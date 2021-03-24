@@ -1,0 +1,22 @@
+language: python
+cache: pip
+services: postgresql
+
+matrix:
+  include:
+    - python: 3.8.5
+      dist: bionic
+      env: TOX_ENV="py38,lint"
+
+before_install:
+  - pip install --upgrade pip
+
+before_script:
+  - psql -c "create database test_users_api;" -U postgres
+
+install:
+  - pip install tox poetry
+
+script:
+  - tox -e $TOX_ENV
+

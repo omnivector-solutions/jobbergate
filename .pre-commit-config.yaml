@@ -1,0 +1,26 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v3.4.0
+  hooks:
+    - id: trailing-whitespace
+      args: [--markdown-linebreak-ext=md]
+    - id: check-merge-conflict
+    - id: no-commit-to-branch
+
+- repo: https://gitlab.com/pycqa/flake8
+  rev: 3.8.4
+  hooks:
+    - id: flake8
+      args: ['--exclude=docs/*,migrations/*', '--ignore=W503,E203']
+
+- repo: https://github.com/pre-commit/mirrors-isort
+  rev: v5.7.0
+  hooks:
+    - id: isort
+      args: ['--check-only', '--diff', '--filter-files']
+      additional_dependencies: ['toml']
+
+- repo: https://github.com/python/black
+  rev: 20.8b1
+  hooks:
+    - id: black
