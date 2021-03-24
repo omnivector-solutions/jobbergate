@@ -11,7 +11,7 @@ repos:
   rev: 3.8.4
   hooks:
     - id: flake8
-      args: ['--exclude=docs/*,migrations/*', '--ignore=W503,E203']
+      args: ['--exclude=docs/*,migrations/*', '--ignore=W503,E203', '--max-line-length=110']
 
 - repo: https://github.com/pre-commit/mirrors-isort
   rev: v5.7.0
