@@ -2,10 +2,10 @@ import asyncio
 
 import click
 
-from jobbergate_api.main import db
 from jobbergate_api.apps.users.models import User
 from jobbergate_api.apps.users.schemas import pwd_context
 from jobbergate_api.config import settings
+from jobbergate_api.main import db
 
 
 @click.group()

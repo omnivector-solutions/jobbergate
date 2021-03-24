@@ -1,7 +1,7 @@
 import typing
 
-from fastapi import APIRouter, Depends, HTTPException
 from asyncpg.exceptions import UniqueViolationError
+from fastapi import APIRouter, Depends, HTTPException
 
 from .models import User as UserModel
 from jobbergate_api.apps.auth.authentication import validate_token
