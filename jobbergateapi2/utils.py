@@ -2,10 +2,10 @@ import asyncio
 
 import click
 
-from jobbergate_api.apps.users.models import User
-from jobbergate_api.apps.users.schemas import pwd_context
-from jobbergate_api.config import settings
-from jobbergate_api.main import db
+import jobbergateapi2.main as main
+from jobbergateapi2.apps.users.models import User
+from jobbergateapi2.apps.users.schemas import pwd_context
+from jobbergateapi2.config import settings
 
 
 @click.group()
@@ -14,7 +14,7 @@ def cli():
 
 
 async def create_super_user(username, email, password):
-    await db.set_bind(settings.DATABASE_URL)
+    await main.db.set_bind(settings.DATABASE_URL)
     await User.create(username=username, email=email, is_active=True, password=password, is_admin=True)
 
 
@@ -29,6 +29,3 @@ def createsuperuser(username, email, password):
 
 
 cli.add_command(createsuperuser)
-
-if __name__ == "__main__":
-    cli()

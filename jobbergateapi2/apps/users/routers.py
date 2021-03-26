@@ -4,10 +4,10 @@ from asyncpg.exceptions import UniqueViolationError
 from fastapi import APIRouter, Depends, HTTPException
 
 from .models import User as UserModel
-from jobbergate_api.apps.auth.authentication import validate_token
-from jobbergate_api.apps.users.schemas import User, UserCreate
-from jobbergate_api.main import db
-from jobbergate_api.pagination import Pagination
+from jobbergateapi2.apps.auth.authentication import validate_token
+from jobbergateapi2.apps.users.schemas import User, UserCreate
+from jobbergateapi2.main import db
+from jobbergateapi2.pagination import Pagination
 
 router = APIRouter()
 

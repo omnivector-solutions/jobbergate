@@ -1,7 +1,7 @@
 import pytest
 from fastapi import status
 
-from jobbergate_api.apps.users.schemas import pwd_context
+from jobbergateapi2.apps.users.schemas import pwd_context
 from tests.apps.users.factories import UserFactory
 
 

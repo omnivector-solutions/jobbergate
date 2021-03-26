@@ -3,8 +3,8 @@ from alembic.config import main
 from fastapi.testclient import TestClient
 from jose import jwt
 
-from jobbergate_api.config import settings
-from jobbergate_api.main import db, get_app
+from jobbergateapi2.config import settings
+from jobbergateapi2.main import db, get_app
 
 settings.TEST_ENV = True
 

@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from jobbergate_api.apps.users.schemas import User, UserCreate
+from jobbergateapi2.apps.users.schemas import User, UserCreate
 
 
 def test_create_user_missing_required_atribute(user_data):

@@ -1,3 +1,6 @@
+"""
+Main file to startup the fastapi server
+"""
 from fastapi import FastAPI
 from gino.ext.starlette import Gino
 
@@ -8,6 +11,9 @@ db = Gino()
 
 
 def get_app(db, database_url):
+    """
+    Return the fastapi app instance, startup the db and load the routers
+    """
     app = FastAPI()
     db.config["dsn"] = database_url
     db.init_app(app)

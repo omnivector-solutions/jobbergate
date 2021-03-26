@@ -7,8 +7,8 @@ from sqlalchemy import engine_from_config, pool
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # noqa
 
-from jobbergate_api.config import settings
-from jobbergate_api.main import db, get_app
+from jobbergateapi2.config import settings
+from jobbergateapi2.main import db, get_app
 
 
 config = context.config

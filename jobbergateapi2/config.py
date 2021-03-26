@@ -1,3 +1,6 @@
+"""
+Configuration file, sets all the necessary environment variables, it is better used with a .env file
+"""
 from prettyconf import config
 
 

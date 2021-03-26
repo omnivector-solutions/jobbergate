@@ -5,9 +5,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 
-from jobbergate_api.apps.users.models import User
-from jobbergate_api.apps.users.schemas import pwd_context
-from jobbergate_api.config import settings
+from jobbergateapi2.apps.users.models import User
+from jobbergateapi2.apps.users.schemas import pwd_context
+from jobbergateapi2.config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.TOKEN_URL)
 

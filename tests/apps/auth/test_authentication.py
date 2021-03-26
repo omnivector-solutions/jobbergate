@@ -6,9 +6,9 @@ import pytest
 from fastapi import HTTPException
 from jose import jwt
 
-from jobbergate_api.apps.auth.authentication import Token, authenticate_user, validate_token
-from jobbergate_api.apps.users.schemas import pwd_context
-from jobbergate_api.config import settings
+from jobbergateapi2.apps.auth.authentication import Token, authenticate_user, validate_token
+from jobbergateapi2.apps.users.schemas import pwd_context
+from jobbergateapi2.config import settings
 from tests.apps.users.factories import UserFactory
 
 nest_asyncio.apply()
@@ -27,7 +27,7 @@ def test_invalid_token():
 
 
 @pytest.mark.asyncio
-@patch("jobbergate_api.apps.auth.authentication.jwt.encode")
+@patch("jobbergateapi2.apps.auth.authentication.jwt.encode")
 async def test_token_creation(mock_encode, client):
     mock_encode.return_value = "mock_hash"
     password_hash = pwd_context.hash("abc123")

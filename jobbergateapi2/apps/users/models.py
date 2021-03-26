@@ -3,7 +3,7 @@ import uuid
 
 from sqlalchemy.dialects.postgresql import UUID
 
-from jobbergate_api.main import db
+from jobbergateapi2.main import db
 
 
 class User(db.Model):

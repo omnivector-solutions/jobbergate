@@ -1,4 +1,4 @@
-from jobbergate_api.apps.users.models import User
+from jobbergateapi2.apps.users.models import User
 
 
 class BaseFactory:

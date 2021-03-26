@@ -5,7 +5,7 @@ import pytest
 from fastapi import status
 
 from .factories import UserFactory
-from jobbergate_api.apps.users.models import User as UserModel
+from jobbergateapi2.apps.users.models import User as UserModel
 
 # because the http test client runs an event loop fot itself,
 # this lib is necessary to avoid the errror "this event loop

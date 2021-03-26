@@ -1,4 +1,4 @@
-from jobbergate_api.pagination import Pagination
+from jobbergateapi2.pagination import Pagination
 
 
 def test_string_conversion():

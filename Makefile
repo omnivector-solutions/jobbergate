@@ -11,10 +11,10 @@ migrate:
 	poetry run alembic upgrade head
 
 run:
-	poetry run uvicorn jobbergate_api.main:app --reload
+	poetry run uvicorn jobbergateapi2.main:app --reload
 
 createsuperuser:
-	poetry run python -m jobbergate_api.utils createsuperuser
+	poetry run python -m jobbergateapi2.utils createsuperuser
 
 clean: clean-eggs clean-build
 	@find . -iname '*.pyc' -delete
