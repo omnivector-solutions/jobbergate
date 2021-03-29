@@ -7,9 +7,9 @@ from fastapi import HTTPException
 from jose import jwt
 
 from jobbergateapi2.apps.auth.authentication import Token, authenticate_user, validate_token
+from jobbergateapi2.apps.users.models import User as UserModel
 from jobbergateapi2.apps.users.schemas import pwd_context
 from jobbergateapi2.config import settings
-from tests.apps.users.factories import UserFactory
 
 nest_asyncio.apply()
 
@@ -31,7 +31,7 @@ def test_invalid_token():
 async def test_token_creation(mock_encode, client):
     mock_encode.return_value = "mock_hash"
     password_hash = pwd_context.hash("abc123")
-    new_user = await UserFactory().create(username="username", password=password_hash)
+    new_user = await UserModel.create(username="username", password=password_hash, email="email@email.com")
     token = Token(new_user)
     assert token.create() == {"access_token": "mock_hash", "token_type": "bearer"}
 
@@ -39,7 +39,7 @@ async def test_token_creation(mock_encode, client):
 @pytest.mark.asyncio
 async def test_authenticate_user(client):
     password_hash = pwd_context.hash("abc123")
-    new_user = await UserFactory().create(username="username", password=password_hash)
+    new_user = await UserModel.create(username="username", password=password_hash, email="email@email.com")
 
     RequestFormMock = namedtuple("OAuth2PasswordRequestForm", ["username", "password"])
     form_data = RequestFormMock("username", "abc123")
@@ -49,7 +49,7 @@ async def test_authenticate_user(client):
 
 @pytest.mark.asyncio
 async def test_authenticate_user_ivalid_password(client):
-    await UserFactory().create(username="username", password="unhased-password")
+    await UserModel.create(username="username", password="unhased-password", email="email@email.com")
 
     RequestFormMock = namedtuple("OAuth2PasswordRequestForm", ["username", "password"])
     form_data = RequestFormMock("username", "abc123")
@@ -61,7 +61,7 @@ async def test_authenticate_user_ivalid_password(client):
 @pytest.mark.asyncio
 async def test_authenticate_user_ivalid_username(client):
     password_hash = pwd_context.hash("abc123")
-    await UserFactory().create(username="name", password=password_hash)
+    await UserModel.create(username="name", password=password_hash, email="email@email.com")
 
     RequestFormMock = namedtuple("OAuth2PasswordRequestForm", ["username", "password"])
     form_data = RequestFormMock("username", "abc123")

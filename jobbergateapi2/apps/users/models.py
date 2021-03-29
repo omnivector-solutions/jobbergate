@@ -13,6 +13,7 @@ class User(db.Model):
     """
     Defines the users_user table and fields for the User resource
     """
+
     __tablename__ = "users_user"
 
     id = db.Column(UUID(), primary_key=True, default=uuid.uuid4)

@@ -4,7 +4,6 @@ import nest_asyncio
 import pytest
 from fastapi import status
 
-from .factories import UserFactory
 from jobbergateapi2.apps.users.models import User as UserModel
 
 # because the http test client runs an event loop fot itself,
@@ -19,8 +18,8 @@ def user_id():
 
 
 @pytest.mark.asyncio
-async def test_search(client, user_data):
-    user = await UserFactory.create()
+async def test_search(client):
+    user = await UserModel.create(username="user1", email="email1@email.com", password="123")
 
     response = client.get(f"/users/?q={user.username}")
     assert response.status_code == status.HTTP_200_OK
@@ -30,11 +29,11 @@ async def test_search(client, user_data):
 
 
 @pytest.mark.asyncio
-async def test_search_with_pagination_limit_offset(client, user_data):
-    await UserFactory.create()
-    await UserFactory.create(**user_data)
+async def test_search_with_pagination_limit_offset(client):
+    await UserModel.create(username="user1", email="email1@email.com", password="123")
+    await UserModel.create(username="user2", email="email2@email.com", password="123")
 
-    user_name = user_data["username"]
+    user_name = "user1"
     response = client.get(f"/users/?q={user_name}&limit=1&offset=0")
     assert response.status_code == status.HTTP_200_OK
 

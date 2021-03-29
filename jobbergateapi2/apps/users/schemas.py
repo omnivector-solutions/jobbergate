@@ -15,6 +15,7 @@ class User(BaseModel):
     """
     Base model for the resource User, defining the default attributes and used for auto generated docs
     """
+
     id: Optional[UUID] = Field(None)
     email: EmailStr
     is_active: Optional[bool] = Field(True)
@@ -40,6 +41,7 @@ class UserCreate(User):
     """
     Class used defines that a User have a password and garantee that it is hashed
     """
+
     password: str = Field(
         None, min_length=8, max_length=32, description="A text value with length between 8 and 32 characters"
     )
