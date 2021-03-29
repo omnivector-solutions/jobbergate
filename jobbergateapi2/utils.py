@@ -1,3 +1,6 @@
+"""
+Script used to create super users via click
+"""
 import asyncio
 
 import click
@@ -14,6 +17,9 @@ def cli():
 
 
 async def create_super_user(username, email, password):
+    """
+    Async function to connect async with the database and create the super user
+    """
     await main.db.set_bind(settings.DATABASE_URL)
     await User.create(username=username, email=email, is_active=True, password=password, is_admin=True)
 
@@ -23,6 +29,9 @@ async def create_super_user(username, email, password):
 @click.option("--username", prompt=True)
 @click.command()
 def createsuperuser(username, email, password):
+    """
+    Click command for creating super users in the database
+    """
     password = pwd_context.hash(password)
     asyncio.run(create_super_user(username, email, password))
     click.echo(f"User {username} created")

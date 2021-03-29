@@ -1,3 +1,6 @@
+"""
+Defines the schema for the resource User
+"""
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
@@ -9,6 +12,9 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class User(BaseModel):
+    """
+    Base model for the resource User, defining the default attributes and used for auto generated docs
+    """
     id: Optional[UUID] = Field(None)
     email: EmailStr
     is_active: Optional[bool] = Field(True)
@@ -31,11 +37,17 @@ class User(BaseModel):
 
 
 class UserCreate(User):
+    """
+    Class used defines that a User have a password and garantee that it is hashed
+    """
     password: str = Field(
         None, min_length=8, max_length=32, description="A text value with length between 8 and 32 characters"
     )
 
     def hash_password(self):
+        """
+        Function used to hash a password using bcrypt
+        """
         if not self.password or len(self.password) > 32:
             return
 

@@ -1,3 +1,6 @@
+"""
+Router for the User resource
+"""
 import typing
 
 from asyncpg.exceptions import UniqueViolationError
@@ -19,6 +22,9 @@ router = APIRouter()
     dependencies=[Depends(validate_token)],
 )
 async def users_search(p: Pagination = Depends()):
+    """
+    Endpoint that requires authentication and is used to GET the users and returns using pagination
+    """
     if p.q is None:
         query = UserModel.query.limit(p.limit).offset(p.offset)
     else:
@@ -29,6 +35,9 @@ async def users_search(p: Pagination = Depends()):
 
 @router.post("/users", description="Endpoint for user creation", dependencies=[Depends(validate_token)])
 async def users_create(user_data: UserCreate):
+    """
+    Endpoint used to create new users using a user already authenticated
+    """
     async with db.transaction():
         try:
             user_created = await UserModel.create(

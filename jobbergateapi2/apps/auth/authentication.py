@@ -1,3 +1,6 @@
+"""
+Application that holds the authentication process using JWT token
+"""
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -19,6 +22,9 @@ credentials_exception = HTTPException(
 
 
 def validate_token(token: str = Depends(oauth2_scheme)):
+    """
+    Given a token check if it is valid
+    """
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
@@ -29,6 +35,9 @@ def validate_token(token: str = Depends(oauth2_scheme)):
 
 
 async def authenticate_user(form_data):
+    """
+    Try to authenticate the user using form_data username and password, raises 401 otherwise
+    """
     user = await User.query.where(User.username == form_data.username).gino.first()
     exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -44,10 +53,17 @@ async def authenticate_user(form_data):
 
 
 class Token:
+    """
+    Class used to create and manage a JWT token for an authenticated user
+    """
+
     def __init__(self, user):
         self.user = user
 
     def create(self):
+        """
+        Function used to create a token with default expiration time
+        """
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = self._create_access_token(
             data={"sub": self.user.email}, expires_delta=access_token_expires
@@ -56,6 +72,9 @@ class Token:
         return {"access_token": access_token, "token_type": "bearer"}
 
     def _create_access_token(self, data: dict, expires_delta: Optional[timedelta] = None):
+        """
+        Given the user data and a expiration time, creates a encoded JWT token
+        """
         to_encode = data.copy()
         if expires_delta:
             expire = datetime.utcnow() + expires_delta
