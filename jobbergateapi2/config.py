@@ -1,17 +1,20 @@
 """
 Configuration file, sets all the necessary environment variables, it is better used with a .env file
 """
-from prettyconf import config
+from pydantic import BaseSettings, Field
 
 
-class Settings:
-    DATABASE_URL = config("DATABASE_URL")
-    TEST_DATABASE_URL = config("TEST_DATABASE_URL")
-    TEST_ENV = config("TEST_ENV", default=False, cast=config.boolean)
-    SECRET_KEY = config("SECRET_KEY")
-    TOKEN_URL = config("TOKEN_URL", default="token")
-    ALGORITHM = config("ALGORITHM", default="HS256")
-    ACCESS_TOKEN_EXPIRE_MINUTES = config("ACCESS_TOKEN_EXPIRE_MINUTES", default="30", cast=config.eval)
+class Settings(BaseSettings):
+    DATABASE_URL: str
+    TEST_DATABASE_URL: str
+    TEST_ENV: bool = Field(False)
+    SECRET_KEY: str
+    TOKEN_URL: str = Field("token")
+    ALGORITHM: str = Field("HS256")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field("30")
+
+    class Config:
+        env_file = ".env"
 
 
 settings = Settings()
