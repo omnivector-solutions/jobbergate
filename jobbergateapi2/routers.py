@@ -1,3 +1,6 @@
+"""
+All the routers of the resources
+"""
 import logging
 from importlib import import_module
 
@@ -7,6 +10,9 @@ app_routers = ["jobbergateapi2.apps.users.routers", "jobbergateapi2.apps.auth.ro
 
 
 def load_routers(app):
+    """
+    Load all routers
+    """
     for path in app_routers:
         module = import_module(path)
 
