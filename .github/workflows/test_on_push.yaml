@@ -1,0 +1,22 @@
+name: 'Test'
+
+on: push
+
+jobs:
+  test:
+    name: "Test code and check lint"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+          architecture: 'x64'
+      - name: Python Poetry Action
+        uses: abatilo/actions-poetry@v2.1.0
+      - name: Install dependencies
+        run: |
+          pip install tox
+      - name: "tox lint"
+        run: |
+          tox -e lint
