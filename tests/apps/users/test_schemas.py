@@ -1,3 +1,6 @@
+"""
+Test the schema of the resource User
+"""
 import pytest
 from pydantic import ValidationError
 
@@ -5,6 +8,9 @@ from jobbergateapi2.apps.users.schemas import User, UserCreate
 
 
 def test_create_user_missing_required_atribute(user_data):
+    """
+    Must raise a ValidationError when creating a user without any required attribute
+    """
     user_data.pop("email")
 
     with pytest.raises(ValidationError):
@@ -12,6 +18,9 @@ def test_create_user_missing_required_atribute(user_data):
 
 
 def test_create_user_with_invalid_email(user_data):
+    """
+    Must raise a ValidationError for invalid email address
+    """
     user_data["email"] = "email"
 
     with pytest.raises(ValidationError) as exc:
@@ -21,6 +30,9 @@ def test_create_user_with_invalid_email(user_data):
 
 
 def test_create_user_with_invalid_password_length(user_data):
+    """
+    Must not allow small passwords
+    """
     user_data["password"] = "1"
 
     with pytest.raises(ValidationError) as exc:
@@ -30,6 +42,9 @@ def test_create_user_with_invalid_password_length(user_data):
 
 
 def test_user_string_conversion(user_data):
+    """
+    Check if the string representation of the User resource is correct
+    """
     user = User(**user_data)
 
     expected_str = f"{user.id}, {user.username}, {user.email}"
@@ -38,6 +53,9 @@ def test_user_string_conversion(user_data):
 
 
 def test_create_user(user_data):
+    """
+    Check if the user creation works
+    """
     user = User(**user_data)
 
     assert user.email == user_data["email"]
@@ -48,12 +66,18 @@ def test_create_user(user_data):
 
 
 def test_user_hash_password(user_data):
+    """
+    Test if the hash_password returns
+    """
     user = UserCreate(**user_data)
 
     assert user.hash_password()
 
 
 def test_user_hash_password_maximum_size(user_data):
+    """
+    Check if the hash_password works with the maximum password size
+    """
     user_data["password"] = "x$j4--9b#V(@IB?!aAIC<J+IcJxBW>]|"
     user = UserCreate(**user_data)
 
@@ -62,6 +86,9 @@ def test_user_hash_password_maximum_size(user_data):
 
 
 def test_user_hash_password_already_hashed(user_data):
+    """
+    Check that it is not possible to hash a password twice
+    """
     user = UserCreate(**user_data)
 
     user.password = user.hash_password()
@@ -70,6 +97,9 @@ def test_user_hash_password_already_hashed(user_data):
 
 
 def test_user_hash_password_without_password_filled(user_data):
+    """
+    When creating a user, if there is no password, the hash_password can't hash it
+    """
     user_data.pop("password")
 
     user = UserCreate(**user_data)

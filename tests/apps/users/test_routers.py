@@ -1,5 +1,6 @@
-import uuid
-
+"""
+Tests for the /users endpoint
+"""
 import nest_asyncio
 import pytest
 from fastapi import status
@@ -12,13 +13,11 @@ from jobbergateapi2.apps.users.models import User as UserModel
 nest_asyncio.apply()
 
 
-@pytest.fixture
-def user_id():
-    return str(uuid.uuid4())
-
-
 @pytest.mark.asyncio
 async def test_search(client):
+    """
+    Create a user then test if the search works
+    """
     user = await UserModel.create(username="user1", email="email1@email.com", password="123")
 
     response = client.get(f"/users/?q={user.username}")
@@ -30,6 +29,9 @@ async def test_search(client):
 
 @pytest.mark.asyncio
 async def test_search_with_pagination_limit_offset(client):
+    """
+    Test if the pagination is working throught the endpoint with 2 users
+    """
     await UserModel.create(username="user1", email="email1@email.com", password="123")
     await UserModel.create(username="user2", email="email2@email.com", password="123")
 
@@ -43,6 +45,9 @@ async def test_search_with_pagination_limit_offset(client):
 
 
 def test_search_without_results(client):
+    """
+    Test when there is no user matching the search criteria
+    """
     response = client.get("/users/?name=Some Name")
 
     assert response.status_code == status.HTTP_200_OK
@@ -53,6 +58,9 @@ def test_search_without_results(client):
 
 @pytest.mark.asyncio
 async def test_create_user(client, user_data):
+    """
+    Test user creation
+    """
     response = client.post("/users", json=user_data)
     assert response.status_code == status.HTTP_200_OK
     assert len(await UserModel.query.gino.all()) == 1
@@ -63,6 +71,9 @@ async def test_create_user(client, user_data):
 
 @pytest.mark.asyncio
 async def test_create_user_duplication(client, user_data):
+    """
+    Test the case where there is a violation in the database constraints for unique
+    """
     response = client.post("/users", json=user_data)
     assert response.status_code == status.HTTP_200_OK
     response = client.post("/users", json=user_data)
@@ -72,6 +83,9 @@ async def test_create_user_duplication(client, user_data):
 
 @pytest.mark.asyncio
 async def test_create_user_admin(client, user_data):
+    """
+    Test creating the user with the admin permission
+    """
     user_data["is_admin"] = True
     response = client.post("/users", json=user_data)
     assert response.status_code == status.HTTP_200_OK
