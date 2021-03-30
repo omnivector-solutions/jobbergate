@@ -29,10 +29,11 @@ uvicorn = "^0.11.5"
 gino = {extras = ["starlette"], version = "^1.0.0"}
 alembic = "^1.4.2"
 python-jose = {extras = ["cryptography"], version = "^3.2.0"}
-passlib = {extras = ["bcrypt"], version = "^1.7.2"}
+passlib = "^1.7.2"
 python-multipart = "^0.0.5"
 psycopg2 = "^2.8.6"
 python-dotenv = "^0.16.0"
+tox = "^3.23.0"
 
 [tool.poetry.dev-dependencies]
 black = { version = "^19", allow-prereleases = true }

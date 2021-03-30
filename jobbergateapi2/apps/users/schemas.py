@@ -8,7 +8,9 @@ from uuid import UUID
 from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr, Field
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["pbkdf2_sha512"], deprecated="auto", pbkdf2_sha512__rounds=500_000, pbkdf2_sha512__salt_size=64
+)
 
 
 class User(BaseModel):
@@ -48,7 +50,7 @@ class UserCreate(User):
 
     def hash_password(self):
         """
-        Function used to hash a password using bcrypt
+        Function used to hash a password using pbkdf2
         """
         if not self.password or len(self.password) > 32:
             return
