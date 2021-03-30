@@ -1,3 +1,6 @@
+"""
+Configuration of pytest
+"""
 import pytest
 from alembic.config import main
 from fastapi.testclient import TestClient
@@ -11,6 +14,9 @@ settings.TEST_ENV = True
 
 @pytest.fixture
 def client():
+    """
+    Client to perform fake requests for the server and then rollback the modifications
+    """
     main(["--raiseerr", "upgrade", "head"])
     test_app = get_app(db, settings.TEST_DATABASE_URL)
     encoded_jwt = jwt.encode({"sub": "username"}, settings.SECRET_KEY, algorithm=settings.ALGORITHM)

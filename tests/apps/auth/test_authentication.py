@@ -1,3 +1,6 @@
+"""
+Tests for the authentication process
+"""
 from collections import namedtuple
 from unittest.mock import patch
 
@@ -15,11 +18,17 @@ nest_asyncio.apply()
 
 
 def test_validate_token():
+    """
+    Test if the token is able to be validated
+    """
     encoded_jwt = jwt.encode({"sub": "username"}, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     assert validate_token(encoded_jwt) is None
 
 
 def test_invalid_token():
+    """
+    Must raise a HTTPException when the token is invalid
+    """
     encoded_jwt = jwt.encode({"sub": "username"}, "invalid_secret_key", algorithm=settings.ALGORITHM)
     with pytest.raises(HTTPException) as exinfo:
         assert validate_token(encoded_jwt) is None
@@ -29,6 +38,9 @@ def test_invalid_token():
 @pytest.mark.asyncio
 @patch("jobbergateapi2.apps.auth.authentication.jwt.encode")
 async def test_token_creation(mock_encode, client):
+    """
+    Check if the token creation works
+    """
     mock_encode.return_value = "mock_hash"
     password_hash = pwd_context.hash("abc123")
     new_user = await UserModel.create(username="username", password=password_hash, email="email@email.com")
@@ -38,6 +50,9 @@ async def test_token_creation(mock_encode, client):
 
 @pytest.mark.asyncio
 async def test_authenticate_user(client):
+    """
+    Test that after a user is created, its credentials works for authentication
+    """
     password_hash = pwd_context.hash("abc123")
     new_user = await UserModel.create(username="username", password=password_hash, email="email@email.com")
 
@@ -48,7 +63,10 @@ async def test_authenticate_user(client):
 
 
 @pytest.mark.asyncio
-async def test_authenticate_user_ivalid_password(client):
+async def test_authenticate_user_invalid_password(client):
+    """
+    Test with an created user, when we try a wrong password, then the auth must fail with HTTPException
+    """
     await UserModel.create(username="username", password="unhased-password", email="email@email.com")
 
     RequestFormMock = namedtuple("OAuth2PasswordRequestForm", ["username", "password"])
@@ -59,7 +77,10 @@ async def test_authenticate_user_ivalid_password(client):
 
 
 @pytest.mark.asyncio
-async def test_authenticate_user_ivalid_username(client):
+async def test_authenticate_user_invalid_username(client):
+    """
+    Same as before, but now with a wrong username and correct password
+    """
     password_hash = pwd_context.hash("abc123")
     await UserModel.create(username="name", password=password_hash, email="email@email.com")
 
