@@ -8,7 +8,7 @@ from sqlalchemy import engine_from_config, pool
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # noqa
 
 from jobbergateapi2.config import settings
-from jobbergateapi2.main import db, get_app
+from jobbergateapi2.main import app, db
 
 
 config = context.config
@@ -17,7 +17,9 @@ fileConfig(config.config_file_name)
 database_url = settings.TEST_DATABASE_URL if settings.TEST_ENV else settings.DATABASE_URL
 config.set_main_option("sqlalchemy.url", database_url)
 
-get_app(db, database_url)
+db.config["dsn"] = database_url
+db.init_app(app)
+
 target_metadata = db
 
 

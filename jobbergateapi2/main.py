@@ -3,22 +3,32 @@ Main file to startup the fastapi server
 """
 from fastapi import FastAPI
 from gino.ext.starlette import Gino
+from mangum import Mangum
 
 from .config import settings
 from .routers import load_routers
 
 db = Gino()
+app = FastAPI()
+load_routers(app)
 
 
-def get_app(db, database_url):
+@app.on_event("startup")
+async def init_database():
     """
-    Return the fastapi app instance, startup the db and load the routers
+    Connect the database; create it if necessary
     """
-    app = FastAPI()
-    db.config["dsn"] = database_url
+    db.config["dsn"] = settings.DATABASE_URL
     db.init_app(app)
-    load_routers(app)
-    return app
 
 
-app = get_app(db, settings.DATABASE_URL)
+def handler(event, context):
+    """
+    Adapt inbound ASGI requests (from API Gateway) using Mangum
+    - Assumes non-ASGI requests (from any other source) are a cloudwatch ping
+    """
+    if not event.get("requestContext"):
+        return
+
+    mangum = Mangum(app)
+    return mangum(event, context)
