@@ -4,7 +4,7 @@ Router for the auth module
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
-from .authentication import Token, authenticate_user
+from jobbergateapi2.apps.auth.authentication import Token, authenticate_user
 
 router = APIRouter()
 

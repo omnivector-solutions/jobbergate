@@ -6,8 +6,8 @@ import typing
 from asyncpg.exceptions import UniqueViolationError
 from fastapi import APIRouter, Depends, HTTPException
 
-from .models import User as UserModel
 from jobbergateapi2.apps.auth.authentication import validate_token
+from jobbergateapi2.apps.users.models import User as UserModel
 from jobbergateapi2.apps.users.schemas import User, UserCreate
 from jobbergateapi2.main import db
 from jobbergateapi2.pagination import Pagination

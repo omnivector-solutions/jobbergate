@@ -5,8 +5,8 @@ from fastapi import FastAPI
 from gino.ext.starlette import Gino
 from mangum import Mangum
 
-from .config import settings
-from .routers import load_routers
+from jobbergateapi2.config import settings
+from jobbergateapi2.routers import load_routers
 
 db = Gino()
 app = FastAPI()
