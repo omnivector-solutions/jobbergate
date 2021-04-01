@@ -14,7 +14,7 @@ run:
 	poetry run uvicorn jobbergateapi2.main:app --reload
 
 createsuperuser:
-	poetry run python -m jobbergateapi2.utils createsuperuser
+	poetry run createsuperuser
 
 clean: clean-eggs clean-build
 	@find . -iname '*.pyc' -delete
