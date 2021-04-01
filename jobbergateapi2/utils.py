@@ -11,11 +11,6 @@ from jobbergateapi2.apps.users.schemas import pwd_context
 from jobbergateapi2.config import settings
 
 
-@click.group()
-def cli():
-    pass
-
-
 async def create_super_user(username, email, password):
     """
     Async function to connect async with the database and create the super user
@@ -35,6 +30,3 @@ def createsuperuser(username, email, password):
     password = pwd_context.hash(password)
     asyncio.run(create_super_user(username, email, password))
     click.echo(f"User {username} created")
-
-
-cli.add_command(createsuperuser)
