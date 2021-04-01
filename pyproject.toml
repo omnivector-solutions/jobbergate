@@ -1,6 +1,6 @@
 [tool.poetry]
 authors = [
-    "zsinx6 <zsinx6@users.noreply.github.com>"
+    "Lucas de Carvalho <lucas.carvalho@omnivector.solutions>"
 ]
 name = "jobbergateapi2"
 description = "jobbergate-api"
