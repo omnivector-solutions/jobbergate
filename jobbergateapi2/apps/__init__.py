@@ -1,0 +1,3 @@
+"""
+Resources of the API
+"""
