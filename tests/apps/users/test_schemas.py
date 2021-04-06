@@ -38,7 +38,7 @@ def test_create_user_with_invalid_password_length(user_data):
     with pytest.raises(ValidationError) as exc:
         UserCreate(**user_data)
 
-    assert "ensure this value has at least 8 characters" in str(exc)
+    assert "ensure this value has at least 12 characters" in str(exc)
 
 
 def test_user_string_conversion(user_data):
@@ -78,22 +78,11 @@ def test_user_hash_password_maximum_size(user_data):
     """
     Check if the hash_password works with the maximum password size
     """
-    user_data["password"] = "x$j4--9b#V(@IB?!aAIC<J+IcJxBW>]|"
+    user_data["password"] = "a" * 100
     user = UserCreate(**user_data)
 
     assert user.hash_password()
     assert len(user.hash_password()) <= 248
-
-
-def test_user_hash_password_already_hashed(user_data):
-    """
-    Check that it is not possible to hash a password twice
-    """
-    user = UserCreate(**user_data)
-
-    user.password = user.hash_password()
-
-    assert user.hash_password() is None
 
 
 def test_user_hash_password_without_password_filled(user_data):

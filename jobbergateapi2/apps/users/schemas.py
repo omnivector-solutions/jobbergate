@@ -45,14 +45,14 @@ class UserCreate(User):
     """
 
     password: str = Field(
-        None, min_length=8, max_length=32, description="A text value with length between 8 and 32 characters"
+        None, min_length=12, max_length=100, description="Password with length between 12 and 100 characters"
     )
 
     def hash_password(self):
         """
         Function used to hash a password using pbkdf2
         """
-        if not self.password or len(self.password) > 32:
+        if not self.password:
             return
 
         return pwd_context.hash(self.password)
