@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from jobbergateapi2.apps.auth.authentication import validate_token
 from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import User, UserCreate
-from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.pagination import Pagination
 from jobbergateapi2.storage import database
 
@@ -49,8 +48,8 @@ async def users_create(user_data: UserCreate):
             }
             user_created_id = await database.execute(query=query, values=values)
 
-        except INTEGRITY_CHECK_EXCEPTIONS as e:
-            raise HTTPException(status_code=422, detail=str(e))
+        except UniqueViolationError as e:
+            raise HTTPException(status_code=422, detail=e.detail)
     return user_created_id
 
 
