@@ -5,9 +5,9 @@ import nest_asyncio
 import pytest
 from fastapi import status
 
+from jobbergateapi2.storage import database
 from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import User, UserCreate
-from jobbergateapi2.storage import database
 from jobbergateapi2.tests.apps.conftest import insert_objects
 
 # because the http test client runs an event loop fot itself,
@@ -41,7 +41,7 @@ async def test_search_with_pagination_limit_offset(client):
     """
     users = [
         UserCreate(username="user1", email="email1@email.com", password="1" * 12),
-        UserCreate(username="user2", email="email2@email.com", password="1" * 12),
+        UserCreate(username="user2", email="email2@email.com", password="1" * 12)
     ]
     await insert_objects(users, users_table)
 
