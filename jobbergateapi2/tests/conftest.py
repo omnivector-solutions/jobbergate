@@ -3,12 +3,11 @@ Configuration of pytest
 """
 import os
 
-from pytest import fixture
 from fastapi.testclient import TestClient
 from jose import jwt
+from pytest import fixture
 
 from jobbergateapi2.config import settings
-
 
 TESTING_DB_FILE = "./sqlite-testing.db"
 settings.DATABASE_URL = f"sqlite:///{TESTING_DB_FILE}"
@@ -59,6 +58,7 @@ async def client():
     """
     # defer import of main to prevent accidentally importing storage too early
     from jobbergateapi2.main import app as backend_app
+
     encoded_jwt = jwt.encode({"sub": "username"}, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     with TestClient(backend_app) as client:
         token = f"bearer {encoded_jwt}"
