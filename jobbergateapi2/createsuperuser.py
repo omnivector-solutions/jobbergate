@@ -5,18 +5,21 @@ import asyncio
 
 import click
 
-import jobbergateapi2.main as main
-from jobbergateapi2.apps.users.models import User
+from jobbergateapi2 import storage
+from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import pwd_context
-from jobbergateapi2.config import settings
+from jobbergateapi2.main import disconnect_database, init_database
 
 
 async def create_super_user(username, email, password):
     """
     Async function to connect async with the database and create the super user
     """
-    await main.db.set_bind(settings.DATABASE_URL)
-    await User.create(username=username, email=email, is_active=True, password=password, is_admin=True)
+    await init_database()
+    query = users_table.insert()
+    values = {"username": username, "email": email, "password": password, "is_admin": True}
+    await storage.database.execute(query=query, values=values)
+    await disconnect_database()
 
 
 @click.option("--password", prompt=True, hide_input=True, confirmation_prompt=True)

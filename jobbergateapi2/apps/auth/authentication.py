@@ -8,9 +8,10 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 
-from jobbergateapi2.apps.users.models import User
+from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import pwd_context
 from jobbergateapi2.config import settings
+from jobbergateapi2.storage import database
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.TOKEN_URL)
 
@@ -38,7 +39,8 @@ async def authenticate_user(form_data):
     """
     Try to authenticate the user using form_data username and password, raises 401 otherwise
     """
-    user = await User.query.where(User.username == form_data.username).gino.first()
+    query = users_table.select().where(users_table.c.username == form_data.username)
+    user = await database.fetch_one(query)
     exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Incorrect username or password",
