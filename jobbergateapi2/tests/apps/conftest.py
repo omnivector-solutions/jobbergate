@@ -1,3 +1,6 @@
+"""
+Pytest helpers to use in all apps
+"""
 from typing import List
 
 import sqlalchemy
