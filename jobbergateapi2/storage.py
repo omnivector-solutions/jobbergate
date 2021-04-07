@@ -1,6 +1,3 @@
-"""
-Persistent data storage
-"""
 import databases
 import sqlalchemy
 
