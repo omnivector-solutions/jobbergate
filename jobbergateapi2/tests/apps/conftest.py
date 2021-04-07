@@ -2,6 +2,7 @@ from typing import List
 
 import sqlalchemy
 from pydantic import BaseModel
+from pytest import fixture
 
 from jobbergateapi2.storage import database
 
@@ -12,8 +13,18 @@ async def insert_objects(objects: List[BaseModel], table: sqlalchemy.Table):
     the specified table
     """
     ModelType = type(objects[0])
-    await database.execute_many(
-        query=table.insert(), values=[obj.dict() for obj in objects]
-    )
+    await database.execute_many(query=table.insert(), values=[obj.dict() for obj in objects])
     fetched = await database.fetch_all(table.select())
     return [ModelType.parse_obj(o) for o in fetched]
+
+
+@fixture
+def user_data():
+    """
+    Default user data for testing
+    """
+    return {
+        "email": "user1@email.com",
+        "username": "username",
+        "password": "supersecret123456",
+    }
