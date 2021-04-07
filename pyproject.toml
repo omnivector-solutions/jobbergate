@@ -35,6 +35,7 @@ psycopg2 = "^2.8.6"
 python-dotenv = "^0.16.0"
 tox = "^3.23.0"
 mangum = "^0.11.0"
+databases = {extras = ["sqlite"], version = "^0.4.3"}
 
 [tool.poetry.dev-dependencies]
 black = { version = "^19", allow-prereleases = true }
