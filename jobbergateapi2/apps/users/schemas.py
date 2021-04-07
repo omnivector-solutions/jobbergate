@@ -21,7 +21,7 @@ class User(BaseModel):
     email: EmailStr
     is_admin: Optional[bool] = Field(False)
     username: str = Field(..., max_length=64, description="The name that represents the user")
-    data_joined: Optional[datetime] = Field(None)
+    data_joined: Optional[datetime] = Field(datetime.utcnow())
 
     class Config:
         orm_mode = True
