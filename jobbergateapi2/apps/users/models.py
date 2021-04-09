@@ -1,14 +1,13 @@
 """
 Database model for the User resource
 """
-import sqlalchemy
-from sqlalchemy import Boolean, DateTime, Integer, String
+from sqlalchemy import Boolean, DateTime, Integer, String, Table
 from sqlalchemy.sql import func
 from sqlalchemy.sql.schema import Column
 
-metadata = sqlalchemy.MetaData()
+from jobbergateapi2.metadata import metadata
 
-users_table = sqlalchemy.Table(
+users_table = Table(
     "users",
     metadata,
     Column("id", Integer, primary_key=True),
