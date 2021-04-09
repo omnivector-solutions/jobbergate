@@ -6,7 +6,11 @@ from importlib import import_module
 
 logger = logging.getLogger(__name__)
 
-app_routers = ["jobbergateapi2.apps.users.routers", "jobbergateapi2.apps.auth.routers"]
+app_routers = [
+    "jobbergateapi2.apps.users.routers",
+    "jobbergateapi2.apps.auth.routers",
+    "jobbergateapi2.apps.applications.routers",
+]
 
 
 def load_routers(app):
