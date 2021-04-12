@@ -4,7 +4,6 @@ Router for the Application resource
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from jobbergateapi2.apps.applications.models import applications_table
-from jobbergateapi2.apps.applications.schemas import Application
 from jobbergateapi2.apps.auth.authentication import get_current_user
 from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
