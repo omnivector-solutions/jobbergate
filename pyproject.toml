@@ -26,8 +26,6 @@ python = "^3.8"
 fastapi = "^0.54.1"
 email_validator = "^1.1.0"
 uvicorn = "^0.11.5"
-gino = {extras = ["starlette"], version = "^1.0.0"}
-alembic = "^1.4.2"
 python-jose = {extras = ["cryptography"], version = "^3.2.0"}
 passlib = "^1.7.2"
 python-multipart = "^0.0.5"
@@ -35,6 +33,7 @@ psycopg2 = "^2.8.6"
 python-dotenv = "^0.16.0"
 tox = "^3.23.0"
 mangum = "^0.11.0"
+databases = {extras = ["sqlite"], version = "^0.4.3"}
 
 [tool.poetry.dev-dependencies]
 black = { version = "^19", allow-prereleases = true }

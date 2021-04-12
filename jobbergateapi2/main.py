@@ -2,13 +2,11 @@
 Main file to startup the fastapi server
 """
 from fastapi import FastAPI
-from gino.ext.starlette import Gino
 from mangum import Mangum
 
-from jobbergateapi2.config import settings
+from jobbergateapi2 import storage
 from jobbergateapi2.routers import load_routers
 
-db = Gino()
 app = FastAPI()
 load_routers(app)
 
@@ -18,8 +16,16 @@ async def init_database():
     """
     Connect the database; create it if necessary
     """
-    db.config["dsn"] = settings.DATABASE_URL
-    db.init_app(app)
+    storage.create_all_tables()
+    await storage.database.connect()
+
+
+@app.on_event("shutdown")
+async def disconnect_database():
+    """
+    Disconnect the database
+    """
+    await storage.database.disconnect()
 
 
 def handler(event, context):

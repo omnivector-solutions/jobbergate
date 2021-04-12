@@ -7,9 +7,6 @@ lint:
 install:
 	poetry install
 
-migrate:
-	poetry run alembic upgrade head
-
 run:
 	poetry run uvicorn jobbergateapi2.main:app --reload
 

@@ -59,7 +59,6 @@ def test_create_user(user_data):
     user = User(**user_data)
 
     assert user.email == user_data["email"]
-    assert user.is_active is True
     assert user.is_admin is False
     assert user.username == user_data["username"]
     assert user.Config.orm_mode is True

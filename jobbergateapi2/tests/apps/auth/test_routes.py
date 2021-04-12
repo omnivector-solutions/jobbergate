@@ -1,11 +1,13 @@
 """
 Test for the authentication endpoint: /token
 """
+import nest_asyncio
 import pytest
 from fastapi import status
 
-from jobbergateapi2.apps.users.models import User as UserModel
-from jobbergateapi2.apps.users.schemas import pwd_context
+from jobbergateapi2.storage import database
+
+nest_asyncio.apply()
 
 
 @pytest.mark.asyncio
@@ -16,12 +18,12 @@ from jobbergateapi2.apps.users.schemas import pwd_context
         {"username": "invalid-name", "password": "abc123"},
     ],
 )
+@database.transaction(force_rollback=True)
 async def test_token_invalid_data(data_payload, client):
     """
     Test the token creation with wrong password or username, must fail
     """
-    password_hash = pwd_context.hash("abc123")
-    await UserModel.create(username="username", password=password_hash, email="email@email.com")
+    client.post("/users", json=data_payload)
     response = client.post("/token", data=data_payload)
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -29,13 +31,13 @@ async def test_token_invalid_data(data_payload, client):
 
 
 @pytest.mark.asyncio
-async def test_token_success_creation(client):
+@database.transaction(force_rollback=True)
+async def test_token_success_creation(client, user_data):
     """
     Test token creation with valid credentials
     """
-    password_hash = pwd_context.hash("abc123")
-    await UserModel.create(username="name", password=password_hash, email="email@email.com")
-    response = client.post("/token", data={"username": "name", "password": "abc123"})
+    client.post("/users", json=user_data)
+    response = client.post("/token", data={"username": "username", "password": "supersecret123456"})
 
     assert response.status_code == status.HTTP_200_OK
     assert "access_token" in response.json().keys()

@@ -3,10 +3,11 @@ Configuration file, sets all the necessary environment variables, it is better u
 """
 from pydantic import BaseSettings, Field
 
+_DB_RX = r"^(sqlite|postgres)://.+$"
+
 
 class Settings(BaseSettings):
-    DATABASE_URL: str
-    TEST_DATABASE_URL: str
+    DATABASE_URL: str = Field("sqlite:///./sqlite.db?check_same_thread=true", regex=_DB_RX)
     TEST_ENV: bool = Field(False)
     SECRET_KEY: str
     TOKEN_URL: str = Field("token")

@@ -3,7 +3,6 @@ Defines the schema for the resource User
 """
 from datetime import datetime
 from typing import Optional
-from uuid import UUID
 
 from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr, Field
@@ -18,12 +17,11 @@ class User(BaseModel):
     Base model for the resource User, defining the default attributes and used for auto generated docs
     """
 
-    id: Optional[UUID] = Field(None)
+    id: Optional[int] = Field(None)
     email: EmailStr
-    is_active: Optional[bool] = Field(True)
     is_admin: Optional[bool] = Field(False)
     username: str = Field(..., max_length=64, description="The name that represents the user")
-    data_joined: Optional[datetime] = Field(None)
+    data_joined: Optional[datetime] = Field(datetime.utcnow())
 
     class Config:
         orm_mode = True

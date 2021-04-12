@@ -1,25 +1,20 @@
 """
 Database model for the User resource
 """
-import datetime
-import uuid
+import sqlalchemy
+from sqlalchemy import Boolean, DateTime, Integer, String
+from sqlalchemy.sql import func
+from sqlalchemy.sql.schema import Column
 
-from sqlalchemy.dialects.postgresql import UUID
+metadata = sqlalchemy.MetaData()
 
-from jobbergateapi2.main import db
-
-
-class User(db.Model):
-    """
-    Defines the users_user table and fields for the User resource
-    """
-
-    __tablename__ = "users_user"
-
-    id = db.Column(UUID(), primary_key=True, default=uuid.uuid4)
-    email = db.Column(db.String(255), nullable=False, index=True, unique=True)
-    is_active = db.Column(db.Boolean, nullable=False, default=True)
-    is_admin = db.Column(db.Boolean, nullable=False, default=False)
-    username = db.Column(db.String(64), index=True, nullable=False, unique=True)
-    password = db.Column(db.String(248), nullable=False)
-    data_joined = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+users_table = sqlalchemy.Table(
+    "users",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("email", String, nullable=False, index=True, unique=True),
+    Column("is_admin", Boolean, nullable=False, default=False),
+    Column("username", String, nullable=False, unique=True),
+    Column("password", String, nullable=False),
+    Column("data_joined", DateTime, nullable=False, default=func.now()),
+)

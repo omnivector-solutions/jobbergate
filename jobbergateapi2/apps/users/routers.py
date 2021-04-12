@@ -3,14 +3,14 @@ Router for the User resource
 """
 import typing
 
-from asyncpg.exceptions import UniqueViolationError
 from fastapi import APIRouter, Depends, HTTPException
 
 from jobbergateapi2.apps.auth.authentication import validate_token
-from jobbergateapi2.apps.users.models import User as UserModel
+from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import User, UserCreate
-from jobbergateapi2.main import db
+from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.pagination import Pagination
+from jobbergateapi2.storage import database
 
 router = APIRouter()
 
@@ -26,10 +26,10 @@ async def users_search(p: Pagination = Depends()):
     Endpoint that requires authentication and is used to GET the users and returns using pagination
     """
     if p.q is None:
-        query = UserModel.query.limit(p.limit).offset(p.offset)
+        query = users_table.select().limit(p.limit).offset(p.offset)
     else:
-        query = UserModel.query.where(UserModel.username == p.q).limit(p.limit).offset(p.offset)
-    users = await query.gino.all()
+        query = users_table.select().where(users_table.c.username == p.q).limit(p.limit).offset(p.offset)
+    users = await database.fetch_all(query)
     return users
 
 
@@ -38,19 +38,20 @@ async def users_create(user_data: UserCreate):
     """
     Endpoint used to create new users using a user already authenticated
     """
-    async with db.transaction():
+    async with database.transaction():
         try:
-            user_created = await UserModel.create(
-                username=user_data.username,
-                email=user_data.email,
-                password=user_data.hash_password(),
-                is_admin=user_data.is_admin,
-                is_active=user_data.is_active,
-            )
+            query = users_table.insert()
+            values = {
+                "username": user_data.username,
+                "email": user_data.email,
+                "password": user_data.hash_password(),
+                "is_admin": user_data.is_admin,
+            }
+            user_created_id = await database.execute(query=query, values=values)
 
-        except UniqueViolationError as e:
-            raise HTTPException(status_code=422, detail=e.detail)
-    return user_created.id
+        except INTEGRITY_CHECK_EXCEPTIONS as e:
+            raise HTTPException(status_code=422, detail=str(e))
+    return user_created_id
 
 
 def include_router(app):

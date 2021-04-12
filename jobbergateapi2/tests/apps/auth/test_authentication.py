@@ -10,9 +10,10 @@ from fastapi import HTTPException
 from jose import jwt
 
 from jobbergateapi2.apps.auth.authentication import Token, authenticate_user, validate_token
-from jobbergateapi2.apps.users.models import User as UserModel
-from jobbergateapi2.apps.users.schemas import pwd_context
+from jobbergateapi2.apps.users.models import users_table
+from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.config import settings
+from jobbergateapi2.storage import database
 
 nest_asyncio.apply()
 
@@ -42,32 +43,35 @@ async def test_token_creation(mock_encode, client):
     Check if the token creation works
     """
     mock_encode.return_value = "mock_hash"
-    password_hash = pwd_context.hash("abc123")
-    new_user = await UserModel.create(username="username", password=password_hash, email="email@email.com")
+    new_user = User(username="username", email="email@email.com")
+
     token = Token(new_user)
     assert token.create() == {"access_token": "mock_hash", "token_type": "bearer"}
 
 
 @pytest.mark.asyncio
-async def test_authenticate_user(client):
+@database.transaction(force_rollback=True)
+async def test_authenticate_user(client, user_data):
     """
     Test that after a user is created, its credentials works for authentication
     """
-    password_hash = pwd_context.hash("abc123")
-    new_user = await UserModel.create(username="username", password=password_hash, email="email@email.com")
+    client.post("/users", json=user_data)
 
     RequestFormMock = namedtuple("OAuth2PasswordRequestForm", ["username", "password"])
-    form_data = RequestFormMock("username", "abc123")
+    form_data = RequestFormMock("username", "supersecret123456")
     user = await authenticate_user(form_data)
+    new_user = User.parse_obj(await database.fetch_one(users_table.select()))
+
     assert user.id == new_user.id
 
 
 @pytest.mark.asyncio
-async def test_authenticate_user_invalid_password(client):
+@database.transaction(force_rollback=True)
+async def test_authenticate_user_invalid_password(client, user_data):
     """
     Test with an created user, when we try a wrong password, then the auth must fail with HTTPException
     """
-    await UserModel.create(username="username", password="unhased-password", email="email@email.com")
+    client.post("/users", json=user_data)
 
     RequestFormMock = namedtuple("OAuth2PasswordRequestForm", ["username", "password"])
     form_data = RequestFormMock("username", "abc123")
@@ -77,12 +81,12 @@ async def test_authenticate_user_invalid_password(client):
 
 
 @pytest.mark.asyncio
-async def test_authenticate_user_invalid_username(client):
+@database.transaction(force_rollback=True)
+async def test_authenticate_user_invalid_username(client, user_data):
     """
     Same as before, but now with a wrong username and correct password
     """
-    password_hash = pwd_context.hash("abc123")
-    await UserModel.create(username="name", password=password_hash, email="email@email.com")
+    client.post("/users", json=user_data)
 
     RequestFormMock = namedtuple("OAuth2PasswordRequestForm", ["username", "password"])
     form_data = RequestFormMock("username", "abc123")
