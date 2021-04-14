@@ -35,6 +35,7 @@ tox = "^3.23.0"
 mangum = "^0.11.0"
 databases = {extras = ["sqlite"], version = "^0.4.3"}
 boto3 = "^1.17.51"
+pytest-freezegun = "^0.4.2"
 
 [tool.poetry.dev-dependencies]
 black = { version = "^19", allow-prereleases = true }
