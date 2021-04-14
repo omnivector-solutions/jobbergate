@@ -1,6 +1,7 @@
 """
 Router for the Application resource
 """
+import boto3
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from jobbergateapi2.apps.applications.models import applications_table
@@ -8,9 +9,10 @@ from jobbergateapi2.apps.applications.schemas import Application
 from jobbergateapi2.apps.auth.authentication import get_current_user
 from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
-from jobbergateapi2.config import S3_BASE_PATH
+from jobbergateapi2.config import settings
 from jobbergateapi2.storage import database
 
+S3_BUCKET = f"jobbergate-api-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
 router = APIRouter()
 
 
@@ -26,6 +28,7 @@ async def applications_create(
     """
     Endpoint used to create new applications using a user already authenticated
     """
+    s3_client = boto3.client("s3")
 
     application = Application(
         application_name=application_name,
@@ -51,9 +54,14 @@ async def applications_create(
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=422, detail=str(e))
     application_location = (
-        f"{S3_BASE_PATH}/{application.owner_id}/applications/{application.id}/jobbergate.tar.gz"
+        f"{settings.S3_BASE_PATH}/TEST/applications/{application.id}/jobbergate.tar.gz"
+        # f"{S3_BASE_PATH}/{application.owner_id}/applications/{application.id}/jobbergate.tar.gz"
     )
-    print(application_location)
+    s3_client.put_object(
+        Body=upload_file.file,
+        Bucket=S3_BUCKET,
+        Key=application_location,
+    )
     return application
 
 

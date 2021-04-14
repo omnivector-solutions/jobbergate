@@ -34,6 +34,7 @@ python-dotenv = "^0.16.0"
 tox = "^3.23.0"
 mangum = "^0.11.0"
 databases = {extras = ["sqlite"], version = "^0.4.3"}
+boto3 = "^1.17.51"
 
 [tool.poetry.dev-dependencies]
 black = { version = "^19", allow-prereleases = true }

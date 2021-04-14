@@ -13,7 +13,9 @@ class Settings(BaseSettings):
     TOKEN_URL: str = Field("token")
     ALGORITHM: str = Field("HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field("30")
-    S3_BASE_PATH: str = "jobbergate-resources"
+    SERVERLESS_STAGE: str = Field("staging")
+    SERVERLESS_REGION: str = Field("eu-north-1")
+    S3_BASE_PATH: str = Field("jobbergate-resources")
 
     class Config:
         env_file = ".env"
