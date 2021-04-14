@@ -8,7 +8,7 @@ install:
 	poetry install
 
 run:
-	poetry run uvicorn jobbergateapi2.main:app --reload
+	poetry run uvicorn --host 0.0.0.0 jobbergateapi2.main:app --reload
 
 createsuperuser:
 	poetry run createsuperuser
