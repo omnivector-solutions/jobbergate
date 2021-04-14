@@ -16,14 +16,14 @@ S3_BUCKET = f"jobbergate-api-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_RE
 router = APIRouter()
 
 
-@router.post("/application", description="Endpoint for application creation")
+@router.post("/applications", description="Endpoint for application creation")
 async def applications_create(
-    application_name: str = Form(None),
+    application_name: str = Form(...),
     application_description: str = Form(""),
-    application_config: str = Form(""),
-    application_file: str = Form(""),
+    application_config: str = Form(...),
+    application_file: str = Form(...),
     current_user: User = Depends(get_current_user),
-    upload_file: UploadFile = File(None),
+    upload_file: UploadFile = File(...),
 ):
     """
     Endpoint used to create new applications using a user already authenticated
