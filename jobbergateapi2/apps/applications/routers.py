@@ -2,6 +2,7 @@
 Router for the Application resource
 """
 import boto3
+from typing import List, Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 
 from jobbergateapi2.apps.applications.models import applications_table
@@ -16,7 +17,7 @@ S3_BUCKET = f"jobbergate-api-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_RE
 router = APIRouter()
 
 
-@router.post("/applications", description="Endpoint for application creation")
+@router.post("/applications/", description="Endpoint for application creation")
 async def applications_create(
     application_name: str = Form(...),
     application_description: str = Form(""),
@@ -65,26 +66,68 @@ async def applications_create(
     return application
 
 
-@router.delete("/applications", status_code=204, description="Endpoint to delete application")
+@router.delete("/applications/{application_id}", status_code=204, description="Endpoint to delete application")
 async def application_delete(
     current_user: User = Depends(get_current_user),
-    id: int = Query(..., description="id of the application to delete"),
+    application_id: int = Query(..., description="id of the application to delete"),
 ):
     """
     Given the id of an application, delete it from the database
     """
-    where_stmt = (applications_table.c.id == id) & (
+    where_stmt = (applications_table.c.id == application_id) & (
         applications_table.c.application_owner_id == current_user.id
     )
     get_query = applications_table.select().where(where_stmt)
     application = await database.fetch_one(get_query)
     if not application:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Application {id=} not found for the user with id={current_user.id}",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application {application_id=} not found for the user with id={current_user.id}",
         )
     delete_query = applications_table.delete().where(where_stmt)
     await database.execute(delete_query)
+
+
+@router.get(
+    "/applications/",
+    description="Endpoint to list applications",
+    response_model=List[Application],
+)
+async def applications_get(all: Optional[bool] = Query(None), current_user: User = Depends(get_current_user)):
+    """
+    Endpoint to list all the applications from the authenticated user
+    """
+    if all:
+        query = applications_table.select()
+    else:
+        query = applications_table.select().where(
+            applications_table.c.application_owner_id == current_user.id
+        )
+    applications = await database.fetch_all(query)
+    return applications
+
+
+@router.get(
+    "/applications/{application_id}",
+    description="Endpoint to list applications",
+)
+async def applications_get_by_id(application_id: int = Query(...), current_user: User = Depends(get_current_user)):
+    """
+    Endpoint to list an application given it's id
+    """
+    query = applications_table.select().where(
+        (applications_table.c.application_owner_id == current_user.id) &
+        (applications_table.c.id == application_id)
+    )
+    raw_application = await database.fetch_one(query)
+    if not raw_application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application {application_id=} not found for the user with id={current_user.id}",
+        )
+
+    application = Application.parse_obj(raw_application)
+    return application
 
 
 def include_router(app):
