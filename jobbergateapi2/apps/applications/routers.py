@@ -2,7 +2,7 @@
 Router for the Application resource
 """
 import boto3
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application
@@ -63,6 +63,28 @@ async def applications_create(
         Key=application_location,
     )
     return application
+
+
+@router.delete("/applications", status_code=204, description="Endpoint to delete application")
+async def application_delete(
+    current_user: User = Depends(get_current_user),
+    id: int = Query(..., description="id of the application to delete"),
+):
+    """
+    Given the id of an application, delete it from the database
+    """
+    where_stmt = (applications_table.c.id == id) & (
+        applications_table.c.application_owner_id == current_user.id
+    )
+    get_query = applications_table.select().where(where_stmt)
+    application = await database.fetch_one(get_query)
+    if not application:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Application {id=} not found for the user with id={current_user.id}",
+        )
+    delete_query = applications_table.delete().where(where_stmt)
+    await database.execute(delete_query)
 
 
 def include_router(app):
