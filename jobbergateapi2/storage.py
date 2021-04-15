@@ -4,8 +4,8 @@ Persistent data storage
 import databases
 import sqlalchemy
 
-from jobbergateapi2.apps.users.models import metadata
 from jobbergateapi2.config import settings
+from jobbergateapi2.metadata import metadata
 
 database = databases.Database(settings.DATABASE_URL)
 

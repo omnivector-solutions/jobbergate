@@ -59,7 +59,7 @@ async def client():
     # defer import of main to prevent accidentally importing storage too early
     from jobbergateapi2.main import app as backend_app
 
-    encoded_jwt = jwt.encode({"sub": "username"}, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode({"sub": "user1@email.com"}, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     with TestClient(backend_app) as client:
         token = f"bearer {encoded_jwt}"
         client.headers.update({"Authorization": token})

@@ -23,7 +23,7 @@ def test_validate_token():
     Test if the token is able to be validated
     """
     encoded_jwt = jwt.encode({"sub": "username"}, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    assert validate_token(encoded_jwt) is None
+    assert validate_token(encoded_jwt) == "username"
 
 
 def test_invalid_token():

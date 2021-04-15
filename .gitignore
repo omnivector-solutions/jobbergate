@@ -103,9 +103,6 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# poetry
-poetry.lock
-
 # OS stuffs
 .DS_Store
 

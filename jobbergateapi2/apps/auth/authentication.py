@@ -9,7 +9,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 
 from jobbergateapi2.apps.users.models import users_table
-from jobbergateapi2.apps.users.schemas import pwd_context
+from jobbergateapi2.apps.users.schemas import User, pwd_context
 from jobbergateapi2.config import settings
 from jobbergateapi2.storage import database
 
@@ -31,8 +31,18 @@ def validate_token(token: str = Depends(oauth2_scheme)):
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
+        return email
     except JWTError:
         raise credentials_exception
+
+
+async def get_current_user(email: str = Depends(validate_token)):
+    """
+    Return the user of the token
+    """
+    query = users_table.select().where(users_table.c.email == email)
+    user = User.parse_obj(await database.fetch_one(query))
+    return user
 
 
 async def authenticate_user(form_data):
