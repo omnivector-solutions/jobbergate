@@ -73,7 +73,7 @@ async def test_create_user(client, user_data):
     """
     Test user creation
     """
-    response = client.post("/users", json=user_data)
+    response = client.post("/users/", json=user_data)
     assert response.status_code == status.HTTP_200_OK
     count = await database.fetch_all("SELECT COUNT(*) FROM users")
     assert count[0][0] == 1
@@ -88,9 +88,9 @@ async def test_create_user_duplication(client, user_data):
     """
     Test the case where there is a violation in the database constraints for unique
     """
-    response = client.post("/users", json=user_data)
+    response = client.post("/users/", json=user_data)
     assert response.status_code == status.HTTP_200_OK
-    response = client.post("/users", json=user_data)
+    response = client.post("/users/", json=user_data)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     count = await database.fetch_all("SELECT COUNT(*) FROM users")
@@ -104,7 +104,7 @@ async def test_create_user_admin(client, user_data):
     Test creating the user with the admin permission
     """
     user_data["is_admin"] = True
-    response = client.post("/users", json=user_data)
+    response = client.post("/users/", json=user_data)
     assert response.status_code == status.HTTP_200_OK
     count = await database.fetch_all("SELECT COUNT(*) FROM users")
     assert count[0][0] == 1

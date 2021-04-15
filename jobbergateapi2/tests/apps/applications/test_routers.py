@@ -35,7 +35,7 @@ async def test_create(boto3_client_mock, application_data, client, user_data):
     user = [UserCreate(**user_data)]
     await insert_objects(user, users_table)
 
-    response = client.post("/applications", data=application_data, files={"upload_file": file_mock})
+    response = client.post("/applications/", data=application_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_200_OK
     s3_client_mock.put_object.assert_called_once()
 
@@ -58,7 +58,7 @@ async def test_create_without_application_name(boto3_client_mock, application_da
     await insert_objects(user, users_table)
 
     application_data["application_name"] = None
-    response = client.post("/applications", data=application_data, files={"upload_file": file_mock})
+    response = client.post("/applications/", data=application_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     s3_client_mock.put_object.assert_not_called()
 
@@ -80,7 +80,7 @@ async def test_create_without_file(boto3_client_mock, application_data, client, 
     await insert_objects(user, users_table)
 
     application_data["application_name"] = None
-    response = client.post("/applications", data=application_data)
+    response = client.post("/applications/", data=application_data)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     s3_client_mock.put_object.assert_not_called()
 
@@ -99,7 +99,7 @@ async def test_delete_application(client, user_data, application_data):
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
-    response = client.delete("/applications?id=1")
+    response = client.delete("/applications/1")
     assert response.status_code == status.HTTP_204_NO_CONTENT
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
@@ -116,8 +116,8 @@ async def test_delete_application_not_found(client, user_data, application_data)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
-    response = client.delete("/applications?id=1")
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    response = client.delete("/applications/1")
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
@@ -128,5 +128,7 @@ async def test_delete_application_without_id(client, user_data, application_data
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
 
-    response = client.delete("/applications")
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    response = client.delete("/applications/")
+    assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+

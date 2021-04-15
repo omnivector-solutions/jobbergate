@@ -33,7 +33,7 @@ async def users_search(p: Pagination = Depends()):
     return users
 
 
-@router.post("/users", description="Endpoint for user creation", dependencies=[Depends(validate_token)])
+@router.post("/users/", description="Endpoint for user creation", dependencies=[Depends(validate_token)])
 async def users_create(user_data: UserCreate):
     """
     Endpoint used to create new users using a user already authenticated
