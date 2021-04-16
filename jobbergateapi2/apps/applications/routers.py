@@ -77,18 +77,28 @@ async def application_delete(
     """
     Given the id of an application, delete it from the database
     """
+    s3_client = boto3.client("s3")
     where_stmt = (applications_table.c.id == application_id) & (
         applications_table.c.application_owner_id == current_user.id
     )
     get_query = applications_table.select().where(where_stmt)
-    application = await database.fetch_one(get_query)
-    if not application:
+    raw_application = await database.fetch_one(get_query)
+    if not raw_application:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Application {application_id=} not found for the user with id={current_user.id}",
         )
+    application = Application.parse_obj(raw_application)
     delete_query = applications_table.delete().where(where_stmt)
     await database.execute(delete_query)
+    application_location = (
+        f"{settings.S3_BASE_PATH}/TEST/applications/{application.id}/jobbergate.tar.gz"
+        # f"{S3_BASE_PATH}/{application.owner_id}/applications/{application.id}/jobbergate.tar.gz"
+    )
+    s3_client.delete_object(
+        Bucket=S3_BUCKET,
+        Key=application_location,
+    )
 
 
 @router.get(

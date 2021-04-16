@@ -89,11 +89,14 @@ async def test_create_without_file(boto3_client_mock, application_data, client, 
 
 
 @pytest.mark.asyncio
+@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
 @database.transaction(force_rollback=True)
-async def test_delete_application(client, user_data, application_data):
+async def test_delete_application(boto3_client_mock, client, user_data, application_data):
     """
     Test delete an application
     """
+    s3_client_mock = mock.Mock()
+    boto3_client_mock.client.return_value = s3_client_mock
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
 
@@ -106,14 +109,18 @@ async def test_delete_application(client, user_data, application_data):
     assert response.status_code == status.HTTP_204_NO_CONTENT
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
+    s3_client_mock.delete_object.assert_called_once()
 
 
 @pytest.mark.asyncio
+@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
 @database.transaction(force_rollback=True)
-async def test_delete_application_not_from_user(client, user_data, application_data):
+async def test_delete_application_not_from_user(boto3_client_mock, client, user_data, application_data):
     """
     Do nothing if current user id is not the owner of the application
     """
+    s3_client_mock = mock.Mock()
+    boto3_client_mock.client.return_value = s3_client_mock
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
 
@@ -126,14 +133,18 @@ async def test_delete_application_not_from_user(client, user_data, application_d
     assert response.status_code == status.HTTP_404_NOT_FOUND
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
+    s3_client_mock.put_object.assert_not_called()
 
 
 @pytest.mark.asyncio
+@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
 @database.transaction(force_rollback=True)
-async def test_delete_application_not_found(client, user_data, application_data):
+async def test_delete_application_not_found(boto3_client_mock, client, user_data, application_data):
     """
     Do nothing if application id does not exists
     """
+    s3_client_mock = mock.Mock()
+    boto3_client_mock.client.return_value = s3_client_mock
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
 
@@ -146,19 +157,24 @@ async def test_delete_application_not_found(client, user_data, application_data)
     assert response.status_code == status.HTTP_404_NOT_FOUND
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
+    s3_client_mock.put_object.assert_not_called()
 
 
 @pytest.mark.asyncio
+@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
 @database.transaction(force_rollback=True)
-async def test_delete_application_without_id(client, user_data, application_data):
+async def test_delete_application_without_id(boto3_client_mock, client, user_data, application_data):
     """
     Don't accept DELETE in /applications/ without id
     """
+    s3_client_mock = mock.Mock()
+    boto3_client_mock.client.return_value = s3_client_mock
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
 
     response = client.delete("/applications/")
     assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+    s3_client_mock.put_object.assert_not_called()
 
 
 @pytest.mark.asyncio
