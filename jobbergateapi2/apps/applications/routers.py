@@ -28,7 +28,7 @@ async def applications_create(
     upload_file: UploadFile = File(...),
 ):
     """
-    Endpoint used to create new applications using a user already authenticated
+    Create new applications using an authenticated user.
     """
     s3_client = boto3.client("s3")
 
@@ -75,7 +75,7 @@ async def application_delete(
     application_id: int = Query(..., description="id of the application to delete"),
 ):
     """
-    Given the id of an application, delete it from the database
+    Delete application from the database and S3 given it's id.
     """
     s3_client = boto3.client("s3")
     where_stmt = (applications_table.c.id == application_id) & (
@@ -106,9 +106,11 @@ async def application_delete(
     description="Endpoint to list applications",
     response_model=List[Application],
 )
-async def applications_get(all: Optional[bool] = Query(None), current_user: User = Depends(get_current_user)):
+async def applications_list(
+    all: Optional[bool] = Query(None), current_user: User = Depends(get_current_user)
+):
     """
-    Endpoint to list all the applications from the authenticated user
+    List applications for the authenticated user.
     """
     if all:
         query = applications_table.select()
@@ -129,7 +131,7 @@ async def applications_get_by_id(
     application_id: int = Query(...), current_user: User = Depends(get_current_user)
 ):
     """
-    Endpoint to list an application given it's id
+    Return the application given it's id.
     """
     query = applications_table.select().where(
         (applications_table.c.application_owner_id == current_user.id)
