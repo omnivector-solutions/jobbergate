@@ -9,7 +9,7 @@ from jobbergateapi2.apps.auth.authentication import Token, authenticate_user
 router = APIRouter()
 
 
-@router.post("/token")
+@router.post("/token/")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     """
     Endpoint used to auth the user via username and password and returns a token

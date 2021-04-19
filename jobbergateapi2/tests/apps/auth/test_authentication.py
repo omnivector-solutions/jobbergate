@@ -55,7 +55,7 @@ async def test_authenticate_user(client, user_data):
     """
     Test that after a user is created, its credentials works for authentication
     """
-    client.post("/users", json=user_data)
+    client.post("/users/", json=user_data)
 
     RequestFormMock = namedtuple("OAuth2PasswordRequestForm", ["username", "password"])
     form_data = RequestFormMock("username", "supersecret123456")
@@ -71,7 +71,7 @@ async def test_authenticate_user_invalid_password(client, user_data):
     """
     Test with an created user, when we try a wrong password, then the auth must fail with HTTPException
     """
-    client.post("/users", json=user_data)
+    client.post("/users/", json=user_data)
 
     RequestFormMock = namedtuple("OAuth2PasswordRequestForm", ["username", "password"])
     form_data = RequestFormMock("username", "abc123")
@@ -86,7 +86,7 @@ async def test_authenticate_user_invalid_username(client, user_data):
     """
     Same as before, but now with a wrong username and correct password
     """
-    client.post("/users", json=user_data)
+    client.post("/users/", json=user_data)
 
     RequestFormMock = namedtuple("OAuth2PasswordRequestForm", ["username", "password"])
     form_data = RequestFormMock("username", "abc123")

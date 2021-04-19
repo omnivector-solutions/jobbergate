@@ -1,8 +1,10 @@
 """
 Router for the Application resource
 """
+from typing import List, Optional
+
 import boto3
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application
@@ -16,7 +18,7 @@ S3_BUCKET = f"jobbergate-api-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_RE
 router = APIRouter()
 
 
-@router.post("/applications", description="Endpoint for application creation")
+@router.post("/applications/", description="Endpoint for application creation")
 async def applications_create(
     application_name: str = Form(...),
     application_description: str = Form(""),
@@ -26,7 +28,7 @@ async def applications_create(
     upload_file: UploadFile = File(...),
 ):
     """
-    Endpoint used to create new applications using a user already authenticated
+    Create new applications using an authenticated user.
     """
     s3_client = boto3.client("s3")
 
@@ -62,6 +64,87 @@ async def applications_create(
         Bucket=S3_BUCKET,
         Key=application_location,
     )
+    return application
+
+
+@router.delete(
+    "/applications/{application_id}", status_code=204, description="Endpoint to delete application"
+)
+async def application_delete(
+    current_user: User = Depends(get_current_user),
+    application_id: int = Query(..., description="id of the application to delete"),
+):
+    """
+    Delete application from the database and S3 given it's id.
+    """
+    s3_client = boto3.client("s3")
+    where_stmt = (applications_table.c.id == application_id) & (
+        applications_table.c.application_owner_id == current_user.id
+    )
+    get_query = applications_table.select().where(where_stmt)
+    raw_application = await database.fetch_one(get_query)
+    if not raw_application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application {application_id=} not found for the user with id={current_user.id}",
+        )
+    application = Application.parse_obj(raw_application)
+    delete_query = applications_table.delete().where(where_stmt)
+    await database.execute(delete_query)
+    application_location = (
+        f"{settings.S3_BASE_PATH}/TEST/applications/{application.id}/jobbergate.tar.gz"
+        # f"{S3_BASE_PATH}/{application.owner_id}/applications/{application.id}/jobbergate.tar.gz"
+    )
+    s3_client.delete_object(
+        Bucket=S3_BUCKET,
+        Key=application_location,
+    )
+
+
+@router.get(
+    "/applications/",
+    description="Endpoint to list applications",
+    response_model=List[Application],
+)
+async def applications_list(
+    all: Optional[bool] = Query(None), current_user: User = Depends(get_current_user)
+):
+    """
+    List applications for the authenticated user.
+    """
+    if all:
+        query = applications_table.select()
+    else:
+        query = applications_table.select().where(
+            applications_table.c.application_owner_id == current_user.id
+        )
+    applications = await database.fetch_all(query)
+    return applications
+
+
+@router.get(
+    "/applications/{application_id}",
+    description="Endpoint to return an application given the id",
+    response_model=Application,
+)
+async def applications_get_by_id(
+    application_id: int = Query(...), current_user: User = Depends(get_current_user)
+):
+    """
+    Return the application given it's id.
+    """
+    query = applications_table.select().where(
+        (applications_table.c.application_owner_id == current_user.id)
+        & (applications_table.c.id == application_id)
+    )
+    raw_application = await database.fetch_one(query)
+    if not raw_application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application {application_id=} not found for the user with id={current_user.id}",
+        )
+
+    application = Application.parse_obj(raw_application)
     return application
 
 
