@@ -133,7 +133,7 @@ async def test_delete_application_not_from_user(boto3_client_mock, client, user_
     assert response.status_code == status.HTTP_404_NOT_FOUND
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
-    s3_client_mock.put_object.assert_not_called()
+    s3_client_mock.delete_object.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -157,7 +157,7 @@ async def test_delete_application_not_found(boto3_client_mock, client, user_data
     assert response.status_code == status.HTTP_404_NOT_FOUND
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
-    s3_client_mock.put_object.assert_not_called()
+    s3_client_mock.delete_object.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -174,7 +174,7 @@ async def test_delete_application_without_id(boto3_client_mock, client, user_dat
 
     response = client.delete("/applications/")
     assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
-    s3_client_mock.put_object.assert_not_called()
+    s3_client_mock.delete_object.assert_not_called()
 
 
 @pytest.mark.asyncio
