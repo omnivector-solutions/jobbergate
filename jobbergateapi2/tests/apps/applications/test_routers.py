@@ -26,7 +26,11 @@ nest_asyncio.apply()
 @database.transaction(force_rollback=True)
 async def test_create(boto3_client_mock, application_data, client, user_data):
     """
-    Test creating a application.
+    Test POST /applications/ correctly creates an application.
+
+    This test proves that an application is successfully created via a POST request to the /applciations/
+    endpoint. We show this by asserting that the application is created in the database after the post
+    request is made, the correct status code (201) is returned and the correct boto3 method was called.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -48,7 +52,12 @@ async def test_create(boto3_client_mock, application_data, client, user_data):
 @database.transaction(force_rollback=True)
 async def test_create_without_application_name(boto3_client_mock, application_data, client, user_data):
     """
-    Don't create application when required value is missing.
+    Test that is not possible to create an application without the required parameters.
+
+    This test proves that is not possible to create an application without the name. We show this by
+    trying to create an application without the application_name in the request then assert that the
+    application still does not exists in the database, the correct status code (422) is returned and that the
+    boto3 method is never called.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -71,7 +80,12 @@ async def test_create_without_application_name(boto3_client_mock, application_da
 @database.transaction(force_rollback=True)
 async def test_create_without_file(boto3_client_mock, application_data, client, user_data):
     """
-    Don't create application without file.
+    Test that is not possible to create an application without a file.
+
+    This test proves that is not possible to create an application without a file. We show this by
+    trying to create an application without a file in the request then assert that the application still
+    does not exists in the database, the correct status code (422) is returned and that the boto3 method
+    is never called.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -93,7 +107,12 @@ async def test_create_without_file(boto3_client_mock, application_data, client, 
 @database.transaction(force_rollback=True)
 async def test_delete_application(boto3_client_mock, client, user_data, application_data):
     """
-    Test delete an application.
+    Test DELETE /applications/<id> correctly deletes an application.
+
+    This test proves that an application is successfully deleted via a DELETE request to the
+    /applciations/<id> endpoint. We show this by asserting that the application
+    no longer exists in the database after the delete request is made, the correct status code
+    is returned and the correct boto3 method was called.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -117,7 +136,11 @@ async def test_delete_application(boto3_client_mock, client, user_data, applicat
 @database.transaction(force_rollback=True)
 async def test_delete_application_not_from_user(boto3_client_mock, client, user_data, application_data):
     """
-    Do nothing if current user id is not the owner of the application.
+    Test that a userX cannot delete an application owned by userY.
+
+    This test proves that userX cannot delete an application owned by userY. We show this by
+    asserting that the application owned by userY still exists after userX tries to delete it, that
+    the correct response code (404) is returned and that the boto3 method is never called.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -141,7 +164,11 @@ async def test_delete_application_not_from_user(boto3_client_mock, client, user_
 @database.transaction(force_rollback=True)
 async def test_delete_application_not_found(boto3_client_mock, client, user_data, application_data):
     """
-    Do nothing if application id does not exists.
+    Test DELETE /applications/<id> the correct response code when the application doesn't exist.
+
+    This test proves that DELETE /applications/<id> returns the correct response code (404)
+    when the application id does not exist in the database. We show this by asserting that a 404 response
+    code is returned for a request made with an application id that doesn't exist.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -165,7 +192,11 @@ async def test_delete_application_not_found(boto3_client_mock, client, user_data
 @database.transaction(force_rollback=True)
 async def test_delete_application_without_id(boto3_client_mock, client, user_data, application_data):
     """
-    Don't accept DELETE in /applications/ without id.
+    Test DELETE /applications/ without <id> returns the correct response.
+
+    This test proves that DELETE /applications returns the correct response code (405)
+    when an application id is not specified. We show this by asserting that a 405 response
+    code is returned for a request made without an application id.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -181,7 +212,12 @@ async def test_delete_application_without_id(boto3_client_mock, client, user_dat
 @database.transaction(force_rollback=True)
 async def test_get_application_by_id(client, user_data, application_data):
     """
-    Return the application with the given id.
+    Test GET /applications/<id>.
+
+    This test proves that GET /applications/<id> returns the correct application, owned by
+    the user making the request. We show this by asserting that the application data
+    returned in the response is equal to the application data that exists in the database
+    for the given application id.
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
@@ -205,7 +241,11 @@ async def test_get_application_by_id(client, user_data, application_data):
 @database.transaction(force_rollback=True)
 async def test_get_application_by_id_invalid(client, user_data, application_data):
     """
-    Return 404 when the application id does not exists.
+    Test the correct response code is returned when an application does not exist.
+
+    This test proves that GET /application/<id> returns the correct response code when the
+    requested application does not exist. We show this by asserting that the status code
+    returned is what we would expect given the application requested doesn't exist (404).
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
@@ -218,7 +258,11 @@ async def test_get_application_by_id_invalid(client, user_data, application_data
 @database.transaction(force_rollback=True)
 async def test_get_application_all_from_user(client, user_data, application_data):
     """
-    Return all applications from the user.
+    Test GET /applications returns only applications owned by the user making the request.
+
+    This test proves that GET /applications returns the correct applications for the user making
+    the request. We show this by asserting that the applications returned in the response are
+    only applications owned by the user making the request.
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
@@ -245,7 +289,12 @@ async def test_get_application_all_from_user(client, user_data, application_data
 @database.transaction(force_rollback=True)
 async def test_get_application_all_from_user_empty(client, user_data, application_data):
     """
-    Return all applications from the user, even when the user don't have any.
+    Test applications list doesn't include applications owned by other users.
+
+    This test proves that the user making the request cannot see applications owned by other users.
+    We show this by creating applications that are owned by another user id and assert that
+    the user making the request to list applications doesn't see any of the other user's
+    applications in the response, len(resp.json()) == 0.
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
@@ -268,7 +317,12 @@ async def test_get_application_all_from_user_empty(client, user_data, applicatio
 @database.transaction(force_rollback=True)
 async def test_get_all_applications(client, user_data, application_data):
     """
-    If all=True returns all applications.
+    Test that listing applications, when all=True, contains applications owned by other users.
+
+    This test proves that the user making the request can see applications owned by other users.
+    We show this by creating three applications, two that are owned by the user making the request, and one
+    anther owned by another user. Assert that the response to GET /applications?all=True includes all three
+    applications.
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
@@ -297,7 +351,11 @@ async def test_get_all_applications(client, user_data, application_data):
 @database.transaction(force_rollback=True)
 async def test_update_application(boto3_client_mock, client, user_data, application_data):
     """
-    Test updating an application.
+    Test that an application is updated via PUT.
+
+    This test proves that an application's values are correctly updated following a PUT request to the
+    /application/<id> endpoint. We show this by asserting that the values provided to update the
+    application are returned in the response made to the PUT /applciation/<id> endpoint.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -331,7 +389,11 @@ async def test_update_application(boto3_client_mock, client, user_data, applicat
 @database.transaction(force_rollback=True)
 async def test_update_application_wrong_user(boto3_client_mock, client, user_data, application_data):
     """
-    Should not allow userX to update application from userY.
+    Test that a userX cannot update an application owned by userY.
+
+    This test proves that userX cannot update an application owned by userY. We show this by
+    asserting that the application id doesn't exist for the user making the request and the
+    expected response is returned.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
