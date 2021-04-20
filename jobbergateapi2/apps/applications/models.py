@@ -19,5 +19,5 @@ applications_table = Table(
     Column("application_file", String, nullable=False),
     Column("application_config", String, nullable=False),
     Column("created_at", DateTime, nullable=False, default=func.now()),
-    Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=datetime.now),
+    Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=datetime.utcnow),
 )
