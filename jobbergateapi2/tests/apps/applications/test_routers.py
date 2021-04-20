@@ -36,7 +36,7 @@ async def test_create(boto3_client_mock, application_data, client, user_data):
     await insert_objects(user, users_table)
 
     response = client.post("/applications/", data=application_data, files={"upload_file": file_mock})
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == status.HTTP_201_CREATED
     s3_client_mock.put_object.assert_called_once()
 
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -290,3 +290,63 @@ async def test_get_all_applications(client, user_data, application_data):
     assert data[0]["id"] == 1
     assert data[1]["id"] == 2
     assert data[2]["id"] == 3
+
+
+@pytest.mark.asyncio
+@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
+@database.transaction(force_rollback=True)
+async def test_update_application(boto3_client_mock, client, user_data, application_data):
+    """
+    Test updating an application
+    """
+    s3_client_mock = mock.Mock()
+    boto3_client_mock.client.return_value = s3_client_mock
+    file_mock = mock.MagicMock(wraps=StringIO("test"))
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    applications = [
+        Application(
+            id=1, application_owner_id=1, application_description="old description", **application_data
+        ),
+    ]
+    await insert_objects(applications, applications_table)
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 1
+
+    application_data["application_name"] = "new_name"
+    application_data["application_description"] = "new_description"
+    response = client.put("/applications/1", data=application_data, files={"upload_file": file_mock})
+    assert response.status_code == status.HTTP_201_CREATED
+
+    data = response.json()
+    assert data["application_name"] == application_data["application_name"]
+    assert data["application_description"] == application_data["application_description"]
+
+    s3_client_mock.put_object.assert_called_once()
+
+
+@pytest.mark.asyncio
+@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
+@database.transaction(force_rollback=True)
+async def test_update_application_wrong_user(boto3_client_mock, client, user_data, application_data):
+    """
+    Should not allow userX to update application from userY
+    """
+    s3_client_mock = mock.Mock()
+    boto3_client_mock.client.return_value = s3_client_mock
+    file_mock = mock.MagicMock(wraps=StringIO("test"))
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    applications = [
+        Application(id=1, application_owner_id=2, **application_data),
+    ]
+    await insert_objects(applications, applications_table)
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 1
+
+    response = client.put("/applications/1", data=application_data, files={"upload_file": file_mock})
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    s3_client_mock.put_object.assert_not_called()
