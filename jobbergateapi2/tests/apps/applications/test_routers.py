@@ -1,5 +1,5 @@
 """
-Tests for the /applications endpoint
+Tests for the /applications endpoint.
 """
 from io import StringIO
 from unittest import mock
@@ -26,7 +26,7 @@ nest_asyncio.apply()
 @database.transaction(force_rollback=True)
 async def test_create(boto3_client_mock, application_data, client, user_data):
     """
-    Test creating a application
+    Test creating a application.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -48,7 +48,7 @@ async def test_create(boto3_client_mock, application_data, client, user_data):
 @database.transaction(force_rollback=True)
 async def test_create_without_application_name(boto3_client_mock, application_data, client, user_data):
     """
-    Don't create application when required value is missing
+    Don't create application when required value is missing.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -71,7 +71,7 @@ async def test_create_without_application_name(boto3_client_mock, application_da
 @database.transaction(force_rollback=True)
 async def test_create_without_file(boto3_client_mock, application_data, client, user_data):
     """
-    Don't create application without file
+    Don't create application without file.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -93,7 +93,7 @@ async def test_create_without_file(boto3_client_mock, application_data, client, 
 @database.transaction(force_rollback=True)
 async def test_delete_application(boto3_client_mock, client, user_data, application_data):
     """
-    Test delete an application
+    Test delete an application.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -117,7 +117,7 @@ async def test_delete_application(boto3_client_mock, client, user_data, applicat
 @database.transaction(force_rollback=True)
 async def test_delete_application_not_from_user(boto3_client_mock, client, user_data, application_data):
     """
-    Do nothing if current user id is not the owner of the application
+    Do nothing if current user id is not the owner of the application.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -141,7 +141,7 @@ async def test_delete_application_not_from_user(boto3_client_mock, client, user_
 @database.transaction(force_rollback=True)
 async def test_delete_application_not_found(boto3_client_mock, client, user_data, application_data):
     """
-    Do nothing if application id does not exists
+    Do nothing if application id does not exists.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -165,7 +165,7 @@ async def test_delete_application_not_found(boto3_client_mock, client, user_data
 @database.transaction(force_rollback=True)
 async def test_delete_application_without_id(boto3_client_mock, client, user_data, application_data):
     """
-    Don't accept DELETE in /applications/ without id
+    Don't accept DELETE in /applications/ without id.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -181,7 +181,7 @@ async def test_delete_application_without_id(boto3_client_mock, client, user_dat
 @database.transaction(force_rollback=True)
 async def test_get_application_by_id(client, user_data, application_data):
     """
-    Return the application with the given id
+    Return the application with the given id.
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
@@ -205,7 +205,7 @@ async def test_get_application_by_id(client, user_data, application_data):
 @database.transaction(force_rollback=True)
 async def test_get_application_by_id_invalid(client, user_data, application_data):
     """
-    Return 404 when the application id does not exists
+    Return 404 when the application id does not exists.
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
@@ -218,7 +218,7 @@ async def test_get_application_by_id_invalid(client, user_data, application_data
 @database.transaction(force_rollback=True)
 async def test_get_application_all_from_user(client, user_data, application_data):
     """
-    Return all applications from the user
+    Return all applications from the user.
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
@@ -245,7 +245,7 @@ async def test_get_application_all_from_user(client, user_data, application_data
 @database.transaction(force_rollback=True)
 async def test_get_application_all_from_user_empty(client, user_data, application_data):
     """
-    Return all applications from the user, even when the user don't have any
+    Return all applications from the user, even when the user don't have any.
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
@@ -268,7 +268,7 @@ async def test_get_application_all_from_user_empty(client, user_data, applicatio
 @database.transaction(force_rollback=True)
 async def test_get_all_applications(client, user_data, application_data):
     """
-    If all=True returns all applications
+    If all=True returns all applications.
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
@@ -297,7 +297,7 @@ async def test_get_all_applications(client, user_data, application_data):
 @database.transaction(force_rollback=True)
 async def test_update_application(boto3_client_mock, client, user_data, application_data):
     """
-    Test updating an application
+    Test updating an application.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -331,7 +331,7 @@ async def test_update_application(boto3_client_mock, client, user_data, applicat
 @database.transaction(force_rollback=True)
 async def test_update_application_wrong_user(boto3_client_mock, client, user_data, application_data):
     """
-    Should not allow userX to update application from userY
+    Should not allow userX to update application from userY.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock

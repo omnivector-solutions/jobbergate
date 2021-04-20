@@ -1,5 +1,5 @@
 """
-Router for the Application resource
+Router for the Application resource.
 """
 from datetime import datetime
 from typing import List, Optional
