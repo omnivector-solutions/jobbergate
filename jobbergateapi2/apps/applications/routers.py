@@ -1,6 +1,7 @@
 """
 Router for the Application resource
 """
+from datetime import datetime
 from typing import List, Optional
 
 import boto3
@@ -18,7 +19,7 @@ S3_BUCKET = f"jobbergate-api-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_RE
 router = APIRouter()
 
 
-@router.post("/applications/", description="Endpoint for application creation")
+@router.post("/applications/", status_code=201, description="Endpoint for application creation")
 async def applications_create(
     application_name: str = Form(...),
     application_description: str = Form(""),
@@ -43,13 +44,7 @@ async def applications_create(
     async with database.transaction():
         try:
             query = applications_table.insert()
-            values = {
-                "application_name": application_name,
-                "application_description": application_description,
-                "application_owner_id": current_user.id,
-                "application_file": application_file,
-                "application_config": application_config,
-            }
+            values = application.dict()
             application_created_id = await database.execute(query=query, values=values)
             application.id = application_created_id
 
@@ -145,6 +140,72 @@ async def applications_get_by_id(
         )
 
     application = Application.parse_obj(raw_application)
+    return application
+
+
+@router.put(
+    "/applications/{application_id}",
+    status_code=201,
+    description="Endpoint to update an application given the id",
+    response_model=Application,
+)
+async def application_update(
+    application_id: int = Query(...),
+    application_name: Optional[str] = Form(None),
+    application_description: Optional[str] = Form(None),
+    application_config: Optional[str] = Form(None),
+    application_file: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user),
+    upload_file: Optional[UploadFile] = File(None),
+):
+    """
+    Update an application given it's id.
+    """
+    s3_client = boto3.client("s3")
+
+    query = applications_table.select().where(
+        (applications_table.c.application_owner_id == current_user.id)
+        & (applications_table.c.id == application_id)
+    )
+    raw_application = await database.fetch_one(query)
+    if not raw_application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application {application_id=} not found for the user with id={current_user.id}",
+        )
+
+    update_dict = {}
+    if application_name:
+        update_dict["application_name"] = application_name
+    if application_description:
+        update_dict["application_description"] = application_description
+    if application_file:
+        update_dict["application_file"] = application_file
+    if application_config:
+        update_dict["application_config"] = application_config
+    update_dict["updated_at"] = datetime.utcnow()
+
+    q_update = (
+        applications_table.update().where(applications_table.c.id == application_id).values(update_dict)
+    )
+    async with database.transaction():
+        try:
+            await database.execute(q_update)
+
+        except INTEGRITY_CHECK_EXCEPTIONS as e:
+            raise HTTPException(status_code=422, detail=str(e))
+    application_location = (
+        f"{settings.S3_BASE_PATH}/TEST/applications/{application_id}/jobbergate.tar.gz"
+        # f"{S3_BASE_PATH}/{application.owner_id}/applications/{application.id}/jobbergate.tar.gz"
+    )
+    if upload_file:
+        s3_client.put_object(
+            Body=upload_file.file,
+            Bucket=S3_BUCKET,
+            Key=application_location,
+        )
+    query = applications_table.select().where(applications_table.c.id == application_id)
+    application = Application.parse_obj(await database.fetch_one(query))
     return application
 
 
