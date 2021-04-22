@@ -1,22 +1,21 @@
 """
 Router for the Application resource.
 """
-from io import BytesIO, StringIO
-from datetime import datetime
-from typing import Dict, List, Optional
 import json
 import tarfile
 import tempfile
+from io import BytesIO, StringIO
+from typing import List, Optional
 
-from jinja2 import Template
 import boto3
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from jinja2 import Template
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application
+from jobbergateapi2.apps.auth.authentication import get_current_user
 from jobbergateapi2.apps.job_scripts.models import job_scripts_table
 from jobbergateapi2.apps.job_scripts.schemas import JobScript
-from jobbergateapi2.apps.auth.authentication import get_current_user
 from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
@@ -69,7 +68,7 @@ async def job_script_create(
     if not raw_application:
         raise HTTPException(
             status_code=422,
-            detail=f"Application with id={application_id} not found for user={current_user.id}"
+            detail=f"Application with id={application_id} not found for user={current_user.id}",
         )
     application = Application.parse_obj(raw_application)
 
@@ -84,7 +83,7 @@ async def job_script_create(
 
     default_template = [
         default_template := param_dict["jobbergate_config"].get("default_template"),
-        "templates/" + default_template
+        "templates/" + default_template,
     ]
 
     application_location = (
