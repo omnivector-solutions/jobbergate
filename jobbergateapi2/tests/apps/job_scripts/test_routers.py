@@ -30,7 +30,7 @@ async def test_create_job_script(
     boto3_client_mock, job_script_data, param_dict, application_data, client, user_data
 ):
     """
-    Test POST /job_scripts/ correctly creates an job_script.
+    Test POST /job_scripts/ correctly creates a job_script.
 
     This test proves that a job_script is successfully created via a POST request to the /job-scripts/
     endpoint. We show this by asserting that the job_script is created in the database after the post
@@ -81,6 +81,7 @@ async def test_create_job_script_without_application(
     job_script_data["param_dict"] = json.dumps(param_dict)
     response = client.post("/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_404_NOT_FOUND
+    s3_client_mock.get_object.assert_not_called()
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0
@@ -112,6 +113,7 @@ async def test_create_job_script_wrong_user(
     job_script_data["param_dict"] = json.dumps(param_dict)
     response = client.post("/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_404_NOT_FOUND
+    s3_client_mock.get_object.assert_not_called()
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0
