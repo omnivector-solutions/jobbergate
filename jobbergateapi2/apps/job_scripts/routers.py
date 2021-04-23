@@ -8,6 +8,7 @@ from io import BytesIO, StringIO
 from typing import List, Optional
 
 import boto3
+from botocore.exceptions import BotoCoreError
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from jinja2 import Template
 
@@ -67,7 +68,7 @@ async def job_script_create(
 
     if not raw_application:
         raise HTTPException(
-            status_code=422,
+            status_code=404,
             detail=f"Application with id={application_id} not found for user={current_user.id}",
         )
     application = Application.parse_obj(raw_application)
@@ -90,7 +91,13 @@ async def job_script_create(
         f"{settings.S3_BASE_PATH}/TEST/applications/{application.id}/jobbergate.tar.gz"
         # f"{S3_BASE_PATH}/{application.owner_id}/applications/{application.id}/jobbergate.tar.gz"
     )
-    s3_application_obj = s3_client.get_object(Bucket=S3_BUCKET, Key=application_location)
+    try:
+        s3_application_obj = s3_client.get_object(Bucket=S3_BUCKET, Key=application_location)
+    except BotoCoreError:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Application with id={application_id} not found for user={current_user.id} in S3",
+        )
     s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj["Body"].read()))
     template_files = {}
     for member in s3_application_tar.getmembers():

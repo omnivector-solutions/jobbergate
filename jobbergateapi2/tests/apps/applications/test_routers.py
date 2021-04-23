@@ -1,5 +1,5 @@
 """
-Tests for the /applications endpoint.
+Tests for the /applications/ endpoint.
 """
 from io import StringIO
 from unittest import mock
@@ -24,11 +24,11 @@ nest_asyncio.apply()
 @pytest.mark.asyncio
 @mock.patch("jobbergateapi2.apps.applications.routers.boto3")
 @database.transaction(force_rollback=True)
-async def test_create(boto3_client_mock, application_data, client, user_data):
+async def test_create_application(boto3_client_mock, application_data, client, user_data):
     """
     Test POST /applications/ correctly creates an application.
 
-    This test proves that an application is successfully created via a POST request to the /applciations/
+    This test proves that an application is successfully created via a POST request to the /applications/
     endpoint. We show this by asserting that the application is created in the database after the post
     request is made, the correct status code (201) is returned and the correct boto3 method was called.
     """
@@ -110,9 +110,9 @@ async def test_delete_application(boto3_client_mock, client, user_data, applicat
     Test DELETE /applications/<id> correctly deletes an application.
 
     This test proves that an application is successfully deleted via a DELETE request to the
-    /applciations/<id> endpoint. We show this by asserting that the application
-    no longer exists in the database after the delete request is made, the correct status code
-    is returned and the correct boto3 method was called.
+    /applciations/<id> endpoint. We show this by asserting that the application no longer exists in the
+    database after the delete request is made, the correct status code is returned and the correct boto3
+    method was called.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
@@ -389,7 +389,7 @@ async def test_update_application(boto3_client_mock, client, user_data, applicat
 @database.transaction(force_rollback=True)
 async def test_update_application_wrong_user(boto3_client_mock, client, user_data, application_data):
     """
-    Test that a userX cannot update an application owned by userY.
+    Test that an userX cannot update an application owned by userY.
 
     This test proves that userX cannot update an application owned by userY. We show this by
     asserting that the application id doesn't exist for the user making the request and the
