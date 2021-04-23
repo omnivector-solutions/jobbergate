@@ -48,7 +48,6 @@ def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str
 async def job_script_create(
     job_script_name: str = Form(...),
     job_script_description: Optional[str] = Form(""),
-    # job_script_data_as_string: str = Form(...),
     application_id: int = Form(...),
     current_user: User = Depends(get_current_user),
     upload_file: UploadFile = File(...),
