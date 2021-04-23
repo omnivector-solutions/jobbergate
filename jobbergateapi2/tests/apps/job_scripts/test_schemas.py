@@ -29,5 +29,5 @@ def test_create_job_script(job_script_data):
     assert job_script.job_script_name == job_script_data["job_script_name"]
     assert job_script.job_script_data_as_string == job_script_data["job_script_data_as_string"]
     assert job_script.job_script_owner_id == job_script_data["job_script_owner_id"]
-    assert job_script.job_script_application_id == job_script_data["job_script_application_id"]
+    assert job_script.application_id == job_script_data["application_id"]
     assert job_script.created_at == datetime.utcnow()

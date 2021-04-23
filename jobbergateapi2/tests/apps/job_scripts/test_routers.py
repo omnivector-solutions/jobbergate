@@ -33,9 +33,9 @@ async def test_create_job_script(
     """
     Test POST /job_scripts/ correctly creates an job_script.
 
-    This test proves that an application is successfully created via a POST request to the /applciations/
-    endpoint. We show this by asserting that the application is created in the database after the post
-    request is made, the correct status code (201) is returned and the correct boto3 method was called.
+    This test proves that a job_script is successfully created via a POST request to the /job-scripts/
+    endpoint. We show this by asserting that the job_script is created in the database after the post
+    request is made, the correct status code (201) is returned.
     """
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
