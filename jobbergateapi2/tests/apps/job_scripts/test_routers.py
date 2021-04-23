@@ -1,17 +1,17 @@
 """
 Tests for the /job-scripts/ endpoint.
 """
+import json
 from io import StringIO
 from unittest import mock
-import json
 
 import nest_asyncio
 import pytest
 from fastapi import status
 
 from jobbergateapi2.apps.applications.models import applications_table
-from jobbergateapi2.apps.job_scripts.models import job_scripts_table
 from jobbergateapi2.apps.applications.schemas import Application
+from jobbergateapi2.apps.job_scripts.models import job_scripts_table
 from jobbergateapi2.apps.job_scripts.schemas import JobScript
 from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import UserCreate
@@ -27,7 +27,9 @@ nest_asyncio.apply()
 @pytest.mark.asyncio
 @mock.patch("jobbergateapi2.apps.job_scripts.routers.boto3")
 @database.transaction(force_rollback=True)
-async def test_create_job_script(boto3_client_mock, job_script_data, param_dict, application_data, client, user_data):
+async def test_create_job_script(
+    boto3_client_mock, job_script_data, param_dict, application_data, client, user_data
+):
     """
     Test POST /job_scripts/ correctly creates an job_script.
 
@@ -38,7 +40,9 @@ async def test_create_job_script(boto3_client_mock, job_script_data, param_dict,
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
     file_mock = mock.MagicMock(wraps=StringIO("test"))
-    s3_client_mock.get_object.return_value = {"Body": open("jobbergateapi2/tests/apps/job_scripts/jobbergate.tar.gz", "rb")}
+    s3_client_mock.get_object.return_value = {
+        "Body": open("jobbergateapi2/tests/apps/job_scripts/jobbergate.tar.gz", "rb")
+    }
 
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
