@@ -1,5 +1,5 @@
 """
-Test the schema of the resource Applcation
+Test the schema of the resource Application
 """
 from datetime import datetime
 

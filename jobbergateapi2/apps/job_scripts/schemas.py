@@ -17,7 +17,7 @@ class JobScript(BaseModel):
     job_script_description: Optional[str] = Field("")
     job_script_data_as_string: str = Field(...)
     job_script_owner_id: int = Field(..., description="The User id of the owner")
-    job_script_application_id: int = Field(..., description="The Application id")
+    application_id: int = Field(..., description="The Application id")
     created_at: Optional[datetime] = Field(datetime.utcnow())
     updated_at: Optional[datetime] = Field(datetime.utcnow())
 
