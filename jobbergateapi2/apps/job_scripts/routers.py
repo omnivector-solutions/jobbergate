@@ -28,7 +28,9 @@ router = APIRouter()
 
 def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str]) -> str:
     """
-    Given the job script as job_script_data_as_string, inject the sbatch params in the correct location
+    Inject sbatch params into job script.
+
+    Given the job script as job_script_data_as_string, inject the sbatch params in the correct location.
     """
     first_sbatch_index = job_script_data_as_string.find("#SBATCH")
     string_slice = job_script_data_as_string[first_sbatch_index:]

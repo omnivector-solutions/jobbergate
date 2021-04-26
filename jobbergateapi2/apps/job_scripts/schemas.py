@@ -1,5 +1,5 @@
 """
-Defines the schema for the JobScript resource
+Defines the schema for the JobScript resource schema.
 """
 from datetime import datetime
 from typing import Optional

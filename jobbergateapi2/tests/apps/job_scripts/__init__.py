@@ -1,3 +1,3 @@
 """
-Tests for the JobScript resource
+Tests for the JobScript resource.
 """

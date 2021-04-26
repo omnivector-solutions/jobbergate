@@ -1,3 +1,3 @@
 """
-Tests for the Application resource
+Tests for the Application resource.
 """
