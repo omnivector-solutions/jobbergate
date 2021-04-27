@@ -31,3 +31,15 @@ def user_data():
         "username": "username",
         "password": "supersecret123456",
     }
+
+
+@fixture
+def application_data():
+    """
+    Default application data for testing.
+    """
+    return {
+        "application_name": "test_name",
+        "application_file": "the\nfile",
+        "application_config": "the configuration is here",
+    }
