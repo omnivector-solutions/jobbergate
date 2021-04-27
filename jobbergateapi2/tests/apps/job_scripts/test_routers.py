@@ -10,10 +10,16 @@ import nest_asyncio
 import pytest
 from botocore.exceptions import BotoCoreError
 from fastapi import status
+from fastapi.exceptions import HTTPException
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application
-from jobbergateapi2.apps.job_scripts.routers import inject_sbatch_params
+from jobbergateapi2.apps.job_scripts.routers import (
+    build_job_script_data_as_string,
+    get_s3_object_as_tarfile,
+    inject_sbatch_params,
+    render_template,
+)
 from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import UserCreate
 from jobbergateapi2.storage import database
@@ -96,7 +102,7 @@ def test_inject_sbatch_params(job_script_data_as_string, sbatch_params, new_job_
 @mock.patch("jobbergateapi2.apps.job_scripts.routers.boto3")
 @database.transaction(force_rollback=True)
 async def test_create_job_script(
-    boto3_client_mock, job_script_data, param_dict, application_data, client, user_data
+    boto3_client_mock, job_script_data, param_dict, application_data, client, user_data, s3_object
 ):
     """
     Test POST /job_scripts/ correctly creates a job_script.
@@ -108,9 +114,7 @@ async def test_create_job_script(
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
     file_mock = mock.MagicMock(wraps=StringIO("test"))
-    s3_client_mock.get_object.return_value = {
-        "Body": open("jobbergateapi2/tests/apps/job_scripts/jobbergate.tar.gz", "rb")
-    }
+    s3_client_mock.get_object.return_value = s3_object
 
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
@@ -220,3 +224,60 @@ async def test_create_job_script_file_not_found(
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0
+
+
+@pytest.mark.asyncio
+@mock.patch("jobbergateapi2.apps.job_scripts.routers.boto3")
+@database.transaction(force_rollback=True)
+async def test_get_s3_object_as_tarfile(boto3_client_mock, param_dict, s3_object):
+    """
+    Test getting a file from S3 with get_s3_object function.
+    """
+    s3_client_mock = mock.Mock()
+    boto3_client_mock.client.return_value = s3_client_mock
+    s3_client_mock.get_object.return_value = s3_object
+
+    s3_file = get_s3_object_as_tarfile(1, 1)
+
+    assert s3_file is not None
+    s3_client_mock.get_object.assert_called_once()
+
+
+@mock.patch("jobbergateapi2.apps.job_scripts.routers.boto3")
+def test_get_s3_object_not_found(
+    boto3_client_mock,
+    param_dict,
+):
+    """
+    Test exception when file not exists in S3 for get_s3_object function.
+    """
+    s3_client_mock = mock.Mock()
+    boto3_client_mock.client.return_value = s3_client_mock
+    s3_client_mock.get_object.side_effect = BotoCoreError()
+
+    s3_file = None
+    with pytest.raises(HTTPException) as exc:
+        s3_file = get_s3_object_as_tarfile(1, 1)
+
+    assert "Application with id=1 not found for user=1" in str(exc)
+
+    assert s3_file is None
+    s3_client_mock.get_object.assert_called_once()
+
+
+def test_render_template(param_dict_flat, template_files, job_script_data_as_string):
+    """
+    Test correctly rendered template for job_script template.
+    """
+    job_script_rendered = render_template(template_files, param_dict_flat)
+
+    assert job_script_rendered == job_script_data_as_string
+
+
+def test_build_job_script_data_as_string(s3_object_as_tar, param_dict, job_script_data_as_string):
+    """
+    Test build_job_script_data_as_string function correct output.
+    """
+    data_as_string = build_job_script_data_as_string(s3_object_as_tar, param_dict)
+
+    assert data_as_string == job_script_data_as_string

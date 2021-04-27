@@ -46,42 +46,48 @@ def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str
     return new_job_script_data_as_string
 
 
-@router.post("/job-scripts/", status_code=201, description="Endpoint for job_script creation")
-async def job_script_create(
-    job_script_name: str = Form(...),
-    job_script_description: Optional[str] = Form(""),
-    application_id: int = Form(...),
-    current_user: User = Depends(get_current_user),
-    upload_file: UploadFile = File(...),
-    sbatch_params: Optional[List[str]] = Form(None),
-    param_dict: Optional[str] = Form(None),
-):
+def get_s3_object_as_tarfile(current_user_id, application_id):
     """
-    Create a new job script.
-
-    Make a post request to this endpoint with the required values to create a new job script.
+    Return the tarfile of a S3 object
     """
     s3_client = boto3.client("s3")
-    param_dict = json.loads(param_dict)
-    query = applications_table.select().where(
-        (applications_table.c.id == application_id)
-        & (applications_table.c.application_owner_id == current_user.id)
+    application_location = (
+        f"{settings.S3_BASE_PATH}/TEST/applications/{application_id}/jobbergate.tar.gz"
+        # f"{S3_BASE_PATH}/{application.owner_id}/applications/{application.id}/jobbergate.tar.gz"
     )
-    raw_application = await database.fetch_one(query)
-
-    if not raw_application:
+    try:
+        s3_application_obj = s3_client.get_object(Bucket=S3_BUCKET, Key=application_location)
+    except BotoCoreError:
         raise HTTPException(
             status_code=404,
-            detail=f"Application with id={application_id} not found for user={current_user.id}",
+            detail=f"Application with id={application_id} not found for user={current_user_id} in S3",
         )
-    application = Application.parse_obj(raw_application)
+    s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj["Body"].read()))
+    return s3_application_tar
 
+
+def render_template(template_files, param_dict_flat):
+    """
+    Use jinga2 to render the template as string
+    """
+    for key, value in template_files.items():
+        template = Template(value)
+        rendered_js = template.render(data=param_dict_flat)
+        template_files[key] = rendered_js
+    job_script_data_as_string = json.dumps(template_files)
+    return job_script_data_as_string
+
+
+def build_job_script_data_as_string(s3_application_tar, param_dict):
+    """
+    Return the job_script_data_as string from the S3 application and the templates
+    """
     try:
-        support_files_ouput = param_dict["jobbergate_config"].get("supporting_files_output_name")
+        support_files_output = param_dict["jobbergate_config"]["supporting_files_output_name"]
     except KeyError:
-        support_files_ouput = {}
+        support_files_output = {}
     try:
-        supporting_files = param_dict["jobbergate_config"].get("supporting_files")
+        supporting_files = param_dict["jobbergate_config"]["supporting_files"]
     except KeyError:
         supporting_files = []
 
@@ -90,27 +96,15 @@ async def job_script_create(
         "templates/" + default_template,
     ]
 
-    application_location = (
-        f"{settings.S3_BASE_PATH}/TEST/applications/{application.id}/jobbergate.tar.gz"
-        # f"{S3_BASE_PATH}/{application.owner_id}/applications/{application.id}/jobbergate.tar.gz"
-    )
-    try:
-        s3_application_obj = s3_client.get_object(Bucket=S3_BUCKET, Key=application_location)
-    except BotoCoreError:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Application with id={application_id} not found for user={current_user.id} in S3",
-        )
-    s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj["Body"].read()))
     template_files = {}
     for member in s3_application_tar.getmembers():
         if member.name in default_template:
             contentfobj = s3_application_tar.extractfile(member)
             template_files["application.sh"] = contentfobj.read().decode("utf-8")
         if member.name in supporting_files:
-            match = [x for x in support_files_ouput if member.name in x]
+            match = [x for x in support_files_output if member.name in x]
             contentfobj = s3_application_tar.extractfile(member)
-            filename = support_files_ouput[match[0]][0]
+            filename = support_files_output[match[0]][0]
             template_files[filename] = contentfobj.read().decode("utf-8")
 
     # Use tempfile to generate .tar in memory - NOT write to disk
@@ -130,14 +124,43 @@ async def job_script_create(
                     rendered_tar.addfile(tarinfo, StringIO(rendered_str))
         f.flush()
         f.seek(0)
-    job_script_data_as_string = ""
-    for key, value in template_files.items():
-        template = Template(value)
-        rendered_js = template.render(data=param_dict_flat)
-        job_script_data_as_string
-        template_files[key] = rendered_js
 
-    job_script_data_as_string = json.dumps(template_files)
+    job_script_data_as_string = render_template(template_files, param_dict_flat)
+    return job_script_data_as_string
+
+
+@router.post("/job-scripts/", status_code=201, description="Endpoint for job_script creation")
+async def job_script_create(
+    job_script_name: str = Form(...),
+    job_script_description: Optional[str] = Form(""),
+    application_id: int = Form(...),
+    current_user: User = Depends(get_current_user),
+    upload_file: UploadFile = File(...),
+    sbatch_params: Optional[List[str]] = Form(None),
+    param_dict: Optional[str] = Form(None),
+):
+    """
+    Create a new job script.
+
+    Make a post request to this endpoint with the required values to create a new job script.
+    """
+    param_dict = json.loads(param_dict)
+    query = applications_table.select().where(
+        (applications_table.c.id == application_id)
+        & (applications_table.c.application_owner_id == current_user.id)
+    )
+    raw_application = await database.fetch_one(query)
+
+    if not raw_application:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Application with id={application_id} not found for user={current_user.id}",
+        )
+    application = Application.parse_obj(raw_application)
+    s3_application_tar = get_s3_object_as_tarfile(current_user.id, application.id)
+
+    job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, param_dict)
+
     if sbatch_params:
         job_script_data_as_string = inject_sbatch_params(job_script_data_as_string, sbatch_params)
 
