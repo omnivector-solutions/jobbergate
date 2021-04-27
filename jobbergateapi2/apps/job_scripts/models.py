@@ -1,5 +1,5 @@
 """
-Database model for the JobScript resource
+Database model for the JobScript resource.
 """
 from datetime import datetime
 

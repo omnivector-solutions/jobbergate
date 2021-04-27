@@ -36,7 +36,7 @@ def user_data():
 @fixture
 def application_data():
     """
-    Default appliation data for testing
+    Default application data for testing.
     """
     return {
         "application_name": "test_name",

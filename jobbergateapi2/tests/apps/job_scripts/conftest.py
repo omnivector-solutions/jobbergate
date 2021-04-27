@@ -4,7 +4,7 @@ from pytest import fixture
 @fixture
 def job_script_data():
     """
-    Default job_script data for testing
+    Default job_script data for testing.
     """
     return {
         "job_script_name": "test_name",

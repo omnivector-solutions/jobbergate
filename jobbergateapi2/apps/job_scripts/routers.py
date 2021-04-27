@@ -57,7 +57,9 @@ async def job_script_create(
     param_dict: Optional[str] = Form(None),
 ):
     """
-    Create new job_script using an authenticated user.
+    Create a new job script.
+    
+    Make a post request to this endpoint with the required values to create a new job script.
     """
     s3_client = boto3.client("s3")
     param_dict = json.loads(param_dict)
