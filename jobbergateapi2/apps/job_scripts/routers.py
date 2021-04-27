@@ -9,7 +9,7 @@ from typing import List, Optional
 
 import boto3
 from botocore.exceptions import BotoCoreError
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from jinja2 import Template
 
 from jobbergateapi2.apps.applications.models import applications_table
@@ -182,6 +182,41 @@ async def job_script_create(
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=422, detail=str(e))
     return job_script
+
+
+@router.get(
+    "/job-scripts/{job_script_id}", description="Endpoint to get a job_script", response_model=JobScript
+)
+async def job_script_get(job_script_id: int = Query(...), current_user: User = Depends(get_current_user)):
+    """
+    Return the job_script given it's id.
+    """
+    query = job_scripts_table.select().where(
+        (job_scripts_table.c.id == job_script_id)
+        & (job_scripts_table.c.job_script_owner_id == current_user.id)
+    )
+    raw_job_script = await database.fetch_one(query)
+
+    if not raw_job_script:
+        raise HTTPException(
+            status_code=404,
+            detail=f"JobScript with id={job_script_id} not found for user={current_user.id}",
+        )
+    job_script = JobScript.parse_obj(raw_job_script)
+    return job_script
+
+
+@router.get("/job-scripts/", description="Endpoint to list job_scripts", response_model=List[JobScript])
+async def job_script_list(all: Optional[bool] = Query(None), current_user: User = Depends(get_current_user)):
+    """
+    List job_scripts for the authenticated user.
+    """
+    if all:
+        query = job_scripts_table.select()
+    else:
+        query = job_scripts_table.select().where(job_scripts_table.c.job_script_owner_id == current_user.id)
+    job_scripts = await database.fetch_all(query)
+    return job_scripts
 
 
 def include_router(app):
