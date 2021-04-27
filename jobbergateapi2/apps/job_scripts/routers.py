@@ -58,7 +58,7 @@ async def job_script_create(
 ):
     """
     Create a new job script.
-    
+
     Make a post request to this endpoint with the required values to create a new job script.
     """
     s3_client = boto3.client("s3")
