@@ -68,7 +68,7 @@ def get_s3_object_as_tarfile(current_user_id, application_id):
 
 def render_template(template_files, param_dict_flat):
     """
-    Use jinga2 to render the template as string.
+    Render the template as string using jinja2.
     """
     for key, value in template_files.items():
         template = Template(value)
