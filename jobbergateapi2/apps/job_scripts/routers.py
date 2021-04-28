@@ -48,7 +48,7 @@ def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str
 
 def get_s3_object_as_tarfile(current_user_id, application_id):
     """
-    Return the tarfile of a S3 object
+    Return the tarfile of a S3 object.
     """
     s3_client = boto3.client("s3")
     application_location = (
@@ -68,7 +68,7 @@ def get_s3_object_as_tarfile(current_user_id, application_id):
 
 def render_template(template_files, param_dict_flat):
     """
-    Use jinga2 to render the template as string
+    Use jinga2 to render the template as string.
     """
     for key, value in template_files.items():
         template = Template(value)
@@ -80,7 +80,7 @@ def render_template(template_files, param_dict_flat):
 
 def build_job_script_data_as_string(s3_application_tar, param_dict):
     """
-    Return the job_script_data_as string from the S3 application and the templates
+    Return the job_script_data_as string from the S3 application and the templates.
     """
     try:
         support_files_output = param_dict["jobbergate_config"]["supporting_files_output_name"]
