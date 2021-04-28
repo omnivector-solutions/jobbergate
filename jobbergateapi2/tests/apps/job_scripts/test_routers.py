@@ -10,10 +10,18 @@ import nest_asyncio
 import pytest
 from botocore.exceptions import BotoCoreError
 from fastapi import status
+from fastapi.exceptions import HTTPException
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application
-from jobbergateapi2.apps.job_scripts.routers import inject_sbatch_params
+from jobbergateapi2.apps.job_scripts.models import job_scripts_table
+from jobbergateapi2.apps.job_scripts.routers import (
+    build_job_script_data_as_string,
+    get_s3_object_as_tarfile,
+    inject_sbatch_params,
+    render_template,
+)
+from jobbergateapi2.apps.job_scripts.schemas import JobScript
 from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import UserCreate
 from jobbergateapi2.storage import database
@@ -96,7 +104,7 @@ def test_inject_sbatch_params(job_script_data_as_string, sbatch_params, new_job_
 @mock.patch("jobbergateapi2.apps.job_scripts.routers.boto3")
 @database.transaction(force_rollback=True)
 async def test_create_job_script(
-    boto3_client_mock, job_script_data, param_dict, application_data, client, user_data
+    boto3_client_mock, job_script_data, param_dict, application_data, client, user_data, s3_object
 ):
     """
     Test POST /job_scripts/ correctly creates a job_script.
@@ -108,9 +116,7 @@ async def test_create_job_script(
     s3_client_mock = mock.Mock()
     boto3_client_mock.client.return_value = s3_client_mock
     file_mock = mock.MagicMock(wraps=StringIO("test"))
-    s3_client_mock.get_object.return_value = {
-        "Body": open("jobbergateapi2/tests/apps/job_scripts/jobbergate.tar.gz", "rb")
-    }
+    s3_client_mock.get_object.return_value = s3_object
 
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
@@ -220,3 +226,219 @@ async def test_create_job_script_file_not_found(
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0
+
+
+@pytest.mark.asyncio
+@mock.patch("jobbergateapi2.apps.job_scripts.routers.boto3")
+@database.transaction(force_rollback=True)
+async def test_get_s3_object_as_tarfile(boto3_client_mock, param_dict, s3_object):
+    """
+    Test getting a file from S3 with get_s3_object function.
+    """
+    s3_client_mock = mock.Mock()
+    boto3_client_mock.client.return_value = s3_client_mock
+    s3_client_mock.get_object.return_value = s3_object
+
+    s3_file = get_s3_object_as_tarfile(1, 1)
+
+    assert s3_file is not None
+    s3_client_mock.get_object.assert_called_once()
+
+
+@mock.patch("jobbergateapi2.apps.job_scripts.routers.boto3")
+def test_get_s3_object_not_found(
+    boto3_client_mock,
+    param_dict,
+):
+    """
+    Test exception when file not exists in S3 for get_s3_object function.
+    """
+    s3_client_mock = mock.Mock()
+    boto3_client_mock.client.return_value = s3_client_mock
+    s3_client_mock.get_object.side_effect = BotoCoreError()
+
+    s3_file = None
+    with pytest.raises(HTTPException) as exc:
+        s3_file = get_s3_object_as_tarfile(1, 1)
+
+    assert "Application with id=1 not found for user=1" in str(exc)
+
+    assert s3_file is None
+    s3_client_mock.get_object.assert_called_once()
+
+
+def test_render_template(param_dict_flat, template_files, job_script_data_as_string):
+    """
+    Test correctly rendered template for job_script template.
+    """
+    job_script_rendered = render_template(template_files, param_dict_flat)
+
+    assert job_script_rendered == job_script_data_as_string
+
+
+def test_build_job_script_data_as_string(s3_object_as_tar, param_dict, job_script_data_as_string):
+    """
+    Test build_job_script_data_as_string function correct output.
+    """
+    data_as_string = build_job_script_data_as_string(s3_object_as_tar, param_dict)
+
+    assert data_as_string == job_script_data_as_string
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_get_job_script_by_id(client, user_data, application_data, job_script_data):
+    """
+    Test GET /job-scripts/<id>.
+
+    This test proves that GET /job-scripts/<id> returns the correct job-script, owned by
+    the user making the request. We show this by asserting that the job_script data
+    returned in the response is equal to the job_script data that exists in the database
+    for the given job_script id.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_script = [JobScript(id=1, **job_script_data)]
+    await insert_objects(job_script, job_scripts_table)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+
+    response = client.get("/job-scripts/1")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert data["id"] == 1
+    assert data["job_script_name"] == job_script_data["job_script_name"]
+    assert data["job_script_data_as_string"] == job_script_data["job_script_data_as_string"]
+    assert data["job_script_owner_id"] == 1
+    assert data["application_id"] == 1
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_get_job_script_by_id_invalid(client, user_data):
+    """
+    Test the correct response code is returned when a job_script does not exist.
+
+    This test proves that GET /job-script/<id> returns the correct response code when the
+    requested job_script does not exist. We show this by asserting that the status code
+    returned is what we would expect given the job_script requested doesn't exist (404).
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    response = client.get("/job-scripts/10")
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_list_job_script_from_user(client, user_data, application_data, job_script_data):
+    """
+    Test GET /job-scripts/ returns only job_scripts owned by the user making the request.
+
+    This test proves that GET /job-scripts/ returns the correct job_scripts for the user making
+    the request. We show this by asserting that the job_scripts returned in the response are
+    only job_scripts owned by the user making the request.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_script_data.pop("job_script_owner_id")
+    job_scripts = [
+        JobScript(id=1, job_script_owner_id=1, **job_script_data),
+        JobScript(id=2, job_script_owner_id=999, **job_script_data),
+        JobScript(id=3, job_script_owner_id=1, **job_script_data),
+    ]
+    await insert_objects(job_scripts, job_scripts_table)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 3
+
+    response = client.get("/job-scripts/")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert len(data) == 2
+    assert data[0]["id"] == 1
+    assert data[1]["id"] == 3
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_list_job_script_from_user_empty(client, user_data, application_data, job_script_data):
+    """
+    Test job_script_list doesn't include job_scripts owned by other users.
+
+    This test proves that the user making the request cannot see job_scripts owned by other users.
+    We show this by creating job_scripts that are owned by another user id and assert that
+    the user making the request to /job-scripts/ doesn't see any of the other user's
+    job_scripts in the response, len(response.json()) == 0.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_script_data.pop("job_script_owner_id")
+    job_scripts = [
+        JobScript(id=1, job_script_owner_id=999, **job_script_data),
+        JobScript(id=2, job_script_owner_id=999, **job_script_data),
+        JobScript(id=3, job_script_owner_id=999, **job_script_data),
+    ]
+    await insert_objects(job_scripts, job_scripts_table)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 3
+
+    response = client.get("/job-scripts/")
+    assert response.status_code == status.HTTP_200_OK
+
+    assert len(response.json()) == 0
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_list_job_script_all(client, user_data, application_data, job_script_data):
+    """
+    Test that listing job_scripts, when all=True, contains job_scripts owned by other users.
+
+    This test proves that the user making the request can see job_scripts owned by other users.
+    We show this by creating three job_scripts, one that are owned by the user making the request, and two
+    owned by another user. Assert that the response to GET /job-scripts/?all=True includes all three
+    job_scripts.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_script_data.pop("job_script_owner_id")
+    job_scripts = [
+        JobScript(id=1, job_script_owner_id=1, **job_script_data),
+        JobScript(id=2, job_script_owner_id=999, **job_script_data),
+        JobScript(id=3, job_script_owner_id=1, **job_script_data),
+    ]
+    await insert_objects(job_scripts, job_scripts_table)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 3
+
+    response = client.get("/job-scripts/?all=True")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert len(data) == 3
+    assert data[0]["id"] == 1
+    assert data[1]["id"] == 2
+    assert data[2]["id"] == 3

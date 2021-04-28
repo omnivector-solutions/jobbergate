@@ -239,7 +239,7 @@ async def test_get_application_by_id(client, user_data, application_data):
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_get_application_by_id_invalid(client, user_data, application_data):
+async def test_get_application_by_id_invalid(client, user_data):
     """
     Test the correct response code is returned when an application does not exist.
 
@@ -321,7 +321,7 @@ async def test_get_all_applications(client, user_data, application_data):
 
     This test proves that the user making the request can see applications owned by other users.
     We show this by creating three applications, two that are owned by the user making the request, and one
-    anther owned by another user. Assert that the response to GET /applications?all=True includes all three
+    owned by another user. Assert that the response to GET /applications/?all=True includes all three
     applications.
     """
     user = [UserCreate(id=1, **user_data)]
