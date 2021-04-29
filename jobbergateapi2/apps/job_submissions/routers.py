@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydant import List, Optional
 
 from jobbergateapi2.apps.auth.authentication import get_current_user
 from jobbergateapi2.apps.job_scripts.models import job_scripts_table
@@ -45,6 +46,51 @@ async def job_submission_create(
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=422, detail=str(e))
     return job_submission
+
+
+@router.get(
+    "/job-submissions/{job_submission_id}",
+    description="Endpoint to get a job_submission",
+    response_model=JobSubmission,
+)
+async def job_submission_get(
+    job_submission_id: int = Query(...), current_user: User = Depends(get_current_user)
+):
+    """
+    Return the job_submission given it's id.
+    """
+    query = job_submissions_table.select().where(
+        (job_submissions_table.c.id == job_submission_id)
+        & (job_submissions_table.c.job_submission_owner_id == current_user.id)
+    )
+    raw_job_submission = await database.fetch_one(query)
+
+    if not raw_job_submission:
+        raise HTTPException(
+            status_code=404,
+            detail=f"JobSubmission with id={job_submission_id} not found for user={current_user.id}",
+        )
+    job_submission = JobSubmission.parse_obj(raw_job_submission)
+    return job_submission
+
+
+@router.get(
+    "/job-submissions/", description="Endpoint to list job_submissions", response_model=List[JobSubmission]
+)
+async def job_submission_list(
+    all: Optional[bool] = Query(None), current_user: User = Depends(get_current_user)
+):
+    """
+    List job_submissions for the authenticated user.
+    """
+    if all:
+        query = job_submissions_table.select()
+    else:
+        query = job_submissions_table.select().where(
+            job_submissions_table.c.job_submission_owner_id == current_user.id
+        )
+    job_submissions = await database.fetch_all(query)
+    return job_submissions
 
 
 def include_router(app):
