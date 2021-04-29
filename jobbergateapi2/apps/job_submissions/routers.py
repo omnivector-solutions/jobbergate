@@ -1,5 +1,6 @@
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydant import List, Optional
 
 from jobbergateapi2.apps.auth.authentication import get_current_user
 from jobbergateapi2.apps.job_scripts.models import job_scripts_table
