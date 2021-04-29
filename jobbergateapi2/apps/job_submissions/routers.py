@@ -35,7 +35,9 @@ async def job_submission_create(
     if not raw_job_script:
         raise HTTPException(
             status_code=404,
-            detail=f"JobScript with id={job_submission.job_script_id} not found for user={current_user.id}",
+            detail=(
+                f"JobSubmission with id={job_submission.job_script_id} not found for user={current_user.id}"
+            ),
         )
 
     job_submission = JobSubmission(job_submission_owner_id=current_user.id, **job_submission.dict())
