@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 class JobSubmissionRequest(BaseModel):
     """
-    Model for the resource JobSubmission
+    Request model for the resource JobSubmission.
     """
 
     job_submission_name: str = Field(...)
@@ -31,6 +31,10 @@ class JobSubmissionRequest(BaseModel):
 
 
 class JobSubmission(JobSubmissionRequest):
+    """
+    Complete model to match the database for the JobSubmission resource.
+    """
+
     id: Optional[int] = Field(None)
     job_submission_owner_id: int = Field(...)
     created_at: Optional[datetime] = Field(datetime.utcnow())

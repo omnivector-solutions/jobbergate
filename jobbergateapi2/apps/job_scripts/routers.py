@@ -1,5 +1,5 @@
 """
-Router for the Application resource.
+Router for the JobScript resource.
 """
 import json
 import tarfile

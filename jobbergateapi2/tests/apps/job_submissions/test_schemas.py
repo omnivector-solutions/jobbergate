@@ -1,5 +1,5 @@
 """
-Test the schema of the JobSubmission resource
+Test the schema of the JobSubmission resource.
 """
 from datetime import datetime
 
