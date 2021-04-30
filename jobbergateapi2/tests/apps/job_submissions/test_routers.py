@@ -104,7 +104,7 @@ async def test_get_job_submission_by_id(
     """
     Test GET /job-submissions/<id>.
 
-    This test proves that GET /job-submissions/<id> returns the correct job-script, owned by
+    This test proves that GET /job-submissions/<id> returns the correct job-submission, owned by
     the user making the request. We show this by asserting that the job_submission data
     returned in the response is equal to the job_submission data that exists in the database
     for the given job_submission id.
