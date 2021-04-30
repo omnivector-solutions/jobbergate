@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 class JobSubmissionRequest(BaseModel):
     """
-    Request model for the resource JobSubmission.
+    Request model for the JobSubmission resource.
     """
 
     job_submission_name: str = Field(...)

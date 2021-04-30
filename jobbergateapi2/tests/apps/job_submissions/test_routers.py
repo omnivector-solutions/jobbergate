@@ -74,7 +74,7 @@ async def test_create_job_submission_wrong_user(
     job_script_data, application_data, client, user_data, job_submission_data
 ):
     """
-    Test that is not possible to create a job_submission based in a job_script of another user.
+    Test that it is not possible to create a job_submission using a job_script owned by another user.
 
     This test proves that is not possible to create a job_submission with another user's job_script.
     We show this by trying to create a job_submission with a job_script from another user (id=999), then
