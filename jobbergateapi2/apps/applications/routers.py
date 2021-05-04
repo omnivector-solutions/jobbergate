@@ -15,7 +15,7 @@ from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
 from jobbergateapi2.storage import database
 
-S3_BUCKET = f"jobbergate-api-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
+S3_BUCKET = f"jobbergateapi2-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
 router = APIRouter()
 
 
@@ -50,10 +50,7 @@ async def applications_create(
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=422, detail=str(e))
-    application_location = (
-        f"{settings.S3_BASE_PATH}/TEST/applications/{application.id}/jobbergate.tar.gz"
-        # f"{S3_BASE_PATH}/{application.owner_id}/applications/{application.id}/jobbergate.tar.gz"
-    )
+    application_location = f"{settings.S3_BASE_PATH}/{application.application_owner_id}/applications/{application.id}/jobbergate.tar.gz"  # noqa
     s3_client.put_object(
         Body=upload_file.file,
         Bucket=S3_BUCKET,
@@ -86,10 +83,7 @@ async def application_delete(
     application = Application.parse_obj(raw_application)
     delete_query = applications_table.delete().where(where_stmt)
     await database.execute(delete_query)
-    application_location = (
-        f"{settings.S3_BASE_PATH}/TEST/applications/{application.id}/jobbergate.tar.gz"
-        # f"{S3_BASE_PATH}/{application.owner_id}/applications/{application.id}/jobbergate.tar.gz"
-    )
+    application_location = f"{settings.S3_BASE_PATH}/{application.application_owner_id}/applications/{application.id}/jobbergate.tar.gz"  # noqa
     s3_client.delete_object(
         Bucket=S3_BUCKET,
         Key=application_location,
@@ -195,8 +189,7 @@ async def application_update(
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=422, detail=str(e))
     application_location = (
-        f"{settings.S3_BASE_PATH}/TEST/applications/{application_id}/jobbergate.tar.gz"
-        # f"{S3_BASE_PATH}/{application.owner_id}/applications/{application.id}/jobbergate.tar.gz"
+        f"{settings.S3_BASE_PATH}/{current_user.id}/applications/{application_id}/jobbergate.tar.gz"
     )
     if upload_file:
         s3_client.put_object(

@@ -22,7 +22,7 @@ from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
 from jobbergateapi2.storage import database
 
-S3_BUCKET = f"jobbergate-api-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
+S3_BUCKET = f"jobbergateapi2-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
 router = APIRouter()
 
 
@@ -52,8 +52,7 @@ def get_s3_object_as_tarfile(current_user_id, application_id):
     """
     s3_client = boto3.client("s3")
     application_location = (
-        f"{settings.S3_BASE_PATH}/TEST/applications/{application_id}/jobbergate.tar.gz"
-        # f"{S3_BASE_PATH}/{application.owner_id}/applications/{application.id}/jobbergate.tar.gz"
+        f"{settings.S3_BASE_PATH}/{current_user_id}/applications/{application_id}/jobbergate.tar.gz"
     )
     try:
         s3_application_obj = s3_client.get_object(Bucket=S3_BUCKET, Key=application_location)
