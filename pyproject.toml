@@ -37,6 +37,7 @@ databases = {extras = ["sqlite"], version = "^0.4.3"}
 boto3 = "^1.17.51"
 pytest-freezegun = "^0.4.2"
 Jinja2 = "^2.11.3"
+asyncpg = "^0.22.0"
 
 [tool.poetry.dev-dependencies]
 black = { version = "^19", allow-prereleases = true }
