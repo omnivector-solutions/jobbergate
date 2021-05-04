@@ -37,13 +37,15 @@ def test_invalid_token():
 
 
 @pytest.mark.asyncio
+@database.transaction(force_rollback=True)
 @patch("jobbergateapi2.apps.auth.authentication.jwt.encode")
-async def test_token_creation(mock_encode, client):
+async def test_token_creation(mock_encode, client, user_data):
     """
     Check if the token creation works
     """
     mock_encode.return_value = "mock_hash"
-    new_user = User(username="username", email="email@email.com")
+    client.post("/users/", json=user_data)
+    new_user = await database.fetch_one(users_table.select())
 
     token = Token(new_user)
     assert token.create() == {"access_token": "mock_hash", "token_type": "bearer"}
