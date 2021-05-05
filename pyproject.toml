@@ -38,7 +38,9 @@ boto3 = "^1.17.51"
 pytest-freezegun = "^0.4.2"
 Jinja2 = "^2.11.3"
 asyncpg = "^0.22.0"
-fastapi-admin = "^0.3.3"
+fastapi-admin = { git = 'https://github.com/fastapi-admin/fastapi-admin.git', branch = 'dev' }
+aioredis = "^1.3.1"
+hiredis = "^2.0.0"
 
 [tool.poetry.dev-dependencies]
 black = { version = "^19", allow-prereleases = true }
