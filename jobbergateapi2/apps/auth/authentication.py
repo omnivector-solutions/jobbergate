@@ -47,9 +47,9 @@ async def get_current_user(email: str = Depends(validate_token)):
 
 async def authenticate_user(form_data):
     """
-    Try to authenticate the user using form_data username and password, raises 401 otherwise
+    Try to authenticate the user using form_data email and password, raises 401 otherwise
     """
-    query = users_table.select().where(users_table.c.username == form_data.username)
+    query = users_table.select().where(users_table.c.email == form_data.username)
     user = await database.fetch_one(query)
     exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
