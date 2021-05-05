@@ -38,6 +38,7 @@ boto3 = "^1.17.51"
 pytest-freezegun = "^0.4.2"
 Jinja2 = "^2.11.3"
 asyncpg = "^0.22.0"
+fastapi-admin = "^0.3.3"
 
 [tool.poetry.dev-dependencies]
 black = { version = "^19", allow-prereleases = true }
