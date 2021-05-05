@@ -12,7 +12,7 @@ router = APIRouter()
 @router.post("/token/")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     """
-    Endpoint used to auth the user via username and password and returns a token
+    Endpoint used to auth the user via email and password and returns a token
     """
     user = await authenticate_user(form_data)
     token = Token(user)

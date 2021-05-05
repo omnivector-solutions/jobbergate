@@ -60,7 +60,7 @@ async def test_authenticate_user(client, user_data):
     client.post("/users/", json=user_data)
 
     RequestFormMock = namedtuple("OAuth2PasswordRequestForm", ["username", "password"])
-    form_data = RequestFormMock("username", "supersecret123456")
+    form_data = RequestFormMock(user_data["email"], user_data["password"])
     user = await authenticate_user(form_data)
     new_user = User.parse_obj(await database.fetch_one(users_table.select()))
 
