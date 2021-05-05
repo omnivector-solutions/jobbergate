@@ -92,7 +92,9 @@ async def job_submission_list(
         query = job_submissions_table.select().where(
             job_submissions_table.c.job_submission_owner_id == current_user.id
         )
-    job_submissions = await database.fetch_all(query)
+    raw_job_submissions = await database.fetch_all(query)
+    job_submissions = [JobSubmission.parse_obj(x) for x in raw_job_submissions]
+
     return job_submissions
 
 

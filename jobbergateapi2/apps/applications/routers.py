@@ -106,7 +106,8 @@ async def applications_list(
         query = applications_table.select().where(
             applications_table.c.application_owner_id == current_user.id
         )
-    applications = await database.fetch_all(query)
+    raw_applications = await database.fetch_all(query)
+    applications = [Application.parse_obj(x) for x in raw_applications]
     return applications
 
 

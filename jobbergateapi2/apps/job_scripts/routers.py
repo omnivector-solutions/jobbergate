@@ -213,7 +213,9 @@ async def job_script_list(all: Optional[bool] = Query(None), current_user: User 
         query = job_scripts_table.select()
     else:
         query = job_scripts_table.select().where(job_scripts_table.c.job_script_owner_id == current_user.id)
-    job_scripts = await database.fetch_all(query)
+    raw_job_scripts = await database.fetch_all(query)
+    job_scripts = [JobScript.parse_obj(x) for x in raw_job_scripts]
+
     return job_scripts
 
 
