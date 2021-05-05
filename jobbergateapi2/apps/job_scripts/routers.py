@@ -16,13 +16,13 @@ from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application
 from jobbergateapi2.apps.auth.authentication import get_current_user
 from jobbergateapi2.apps.job_scripts.models import job_scripts_table
-from jobbergateapi2.apps.job_scripts.schemas import JobScript
+from jobbergateapi2.apps.job_scripts.schemas import JobScript, JobScriptRequest
 from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
 from jobbergateapi2.storage import database
 
-S3_BUCKET = f"jobbergate-api-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
+S3_BUCKET = f"jobbergateapi2-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
 router = APIRouter()
 
 
@@ -52,8 +52,7 @@ def get_s3_object_as_tarfile(current_user_id, application_id):
     """
     s3_client = boto3.client("s3")
     application_location = (
-        f"{settings.S3_BASE_PATH}/TEST/applications/{application_id}/jobbergate.tar.gz"
-        # f"{S3_BASE_PATH}/{application.owner_id}/applications/{application.id}/jobbergate.tar.gz"
+        f"{settings.S3_BASE_PATH}/{current_user_id}/applications/{application_id}/jobbergate.tar.gz"
     )
     try:
         s3_application_obj = s3_client.get_object(Bucket=S3_BUCKET, Key=application_location)
@@ -164,7 +163,7 @@ async def job_script_create(
     if sbatch_params:
         job_script_data_as_string = inject_sbatch_params(job_script_data_as_string, sbatch_params)
 
-    job_script = JobScript(
+    job_script = JobScriptRequest(
         job_script_name=job_script_name,
         job_script_description=job_script_description,
         job_script_data_as_string=job_script_data_as_string,
@@ -177,11 +176,10 @@ async def job_script_create(
             query = job_scripts_table.insert()
             values = job_script.dict()
             job_script_created_id = await database.execute(query=query, values=values)
-            job_script.id = job_script_created_id
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=422, detail=str(e))
-    return job_script
+    return JobScript(id=job_script_created_id, **job_script.dict())
 
 
 @router.get(
@@ -215,7 +213,9 @@ async def job_script_list(all: Optional[bool] = Query(None), current_user: User 
         query = job_scripts_table.select()
     else:
         query = job_scripts_table.select().where(job_scripts_table.c.job_script_owner_id == current_user.id)
-    job_scripts = await database.fetch_all(query)
+    raw_job_scripts = await database.fetch_all(query)
+    job_scripts = [JobScript.parse_obj(x) for x in raw_job_scripts]
+
     return job_scripts
 
 

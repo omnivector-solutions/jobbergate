@@ -38,18 +38,17 @@ async def job_submission_create(
             detail=(f"JobScript id={job_submission.job_script_id} not found for user={current_user.id}"),
         )
 
-    job_submission = JobSubmission(job_submission_owner_id=current_user.id, **job_submission.dict())
-
     async with database.transaction():
         try:
             query = job_submissions_table.insert()
-            values = job_submission.dict()
+            values = {"job_submission_owner_id": current_user.id, **job_submission.dict()}
             job_submission_created_id = await database.execute(query=query, values=values)
-            job_submission.id = job_submission_created_id
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=422, detail=str(e))
-    return job_submission
+    return JobSubmission(
+        id=job_submission_created_id, job_submission_owner_id=current_user.id, **job_submission.dict()
+    )
 
 
 @router.get(
@@ -93,7 +92,9 @@ async def job_submission_list(
         query = job_submissions_table.select().where(
             job_submissions_table.c.job_submission_owner_id == current_user.id
         )
-    job_submissions = await database.fetch_all(query)
+    raw_job_submissions = await database.fetch_all(query)
+    job_submissions = [JobSubmission.parse_obj(x) for x in raw_job_submissions]
+
     return job_submissions
 
 

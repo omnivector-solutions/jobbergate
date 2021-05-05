@@ -57,7 +57,7 @@ async def authenticate_user(form_data):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        if not user or not pwd_context.verify(form_data.password, user.password):
+        if not user or not pwd_context.verify(form_data.password, user["password"]):
             raise exception
     except ValueError:
         raise exception
@@ -78,7 +78,7 @@ class Token:
         """
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = self._create_access_token(
-            data={"sub": self.user.email}, expires_delta=access_token_expires
+            data={"sub": self.user["email"]}, expires_delta=access_token_expires
         )
 
         return {"access_token": access_token, "token_type": "bearer"}

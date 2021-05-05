@@ -7,22 +7,29 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
-class Application(BaseModel):
+class ApplicationRequest(BaseModel):
     """
-    Model for the resource Application
+    Request model for the Application resource.
     """
 
-    id: Optional[int] = Field(None)
     application_name: str = Field(...)
     application_description: Optional[str] = Field("")
     application_owner_id: Optional[int] = Field(None, description="The User id of the owner")
     application_file: str
     application_config: str
-    created_at: Optional[datetime] = Field(datetime.utcnow())
-    updated_at: Optional[datetime] = Field(datetime.utcnow())
 
     class Config:
         orm_mode = True
 
     def __str__(self):
         return self.application_name
+
+
+class Application(ApplicationRequest):
+    """
+    Complete model to match the database for the Application resource.
+    """
+
+    id: Optional[int] = Field(None)
+    created_at: Optional[datetime] = Field(datetime.utcnow())
+    updated_at: Optional[datetime] = Field(datetime.utcnow())
