@@ -16,7 +16,7 @@ from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application
 from jobbergateapi2.apps.auth.authentication import get_current_user
 from jobbergateapi2.apps.job_scripts.models import job_scripts_table
-from jobbergateapi2.apps.job_scripts.schemas import JobScript
+from jobbergateapi2.apps.job_scripts.schemas import JobScript, JobScriptRequest
 from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
@@ -163,7 +163,7 @@ async def job_script_create(
     if sbatch_params:
         job_script_data_as_string = inject_sbatch_params(job_script_data_as_string, sbatch_params)
 
-    job_script = JobScript(
+    job_script = JobScriptRequest(
         job_script_name=job_script_name,
         job_script_description=job_script_description,
         job_script_data_as_string=job_script_data_as_string,
@@ -176,11 +176,10 @@ async def job_script_create(
             query = job_scripts_table.insert()
             values = job_script.dict()
             job_script_created_id = await database.execute(query=query, values=values)
-            job_script.id = job_script_created_id
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=422, detail=str(e))
-    return job_script
+    return JobScript(id=job_script_created_id, **job_script.dict())
 
 
 @router.get(

@@ -8,7 +8,7 @@ import boto3
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 
 from jobbergateapi2.apps.applications.models import applications_table
-from jobbergateapi2.apps.applications.schemas import Application
+from jobbergateapi2.apps.applications.schemas import Application, ApplicationRequest
 from jobbergateapi2.apps.auth.authentication import get_current_user
 from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
@@ -33,7 +33,7 @@ async def applications_create(
     """
     s3_client = boto3.client("s3")
 
-    application = Application(
+    application = ApplicationRequest(
         application_name=application_name,
         application_description=application_description,
         application_file=application_file,
@@ -46,17 +46,16 @@ async def applications_create(
             query = applications_table.insert()
             values = application.dict()
             application_created_id = await database.execute(query=query, values=values)
-            application.id = application_created_id
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=422, detail=str(e))
-    application_location = f"{settings.S3_BASE_PATH}/{application.application_owner_id}/applications/{application.id}/jobbergate.tar.gz"  # noqa
+    application_location = f"{settings.S3_BASE_PATH}/{application.application_owner_id}/applications/{application_created_id}/jobbergate.tar.gz"  # noqa
     s3_client.put_object(
         Body=upload_file.file,
         Bucket=S3_BUCKET,
         Key=application_location,
     )
-    return application
+    return Application(id=application_created_id, **application.dict())
 
 
 @router.delete(
