@@ -1,11 +1,11 @@
 """
-Router for the User resource
+Router for the User resource.
 """
 import typing
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from jobbergateapi2.apps.auth.authentication import validate_token
+from jobbergateapi2.apps.auth.authentication import get_current_user, validate_token
 from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import User, UserCreate
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
@@ -17,19 +17,17 @@ router = APIRouter()
 
 @router.get(
     "/users/",
-    description="Endpoint to search users",
+    description="Endpoint to list users",
     response_model=typing.List[User],
     dependencies=[Depends(validate_token)],
 )
-async def users_search(p: Pagination = Depends()):
+async def users_list(p: Pagination = Depends()):
     """
-    Endpoint that requires authentication and is used to GET the users and returns using pagination
+    Return all the users.
     """
-    if p.q is None:
-        query = users_table.select().limit(p.limit).offset(p.offset)
-    else:
-        query = users_table.select().where(users_table.c.username == p.q).limit(p.limit).offset(p.offset)
-    users = await database.fetch_all(query)
+    query = users_table.select().limit(p.limit).offset(p.skip)
+    raw_users = await database.fetch_all(query)
+    users = [User.parse_obj(x) for x in raw_users]
     return users
 
 
@@ -42,10 +40,11 @@ async def users_create(user_data: UserCreate):
         try:
             query = users_table.insert()
             values = {
-                "username": user_data.username,
+                "full_name": user_data.full_name,
                 "email": user_data.email,
                 "password": user_data.hash_password(),
-                "is_admin": user_data.is_admin,
+                "is_superuser": user_data.is_superuser,
+                "is_active": user_data.is_active,
             }
             user_created_id = await database.execute(query=query, values=values)
 
