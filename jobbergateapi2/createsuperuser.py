@@ -13,7 +13,7 @@ from jobbergateapi2.main import disconnect_database, init_database
 
 async def create_super_user(full_name, email, password):
     """
-    Async function to connect async with the database and create the super user
+    Async function to connect async with the database and create the super user.
     """
     await init_database()
     query = users_table.insert()
@@ -34,7 +34,7 @@ async def create_super_user(full_name, email, password):
 @click.command()
 def createsuperuser(full_name, email, password):
     """
-    Click command for creating super users in the database
+    Click command for creating super users in the database.
     """
     password = pwd_context.hash(password)
     asyncio.run(create_super_user(full_name, email, password))

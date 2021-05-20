@@ -1,12 +1,12 @@
 """
-Test the pagination
+Test the pagination.
 """
 from jobbergateapi2.pagination import Pagination
 
 
 def test_string_conversion():
     """
-    Test the pagination as string
+    Test the pagination as string.
     """
     pagination = Pagination()
 
@@ -15,7 +15,7 @@ def test_string_conversion():
 
 def test_pagination_with_default_values():
     """
-    Test the pagination default values
+    Test the pagination default values.
     """
     pagination = Pagination()
 
@@ -25,7 +25,7 @@ def test_pagination_with_default_values():
 
 def test_pagination_with_custom_values():
     """
-    Test the pagination with custom values
+    Test the pagination with custom values.
     """
     pagination = Pagination(limit=100, skip=1)
 

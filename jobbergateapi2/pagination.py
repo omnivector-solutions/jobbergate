@@ -5,7 +5,7 @@ Pagination feature for all endpoints.
 
 class Pagination:
     """
-    Basic pagination class
+    Basic pagination class.
     """
 
     def __init__(self, limit: int = 10, skip: int = 0):
