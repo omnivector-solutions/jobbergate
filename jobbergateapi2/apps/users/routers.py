@@ -31,10 +31,43 @@ async def users_list(p: Pagination = Depends()):
     return users
 
 
+@router.get(
+    "/users/{user_id}",
+    description="Endpoint to get user given the id",
+    response_model=User,
+    dependencies=[Depends(validate_token)],
+)
+async def users_get(user_id: int = Query(...)):
+    """
+    Return the user given it's id.
+    """
+    query = users_table.select(users_table.c.id == user_id)
+    raw_user = await database.fetch_one(query)
+    if not raw_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User {user_id=} not found",
+        )
+    user = User.parse_obj(raw_user)
+    return user
+
+
+@router.get(
+    "/user/me",
+    description="Endpoint to get current user",
+    response_model=User,
+)
+async def users_me(current_user: User = Depends(get_current_user)):
+    """
+    Return the authenticated user.
+    """
+    return current_user
+
+
 @router.post("/users/", description="Endpoint for user creation", dependencies=[Depends(validate_token)])
 async def users_create(user_data: UserCreate):
     """
-    Endpoint used to create new users using a user already authenticated
+    Create new users.
     """
     async with database.transaction():
         try:
