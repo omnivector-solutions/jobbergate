@@ -12,8 +12,9 @@ users_table = Table(
     metadata,
     Column("id", Integer, primary_key=True),
     Column("email", String, nullable=False, index=True, unique=True),
-    Column("is_admin", Boolean, nullable=False, default=False),
-    Column("username", String, nullable=False, unique=True),
+    Column("is_superuser", Boolean, nullable=False, default=False),
+    Column("is_active", Boolean, nullable=False, default=True),
+    Column("full_name", String, nullable=False, unique=True),
     Column("password", String, nullable=False),
     Column("data_joined", DateTime, nullable=False, default=func.now()),
 )
