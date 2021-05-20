@@ -45,7 +45,7 @@ async def test_list_with_pagination_limit_offset(client):
     ]
     await insert_objects(users, users_table)
 
-    response = client.get("/users/?limit=1&offset=0")
+    response = client.get("/users/?limit=1&skip=0")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
