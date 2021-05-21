@@ -23,7 +23,8 @@ router = APIRouter()
 )
 async def users_list(p: Pagination = Depends()):
     """
-    Return all the users.
+    Return all the users with pagination.
+    The limit and skip are passed via query strings.
     """
     query = users_table.select().limit(p.limit).offset(p.skip)
     raw_users = await database.fetch_all(query)
@@ -39,7 +40,7 @@ async def users_list(p: Pagination = Depends()):
 )
 async def users_get(user_id: int = Query(...)):
     """
-    Return the user given it's id.
+    Return the user given its id.
     """
     query = users_table.select(users_table.c.id == user_id)
     raw_user = await database.fetch_one(query)

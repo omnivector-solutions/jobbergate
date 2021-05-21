@@ -18,10 +18,10 @@ class User(BaseModel):
     """
 
     id: Optional[int] = Field(None)
-    email: EmailStr
+    email: EmailStr = Field(..., description="User unique email")
     is_active: Optional[bool] = Field(True)
     is_superuser: Optional[bool] = Field(False)
-    full_name: str = Field(..., max_length=64)
+    full_name: str = Field(..., description="Full name of the user")
     data_joined: Optional[datetime] = Field(datetime.utcnow())
 
     class Config:

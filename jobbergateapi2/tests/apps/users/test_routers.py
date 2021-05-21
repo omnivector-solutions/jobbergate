@@ -18,7 +18,7 @@ nest_asyncio.apply()
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_list(client, user_data):
+async def test_list_single_element(client, user_data):
     """
     Create a user then test if the listing works.
     """
@@ -32,12 +32,41 @@ async def test_list(client, user_data):
     data = response.json()
     assert len(data) == 1
 
+    assert data[0]["id"] == 1
+    assert data[0]["full_name"] == user_data["full_name"]
+    assert data[0]["email"] == user_data["email"]
+
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_list_with_pagination_limit_offset(client):
+async def test_list_multiple_elements(client, user_data):
     """
-    Test if the pagination is working throught the endpoint with 2 users.
+    Create multiple users then test if the listing works.
+    """
+
+    users = [
+        UserCreate(full_name="user1", email="email1@email.com", password="1" * 12),
+        UserCreate(full_name="user2", email="email2@email.com", password="1" * 12),
+    ]
+    await insert_objects(users, users_table)
+
+    response = client.get("/users/")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert len(data) == 2
+
+    assert data[0]["id"] == 1
+    assert data[0]["email"] == "email1@email.com"
+    assert data[1]["id"] == 2
+    assert data[1]["email"] == "email2@email.com"
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_list_with_pagination_limit_1_offset_0(client):
+    """
+    Test if the pagination is working through the endpoint using offset=0 and limit=1
     """
     users = [
         UserCreate(full_name="user1", email="email1@email.com", password="1" * 12),
@@ -50,14 +79,35 @@ async def test_list_with_pagination_limit_offset(client):
 
     data = response.json()
     assert len(data) == 1
-    count = await database.fetch_all("SELECT COUNT(*) FROM users")
-    assert count[0][0] == 2
+    assert data[0]["id"] == 1
+    assert data[0]["email"] == "email1@email.com"
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_list_with_pagination_limit_1_offset_1(client):
+    """
+    Test if the pagination is working through the endpoint using offset=1 and limit=1
+    """
+    users = [
+        UserCreate(full_name="user1", email="email1@email.com", password="1" * 12),
+        UserCreate(full_name="user2", email="email2@email.com", password="1" * 12),
+    ]
+    await insert_objects(users, users_table)
+
+    response = client.get("/users/?limit=1&skip=1")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["id"] == 2
+    assert data[0]["email"] == "email2@email.com"
 
 
 @pytest.mark.asyncio
 async def test_list_without_results(client):
     """
-    Test when there is no user.
+    Test listing when no users exist to list.
     """
     response = client.get("/users/")
 
@@ -71,7 +121,8 @@ async def test_list_without_results(client):
 @database.transaction(force_rollback=True)
 async def test_create_user(client, user_data):
     """
-    Test user creation, should be active and not superuser.
+    Test create user.
+    The default behavior is for the created user to be active and be not a superuser.
     """
     response = client.post("/users/", json=user_data)
     assert response.status_code == status.HTTP_200_OK
