@@ -110,6 +110,8 @@ async def users_me_update(
             await database.execute(q_update)
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=422, detail=str(e))
+    query = users_table.select(users_table.c.id == current_user.id)
+    return User.parse_obj(await database.fetch_one(query))
 
 
 @router.post(
@@ -193,6 +195,8 @@ async def users_update(
             await database.execute(q_update)
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=422, detail=str(e))
+    query = users_table.select(users_table.c.id == user_id)
+    return User.parse_obj(await database.fetch_one(query))
 
 
 def include_router(app):

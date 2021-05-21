@@ -218,6 +218,10 @@ async def test_update_user(client, user_data):
     response = client.put("/users/1", json={"full_name": "new name"})
 
     assert response.status_code == status.HTTP_201_CREATED
+    data = response.json()
+
+    assert data["full_name"] == "new name"
+    assert data["id"] == 1
 
     query = users_table.select(users_table.c.id == 1)
     user = User.parse_obj(await database.fetch_one(query))
@@ -238,6 +242,10 @@ async def test_update_user_superuser(client, user_data):
     response = client.put("/users/1", json={"is_superuser": False})
 
     assert response.status_code == status.HTTP_201_CREATED
+    data = response.json()
+
+    assert data["is_superuser"] is False
+    assert data["id"] == 1
 
     query = users_table.select(users_table.c.id == 1)
     user = User.parse_obj(await database.fetch_one(query))
@@ -276,6 +284,10 @@ async def test_update_user_me(client, user_data):
     await insert_objects(user, users_table)
 
     response = client.put("/user/me", json={"full_name": "new name"})
+    data = response.json()
+
+    assert data["full_name"] == "new name"
+    assert data["id"] == 1
 
     assert response.status_code == status.HTTP_201_CREATED
 
