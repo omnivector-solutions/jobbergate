@@ -125,7 +125,7 @@ async def test_create_user(client, user_data):
     The default behavior is for the created user to be active and be not a superuser.
     """
     response = client.post("/users/", json=user_data)
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == status.HTTP_201_CREATED
     count = await database.fetch_all("SELECT COUNT(*) FROM users")
     assert count[0][0] == 1
 
@@ -141,7 +141,7 @@ async def test_create_user_duplication(client, user_data):
     Test the case where there is a violation in the database constraints for unique.
     """
     response = client.post("/users/", json=user_data)
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == status.HTTP_201_CREATED
     response = client.post("/users/", json=user_data)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
@@ -157,7 +157,7 @@ async def test_create_superuser(client, user_data):
     """
     user_data["is_superuser"] = True
     response = client.post("/users/", json=user_data)
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == status.HTTP_201_CREATED
     count = await database.fetch_all("SELECT COUNT(*) FROM users")
     assert count[0][0] == 1
 
@@ -204,3 +204,63 @@ async def test_users_me(client, user_data):
 
     data = response.json()
     assert data["email"] == user_data["email"]
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_update_user(client, user_data):
+    """
+    Test update an User.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    response = client.put("/users/1", json={"full_name": "new name"})
+
+    assert response.status_code == status.HTTP_201_CREATED
+
+    query = users_table.select(users_table.c.id == 1)
+    user = User.parse_obj(await database.fetch_one(query))
+
+    assert user is not None
+    assert user.full_name == "new name"
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_update_user_not_found(client, user_data):
+    """
+    Try to update a User not found, must return 404 and do nothing with the stored data.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    response = client.put("/users/123", json={"full_name": "new name"})
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    query = users_table.select(users_table.c.id == 1)
+    user = User.parse_obj(await database.fetch_one(query))
+
+    assert user is not None
+    assert user.full_name == user_data["full_name"]
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_update_user_me(client, user_data):
+    """
+    Test update the authenticated User.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    response = client.put("/user/me", json={"full_name": "new name"})
+
+    assert response.status_code == status.HTTP_201_CREATED
+
+    query = users_table.select(users_table.c.id == 1)
+    user = User.parse_obj(await database.fetch_one(query))
+
+    assert user is not None
+    assert user.full_name == "new name"
