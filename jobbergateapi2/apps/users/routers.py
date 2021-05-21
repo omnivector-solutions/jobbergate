@@ -75,6 +75,8 @@ async def users_me_update(
     full_name: Optional[str] = Body(None),
     email: Optional[str] = Body(None),
     password: Optional[str] = Body(None),
+    is_active: Optional[bool] = Body(None),
+    is_superuser: Optional[bool] = Body(None),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -82,12 +84,16 @@ async def users_me_update(
 
     """
     user_data = UserCreate(**current_user.dict())
-    if full_name:
+    if full_name is not None:
         user_data.full_name = full_name
-    if email:
+    if email is not None:
         user_data.email = email
-    if password:
+    if password is not None:
         user_data.password = password
+    if is_superuser is not None:
+        user_data.is_superuser = is_superuser
+    if is_active is not None:
+        user_data.is_active = is_active
 
     values = {
         "full_name": user_data.full_name,
@@ -96,7 +102,7 @@ async def users_me_update(
         "is_superuser": user_data.is_superuser,
         "is_active": user_data.is_active,
     }
-    validated_values = {key: value for key, value in values.items() if value}
+    validated_values = {key: value for key, value in values.items() if value is not None}
 
     q_update = users_table.update().where(users_table.c.id == current_user.id).values(validated_values)
     async with database.transaction():
@@ -144,6 +150,8 @@ async def users_update(
     full_name: Optional[str] = Body(None),
     email: Optional[str] = Body(None),
     password: Optional[str] = Body(None),
+    is_active: Optional[bool] = Body(None),
+    is_superuser: Optional[bool] = Body(None),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -159,12 +167,16 @@ async def users_update(
         )
     user = User.parse_obj(raw_user)
     user_data = UserCreate(**user.dict())
-    if full_name:
+    if full_name is not None:
         user_data.full_name = full_name
-    if email:
+    if email is not None:
         user_data.email = email
-    if password:
+    if password is not None:
         user_data.password = password
+    if is_superuser is not None:
+        user_data.is_superuser = is_superuser
+    if is_active is not None:
+        user_data.is_active = is_active
 
     values = {
         "full_name": user_data.full_name,
@@ -173,7 +185,7 @@ async def users_update(
         "is_superuser": user_data.is_superuser,
         "is_active": user_data.is_active,
     }
-    validated_values = {key: value for key, value in values.items() if value}
+    validated_values = {key: value for key, value in values.items() if value is not None}
 
     q_update = users_table.update().where(users_table.c.id == user_id).values(validated_values)
     async with database.transaction():

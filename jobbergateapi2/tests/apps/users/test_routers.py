@@ -228,6 +228,26 @@ async def test_update_user(client, user_data):
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
+async def test_update_user_superuser(client, user_data):
+    """
+    Test update an User to change the superuser status.
+    """
+    user = [UserCreate(id=1, is_superuser=True, **user_data)]
+    await insert_objects(user, users_table)
+
+    response = client.put("/users/1", json={"is_superuser": False})
+
+    assert response.status_code == status.HTTP_201_CREATED
+
+    query = users_table.select(users_table.c.id == 1)
+    user = User.parse_obj(await database.fetch_one(query))
+
+    assert user is not None
+    assert user.is_superuser is False
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
 async def test_update_user_not_found(client, user_data):
     """
     Try to update a User not found, must return 404 and do nothing with the stored data.
