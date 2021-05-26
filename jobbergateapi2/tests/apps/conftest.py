@@ -28,7 +28,7 @@ def user_data():
     """
     return {
         "email": "user1@email.com",
-        "username": "username",
+        "full_name": "username",
         "password": "supersecret123456",
     }
 

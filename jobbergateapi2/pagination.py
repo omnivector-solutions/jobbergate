@@ -1,20 +1,19 @@
 """
-Pagination feature for all endpoints
+Pagination feature for all endpoints.
 """
 
 
 class Pagination:
     """
-    Basic pagination class
+    Basic pagination class.
     """
 
-    def __init__(self, q: str = None, limit: int = 10, offset: int = 0):
+    def __init__(self, limit: int = 10, skip: int = 0):
         """
-        Pagination constructor using default limit and offset
+        Pagination constructor using default limit and skip offset.
         """
-        self.q = q
         self.limit = limit
-        self.offset = offset
+        self.skip = skip
 
     def __str__(self):
-        return f"q: {self.q}, limit: {self.limit}, offset: {self.offset}"
+        return f"limit: {self.limit}, skip: {self.skip}"

@@ -47,7 +47,7 @@ def test_user_string_conversion(user_data):
     """
     user = User(**user_data)
 
-    expected_str = f"{user.id}, {user.username}, {user.email}"
+    expected_str = f"{user.id}, {user.full_name}, {user.email}"
 
     assert str(user) == expected_str
 
@@ -59,8 +59,8 @@ def test_create_user(user_data):
     user = User(**user_data)
 
     assert user.email == user_data["email"]
-    assert user.is_admin is False
-    assert user.username == user_data["username"]
+    assert user.is_superuser is False
+    assert user.full_name == user_data["full_name"]
     assert user.Config.orm_mode is True
 
 
