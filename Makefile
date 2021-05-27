@@ -16,6 +16,9 @@ run:
 createsuperuser:
 	poetry run createsuperuser
 
+update-precommit:
+	poetry run pre-commit autoupdate
+
 clean: clean-eggs clean-build
 	@find . -iname '*.pyc' -delete
 	@find . -iname '*.pyo' -delete
