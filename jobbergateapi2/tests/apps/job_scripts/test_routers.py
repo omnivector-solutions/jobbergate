@@ -455,7 +455,11 @@ async def test_list_job_script_all(client, user_data, application_data, job_scri
 @database.transaction(force_rollback=True)
 async def test_update_job_script(client, user_data, application_data, job_script_data):
     """
-    Test update job_script.
+    Test update job_script via PUT.
+
+    This test proves that the job_script values are correctly updated following a PUT request to the
+    /job-scripts/<id> endpoint. We show this by assert the response status code to 201, the response data
+    it corresponds to the updated data, and the data in the database is also updated.
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
@@ -488,7 +492,11 @@ async def test_update_job_script(client, user_data, application_data, job_script
 @database.transaction(force_rollback=True)
 async def test_update_job_script_not_found(client, user_data, application_data, job_script_data):
     """
-    Test update a job_script not found, must return 404 and do nothing with the stored data.
+    Test that it is not possible to update a job_script not found.
+
+    This test proves that it is not possible to update a job_script if it is not found. We show this by
+    asserting that the response status code of the request is 404, and that the data stored in the
+    database for the job_script is no updated.
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
@@ -514,7 +522,11 @@ async def test_update_job_script_not_found(client, user_data, application_data, 
 @database.transaction(force_rollback=True)
 async def test_delete_job_script(client, user_data, application_data, job_script_data):
     """
-    Test delete a job_script, must return 204 and delete the data.
+    Test delete job_script via DELETE.
+
+    This test proves that a job_script is successfully deleted via a DELETE request to the /job-scripts/<id>
+    endpoint. We show this by asserting that the job_script no longer exists in the database after the
+    request is made and the correct status code is returned (204).
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
@@ -540,7 +552,11 @@ async def test_delete_job_script(client, user_data, application_data, job_script
 @database.transaction(force_rollback=True)
 async def test_delete_job_script_not_found(client, user_data, application_data, job_script_data):
     """
-    Test delete a job_script not found, must return 404 and do nothing with the data.
+    Test that it is not possible to delete a job_script that is not found.
+
+    This test proves that it is not possible to delete a job_script if it does not exists. We show this by
+    assert that a 404 response status code is returned and the job_script still exists in the database after
+    the request.
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
