@@ -229,7 +229,7 @@ async def job_script_list(all: Optional[bool] = Query(None), current_user: User 
 )
 async def job_script_delete(
     current_user: User = Depends(get_current_user),
-    job_script_id: int = Query(..., description="id of the application to delete"),
+    job_script_id: int = Query(..., description="id of the job script to delete"),
 ):
     """
     Delete job_script given its id.
@@ -284,7 +284,7 @@ async def job_script_update(
     if job_script_description is not None:
         job_script_data.job_script_description = job_script_description
     if job_script_data_as_string is not None:
-        job_script_data.is_superuser = job_script_data_as_string
+        job_script_data.job_script_data_as_string = job_script_data_as_string
 
     job_script_data.updated_at = datetime.utcnow()
 
