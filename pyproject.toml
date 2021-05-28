@@ -41,7 +41,7 @@ asyncpg = "^0.22.0"
 
 [tool.poetry.dev-dependencies]
 black = { version = "^19", allow-prereleases = true }
-pre-commit = "^1.18"
+pre-commit = "^2.9.2"
 pytest = "^5.2"
 pytest-asyncio = "^0.12"
 pytest-cov = "^2.8"

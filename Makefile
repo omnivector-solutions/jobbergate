@@ -4,6 +4,9 @@ test:
 lint:
 	poetry run pre-commit run -a -v
 
+format:
+	poetry run pre-commit run -a -v isort && poetry run pre-commit run -a -v black
+
 install:
 	poetry install
 
@@ -12,6 +15,9 @@ run:
 
 createsuperuser:
 	poetry run createsuperuser
+
+update-precommit:
+	poetry run pre-commit autoupdate
 
 clean: clean-eggs clean-build
 	@find . -iname '*.pyc' -delete
