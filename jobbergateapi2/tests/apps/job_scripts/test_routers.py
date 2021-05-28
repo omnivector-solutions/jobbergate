@@ -459,7 +459,7 @@ async def test_update_job_script(client, user_data, application_data, job_script
 
     This test proves that the job_script values are correctly updated following a PUT request to the
     /job-scripts/<id> endpoint. We show this by assert the response status code to 201, the response data
-    it corresponds to the updated data, and the data in the database is also updated.
+    corresponds to the updated data, and the data in the database is also updated.
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
@@ -470,13 +470,22 @@ async def test_update_job_script(client, user_data, application_data, job_script
     job_scripts = [JobScript(id=1, **job_script_data)]
     await insert_objects(job_scripts, job_scripts_table)
 
-    response = client.put("/job-scripts/1", data={"job_script_name": "new name"})
+    response = client.put(
+        "/job-scripts/1",
+        data={
+            "job_script_name": "new name",
+            "job_script_description": "new description",
+            "job_script_data_as_string": "new value",
+        },
+    )
 
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
     now = datetime.now()
 
     assert data["job_script_name"] == "new name"
+    assert data["job_script_description"] == "new description"
+    assert data["job_script_data_as_string"] == "new value"
     assert data["id"] == 1
     assert data["updated_at"] == now.isoformat()
 
@@ -485,6 +494,8 @@ async def test_update_job_script(client, user_data, application_data, job_script
 
     assert job_script is not None
     assert job_script.job_script_name == "new name"
+    assert job_script.job_script_description == "new description"
+    assert job_script.job_script_data_as_string == "new value"
     assert job_script.updated_at == now
 
 
@@ -496,7 +507,7 @@ async def test_update_job_script_not_found(client, user_data, application_data, 
 
     This test proves that it is not possible to update a job_script if it is not found. We show this by
     asserting that the response status code of the request is 404, and that the data stored in the
-    database for the job_script is no updated.
+    database for the job_script is not updated.
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
