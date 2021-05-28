@@ -1,6 +1,8 @@
 """
 Tests for the /job-submissions/ endpoint.
 """
+from datetime import datetime
+
 import nest_asyncio
 import pytest
 from fastapi import status
@@ -269,3 +271,159 @@ async def test_list_job_submission_all(
     assert data[0]["id"] == 1
     assert data[1]["id"] == 2
     assert data[2]["id"] == 3
+
+
+@pytest.mark.freeze_time
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_update_job_submission(
+    client, user_data, application_data, job_script_data, job_submission_data
+):
+    """
+    Test update job_submission via PUT.
+
+    This test proves that the job_submission values are correctly updated following a PUT request to the
+    /job-submissions/<id> endpoint. We show this by assert the response status code to 201, the response data
+    corresponds to the updated data, and the data in the database is also updated.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_scripts = [JobScript(id=1, **job_script_data)]
+    await insert_objects(job_scripts, job_scripts_table)
+
+    job_submissions = [JobSubmission(id=1, job_submission_owner_id=1, **job_submission_data)]
+    await insert_objects(job_submissions, job_submissions_table)
+
+    response = client.put(
+        "/job-submissions/1",
+        data={
+            "job_submission_name": "new name",
+            "job_submission_description": "new description",
+        },
+    )
+
+    assert response.status_code == status.HTTP_201_CREATED
+    data = response.json()
+    now = datetime.now()
+
+    assert data["job_submission_name"] == "new name"
+    assert data["job_submission_description"] == "new description"
+    assert data["id"] == 1
+    assert data["updated_at"] == now.isoformat()
+
+    query = job_submissions_table.select(job_submissions_table.c.id == 1)
+    job_submission = JobSubmission.parse_obj(await database.fetch_one(query))
+
+    assert job_submission is not None
+    assert job_submission.job_submission_name == "new name"
+    assert job_submission.job_submission_description == "new description"
+    assert job_submission.updated_at == now
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_update_job_submission_not_found(
+    client, user_data, application_data, job_script_data, job_submission_data
+):
+    """
+    Test that it is not possible to update a job_submission not found.
+
+    This test proves that it is not possible to update a job_submission if it is not found. We show this by
+    asserting that the response status code of the request is 404, and that the data stored in the
+    database for the job_submission is not updated.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_scripts = [JobScript(id=1, **job_script_data)]
+    await insert_objects(job_scripts, job_scripts_table)
+
+    job_submissions = [JobSubmission(id=1, job_submission_owner_id=1, **job_submission_data)]
+    await insert_objects(job_submissions, job_submissions_table)
+
+    response = client.put("/job-submissions/123", data={"job_submission_name": "new name"})
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    query = job_submissions_table.select(job_submissions_table.c.id == 1)
+    job_submission = JobSubmission.parse_obj(await database.fetch_one(query))
+
+    assert job_submission is not None
+    assert job_submission.job_submission_name == job_submission_data["job_submission_name"]
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_delete_job_submission(
+    client, user_data, application_data, job_script_data, job_submission_data
+):
+    """
+    Test delete job_submission via DELETE.
+
+    This test proves that a job_submission is successfully deleted via a DELETE request to the
+    /job-submissions/<id> endpoint. We show this by asserting that the job_submission no longer exists in
+    the database after the request is made and the correct status code is returned (204).
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_scripts = [JobScript(id=1, **job_script_data)]
+    await insert_objects(job_scripts, job_scripts_table)
+
+    job_submissions = [JobSubmission(id=1, job_submission_owner_id=1, **job_submission_data)]
+    await insert_objects(job_submissions, job_submissions_table)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 1
+
+    response = client.delete("/job-submissions/1")
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 0
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_delete_job_submission_not_found(
+    client, user_data, application_data, job_script_data, job_submission_data
+):
+    """
+    Test that it is not possible to delete a job_submission that is not found.
+
+    This test proves that it is not possible to delete a job_submission if it does not exists. We show this
+    by asserting that a 404 response status code is returned and the job_submission still exists in the
+    database after the request.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_scripts = [JobScript(id=1, **job_script_data)]
+    await insert_objects(job_scripts, job_scripts_table)
+
+    job_submissions = [JobSubmission(id=1, job_submission_owner_id=1, **job_submission_data)]
+    await insert_objects(job_submissions, job_submissions_table)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 1
+
+    response = client.delete("/job-submissions/123")
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 1

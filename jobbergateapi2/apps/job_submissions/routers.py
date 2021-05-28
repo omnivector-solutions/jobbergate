@@ -1,9 +1,10 @@
 """
 Router for the JobSubmission resource.
 """
+from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, status
 
 from jobbergateapi2.apps.auth.authentication import get_current_user
 from jobbergateapi2.apps.job_scripts.models import job_scripts_table
@@ -96,6 +97,90 @@ async def job_submission_list(
     job_submissions = [JobSubmission.parse_obj(x) for x in raw_job_submissions]
 
     return job_submissions
+
+
+@router.delete(
+    "/job-submissions/{job_submission_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    description="Endpoint to delete job submission",
+)
+async def job_submission_delete(
+    current_user: User = Depends(get_current_user),
+    job_submission_id: int = Query(..., description="id of the job submission to delete"),
+):
+    """
+    Delete job_submission given its id.
+    """
+    where_stmt = (job_submissions_table.c.id == job_submission_id) & (
+        job_submissions_table.c.job_submission_owner_id == current_user.id
+    )
+
+    get_query = job_submissions_table.select().where(where_stmt)
+    raw_job_submission = await database.fetch_one(get_query)
+    if not raw_job_submission:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"JobSubmission with id={job_submission_id} not found for user={current_user.id}",
+        )
+
+    delete_query = job_submissions_table.delete().where(where_stmt)
+    await database.execute(delete_query)
+
+
+@router.put(
+    "/job-submissions/{job_submission_id}",
+    status_code=status.HTTP_201_CREATED,
+    description="Endpoint to update a job_submission given the id",
+    response_model=JobSubmission,
+)
+async def job_script_update(
+    job_submission_id: int = Query(...),
+    job_submission_name: Optional[str] = Form(None),
+    job_submission_description: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Update a job_submission given its id.
+    """
+    query = job_submissions_table.select().where(
+        (job_submissions_table.c.id == job_submission_id)
+        & (job_submissions_table.c.job_submission_owner_id == current_user.id)
+    )
+    raw_job_submission = await database.fetch_one(query)
+
+    if not raw_job_submission:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"JobSubmission with id={job_submission_id} not found for user={current_user.id}",
+        )
+    job_submission_data = JobSubmission.parse_obj(raw_job_submission)
+
+    if job_submission_name is not None:
+        job_submission_data.job_submission_name = job_submission_name
+    if job_submission_description is not None:
+        job_submission_data.job_submission_description = job_submission_description
+
+    job_submission_data.updated_at = datetime.utcnow()
+
+    values = {
+        "job_submission_name": job_submission_data.job_submission_name,
+        "job_submission_description": job_submission_data.job_submission_description,
+        "updated_at": job_submission_data.updated_at,
+    }
+    validated_values = {key: value for key, value in values.items() if value is not None}
+
+    q_update = (
+        job_submissions_table.update()
+        .where(job_submissions_table.c.id == job_submission_id)
+        .values(validated_values)
+    )
+    async with database.transaction():
+        try:
+            await database.execute(q_update)
+        except INTEGRITY_CHECK_EXCEPTIONS as e:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    query = job_submissions_table.select(job_submissions_table.c.id == job_submission_id)
+    return JobSubmission.parse_obj(await database.fetch_one(query))
 
 
 def include_router(app):
