@@ -5,7 +5,8 @@ lint:
 	poetry run pre-commit run -a -v
 
 format:
-	poetry run pre-commit run -a -v isort; poetry run pre-commit run -a -v black
+	poetry run pre-commit run -a -v isort
+	poetry run pre-commit run -a -v black
 
 install:
 	poetry install
