@@ -277,9 +277,8 @@ async def job_script_update(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"JobScript with id={job_script_id} not found for user={current_user.id}",
         )
-    job_script = JobScript.parse_obj(raw_job_script)
+    job_script_data = JobScript.parse_obj(raw_job_script)
 
-    job_script_data = JobScript(**job_script.dict())
     if job_script_name is not None:
         job_script_data.job_script_name = job_script_name
     if job_script_description is not None:
