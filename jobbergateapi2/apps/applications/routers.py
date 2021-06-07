@@ -69,15 +69,13 @@ async def application_delete(
     Delete application from the database and S3 given it's id.
     """
     s3_client = boto3.client("s3")
-    where_stmt = (applications_table.c.id == application_id) & (
-        applications_table.c.application_owner_id == current_user.id
-    )
+    where_stmt = applications_table.c.id == application_id
     get_query = applications_table.select().where(where_stmt)
     raw_application = await database.fetch_one(get_query)
     if not raw_application:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application {application_id=} not found for the user with id={current_user.id}",
+            detail=f"Application {application_id=} not found.",
         )
     application = Application.parse_obj(raw_application)
     delete_query = applications_table.delete().where(where_stmt)
@@ -122,15 +120,12 @@ async def applications_get_by_id(
     """
     Return the application given it's id.
     """
-    query = applications_table.select().where(
-        (applications_table.c.application_owner_id == current_user.id)
-        & (applications_table.c.id == application_id)
-    )
+    query = applications_table.select().where(applications_table.c.id == application_id)
     raw_application = await database.fetch_one(query)
     if not raw_application:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application {application_id=} not found for the user with id={current_user.id}",
+            detail=f"Application {application_id=} not found.",
         )
 
     application = Application.parse_obj(raw_application)
@@ -157,15 +152,12 @@ async def application_update(
     """
     s3_client = boto3.client("s3")
 
-    query = applications_table.select().where(
-        (applications_table.c.application_owner_id == current_user.id)
-        & (applications_table.c.id == application_id)
-    )
+    query = applications_table.select().where(applications_table.c.id == application_id)
     raw_application = await database.fetch_one(query)
     if not raw_application:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application {application_id=} not found for the user with id={current_user.id}",
+            detail=f"Application {application_id=} not found.",
         )
 
     update_dict = {}

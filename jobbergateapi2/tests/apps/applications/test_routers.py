@@ -134,34 +134,6 @@ async def test_delete_application(boto3_client_mock, client, user_data, applicat
 @pytest.mark.asyncio
 @mock.patch("jobbergateapi2.apps.applications.routers.boto3")
 @database.transaction(force_rollback=True)
-async def test_delete_application_not_from_user(boto3_client_mock, client, user_data, application_data):
-    """
-    Test that a userX cannot delete an application owned by userY.
-
-    This test proves that userX cannot delete an application owned by userY. We show this by
-    asserting that the application owned by userY still exists after userX tries to delete it, that
-    the correct response code (404) is returned and that the boto3 method is never called.
-    """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
-    user = [UserCreate(id=1, **user_data)]
-    await insert_objects(user, users_table)
-
-    application = [Application(id=1, application_owner_id=999, **application_data)]
-    await insert_objects(application, applications_table)
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
-
-    response = client.delete("/applications/1")
-    assert response.status_code == status.HTTP_404_NOT_FOUND
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
-    s3_client_mock.delete_object.assert_not_called()
-
-
-@pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
-@database.transaction(force_rollback=True)
 async def test_delete_application_not_found(boto3_client_mock, client, user_data, application_data):
     """
     Test DELETE /applications/<id> the correct response code when the application doesn't exist.
@@ -382,33 +354,3 @@ async def test_update_application(boto3_client_mock, client, user_data, applicat
     assert data["application_description"] == application_data["application_description"]
 
     s3_client_mock.put_object.assert_called_once()
-
-
-@pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
-@database.transaction(force_rollback=True)
-async def test_update_application_wrong_user(boto3_client_mock, client, user_data, application_data):
-    """
-    Test that an userX cannot update an application owned by userY.
-
-    This test proves that userX cannot update an application owned by userY. We show this by
-    asserting that the application id doesn't exist for the user making the request and the
-    expected response is returned.
-    """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
-    file_mock = mock.MagicMock(wraps=StringIO("test"))
-    user = [UserCreate(id=1, **user_data)]
-    await insert_objects(user, users_table)
-
-    applications = [
-        Application(id=1, application_owner_id=2, **application_data),
-    ]
-    await insert_objects(applications, applications_table)
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
-
-    response = client.put("/applications/1", data=application_data, files={"upload_file": file_mock})
-    assert response.status_code == status.HTTP_404_NOT_FOUND
-
-    s3_client_mock.put_object.assert_not_called()

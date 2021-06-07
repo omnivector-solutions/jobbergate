@@ -147,16 +147,13 @@ async def job_script_create(
     Make a post request to this endpoint with the required values to create a new job script.
     """
     param_dict = json.loads(param_dict)
-    query = applications_table.select().where(
-        (applications_table.c.id == application_id)
-        & (applications_table.c.application_owner_id == current_user.id)
-    )
+    query = applications_table.select().where(applications_table.c.id == application_id)
     raw_application = await database.fetch_one(query)
 
     if not raw_application:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application with id={application_id} not found for user={current_user.id}",
+            detail=f"Application with id={application_id} not found.",
         )
     application = Application.parse_obj(raw_application)
     s3_application_tar = get_s3_object_as_tarfile(current_user.id, application.id)
@@ -192,16 +189,13 @@ async def job_script_get(job_script_id: int = Query(...), current_user: User = D
     """
     Return the job_script given it's id.
     """
-    query = job_scripts_table.select().where(
-        (job_scripts_table.c.id == job_script_id)
-        & (job_scripts_table.c.job_script_owner_id == current_user.id)
-    )
+    query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
     raw_job_script = await database.fetch_one(query)
 
     if not raw_job_script:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"JobScript with id={job_script_id} not found for user={current_user.id}",
+            detail=f"JobScript with id={job_script_id} not found.",
         )
     job_script = JobScript.parse_obj(raw_job_script)
     return job_script
@@ -234,16 +228,14 @@ async def job_script_delete(
     """
     Delete job_script given its id.
     """
-    where_stmt = (job_scripts_table.c.id == job_script_id) & (
-        job_scripts_table.c.job_script_owner_id == current_user.id
-    )
+    where_stmt = job_scripts_table.c.id == job_script_id
 
     get_query = job_scripts_table.select().where(where_stmt)
     raw_job_script = await database.fetch_one(get_query)
     if not raw_job_script:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"JobScript with id={job_script_id} not found for user={current_user.id}",
+            detail=f"JobScript with id={job_script_id} not found.",
         )
 
     delete_query = job_scripts_table.delete().where(where_stmt)
@@ -266,16 +258,13 @@ async def job_script_update(
     """
     Update a job_script given its id.
     """
-    query = job_scripts_table.select().where(
-        (job_scripts_table.c.id == job_script_id)
-        & (job_scripts_table.c.job_script_owner_id == current_user.id)
-    )
+    query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
     raw_job_script = await database.fetch_one(query)
 
     if not raw_job_script:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"JobScript with id={job_script_id} not found for user={current_user.id}",
+            detail=f"JobScript with id={job_script_id} not found.",
         )
     job_script_data = JobScript.parse_obj(raw_job_script)
 

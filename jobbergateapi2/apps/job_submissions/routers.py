@@ -27,16 +27,13 @@ async def job_submission_create(
 
     Make a post request to this endpoint with the required values to create a new job submission.
     """
-    query = job_scripts_table.select().where(
-        (job_scripts_table.c.id == (job_submission.job_script_id))
-        & (job_scripts_table.c.job_script_owner_id == (current_user.id))
-    )
+    query = job_scripts_table.select().where(job_scripts_table.c.id == job_submission.job_script_id)
     raw_job_script = await database.fetch_one(query)
 
     if not raw_job_script:
         raise HTTPException(
             status_code=404,
-            detail=(f"JobScript id={job_submission.job_script_id} not found for user={current_user.id}"),
+            detail=(f"JobScript id={job_submission.job_script_id} not found."),
         )
 
     async with database.transaction():
@@ -63,16 +60,13 @@ async def job_submission_get(
     """
     Return the job_submission given it's id.
     """
-    query = job_submissions_table.select().where(
-        (job_submissions_table.c.id == job_submission_id)
-        & (job_submissions_table.c.job_submission_owner_id == current_user.id)
-    )
+    query = job_submissions_table.select().where(job_submissions_table.c.id == job_submission_id)
     raw_job_submission = await database.fetch_one(query)
 
     if not raw_job_submission:
         raise HTTPException(
             status_code=404,
-            detail=f"JobSubmission with id={job_submission_id} not found for user={current_user.id}",
+            detail=f"JobSubmission with id={job_submission_id} not found.",
         )
     job_submission = JobSubmission.parse_obj(raw_job_submission)
     return job_submission
@@ -111,9 +105,7 @@ async def job_submission_delete(
     """
     Delete job_submission given its id.
     """
-    where_stmt = (job_submissions_table.c.id == job_submission_id) & (
-        job_submissions_table.c.job_submission_owner_id == current_user.id
-    )
+    where_stmt = job_submissions_table.c.id == job_submission_id
 
     get_query = job_submissions_table.select().where(where_stmt)
     raw_job_submission = await database.fetch_one(get_query)
@@ -142,16 +134,13 @@ async def job_script_update(
     """
     Update a job_submission given its id.
     """
-    query = job_submissions_table.select().where(
-        (job_submissions_table.c.id == job_submission_id)
-        & (job_submissions_table.c.job_submission_owner_id == current_user.id)
-    )
+    query = job_submissions_table.select().where(job_submissions_table.c.id == job_submission_id)
     raw_job_submission = await database.fetch_one(query)
 
     if not raw_job_submission:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"JobSubmission with id={job_submission_id} not found for user={current_user.id}",
+            detail=f"JobSubmission with id={job_submission_id} not found.",
         )
     job_submission_data = JobSubmission.parse_obj(raw_job_submission)
 

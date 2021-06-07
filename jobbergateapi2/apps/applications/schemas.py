@@ -1,5 +1,5 @@
 """
-Defines the schema for the resource User
+Defines the schema for the resource User.
 """
 from datetime import datetime
 from typing import Optional
@@ -15,8 +15,8 @@ class ApplicationRequest(BaseModel):
     application_name: str = Field(...)
     application_description: Optional[str] = Field("")
     application_owner_id: Optional[int] = Field(None, description="The User id of the owner")
-    application_file: str
-    application_config: str
+    application_file: str = Field(..., description="Application file content (.py) as text")
+    application_config: str = Field(..., description="Application config file content (.yaml) as text")
 
     class Config:
         orm_mode = True
