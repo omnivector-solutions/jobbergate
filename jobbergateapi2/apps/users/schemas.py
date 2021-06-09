@@ -23,6 +23,7 @@ class User(BaseModel):
     is_superuser: Optional[bool] = Field(False)
     full_name: str = Field(..., description="Full name of the user")
     data_joined: Optional[datetime] = Field(datetime.utcnow())
+    principals: Optional[str] = Field("", description="String separated by |")
 
     class Config:
         orm_mode = True
@@ -48,7 +49,6 @@ class UserCreate(User):
     password: str = Field(
         None, min_length=12, max_length=100, description="Password with length between 12 and 100 characters"
     )
-    principals: Optional[str] = Field("", description="String separated by |")
 
     def hash_password(self):
         """

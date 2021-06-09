@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application, ApplicationRequest
-from jobbergateapi2.apps.auth.authentication import get_current_user
+from jobbergateapi2.apps.auth.authentication import Permission, get_current_user
 from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
@@ -17,6 +17,21 @@ from jobbergateapi2.storage import database
 
 S3_BUCKET = f"jobbergateapi2-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
 router = APIRouter()
+
+
+async def get_application(application_id: int):
+    """
+    Return application given its id.
+    """
+    query = applications_table.select().where(applications_table.c.id == application_id)
+    raw_application = await database.fetch_one(query)
+    if not raw_application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application {application_id=} not found.",
+        )
+
+    return Application.parse_obj(raw_application)
 
 
 @router.post("/applications/", status_code=201, description="Endpoint for application creation")
@@ -114,21 +129,10 @@ async def applications_list(
     description="Endpoint to return an application given the id",
     response_model=Application,
 )
-async def applications_get_by_id(
-    application_id: int = Query(...), current_user: User = Depends(get_current_user)
-):
+async def applications_get_by_id(application: Application = Permission("view", get_application)):
     """
     Return the application given it's id.
     """
-    query = applications_table.select().where(applications_table.c.id == application_id)
-    raw_application = await database.fetch_one(query)
-    if not raw_application:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application {application_id=} not found.",
-        )
-
-    application = Application.parse_obj(raw_application)
     return application
 
 

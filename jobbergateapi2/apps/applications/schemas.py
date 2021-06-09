@@ -4,6 +4,7 @@ Defines the schema for the resource User.
 from datetime import datetime
 from typing import Optional
 
+from fastapi_permissions import Allow, Authenticated
 from pydantic import BaseModel, Field
 
 
@@ -23,6 +24,11 @@ class ApplicationRequest(BaseModel):
 
     def __str__(self):
         return self.application_name
+
+    def __acl__(self):
+        return [
+            (Allow, Authenticated, "view"),
+        ]
 
 
 class Application(ApplicationRequest):
