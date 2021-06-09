@@ -6,9 +6,12 @@ from typing import List, Optional
 
 import boto3
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi_permissions import Allow, Deny, Authenticated
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application, ApplicationRequest
+from jobbergateapi2.apps.application_permissions.models import application_permissions_table
+from jobbergateapi2.apps.application_permissions.schemas import ApplicationPermission
 from jobbergateapi2.apps.auth.authentication import Permission, get_current_user
 from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
@@ -19,19 +22,24 @@ S3_BUCKET = f"jobbergateapi2-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_RE
 router = APIRouter()
 
 
-async def get_application(application_id: int):
+async def applications_acl_as_list():
     """
-    Return application given its id.
+    Return the application_permissions.
     """
-    query = applications_table.select().where(applications_table.c.id == application_id)
-    raw_application = await database.fetch_one(query)
-    if not raw_application:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application {application_id=} not found.",
-        )
-
-    return Application.parse_obj(raw_application)
+    query = application_permissions_table.select()
+    raw_permissions = await database.fetch_all(query)
+    permissions = [ApplicationPermission.parse_obj(x) for x in raw_permissions]
+    acl_list = []
+    for permission in permissions:
+        action, principal, permission = permission.acl.split("|")
+        action_type = Deny
+        if action == "Allow":
+            action_type = Allow
+        principal_type = principal
+        if principal == "Authenticated":
+            principal_type = Authenticated
+        acl_list.append((action_type, principal_type, permission))
+    return acl_list
 
 
 @router.post("/applications/", status_code=201, description="Endpoint for application creation")
@@ -42,6 +50,7 @@ async def applications_create(
     application_file: str = Form(...),
     current_user: User = Depends(get_current_user),
     upload_file: UploadFile = File(...),
+    acls: list = Permission("create", applications_acl_as_list)
 ):
     """
     Create new applications using an authenticated user.
@@ -79,6 +88,7 @@ async def applications_create(
 async def application_delete(
     current_user: User = Depends(get_current_user),
     application_id: int = Query(..., description="id of the application to delete"),
+    acls: list = Permission("delete", applications_acl_as_list)
 ):
     """
     Delete application from the database and S3 given it's id.
@@ -108,7 +118,8 @@ async def application_delete(
     response_model=List[Application],
 )
 async def applications_list(
-    all: Optional[bool] = Query(None), current_user: User = Depends(get_current_user)
+    all: Optional[bool] = Query(None), current_user: User = Depends(get_current_user),
+    acls: list = Permission("view", applications_acl_as_list)
 ):
     """
     List applications for the authenticated user.
@@ -129,10 +140,22 @@ async def applications_list(
     description="Endpoint to return an application given the id",
     response_model=Application,
 )
-async def applications_get_by_id(application: Application = Permission("view", get_application)):
+async def applications_get_by_id(
+    application_id: int = Query(...),
+    acls: list = Permission("view", applications_acl_as_list)
+):
     """
     Return the application given it's id.
     """
+    query = applications_table.select().where(applications_table.c.id == application_id)
+    raw_application = await database.fetch_one(query)
+    if not raw_application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application {application_id=} not found.",
+        )
+    application = Application.parse_obj(raw_application)
+
     return application
 
 
@@ -150,6 +173,7 @@ async def application_update(
     application_file: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
     upload_file: Optional[UploadFile] = File(None),
+    acls: list = Permission("update", applications_acl_as_list)
 ):
     """
     Update an application given it's id.

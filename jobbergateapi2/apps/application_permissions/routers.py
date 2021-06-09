@@ -60,7 +60,7 @@ async def application_permissions_create(
 @router.get(
     "/application-permissions/",
     description="Endpoint to list application permissions",
-    response_model=List[ApplicationPermission],
+    response_model=List[str],
 )
 async def application_permissions_list(current_user: User = Depends(get_current_user)):
     """
@@ -69,7 +69,8 @@ async def application_permissions_list(current_user: User = Depends(get_current_
     query = application_permissions_table.select()
     raw_permissions = await database.fetch_all(query)
     permissions = [ApplicationPermission.parse_obj(x) for x in raw_permissions]
-    return permissions
+    acl_permissions = [permission.acl for permission in permissions]
+    return acl_permissions
 
 
 @router.delete(

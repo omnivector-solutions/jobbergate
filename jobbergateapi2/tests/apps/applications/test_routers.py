@@ -10,6 +10,8 @@ from fastapi import status
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application
+from jobbergateapi2.apps.application_permissions.models import application_permissions_table
+from jobbergateapi2.apps.application_permissions.schemas import ApplicationPermission
 from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import UserCreate
 from jobbergateapi2.storage import database
@@ -39,6 +41,9 @@ async def test_create_application(boto3_client_mock, application_data, client, u
     user = [UserCreate(**user_data)]
     await insert_objects(user, users_table)
 
+    application_permission = [ApplicationPermission(id=1, acl="Allow|role:admin|create")]
+    await insert_objects(application_permission, application_permissions_table)
+
     response = client.post("/applications/", data=application_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_201_CREATED
     s3_client_mock.put_object.assert_called_once()
@@ -65,6 +70,9 @@ async def test_create_without_application_name(boto3_client_mock, application_da
 
     user = [UserCreate(**user_data)]
     await insert_objects(user, users_table)
+
+    application_permission = [ApplicationPermission(id=1, acl="Allow|role:admin|create")]
+    await insert_objects(application_permission, application_permissions_table)
 
     application_data["application_name"] = None
     response = client.post("/applications/", data=application_data, files={"upload_file": file_mock})
@@ -93,6 +101,9 @@ async def test_create_without_file(boto3_client_mock, application_data, client, 
     user = [UserCreate(**user_data)]
     await insert_objects(user, users_table)
 
+    application_permission = [ApplicationPermission(id=1, acl="Allow|role:admin|create")]
+    await insert_objects(application_permission, application_permissions_table)
+
     application_data["application_name"] = None
     response = client.post("/applications/", data=application_data)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -118,6 +129,9 @@ async def test_delete_application(boto3_client_mock, client, user_data, applicat
     boto3_client_mock.client.return_value = s3_client_mock
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+
+    application_permission = [ApplicationPermission(id=1, acl="Allow|role:admin|delete")]
+    await insert_objects(application_permission, application_permissions_table)
 
     application = [Application(application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
@@ -147,6 +161,9 @@ async def test_delete_application_not_found(boto3_client_mock, client, user_data
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
 
+    application_permission = [ApplicationPermission(id=1, acl="Allow|role:admin|delete")]
+    await insert_objects(application_permission, application_permissions_table)
+
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -175,6 +192,9 @@ async def test_delete_application_without_id(boto3_client_mock, client, user_dat
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
 
+    application_permission = [ApplicationPermission(id=1, acl="Allow|role:admin|delete")]
+    await insert_objects(application_permission, application_permissions_table)
+
     response = client.delete("/applications/")
     assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
     s3_client_mock.delete_object.assert_not_called()
@@ -196,6 +216,10 @@ async def test_get_application_by_id(client, user_data, application_data):
 
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
+
+    application_permission = [ApplicationPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(application_permission, application_permissions_table)
+
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
@@ -222,6 +246,9 @@ async def test_get_application_by_id_invalid(client, user_data):
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
 
+    application_permission = [ApplicationPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(application_permission, application_permissions_table)
+
     response = client.get("/applications/10")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -238,6 +265,9 @@ async def test_get_application_all_from_user(client, user_data, application_data
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+
+    application_permission = [ApplicationPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(application_permission, application_permissions_table)
 
     applications = [
         Application(id=1, application_owner_id=1, **application_data),
@@ -271,6 +301,9 @@ async def test_get_application_all_from_user_empty(client, user_data, applicatio
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
 
+    application_permission = [ApplicationPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(application_permission, application_permissions_table)
+
     applications = [
         Application(id=1, application_owner_id=999, **application_data),
         Application(id=2, application_owner_id=999, **application_data),
@@ -298,6 +331,9 @@ async def test_get_all_applications(client, user_data, application_data):
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+
+    application_permission = [ApplicationPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(application_permission, application_permissions_table)
 
     applications = [
         Application(id=1, application_owner_id=1, **application_data),
@@ -334,6 +370,9 @@ async def test_update_application(boto3_client_mock, client, user_data, applicat
     file_mock = mock.MagicMock(wraps=StringIO("test"))
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+
+    application_permission = [ApplicationPermission(id=1, acl="Allow|role:admin|update")]
+    await insert_objects(application_permission, application_permissions_table)
 
     applications = [
         Application(
