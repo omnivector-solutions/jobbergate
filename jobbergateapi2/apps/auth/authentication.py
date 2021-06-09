@@ -6,6 +6,7 @@ from typing import Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from fastapi_permissions import Authenticated, Everyone, configure_permissions
 from jose import JWTError, jwt
 
 from jobbergateapi2.apps.users.models import users_table
@@ -43,6 +44,18 @@ async def get_current_user(email: str = Depends(validate_token)):
     query = users_table.select().where(users_table.c.email == email)
     user = User.parse_obj(await database.fetch_one(query))
     return user
+
+
+def get_active_principals(user: User = Depends(get_current_user)):
+    if user:
+        principals = user.principals.split("|") if user.principals != "" else []
+        principals.extend([Everyone, Authenticated])
+    else:
+        principals = [Everyone]
+    return principals
+
+
+Permission = configure_permissions(get_active_principals)
 
 
 async def authenticate_user(form_data):

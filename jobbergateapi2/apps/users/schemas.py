@@ -48,7 +48,7 @@ class UserCreate(User):
     password: str = Field(
         None, min_length=12, max_length=100, description="Password with length between 12 and 100 characters"
     )
-    principals: Optional[str] = Field("")
+    principals: Optional[str] = Field("", description="String separated by |")
 
     def hash_password(self):
         """
