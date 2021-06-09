@@ -26,6 +26,26 @@ class ApplicationRequest(BaseModel):
         return self.application_name
 
     def __acl__(self):
+        """
+        Currently returns only a tuple.
+
+        # There is a table 'applications_permissions', with only an acl String column
+        # here applications_acl returns a list of strings, each string is separated by |
+        # e.g. applications_acl=["Allow|role:admin|view", "Deny|Authenticated|delete"]
+        acl_list = []
+
+        for acl in applications_acl:
+            action, principal, permission = acl.split("|")
+            action_type = Deny
+            if action == "Allow":
+                action_type = Allow
+            principal_type = principal
+            if principal == "Authenticated":
+                principal_type = Authenticated
+            acl_list.append((action_type, principal_type, permission))
+
+        return acl_list
+        """
         return [
             (Allow, Authenticated, "view"),
         ]
