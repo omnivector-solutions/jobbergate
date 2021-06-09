@@ -1,5 +1,5 @@
 """
-Application that holds the authentication process using JWT token
+Application that holds the authentication process using JWT token.
 """
 from datetime import datetime, timedelta
 from typing import Optional
@@ -25,7 +25,7 @@ credentials_exception = HTTPException(
 
 def validate_token(token: str = Depends(oauth2_scheme)):
     """
-    Given a token check if it is valid
+    Given a token check if it is valid.
     """
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
@@ -39,7 +39,7 @@ def validate_token(token: str = Depends(oauth2_scheme)):
 
 async def get_current_user(email: str = Depends(validate_token)):
     """
-    Return the user of the token
+    Return the user of the token.
     """
     query = users_table.select().where(users_table.c.email == email)
     user = User.parse_obj(await database.fetch_one(query))
@@ -47,6 +47,9 @@ async def get_current_user(email: str = Depends(validate_token)):
 
 
 def get_active_principals(user: User = Depends(get_current_user)):
+    """
+    Return the principals for the active user.
+    """
     if user:
         principals = user.principals.split("|") if user.principals != "" else []
         principals.extend([Everyone, Authenticated])
@@ -60,7 +63,7 @@ Permission = configure_permissions(get_active_principals)
 
 async def authenticate_user(form_data):
     """
-    Try to authenticate the user using form_data email and password, raises 401 otherwise
+    Try to authenticate the user using form_data email and password, raises 401 otherwise.
     """
     query = users_table.select().where(users_table.c.email == form_data.username)
     user = await database.fetch_one(query)
@@ -79,7 +82,7 @@ async def authenticate_user(form_data):
 
 class Token:
     """
-    Class used to create and manage a JWT token for an authenticated user
+    Class used to create and manage a JWT token for an authenticated user.
     """
 
     def __init__(self, user):
@@ -87,7 +90,7 @@ class Token:
 
     def create(self):
         """
-        Function used to create a token with default expiration time
+        Function used to create a token with default expiration time.
         """
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = self._create_access_token(
@@ -98,7 +101,7 @@ class Token:
 
     def _create_access_token(self, data: dict, expires_delta: Optional[timedelta] = None):
         """
-        Given the user data and a expiration time, creates a encoded JWT token
+        Given the user data and a expiration time, creates a encoded JWT token.
         """
         to_encode = data.copy()
         if expires_delta:
