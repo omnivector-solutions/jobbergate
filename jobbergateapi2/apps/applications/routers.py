@@ -42,7 +42,9 @@ async def applications_acl_as_list():
     return acl_list
 
 
-@router.post("/applications/", status_code=201, description="Endpoint for application creation")
+@router.post(
+    "/applications/", status_code=status.HTTP_201_CREATED, description="Endpoint for application creation"
+)
 async def applications_create(
     application_name: str = Form(...),
     application_description: str = Form(""),
@@ -72,7 +74,7 @@ async def applications_create(
             application_created_id = await database.execute(query=query, values=values)
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
-            raise HTTPException(status_code=422, detail=str(e))
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     application_location = f"{settings.S3_BASE_PATH}/{application.application_owner_id}/applications/{application_created_id}/jobbergate.tar.gz"  # noqa
     s3_client.put_object(
         Body=upload_file.file,
@@ -83,7 +85,9 @@ async def applications_create(
 
 
 @router.delete(
-    "/applications/{application_id}", status_code=204, description="Endpoint to delete application"
+    "/applications/{application_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    description="Endpoint to delete application",
 )
 async def application_delete(
     current_user: User = Depends(get_current_user),
@@ -161,7 +165,7 @@ async def applications_get_by_id(
 
 @router.put(
     "/applications/{application_id}",
-    status_code=201,
+    status_code=status.HTTP_201_CREATED,
     description="Endpoint to update an application given the id",
     response_model=Application,
 )
@@ -207,7 +211,7 @@ async def application_update(
             await database.execute(q_update)
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
-            raise HTTPException(status_code=422, detail=str(e))
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     application_location = (
         f"{settings.S3_BASE_PATH}/{current_user.id}/applications/{application_id}/jobbergate.tar.gz"
     )
