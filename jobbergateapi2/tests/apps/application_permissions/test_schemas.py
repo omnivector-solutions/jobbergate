@@ -17,7 +17,7 @@ from jobbergateapi2.apps.application_permissions.schemas import ApplicationPermi
         ("Allow|admin|view|"),
         ("Allow|role:admin|view|"),
         ("Den|role:admin|view"),
-    ]
+    ],
 )
 def test_create_application_permission_bad_acl(acl):
     with pytest.raises(ValidationError):
@@ -30,7 +30,7 @@ def test_create_application_permission_bad_acl(acl):
         ("Deny|role:admin|delete"),
         ("Allow|Authenticated|view"),
         ("Deny|role:troll|create"),
-    ]
+    ],
 )
 def test_create_application_permission(acl):
     permission = ApplicationPermission(acl=acl)
