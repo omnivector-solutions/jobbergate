@@ -7,10 +7,12 @@ from unittest import mock
 import nest_asyncio
 import pytest
 from fastapi import status
+from fastapi_permissions import Allow, Authenticated, Deny
 
 from jobbergateapi2.apps.application_permissions.models import application_permissions_table
 from jobbergateapi2.apps.application_permissions.schemas import ApplicationPermission
 from jobbergateapi2.apps.applications.models import applications_table
+from jobbergateapi2.apps.applications.routers import applications_acl_as_list
 from jobbergateapi2.apps.applications.schemas import Application
 from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import UserCreate
@@ -556,3 +558,38 @@ async def test_update_application_bad_permission(boto3_client_mock, client, user
     assert application.application_name != application_data["application_name"]
     assert application.application_owner_id == 1
     assert application.application_description == "old description"
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_applications_acl_as_list():
+    """
+    Test that the applications_acl_as_list function returns the correct result.
+
+    We show this by asserting the return of the function with the expected output.
+    """
+    application_permissions = [
+        ApplicationPermission(id=1, acl="Allow|role:admin|create"),
+        ApplicationPermission(id=2, acl="Deny|Authenticated|delete"),
+    ]
+    await insert_objects(application_permissions, application_permissions_table)
+
+    acl = await applications_acl_as_list()
+
+    assert acl == [
+        (Allow, "role:admin", "create"),
+        (Deny, Authenticated, "delete"),
+    ]
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_applications_acl_as_list_empty():
+    """
+    Test that the applications_acl_as_list returns an empty list when there is nothing in the database.
+
+    We show this by asserting the return of the function with an empty list.
+    """
+    acl = await applications_acl_as_list()
+
+    assert acl == []
