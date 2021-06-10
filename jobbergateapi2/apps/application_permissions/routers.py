@@ -17,7 +17,7 @@ router = APIRouter()
 
 
 def check_acl_string(acl_string: str):
-    regex = "^(Allow|Deny)\|[\w:]+\|\w+$"  # noqa
+    regex = r"^(Allow|Deny)\|\w+:\w+\|\w+$"
     if re.match(regex, acl_string):
         return True
     else:
@@ -60,7 +60,7 @@ async def application_permissions_create(
 @router.get(
     "/application-permissions/",
     description="Endpoint to list application permissions",
-    response_model=List[str],
+    response_model=List[ApplicationPermission],
 )
 async def application_permissions_list(current_user: User = Depends(get_current_user)):
     """
@@ -69,8 +69,7 @@ async def application_permissions_list(current_user: User = Depends(get_current_
     query = application_permissions_table.select()
     raw_permissions = await database.fetch_all(query)
     permissions = [ApplicationPermission.parse_obj(x) for x in raw_permissions]
-    acl_permissions = [permission.acl for permission in permissions]
-    return acl_permissions
+    return permissions
 
 
 @router.delete(
@@ -85,6 +84,11 @@ async def application_permissions_delete(
     """
     Delete application permission given its id.
     """
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="To delete permissions the user must be superuser",
+        )
     where_stmt = application_permissions_table.c.id == permission_id
     get_query = application_permissions_table.select().where(where_stmt)
     raw_permission = await database.fetch_one(get_query)
