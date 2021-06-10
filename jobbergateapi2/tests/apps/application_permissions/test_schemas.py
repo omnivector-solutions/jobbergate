@@ -20,6 +20,9 @@ from jobbergateapi2.apps.application_permissions.schemas import ApplicationPermi
     ],
 )
 def test_create_application_permission_bad_acl(acl):
+    """
+    Test that is not possible to create an ApplicationPermission with the wrong format.
+    """
     with pytest.raises(ValidationError):
         ApplicationPermission(acl=acl)
 
@@ -33,6 +36,9 @@ def test_create_application_permission_bad_acl(acl):
     ],
 )
 def test_create_application_permission(acl):
+    """
+    Test multiple allowed formats to create ApplicationPermission.
+    """
     permission = ApplicationPermission(acl=acl)
     assert permission is not None
     assert permission.acl == acl
