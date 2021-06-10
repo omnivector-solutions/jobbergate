@@ -2,9 +2,8 @@
 Defines the schema for the resource Application.
 """
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional
 
-from fastapi_permissions import Allow, Authenticated
 from pydantic import BaseModel, Field
 
 

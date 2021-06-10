@@ -6,12 +6,12 @@ from typing import List, Optional
 
 import boto3
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
-from fastapi_permissions import Allow, Deny, Authenticated
+from fastapi_permissions import Allow, Authenticated, Deny
 
-from jobbergateapi2.apps.applications.models import applications_table
-from jobbergateapi2.apps.applications.schemas import Application, ApplicationRequest
 from jobbergateapi2.apps.application_permissions.models import application_permissions_table
 from jobbergateapi2.apps.application_permissions.schemas import ApplicationPermission
+from jobbergateapi2.apps.applications.models import applications_table
+from jobbergateapi2.apps.applications.schemas import Application, ApplicationRequest
 from jobbergateapi2.apps.auth.authentication import Permission, get_current_user
 from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
@@ -50,7 +50,7 @@ async def applications_create(
     application_file: str = Form(...),
     current_user: User = Depends(get_current_user),
     upload_file: UploadFile = File(...),
-    acls: list = Permission("create", applications_acl_as_list)
+    acls: list = Permission("create", applications_acl_as_list),
 ):
     """
     Create new applications using an authenticated user.
@@ -88,7 +88,7 @@ async def applications_create(
 async def application_delete(
     current_user: User = Depends(get_current_user),
     application_id: int = Query(..., description="id of the application to delete"),
-    acls: list = Permission("delete", applications_acl_as_list)
+    acls: list = Permission("delete", applications_acl_as_list),
 ):
     """
     Delete application from the database and S3 given it's id.
@@ -118,8 +118,9 @@ async def application_delete(
     response_model=List[Application],
 )
 async def applications_list(
-    all: Optional[bool] = Query(None), current_user: User = Depends(get_current_user),
-    acls: list = Permission("view", applications_acl_as_list)
+    all: Optional[bool] = Query(None),
+    current_user: User = Depends(get_current_user),
+    acls: list = Permission("view", applications_acl_as_list),
 ):
     """
     List applications for the authenticated user.
@@ -141,8 +142,7 @@ async def applications_list(
     response_model=Application,
 )
 async def applications_get_by_id(
-    application_id: int = Query(...),
-    acls: list = Permission("view", applications_acl_as_list)
+    application_id: int = Query(...), acls: list = Permission("view", applications_acl_as_list)
 ):
     """
     Return the application given it's id.
@@ -173,7 +173,7 @@ async def application_update(
     application_file: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
     upload_file: Optional[UploadFile] = File(None),
-    acls: list = Permission("update", applications_acl_as_list)
+    acls: list = Permission("update", applications_acl_as_list),
 ):
     """
     Update an application given it's id.

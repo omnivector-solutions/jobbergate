@@ -8,10 +8,10 @@ import nest_asyncio
 import pytest
 from fastapi import status
 
-from jobbergateapi2.apps.applications.models import applications_table
-from jobbergateapi2.apps.applications.schemas import Application
 from jobbergateapi2.apps.application_permissions.models import application_permissions_table
 from jobbergateapi2.apps.application_permissions.schemas import ApplicationPermission
+from jobbergateapi2.apps.applications.models import applications_table
+from jobbergateapi2.apps.applications.schemas import Application
 from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import UserCreate
 from jobbergateapi2.storage import database

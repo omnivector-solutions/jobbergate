@@ -30,7 +30,7 @@ def user_data():
         "email": "user1@email.com",
         "full_name": "username",
         "password": "supersecret123456",
-        "principals": "role:admin"
+        "principals": "role:admin",
     }
 
 
