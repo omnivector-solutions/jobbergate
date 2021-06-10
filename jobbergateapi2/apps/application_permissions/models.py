@@ -10,5 +10,5 @@ application_permissions_table = Table(
     "application_permissions",
     metadata,
     Column("id", Integer, primary_key=True),
-    Column("acl", String, nullable=False, index=True),
+    Column("acl", String, nullable=False, unique=True),
 )
