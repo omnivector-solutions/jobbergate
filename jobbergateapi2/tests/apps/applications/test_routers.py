@@ -55,6 +55,33 @@ async def test_create_application(boto3_client_mock, application_data, client, u
 @pytest.mark.asyncio
 @mock.patch("jobbergateapi2.apps.applications.routers.boto3")
 @database.transaction(force_rollback=True)
+async def test_create_application_bad_permission(boto3_client_mock, application_data, client, user_data):
+    """
+    Test that it is not possible to create application without proper permission.
+
+    This test proves that is not possible to create an application without the proper permission.
+    We show this by trying to create an application without an permission that allow "create" then assert
+    that the application still does not exists in the database, the correct status code (403) is returned
+    and that the boto3 method is never called.
+    """
+    s3_client_mock = mock.Mock()
+    boto3_client_mock.client.return_value = s3_client_mock
+    file_mock = mock.MagicMock(wraps=StringIO("test"))
+
+    user = [UserCreate(**user_data)]
+    await insert_objects(user, users_table)
+
+    response = client.post("/applications/", data=application_data, files={"upload_file": file_mock})
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    s3_client_mock.put_object.assert_not_called()
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 0
+
+
+@pytest.mark.asyncio
+@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
+@database.transaction(force_rollback=True)
 async def test_create_without_application_name(boto3_client_mock, application_data, client, user_data):
     """
     Test that is not possible to create an application without the required parameters.
