@@ -12,7 +12,7 @@ class ApplicationPermission(BaseModel):
     """
 
     id: Optional[int] = Field(None)
-    acl: str = Field(...)
+    acl: str = Field(..., regex=r"^(Allow|Deny)\|\w+:\w+\|\w+$")
 
     class Config:
         orm_mode = True

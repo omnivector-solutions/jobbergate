@@ -3,7 +3,6 @@ import pytest
 from fastapi import status
 
 from jobbergateapi2.apps.application_permissions.models import application_permissions_table
-from jobbergateapi2.apps.application_permissions.routers import check_acl_string
 from jobbergateapi2.apps.application_permissions.schemas import ApplicationPermission
 from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import UserCreate
@@ -14,23 +13,6 @@ from jobbergateapi2.tests.apps.conftest import insert_objects
 # this lib is necessary to avoid the errror "this event loop
 # is already running"
 nest_asyncio.apply()
-
-
-@pytest.mark.parametrize(
-    "string,expected",
-    [
-        ("Allow|role:admin|view", True),
-        ("Deny|role:some_role|create", True),
-        ("Deny|role|update", False),
-        ("Deny", False),
-        ("Allow|update", False),
-        ("Allow|role:admin", False),
-        ("Allow|admin|view|", False),
-        ("Allow|role:admin|view|", False),
-    ],
-)
-def test_check_acl_string(string, expected):
-    assert check_acl_string(string) is expected
 
 
 @pytest.mark.asyncio

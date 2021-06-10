@@ -1,10 +1,10 @@
 """
 Router for the ApplicationPermissions resource.
 """
-import re
 from typing import List
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, status
+from pydantic import ValidationError
 
 from jobbergateapi2.apps.application_permissions.models import application_permissions_table
 from jobbergateapi2.apps.application_permissions.schemas import ApplicationPermission
@@ -14,14 +14,6 @@ from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.storage import database
 
 router = APIRouter()
-
-
-def check_acl_string(acl_string: str):
-    regex = r"^(Allow|Deny)\|\w+:\w+\|\w+$"
-    if re.match(regex, acl_string):
-        return True
-    else:
-        return False
 
 
 @router.post(
@@ -42,9 +34,10 @@ async def application_permissions_create(
             detail="To create permissions the user must be superuser",
         )
 
-    if not check_acl_string(acl):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Wrong ACL format")
-
+    try:
+        permission = ApplicationPermission(acl=acl)
+    except ValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     async with database.transaction():
         try:
             query = application_permissions_table.insert()
@@ -54,7 +47,8 @@ async def application_permissions_create(
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
-    return ApplicationPermission(id=permission_created_id, acl=acl)
+        permission.id = permission_created_id
+        return permission
 
 
 @router.get(
