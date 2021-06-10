@@ -24,7 +24,15 @@ def test_create_application_permission_bad_acl(acl):
         ApplicationPermission(acl=acl)
 
 
-def test_create_application_permission():
-    permission = ApplicationPermission(acl="Allow|role:updater|update")
+@pytest.mark.parametrize(
+    "acl",
+    [
+        ("Deny|role:admin|delete"),
+        ("Allow|Authenticated|view"),
+        ("Deny|role:troll|create"),
+    ]
+)
+def test_create_application_permission(acl):
+    permission = ApplicationPermission(acl=acl)
     assert permission is not None
-    assert permission.acl == "Allow|role:updater|update"
+    assert permission.acl == acl
