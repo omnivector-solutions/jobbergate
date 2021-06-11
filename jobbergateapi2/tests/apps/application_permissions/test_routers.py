@@ -194,6 +194,11 @@ async def test_delete_application_permissions(user_data, client):
     count = await database.fetch_all("SELECT COUNT(*) FROM application_permissions")
     assert count[0][0] == 1
 
+    query = application_permissions_table.select(application_permissions_table.c.id == 2)
+    permission = ApplicationPermission.parse_obj(await database.fetch_one(query))
+
+    assert permission is not None
+
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
