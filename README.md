@@ -5,10 +5,10 @@ We are using the [fastapi_permissions](https://github.com/holgi/fastapi-permissi
 permissions.
 
 The User model has the `principals` field, that holds its permissions roles (e.g. `Authenticated` or
-`role:admin`). Every user that is authenticated have the `Authenticated` role automatically. It is important
+`role:admin`). Every user that is authenticated has the `Authenticated` role automatically. It is important
 to note that the `principals` field is a String field in the database, and each entry is separated by `|`.
 
-Every other resource have the `<resource>Permission` (e.g. `ApplicationPermission`) that holds the ACL for that resource.
+Every other resource has the `<resource>Permission` (e.g. `ApplicationPermission`) that holds the ACL for that resource.
 For example if we want to all the authenticated users to view the `applications`, we need to create the `view`
 permission, it is done like this:
 
