@@ -23,6 +23,7 @@ async def create_super_user(full_name, email, password):
         "password": password,
         "is_superuser": True,
         "is_active": True,
+        "principals": "role:admin",
     }
     await storage.database.execute(query=query, values=values)
     await disconnect_database()

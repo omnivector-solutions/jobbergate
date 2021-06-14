@@ -1,5 +1,5 @@
 """
-Defines the schema for the resource User.
+Defines the schema for the resource Application.
 """
 from datetime import datetime
 from typing import Optional

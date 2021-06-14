@@ -6,10 +6,13 @@ from typing import List, Optional
 
 import boto3
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi_permissions import Allow, Authenticated, Deny
 
+from jobbergateapi2.apps.application_permissions.models import application_permissions_table
+from jobbergateapi2.apps.application_permissions.schemas import ApplicationPermission
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application, ApplicationRequest
-from jobbergateapi2.apps.auth.authentication import get_current_user
+from jobbergateapi2.apps.auth.authentication import Permission, get_current_user
 from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
@@ -19,7 +22,29 @@ S3_BUCKET = f"jobbergateapi2-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_RE
 router = APIRouter()
 
 
-@router.post("/applications/", status_code=201, description="Endpoint for application creation")
+async def applications_acl_as_list():
+    """
+    Return the application_permissions.
+    """
+    query = application_permissions_table.select()
+    raw_permissions = await database.fetch_all(query)
+    permissions = [ApplicationPermission.parse_obj(x) for x in raw_permissions]
+    acl_list = []
+    for permission in permissions:
+        action, principal, permission = permission.acl.split("|")
+        action_type = Deny
+        if action == "Allow":
+            action_type = Allow
+        principal_type = principal
+        if principal == "Authenticated":
+            principal_type = Authenticated
+        acl_list.append((action_type, principal_type, permission))
+    return acl_list
+
+
+@router.post(
+    "/applications/", status_code=status.HTTP_201_CREATED, description="Endpoint for application creation"
+)
 async def applications_create(
     application_name: str = Form(...),
     application_description: str = Form(""),
@@ -27,6 +52,7 @@ async def applications_create(
     application_file: str = Form(...),
     current_user: User = Depends(get_current_user),
     upload_file: UploadFile = File(...),
+    acls: list = Permission("create", applications_acl_as_list),
 ):
     """
     Create new applications using an authenticated user.
@@ -48,7 +74,7 @@ async def applications_create(
             application_created_id = await database.execute(query=query, values=values)
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
-            raise HTTPException(status_code=422, detail=str(e))
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     application_location = f"{settings.S3_BASE_PATH}/{application.application_owner_id}/applications/{application_created_id}/jobbergate.tar.gz"  # noqa
     s3_client.put_object(
         Body=upload_file.file,
@@ -59,11 +85,14 @@ async def applications_create(
 
 
 @router.delete(
-    "/applications/{application_id}", status_code=204, description="Endpoint to delete application"
+    "/applications/{application_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    description="Endpoint to delete application",
 )
 async def application_delete(
     current_user: User = Depends(get_current_user),
     application_id: int = Query(..., description="id of the application to delete"),
+    acls: list = Permission("delete", applications_acl_as_list),
 ):
     """
     Delete application from the database and S3 given it's id.
@@ -93,7 +122,9 @@ async def application_delete(
     response_model=List[Application],
 )
 async def applications_list(
-    all: Optional[bool] = Query(None), current_user: User = Depends(get_current_user)
+    all: Optional[bool] = Query(None),
+    current_user: User = Depends(get_current_user),
+    acls: list = Permission("view", applications_acl_as_list),
 ):
     """
     List applications for the authenticated user.
@@ -115,7 +146,7 @@ async def applications_list(
     response_model=Application,
 )
 async def applications_get_by_id(
-    application_id: int = Query(...), current_user: User = Depends(get_current_user)
+    application_id: int = Query(...), acls: list = Permission("view", applications_acl_as_list)
 ):
     """
     Return the application given it's id.
@@ -127,14 +158,14 @@ async def applications_get_by_id(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Application {application_id=} not found.",
         )
-
     application = Application.parse_obj(raw_application)
+
     return application
 
 
 @router.put(
     "/applications/{application_id}",
-    status_code=201,
+    status_code=status.HTTP_201_CREATED,
     description="Endpoint to update an application given the id",
     response_model=Application,
 )
@@ -146,6 +177,7 @@ async def application_update(
     application_file: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
     upload_file: Optional[UploadFile] = File(None),
+    acls: list = Permission("update", applications_acl_as_list),
 ):
     """
     Update an application given it's id.
@@ -179,7 +211,7 @@ async def application_update(
             await database.execute(q_update)
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
-            raise HTTPException(status_code=422, detail=str(e))
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     application_location = (
         f"{settings.S3_BASE_PATH}/{current_user.id}/applications/{application_id}/jobbergate.tar.gz"
     )

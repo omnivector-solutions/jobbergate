@@ -23,6 +23,7 @@ class User(BaseModel):
     is_superuser: Optional[bool] = Field(False)
     full_name: str = Field(..., description="Full name of the user")
     data_joined: Optional[datetime] = Field(datetime.utcnow())
+    principals: Optional[str] = Field("", description="String separated by |")
 
     class Config:
         orm_mode = True
