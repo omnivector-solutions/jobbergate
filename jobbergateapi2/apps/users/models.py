@@ -17,4 +17,5 @@ users_table = Table(
     Column("full_name", String, nullable=False),
     Column("password", String, nullable=False),
     Column("data_joined", DateTime, nullable=False, default=func.now()),
+    Column("principals", String, nullable=False, default=""),
 )

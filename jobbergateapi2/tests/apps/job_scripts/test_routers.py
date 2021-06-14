@@ -171,38 +171,6 @@ async def test_create_job_script_without_application(
 @pytest.mark.asyncio
 @mock.patch("jobbergateapi2.apps.job_scripts.routers.boto3")
 @database.transaction(force_rollback=True)
-async def test_create_job_script_wrong_user(
-    boto3_client_mock, job_script_data, param_dict, application_data, client, user_data
-):
-    """
-    Test that is not possible to create a job_script based in an application of another user.
-
-    This test proves that is not possible to create a job_script with another user's application.
-    We show this by trying to create a job_script with an application from another user (id=999), then assert
-    that the job_script still does not exists in the database, the correct status code (404) is returned and
-    that the boto3 method is never called.
-    """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
-    file_mock = mock.MagicMock(wraps=StringIO("test"))
-
-    user = [UserCreate(id=1, **user_data)]
-    await insert_objects(user, users_table)
-    application = [Application(id=1, application_owner_id=999, **application_data)]
-    await insert_objects(application, applications_table)
-
-    job_script_data["param_dict"] = json.dumps(param_dict)
-    response = client.post("/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
-    assert response.status_code == status.HTTP_404_NOT_FOUND
-    s3_client_mock.get_object.assert_not_called()
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 0
-
-
-@pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.job_scripts.routers.boto3")
-@database.transaction(force_rollback=True)
 async def test_create_job_script_file_not_found(
     boto3_client_mock, job_script_data, param_dict, application_data, client, user_data
 ):

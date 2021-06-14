@@ -133,6 +133,7 @@ async def users_create(user_data: UserCreate):
                 "password": user_data.hash_password(),
                 "is_superuser": user_data.is_superuser,
                 "is_active": user_data.is_active,
+                "principals": user_data.principals,
             }
             user_created_id = await database.execute(query=query, values=values)
 

@@ -1,5 +1,5 @@
 """
-Database model for the Application resource
+Database model for the Application resource.
 """
 from datetime import datetime
 
