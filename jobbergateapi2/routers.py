@@ -10,7 +10,7 @@ app_routers = [
     "jobbergateapi2.apps.users.routers",
     "jobbergateapi2.apps.auth.routers",
     "jobbergateapi2.apps.applications.routers",
-    "jobbergateapi2.apps.application_permissions.routers",
+    "jobbergateapi2.apps.permissions.routers",
     "jobbergateapi2.apps.job_scripts.routers",
     "jobbergateapi2.apps.job_submissions.routers",
 ]
