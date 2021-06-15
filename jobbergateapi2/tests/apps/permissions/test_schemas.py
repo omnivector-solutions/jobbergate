@@ -29,7 +29,7 @@ def test_regex():
 )
 def test_create_application_permission_bad_acl(acl, permission_class):
     """
-    Test that is not possible to create an ApplicationPermission with the wrong format.
+    Test that is not possible to create a Permission with the wrong format.
     """
     with pytest.raises(ValidationError):
         permission_class(acl=acl)
@@ -46,7 +46,7 @@ def test_create_application_permission_bad_acl(acl, permission_class):
 )
 def test_create_application_permission(acl, permission_class):
     """
-    Test multiple allowed formats to create ApplicationPermission.
+    Test multiple allowed formats to create Permission.
     """
     permission = permission_class(acl=acl)
     assert permission is not None
