@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from jobbergateapi2.apps.permissions.schemas import _ACL_RX, ApplicationPermission
 
 
-def test_regex():
+def test_acl_regex():
     """
     Check if the _ACL_RX is correct.
     """
@@ -27,7 +27,7 @@ def test_regex():
         ("Den|role:admin|view"),
     ],
 )
-def test_create_application_permission_bad_acl(acl, permission_class):
+def test_create_permission_bad_acl(acl, permission_class):
     """
     Test that is not possible to create a Permission with the wrong format.
     """
@@ -44,7 +44,7 @@ def test_create_application_permission_bad_acl(acl, permission_class):
         ("Deny|role:troll|create"),
     ],
 )
-def test_create_application_permission(acl, permission_class):
+def test_create_permission(acl, permission_class):
     """
     Test multiple allowed formats to create Permission.
     """
