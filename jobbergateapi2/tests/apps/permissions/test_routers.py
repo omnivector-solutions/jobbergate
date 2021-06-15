@@ -104,7 +104,7 @@ async def test_create_permissions_duplicated(
 )
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_create_application_permissions_not_superuser(
+async def test_create_permissions_not_superuser(
     user_data, client, permission_class, permission_table, permission_query
 ):
     """
