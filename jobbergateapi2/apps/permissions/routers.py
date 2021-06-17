@@ -4,6 +4,7 @@ Router for the permissions resource.
 from typing import List
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, status
+from fastapi_permissions import Allow, Authenticated, Deny
 from pydantic import ValidationError
 
 from jobbergateapi2.apps.auth.authentication import get_current_user
@@ -19,6 +20,31 @@ router = APIRouter()
 _QUERY_RX = r"^(application|job_script|job_submission)$"
 permission_classes = {"application": ApplicationPermission}
 permission_tables = {"application": application_permissions_table}
+
+
+async def resource_acl_as_list(permission_query):
+    """
+    Return the permissions as a list.
+    For example:
+    [(Allow|Authenticated|view), (Deny|role:troll:delete)]
+    """
+    permission_class = permission_classes[permission_query]
+    permission_table = permission_tables[permission_query]
+
+    query = permission_table.select()
+    raw_permissions = await database.fetch_all(query)
+    permissions = [permission_class.parse_obj(x) for x in raw_permissions]
+    acl_list = []
+    for permission in permissions:
+        action, principal, permission = permission.acl.split("|")
+        action_type = Deny
+        if action == "Allow":
+            action_type = Allow
+        principal_type = principal
+        if principal == "Authenticated":
+            principal_type = Authenticated
+        acl_list.append((action_type, principal_type, permission))
+    return acl_list
 
 
 @router.post(
