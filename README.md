@@ -13,12 +13,12 @@ For example if we want to all the authenticated users to view the `applications`
 permission, it is done like this:
 
 ```bash
-POST /application-permissions/ data={"acl": "Allow|Authenticated|view"}
+POST /permissions/?permission_query=application data={"acl": "Allow|Authenticated|view"}
 ```
 
 And each line in the `<resource>_permissions_table` is in this format: (action, principal, permission), but
 are a String field in the database, for example: `Allow|role:admin|view` and `Deny|Authenticated|delete`.
-It is checked by the following RegEx: `r"^(Allow|Deny)\|(\w+:\w+|Authenticated)\|\w+$"`.
+It is checked by the following RegEx: `r"^(Allow|Deny)\|(role:\w+|Authenticated)\|\w+$"`.
 
 We have currently the following permissions: `view`, `create`, `update`, `delete`.
 

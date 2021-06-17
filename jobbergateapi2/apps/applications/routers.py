@@ -8,11 +8,11 @@ import boto3
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from fastapi_permissions import Allow, Authenticated, Deny
 
-from jobbergateapi2.apps.application_permissions.models import application_permissions_table
-from jobbergateapi2.apps.application_permissions.schemas import ApplicationPermission
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application, ApplicationRequest
 from jobbergateapi2.apps.auth.authentication import Permission, get_current_user
+from jobbergateapi2.apps.permissions.models import application_permissions_table
+from jobbergateapi2.apps.permissions.schemas import ApplicationPermission
 from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
