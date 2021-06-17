@@ -6,13 +6,17 @@ from datetime import datetime
 import nest_asyncio
 import pytest
 from fastapi import status
+from fastapi_permissions import Allow, Authenticated, Deny
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application
 from jobbergateapi2.apps.job_scripts.models import job_scripts_table
 from jobbergateapi2.apps.job_scripts.schemas import JobScript
 from jobbergateapi2.apps.job_submissions.models import job_submissions_table
+from jobbergateapi2.apps.job_submissions.routers import job_submissions_acl_as_list
 from jobbergateapi2.apps.job_submissions.schemas import JobSubmission
+from jobbergateapi2.apps.permissions.models import job_submission_permissions_table
+from jobbergateapi2.apps.permissions.schemas import JobSubmissionPermission
 from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import UserCreate
 from jobbergateapi2.storage import database
@@ -38,6 +42,8 @@ async def test_create_job_submission(
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+    job_submission_permission = [JobSubmissionPermission(id=1, acl="Allow|role:admin|create")]
+    await insert_objects(job_submission_permission, job_submission_permissions_table)
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
     job_script = [JobScript(id=1, **job_script_data)]
@@ -63,8 +69,39 @@ async def test_create_job_submission_without_job_script(client, user_data, job_s
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
 
+    job_submission_permission = [JobSubmissionPermission(id=1, acl="Allow|role:admin|create")]
+    await insert_objects(job_submission_permission, job_submission_permissions_table)
+
     response = client.post("/job-submissions/", json=job_submission_data)
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 0
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_create_job_submission_bad_permission(
+    client, user_data, job_submission_data, application_data, job_script_data
+):
+    """
+    Test that is not possible to create a job_submission without the permission.
+
+    This test proves that is not possible to create a job_submission using a user without the permission.
+    We show this by trying to create a job_submission with a user without permission, then assert that
+    the job_submission still does not exists in the database and the correct status code (403) is returned.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_script = [JobScript(id=1, **job_script_data)]
+    await insert_objects(job_script, job_scripts_table)
+
+    response = client.post("/job-submissions/", json=job_submission_data)
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 0
@@ -85,6 +122,9 @@ async def test_get_job_submission_by_id(
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+
+    job_submission_permission = [JobSubmissionPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(job_submission_permission, job_submission_permissions_table)
 
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
@@ -110,6 +150,33 @@ async def test_get_job_submission_by_id(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
+async def test_get_job_submission_by_id_bad_permission(
+    client, user_data, application_data, job_script_data, job_submission_data
+):
+    """
+    Test the correct response code is returned when the user don't have the proper permission.
+
+    This test proves that GET /job-submissions/<id> returns the correct response code when the user don't
+    have proper permission. We show this by asserting that the status code returned is 403.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_script = [JobScript(id=1, **job_script_data)]
+    await insert_objects(job_script, job_scripts_table)
+
+    job_submissions = [JobSubmission(id=1, job_submission_owner_id=1, **job_submission_data)]
+    await insert_objects(job_submissions, job_submissions_table)
+
+    response = client.get("/job-submissions/1")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
 async def test_get_job_submission_by_id_invalid(client, user_data):
     """
     Test the correct response code is returned when a job_submission does not exist.
@@ -120,6 +187,9 @@ async def test_get_job_submission_by_id_invalid(client, user_data):
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+
+    job_submission_permission = [JobSubmissionPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(job_submission_permission, job_submission_permissions_table)
 
     response = client.get("/job-submissions/10")
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -139,6 +209,9 @@ async def test_list_job_submission_from_user(
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+
+    job_submission_permission = [JobSubmissionPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(job_submission_permission, job_submission_permissions_table)
 
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
@@ -167,6 +240,40 @@ async def test_list_job_submission_from_user(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
+async def test_list_job_submission_bad_permission(
+    client, user_data, application_data, job_submission_data, job_script_data
+):
+    """
+    Test GET /job-submissions/ returns 403 for a user without permission.
+
+    This test proves that GET /job-submissions/ returns the correct status code (403) for a user without
+    permission. We show this by asserting that the status code of the response is 403.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_script = [JobScript(id=1, **job_script_data)]
+    await insert_objects(job_script, job_scripts_table)
+
+    job_submissions = [
+        JobSubmission(id=1, job_submission_owner_id=1, **job_submission_data),
+        JobSubmission(id=2, job_submission_owner_id=999, **job_submission_data),
+        JobSubmission(id=3, job_submission_owner_id=1, **job_submission_data),
+    ]
+    await insert_objects(job_submissions, job_submissions_table)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 3
+
+    response = client.get("/job-submissions/")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
 async def test_list_job_submission_from_user_empty(
     client, user_data, application_data, job_submission_data, job_script_data
 ):
@@ -180,6 +287,9 @@ async def test_list_job_submission_from_user_empty(
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+
+    job_submission_permission = [JobSubmissionPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(job_submission_permission, job_submission_permissions_table)
 
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
@@ -218,6 +328,9 @@ async def test_list_job_submission_all(
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+
+    job_submission_permission = [JobSubmissionPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(job_submission_permission, job_submission_permissions_table)
 
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
@@ -260,6 +373,9 @@ async def test_update_job_submission(
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+
+    job_submission_permission = [JobSubmissionPermission(id=1, acl="Allow|role:admin|update")]
+    await insert_objects(job_submission_permission, job_submission_permissions_table)
 
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
@@ -311,6 +427,9 @@ async def test_update_job_submission_not_found(
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
 
+    job_submission_permission = [JobSubmissionPermission(id=1, acl="Allow|role:admin|update")]
+    await insert_objects(job_submission_permission, job_submission_permissions_table)
+
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
 
@@ -333,6 +452,41 @@ async def test_update_job_submission_not_found(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
+async def test_update_job_submission_bad_permission(
+    client, user_data, application_data, job_script_data, job_submission_data
+):
+    """
+    Test that it is not possible to update a job_submission without the permission.
+
+    This test proves that it is not possible to update a job_submission if the user don't have the permission.
+    We show this by asserting that the response status code of the request is 403, and that the data stored in
+    the database for the job_submission is not updated.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_scripts = [JobScript(id=1, **job_script_data)]
+    await insert_objects(job_scripts, job_scripts_table)
+
+    job_submissions = [JobSubmission(id=1, job_submission_owner_id=1, **job_submission_data)]
+    await insert_objects(job_submissions, job_submissions_table)
+
+    response = client.put("/job-submissions/1", data={"job_submission_name": "new name"})
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    query = job_submissions_table.select(job_submissions_table.c.id == 1)
+    job_submission = JobSubmission.parse_obj(await database.fetch_one(query))
+
+    assert job_submission is not None
+    assert job_submission.job_submission_name == job_submission_data["job_submission_name"]
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
 async def test_delete_job_submission(
     client, user_data, application_data, job_script_data, job_submission_data
 ):
@@ -345,6 +499,9 @@ async def test_delete_job_submission(
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+
+    job_submission_permission = [JobSubmissionPermission(id=1, acl="Allow|role:admin|delete")]
+    await insert_objects(job_submission_permission, job_submission_permissions_table)
 
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
@@ -381,6 +538,9 @@ async def test_delete_job_submission_not_found(
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
 
+    job_submission_permission = [JobSubmissionPermission(id=1, acl="Allow|role:admin|delete")]
+    await insert_objects(job_submission_permission, job_submission_permissions_table)
+
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
 
@@ -399,3 +559,73 @@ async def test_delete_job_submission_not_found(
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 1
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_delete_job_submission_bad_permission(
+    client, user_data, application_data, job_script_data, job_submission_data
+):
+    """
+    Test that it is not possible to delete a job_submission with an user without proper permission.
+
+    This test proves that it is not possible to delete a job_submission if the user don't have the permission.
+    We show this by asserting that a 403 response status code is returned and the job_submission still exists
+    in the database after the request.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_scripts = [JobScript(id=1, **job_script_data)]
+    await insert_objects(job_scripts, job_scripts_table)
+
+    job_submissions = [JobSubmission(id=1, job_submission_owner_id=1, **job_submission_data)]
+    await insert_objects(job_submissions, job_submissions_table)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 1
+
+    response = client.delete("/job-submissions/1")
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 1
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_job_submissions_acl_as_list():
+    """
+    Test that the job_submissions_acl_as_list function returns the correct result.
+
+    We show this by asserting the return of the function with the expected output.
+    """
+    job_submission_permissions = [
+        JobSubmissionPermission(id=1, acl="Allow|role:admin|create"),
+        JobSubmissionPermission(id=2, acl="Deny|Authenticated|delete"),
+    ]
+    await insert_objects(job_submission_permissions, job_submission_permissions_table)
+
+    acl = await job_submissions_acl_as_list()
+
+    assert acl == [
+        (Allow, "role:admin", "create"),
+        (Deny, Authenticated, "delete"),
+    ]
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_job_submissions_acl_as_list_empty():
+    """
+    Test that the job_submissions_acl_as_list returns an empty list when there is nothing in the database.
+
+    We show this by asserting the return of the function with an empty list.
+    """
+    acl = await job_submissions_acl_as_list()
+
+    assert acl == []
