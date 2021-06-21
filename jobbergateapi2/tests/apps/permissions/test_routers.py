@@ -510,3 +510,58 @@ async def test_resource_acl_as_list_empty(permission_query):
     acl = await resource_acl_as_list(permission_query)
 
     assert acl == []
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_list_permissions_all(user_data, client):
+    """
+    Test the GET in the /permissions/all returns the list of all existing Permissions.
+
+    We show this by creating 3 permissions, making the GET request to the /permissions/all endpoint,
+    then asserting the response status code is 200, and the content of the response is as expected.
+    """
+    user = [UserCreate(**user_data)]
+    await insert_objects(user, users_table)
+
+    permission_application = [ApplicationPermission(id=1, acl="Allow|role:admin|create")]
+    await insert_objects(permission_application, application_permissions_table)
+    permission_job_script = [JobScriptPermission(id=1, acl="Allow|role:admin|create")]
+    await insert_objects(permission_job_script, job_script_permissions_table)
+    permission_job_submission = [JobSubmissionPermission(id=1, acl="Allow|role:admin|create")]
+    await insert_objects(permission_job_submission, job_submission_permissions_table)
+
+    response = client.get("/permissions/all")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert len(data) == 3
+
+    assert data[0]["id"] == 1
+    assert data[0]["acl"] == "Allow|role:admin|create"
+    assert data[0]["resource_name"] == "application"
+    assert data[1]["id"] == 1
+    assert data[1]["acl"] == "Allow|role:admin|create"
+    assert data[1]["resource_name"] == "job_script"
+    assert data[2]["id"] == 1
+    assert data[2]["acl"] == "Allow|role:admin|create"
+    assert data[2]["resource_name"] == "job_submission"
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_list_permissions_all_empty(user_data, client):
+    """
+    Test the GET in the /permissions/all returns the list of existing Permissions even when there is none.
+
+    We by making the GET request to the /permissions/all endpoint without any  permission created, then
+    asserting the response status code is 200, and the content of the response is as expected.
+    """
+    user = [UserCreate(**user_data)]
+    await insert_objects(user, users_table)
+
+    response = client.get("/permissions/all")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert len(data) == 0

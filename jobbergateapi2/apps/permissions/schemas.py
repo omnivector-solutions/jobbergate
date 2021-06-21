@@ -6,6 +6,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 _ACL_RX = r"^(Allow|Deny)\|(role:\w+|Authenticated)\|\w+$"
+_RESOURCE_RX = r"^(application|job_script|job_submission)$"
 
 
 class BasePermission(BaseModel):
@@ -39,3 +40,11 @@ class JobSubmissionPermission(BasePermission):
     """
     Permission model for the JobSubmission resource.
     """
+
+
+class AllPermissions(BasePermission):
+    """
+    Schema to return all permissions.
+    """
+
+    resource_name: str = Field(..., regex=_RESOURCE_RX)
