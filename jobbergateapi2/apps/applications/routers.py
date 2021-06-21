@@ -6,13 +6,11 @@ from typing import List, Optional
 
 import boto3
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
-from fastapi_permissions import Allow, Authenticated, Deny
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application, ApplicationRequest
 from jobbergateapi2.apps.auth.authentication import Permission, get_current_user
-from jobbergateapi2.apps.permissions.models import application_permissions_table
-from jobbergateapi2.apps.permissions.schemas import ApplicationPermission
+from jobbergateapi2.apps.permissions.routers import resource_acl_as_list
 from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
@@ -24,22 +22,9 @@ router = APIRouter()
 
 async def applications_acl_as_list():
     """
-    Return the application_permissions.
+    Return the permissions as list for the Application resoruce.
     """
-    query = application_permissions_table.select()
-    raw_permissions = await database.fetch_all(query)
-    permissions = [ApplicationPermission.parse_obj(x) for x in raw_permissions]
-    acl_list = []
-    for permission in permissions:
-        action, principal, permission = permission.acl.split("|")
-        action_type = Deny
-        if action == "Allow":
-            action_type = Allow
-        principal_type = principal
-        if principal == "Authenticated":
-            principal_type = Authenticated
-        acl_list.append((action_type, principal_type, permission))
-    return acl_list
+    return await resource_acl_as_list("application")
 
 
 @router.post(

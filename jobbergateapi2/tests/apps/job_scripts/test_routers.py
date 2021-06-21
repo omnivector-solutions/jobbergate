@@ -12,6 +12,7 @@ import pytest
 from botocore.exceptions import BotoCoreError
 from fastapi import status
 from fastapi.exceptions import HTTPException
+from fastapi_permissions import Allow, Authenticated, Deny
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application
@@ -20,9 +21,12 @@ from jobbergateapi2.apps.job_scripts.routers import (
     build_job_script_data_as_string,
     get_s3_object_as_tarfile,
     inject_sbatch_params,
+    job_scripts_acl_as_list,
     render_template,
 )
 from jobbergateapi2.apps.job_scripts.schemas import JobScript
+from jobbergateapi2.apps.permissions.models import job_script_permissions_table
+from jobbergateapi2.apps.permissions.schemas import JobScriptPermission
 from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import UserCreate
 from jobbergateapi2.storage import database
@@ -121,6 +125,8 @@ async def test_create_job_script(
 
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+    job_script_permission = [JobScriptPermission(id=1, acl="Allow|role:admin|create")]
+    await insert_objects(job_script_permission, job_script_permissions_table)
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
 
@@ -136,6 +142,39 @@ async def test_create_job_script(
 
     assert job_script is not None
     assert job_script.job_script_name == job_script_data["job_script_name"]
+
+
+@pytest.mark.asyncio
+@mock.patch("jobbergateapi2.apps.job_scripts.routers.boto3")
+@database.transaction(force_rollback=True)
+async def test_create_job_script_bad_permission(
+    boto3_client_mock, job_script_data, param_dict, application_data, client, user_data, s3_object
+):
+    """
+    Test that it is not possible to create job_script without proper permission.
+
+    This test proves that is not possible to create a job_script without the proper permission.
+    We show this by trying to create a job_script without a permission that allow "create" then assert
+    that the job_script still does not exists in the database, the correct status code (403) is returned
+    and that the boto3 method is never called.
+    """
+    s3_client_mock = mock.Mock()
+    boto3_client_mock.client.return_value = s3_client_mock
+    file_mock = mock.MagicMock(wraps=StringIO("test"))
+    s3_client_mock.get_object.return_value = s3_object
+
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_script_data["param_dict"] = json.dumps(param_dict)
+    response = client.post("/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    s3_client_mock.get_object.assert_not_called()
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 0
 
 
 @pytest.mark.asyncio
@@ -158,6 +197,8 @@ async def test_create_job_script_without_application(
 
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+    job_script_permission = [JobScriptPermission(id=1, acl="Allow|role:admin|create")]
+    await insert_objects(job_script_permission, job_script_permissions_table)
 
     job_script_data["param_dict"] = json.dumps(param_dict)
     response = client.post("/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
@@ -190,6 +231,8 @@ async def test_create_job_script_file_not_found(
 
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+    job_script_permission = [JobScriptPermission(id=1, acl="Allow|role:admin|create")]
+    await insert_objects(job_script_permission, job_script_permissions_table)
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
 
@@ -272,6 +315,8 @@ async def test_get_job_script_by_id(client, user_data, application_data, job_scr
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+    job_script_permission = [JobScriptPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(job_script_permission, job_script_permissions_table)
 
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
@@ -306,8 +351,34 @@ async def test_get_job_script_by_id_invalid(client, user_data):
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
 
+    job_script_permission = [JobScriptPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(job_script_permission, job_script_permissions_table)
+
     response = client.get("/job-scripts/10")
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_get_job_script_by_id_bad_permission(client, user_data, application_data, job_script_data):
+    """
+    Test the correct response code is returned when the user don't have the proper permission.
+
+    This test proves that GET /job-script/<id> returns the correct response code when the
+    user don't have the proper permission. We show this by asserting that the status code
+    returned is what we would expect (403).
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_script = [JobScript(id=1, **job_script_data)]
+    await insert_objects(job_script, job_scripts_table)
+
+    response = client.get("/job-scripts/1")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 @pytest.mark.asyncio
@@ -322,6 +393,9 @@ async def test_list_job_script_from_user(client, user_data, application_data, jo
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+
+    job_script_permission = [JobScriptPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(job_script_permission, job_script_permissions_table)
 
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
@@ -348,6 +422,36 @@ async def test_list_job_script_from_user(client, user_data, application_data, jo
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
+async def test_list_job_script_bad_permission(client, user_data, application_data, job_script_data):
+    """
+    Test GET /job-scripts/ returns 403 since the user don't have the proper permission.
+
+    This test proves that GET /job-scripts/ returns the 403 status code when the user making the request
+    don't have the permission to list. We show this by asserting that the response status code is 403.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_script_data.pop("job_script_owner_id")
+    job_scripts = [
+        JobScript(id=1, job_script_owner_id=1, **job_script_data),
+        JobScript(id=2, job_script_owner_id=999, **job_script_data),
+        JobScript(id=3, job_script_owner_id=1, **job_script_data),
+    ]
+    await insert_objects(job_scripts, job_scripts_table)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 3
+
+    response = client.get("/job-scripts/")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
 async def test_list_job_script_from_user_empty(client, user_data, application_data, job_script_data):
     """
     Test job_script_list doesn't include job_scripts owned by other users.
@@ -359,6 +463,9 @@ async def test_list_job_script_from_user_empty(client, user_data, application_da
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+
+    job_script_permission = [JobScriptPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(job_script_permission, job_script_permissions_table)
 
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
@@ -393,6 +500,9 @@ async def test_list_job_script_all(client, user_data, application_data, job_scri
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+
+    job_script_permission = [JobScriptPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(job_script_permission, job_script_permissions_table)
 
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
@@ -431,6 +541,9 @@ async def test_update_job_script(client, user_data, application_data, job_script
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+
+    job_script_permission = [JobScriptPermission(id=1, acl="Allow|role:admin|update")]
+    await insert_objects(job_script_permission, job_script_permissions_table)
 
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
@@ -480,6 +593,9 @@ async def test_update_job_script_not_found(client, user_data, application_data, 
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
 
+    job_script_permission = [JobScriptPermission(id=1, acl="Allow|role:admin|update")]
+    await insert_objects(job_script_permission, job_script_permissions_table)
+
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
 
@@ -489,6 +605,36 @@ async def test_update_job_script_not_found(client, user_data, application_data, 
     response = client.put("/job-scripts/123", data={"job_script_name": "new name"})
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    query = job_scripts_table.select(job_scripts_table.c.id == 1)
+    job_script = JobScript.parse_obj(await database.fetch_one(query))
+
+    assert job_script is not None
+    assert job_script.job_script_name == job_script_data["job_script_name"]
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_update_job_script_bad_permission(client, user_data, application_data, job_script_data):
+    """
+    Test that it is not possible to update a job_script if the user don't have the proper permission.
+
+    This test proves that it is not possible to update a job_script if the user don't have permission. We
+    show this by asserting that the response status code of the request is 403, and that the data stored in
+    the database for the job_script is not updated.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_scripts = [JobScript(id=1, **job_script_data)]
+    await insert_objects(job_scripts, job_scripts_table)
+
+    response = client.put("/job-scripts/1", data={"job_script_name": "new name"})
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
     query = job_scripts_table.select(job_scripts_table.c.id == 1)
     job_script = JobScript.parse_obj(await database.fetch_one(query))
@@ -509,6 +655,9 @@ async def test_delete_job_script(client, user_data, application_data, job_script
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
+
+    job_script_permission = [JobScriptPermission(id=1, acl="Allow|role:admin|delete")]
+    await insert_objects(job_script_permission, job_script_permissions_table)
 
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
@@ -540,6 +689,9 @@ async def test_delete_job_script_not_found(client, user_data, application_data, 
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)
 
+    job_script_permission = [JobScriptPermission(id=1, acl="Allow|role:admin|delete")]
+    await insert_objects(job_script_permission, job_script_permissions_table)
+
     application = [Application(id=1, application_owner_id=1, **application_data)]
     await insert_objects(application, applications_table)
 
@@ -555,3 +707,68 @@ async def test_delete_job_script_not_found(client, user_data, application_data, 
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_delete_job_script_bad_permission(client, user_data, application_data, job_script_data):
+    """
+    Test that it is not possible to delete a job_script when the user don't have the permission.
+
+    This test proves that it is not possible to delete a job_script if the user don't have the permission.
+    We show this by assert that a 403 response status code is returned and the job_script still exists in
+    the database after the request.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_scripts = [JobScript(id=1, **job_script_data)]
+    await insert_objects(job_scripts, job_scripts_table)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+
+    response = client.delete("/job-scripts/1")
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_job_scripts_acl_as_list():
+    """
+    Test that the job_scripts_acl_as_list function returns the correct result.
+
+    We show this by asserting the return of the function with the expected output.
+    """
+    job_script_permissions = [
+        JobScriptPermission(id=1, acl="Allow|role:admin|create"),
+        JobScriptPermission(id=2, acl="Deny|Authenticated|delete"),
+    ]
+    await insert_objects(job_script_permissions, job_script_permissions_table)
+
+    acl = await job_scripts_acl_as_list()
+
+    assert acl == [
+        (Allow, "role:admin", "create"),
+        (Deny, Authenticated, "delete"),
+    ]
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_job_scripts_acl_as_list_empty():
+    """
+    Test that the job_scripts_acl_as_list returns an empty list when there is nothing in the database.
+
+    We show this by asserting the return of the function with an empty list.
+    """
+    acl = await job_scripts_acl_as_list()
+
+    assert acl == []

@@ -27,3 +27,15 @@ class ApplicationPermission(BasePermission):
     """
     Permission model for the Application resource.
     """
+
+
+class JobScriptPermission(BasePermission):
+    """
+    Permission model for the JobScript resource.
+    """
+
+
+class JobSubmissionPermission(BasePermission):
+    """
+    Permission model for the JobSubmission resource.
+    """

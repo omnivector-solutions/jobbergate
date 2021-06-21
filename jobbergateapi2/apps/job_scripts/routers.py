@@ -15,9 +15,10 @@ from jinja2 import Template
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application
-from jobbergateapi2.apps.auth.authentication import get_current_user
+from jobbergateapi2.apps.auth.authentication import Permission, get_current_user
 from jobbergateapi2.apps.job_scripts.models import job_scripts_table
 from jobbergateapi2.apps.job_scripts.schemas import JobScript, JobScriptRequest
+from jobbergateapi2.apps.permissions.routers import resource_acl_as_list
 from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
@@ -25,6 +26,13 @@ from jobbergateapi2.storage import database
 
 S3_BUCKET = f"jobbergateapi2-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
 router = APIRouter()
+
+
+async def job_scripts_acl_as_list():
+    """
+    Return the permissions as list for the JobScript resoruce.
+    """
+    return await resource_acl_as_list("job_script")
 
 
 def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str]) -> str:
@@ -140,6 +148,7 @@ async def job_script_create(
     upload_file: UploadFile = File(...),
     sbatch_params: Optional[List[str]] = Form(None),
     param_dict: Optional[str] = Form(None),
+    acls: list = Permission("create", job_scripts_acl_as_list),
 ):
     """
     Create a new job script.
@@ -185,7 +194,11 @@ async def job_script_create(
 @router.get(
     "/job-scripts/{job_script_id}", description="Endpoint to get a job_script", response_model=JobScript
 )
-async def job_script_get(job_script_id: int = Query(...), current_user: User = Depends(get_current_user)):
+async def job_script_get(
+    job_script_id: int = Query(...),
+    current_user: User = Depends(get_current_user),
+    acls: list = Permission("view", job_scripts_acl_as_list),
+):
     """
     Return the job_script given it's id.
     """
@@ -202,7 +215,11 @@ async def job_script_get(job_script_id: int = Query(...), current_user: User = D
 
 
 @router.get("/job-scripts/", description="Endpoint to list job_scripts", response_model=List[JobScript])
-async def job_script_list(all: Optional[bool] = Query(None), current_user: User = Depends(get_current_user)):
+async def job_script_list(
+    all: Optional[bool] = Query(None),
+    current_user: User = Depends(get_current_user),
+    acls: list = Permission("view", job_scripts_acl_as_list),
+):
     """
     List job_scripts for the authenticated user.
     """
@@ -224,6 +241,7 @@ async def job_script_list(all: Optional[bool] = Query(None), current_user: User 
 async def job_script_delete(
     current_user: User = Depends(get_current_user),
     job_script_id: int = Query(..., description="id of the job script to delete"),
+    acls: list = Permission("delete", job_scripts_acl_as_list),
 ):
     """
     Delete job_script given its id.
@@ -254,6 +272,7 @@ async def job_script_update(
     job_script_description: Optional[str] = Form(None),
     job_script_data_as_string: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
+    acls: list = Permission("update", job_scripts_acl_as_list),
 ):
     """
     Update a job_script given its id.

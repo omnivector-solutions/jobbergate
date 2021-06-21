@@ -4,7 +4,12 @@ Test the schema of the resource Permission.
 import pytest
 from pydantic import ValidationError
 
-from jobbergateapi2.apps.permissions.schemas import _ACL_RX, ApplicationPermission
+from jobbergateapi2.apps.permissions.schemas import (
+    _ACL_RX,
+    ApplicationPermission,
+    JobScriptPermission,
+    JobSubmissionPermission,
+)
 
 
 def test_acl_regex():
@@ -14,7 +19,9 @@ def test_acl_regex():
     assert _ACL_RX == r"^(Allow|Deny)\|(role:\w+|Authenticated)\|\w+$"
 
 
-@pytest.mark.parametrize("permission_class", [(ApplicationPermission)])
+@pytest.mark.parametrize(
+    "permission_class", [(ApplicationPermission), (JobScriptPermission), (JobSubmissionPermission)]
+)
 @pytest.mark.parametrize(
     "acl",
     [
@@ -35,7 +42,9 @@ def test_create_permission_bad_acl(acl, permission_class):
         permission_class(acl=acl)
 
 
-@pytest.mark.parametrize("permission_class", [(ApplicationPermission)])
+@pytest.mark.parametrize(
+    "permission_class", [(ApplicationPermission), (JobScriptPermission), (JobSubmissionPermission)]
+)
 @pytest.mark.parametrize(
     "acl",
     [

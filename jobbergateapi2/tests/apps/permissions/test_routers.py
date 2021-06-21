@@ -4,10 +4,19 @@ Tests for the /permissions/ endpoint.
 import nest_asyncio
 import pytest
 from fastapi import status
+from fastapi_permissions import Allow, Authenticated, Deny
 
-from jobbergateapi2.apps.permissions.models import application_permissions_table
-from jobbergateapi2.apps.permissions.routers import _QUERY_RX
-from jobbergateapi2.apps.permissions.schemas import ApplicationPermission
+from jobbergateapi2.apps.permissions.models import (
+    application_permissions_table,
+    job_script_permissions_table,
+    job_submission_permissions_table,
+)
+from jobbergateapi2.apps.permissions.routers import _QUERY_RX, resource_acl_as_list
+from jobbergateapi2.apps.permissions.schemas import (
+    ApplicationPermission,
+    JobScriptPermission,
+    JobSubmissionPermission,
+)
 from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import UserCreate
 from jobbergateapi2.storage import database
@@ -28,7 +37,11 @@ def test_query_regex():
 
 @pytest.mark.parametrize(
     "permission_class,permission_table,permission_query",
-    [(ApplicationPermission, application_permissions_table, "application")],
+    [
+        (ApplicationPermission, application_permissions_table, "application"),
+        (JobScriptPermission, job_script_permissions_table, "job_script"),
+        (JobSubmissionPermission, job_submission_permissions_table, "job_submission"),
+    ],
 )
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
@@ -63,7 +76,11 @@ async def test_create_permissions(user_data, client, permission_class, permissio
 
 @pytest.mark.parametrize(
     "permission_class,permission_table,permission_query",
-    [(ApplicationPermission, application_permissions_table, "application")],
+    [
+        (ApplicationPermission, application_permissions_table, "application"),
+        (JobScriptPermission, job_script_permissions_table, "job_script"),
+        (JobSubmissionPermission, job_submission_permissions_table, "job_submission"),
+    ],
 )
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
@@ -100,7 +117,11 @@ async def test_create_permissions_duplicated(
 
 @pytest.mark.parametrize(
     "permission_class,permission_table,permission_query",
-    [(ApplicationPermission, application_permissions_table, "application")],
+    [
+        (ApplicationPermission, application_permissions_table, "application"),
+        (JobScriptPermission, job_script_permissions_table, "job_script"),
+        (JobSubmissionPermission, job_submission_permissions_table, "job_submission"),
+    ],
 )
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
@@ -163,7 +184,11 @@ async def test_create_permissions_with_bad_query_string(user_data, client):
 
 @pytest.mark.parametrize(
     "permission_class,permission_table,permission_query",
-    [(ApplicationPermission, application_permissions_table, "application")],
+    [
+        (ApplicationPermission, application_permissions_table, "application"),
+        (JobScriptPermission, job_script_permissions_table, "job_script"),
+        (JobSubmissionPermission, job_submission_permissions_table, "job_submission"),
+    ],
 )
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
@@ -191,7 +216,11 @@ async def test_create_permissions_invalid_acl(
 
 @pytest.mark.parametrize(
     "permission_class,permission_table,permission_query",
-    [(ApplicationPermission, application_permissions_table, "application")],
+    [
+        (ApplicationPermission, application_permissions_table, "application"),
+        (JobScriptPermission, job_script_permissions_table, "job_script"),
+        (JobSubmissionPermission, job_submission_permissions_table, "job_submission"),
+    ],
 )
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
@@ -225,7 +254,11 @@ async def test_list_permissions(user_data, client, permission_class, permission_
 
 @pytest.mark.parametrize(
     "permission_class,permission_table,permission_query",
-    [(ApplicationPermission, application_permissions_table, "application")],
+    [
+        (ApplicationPermission, application_permissions_table, "application"),
+        (JobScriptPermission, job_script_permissions_table, "job_script"),
+        (JobSubmissionPermission, job_submission_permissions_table, "job_submission"),
+    ],
 )
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
@@ -282,7 +315,11 @@ async def test_list_permissions_without_query_string(user_data, client):
 
 @pytest.mark.parametrize(
     "permission_class,permission_table,permission_query",
-    [(ApplicationPermission, application_permissions_table, "application")],
+    [
+        (ApplicationPermission, application_permissions_table, "application"),
+        (JobScriptPermission, job_script_permissions_table, "job_script"),
+        (JobSubmissionPermission, job_submission_permissions_table, "job_submission"),
+    ],
 )
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
@@ -316,7 +353,11 @@ async def test_delete_permissions(user_data, client, permission_class, permissio
 
 @pytest.mark.parametrize(
     "permission_class,permission_table,permission_query",
-    [(ApplicationPermission, application_permissions_table, "application")],
+    [
+        (ApplicationPermission, application_permissions_table, "application"),
+        (JobScriptPermission, job_script_permissions_table, "job_script"),
+        (JobSubmissionPermission, job_submission_permissions_table, "job_submission"),
+    ],
 )
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
@@ -353,7 +394,11 @@ async def test_delete_permissions_not_superuser(
 
 @pytest.mark.parametrize(
     "permission_class,permission_table,permission_query",
-    [(ApplicationPermission, application_permissions_table, "application")],
+    [
+        (ApplicationPermission, application_permissions_table, "application"),
+        (JobScriptPermission, job_script_permissions_table, "job_script"),
+        (JobSubmissionPermission, job_submission_permissions_table, "job_submission"),
+    ],
 )
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
@@ -418,3 +463,50 @@ async def test_delete_permissions_without_query_string(user_data, client):
 
     response = client.delete("/permissions/1")
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.parametrize(
+    "permission_class,permission_table,permission_query",
+    [
+        (ApplicationPermission, application_permissions_table, "application"),
+        (JobScriptPermission, job_script_permissions_table, "job_script"),
+        (JobSubmissionPermission, job_submission_permissions_table, "job_submission"),
+    ],
+)
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_resource_acl_as_list(permission_class, permission_table, permission_query):
+    """
+    Test that the resource_acl_as_list function returns the correct result.
+
+    We show this by asserting the return of the function with the expected output.
+    """
+    permissions = [
+        permission_class(id=1, acl="Allow|role:admin|create"),
+        permission_class(id=2, acl="Deny|Authenticated|delete"),
+    ]
+    await insert_objects(permissions, permission_table)
+
+    acl = await resource_acl_as_list(permission_query)
+
+    assert acl == [
+        (Allow, "role:admin", "create"),
+        (Deny, Authenticated, "delete"),
+    ]
+
+
+@pytest.mark.parametrize(
+    "permission_query",
+    [("application"), ("job_script"), ("job_submission")],
+)
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_resource_acl_as_list_empty(permission_query):
+    """
+    Test that the resource_acl_as_list returns an empty list when there is nothing in the database.
+
+    We show this by asserting the return of the function with an empty list.
+    """
+    acl = await resource_acl_as_list(permission_query)
+
+    assert acl == []

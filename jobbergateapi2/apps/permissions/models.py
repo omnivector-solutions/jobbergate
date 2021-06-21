@@ -12,3 +12,19 @@ application_permissions_table = Table(
     Column("id", Integer, primary_key=True),
     Column("acl", String, nullable=False, unique=True),
 )
+
+
+job_script_permissions_table = Table(
+    "job_script_permissions",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("acl", String, nullable=False, unique=True),
+)
+
+
+job_submission_permissions_table = Table(
+    "job_submission_permissions",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("acl", String, nullable=False, unique=True),
+)
