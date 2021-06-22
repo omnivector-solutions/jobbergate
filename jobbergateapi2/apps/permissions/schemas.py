@@ -44,7 +44,7 @@ class JobSubmissionPermission(BasePermission):
 
 class AllPermissions(BasePermission):
     """
-    Schema to return all permissions.
+    Store the permission resource.
     """
 
     resource_name: str = Field(..., regex=_RESOURCE_RX)

@@ -516,10 +516,11 @@ async def test_resource_acl_as_list_empty(permission_query):
 @database.transaction(force_rollback=True)
 async def test_list_permissions_all(user_data, client):
     """
-    Test the GET in the /permissions/all returns the list of all existing Permissions.
+    Test that GET /permissions/all returns a list of all existing Permissions.
 
-    We show this by creating 3 permissions, making the GET request to the /permissions/all endpoint,
-    then asserting the response status code is 200, and the content of the response is as expected.
+    We show this by creating 3 permissions followed by a GET request to the /permissions/all endpoint and
+    finally asserting the response status code is 200 and the response contains the correct number of
+    Permissions.
     """
     user = [UserCreate(**user_data)]
     await insert_objects(user, users_table)
@@ -554,8 +555,9 @@ async def test_list_permissions_all_empty(user_data, client):
     """
     Test the GET in the /permissions/all returns the list of existing Permissions even when there is none.
 
-    We by making the GET request to the /permissions/all endpoint without any  permission created, then
-    asserting the response status code is 200, and the content of the response is as expected.
+    We prove that GET /permissions/all returns correctly even when no permissions exist by making a GET
+    request to the /permissions/all endpoint without any existing permissions entries in the database.
+    Finally assert the response status code is 200 and the number of Permission returned is 0.
     """
     user = [UserCreate(**user_data)]
     await insert_objects(user, users_table)
