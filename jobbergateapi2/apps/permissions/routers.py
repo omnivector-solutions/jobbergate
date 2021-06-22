@@ -15,6 +15,7 @@ from jobbergateapi2.apps.permissions.models import (
 )
 from jobbergateapi2.apps.permissions.schemas import (
     _ACL_RX,
+    AllPermissions,
     ApplicationPermission,
     BasePermission,
     JobScriptPermission,
@@ -121,6 +122,30 @@ async def permission_list(
     raw_permissions = await database.fetch_all(query)
     permissions = [permission_class.parse_obj(x) for x in raw_permissions]
     return permissions
+
+
+@router.get(
+    "/permissions/all",
+    description="Endpoint to list permissions",
+    response_model=List[AllPermissions],
+)
+async def permission_list_all(
+    current_user: User = Depends(get_current_user),
+):
+    """
+    List all permissions.
+    """
+    all_permissions = []
+    for permission_query in ["application", "job_script", "job_submission"]:
+        permission_class = permission_classes[permission_query]
+        permission_table = permission_tables[permission_query]
+
+        query = permission_table.select()
+        raw_permissions = await database.fetch_all(query)
+        for raw_permission in raw_permissions:
+            permission = permission_class.parse_obj(raw_permission)
+            all_permissions.append(AllPermissions(resource_name=permission_query, **permission.dict()))
+    return all_permissions
 
 
 @router.delete(

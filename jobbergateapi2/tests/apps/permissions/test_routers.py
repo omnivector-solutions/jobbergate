@@ -510,3 +510,60 @@ async def test_resource_acl_as_list_empty(permission_query):
     acl = await resource_acl_as_list(permission_query)
 
     assert acl == []
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_list_permissions_all(user_data, client):
+    """
+    Test that GET /permissions/all returns a list of all existing Permissions.
+
+    We show this by creating 3 permissions followed by a GET request to the /permissions/all endpoint and
+    finally asserting the response status code is 200 and the response contains the correct number of
+    Permissions.
+    """
+    user = [UserCreate(**user_data)]
+    await insert_objects(user, users_table)
+
+    permission_application = [ApplicationPermission(id=1, acl="Allow|role:admin|create")]
+    await insert_objects(permission_application, application_permissions_table)
+    permission_job_script = [JobScriptPermission(id=1, acl="Allow|role:admin|create")]
+    await insert_objects(permission_job_script, job_script_permissions_table)
+    permission_job_submission = [JobSubmissionPermission(id=1, acl="Allow|role:admin|create")]
+    await insert_objects(permission_job_submission, job_submission_permissions_table)
+
+    response = client.get("/permissions/all")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert len(data) == 3
+
+    assert data[0]["id"] == 1
+    assert data[0]["acl"] == "Allow|role:admin|create"
+    assert data[0]["resource_name"] == "application"
+    assert data[1]["id"] == 1
+    assert data[1]["acl"] == "Allow|role:admin|create"
+    assert data[1]["resource_name"] == "job_script"
+    assert data[2]["id"] == 1
+    assert data[2]["acl"] == "Allow|role:admin|create"
+    assert data[2]["resource_name"] == "job_submission"
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_list_permissions_all_empty(user_data, client):
+    """
+    Test the GET in the /permissions/all returns the list of existing Permissions even when there is none.
+
+    We prove that GET /permissions/all returns correctly even when no permissions exist by making a GET
+    request to the /permissions/all endpoint without any existing permissions entries in the database.
+    Finally assert the response status code is 200 and the number of Permission returned is 0.
+    """
+    user = [UserCreate(**user_data)]
+    await insert_objects(user, users_table)
+
+    response = client.get("/permissions/all")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert len(data) == 0
