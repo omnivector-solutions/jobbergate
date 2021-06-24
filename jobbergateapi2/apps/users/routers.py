@@ -7,7 +7,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 
 from jobbergateapi2.apps.auth.authentication import get_current_user, validate_token
 from jobbergateapi2.apps.users.models import users_table
-from jobbergateapi2.apps.users.schemas import User, UserCreate
+from jobbergateapi2.apps.users.schemas import _PRINCIPALS_RX, User, UserCreate
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.pagination import Pagination
 from jobbergateapi2.storage import database
@@ -155,6 +155,7 @@ async def users_update(
     password: Optional[str] = Body(None),
     is_active: Optional[bool] = Body(None),
     is_superuser: Optional[bool] = Body(None),
+    principals: Optional[str] = Body(None, regex=_PRINCIPALS_RX),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -180,6 +181,8 @@ async def users_update(
         user_data.is_superuser = is_superuser
     if is_active is not None:
         user_data.is_active = is_active
+    if principals is not None:
+        user_data.principals = principals
 
     values = {
         "full_name": user_data.full_name,
@@ -187,6 +190,7 @@ async def users_update(
         "password": user_data.hash_password(),
         "is_superuser": user_data.is_superuser,
         "is_active": user_data.is_active,
+        "principals": user_data.principals,
     }
     validated_values = {key: value for key, value in values.items() if value is not None}
 
