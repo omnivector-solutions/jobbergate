@@ -277,8 +277,8 @@ async def test_update_user_principals(client, user_data, principals):
 @database.transaction(force_rollback=True)
 async def test_update_user_principals_bad_format(client, user_data, principals):
     """
-    Test update an User principals with wrong format, the principals must not be updated in the database, and
-    the response status code must be 422.
+    Test that updating a User principals with a bad format does not update the principals in the database, and
+    that a 422 status code is returned.
     """
     user = [UserCreate(id=1, **user_data)]
     await insert_objects(user, users_table)

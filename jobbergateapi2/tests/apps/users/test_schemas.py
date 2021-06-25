@@ -16,7 +16,7 @@ def test_principals_regex():
 
 def test_create_user_missing_required_atribute(user_data):
     """
-    Must raise a ValidationError when creating a user without any required attribute.
+    Test that a ValidationError is raised when creating a user without a required attribute.
     """
     user_data.pop("email")
 
@@ -26,7 +26,7 @@ def test_create_user_missing_required_atribute(user_data):
 
 def test_create_user_with_invalid_email(user_data):
     """
-    Must raise a ValidationError for invalid email address.
+    Test that a ValidationError is raised when an invalid email address is supplied.
     """
     user_data["email"] = "email"
 
@@ -38,9 +38,9 @@ def test_create_user_with_invalid_email(user_data):
 
 def test_create_user_with_invalid_password_length(user_data):
     """
-    Must not allow small passwords.
+    Test that a ValidationError is raised when a password length < 12 chars is used.
     """
-    user_data["password"] = "1"
+    user_data["password"] = "00123456789"
 
     with pytest.raises(ValidationError) as exc:
         UserCreate(**user_data)
@@ -59,7 +59,7 @@ def test_create_user_with_invalid_password_length(user_data):
 )
 def test_create_user_with_invalid_principals(user_data, principals):
     """
-    Must not allow bad formated principals.
+    Test that a ValidationError is raised when an invalid principals format is supplied.
     """
     user_data["principals"] = principals
 
