@@ -12,6 +12,9 @@ pwd_context = CryptContext(
 )
 
 
+_PRINCIPALS_RX = r"^(role:\w+)?(\|role:\w+)*$"
+
+
 class User(BaseModel):
     """
     Base model for the resource User, defining the default attributes and used for auto generated docs
@@ -23,7 +26,7 @@ class User(BaseModel):
     is_superuser: Optional[bool] = Field(False)
     full_name: str = Field(..., description="Full name of the user")
     data_joined: Optional[datetime] = Field(datetime.utcnow())
-    principals: Optional[str] = Field("", description="String separated by |")
+    principals: Optional[str] = Field("", description="String separated by |", regex=_PRINCIPALS_RX)
 
     class Config:
         orm_mode = True

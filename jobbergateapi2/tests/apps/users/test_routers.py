@@ -230,6 +230,70 @@ async def test_update_user(client, user_data):
     assert user.full_name == "new name"
 
 
+@pytest.mark.parametrize(
+    "principals",
+    [
+        ("role:admin"),
+        ("role:admin|role:operator|role:user"),
+        (""),
+    ],
+)
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_update_user_principals(client, user_data, principals):
+    """
+    Test update an User principals field.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    response = client.put("/users/1", json={"principals": principals})
+
+    assert response.status_code == status.HTTP_201_CREATED
+    data = response.json()
+
+    assert data["principals"] == principals
+    assert data["id"] == 1
+
+    query = users_table.select(users_table.c.id == 1)
+    user = User.parse_obj(await database.fetch_one(query))
+
+    assert user is not None
+    assert user.principals == principals
+
+
+@pytest.mark.parametrize(
+    "principals",
+    [
+        ("roleadmin"),
+        ("role:admin|"),
+        ("role:admin,role:operator,role:user"),
+        ("|"),
+        ("|role:admin|"),
+        ("roleadmin|"),
+    ],
+)
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_update_user_principals_bad_format(client, user_data, principals):
+    """
+    Test that updating a User principals with a bad format does not update the principals in the database, and
+    that a 422 status code is returned.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    response = client.put("/users/1", json={"principals": principals})
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    query = users_table.select(users_table.c.id == 1)
+    user = User.parse_obj(await database.fetch_one(query))
+
+    assert user is not None
+    assert user.principals == "role:admin"
+
+
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
 async def test_update_user_superuser(client, user_data):
