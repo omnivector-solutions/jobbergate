@@ -94,7 +94,7 @@ async def permission_create(
     async with database.transaction():
         try:
             query = permission_table.insert()
-            permission_created_id = await database.execute(query=query, values=permission.dict())
+            permission_created_id = await database.execute(query=query, values={"acl": acl})
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
