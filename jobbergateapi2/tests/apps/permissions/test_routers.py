@@ -567,3 +567,109 @@ async def test_list_permissions_all_empty(user_data, client):
 
     data = response.json()
     assert len(data) == 0
+
+
+@pytest.mark.parametrize(
+    "permission_class,permission_table,permission_query",
+    [
+        (ApplicationPermission, application_permissions_table, "application"),
+        (JobScriptPermission, job_script_permissions_table, "job_script"),
+        (JobSubmissionPermission, job_submission_permissions_table, "job_submission"),
+    ],
+)
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_list_permissions_from_role(
+    user_data, client, permission_class, permission_table, permission_query
+):
+    """
+    Test the GET in the /permissions-principal/ returns the list of existing Permissions for the given
+    principals.
+
+    We show this by creating 2 permissions, making the GET request to the /permissions-principal/ endpoint,
+    then asserting the response status code is 200, and the content of the response is as expected.
+    """
+    user = [UserCreate(**user_data)]
+    await insert_objects(user, users_table)
+
+    permissions = [
+        permission_class(id=1, acl="Allow|role:admin|create"),
+        permission_class(id=2, acl="Allow|role:admin|view"),
+        permission_class(id=3, acl="Deny|role:admin|delete"),
+    ]
+    await insert_objects(permissions, permission_table)
+
+    response = client.get("/permissions-principal/?principals=role:admin")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert data["Allow"] == [
+        {
+            "resource": permission_query,
+            "permission": "create",
+        },
+        {
+            "resource": permission_query,
+            "permission": "view",
+        },
+    ]
+    assert data["Deny"] == [
+        {
+            "resource": permission_query,
+            "permission": "delete",
+        },
+    ]
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_list_permissions_from_role_mixed(user_data, client):
+    """
+    Test the GET in the /permissions-principal/ returns the list of existing Permissions for the given
+    principals.
+
+    We show this by creating 2 permissions, making the GET request to the /permissions-principal/ endpoint,
+    then asserting the response status code is 200, and the content of the response is as expected.
+    """
+    user = [UserCreate(**user_data)]
+    await insert_objects(user, users_table)
+
+    permissions = [
+        ApplicationPermission(id=1, acl="Allow|role:admin|create"),
+        ApplicationPermission(id=2, acl="Allow|role:admin|view"),
+        ApplicationPermission(id=3, acl="Allow|role:operator|view"),
+    ]
+    await insert_objects(permissions, application_permissions_table)
+    permissions = [JobScriptPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(permissions, job_script_permissions_table)
+    permissions = [
+        JobSubmissionPermission(id=1, acl="Deny|role:admin|delete"),
+        JobSubmissionPermission(id=2, acl="Deny|role:operator|view"),
+    ]
+    await insert_objects(permissions, job_submission_permissions_table)
+
+    response = client.get("/permissions-principal/?principals=role:admin|role:operator")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert data["Allow"] == [
+        {
+            "resource": "application",
+            "permission": "create",
+        },
+        {
+            "resource": "application",
+            "permission": "view",
+        },
+        {"resource": "job_script", "permission": "view"},
+    ]
+    assert data["Deny"] == [
+        {
+            "resource": "job_submission",
+            "permission": "delete",
+        },
+        {
+            "resource": "job_submission",
+            "permission": "view",
+        },
+    ]
