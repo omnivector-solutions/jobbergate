@@ -21,7 +21,7 @@ from jobbergateapi2.apps.permissions.schemas import (
     JobScriptPermission,
     JobSubmissionPermission,
 )
-from jobbergateapi2.apps.users.schemas import User
+from jobbergateapi2.apps.users.schemas import _PRINCIPALS_RX, User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.storage import database
 
@@ -39,6 +39,17 @@ permission_tables = {
     "job_script": job_script_permissions_table,
     "job_submission": job_submission_permissions_table,
 }
+
+
+def remove_duplicates(permissions_list):
+    """
+    Remove duplicates from the list.
+    """
+    unique_list = []
+    for permission in permissions_list:
+        if permission not in unique_list:
+            unique_list.append(permission)
+    return unique_list
 
 
 async def resource_acl_as_list(permission_query):
@@ -145,6 +156,37 @@ async def permission_list_all(
         for raw_permission in raw_permissions:
             permission = permission_class.parse_obj(raw_permission)
             all_permissions.append(AllPermissions(resource_name=permission_query, **permission.dict()))
+    return all_permissions
+
+
+@router.get(
+    "/permissions-principal",
+    description="Endpoint to list permissions given the principal",
+)
+async def permission_list_from_role(
+    current_user: User = Depends(get_current_user),
+    principals: str = Query(..., regex=_PRINCIPALS_RX),
+):
+    """
+    List all permissions for the principal.
+    """
+    allow = []
+    deny = []
+    for permission_query in ["application", "job_script", "job_submission"]:
+        permission_class = permission_classes[permission_query]
+        permission_table = permission_tables[permission_query]
+
+        query = permission_table.select()
+        raw_permissions = await database.fetch_all(query)
+        for raw_permission in raw_permissions:
+            permission = permission_class.parse_obj(raw_permission).dict()
+            action, role, permission = permission["acl"].split("|")
+            if role in principals:
+                if action == Allow:
+                    allow.append({"resource": permission_query, "permission": permission})
+                else:
+                    deny.append({"resource": permission_query, "permission": permission})
+    all_permissions = {"Allow": remove_duplicates(allow), "Deny": remove_duplicates(deny)}
     return all_permissions
 
 
