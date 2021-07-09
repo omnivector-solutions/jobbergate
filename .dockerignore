@@ -7,3 +7,6 @@ htmlcov
 templates
 sqlite.db
 poetry.lock
+.git
+.github
+.pre-commit-config.yaml
