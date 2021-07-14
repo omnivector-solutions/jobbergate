@@ -13,6 +13,7 @@ class ApplicationRequest(BaseModel):
     """
 
     application_name: str = Field(...)
+    identifier: str = Field(None)
     application_description: Optional[str] = Field("")
     application_owner_id: Optional[int] = Field(None, description="The User id of the owner")
     application_file: str = Field(..., description="Application file content (.py) as text")
