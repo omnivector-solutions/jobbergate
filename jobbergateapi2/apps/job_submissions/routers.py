@@ -13,6 +13,7 @@ from jobbergateapi2.apps.job_submissions.schemas import JobSubmission, JobSubmis
 from jobbergateapi2.apps.permissions.routers import resource_acl_as_list
 from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
+from jobbergateapi2.pagination import Pagination
 from jobbergateapi2.storage import database
 
 router = APIRouter()
@@ -87,6 +88,7 @@ async def job_submission_get(
     "/job-submissions/", description="Endpoint to list job_submissions", response_model=List[JobSubmission]
 )
 async def job_submission_list(
+    p: Pagination = Depends(),
     all: Optional[bool] = Query(None),
     current_user: User = Depends(get_current_user),
     acls: list = Permission("view", job_submissions_acl_as_list),
@@ -95,10 +97,13 @@ async def job_submission_list(
     List job_submissions for the authenticated user.
     """
     if all:
-        query = job_submissions_table.select()
+        query = job_submissions_table.select().limit(p.limit).offset(p.skip)
     else:
-        query = job_submissions_table.select().where(
-            job_submissions_table.c.job_submission_owner_id == current_user.id
+        query = (
+            job_submissions_table.select()
+            .where(job_submissions_table.c.job_submission_owner_id == current_user.id)
+            .limit(p.limit)
+            .offset(p.skip)
         )
     raw_job_submissions = await database.fetch_all(query)
     job_submissions = [JobSubmission.parse_obj(x) for x in raw_job_submissions]

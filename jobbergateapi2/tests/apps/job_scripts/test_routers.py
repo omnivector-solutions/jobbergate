@@ -528,6 +528,51 @@ async def test_list_job_script_all(client, user_data, application_data, job_scri
     assert data[2]["id"] == 3
 
 
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_list_job_script_pagination(client, user_data, application_data, job_script_data):
+    """
+    Test that listing job_scripts works with pagination.
+
+    This test proves that the user making the request can see job_scripts paginated.
+    We show this by creating three job_scripts and assert that the response is correctly paginated.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    job_script_permission = [JobScriptPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(job_script_permission, job_script_permissions_table)
+
+    application = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_script_data.pop("job_script_owner_id")
+    job_scripts = [
+        JobScript(id=1, job_script_owner_id=1, **job_script_data),
+        JobScript(id=2, job_script_owner_id=1, **job_script_data),
+        JobScript(id=3, job_script_owner_id=1, **job_script_data),
+    ]
+    await insert_objects(job_scripts, job_scripts_table)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 3
+
+    response = client.get("/job-scripts/?limit=1&skip=0")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["id"] == 1
+
+    response = client.get("/job-scripts/?limit=2&skip=1")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert len(data) == 2
+    assert data[0]["id"] == 2
+    assert data[1]["id"] == 3
+
+
 @pytest.mark.freeze_time
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)

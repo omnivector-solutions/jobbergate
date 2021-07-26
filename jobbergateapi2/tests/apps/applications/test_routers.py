@@ -468,6 +468,46 @@ async def test_get_all_applications(client, user_data, application_data):
 
 
 @pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_get_all_applications_pagination(client, user_data, application_data):
+    """
+    Test that listing applications works with pagination.
+
+    This test proves that the user making the request can see applications paginated.
+    We show this by creating three applications and assert that the response is correctly paginated.
+    """
+    user = [UserCreate(id=1, **user_data)]
+    await insert_objects(user, users_table)
+
+    application_permission = [ApplicationPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(application_permission, application_permissions_table)
+
+    applications = [
+        Application(id=1, application_owner_id=1, **application_data),
+        Application(id=2, application_owner_id=1, **application_data),
+        Application(id=3, application_owner_id=1, **application_data),
+    ]
+    await insert_objects(applications, applications_table)
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 3
+
+    response = client.get("/applications/?limit=1&skip=0")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["id"] == 1
+
+    response = client.get("/applications/?limit=2&skip=1")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert len(data) == 2
+    assert data[0]["id"] == 2
+    assert data[1]["id"] == 3
+
+
+@pytest.mark.asyncio
 @mock.patch("jobbergateapi2.apps.applications.routers.boto3")
 @database.transaction(force_rollback=True)
 async def test_update_application(boto3_client_mock, client, user_data, application_data):

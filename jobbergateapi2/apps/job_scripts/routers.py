@@ -22,6 +22,7 @@ from jobbergateapi2.apps.permissions.routers import resource_acl_as_list
 from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
+from jobbergateapi2.pagination import Pagination
 from jobbergateapi2.storage import database
 
 S3_BUCKET = f"jobbergateapi2-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
@@ -216,6 +217,7 @@ async def job_script_get(
 
 @router.get("/job-scripts/", description="Endpoint to list job_scripts", response_model=List[JobScript])
 async def job_script_list(
+    p: Pagination = Depends(),
     all: Optional[bool] = Query(None),
     current_user: User = Depends(get_current_user),
     acls: list = Permission("view", job_scripts_acl_as_list),
@@ -224,9 +226,14 @@ async def job_script_list(
     List job_scripts for the authenticated user.
     """
     if all:
-        query = job_scripts_table.select()
+        query = job_scripts_table.select().limit(p.limit).offset(p.skip)
     else:
-        query = job_scripts_table.select().where(job_scripts_table.c.job_script_owner_id == current_user.id)
+        query = (
+            job_scripts_table.select()
+            .where(job_scripts_table.c.job_script_owner_id == current_user.id)
+            .limit(p.limit)
+            .offset(p.skip)
+        )
     raw_job_scripts = await database.fetch_all(query)
     job_scripts = [JobScript.parse_obj(x) for x in raw_job_scripts]
 
