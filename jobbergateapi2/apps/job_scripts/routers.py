@@ -225,15 +225,10 @@ async def job_script_list(
     """
     List job_scripts for the authenticated user.
     """
-    if all:
-        query = job_scripts_table.select().limit(p.limit).offset(p.skip)
-    else:
-        query = (
-            job_scripts_table.select()
-            .where(job_scripts_table.c.job_script_owner_id == current_user.id)
-            .limit(p.limit)
-            .offset(p.skip)
-        )
+    query = job_scripts_table.select()
+    if not all:
+        query = query.where(job_scripts_table.c.job_script_owner_id == current_user.id)
+    query = query.limit(p.limit).offset(p.skip)
     raw_job_scripts = await database.fetch_all(query)
     job_scripts = [JobScript.parse_obj(x) for x in raw_job_scripts]
 

@@ -369,17 +369,17 @@ async def test_list_job_submission_pagination(
     this test proves that the user making the request can see job_submisions paginated.
     We show this by creating three job_submissions and assert that the response is correctly paginated.
     """
-    user = [UserCreate(id=1, **user_data)]
-    await insert_objects(user, users_table)
+    users = [UserCreate(id=1, **user_data)]
+    await insert_objects(users, users_table)
 
-    job_submission_permission = [JobSubmissionPermission(id=1, acl="Allow|role:admin|view")]
-    await insert_objects(job_submission_permission, job_submission_permissions_table)
+    job_submission_permissions = [JobSubmissionPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(job_submission_permissions, job_submission_permissions_table)
 
-    application = [Application(id=1, application_owner_id=1, **application_data)]
-    await insert_objects(application, applications_table)
+    applications = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(applications, applications_table)
 
-    job_script = [JobScript(id=1, **job_script_data)]
-    await insert_objects(job_script, job_scripts_table)
+    job_scripts = [JobScript(id=1, **job_script_data)]
+    await insert_objects(job_scripts, job_scripts_table)
 
     job_submissions = [
         JobSubmission(id=1, job_submission_owner_id=1, **job_submission_data),
@@ -395,16 +395,13 @@ async def test_list_job_submission_pagination(
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert len(data) == 1
-    assert data[0]["id"] == 1
+    assert [d["id"] for d in data] == [1]
 
     response = client.get("/job-submissions/?limit=2&skip=1")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert len(data) == 2
-    assert data[0]["id"] == 2
-    assert data[1]["id"] == 3
+    assert [d["id"] for d in data] == [2, 3]
 
 
 @pytest.mark.freeze_time

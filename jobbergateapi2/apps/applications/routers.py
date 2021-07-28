@@ -116,15 +116,10 @@ async def applications_list(
     """
     List applications for the authenticated user.
     """
-    if all:
-        query = applications_table.select().limit(p.limit).offset(p.skip)
-    else:
-        query = (
-            applications_table.select()
-            .where(applications_table.c.application_owner_id == current_user.id)
-            .limit(p.limit)
-            .offset(p.skip)
-        )
+    query = applications_table.select()
+    if not all:
+        query = query.where(applications_table.c.application_owner_id == current_user.id)
+    query = query.limit(p.limit).offset(p.skip)
     raw_applications = await database.fetch_all(query)
     applications = [Application.parse_obj(x) for x in raw_applications]
     return applications

@@ -476,11 +476,11 @@ async def test_get_all_applications_pagination(client, user_data, application_da
     This test proves that the user making the request can see applications paginated.
     We show this by creating three applications and assert that the response is correctly paginated.
     """
-    user = [UserCreate(id=1, **user_data)]
-    await insert_objects(user, users_table)
+    users = [UserCreate(id=1, **user_data)]
+    await insert_objects(users, users_table)
 
-    application_permission = [ApplicationPermission(id=1, acl="Allow|role:admin|view")]
-    await insert_objects(application_permission, application_permissions_table)
+    application_permissions = [ApplicationPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(application_permissions, application_permissions_table)
 
     applications = [
         Application(id=1, application_owner_id=1, **application_data),
@@ -495,16 +495,13 @@ async def test_get_all_applications_pagination(client, user_data, application_da
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert len(data) == 1
-    assert data[0]["id"] == 1
+    assert [d["id"] for d in data] == [1]
 
     response = client.get("/applications/?limit=2&skip=1")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert len(data) == 2
-    assert data[0]["id"] == 2
-    assert data[1]["id"] == 3
+    assert [d["id"] for d in data] == [2, 3]
 
 
 @pytest.mark.asyncio

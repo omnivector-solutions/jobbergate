@@ -537,14 +537,14 @@ async def test_list_job_script_pagination(client, user_data, application_data, j
     This test proves that the user making the request can see job_scripts paginated.
     We show this by creating three job_scripts and assert that the response is correctly paginated.
     """
-    user = [UserCreate(id=1, **user_data)]
-    await insert_objects(user, users_table)
+    users = [UserCreate(id=1, **user_data)]
+    await insert_objects(users, users_table)
 
-    job_script_permission = [JobScriptPermission(id=1, acl="Allow|role:admin|view")]
-    await insert_objects(job_script_permission, job_script_permissions_table)
+    job_script_permissions = [JobScriptPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(job_script_permissions, job_script_permissions_table)
 
-    application = [Application(id=1, application_owner_id=1, **application_data)]
-    await insert_objects(application, applications_table)
+    applications = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(applications, applications_table)
 
     job_script_data.pop("job_script_owner_id")
     job_scripts = [
@@ -561,16 +561,13 @@ async def test_list_job_script_pagination(client, user_data, application_data, j
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert len(data) == 1
-    assert data[0]["id"] == 1
+    assert [d["id"] for d in data] == [1]
 
     response = client.get("/job-scripts/?limit=2&skip=1")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert len(data) == 2
-    assert data[0]["id"] == 2
-    assert data[1]["id"] == 3
+    assert [d["id"] for d in data] == [2, 3]
 
 
 @pytest.mark.freeze_time
