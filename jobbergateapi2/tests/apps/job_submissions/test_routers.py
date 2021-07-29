@@ -358,6 +358,52 @@ async def test_list_job_submission_all(
     assert data[2]["id"] == 3
 
 
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_list_job_submission_pagination(
+    client, user_data, application_data, job_submission_data, job_script_data
+):
+    """
+    Test that listing job_submissions works with pagination.
+
+    this test proves that the user making the request can see job_submisions paginated.
+    We show this by creating three job_submissions and assert that the response is correctly paginated.
+    """
+    users = [UserCreate(id=1, **user_data)]
+    await insert_objects(users, users_table)
+
+    job_submission_permissions = [JobSubmissionPermission(id=1, acl="Allow|role:admin|view")]
+    await insert_objects(job_submission_permissions, job_submission_permissions_table)
+
+    applications = [Application(id=1, application_owner_id=1, **application_data)]
+    await insert_objects(applications, applications_table)
+
+    job_scripts = [JobScript(id=1, **job_script_data)]
+    await insert_objects(job_scripts, job_scripts_table)
+
+    job_submissions = [
+        JobSubmission(id=1, job_submission_owner_id=1, **job_submission_data),
+        JobSubmission(id=2, job_submission_owner_id=1, **job_submission_data),
+        JobSubmission(id=3, job_submission_owner_id=1, **job_submission_data),
+    ]
+    await insert_objects(job_submissions, job_submissions_table)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 3
+
+    response = client.get("/job-submissions/?limit=1&skip=0")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert [d["id"] for d in data] == [1]
+
+    response = client.get("/job-submissions/?limit=2&skip=1")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert [d["id"] for d in data] == [2, 3]
+
+
 @pytest.mark.freeze_time
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)

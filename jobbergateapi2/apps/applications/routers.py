@@ -14,6 +14,7 @@ from jobbergateapi2.apps.permissions.routers import resource_acl_as_list
 from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
+from jobbergateapi2.pagination import Pagination
 from jobbergateapi2.storage import database
 
 S3_BUCKET = f"jobbergateapi2-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
@@ -107,6 +108,7 @@ async def application_delete(
     response_model=List[Application],
 )
 async def applications_list(
+    p: Pagination = Depends(),
     all: Optional[bool] = Query(None),
     current_user: User = Depends(get_current_user),
     acls: list = Permission("view", applications_acl_as_list),
@@ -114,12 +116,10 @@ async def applications_list(
     """
     List applications for the authenticated user.
     """
-    if all:
-        query = applications_table.select()
-    else:
-        query = applications_table.select().where(
-            applications_table.c.application_owner_id == current_user.id
-        )
+    query = applications_table.select()
+    if not all:
+        query = query.where(applications_table.c.application_owner_id == current_user.id)
+    query = query.limit(p.limit).offset(p.skip)
     raw_applications = await database.fetch_all(query)
     applications = [Application.parse_obj(x) for x in raw_applications]
     return applications
