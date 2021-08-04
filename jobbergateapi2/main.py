@@ -7,6 +7,8 @@ from fastapi import FastAPI
 from mangum import Mangum
 from starlette.middleware.cors import CORSMiddleware
 
+from loguru import logger
+
 from jobbergateapi2 import storage
 from jobbergateapi2.config import settings
 from jobbergateapi2.routers import load_routers
@@ -20,16 +22,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-load_routers(app)
-
 
 @app.on_event("startup")
 async def init_database():
     """
     Connect the database; create it if necessary
     """
+    logger.debug("Initializing database")
     storage.create_all_tables()
     await storage.database.connect()
+
+    logger.debug("Loading routers")
+    load_routers(app)
 
 
 @app.on_event("shutdown")
@@ -37,6 +41,7 @@ async def disconnect_database():
     """
     Disconnect the database
     """
+    logger.debug("Disconnecting database")
     await storage.database.disconnect()
 
 
