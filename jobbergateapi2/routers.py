@@ -1,10 +1,8 @@
 """
 All the routers of the resources
 """
-import logging
 from importlib import import_module
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 app_routers = [
     "jobbergateapi2.apps.users.routers",
@@ -20,10 +18,12 @@ def load_routers(app):
     """
     Load all routers
     """
+    logger.debug("Loading routes")
     for path in app_routers:
         module = import_module(path)
+        logger.debug(f"Loading router for {module=}")
 
         function = getattr(module, "include_router")
         function(app)
 
-        logger.info("Initialized router to %s", path)
+        logger.info(f"Initialized router to {path}")
