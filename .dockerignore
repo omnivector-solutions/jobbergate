@@ -6,7 +6,6 @@ htmlcov
 .pytest_cache
 templates
 sqlite.db
-poetry.lock
 .git
 .github
 .pre-commit-config.yaml

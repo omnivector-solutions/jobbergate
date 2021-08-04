@@ -19,12 +19,7 @@ class JobSubmissionRequest(BaseModel):
 
     class Config:
         orm_mode = True
-        schema_extra = {
-            "example": {
-                "job_submission_name": "name",
-                "job_script_id": 1,
-            }
-        }
+        schema_extra = {"example": {"job_submission_name": "name", "job_script_id": 1}}
 
     def __str__(self):
         return self.job_submission_name
@@ -36,6 +31,6 @@ class JobSubmission(JobSubmissionRequest):
     """
 
     id: Optional[int] = Field(None)
-    job_submission_owner_id: int = Field(...)
+    job_submission_owner_id: str = Field(...)
     created_at: Optional[datetime] = Field(datetime.utcnow())
     updated_at: Optional[datetime] = Field(datetime.utcnow())
