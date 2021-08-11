@@ -1,9 +1,7 @@
 """
 Configuration file, sets all the necessary environment variables, it is better used with a .env file
 """
-from typing import List
-
-from pydantic import AnyHttpUrl, BaseSettings, Field
+from pydantic import BaseSettings, Field
 
 _DB_RX = r"^(sqlite|postgres)://.+$"
 
