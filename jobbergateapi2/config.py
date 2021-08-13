@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     SERVERLESS_STAGE: str = Field("staging")
     SERVERLESS_REGION: str = Field("eu-north-1")
     S3_BASE_PATH: str = Field("jobbergate-resources")
+    # BACKEND_CORS_ORIGINS example: "['https://example1.com', 'https://example2.com']"
     BACKEND_CORS_ORIGINS: str = Field("[]")
 
     class Config:
