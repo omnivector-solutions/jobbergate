@@ -8,7 +8,9 @@ import click
 from jobbergateapi2 import storage
 from jobbergateapi2.apps.users.models import users_table
 from jobbergateapi2.apps.users.schemas import pwd_context
-from jobbergateapi2.main import disconnect_database, init_database
+from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
+from jobbergateapi2.main import init_database
+from jobbergateapi2.storage import database
 
 
 async def create_super_user(full_name, email, password):
@@ -25,8 +27,13 @@ async def create_super_user(full_name, email, password):
         "is_active": True,
         "principals": "role:admin",
     }
-    await storage.database.execute(query=query, values=values)
-    await disconnect_database()
+    async with database.transaction():
+        try:
+            await storage.database.execute(query=query, values=values)
+        except INTEGRITY_CHECK_EXCEPTIONS:
+            click.echo(f"User {full_name} already exists")
+            return
+    click.echo(f"User {full_name} created")
 
 
 @click.option("--password", prompt=True, hide_input=True, confirmation_prompt=True)
@@ -39,4 +46,3 @@ def createsuperuser(full_name, email, password):
     """
     password = pwd_context.hash(password)
     asyncio.run(create_super_user(full_name, email, password))
-    click.echo(f"User {full_name} created")

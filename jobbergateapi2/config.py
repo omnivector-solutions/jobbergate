@@ -1,9 +1,7 @@
 """
 Configuration file, sets all the necessary environment variables, it is better used with a .env file
 """
-from typing import List
-
-from pydantic import AnyHttpUrl, BaseSettings, Field
+from pydantic import BaseSettings, Field
 
 _DB_RX = r"^(sqlite|postgres)://.+$"
 
@@ -18,7 +16,8 @@ class Settings(BaseSettings):
     SERVERLESS_STAGE: str = Field("staging")
     SERVERLESS_REGION: str = Field("eu-north-1")
     S3_BASE_PATH: str = Field("jobbergate-resources")
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    # BACKEND_CORS_ORIGINS example: "['https://example1.com', 'https://example2.com']"
+    BACKEND_CORS_ORIGINS: str = Field("[]")
 
     class Config:
         env_file = ".env"
