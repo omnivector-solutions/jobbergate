@@ -24,6 +24,7 @@ from jobbergateapi2.apps.permissions.schemas import (
 from jobbergateapi2.apps.users.schemas import _PRINCIPALS_RX, User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.storage import database
+from jobbergateapi2.token import Token, security
 
 router = APIRouter()
 
@@ -83,17 +84,17 @@ async def resource_acl_as_list(permission_query):
     description="Endpoint to create permissions",
 )
 async def permission_create(
-    current_user: User = Depends(get_current_user),
+    token: Token = Depends(security),
     acl: str = Form(..., regex=_ACL_RX),
     permission_query: str = Query(..., regex=_QUERY_RX),
 ):
     """
     Create new permission using an admin user.
     """
-    if not current_user.is_superuser:
+    if not token.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="To create permissions the user must be superuser",
+            detail="Must be logged in as superuser to create permissions",
         )
     permission_class = permission_classes[permission_query]
     permission_table = permission_tables[permission_query]

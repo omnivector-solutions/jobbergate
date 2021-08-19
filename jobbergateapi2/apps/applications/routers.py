@@ -9,13 +9,13 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application, ApplicationRequest
-from jobbergateapi2.apps.auth.authentication import Permission, get_current_user
+from jobbergateapi2.apps.auth.authentication import Permission
 from jobbergateapi2.apps.permissions.routers import resource_acl_as_list
-from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
 from jobbergateapi2.pagination import Pagination
 from jobbergateapi2.storage import database
+from jobbergateapi2.token import Token, security
 
 S3_BUCKET = f"jobbergateapi2-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
 router = APIRouter()
@@ -36,12 +36,12 @@ async def applications_create(
     application_description: str = Form(""),
     application_config: str = Form(...),
     application_file: str = Form(...),
-    current_user: User = Depends(get_current_user),
+    token: Token = Depends(security),
     upload_file: UploadFile = File(...),
     acls: list = Permission("create", applications_acl_as_list),
 ):
     """
-    Create new applications using an authenticated user.
+    Create new applications using an authenticated user token.
     """
     s3_client = boto3.client("s3")
 
@@ -50,7 +50,7 @@ async def applications_create(
         application_description=application_description,
         application_file=application_file,
         application_config=application_config,
-        application_owner_id=current_user.id,
+        application_owner_id=token.sub,
     )
 
     async with database.transaction():
@@ -74,9 +74,9 @@ async def applications_create(
     "/applications/{application_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete application",
+    dependencies=[Depends(security)],
 )
 async def application_delete(
-    current_user: User = Depends(get_current_user),
     application_id: int = Query(..., description="id of the application to delete"),
     acls: list = Permission("delete", applications_acl_as_list),
 ):
@@ -110,15 +110,15 @@ async def application_delete(
 async def applications_list(
     p: Pagination = Depends(),
     all: Optional[bool] = Query(None),
-    current_user: User = Depends(get_current_user),
+    token: Token = Depends(security),
     acls: list = Permission("view", applications_acl_as_list),
 ):
     """
-    List applications for the authenticated user.
+    List applications for the authenticated user token.
     """
     query = applications_table.select()
     if not all:
-        query = query.where(applications_table.c.application_owner_id == current_user.id)
+        query = query.where(applications_table.c.application_owner_id == tokn.sub)
     query = query.limit(p.limit).offset(p.skip)
     raw_applications = await database.fetch_all(query)
     applications = [Application.parse_obj(x) for x in raw_applications]
@@ -160,7 +160,7 @@ async def application_update(
     application_description: Optional[str] = Form(None),
     application_config: Optional[str] = Form(None),
     application_file: Optional[str] = Form(None),
-    current_user: User = Depends(get_current_user),
+    token: Token = Depends(security),
     upload_file: Optional[UploadFile] = File(None),
     acls: list = Permission("update", applications_acl_as_list),
 ):
@@ -198,7 +198,7 @@ async def application_update(
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     application_location = (
-        f"{settings.S3_BASE_PATH}/{current_user.id}/applications/{application_id}/jobbergate.tar.gz"
+        f"{settings.S3_BASE_PATH}/{token.sub}/applications/{application_id}/jobbergate.tar.gz"
     )
     if upload_file:
         s3_client.put_object(

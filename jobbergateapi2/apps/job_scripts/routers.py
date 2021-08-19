@@ -15,7 +15,7 @@ from jinja2 import Template
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application
-from jobbergateapi2.apps.auth.authentication import Permission, get_current_user
+from jobbergateapi2.apps.auth.authentication import Permission
 from jobbergateapi2.apps.job_scripts.models import job_scripts_table
 from jobbergateapi2.apps.job_scripts.schemas import JobScript, JobScriptRequest
 from jobbergateapi2.apps.permissions.routers import resource_acl_as_list

@@ -23,7 +23,7 @@ default_section = "THIRDPARTY"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-fastapi = "^0.54.1"
+fastapi = "^0.68.0"
 email_validator = "^1.1.0"
 uvicorn = "^0.11.5"
 psycopg2 = "^2.9.1"
@@ -40,6 +40,7 @@ Jinja2 = "^2.11.3"
 asyncpg = "^0.22.0"
 fastapi_permissions = "^0.2.7"
 loguru = "^0.5.3"
+mini-auth-token = "^0.1.6"
 
 [tool.poetry.dev-dependencies]
 black = { version = "^19", allow-prereleases = true }
@@ -56,6 +57,10 @@ ipython = "^7.26.0"
 
 [tool.poetry.scripts]
 db-login = "bin.db_login:login"
+
+[[tool.poetry.source]]
+name = "pypicloud"
+url = "https://pypicloud.omnivector.solutions/simple"
 
 [build-system]
 requires = ["poetry>=1.0.0"]
