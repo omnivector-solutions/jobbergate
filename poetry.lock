@@ -41,6 +41,40 @@ url = "https://pypicloud.omnivector.solutions/simple"
 reference = "pypicloud"
 
 [[package]]
+name = "armada-security"
+version = "0.1.0"
+description = "Armada Security Tools"
+category = "main"
+optional = false
+python-versions = ">=3.8,<4.0"
+
+[package.dependencies]
+fastapi = ">=0.68.0,<0.69.0"
+python-dotenv = ">=0.16.0,<0.17.0"
+python-jose = {version = ">=3.2.0,<4.0.0", extras = ["cryptography"]}
+
+[package.source]
+type = "legacy"
+url = "https://pypicloud.omnivector.solutions/simple"
+reference = "pypicloud"
+
+[[package]]
+name = "asgi-lifespan"
+version = "1.0.1"
+description = "Programmatic startup/shutdown of ASGI apps."
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+sniffio = "*"
+
+[package.source]
+type = "legacy"
+url = "https://pypicloud.omnivector.solutions/simple"
+reference = "pypicloud"
+
+[[package]]
 name = "asyncpg"
 version = "0.22.0"
 description = "An asyncio PostgreSQL driver"
@@ -62,7 +96,7 @@ reference = "pypicloud"
 name = "atomicwrites"
 version = "1.4.0"
 description = "Atomic file writes."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
@@ -75,7 +109,7 @@ reference = "pypicloud"
 name = "attrs"
 version = "21.2.0"
 description = "Classes Without Boilerplate"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
@@ -479,27 +513,6 @@ url = "https://pypicloud.omnivector.solutions/simple"
 reference = "pypicloud"
 
 [[package]]
-name = "fastapi-permissions"
-version = "0.2.7"
-description = "Row Level Permissions for FastAPI"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.dependencies]
-fastapi = ">=0.33.0"
-python-multipart = ">=0.0.5"
-
-[package.extras]
-dev = ["black", "flake8", "flake8-comprehensions", "isort (>=5.0.0)", "keyring", "pre-commit", "pyjwt", "passlib", "fastapi"]
-test = ["pytest (>=4.0.0)", "pytest-cov", "pytest-mock", "pytest-asyncio", "pytest-randomly", "tox"]
-
-[package.source]
-type = "legacy"
-url = "https://pypicloud.omnivector.solutions/simple"
-reference = "pypicloud"
-
-[[package]]
 name = "filelock"
 version = "3.0.12"
 description = "A platform independent file lock."
@@ -516,7 +529,7 @@ reference = "pypicloud"
 name = "freezegun"
 version = "1.1.0"
 description = "Let your Python tests travel through time"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.5"
 
@@ -754,29 +767,10 @@ url = "https://pypicloud.omnivector.solutions/simple"
 reference = "pypicloud"
 
 [[package]]
-name = "mini-auth-token"
-version = "0.1.6"
-description = "Token tools for mini-auth"
-category = "main"
-optional = false
-python-versions = ">=3.8,<4.0"
-
-[package.dependencies]
-fastapi = ">=0.68.0,<0.69.0"
-fastapi_permissions = ">=0.2.7,<0.3.0"
-python-dotenv = ">=0.16.0,<0.17.0"
-python-jose = {version = ">=3.2.0,<4.0.0", extras = ["cryptography"]}
-
-[package.source]
-type = "legacy"
-url = "https://pypicloud.omnivector.solutions/simple"
-reference = "pypicloud"
-
-[[package]]
 name = "more-itertools"
 version = "8.8.0"
 description = "More routines for operating on iterables, beyond itertools"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.5"
 
@@ -1153,7 +1147,7 @@ reference = "pypicloud"
 name = "pytest"
 version = "5.4.3"
 description = "pytest: simple powerful testing with Python"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.5"
 
@@ -1217,10 +1211,26 @@ url = "https://pypicloud.omnivector.solutions/simple"
 reference = "pypicloud"
 
 [[package]]
+name = "pytest-env"
+version = "0.6.2"
+description = "py.test plugin that allows you to add environment variables."
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+pytest = ">=2.6.0"
+
+[package.source]
+type = "legacy"
+url = "https://pypicloud.omnivector.solutions/simple"
+reference = "pypicloud"
+
+[[package]]
 name = "pytest-freezegun"
 version = "0.4.2"
 description = "Wrap tests with fixtures in freeze_time"
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -1438,6 +1448,19 @@ description = "Python 2 and 3 compatibility utilities"
 category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
+
+[package.source]
+type = "legacy"
+url = "https://pypicloud.omnivector.solutions/simple"
+reference = "pypicloud"
+
+[[package]]
+name = "sniffio"
+version = "1.2.0"
+description = "Sniff out which async library your code is running under"
+category = "dev"
+optional = false
+python-versions = ">=3.5"
 
 [package.source]
 type = "legacy"
@@ -1702,7 +1725,7 @@ reference = "pypicloud"
 name = "wcwidth"
 version = "0.2.5"
 description = "Measures the displayed width of unicode strings in a terminal"
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -1743,7 +1766,7 @@ reference = "pypicloud"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "99d3870a4874dcd444117d1dab4229056b48a49239a149bf0f8a53dbd6a0b836"
+content-hash = "fb76f7e10dfeaa0d76110635ce6ce91e6509e1ad6716bea5c698b59f7049c273"
 
 [metadata.files]
 aiosqlite = [
@@ -1757,6 +1780,14 @@ appdirs = [
 appnope = [
     {file = "appnope-0.1.2-py2.py3-none-any.whl", hash = "sha256:93aa393e9d6c54c5cd570ccadd8edad61ea0c4b9ea7a01409020c9aa019eb442"},
     {file = "appnope-0.1.2.tar.gz", hash = "sha256:dd83cd4b5b460958838f6eb3000c660b1f9caf2a5b1de4264e941512f603258a"},
+]
+armada-security = [
+    {file = "armada-security-0.1.0.tar.gz", hash = "sha256:1b9c81be62f935886e7de57bbfdb20d2fe97d082ddec7bf99c78116166d7b6ae"},
+    {file = "armada_security-0.1.0-py3-none-any.whl", hash = "sha256:b3ec33c1d017d617e705754d57fa8e99ffb6b3d9186262e5183201e98abe5c1d"},
+]
+asgi-lifespan = [
+    {file = "asgi-lifespan-1.0.1.tar.gz", hash = "sha256:9a33e7da2073c4764bc79bd6136501d6c42f60e3d2168ba71235e84122eadb7f"},
+    {file = "asgi_lifespan-1.0.1-py3-none-any.whl", hash = "sha256:9ea969dc5eb5cf08e52c08dce6f61afcadd28112e72d81c972b1d8eb8691ab53"},
 ]
 asyncpg = [
     {file = "asyncpg-0.22.0-cp35-cp35m-macosx_10_14_x86_64.whl", hash = "sha256:ccd75cfb4710c7e8debc19516e2e1d4c9863cce3f7a45a3822980d04b16f4fdd"},
@@ -1975,10 +2006,6 @@ fastapi = [
     {file = "fastapi-0.68.0-py3-none-any.whl", hash = "sha256:f4dba2596b1e0a1f962834c3b9ec4291a7aec387a1031c6c2e25bf239d27fd0f"},
     {file = "fastapi-0.68.0.tar.gz", hash = "sha256:c9256a89b0436223b45f53fe3a39b178f3da6be5841a2c59deedff4b676d003f"},
 ]
-fastapi-permissions = [
-    {file = "fastapi_permissions-0.2.7-py3-none-any.whl", hash = "sha256:b9e5c05b4621b00db3d3ffb9cac55be1295c83648ced6c253fe94cd8cd3bc75f"},
-    {file = "fastapi_permissions-0.2.7.tar.gz", hash = "sha256:9a344b2f67d983959f8922a02aa308f1c6382efeab12cdc9f013482c49df9b76"},
-]
 filelock = [
     {file = "filelock-3.0.12-py3-none-any.whl", hash = "sha256:929b7d63ec5b7d6b71b0fa5ac14e030b3f70b75747cef1b10da9b879fef15836"},
     {file = "filelock-3.0.12.tar.gz", hash = "sha256:18d82244ee114f543149c66a6e0c14e9c4f8a1044b5cdaadd0f82159d6a6ff59"},
@@ -2103,10 +2130,6 @@ markupsafe = [
 matplotlib-inline = [
     {file = "matplotlib-inline-0.1.2.tar.gz", hash = "sha256:f41d5ff73c9f5385775d5c0bc13b424535c8402fe70ea8210f93e11f3683993e"},
     {file = "matplotlib_inline-0.1.2-py3-none-any.whl", hash = "sha256:5cf1176f554abb4fa98cb362aa2b55c500147e4bdbb07e3fda359143e1da0811"},
-]
-mini-auth-token = [
-    {file = "mini-auth-token-0.1.6.tar.gz", hash = "sha256:59aaea5253f2d08c4b71058621f8507b93a55eb479afbddd27cba2970f5bdd85"},
-    {file = "mini_auth_token-0.1.6-py3-none-any.whl", hash = "sha256:d59cc7c344c33916e485105737ab47a786322d342b5cce5009b62990a9e58e51"},
 ]
 more-itertools = [
     {file = "more-itertools-8.8.0.tar.gz", hash = "sha256:83f0308e05477c68f56ea3a888172c78ed5d5b3c282addb67508e7ba6c8f813a"},
@@ -2261,6 +2284,9 @@ pytest-cov = [
     {file = "pytest-cov-2.12.1.tar.gz", hash = "sha256:261ceeb8c227b726249b376b8526b600f38667ee314f910353fa318caa01f4d7"},
     {file = "pytest_cov-2.12.1-py2.py3-none-any.whl", hash = "sha256:261bb9e47e65bd099c89c3edf92972865210c36813f80ede5277dceb77a4a62a"},
 ]
+pytest-env = [
+    {file = "pytest-env-0.6.2.tar.gz", hash = "sha256:7e94956aef7f2764f3c147d216ce066bf6c42948bb9e293169b1b1c880a580c2"},
+]
 pytest-freezegun = [
     {file = "pytest-freezegun-0.4.2.zip", hash = "sha256:19c82d5633751bf3ec92caa481fb5cffaac1787bd485f0df6436fd6242176949"},
     {file = "pytest_freezegun-0.4.2-py2.py3-none-any.whl", hash = "sha256:5318a6bfb8ba4b709c8471c94d0033113877b3ee02da5bfcd917c1889cde99a7"},
@@ -2391,6 +2417,10 @@ setproctitle = [
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
+]
+sniffio = [
+    {file = "sniffio-1.2.0-py3-none-any.whl", hash = "sha256:471b71698eac1c2112a40ce2752bb2f4a4814c22a54a3eed3676bc0f5ca9f663"},
+    {file = "sniffio-1.2.0.tar.gz", hash = "sha256:c4666eecec1d3f50960c6bdf61ab7bc350648da6c126e3cf6898d8cd4ddcd3de"},
 ]
 sqlalchemy = [
     {file = "SQLAlchemy-1.3.24-cp27-cp27m-macosx_10_14_x86_64.whl", hash = "sha256:87a2725ad7d41cd7376373c15fd8bf674e9c33ca56d0b8036add2d634dba372e"},

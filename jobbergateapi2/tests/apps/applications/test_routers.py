@@ -28,7 +28,7 @@ nest_asyncio.apply()
 @pytest.mark.asyncio
 @mock.patch("jobbergateapi2.apps.applications.routers.boto3")
 @database.transaction(force_rollback=True)
-async def test_create_application(boto3_client_mock, application_data, client, user_data):
+async def test_create_application(boto3_client_mock, application_data, client, inject_security_header):
     """
     Test POST /applications/ correctly creates an application.
 
@@ -46,6 +46,7 @@ async def test_create_application(boto3_client_mock, application_data, client, u
     application_permission = [ApplicationPermission(id=1, acl="Allow|role:admin|create")]
     await insert_objects(application_permission, application_permissions_table)
 
+    inject_security_header("owner1", ["jobbergate:applications:create"])
     response = client.post("/applications/", data=application_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_201_CREATED
     s3_client_mock.put_object.assert_called_once()

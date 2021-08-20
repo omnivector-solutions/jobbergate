@@ -1,13 +1,19 @@
 """
 Configuration of pytest
 """
+import datetime
 import os
+import typing
 
 from fastapi.testclient import TestClient
+from httpx import AsyncClient
 from jose import jwt
 from pytest import fixture
+from armasec.managers import TestTokenManager
 
+from jobbergateapi2.main import app
 from jobbergateapi2.config import settings
+from jobbergateapi2
 
 TESTING_DB_FILE = "./sqlite-testing.db"
 settings.DATABASE_URL = f"sqlite:///{TESTING_DB_FILE}"
@@ -52,15 +58,45 @@ async def enforce_empty_database():
 
 
 @fixture
-async def client():
+def manager():
+    """
+    Returns a TestTokenManager behaves the same as the app's TokenManager but with test helpers added
+    """
+    return TestTokenManager(
+        secret=settings.ARMASEC_SECRET,
+        algorithm=settings.ARMASEC_ALGORITHM,
+        issuer=settings.ARMASEC_ISSUER,
+        audience=settings.ARMASEC_AUDIENCE,
+    )
+
+
+@fixture(autouse=True)
+async def startup_event_force():
+    async with LifespanManager(app):
+        yield
+
+
+
+@fixture
+async def client(startup_event_force):
     """
     A client that can issue fake requests against fastapi endpoint functions in the backend
     """
-    # defer import of main to prevent accidentally importing storage too early
-    from jobbergateapi2.main import app as backend_app
-
-    encoded_jwt = jwt.encode({"sub": "user1@email.com"}, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    with TestClient(backend_app) as client:
-        token = f"bearer {encoded_jwt}"
-        client.headers.update({"Authorization": token})
+    with AsyncClient(backend_app, base_url="http://test") as client:
         yield client
+
+
+@fixture
+async def inject_security_header(client, manager):
+    def _helper(
+        owner_id: str,
+        permissions: typing.List[str],
+        expires_in_minutes: int = 0,
+    )
+        token_payload = TokenPayload(
+            sub=owner_id,
+            permissions=permissions,
+            expire=datetime.datetime.utcnow() + datetime.timedelta(minutes=expires_in_minutes),
+        )
+        client.headers.update(manager.pack_header(token_payload))
+    return _helper

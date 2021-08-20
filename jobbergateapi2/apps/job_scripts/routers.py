@@ -15,15 +15,14 @@ from jinja2 import Template
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application
-from jobbergateapi2.apps.auth.authentication import Permission
 from jobbergateapi2.apps.job_scripts.models import job_scripts_table
 from jobbergateapi2.apps.job_scripts.schemas import JobScript, JobScriptRequest
 from jobbergateapi2.apps.permissions.routers import resource_acl_as_list
-from jobbergateapi2.apps.users.schemas import User
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
 from jobbergateapi2.pagination import Pagination
 from jobbergateapi2.storage import database
+from jobbergateapi2.security import armasec_factory
 
 S3_BUCKET = f"jobbergateapi2-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
 router = APIRouter()
@@ -145,7 +144,7 @@ async def job_script_create(
     job_script_name: str = Form(...),
     job_script_description: Optional[str] = Form(""),
     application_id: int = Form(...),
-    current_user: User = Depends(get_current_user),
+    token_payload: TokenPayload = Depends(armasec_factory("jobbergate:job_scripts:create")),
     upload_file: UploadFile = File(...),
     sbatch_params: Optional[List[str]] = Form(None),
     param_dict: Optional[str] = Form(None),
@@ -166,7 +165,7 @@ async def job_script_create(
             detail=f"Application with id={application_id} not found.",
         )
     application = Application.parse_obj(raw_application)
-    s3_application_tar = get_s3_object_as_tarfile(current_user.id, application.id)
+    s3_application_tar = get_s3_object_as_tarfile(token_payload.sub, application.id)
 
     job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, param_dict)
 
@@ -177,7 +176,7 @@ async def job_script_create(
         job_script_name=job_script_name,
         job_script_description=job_script_description,
         job_script_data_as_string=job_script_data_as_string,
-        job_script_owner_id=current_user.id,
+        job_script_owner_id=token_payload.sub,
         application_id=application_id,
     )
 
@@ -193,13 +192,12 @@ async def job_script_create(
 
 
 @router.get(
-    "/job-scripts/{job_script_id}", description="Endpoint to get a job_script", response_model=JobScript
+    "/job-scripts/{job_script_id}",
+    description="Endpoint to get a job_script",
+    response_model=JobScript,
+    dependencies=[Depends(armasec_factory("jobbergate:job_scripts:read"))],
 )
-async def job_script_get(
-    job_script_id: int = Query(...),
-    current_user: User = Depends(get_current_user),
-    acls: list = Permission("view", job_scripts_acl_as_list),
-):
+async def job_script_get(job_script_id: int = Query(...)):
     """
     Return the job_script given it's id.
     """
@@ -219,15 +217,14 @@ async def job_script_get(
 async def job_script_list(
     p: Pagination = Depends(),
     all: Optional[bool] = Query(None),
-    current_user: User = Depends(get_current_user),
-    acls: list = Permission("view", job_scripts_acl_as_list),
+    token_payload: TokenPayload = Depends(armasec_factory("jobbergate:job_scripts:read")),
 ):
     """
     List job_scripts for the authenticated user.
     """
     query = job_scripts_table.select()
     if not all:
-        query = query.where(job_scripts_table.c.job_script_owner_id == current_user.id)
+        query = query.where(job_scripts_table.c.job_script_owner_id == token_payload.sub)
     query = query.limit(p.limit).offset(p.skip)
     raw_job_scripts = await database.fetch_all(query)
     job_scripts = [JobScript.parse_obj(x) for x in raw_job_scripts]
@@ -239,12 +236,9 @@ async def job_script_list(
     "/job-scripts/{job_script_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete job script",
+    dependencies=[Depends(armasec_factory("jobbergate:job_scripts:delete"))],
 )
-async def job_script_delete(
-    current_user: User = Depends(get_current_user),
-    job_script_id: int = Query(..., description="id of the job script to delete"),
-    acls: list = Permission("delete", job_scripts_acl_as_list),
-):
+async def job_script_delete(job_script_id: int = Query(..., description="id of the job script to delete")):
     """
     Delete job_script given its id.
     """
@@ -267,14 +261,13 @@ async def job_script_delete(
     status_code=status.HTTP_201_CREATED,
     description="Endpoint to update a job_script given the id",
     response_model=JobScript,
+    dependencies=[Depends(armasec_factory("jobbergate:job_scripts:update"))],
 )
 async def job_script_update(
     job_script_id: int = Query(...),
     job_script_name: Optional[str] = Form(None),
     job_script_description: Optional[str] = Form(None),
     job_script_data_as_string: Optional[str] = Form(None),
-    current_user: User = Depends(get_current_user),
-    acls: list = Permission("update", job_scripts_acl_as_list),
 ):
     """
     Update a job_script given its id.

@@ -16,7 +16,7 @@ job_scripts_table = Table(
     Column("job_script_name", String, nullable=False, index=True),
     Column("job_script_description", String, default=""),
     Column("job_script_data_as_string", String, nullable=False),
-    Column("job_script_owner_id", Integer, nullable=False, index=True),
+    Column("job_script_owner_id", String, nullable=False, index=True),
     Column("application_id", ForeignKey("applications.id")),
     Column("created_at", DateTime, nullable=False, default=func.now()),
     Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=datetime.utcnow),

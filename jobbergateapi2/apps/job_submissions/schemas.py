@@ -36,6 +36,6 @@ class JobSubmission(JobSubmissionRequest):
     """
 
     id: Optional[int] = Field(None)
-    job_submission_owner_id: int = Field(...)
+    job_submission_owner_id: str = Field(...)
     created_at: Optional[datetime] = Field(datetime.utcnow())
     updated_at: Optional[datetime] = Field(datetime.utcnow())

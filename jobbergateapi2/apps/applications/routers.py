@@ -15,10 +15,15 @@ from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
 from jobbergateapi2.pagination import Pagination
 from jobbergateapi2.storage import database
-from jobbergateapi2.token import Token, security
+from jobbergateapi2.security import armasec_factory
 
 S3_BUCKET = f"jobbergateapi2-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
 router = APIRouter()
+
+
+read_permission = armasec_factory(scopes=["applications:read"])
+create_permission = armasec_factory(scopes=["applications:create"])
+create_permission = armasec_factory(scopes=["applications:create"])
 
 
 async def applications_acl_as_list():
@@ -29,16 +34,17 @@ async def applications_acl_as_list():
 
 
 @router.post(
-    "/applications/", status_code=status.HTTP_201_CREATED, description="Endpoint for application creation"
+    "/applications/",
+    status_code=status.HTTP_201_CREATED,
+    description="Endpoint for application creation",
 )
 async def applications_create(
     application_name: str = Form(...),
     application_description: str = Form(""),
     application_config: str = Form(...),
     application_file: str = Form(...),
-    token: Token = Depends(security),
+    token_payload: TokenPayload = Depends(armasec_factory("jobbergate:applicaitons:create")),
     upload_file: UploadFile = File(...),
-    acls: list = Permission("create", applications_acl_as_list),
 ):
     """
     Create new applications using an authenticated user token.
@@ -50,7 +56,7 @@ async def applications_create(
         application_description=application_description,
         application_file=application_file,
         application_config=application_config,
-        application_owner_id=token.sub,
+        application_owner_id=token_payload.sub,
     )
 
     async with database.transaction():
@@ -61,7 +67,11 @@ async def applications_create(
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-    application_location = f"{settings.S3_BASE_PATH}/{application.application_owner_id}/applications/{application_created_id}/jobbergate.tar.gz"  # noqa
+    application_location = f"{base}/{owner_id}/applications/{app_id}/jobbergate.tar.gz".format(
+        base=settings.S3_BASE_PATH,
+        owner_id=application.application_owner_id
+        app_id=application_created_id,
+    )
     s3_client.put_object(
         Body=upload_file.file,
         Bucket=S3_BUCKET,
@@ -74,11 +84,10 @@ async def applications_create(
     "/applications/{application_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete application",
-    dependencies=[Depends(security)],
+    dependencies=[Depends(armasec_factory("jobbergate:applicaitons:delete"))],
 )
 async def application_delete(
     application_id: int = Query(..., description="id of the application to delete"),
-    acls: list = Permission("delete", applications_acl_as_list),
 ):
     """
     Delete application from the database and S3 given it's id.
@@ -95,7 +104,11 @@ async def application_delete(
     application = Application.parse_obj(raw_application)
     delete_query = applications_table.delete().where(where_stmt)
     await database.execute(delete_query)
-    application_location = f"{settings.S3_BASE_PATH}/{application.application_owner_id}/applications/{application.id}/jobbergate.tar.gz"  # noqa
+    application_location = f"{base}/{owner_id}/applications/{app_id}/jobbergate.tar.gz".format(
+        base=settings.S3_BASE_PATH,
+        owner_id=application.application_owner_id
+        app_id=application_created_id,
+    )
     s3_client.delete_object(
         Bucket=S3_BUCKET,
         Key=application_location,
@@ -106,15 +119,11 @@ async def application_delete(
     "/applications/",
     description="Endpoint to list applications",
     response_model=List[Application],
+    dependencies=[Depends(armasec_factory("jobbergate:applicaitons:read"))],
 )
-async def applications_list(
-    p: Pagination = Depends(),
-    all: Optional[bool] = Query(None),
-    token: Token = Depends(security),
-    acls: list = Permission("view", applications_acl_as_list),
-):
+async def applications_list(p: Pagination = Depends(), all: Optional[bool] = Query(None)):
     """
-    List applications for the authenticated user token.
+    List all applications
     """
     query = applications_table.select()
     if not all:
@@ -129,10 +138,9 @@ async def applications_list(
     "/applications/{application_id}",
     description="Endpoint to return an application given the id",
     response_model=Application,
+    dependencies=[Depends(armasec_factory("jobbergate:applicaitons:read"))],
 )
-async def applications_get_by_id(
-    application_id: int = Query(...), acls: list = Permission("view", applications_acl_as_list)
-):
+async def applications_get_by_id(application_id: int = Query(...)):
     """
     Return the application given it's id.
     """
@@ -160,9 +168,8 @@ async def application_update(
     application_description: Optional[str] = Form(None),
     application_config: Optional[str] = Form(None),
     application_file: Optional[str] = Form(None),
-    token: Token = Depends(security),
+    token_payload: TokenPayload = Depends(armasec_factory("jobbergate:applicaitons:update")),
     upload_file: Optional[UploadFile] = File(None),
-    acls: list = Permission("update", applications_acl_as_list),
 ):
     """
     Update an application given it's id.
@@ -197,8 +204,11 @@ async def application_update(
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-    application_location = (
-        f"{settings.S3_BASE_PATH}/{token.sub}/applications/{application_id}/jobbergate.tar.gz"
+    application_location = f"{base}/{owner_id}/applications/{app_id}/jobbergate.tar.gz".format(
+        base=settings.S3_BASE_PATH,
+        # owner_id=token_payload.sub,
+        owner_id=application.application_owner_id
+        app_id=application_created_id,
     )
     if upload_file:
         s3_client.put_object(

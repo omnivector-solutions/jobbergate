@@ -54,6 +54,6 @@ def job_script_data():
     return {
         "job_script_name": "test_name",
         "job_script_data_as_string": "the\nfile",
-        "job_script_owner_id": 1,
+        "job_script_owner_id": "owner1",
         "application_id": 1,
     }

@@ -21,13 +21,25 @@ skip_glob = "migrations/*"
 sections = "FUTURE,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
 default_section = "THIRDPARTY"
 
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--random-order --cov=jobbergate2 --cov-report=term-missing --cov-fail-under=95"
+testpaths = ["jobbergate2/tests"]
+env = [
+    "DATABASE_URL = sqlite:///sqlite-testing.db",
+    "TEST_ENV = True",
+
+    "ARMASEC_SECRET = notmuchofasecret",
+    "ARMASEC_ISSUER = https://armasec-issuer.com",
+    "ARMASEC_AUDIENCE = https://armasec-audience.com/",
+]
+
 [tool.poetry.dependencies]
 python = "^3.8"
 fastapi = "^0.68.0"
 email_validator = "^1.1.0"
 uvicorn = "^0.11.5"
 psycopg2 = "^2.9.1"
-python-jose = {extras = ["cryptography"], version = "^3.2.0"}
 passlib = "^1.7.2"
 python-multipart = "^0.0.5"
 python-dotenv = "^0.16.0"
@@ -35,12 +47,10 @@ tox = "^3.23.0"
 mangum = "^0.11.0"
 databases = {extras = ["sqlite"], version = "^0.4.3"}
 boto3 = "^1.17.51"
-pytest-freezegun = "^0.4.2"
 Jinja2 = "^2.11.3"
 asyncpg = "^0.22.0"
-fastapi_permissions = "^0.2.7"
 loguru = "^0.5.3"
-mini-auth-token = "^0.1.6"
+armada-security = "^0.1.0"
 
 [tool.poetry.dev-dependencies]
 black = { version = "^19", allow-prereleases = true }
@@ -54,6 +64,9 @@ nest_asyncio = "^1.3.3"
 coverage = "^5.1"
 pgcli = "^3.1.0"
 ipython = "^7.26.0"
+pytest-freezegun = "^0.4.2"
+pytest-env = "^0.6.2"
+asgi-lifespan = "^1.0.1"
 
 [tool.poetry.scripts]
 db-login = "bin.db_login:login"
