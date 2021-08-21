@@ -5,6 +5,7 @@ import datetime
 import os
 import typing
 
+from asgi_lifespan import LifespanManager
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from jose import jwt
@@ -13,7 +14,6 @@ from armasec.managers import TestTokenManager
 
 from jobbergateapi2.main import app
 from jobbergateapi2.config import settings
-from jobbergateapi2
 
 TESTING_DB_FILE = "./sqlite-testing.db"
 settings.DATABASE_URL = f"sqlite:///{TESTING_DB_FILE}"
@@ -53,7 +53,7 @@ async def enforce_empty_database():
     yield
     from jobbergateapi2.storage import database
 
-    count = await database.fetch_all("SELECT COUNT(*) FROM users")
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
 
 
@@ -92,7 +92,7 @@ async def inject_security_header(client, manager):
         owner_id: str,
         permissions: typing.List[str],
         expires_in_minutes: int = 0,
-    )
+    ):
         token_payload = TokenPayload(
             sub=owner_id,
             permissions=permissions,

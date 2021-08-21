@@ -24,7 +24,7 @@ default_section = "THIRDPARTY"
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "--random-order --cov=jobbergate2 --cov-report=term-missing --cov-fail-under=95"
-testpaths = ["jobbergate2/tests"]
+testpaths = ["jobbergateapi2/tests"]
 env = [
     "DATABASE_URL = sqlite:///sqlite-testing.db",
     "TEST_ENV = True",
@@ -38,24 +38,23 @@ env = [
 python = "^3.8"
 fastapi = "^0.68.0"
 email_validator = "^1.1.0"
-uvicorn = "^0.11.5"
 psycopg2 = "^2.9.1"
 passlib = "^1.7.2"
 python-multipart = "^0.0.5"
 python-dotenv = "^0.16.0"
-tox = "^3.23.0"
 mangum = "^0.11.0"
 databases = {extras = ["sqlite"], version = "^0.4.3"}
 boto3 = "^1.17.51"
 Jinja2 = "^2.11.3"
 asyncpg = "^0.22.0"
 loguru = "^0.5.3"
-armada-security = "^0.1.0"
+uvicorn = "^0.15.0"
+armada-security = "^0.2.0"
 
 [tool.poetry.dev-dependencies]
 black = { version = "^19", allow-prereleases = true }
 pre-commit = "^2.9.2"
-pytest = "^5.2"
+pytest = "^6.2"
 pytest-asyncio = "^0.12"
 pytest-cov = "^2.8"
 python-status = "i^1.0"
@@ -67,6 +66,7 @@ ipython = "^7.26.0"
 pytest-freezegun = "^0.4.2"
 pytest-env = "^0.6.2"
 asgi-lifespan = "^1.0.1"
+pytest-random-order = "^1.0.4"
 
 [tool.poetry.scripts]
 db-login = "bin.db_login:login"
