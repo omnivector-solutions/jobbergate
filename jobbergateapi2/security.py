@@ -3,7 +3,7 @@ from collections import namedtuple
 from armasec import TokenManager
 from loguru import logger
 
-from jobberrgateapi2.config import settings
+from jobbergateapi2.config import settings
 
 extra_kwars = dict()
 if settings.TEST_ENV:

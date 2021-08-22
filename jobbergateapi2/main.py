@@ -11,7 +11,9 @@ from loguru import logger
 
 from jobbergateapi2 import storage
 from jobbergateapi2.config import settings
-from jobbergateapi2.routers import load_routers
+from jobbergateapi2.apps.applications.routers import router as applications_router
+from jobbergateapi2.apps.job_scripts.routers import router as job_scripts_router
+from jobbergateapi2.apps.job_submissions.routers import router as job_submissions_router
 
 app = FastAPI()
 app.add_middleware(
@@ -21,6 +23,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(applications_router)
+app.include_router(job_scripts_router)
+app.include_router(job_submissions_router)
 
 
 @app.on_event("startup")
@@ -31,9 +36,6 @@ async def init_database():
     logger.debug("Initializing database")
     storage.create_all_tables()
     await storage.database.connect()
-
-    logger.debug("Loading routers")
-    load_routers(app)
 
 
 @app.on_event("shutdown")

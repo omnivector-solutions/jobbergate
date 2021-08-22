@@ -9,8 +9,6 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application, ApplicationRequest
-from jobbergateapi2.apps.auth.authentication import Permission
-from jobbergateapi2.apps.permissions.routers import resource_acl_as_list
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
 from jobbergateapi2.pagination import Pagination
@@ -69,7 +67,7 @@ async def applications_create(
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     application_location = f"{base}/{owner_id}/applications/{app_id}/jobbergate.tar.gz".format(
         base=settings.S3_BASE_PATH,
-        owner_id=application.application_owner_id
+        owner_id=application.application_owner_id,
         app_id=application_created_id,
     )
     s3_client.put_object(
@@ -106,7 +104,7 @@ async def application_delete(
     await database.execute(delete_query)
     application_location = f"{base}/{owner_id}/applications/{app_id}/jobbergate.tar.gz".format(
         base=settings.S3_BASE_PATH,
-        owner_id=application.application_owner_id
+        owner_id=application.application_owner_id,
         app_id=application_created_id,
     )
     s3_client.delete_object(
@@ -207,7 +205,7 @@ async def application_update(
     application_location = f"{base}/{owner_id}/applications/{app_id}/jobbergate.tar.gz".format(
         base=settings.S3_BASE_PATH,
         # owner_id=token_payload.sub,
-        owner_id=application.application_owner_id
+        owner_id=application.application_owner_id,
         app_id=application_created_id,
     )
     if upload_file:
