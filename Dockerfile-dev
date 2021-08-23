@@ -7,18 +7,14 @@ RUN pip install 'poetry==1.1.7'
 
 ENV MODULE_NAME="jobbergateapi2.main"
 
-RUN mkdir app
-WORKDIR app
-
 COPY ./pyproject.toml /app/
 COPY ./poetry.lock /app/
 
-COPY hack_build_secrets.sh .
-RUN --mount=type=secret,id=pypi_password ./hack_build_secrets.sh
+ARG PYPI_PASSWORD
 ENV POETRY_HTTP_BASIC_PYPICLOUD_USERNAME=admin
 ENV POETRY_HTTP_BASIC_PYPICLOUD_PASSWORD=$PYPI_PASSWORD
 
 RUN poetry config virtualenvs.create false --local
 RUN poetry install
 
-COPY ./mini_auth /app/mini_auth/
+VOLUME /app/jobbergateapi2
