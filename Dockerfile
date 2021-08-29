@@ -21,4 +21,4 @@ ENV POETRY_HTTP_BASIC_PYPICLOUD_PASSWORD=$PYPI_PASSWORD
 RUN poetry config virtualenvs.create false --local
 RUN poetry install
 
-COPY ./mini_auth /app/mini_auth/
+COPY ./jobbergateapi2 /app/jobbergateapi2/
