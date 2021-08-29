@@ -19,6 +19,6 @@ jobs:
       - uses: Gr1N/setup-poetry@v7
       - name: "run full suite of tests"
         env:
-          POETRY_HTTP_BASIC_PYPICOUD_USERNAME: admin
-          POETRY_HTTP_BASIC_PYPICOUD_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+          POETRY_HTTP_BASIC_PYPICLOUD_USERNAME: admin
+          POETRY_HTTP_BASIC_PYPICLOUD_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: make qa
