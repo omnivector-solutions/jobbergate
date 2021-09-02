@@ -4,8 +4,8 @@ Configuration of pytest
 import datetime
 import os
 import typing
+import unittest
 
-from armasec.managers import TestTokenManager
 from armasec.token_payload import TokenPayload
 from asgi_lifespan import LifespanManager
 from httpx import AsyncClient
@@ -13,11 +13,7 @@ from pytest import fixture
 
 from jobbergateapi2.config import settings
 from jobbergateapi2.main import app
-
-TESTING_DB_FILE = "./sqlite-testing.db"
-settings.DATABASE_URL = f"sqlite:///{TESTING_DB_FILE}"
-
-settings.TEST_ENV = True
+from jobbergateapi2.security import armasec_manager
 
 
 @fixture(scope="session", autouse=True)
@@ -31,7 +27,7 @@ def backend_testing_database():
 
     create_all_tables()
     yield
-    os.remove(TESTING_DB_FILE)
+    os.remove("./sqlite-testing.db")
 
 
 @fixture(autouse=True)
@@ -56,19 +52,6 @@ async def enforce_empty_database():
     assert count[0][0] == 0
 
 
-@fixture
-def manager():
-    """
-    Returns a TestTokenManager behaves the same as the app's TokenManager but with test helpers added
-    """
-    return TestTokenManager(
-        secret=settings.ARMASEC_SECRET,
-        algorithm=settings.ARMASEC_ALGORITHM,
-        issuer=settings.ARMASEC_ISSUER,
-        audience=settings.ARMASEC_AUDIENCE,
-    )
-
-
 @fixture(autouse=True)
 async def startup_event_force():
     async with LifespanManager(app):
@@ -85,7 +68,7 @@ async def client(startup_event_force):
 
 
 @fixture
-async def inject_security_header(client, manager):
+async def inject_security_header(client):
     """
     Provides a helper method that will inject a security token into the requests for a test client. If no
     permisions are provided, the security token will still be valid but will not carry any permissions
@@ -99,6 +82,6 @@ async def inject_security_header(client, manager):
             permissions=permissions,
             expire=datetime.datetime.utcnow() + datetime.timedelta(minutes=expires_in_minutes),
         )
-        client.headers.update(manager.pack_header(token_payload))
+        client.headers.update(armasec_manager.pack_header(token_payload))
 
     return _helper

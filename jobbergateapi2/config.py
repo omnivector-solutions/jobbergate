@@ -18,9 +18,11 @@ class Settings(BaseSettings):
     # Security Settings. For details, see https://github.com/omnivector-solutions/armada-security
     ARMASEC_SECRET: str
     ARMASEC_ALGORITHM: str = Field("RS256")
+    ARMASEC_ISSUER: HttpUrl = Field(None)
     ARMASEC_CLIENT_ID: str
     ARMASEC_DOMAIN: str
     ARMASEC_AUDIENCE: HttpUrl
+    ARMASEC_DEBUG: bool = Field(False)
 
     class Config:
         env_file = ".env"
