@@ -9,14 +9,15 @@ from fastapi import status
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application
+from jobbergateapi2.apps.applications.routers import s3man
 from jobbergateapi2.storage import database
 from jobbergateapi2.tests.apps.conftest import insert_objects
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
+@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
-async def test_create_application(boto3_client_mock, application_data, client, inject_security_header):
+async def test_create_application(s3man_client_mock, application_data, client, inject_security_header):
     """
     Test POST /applications/ correctly creates an application.
 
@@ -24,14 +25,12 @@ async def test_create_application(boto3_client_mock, application_data, client, i
     endpoint. We show this by asserting that the application is created in the database after the post
     request is made, the correct status code (201) is returned and the correct boto3 method was called.
     """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
     file_mock = mock.MagicMock(wraps=StringIO("test"))
 
     inject_security_header("owner1", "jobbergate:applications:create")
     response = await client.post("/applications/", data=application_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_201_CREATED
-    s3_client_mock.put_object.assert_called_once()
+    s3man.s3_client.put_object.assert_called_once()
 
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
@@ -48,10 +47,10 @@ async def test_create_application(boto3_client_mock, application_data, client, i
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
+@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_create_application_bad_permission(
-    boto3_client_mock, application_data, client, inject_security_header,
+    s3man_client_mock, application_data, client, inject_security_header,
 ):
     """
     Test that it is not possible to create application without proper permission.
@@ -61,24 +60,22 @@ async def test_create_application_bad_permission(
     that the application still does not exists in the database, the correct status code (403) is returned
     and that the boto3 method is never called.
     """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
     file_mock = mock.MagicMock(wraps=StringIO("test"))
 
     inject_security_header("owner1", "INVALID_PERMISSION")
     response = await client.post("/applications/", data=application_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    s3_client_mock.put_object.assert_not_called()
+    s3man.s3_client.put_object.assert_not_called()
 
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
+@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_create_without_application_name(
-    boto3_client_mock, application_data, client, inject_security_header,
+    s3man_client_mock, application_data, client, inject_security_header,
 ):
     """
     Test that is not possible to create an application without the required parameters.
@@ -88,25 +85,23 @@ async def test_create_without_application_name(
     application still does not exists in the database, the correct status code (422) is returned and that the
     boto3 method is never called.
     """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
     file_mock = mock.MagicMock(wraps=StringIO("test"))
 
     inject_security_header("owner1", "jobbergate:applications:create")
     application_data["application_name"] = None
     response = await client.post("/applications/", data=application_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    s3_client_mock.put_object.assert_not_called()
+    s3man.s3_client.put_object.assert_not_called()
 
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
+@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_create_without_file(
-    boto3_client_mock, application_data, client, inject_security_header,
+    s3man_client_mock, application_data, client, inject_security_header,
 ):
     """
     Test that is not possible to create an application without a file.
@@ -116,24 +111,21 @@ async def test_create_without_file(
     does not exists in the database, the correct status code (422) is returned and that the boto3 method
     is never called.
     """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
-
     inject_security_header("owner1", "jobbergate:applications:create")
     application_data["application_name"] = None
     response = await client.post("/applications/", data=application_data)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    s3_client_mock.put_object.assert_not_called()
+    s3man.s3_client.put_object.assert_not_called()
 
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
+@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_delete_application(
-    boto3_client_mock, client, application_data, inject_security_header,
+    s3man_client_mock, client, application_data, inject_security_header,
 ):
     """
     Test DELETE /applications/<id> correctly deletes an application.
@@ -143,9 +135,6 @@ async def test_delete_application(
     database after the delete request is made, the correct status code is returned and the correct boto3
     method was called.
     """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
-
     application = [Application(application_owner_id="owner1", **application_data)]
     await insert_objects(application, applications_table)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -156,14 +145,14 @@ async def test_delete_application(
     assert response.status_code == status.HTTP_204_NO_CONTENT
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
-    s3_client_mock.delete_object.assert_called_once()
+    s3man.s3_client.delete_object.assert_called_once()
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
+@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_delete_application_bad_permission(
-    boto3_client_mock, client, application_data, inject_security_header,
+    s3man_client_mock, client, application_data, inject_security_header,
 ):
     """
     Test that it is not possible to delete application without proper permission.
@@ -172,9 +161,6 @@ async def test_delete_application_bad_permission(
     endpoint. We show this by asserting that the application still exists in the database after the delete
     request is made, the correct status code is returned and the boto3 method is never called.
     """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
-
     application = [Application(application_owner_id="owner1", **application_data)]
     await insert_objects(application, applications_table)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -185,14 +171,14 @@ async def test_delete_application_bad_permission(
     assert response.status_code == status.HTTP_403_FORBIDDEN
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
-    s3_client_mock.delete_object.assert_not_called()
+    s3man.s3_client.delete_object.assert_not_called()
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
+@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_delete_application_not_found(
-    boto3_client_mock, client, application_data, inject_security_header,
+    s3man_client_mock, client, application_data, inject_security_header,
 ):
     """
     Test DELETE /applications/<id> the correct response code when the application doesn't exist.
@@ -201,9 +187,6 @@ async def test_delete_application_not_found(
     when the application id does not exist in the database. We show this by asserting that a 404 response
     code is returned for a request made with an application id that doesn't exist.
     """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
-
     application = [Application(id=1, application_owner_id="owner1", **application_data)]
     await insert_objects(application, applications_table)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -214,14 +197,14 @@ async def test_delete_application_not_found(
     assert response.status_code == status.HTTP_404_NOT_FOUND
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
-    s3_client_mock.delete_object.assert_not_called()
+    s3man.s3_client.delete_object.assert_not_called()
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
+@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_delete_application_without_id(
-    boto3_client_mock, client, application_data, inject_security_header,
+    s3man_client_mock, client, application_data, inject_security_header,
 ):
     """
     Test DELETE /applications/ without <id> returns the correct response.
@@ -230,13 +213,10 @@ async def test_delete_application_without_id(
     when an application id is not specified. We show this by asserting that a 405 response
     code is returned for a request made without an application id.
     """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
-
     inject_security_header("owner1", "jobbergate:applications:delete")
     response = await client.delete("/applications/")
     assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
-    s3_client_mock.delete_object.assert_not_called()
+    s3man.s3_client.delete_object.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -445,9 +425,9 @@ async def test_get_all_applications_pagination(client, application_data, inject_
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
+@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
-async def test_update_application(boto3_client_mock, client, application_data, inject_security_header):
+async def test_update_application(s3man_client_mock, client, application_data, inject_security_header):
     """
     Test that an application is updated via PUT.
 
@@ -455,8 +435,6 @@ async def test_update_application(boto3_client_mock, client, application_data, i
     /application/<id> endpoint. We show this by asserting that the values provided to update the
     application are returned in the response made to the PUT /applciation/<id> endpoint.
     """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
     file_mock = mock.MagicMock(wraps=StringIO("test"))
 
     applications = [
@@ -478,7 +456,7 @@ async def test_update_application(boto3_client_mock, client, application_data, i
     assert data["application_name"] == application_data["application_name"]
     assert data["application_description"] == application_data["application_description"]
 
-    s3_client_mock.put_object.assert_called_once()
+    s3man.s3_client.put_object.assert_called_once()
 
     query = applications_table.select(applications_table.c.id == 1)
     application = Application.parse_obj(await database.fetch_one(query))
@@ -492,10 +470,10 @@ async def test_update_application(boto3_client_mock, client, application_data, i
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.applications.routers.boto3")
+@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_update_application_bad_permission(
-    boto3_client_mock, client, application_data, inject_security_header,
+    s3man_client_mock, client, application_data, inject_security_header,
 ):
     """
     Test that it is not possible to update applications without proper permission.
@@ -504,8 +482,6 @@ async def test_update_application_bad_permission(
     /application/<id> endpoint by a user without permission. We show this by asserting that the s3_client is
     not called, the status code 403 is returned and that the application_data is still the same as before.
     """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
     file_mock = mock.MagicMock(wraps=StringIO("test"))
 
     applications = [
@@ -526,7 +502,7 @@ async def test_update_application_bad_permission(
     response = await client.put("/applications/1", data=application_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    s3_client_mock.put_object.assert_not_called()
+    s3man.s3_client.put_object.assert_not_called()
 
     query = applications_table.select(applications_table.c.id == 1)
     application = Application.parse_obj(await database.fetch_one(query))

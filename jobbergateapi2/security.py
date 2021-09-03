@@ -1,3 +1,8 @@
+"""
+Instantiates armada-security resources for auth on api endpoints using project settings.
+Also provides a factory function for TokenSecurity to reduce boilerplate.
+"""
+
 from typing import Union
 
 from armasec.managers import AsymmetricManager, TokenManager
@@ -27,6 +32,15 @@ else:
 
 
 def armasec_factory(*scopes):
+    """
+    A simple factory method that reduces boilerplate for injecting security into api endpoints.
+
+    Example:
+        @app.get("/stuff/")
+        def get_stuff(token_payload: TokenPayload = Depends(armasec_factory("stuff:read"))):
+            # Will authenticate calls and make sure the token carries the stuff:read scope
+            pass
+    """
     return TokenSecurity(armasec_manager, scopes=scopes if scopes else None, debug=settings.TEST_ENV)
 
 

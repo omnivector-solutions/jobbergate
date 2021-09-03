@@ -19,6 +19,8 @@ class JobSubmissionRequest(BaseModel):
 
     class Config:
         orm_mode = True
+        # Provides an example on the swagger pages. See:
+        # https://fastapi.tiangolo.com/tutorial/schema-extra-example/#pydantic-schema_extra
         schema_extra = {"example": {"job_submission_name": "name", "job_script_id": 1}}
 
     def __str__(self):

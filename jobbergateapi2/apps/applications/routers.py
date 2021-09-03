@@ -1,15 +1,16 @@
 """
 Router for the Application resource.
 """
+
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-import boto3
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application, ApplicationRequest
+from jobbergateapi2.apps.applications.s3_manager import S3Manager
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
 from jobbergateapi2.pagination import Pagination
@@ -18,6 +19,7 @@ from jobbergateapi2.storage import database
 
 S3_BUCKET = f"jobbergateapi2-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
 router = APIRouter()
+s3man = S3Manager()
 
 
 @router.post(
@@ -34,8 +36,6 @@ async def applications_create(
     """
     Create new applications using an authenticated user token.
     """
-    s3_client = boto3.client("s3")
-
     application = ApplicationRequest(
         application_name=application_name,
         application_description=application_description,
@@ -52,12 +52,13 @@ async def applications_create(
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-    application_location = "{base}/{owner_id}/applications/{app_id}/jobbergate.tar.gz".format(
-        base=settings.S3_BASE_PATH, owner_id=application.application_owner_id, app_id=application_created_id,
+
+    s3man.put(
+        upload_file,
+        owner_id=application.application_owner_id,
+        app_id=application_created_id,
     )
-    s3_client.put_object(
-        Body=upload_file.file, Bucket=S3_BUCKET, Key=application_location,
-    )
+
     return Application(id=application_created_id, **application.dict())
 
 
@@ -73,7 +74,6 @@ async def application_delete(
     """
     Delete application from the database and S3 given it's id.
     """
-    s3_client = boto3.client("s3")
     where_stmt = applications_table.c.id == application_id
     get_query = applications_table.select().where(where_stmt)
     raw_application = await database.fetch_one(get_query)
@@ -84,12 +84,7 @@ async def application_delete(
     application = Application.parse_obj(raw_application)
     delete_query = applications_table.delete().where(where_stmt)
     await database.execute(delete_query)
-    application_location = "{base}/{owner_id}/applications/{app_id}/jobbergate.tar.gz".format(
-        base=settings.S3_BASE_PATH, owner_id=application.application_owner_id, app_id=application_id,
-    )
-    s3_client.delete_object(
-        Bucket=S3_BUCKET, Key=application_location,
-    )
+    s3man.delete(owner_id=application.application_owner_id, app_id=application_id)
 
 
 @router.get(
@@ -151,8 +146,6 @@ async def application_update(
     """
     Update an application given it's id.
     """
-    s3_client = boto3.client("s3")
-
     query = applications_table.select().where(applications_table.c.id == application_id)
     raw_application = await database.fetch_one(query)
     if not raw_application:
@@ -183,12 +176,11 @@ async def application_update(
     query = applications_table.select().where(applications_table.c.id == application_id)
     application = Application.parse_obj(await database.fetch_one(query))
 
-    application_location = "{base}/{owner_id}/applications/{app_id}/jobbergate.tar.gz".format(
-        base=settings.S3_BASE_PATH, owner_id=application.application_owner_id, app_id=application_id,
-    )
     if upload_file:
-        s3_client.put_object(
-            Body=upload_file.file, Bucket=S3_BUCKET, Key=application_location,
+        s3man.put(
+            upload_file,
+            owner_id=application.application_owner_id,
+            app_id=application_id,
         )
 
     return application
