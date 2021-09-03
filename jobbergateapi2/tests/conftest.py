@@ -4,14 +4,13 @@ Configuration of pytest
 import datetime
 import os
 import typing
-import unittest
 
 from armasec.token_payload import TokenPayload
+from armasec.utilities import pack_header
 from asgi_lifespan import LifespanManager
 from httpx import AsyncClient
 from pytest import fixture
 
-from jobbergateapi2.config import settings
 from jobbergateapi2.main import app
 from jobbergateapi2.security import armasec_manager
 
@@ -82,6 +81,6 @@ async def inject_security_header(client):
             permissions=permissions,
             expire=datetime.datetime.utcnow() + datetime.timedelta(minutes=expires_in_minutes),
         )
-        client.headers.update(armasec_manager.pack_header(token_payload))
+        client.headers.update(pack_header(armasec_manager, token_payload))
 
     return _helper

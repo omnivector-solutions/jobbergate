@@ -2,7 +2,7 @@
 Router for the Application resource.
 """
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import boto3
 from armasec import TokenPayload
@@ -160,7 +160,7 @@ async def application_update(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Application {application_id=} not found.",
         )
 
-    update_dict = {}
+    update_dict: Dict[str, Any] = {}
     if application_name:
         update_dict["application_name"] = application_name
     if application_description:

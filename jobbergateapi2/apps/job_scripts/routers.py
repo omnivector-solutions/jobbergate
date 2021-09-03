@@ -147,9 +147,9 @@ async def job_script_create(
 
     Make a post request to this endpoint with the required values to create a new job script.
     """
-    param_dict = json.loads(param_dict)
-    query = applications_table.select().where(applications_table.c.id == application_id)
-    raw_application = await database.fetch_one(query)
+    _param_dict = json.loads(param_dict) if param_dict is not None else dict()
+    select_query = applications_table.select().where(applications_table.c.id == application_id)
+    raw_application = await database.fetch_one(select_query)
 
     if not raw_application:
         raise HTTPException(
@@ -158,7 +158,7 @@ async def job_script_create(
     application = Application.parse_obj(raw_application)
     s3_application_tar = get_s3_object_as_tarfile(token_payload.sub, application.id)
 
-    job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, param_dict)
+    job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, _param_dict)
 
     if sbatch_params:
         job_script_data_as_string = inject_sbatch_params(job_script_data_as_string, sbatch_params)
@@ -173,9 +173,9 @@ async def job_script_create(
 
     async with database.transaction():
         try:
-            query = job_scripts_table.insert()
+            insert_query = job_scripts_table.insert()
             values = job_script.dict()
-            job_script_created_id = await database.execute(query=query, values=values)
+            job_script_created_id = await database.execute(query=insert_query, values=values)
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))

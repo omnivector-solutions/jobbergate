@@ -1,12 +1,14 @@
+from typing import Union
+
+from armasec.managers import AsymmetricManager, TokenManager
 from armasec.security import TokenSecurity
-from armasec.managers import AsymmetricManager
-from armasec.managers.test import TestTokenManager
 from loguru import logger
 
 from jobbergateapi2.config import settings
 
+armasec_manager: Union[TokenManager, AsymmetricManager]
 if settings.TEST_ENV:
-    armasec_manager = TestTokenManager(
+    armasec_manager = TokenManager(
         secret=settings.ARMASEC_SECRET,
         algorithm=settings.ARMASEC_ALGORITHM,
         issuer=settings.ARMASEC_ISSUER,

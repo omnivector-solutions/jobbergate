@@ -22,7 +22,7 @@ Jinja2 = "^2.11.3"
 asyncpg = "^0.22.0"
 loguru = "^0.5.3"
 uvicorn = "^0.15.0"
-armada-security = "^0.3.1"
+armada-security = "^0.3.3"
 
 [tool.poetry.dev-dependencies]
 black = { version = "^19", allow-prereleases = true }

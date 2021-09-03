@@ -28,8 +28,8 @@ async def job_submission_create(
 
     Make a post request to this endpoint with the required values to create a new job submission.
     """
-    query = job_scripts_table.select().where(job_scripts_table.c.id == job_submission.job_script_id)
-    raw_job_script = await database.fetch_one(query)
+    select_query = job_scripts_table.select().where(job_scripts_table.c.id == job_submission.job_script_id)
+    raw_job_script = await database.fetch_one(select_query)
 
     if not raw_job_script:
         raise HTTPException(
@@ -38,9 +38,9 @@ async def job_submission_create(
 
     async with database.transaction():
         try:
-            query = job_submissions_table.insert()
+            insert_query = job_submissions_table.insert()
             values = {"job_submission_owner_id": token_payload.sub, **job_submission.dict()}
-            job_submission_created_id = await database.execute(query=query, values=values)
+            job_submission_created_id = await database.execute(query=insert_query, values=values)
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=422, detail=str(e))
