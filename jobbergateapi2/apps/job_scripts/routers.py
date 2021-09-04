@@ -8,7 +8,6 @@ from datetime import datetime
 from io import BytesIO, StringIO
 from typing import List, Optional
 
-import boto3
 from armasec import TokenPayload
 from botocore.exceptions import BotoCoreError
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
@@ -23,9 +22,10 @@ from jobbergateapi2.config import settings
 from jobbergateapi2.pagination import Pagination
 from jobbergateapi2.security import armasec_factory
 from jobbergateapi2.storage import database
+from jobbergateapi2.s3_manager import S3Manager
 
-S3_BUCKET = f"jobbergateapi2-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
 router = APIRouter()
+s3man = S3Manager()
 
 
 def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str]) -> str:
@@ -52,12 +52,8 @@ def get_s3_object_as_tarfile(current_user_id, application_id):
     """
     Return the tarfile of a S3 object.
     """
-    s3_client = boto3.client("s3")
-    application_location = (
-        f"{settings.S3_BASE_PATH}/{current_user_id}/applications/{application_id}/jobbergate.tar.gz"
-    )
     try:
-        s3_application_obj = s3_client.get_object(Bucket=S3_BUCKET, Key=application_location)
+        s3_application_obj = s3man.get(owner_id=current_user_id, app_id=application_id)
     except BotoCoreError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

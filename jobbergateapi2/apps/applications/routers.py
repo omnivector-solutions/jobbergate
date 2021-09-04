@@ -10,14 +10,14 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application, ApplicationRequest
-from jobbergateapi2.apps.applications.s3_manager import S3Manager
+from jobbergateapi2.s3_manager import S3Manager
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
 from jobbergateapi2.pagination import Pagination
 from jobbergateapi2.security import armasec_factory
 from jobbergateapi2.storage import database
+from jobbergateapi2.s3_manager import S3Manager
 
-S3_BUCKET = f"jobbergateapi2-{settings.SERVERLESS_STAGE}-{settings.SERVERLESS_REGION}-resources"
 router = APIRouter()
 s3man = S3Manager()
 

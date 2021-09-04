@@ -16,8 +16,8 @@ class S3Manager:
 
     def __init__(self):
         self.bucket_name = "jobbergateapi2-{stage}-{region}-resources".format(
-            stage=settings.SERVERLESS_STAGE,
-            region=settings.SERVERLESS_REGION,
+            stage=settings.S3_STAGE,
+            region=settings.S3_REGION,
         )
         self.key_template = f"{settings.S3_BASE_PATH}/{{owner_id}}/applications/{{app_id}}/jobbergate.tar.gz"
         self.s3_client = boto3.client("s3")
@@ -48,3 +48,9 @@ class S3Manager:
         Delete a file from s3 associated to the given owner_id and app_id.
         """
         self.s3_client.delete_object(Bucket=self.bucket_name, Key=self._get_key(owner_id, app_id))
+
+    def get(self, owner_id: str = "", app_id: str = ""):
+        """
+        Get a file from s3 associated to the given owner_id and app_id.
+        """
+        return self.s3_client.get_object(Bucket=self.bucket_name, Key=self._get_key(owner_id, app_id))

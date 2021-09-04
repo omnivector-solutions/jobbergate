@@ -22,6 +22,7 @@ from jobbergateapi2.apps.job_scripts.routers import (
     render_template,
 )
 from jobbergateapi2.apps.job_scripts.schemas import JobScript
+from jobbergateapi2.apps.job_scripts.routers import s3man
 from jobbergateapi2.storage import database
 from jobbergateapi2.tests.apps.conftest import insert_objects
 
@@ -96,10 +97,10 @@ def test_inject_sbatch_params(job_script_data_as_string, sbatch_params, new_job_
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.job_scripts.routers.boto3")
+@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_create_job_script(
-    boto3_client_mock,
+    s3man_client_mock,
     job_script_data,
     param_dict,
     application_data,
@@ -114,10 +115,8 @@ async def test_create_job_script(
     endpoint. We show this by asserting that the job_script is created in the database after the post
     request is made, the correct status code (201) is returned.
     """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
+    s3man_client_mock.get_object.return_value = s3_object
     file_mock = mock.MagicMock(wraps=StringIO("test"))
-    s3_client_mock.get_object.return_value = s3_object
 
     application = [Application(id=1, application_owner_id="owner1", **application_data)]
     await insert_objects(application, applications_table)
@@ -126,7 +125,7 @@ async def test_create_job_script(
     job_script_data["param_dict"] = json.dumps(param_dict)
     response = await client.post("/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_201_CREATED
-    s3_client_mock.get_object.assert_called_once()
+    s3man_client_mock.get_object.assert_called_once()
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
@@ -138,10 +137,10 @@ async def test_create_job_script(
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.job_scripts.routers.boto3")
+@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_create_job_script_bad_permission(
-    boto3_client_mock,
+    s3man_client_mock,
     job_script_data,
     param_dict,
     application_data,
@@ -157,10 +156,8 @@ async def test_create_job_script_bad_permission(
     that the job_script still does not exists in the database, the correct status code (403) is returned
     and that the boto3 method is never called.
     """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
+    s3man_client_mock.get_object.return_value = s3_object
     file_mock = mock.MagicMock(wraps=StringIO("test"))
-    s3_client_mock.get_object.return_value = s3_object
 
     application = [Application(id=1, application_owner_id="owner1", **application_data)]
     await insert_objects(application, applications_table)
@@ -169,17 +166,17 @@ async def test_create_job_script_bad_permission(
     job_script_data["param_dict"] = json.dumps(param_dict)
     response = await client.post("/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    s3_client_mock.get_object.assert_not_called()
+    s3man_client_mock.get_object.assert_not_called()
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.job_scripts.routers.boto3")
+@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_create_job_script_without_application(
-    boto3_client_mock, job_script_data, param_dict, client, inject_security_header,
+    s3man_client_mock, job_script_data, param_dict, client, inject_security_header,
 ):
     """
     Test that is not possible to create a job_script without an application.
@@ -189,25 +186,23 @@ async def test_create_job_script_without_application(
     job_script still does not exists in the database, the correct status code (404) is returned and that the
     boto3 method is never called.
     """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
     file_mock = mock.MagicMock(wraps=StringIO("test"))
 
     inject_security_header("owner1", "jobbergate:job-scripts:create")
     job_script_data["param_dict"] = json.dumps(param_dict)
     response = await client.post("/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    s3_client_mock.get_object.assert_not_called()
+    s3man_client_mock.get_object.assert_not_called()
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.job_scripts.routers.boto3")
+@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_create_job_script_file_not_found(
-    boto3_client_mock, job_script_data, param_dict, application_data, client, inject_security_header,
+    s3man_client_mock, job_script_data, param_dict, application_data, client, inject_security_header,
 ):
     """
     Test that is not possible to create a job_script if the application is in the database but not in S3.
@@ -218,10 +213,8 @@ async def test_create_job_script_file_not_found(
     is not in S3 (raises BotoCoreError), then assert that the job_script still does not exists in the
     database, the correct status code (404) is returned and that the boto3 method was called.
     """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
     file_mock = mock.MagicMock(wraps=StringIO("test"))
-    s3_client_mock.get_object.side_effect = BotoCoreError()
+    s3man_client_mock.get_object.side_effect = BotoCoreError()
 
     application = [Application(id=1, application_owner_id="owner1", **application_data)]
     await insert_objects(application, applications_table)
@@ -230,39 +223,35 @@ async def test_create_job_script_file_not_found(
     job_script_data["param_dict"] = json.dumps(param_dict)
     response = await client.post("/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    s3_client_mock.get_object.assert_called_once()
+    s3man_client_mock.get_object.assert_called_once()
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergateapi2.apps.job_scripts.routers.boto3")
+@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
-async def test_get_s3_object_as_tarfile(boto3_client_mock, param_dict, s3_object):
+async def test_get_s3_object_as_tarfile(s3man_client_mock, param_dict, s3_object):
     """
     Test getting a file from S3 with get_s3_object function.
     """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
-    s3_client_mock.get_object.return_value = s3_object
+    s3man_client_mock.get_object.return_value = s3_object
 
     s3_file = get_s3_object_as_tarfile(1, 1)
 
     assert s3_file is not None
-    s3_client_mock.get_object.assert_called_once()
+    s3man_client_mock.get_object.assert_called_once()
 
 
-@mock.patch("jobbergateapi2.apps.job_scripts.routers.boto3")
+@mock.patch.object(s3man, "s3_client")
 def test_get_s3_object_not_found(
-    boto3_client_mock, param_dict,
+    s3man_client_mock, param_dict,
 ):
     """
     Test exception when file not exists in S3 for get_s3_object function.
     """
-    s3_client_mock = mock.Mock()
-    boto3_client_mock.client.return_value = s3_client_mock
-    s3_client_mock.get_object.side_effect = BotoCoreError()
+    s3man_client_mock.get_object.side_effect = BotoCoreError()
 
     s3_file = None
     with pytest.raises(HTTPException) as exc:
@@ -271,7 +260,7 @@ def test_get_s3_object_not_found(
     assert "Application with id=1 not found for user=1" in str(exc)
 
     assert s3_file is None
-    s3_client_mock.get_object.assert_called_once()
+    s3man_client_mock.get_object.assert_called_once()
 
 
 def test_render_template(param_dict_flat, template_files, job_script_data_as_string):
