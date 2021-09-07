@@ -3,7 +3,7 @@ Provides a convenience class for managing calls to S3.
 """
 
 import boto3
-from fastapi import UploadFile
+from fastapi import UploadFile, HTTPException, status
 
 from jobbergateapi2.config import settings
 
