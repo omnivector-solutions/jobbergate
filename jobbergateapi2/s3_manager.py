@@ -3,9 +3,9 @@ Provides a convenience class for managing calls to S3.
 """
 
 import boto3
+from fastapi import UploadFile
 
 from jobbergateapi2.config import settings
-from fastapi import UploadFile
 
 
 class S3Manager:
@@ -16,8 +16,7 @@ class S3Manager:
 
     def __init__(self):
         self.bucket_name = "jobbergateapi2-{stage}-{region}-resources".format(
-            stage=settings.S3_STAGE,
-            region=settings.S3_REGION,
+            stage=settings.S3_STAGE, region=settings.S3_REGION,
         )
         self.key_template = f"{settings.S3_BASE_PATH}/{{owner_id}}/applications/{{app_id}}/jobbergate.tar.gz"
         self.s3_client = boto3.client("s3")
@@ -29,7 +28,7 @@ class S3Manager:
         if not owner_id or not app_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"You must supply a non-empty owner_id and app_id: got ({owner_id=}, {app_id=})"
+                detail=f"You must supply a non-empty owner_id and app_id: got ({owner_id=}, {app_id=})",
             )
         return self.key_template.format(owner_id=owner_id, app_id=app_id)
 
@@ -38,9 +37,7 @@ class S3Manager:
         Upload a file to s3 for the given owner_id and app_id.
         """
         self.s3_client.put_object(
-            Body=upload_file.file,
-            Bucket=self.bucket_name,
-            Key=self._get_key(owner_id, app_id),
+            Body=upload_file.file, Bucket=self.bucket_name, Key=self._get_key(owner_id, app_id),
         )
 
     def delete(self, owner_id: str = "", app_id: str = ""):

@@ -20,9 +20,9 @@ from jobbergateapi2.apps.job_scripts.routers import (
     get_s3_object_as_tarfile,
     inject_sbatch_params,
     render_template,
+    s3man,
 )
 from jobbergateapi2.apps.job_scripts.schemas import JobScript
-from jobbergateapi2.apps.job_scripts.routers import s3man
 from jobbergateapi2.storage import database
 from jobbergateapi2.tests.apps.conftest import insert_objects
 

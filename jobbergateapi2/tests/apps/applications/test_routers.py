@@ -8,8 +8,8 @@ import pytest
 from fastapi import status
 
 from jobbergateapi2.apps.applications.models import applications_table
-from jobbergateapi2.apps.applications.schemas import Application
 from jobbergateapi2.apps.applications.routers import s3man
+from jobbergateapi2.apps.applications.schemas import Application
 from jobbergateapi2.storage import database
 from jobbergateapi2.tests.apps.conftest import insert_objects
 

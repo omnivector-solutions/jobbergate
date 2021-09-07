@@ -20,9 +20,9 @@ from jobbergateapi2.apps.job_scripts.schemas import JobScript, JobScriptRequest
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.config import settings
 from jobbergateapi2.pagination import Pagination
+from jobbergateapi2.s3_manager import S3Manager
 from jobbergateapi2.security import armasec_factory
 from jobbergateapi2.storage import database
-from jobbergateapi2.s3_manager import S3Manager
 
 router = APIRouter()
 s3man = S3Manager()
