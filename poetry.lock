@@ -63,9 +63,9 @@ url = "https://pypicloud.omnivector.solutions/simple"
 reference = "pypicloud"
 
 [[package]]
-name = "armada-security"
-version = "0.3.3"
-description = "Armada Security Tools"
+name = "armasec"
+version = "0.5.1"
+description = "Injectable FastAPI auth via OIDC"
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
@@ -463,7 +463,7 @@ reference = "pypicloud"
 
 [[package]]
 name = "deprecated"
-version = "1.2.12"
+version = "1.2.13"
 description = "Python @deprecated decorator to deprecate old python classes, functions or methods."
 category = "main"
 optional = false
@@ -1649,6 +1649,22 @@ url = "https://pypicloud.omnivector.solutions/simple"
 reference = "pypicloud"
 
 [[package]]
+name = "respx"
+version = "0.17.1"
+description = "A utility for mocking out the Python HTTPX and HTTP Core libraries."
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+httpx = ">=0.18.0"
+
+[package.source]
+type = "legacy"
+url = "https://pypicloud.omnivector.solutions/simple"
+reference = "pypicloud"
+
+[[package]]
 name = "rfc3986"
 version = "1.5.0"
 description = "Validating URI References per RFC 3986"
@@ -2016,7 +2032,7 @@ reference = "pypicloud"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "1ba2fd83d14ba97127914408e6d551c49d842d0c63b4422aa2c33b7a8804860a"
+content-hash = "c7586506f628a3a26a03cd7b02e4d314f86313bb07297c583b7ef813e1740516"
 
 [metadata.files]
 aiosqlite = [
@@ -2035,9 +2051,9 @@ appnope = [
     {file = "appnope-0.1.2-py2.py3-none-any.whl", hash = "sha256:93aa393e9d6c54c5cd570ccadd8edad61ea0c4b9ea7a01409020c9aa019eb442"},
     {file = "appnope-0.1.2.tar.gz", hash = "sha256:dd83cd4b5b460958838f6eb3000c660b1f9caf2a5b1de4264e941512f603258a"},
 ]
-armada-security = [
-    {file = "armada-security-0.3.3.tar.gz", hash = "sha256:0f47b4ec4501764894e60b1cace154a9be94f997dd3972012c18ee3e8ddfdb0f"},
-    {file = "armada_security-0.3.3-py3-none-any.whl", hash = "sha256:6c2752c59cd5cc3413b2be28579e9591d24a6cf65a288b80f53ed6b2849fa5e8"},
+armasec = [
+    {file = "armasec-0.5.1-py3-none-any.whl", hash = "sha256:24473169bee2163349fc441942bbe22a9882d585600a8b05c936ca10b56e9f10"},
+    {file = "armasec-0.5.1.tar.gz", hash = "sha256:b79cb862b05fb7edd37c373e70f197896b10abee778240913452ee341fa2922d"},
 ]
 asgi-lifespan = [
     {file = "asgi-lifespan-1.0.1.tar.gz", hash = "sha256:9a33e7da2073c4764bc79bd6136501d6c42f60e3d2168ba71235e84122eadb7f"},
@@ -2247,8 +2263,8 @@ decorator = [
     {file = "decorator-5.0.9.tar.gz", hash = "sha256:72ecfba4320a893c53f9706bebb2d55c270c1e51a28789361aa93e4a21319ed5"},
 ]
 deprecated = [
-    {file = "Deprecated-1.2.12-py2.py3-none-any.whl", hash = "sha256:08452d69b6b5bc66e8330adde0a4f8642e969b9e1702904d137eeb29c8ffc771"},
-    {file = "Deprecated-1.2.12.tar.gz", hash = "sha256:6d2de2de7931a968874481ef30208fd4e08da39177d61d3d4ebdf4366e7dbca1"},
+    {file = "Deprecated-1.2.13-py2.py3-none-any.whl", hash = "sha256:64756e3e14c8c5eea9795d93c524551432a0be75629f8f29e67ab8caf076c76d"},
+    {file = "Deprecated-1.2.13.tar.gz", hash = "sha256:43ac5335da90c31c24ba028af536a91d41d53f9e6901ddb021bcc572ce44e38d"},
 ]
 distlib = [
     {file = "distlib-0.3.2-py2.py3-none-any.whl", hash = "sha256:23e223426b28491b1ced97dc3bbe183027419dfc7982b4fa2f05d5f3ff10711c"},
@@ -2710,6 +2726,10 @@ regex = [
 requests = [
     {file = "requests-2.26.0-py2.py3-none-any.whl", hash = "sha256:6c1246513ecd5ecd4528a0906f910e8f0f9c6b8ec72030dc9fd154dc1a6efd24"},
     {file = "requests-2.26.0.tar.gz", hash = "sha256:b8aa58f8cf793ffd8782d3d8cb19e66ef36f7aba4353eec859e74678b01b07a7"},
+]
+respx = [
+    {file = "respx-0.17.1-py2.py3-none-any.whl", hash = "sha256:34b28dacaa8e0c1bced38d9d183d7633df1f7c06db9802b9157bafa68a11755b"},
+    {file = "respx-0.17.1.tar.gz", hash = "sha256:7bde9b6f311ba51f4651618ccd4c5034df628fe44bc28102b98235c429df68fb"},
 ]
 rfc3986 = [
     {file = "rfc3986-1.5.0-py2.py3-none-any.whl", hash = "sha256:a86d6e1f5b1dc238b218b012df0aa79409667bb209e58da56d0b94704e712a97"},

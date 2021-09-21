@@ -1,18 +1,14 @@
 """
 Configuration of pytest
 """
-import datetime
 import os
 import typing
 
-from armasec.token_payload import TokenPayload
-from armasec.utilities import pack_header
 from asgi_lifespan import LifespanManager
 from httpx import AsyncClient
 from pytest import fixture
 
 from jobbergateapi2.main import app
-from jobbergateapi2.security import armasec_manager
 
 
 @fixture(scope="session", autouse=True)
@@ -57,6 +53,15 @@ async def startup_event_force():
         yield
 
 
+@fixture(autouse=True)
+def enforce_mocked_oidc_provider(mock_openid_server):
+    """
+    Enforce that the OIDC provider used by armada-security is the mock_openid_server provided as a fixture.
+    No actual calls to an OIDC provider will be made.
+    """
+    yield
+
+
 @fixture
 async def client(startup_event_force):
     """
@@ -67,20 +72,15 @@ async def client(startup_event_force):
 
 
 @fixture
-async def inject_security_header(client):
+async def inject_security_header(client, build_rs256_token):
     """
     Provides a helper method that will inject a security token into the requests for a test client. If no
-    permisions are provided, the security token will still be valid but will not carry any permissions
+    permisions are provided, the security token will still be valid but will not carry any permissions. Uses
+    the `build_rs256_token()` fixture from the armasec package.
     """
 
-    def _helper(
-        owner_id: str, *permissions: typing.List[str], expires_in_minutes: int = 0,
-    ):
-        token_payload = TokenPayload(
-            sub=owner_id,
-            permissions=permissions,
-            expire=datetime.datetime.utcnow() + datetime.timedelta(minutes=expires_in_minutes),
-        )
-        client.headers.update(pack_header(armasec_manager, token_payload))
+    def _helper(owner_id: str, *permissions: typing.List[str]):
+        token = build_rs256_token(claim_overrides=dict(sub=owner_id, permissions=permissions))
+        client.headers.update({"Authorization": f"Bearer {token}"})
 
     return _helper

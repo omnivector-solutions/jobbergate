@@ -22,7 +22,7 @@ Jinja2 = "^2.11.3"
 asyncpg = "^0.22.0"
 loguru = "^0.5.3"
 uvicorn = "^0.15.0"
-armada-security = "^0.3.3"
+armasec = "^0.5.1"
 
 [tool.poetry.dev-dependencies]
 black = { version = "^19", allow-prereleases = true }
@@ -44,6 +44,7 @@ flake8 = "^3.9.2"
 mypy = "^0.910"
 sqlalchemy-stubs = "^0.4"
 isort = "^5.9.3"
+respx = "^0.17.1"
 
 [tool.poetry.scripts]
 db-login = "bin.db_login:login"
@@ -70,12 +71,9 @@ env = [
     "DATABASE_URL = sqlite:///sqlite-testing.db",
     "TEST_ENV = True",
 
-    "ARMASEC_SECRET = notmuchofasecret",
-    "ARMASEC_ALGORITHM = HS256",
-    "ARMASEC_ISSUER = https://armasec-issuer.com",
-    "ARMASEC_AUDIENCE = https://armasec-audience.com/",
-    "ARMASEC_CLIENT_ID = test-client-whatever",
-    "ARMASEC_DOMAIN = armasec-domain.com",
+    # This setting must align with the rs256_domain fixture from armasec's pytest extension
+    "ARMASEC_DOMAIN = armasec.dev",
+    "ARMASEC_DEBUG = True",
 ]
 
 [[tool.poetry.source]]

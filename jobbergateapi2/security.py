@@ -3,45 +3,13 @@ Instantiates armada-security resources for auth on api endpoints using project s
 Also provides a factory function for TokenSecurity to reduce boilerplate.
 """
 
-from typing import Union
-
-from armasec.managers import AsymmetricManager, TokenManager
-from armasec.security import TokenSecurity
+from armasec import Armasec
 from loguru import logger
 
 from jobbergateapi2.config import settings
 
-armasec_manager: Union[TokenManager, AsymmetricManager]
-if settings.TEST_ENV:
-    armasec_manager = TokenManager(
-        secret=settings.ARMASEC_SECRET,
-        algorithm=settings.ARMASEC_ALGORITHM,
-        issuer=settings.ARMASEC_ISSUER,
-        audience=settings.ARMASEC_AUDIENCE,
-        debug_logger=logger.debug,
-    )
-else:
-    armasec_manager = AsymmetricManager(
-        secret=settings.ARMASEC_SECRET,
-        algorithm=settings.ARMASEC_ALGORITHM,
-        client_id=settings.ARMASEC_CLIENT_ID,
-        domain=settings.ARMASEC_DOMAIN,
-        audience=settings.ARMASEC_AUDIENCE,
-        debug_logger=logger.debug if settings.ARMASEC_DEBUG else None,
-    )
-
-
-def armasec_factory(*scopes):
-    """
-    A simple factory method that reduces boilerplate for injecting security into api endpoints.
-
-    Example:
-        @app.get("/stuff/")
-        def get_stuff(token_payload: TokenPayload = Depends(armasec_factory("stuff:read"))):
-            # Will authenticate calls and make sure the token carries the stuff:read scope
-            pass
-    """
-    return TokenSecurity(armasec_manager, scopes=scopes if scopes else None, debug=settings.TEST_ENV)
-
-
-armasec_authenticated = armasec_factory()
+guard = Armasec(
+    settings.ARMASEC_DOMAIN,
+    audience=settings.ARMASEC_AUDIENCE,
+    debug_logger=logger.debug if settings.ARMASEC_DEBUG else None,
+)

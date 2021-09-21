@@ -13,7 +13,7 @@ from jobbergateapi2.apps.applications.schemas import Application, ApplicationReq
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergateapi2.pagination import Pagination
 from jobbergateapi2.s3_manager import S3Manager
-from jobbergateapi2.security import armasec_factory
+from jobbergateapi2.security import guard
 from jobbergateapi2.storage import database
 
 router = APIRouter()
@@ -28,7 +28,7 @@ async def applications_create(
     application_description: str = Form(""),
     application_config: str = Form(...),
     application_file: str = Form(...),
-    token_payload: TokenPayload = Depends(armasec_factory("jobbergate:applications:create")),
+    token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:applications:create")),
     upload_file: UploadFile = File(...),
 ):
     """
@@ -62,7 +62,7 @@ async def applications_create(
     "/applications/{application_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete application",
-    dependencies=[Depends(armasec_factory("jobbergate:applications:delete"))],
+    dependencies=[Depends(guard.lockdown("jobbergate:applications:delete"))],
 )
 async def application_delete(
     application_id: int = Query(..., description="id of the application to delete"),
@@ -89,7 +89,7 @@ async def application_delete(
 async def applications_list(
     p: Pagination = Depends(),
     all: Optional[bool] = Query(None),
-    token_payload: TokenPayload = Depends(armasec_factory("jobbergate:applications:read")),
+    token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:applications:read")),
 ):
     """
     List all applications
@@ -107,7 +107,7 @@ async def applications_list(
     "/applications/{application_id}",
     description="Endpoint to return an application given the id",
     response_model=Application,
-    dependencies=[Depends(armasec_factory("jobbergate:applications:read"))],
+    dependencies=[Depends(guard.lockdown("jobbergate:applications:read"))],
 )
 async def applications_get_by_id(application_id: int = Query(...)):
     """
@@ -136,7 +136,7 @@ async def application_update(
     application_description: Optional[str] = Form(None),
     application_config: Optional[str] = Form(None),
     application_file: Optional[str] = Form(None),
-    token_payload: TokenPayload = Depends(armasec_factory("jobbergate:applications:update")),
+    token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:applications:update")),
     upload_file: Optional[UploadFile] = File(None),
 ):
     """

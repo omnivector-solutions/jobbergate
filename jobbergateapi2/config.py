@@ -1,6 +1,8 @@
 """
 Configuration file, sets all the necessary environment variables, it is better used with a .env file
 """
+from typing import Optional
+
 from pydantic import BaseSettings, Field, HttpUrl
 
 _DB_RX = r"^(sqlite|postgres)://.+$"
@@ -15,13 +17,9 @@ class Settings(BaseSettings):
     # BACKEND_CORS_ORIGINS example: "['https://example1.com', 'https://example2.com']"
     BACKEND_CORS_ORIGINS: str = Field("[]")
 
-    # Security Settings. For details, see https://github.com/omnivector-solutions/armada-security
-    ARMASEC_SECRET: str
-    ARMASEC_ALGORITHM: str = Field("RS256")
-    ARMASEC_ISSUER: HttpUrl = Field(None)
-    ARMASEC_CLIENT_ID: str
+    # Security Settings. For details, see https://github.com/omnivector-solutions/armsec
     ARMASEC_DOMAIN: str
-    ARMASEC_AUDIENCE: HttpUrl
+    ARMASEC_AUDIENCE: Optional[HttpUrl]
     ARMASEC_DEBUG: bool = Field(False)
 
     class Config:
