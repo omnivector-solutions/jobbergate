@@ -1,5 +1,5 @@
 """
-Pytest helpers to use in all apps
+Pytest helpers to use in all apps.
 """
 from typing import List
 
@@ -13,7 +13,7 @@ from jobbergateapi2.storage import database
 async def insert_objects(objects: List[BaseModel], table: sqlalchemy.Table):
     """
     Perform a database insertion for the objects passed as the argument, into
-    the specified table
+    the specified table.
     """
     ModelType = type(objects[0])
     await database.execute_many(query=table.insert(), values=[obj.dict() for obj in objects])
@@ -24,7 +24,7 @@ async def insert_objects(objects: List[BaseModel], table: sqlalchemy.Table):
 @fixture
 def user_data():
     """
-    Default user data for testing
+    Default user data for testing.
     """
     return {
         "email": "user1@email.com",

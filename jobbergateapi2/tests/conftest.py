@@ -1,5 +1,5 @@
 """
-Configuration of pytest
+Configuration of pytest.
 """
 import os
 import typing
@@ -14,7 +14,7 @@ from jobbergateapi2.main import app
 @fixture(scope="session", autouse=True)
 def backend_testing_database():
     """
-    Override whatever is set for DATABASE_URL during testing
+    Override whatever is set for DATABASE_URL during testing.
     """
     # defer import of storage until now, to prevent the database
     # from being initialized implicitly on import
@@ -28,7 +28,7 @@ def backend_testing_database():
 @fixture(autouse=True)
 def enforce_testing_database():
     """
-    Are you sure we're in a testing database?
+    Ensure that we are using a testing database.
     """
     from jobbergateapi2.storage import database
 
@@ -38,7 +38,7 @@ def enforce_testing_database():
 @fixture(autouse=True)
 async def enforce_empty_database():
     """
-    Make sure our database is empty at the end of each test
+    Make sure our database is empty at the end of each test.
     """
     yield
     from jobbergateapi2.storage import database
@@ -65,7 +65,7 @@ def enforce_mocked_oidc_provider(mock_openid_server):
 @fixture
 async def client(startup_event_force):
     """
-    A client that can issue fake requests against fastapi endpoint functions in the backend
+    A client that can issue fake requests against fastapi endpoint functions in the backend.
     """
     async with AsyncClient(app=app, base_url="http://test") as client:
         yield client
