@@ -4,12 +4,15 @@ Main file to startup the fastapi server
 import ast
 
 from fastapi import FastAPI
+from loguru import logger
 from mangum import Mangum
 from starlette.middleware.cors import CORSMiddleware
 
 from jobbergateapi2 import storage
+from jobbergateapi2.apps.applications.routers import router as applications_router
+from jobbergateapi2.apps.job_scripts.routers import router as job_scripts_router
+from jobbergateapi2.apps.job_submissions.routers import router as job_submissions_router
 from jobbergateapi2.config import settings
-from jobbergateapi2.routers import load_routers
 
 app = FastAPI()
 app.add_middleware(
@@ -19,8 +22,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-load_routers(app)
+app.include_router(applications_router)
+app.include_router(job_scripts_router)
+app.include_router(job_submissions_router)
 
 
 @app.on_event("startup")
@@ -28,6 +32,7 @@ async def init_database():
     """
     Connect the database; create it if necessary
     """
+    logger.debug("Initializing database")
     storage.create_all_tables()
     await storage.database.connect()
 
@@ -37,6 +42,7 @@ async def disconnect_database():
     """
     Disconnect the database
     """
+    logger.debug("Disconnecting database")
     await storage.database.disconnect()
 
 

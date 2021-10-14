@@ -7,8 +7,8 @@ on:
   pull_request:
 
 jobs:
-  test:
-    name: "Test code and check lint"
+  tests:
+    name: "Tests"
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v2
@@ -16,14 +16,9 @@ jobs:
         with:
           python-version: '3.x'
           architecture: 'x64'
-      - name: Python Poetry Action
-        uses: abatilo/actions-poetry@v2.1.0
-      - name: Install dependencies
-        run: |
-          pip install tox
-      - name: "tests"
-        run: |
-          tox
-      - name: "lint"
-        run: |
-          tox -e lint
+      - uses: Gr1N/setup-poetry@v7
+      - name: "run full suite of tests"
+        env:
+          POETRY_HTTP_BASIC_PYPICLOUD_USERNAME: admin
+          POETRY_HTTP_BASIC_PYPICLOUD_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: make qa

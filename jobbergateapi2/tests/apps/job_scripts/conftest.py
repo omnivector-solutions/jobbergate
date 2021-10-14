@@ -1,3 +1,6 @@
+"""
+Convenience fixtures for the job scripts tests.
+"""
 import tarfile
 from io import BytesIO
 

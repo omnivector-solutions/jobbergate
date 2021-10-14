@@ -7,18 +7,20 @@ RUN pip install 'poetry==1.1.7'
 
 ENV MODULE_NAME="jobbergateapi2.main"
 
-RUN mkdir app
-WORKDIR app
-
 COPY ./pyproject.toml /app/
 COPY ./poetry.lock /app/
 
-COPY hack_build_secrets.sh .
-RUN --mount=type=secret,id=pypi_password ./hack_build_secrets.sh
+ARG PYPI_PASSWORD
 ENV POETRY_HTTP_BASIC_PYPICLOUD_USERNAME=admin
 ENV POETRY_HTTP_BASIC_PYPICLOUD_PASSWORD=$PYPI_PASSWORD
+
+ARG AWS_ACCESS_KEY_ID
+ENV AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+
+ARG AWS_SECRET_ACCESS_KEY
+ENV AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
 
 RUN poetry config virtualenvs.create false --local
 RUN poetry install
 
-COPY ./jobbergateapi2 /app/jobbergateapi2/
+VOLUME /app/jobbergateapi2
