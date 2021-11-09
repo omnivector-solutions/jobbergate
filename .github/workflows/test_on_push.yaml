@@ -8,16 +8,17 @@ on:
 
 jobs:
   tests:
-    name: "Tests"
+    name: "jobbergate-api tests"
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.x'
+          python-version: '3.8'
           architecture: 'x64'
       - uses: Gr1N/setup-poetry@v7
-      - name: "run full suite of tests"
+      - name: "run quality control checks"
+        working-directory: jobbergate-api
         env:
           POETRY_HTTP_BASIC_PYPICLOUD_USERNAME: admin
           POETRY_HTTP_BASIC_PYPICLOUD_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
