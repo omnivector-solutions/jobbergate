@@ -69,8 +69,9 @@ application.
 
    Fix the link below after project migration is complete
 
-There jobbergate-api offers `interactive documentation via swagger
-<https://jobbergateapi2-staging.omnivector.solutions/docs>`_
+The jobbergate-api offers `interactive documentation via swagger
+<https://jobbergateapi2-staging.omnivector.solutions/docs>`_ for the available API
+endpoints.
 
 Requests to the API must be accompanied by a JWT issued by a Auth0.
 
