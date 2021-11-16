@@ -17,9 +17,12 @@ class Settings(BaseSettings):
     DATABASE_PORT: Optional[int]
     DATABASE_URL: Optional[str]
 
-    S3_STAGE: str = Field("staging")
-    S3_REGION: str = Field("eu-north-1")
-    S3_BASE_PATH: str = Field("jobbergate-resources")
+    # S3 configuration
+    S3_BUCKET_NAME: str = Field("jobbergate-staging-eu-north-1-resources")
+    S3_ENDPOINT_URL: Optional[str]
+    AWS_ACCESS_KEY_ID: str
+    AWS_SECRET_ACCESS_KEY: str
+
     # BACKEND_CORS_ORIGINS example: "['https://example1.com', 'https://example2.com']"
     BACKEND_CORS_ORIGINS: str = Field("[]")
 

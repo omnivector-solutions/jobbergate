@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: ./jobbergate-api
+      dockerfile: Dockerfile-dev
+      args:
+        - PYPI_PASSWORD=${PYPI_PASSWORD}
+    volumes:
+      - ./jobbergate-api/jobbergateapi2:/app/jobbergateapi2
+    command: uvicorn jobbergateapi2.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
+    environment:
+      - DATABASE_HOST=${NEXTGEN_DATABASE_HOST:-nextgen-db}
+      - DATABASE_USER=${NEXTGEN_DATABASE_USER:-nextgen}
+      - DATABASE_PSWD=${NEXTGEN_DATABASE_PSWD:-nextgen}
+      - DATABASE_NAME=${NEXTGEN_DATABASE_NAME:-nextgen}
+      - DATABASE_PORT=${NEXTGEN_DATABASE_PORT:-5432}
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL:-http://s3:9000}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-FAKE_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-FAKE_SECRET_ACCESS_KEY}
+      - ARMASEC_DOMAIN=${ARMASEC_DOMAIN}
+      - ARMASEC_AUDIENCE=${ARMASEC_AUDIENCE}
+      - ARMASEC_DEBUG=${ARMASEC_DEBUG}
+    ports:
+      - 8000:8000
+    depends_on:
+      - nextgen-db
+
+  nextgen-db:
+    image: postgres
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_PASSWORD=${NEXTGEN_DATABASE_PSWD:-nextgen}
+      - POSTGRES_USER=${NEXTGEN_DATABASE_USER:-nextgen}
+      - POSTGRES_DB=${NEXTGEN_DATABASE_NAME:-nextgen}
+    ports:
+      - 5432:5432
+
+  minio:
+    image: minio/minio
+    volumes:
+      - minio_data:/data
+    ports:
+      - 9000:9000
+      - 9001:9001
+    environment:
+      - MINIO_ROOT_USER=${AWS_ACCESS_KEY_ID:-FAKE_ACCESS_KEY_ID}
+      - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY:-FAKE_SECRET_ACCESS_KEY}
+    command: ["server", "--compat", "--console-address", ':9001', "/data"]
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+volumes:
+    postgres_data:
+    minio_data:

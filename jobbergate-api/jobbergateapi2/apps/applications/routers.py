@@ -51,9 +51,7 @@ async def applications_create(
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
-    s3man.put(
-        upload_file, owner_id=application.application_owner_id, app_id=application_created_id,
-    )
+    s3man.put(upload_file, app_id=application_created_id)
 
     return Application(id=application_created_id, **application.dict())
 
@@ -80,7 +78,7 @@ async def application_delete(
     application = Application.parse_obj(raw_application)
     delete_query = applications_table.delete().where(where_stmt)
     await database.execute(delete_query)
-    s3man.delete(owner_id=application.application_owner_id, app_id=str(application_id))
+    s3man.delete(app_id=str(application_id))
 
 
 @router.get(
@@ -173,9 +171,7 @@ async def application_update(
     application = Application.parse_obj(await database.fetch_one(query))
 
     if upload_file:
-        s3man.put(
-            upload_file, owner_id=application.application_owner_id, app_id=str(application_id),
-        )
+        s3man.put(upload_file, app_id=str(application_id))
 
     return application
 

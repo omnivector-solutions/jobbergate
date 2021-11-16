@@ -15,39 +15,43 @@ class S3Manager:
     """
 
     def __init__(self):
-        self.bucket_name = "jobbergateapi2-{stage}-{region}-resources".format(
-            stage=settings.S3_STAGE, region=settings.S3_REGION,
-        )
-        self.key_template = f"{settings.S3_BASE_PATH}/{{owner_id}}/applications/{{app_id}}/jobbergate.tar.gz"
-        self.s3_client = boto3.client("s3")
+        self.bucket_name = settings.S3_BUCKET_NAME
+        self.key_template = "applications/{{app_id}}/jobbergate.tar.gz"
+        self.s3_client = boto3.client(
+            "s3",
+            endpoint_url=settings.S3_ENDPOINT_URL,
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
 
-    def _get_key(self, owner_id, app_id):
+        )
+
+    def _get_key(self, app_id):
         """
-        Get an s3 key based upon the owner_id and app_id. If either are falsey, throw an exception.
+        Get an s3 key based upon the app_id. If app_id is falsey, throw an exception.
         """
-        if not owner_id or not app_id:
+        if not app_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"You must supply a non-empty owner_id and app_id: got ({owner_id=}, {app_id=})",
+                detail=f"You must supply a non-empty app_id: got ({app_id=})",
             )
-        return self.key_template.format(owner_id=owner_id, app_id=app_id)
+        return self.key_template.format(app_id=app_id)
 
-    def put(self, upload_file: UploadFile, owner_id: str = "", app_id: str = ""):
+    def put(self, upload_file: UploadFile, app_id: str = ""):
         """
-        Upload a file to s3 for the given owner_id and app_id.
+        Upload a file to s3 for the given app_id.
         """
         self.s3_client.put_object(
-            Body=upload_file.file, Bucket=self.bucket_name, Key=self._get_key(owner_id, app_id),
+            Body=upload_file.file, Bucket=self.bucket_name, Key=self._get_key(app_id),
         )
 
-    def delete(self, owner_id: str = "", app_id: str = ""):
+    def delete(self, app_id: str = ""):
         """
-        Delete a file from s3 associated to the given owner_id and app_id.
+        Delete a file from s3 associated to the given app_id.
         """
-        self.s3_client.delete_object(Bucket=self.bucket_name, Key=self._get_key(owner_id, app_id))
+        self.s3_client.delete_object(Bucket=self.bucket_name, Key=self._get_key(app_id))
 
-    def get(self, owner_id: str = "", app_id: str = ""):
+    def get(self, app_id: str = ""):
         """
-        Get a file from s3 associated to the given owner_id and app_id.
+        Get a file from s3 associated to the given app_id.
         """
-        return self.s3_client.get_object(Bucket=self.bucket_name, Key=self._get_key(owner_id, app_id))
+        return self.s3_client.get_object(Bucket=self.bucket_name, Key=self._get_key(app_id))
