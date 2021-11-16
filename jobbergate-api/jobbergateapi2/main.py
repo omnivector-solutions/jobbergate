@@ -14,7 +14,7 @@ from jobbergateapi2.apps.job_scripts.routers import router as job_scripts_router
 from jobbergateapi2.apps.job_submissions.routers import router as job_submissions_router
 from jobbergateapi2.config import settings
 
-app = FastAPI()
+app = FastAPI(prefix="jobbergate")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[str(origin) for origin in ast.literal_eval(settings.BACKEND_CORS_ORIGINS)],
