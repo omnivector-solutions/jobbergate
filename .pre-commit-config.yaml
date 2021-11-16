@@ -1,25 +1,9 @@
 repos:
-- repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.0.1
+- repo: local
   hooks:
-    - id: trailing-whitespace
-      args: [--markdown-linebreak-ext=md]
-    - id: check-merge-conflict
-    - id: no-commit-to-branch
-
-- repo: https://gitlab.com/pycqa/flake8
-  rev: 3.9.2
-  hooks:
-    - id: flake8
-      args: ['--exclude=docs/*,migrations/*', '--ignore=W503,E203', '--max-line-length=110']
-
-- repo: https://github.com/pre-commit/mirrors-isort
-  rev: v5.8.0
-  hooks:
-    - id: isort
-      additional_dependencies: ['toml']
-
-- repo: https://github.com/python/black
-  rev: 21.5b1
-  hooks:
-    - id: black
+    - id: jobbergate-api-tests
+      name: Run quality checks in jobbergate-api
+      language: system
+      entry: bash -c 'cd jobbergate-api && exec make qa'
+      pass_filenames: false
+      files: ^jobbergate-api/
