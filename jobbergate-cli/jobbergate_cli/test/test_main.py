@@ -87,9 +87,7 @@ def dwf_jwt_token_response(dwf_jwt_token, response_mock):
     ],
 )
 @mark.freeze_time()
-def test_init_token(
-    token_responder_name, when, is_valid, freezer, token_cache_mock, request
-):
+def test_init_token(token_responder_name, when, is_valid, freezer, token_cache_mock, request):
     """
     Do I successfully parse various tokens? Do I identify invalid tokens?
     """

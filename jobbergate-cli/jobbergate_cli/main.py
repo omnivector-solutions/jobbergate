@@ -143,9 +143,7 @@ def jobbergate_command_wrapper(func):
                 user=ctx.obj["token"]["username"],
                 id_=ctx.obj["token"]["user_id"],
                 fn=func.__name__,
-                args_string=", ".join(
-                    list(args) + [f"{k}={v}" for (k, v) in kwargs.items()]
-                ),
+                args_string=", ".join(list(args) + [f"{k}={v}" for (k, v) in kwargs.items()]),
             )
             logger.error(message)
 
@@ -171,10 +169,11 @@ def jobbergate_command_wrapper(func):
                     f"""
                     There was an error processing command '{ctx.command.name}'.
 
-                    Please check the parameters and the command documentation. You can check the documentation
-                    at any time by adding '--help' to any command.
+                    Please check the parameters and the command documentation.
+                    You can check the documentation at any time by adding '--help' to any command.
 
-                    If the problem persists, please contact Omnivector <info@omnivector.solutions> for support.
+                    If the problem persists, please contact Omnivector <info@omnivector.solutions>
+                    for support.
                     """
                 ).strip(),
                 file=sys.stderr,
@@ -346,9 +345,7 @@ def main(ctx, username, password, verbose, raw, full):
             )
         except Exception as err:
             logger.error(f"Auth Failed for '{username}': {str(err)}")
-            raise click.ClickException(
-                f"Failed to login with '{username}'. Please try again."
-            )
+            raise click.ClickException(f"Failed to login with '{username}'. Please try again.")
 
     logger.debug("Decoding auth token")
     ctx.obj["token"] = decode_token_to_dict(JOBBERGATE_API_JWT_PATH.read_text())
@@ -482,9 +479,7 @@ def update_application(
     UPDATE an Application.
     """
     api = ctx.obj["api"]
-    return api.update_application(
-        id_, identifier, application_path, update_identifier, application_desc
-    )
+    return api.update_application(id_, identifier, application_path, update_identifier, application_desc)
 
 
 @main.command("delete-application")

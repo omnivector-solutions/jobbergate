@@ -130,9 +130,7 @@ class BooleanList(QuestionBase):
     :param whentrue: List of questions to show if user answers no/false on this question
     """
 
-    def __init__(
-        self, variablename, message, default=None, whentrue=None, whenfalse=None
-    ):
+    def __init__(self, variablename, message, default=None, whentrue=None, whenfalse=None):
         super().__init__(variablename, message, default)
         if whentrue is None and whenfalse is None:
             raise ValueError("Empty questions lists")

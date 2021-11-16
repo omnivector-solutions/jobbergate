@@ -17,7 +17,7 @@ test: install
 lint: install
 	poetry run black --check ${PACKAGE_NAME}
 	poetry run isort --check ${PACKAGE_NAME}
-	poetry run flake8 --max-line-length=120 --max-complexity=40 ${PACKAGE_NAME}
+	poetry run flake8 --max-line-length=110 --max-complexity=40 ${PACKAGE_NAME}
 
 .PHONY: qa
 qa: test lint

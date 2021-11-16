@@ -17,9 +17,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 # load these two from the environment, with these defaults.
-JOBBERGATE_CACHE_DIR = Path(
-    os.environ.get("JOBBERGATE_CACHE_DIR", Path.home() / ".local/share/jobbergate")
-)
+JOBBERGATE_CACHE_DIR = Path(os.environ.get("JOBBERGATE_CACHE_DIR", Path.home() / ".local/share/jobbergate"))
 JOBBERGATE_API_ENDPOINT = os.environ.get(
     "JOBBERGATE_API_ENDPOINT",
     "https://jobbergateapi2-staging.omnivector.solutions",
@@ -27,9 +25,7 @@ JOBBERGATE_API_ENDPOINT = os.environ.get(
 # for reference: staging: "https://jobbergate-api-staging-eu-north-1.omnivector.solutions"
 
 # enable http tracing, accepts e.g. "1", "true", "0", "false"
-JOBBERGATE_DEBUG = ConfigParser.BOOLEAN_STATES.get(
-    os.environ.get("JOBBERGATE_DEBUG", "false").lower()
-)
+JOBBERGATE_DEBUG = ConfigParser.BOOLEAN_STATES.get(os.environ.get("JOBBERGATE_DEBUG", "false").lower())
 
 # grab the username and password from the environment if they are set there
 JOBBERGATE_USERNAME = os.environ.get("JOBBERGATE_USERNAME")
@@ -69,23 +65,15 @@ JOBBERGATE_APPLICATION_MODULE_FILE_NAME = "jobbergate.py"
 
 JOBBERGATE_APPLICATION_CONFIG_FILE_NAME = "jobbergate.yaml"
 
-JOBBERGATE_APPLICATION_MODULE_PATH = (
-    JOBBERGATE_CACHE_DIR / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-)
+JOBBERGATE_APPLICATION_MODULE_PATH = JOBBERGATE_CACHE_DIR / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
 
-JOBBERGATE_APPLICATION_CONFIG_PATH = (
-    JOBBERGATE_CACHE_DIR / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-)
+JOBBERGATE_APPLICATION_CONFIG_PATH = JOBBERGATE_CACHE_DIR / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
 
 TAR_NAME = "jobbergate.tar.gz"
 
-JOBBERGATE_APPLICATION_MODULE_PATH = (
-    JOBBERGATE_CACHE_DIR / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-)
+JOBBERGATE_APPLICATION_MODULE_PATH = JOBBERGATE_CACHE_DIR / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
 
-JOBBERGATE_APPLICATION_CONFIG_PATH = (
-    JOBBERGATE_CACHE_DIR / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-)
+JOBBERGATE_APPLICATION_CONFIG_PATH = JOBBERGATE_CACHE_DIR / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
 
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
 

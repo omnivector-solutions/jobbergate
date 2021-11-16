@@ -92,9 +92,7 @@ class JobbergateApi:
             if root in tar_list:
                 for file in files:
                     if "templates" in root:
-                        archive.add(
-                            os.path.join(root, file), arcname=f"/templates/{file}"
-                        )
+                        archive.add(os.path.join(root, file), arcname=f"/templates/{file}")
                     else:
                         archive.add(os.path.join(root, file), arcname=file)
         archive.close()
@@ -335,17 +333,11 @@ class JobbergateApi:
 
             if question.whenfalse:
                 retval.extend(
-                    [
-                        self.assemble_questions(wf, ignore=question.ignore)
-                        for wf in question.whenfalse
-                    ]
+                    [self.assemble_questions(wf, ignore=question.ignore) for wf in question.whenfalse]
                 )
             if question.whentrue:
                 retval.extend(
-                    [
-                        self.assemble_questions(wt, ignore=question.noignore)
-                        for wt in question.whentrue
-                    ]
+                    [self.assemble_questions(wt, ignore=question.noignore) for wt in question.whentrue]
                 )
 
             return retval
@@ -392,17 +384,12 @@ class JobbergateApi:
         if not local_jobbergate_application_dir.exists():
             check = self.error_handle(
                 error="invalid application path supplied",
-                solution=(
-                    f"{application_path} is invalid, please " "review and try again"
-                ),
+                solution=(f"{application_path} is invalid, please " "review and try again"),
             )
             error_check.append(check)
         if not local_jobbergate_application_module.exists():
             check = self.error_handle(
-                error=(
-                    f"Could not find {JOBBERGATE_APPLICATION_MODULE_FILE_NAME} "
-                    "in {application_path}"
-                ),
+                error=(f"Could not find {JOBBERGATE_APPLICATION_MODULE_FILE_NAME} " "in {application_path}"),
                 solution=(
                     f"Please ensure {JOBBERGATE_APPLICATION_MODULE_FILE_NAME} "
                     "is in application path provided"
@@ -411,10 +398,7 @@ class JobbergateApi:
             error_check.append(check)
         if not local_jobbergate_application_config.exists():
             check = self.error_handle(
-                error=(
-                    f"Could not find {JOBBERGATE_APPLICATION_CONFIG_FILE_NAME} "
-                    "in {application_path}"
-                ),
+                error=(f"Could not find {JOBBERGATE_APPLICATION_CONFIG_FILE_NAME} " "in {application_path}"),
                 solution=(
                     f"Please ensure {JOBBERGATE_APPLICATION_CONFIG_FILE_NAME} "
                     "is in application path provided"
@@ -433,15 +417,10 @@ class JobbergateApi:
                     if NOT specified then only the user's job scripts
                     will be returned
         """
-        response = self.jobbergate_request(
-            method="GET", endpoint=urljoin(self.api_endpoint, "/job-scripts/")
-        )
+        response = self.jobbergate_request(method="GET", endpoint=urljoin(self.api_endpoint, "/job-scripts/"))
 
         try:
-            response = [
-                {k: v for k, v in d.items() if k not in self.job_script_suppress}
-                for d in response
-            ]
+            response = [{k: v for k, v in d.items() if k not in self.job_script_suppress} for d in response]
         except:  # noqa: E722
             return response
 
@@ -578,9 +557,7 @@ class JobbergateApi:
             )  # Use and remove from the dict
 
             try:
-                workflow_questions = method_to_call(
-                    data=param_dict["jobbergate_config"]
-                )
+                workflow_questions = method_to_call(data=param_dict["jobbergate_config"])
             except NotImplementedError:
                 response = self.error_handle(
                     error="Abstract method not implemented",
@@ -622,9 +599,7 @@ class JobbergateApi:
         files = {"upload_file": open(param_filename, "rb")}
 
         # Possibly overwrite script name
-        job_script_name_from_param = param_dict["jobbergate_config"].get(
-            "job_script_name"
-        )
+        job_script_name_from_param = param_dict["jobbergate_config"].get("job_script_name")
         if job_script_name_from_param:
             data["job_script_name"] = job_script_name_from_param
 
@@ -796,8 +771,7 @@ class JobbergateApi:
 
         try:
             response = [
-                {k: v for k, v in d.items() if k not in self.job_submission_suppress}
-                for d in response
+                {k: v for k, v in d.items() if k not in self.job_submission_suppress} for d in response
             ]
         except:  # noqa: E722
             return response
@@ -805,9 +779,7 @@ class JobbergateApi:
         if all:
             return response
         else:
-            response = [
-                d for d in response if d["job_submission_owner"] == self.user_id
-            ]
+            response = [d for d in response if d["job_submission_owner"] == self.user_id]
             return response
 
     def create_job_submission(self, job_script_id, render_only, job_submission_name=""):
@@ -917,9 +889,7 @@ class JobbergateApi:
 
         response = self.jobbergate_request(
             method="GET",
-            endpoint=urljoin(
-                self.api_endpoint, f"/job-submissions/{job_submission_id}"
-            ),
+            endpoint=urljoin(self.api_endpoint, f"/job-submissions/{job_submission_id}"),
         )
 
         return response
@@ -947,9 +917,7 @@ class JobbergateApi:
         # TODO how to collect data that will updated for the job-submission
         response = self.jobbergate_request(
             method="PUT",
-            endpoint=urljoin(
-                self.api_endpoint, f"/job-submission/{job_submission_id}/"
-            ),
+            endpoint=urljoin(self.api_endpoint, f"/job-submission/{job_submission_id}/"),
         )
         return response
 
@@ -991,10 +959,7 @@ class JobbergateApi:
             method="GET", endpoint=urljoin(self.api_endpoint, "/applications/")
         )
         try:
-            response = [
-                {k: v for k, v in d.items() if k not in self.application_suppress}
-                for d in response
-            ]
+            response = [{k: v for k, v in d.items() if k not in self.application_suppress} for d in response]
         except:  # noqa: E722
             return response
 
@@ -1013,22 +978,14 @@ class JobbergateApi:
         # List only the applications of the user that have identifier
         elif user:
             default_applications = [
-                application
-                for application in response
-                if application.get("application_identifier")
+                application for application in response if application.get("application_identifier")
             ]
-            user_applications = [
-                d
-                for d in default_applications
-                if d["application_owner"] == self.user_id
-            ]
+            user_applications = [d for d in default_applications if d["application_owner"] == self.user_id]
             return user_applications
         # If no flag is passed, list all the applications, but only the ones that have identifier
         else:
             default_applications = [
-                application
-                for application in response
-                if application.get("application_identifier")
+                application for application in response if application.get("application_identifier")
             ]
             return default_applications
 
