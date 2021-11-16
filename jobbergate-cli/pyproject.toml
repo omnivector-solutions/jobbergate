@@ -33,7 +33,12 @@ pytest-env = "^0.6.2"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--random-order --cov=jobbergate_cli --cov-report=term-missing --cov-fail-under=25"
+addopts = [
+    "--random-order",
+    "--cov=jobbergate_cli",
+    "--cov-report=term-missing",
+    "--cov-fail-under=25",
+]
 env = [
     "JOBBERGATE_API_ENDPOINT = https://jobbergate-api-staging.omnivector.solutions",
     "JOBBERGATE_DEBUG = false",
