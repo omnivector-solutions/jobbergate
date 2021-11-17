@@ -65,7 +65,12 @@ default_section = "THIRDPARTY"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--random-order --cov=jobbergateapi2 --cov-report=term-missing --cov-fail-under=95"
+addopts = [
+    "--random-order",
+    "--cov=jobbergateapi2",
+    "--cov-report=term-missing",
+    "--cov-fail-under=95",
+]
 testpaths = ["jobbergateapi2/tests"]
 env = [
     "DATABASE_URL = sqlite:///sqlite-testing.db",
