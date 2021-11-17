@@ -5,7 +5,6 @@ import ast
 
 from fastapi import FastAPI, Response, status
 from loguru import logger
-from mangum import Mangum
 from starlette.middleware.cors import CORSMiddleware
 
 from jobbergateapi2 import storage
@@ -26,9 +25,9 @@ subapp.include_router(applications_router)
 subapp.include_router(job_scripts_router)
 subapp.include_router(job_submissions_router)
 
-@subapp.get("/health",
-    status_code=status.HTTP_204_NO_CONTENT,
-    responses={204: {"description": "API is healthy"}},
+
+@subapp.get(
+    "/health", status_code=status.HTTP_204_NO_CONTENT, responses={204: {"description": "API is healthy"}},
 )
 async def health_check():
     return Response(status_code=status.HTTP_204_NO_CONTENT)

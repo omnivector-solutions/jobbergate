@@ -28,7 +28,9 @@ async def test_create_application(s3man_client_mock, application_data, client, i
     file_mock = mock.MagicMock(wraps=StringIO("test"))
 
     inject_security_header("owner1", "jobbergate:applications:create")
-    response = await client.post("/jobbergate/applications/", data=application_data, files={"upload_file": file_mock})
+    response = await client.post(
+        "/jobbergate/applications/", data=application_data, files={"upload_file": file_mock}
+    )
     assert response.status_code == status.HTTP_201_CREATED
     s3man.s3_client.put_object.assert_called_once()
 
@@ -63,7 +65,9 @@ async def test_create_application_bad_permission(
     file_mock = mock.MagicMock(wraps=StringIO("test"))
 
     inject_security_header("owner1", "INVALID_PERMISSION")
-    response = await client.post("/jobbergate/applications/", data=application_data, files={"upload_file": file_mock})
+    response = await client.post(
+        "/jobbergate/applications/", data=application_data, files={"upload_file": file_mock}
+    )
     assert response.status_code == status.HTTP_403_FORBIDDEN
     s3man.s3_client.put_object.assert_not_called()
 
@@ -89,7 +93,9 @@ async def test_create_without_application_name(
 
     inject_security_header("owner1", "jobbergate:applications:create")
     application_data["application_name"] = None
-    response = await client.post("/jobbergate/applications/", data=application_data, files={"upload_file": file_mock})
+    response = await client.post(
+        "/jobbergate/applications/", data=application_data, files={"upload_file": file_mock}
+    )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     s3man.s3_client.put_object.assert_not_called()
 
@@ -449,7 +455,9 @@ async def test_update_application(s3man_client_mock, client, application_data, i
     inject_security_header("owner1", "jobbergate:applications:update")
     application_data["application_name"] = "new_name"
     application_data["application_description"] = "new_description"
-    response = await client.put("/jobbergate/applications/1", data=application_data, files={"upload_file": file_mock})
+    response = await client.put(
+        "/jobbergate/applications/1", data=application_data, files={"upload_file": file_mock}
+    )
     assert response.status_code == status.HTTP_201_CREATED
 
     data = response.json()
@@ -499,7 +507,9 @@ async def test_update_application_bad_permission(
     inject_security_header("owner1", "INVALID_PERMISSION")
     application_data["application_name"] = "new_name"
     application_data["application_description"] = "new_description"
-    response = await client.put("/jobbergate/applications/1", data=application_data, files={"upload_file": file_mock})
+    response = await client.put(
+        "/jobbergate/applications/1", data=application_data, files={"upload_file": file_mock}
+    )
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
     s3man.s3_client.put_object.assert_not_called()

@@ -123,7 +123,9 @@ async def test_create_job_script(
 
     inject_security_header("owner1", "jobbergate:job-scripts:create")
     job_script_data["param_dict"] = json.dumps(param_dict)
-    response = await client.post("/jobbergate/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
+    response = await client.post(
+        "/jobbergate/job-scripts/", data=job_script_data, files={"upload_file": file_mock}
+    )
     assert response.status_code == status.HTTP_201_CREATED
     s3man_client_mock.get_object.assert_called_once()
 
@@ -164,7 +166,9 @@ async def test_create_job_script_bad_permission(
 
     inject_security_header("owner1", "INVALID_PERMISSION")
     job_script_data["param_dict"] = json.dumps(param_dict)
-    response = await client.post("/jobbergate/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
+    response = await client.post(
+        "/jobbergate/job-scripts/", data=job_script_data, files={"upload_file": file_mock}
+    )
     assert response.status_code == status.HTTP_403_FORBIDDEN
     s3man_client_mock.get_object.assert_not_called()
 
@@ -190,7 +194,9 @@ async def test_create_job_script_without_application(
 
     inject_security_header("owner1", "jobbergate:job-scripts:create")
     job_script_data["param_dict"] = json.dumps(param_dict)
-    response = await client.post("/jobbergate/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
+    response = await client.post(
+        "/jobbergate/job-scripts/", data=job_script_data, files={"upload_file": file_mock}
+    )
     assert response.status_code == status.HTTP_404_NOT_FOUND
     s3man_client_mock.get_object.assert_not_called()
 
@@ -221,7 +227,9 @@ async def test_create_job_script_file_not_found(
 
     inject_security_header("owner1", "jobbergate:job-scripts:create")
     job_script_data["param_dict"] = json.dumps(param_dict)
-    response = await client.post("/jobbergate/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
+    response = await client.post(
+        "/jobbergate/job-scripts/", data=job_script_data, files={"upload_file": file_mock}
+    )
     assert response.status_code == status.HTTP_404_NOT_FOUND
     s3man_client_mock.get_object.assert_called_once()
 
