@@ -1,3 +1,7 @@
+"""
+Methods for creating connections to legacy and nextgen databases.
+"""
+
 from psycopg import connect
 from psycopg.rows import dict_row
 from contextlib import contextmanager
@@ -8,6 +12,9 @@ from slurp.config import settings
 
 
 def build_url(is_legacy=False):
+    """
+    Builds a postgres uri for either legacy or nextgen databases based on settings.
+    """
     env_prefix = 'NEXTGEN' if not is_legacy else 'LEGACY'
     keys = ('user', 'pswd', 'host', 'port', 'name')
     return "postgresql://{user}:{pswd}@{host}:{port}/{name}".format(
@@ -17,6 +24,13 @@ def build_url(is_legacy=False):
 
 @contextmanager
 def db(is_legacy=False):
+    """
+    Creates a connections to the database.
+
+    Used as a context manager that closes the connection automatically on exit.
+    Legacy connections will roll-back before close as they are always read-only.
+    Nextgen connections will be committed before close unless there is an error.
+    """
     database_url = build_url(is_legacy=is_legacy)
     logger.debug(f"Starting a connection with {database_url}")
     with connect(database_url, row_factory=dict_row) as connection:

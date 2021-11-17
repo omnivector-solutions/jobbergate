@@ -1,3 +1,6 @@
+"""
+Provides logic for migrating application data from legacy db to nextgen db.
+"""
 from loguru import logger
 import snick
 
@@ -5,6 +8,14 @@ from slurp.connections import db
 
 
 def migrate_applications(nextgen_db, legacy_applications, user_map):
+    """
+    Inserts application data to nextgen database.
+
+    Given a list of legacy applications and a user map, create records in the
+    nextgen database for each application.
+
+    :returns: An dict mapping legacy application ids to nextgen application ids
+    """
     application_map = {}
     logger.debug("Inserting applications to nextgen database")
     for application in legacy_applications:

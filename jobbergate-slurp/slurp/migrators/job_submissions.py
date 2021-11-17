@@ -1,3 +1,6 @@
+"""
+Provides logic for migrating job_submission data from legacy db to nextgen db.
+"""
 from loguru import logger
 import snick
 
@@ -5,6 +8,12 @@ from slurp.connections import db
 
 
 def migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map, job_scripts_map):
+    """
+    Inserts job_submission data to nextgen database.
+
+    Given a list of legacy job_submissions, a user map, and a job_script map, create
+    records in the nextgen database for each job_submission.
+    """
     logger.debug("Migrating job_submissions to nextgen database")
     for job_submission in legacy_job_submissions:
         legacy_email = user_map[job_submission["job_submission_owner_id"]]["email"]

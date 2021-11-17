@@ -1,3 +1,7 @@
+"""
+Provides logic for migrating job_script data from legacy db to nextgen db.
+"""
+
 from loguru import logger
 import snick
 
@@ -5,6 +9,14 @@ from slurp.connections import db
 
 
 def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_map):
+    """
+    Inserts job_script data to nextgen database.
+
+    Given a list of legacy job_scripts, a user map, and an applicaiton map, create
+    records in the nextgen database for each job_script.
+
+    :returns: An dict mapping legacy job_script ids to nextgen job_script ids
+    """
     job_scripts_map = {}
     logger.debug("Migrating job_scripts to nextgen database")
     for job_script in legacy_job_scripts:

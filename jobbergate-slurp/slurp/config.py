@@ -1,9 +1,16 @@
+"""
+Settings for the Jobbergate Slurp application.
+"""
+
 from typing import Optional
 
 from pydantic import BaseSettings, Field, HttpUrl
 
 
 class Settings(BaseSettings):
+    """
+    Settings model. Will load from environment and dotenv files.
+    """
     LEGACY_DATABASE_USER: str
     LEGACY_DATABASE_PSWD: str
     LEGACY_DATABASE_HOST: str
@@ -22,6 +29,9 @@ class Settings(BaseSettings):
     AUTH0_CLIENT_SECRET: str
 
     class Config:
+        """
+        Special settings for Pydanitc BaseSettings.
+        """
         env_file = ".env"
 
 

@@ -1,3 +1,8 @@
+"""
+The main slurp application.
+
+Provides a Typer app and associated commands.
+"""
 import subprocess
 from loguru import logger
 
@@ -17,11 +22,17 @@ app = typer.Typer()
 
 @app.command()
 def login(is_legacy: bool = False):
+    """
+    Runs an interactive postgres shell connected to either legacy or nextgen db.
+    """
     subprocess.run(["pgcli", build_url(is_legacy=is_legacy)])
 
 
 @app.command()
 def clear_nextgen_db():
+    """
+    Clears out the tables of the nextgen database.
+    """
     logger.debug("Clearing out nextgen database")
     with db(is_legacy=False) as nextgen_db:
         logger.debug("Truncating job_submissions")
@@ -37,6 +48,9 @@ def clear_nextgen_db():
 
 @app.command()
 def migrate():
+    """
+    Migrates data from the legacy database to the nextgen database.
+    """
     logger.debug("Migrating jobbergate data from legacy to nextgen database")
     with db(is_legacy=True) as legacy_db, db(is_legacy=False) as nextgen_db:
         user_map = pull_users(legacy_db)
@@ -55,6 +69,12 @@ def migrate():
 
 @app.command()
 def update_users():
+    """
+    Updates owner ids in the nextgen database.
+
+    Connects to the Auth0 admin api to pull nextgen users and attemtps to match them
+    to the legacy users pulled in during migration.
+    """
     logger.debug("Update users")
     with db(is_legacy=False) as nextgen_db:
         migrate_users(nextgen_db)
