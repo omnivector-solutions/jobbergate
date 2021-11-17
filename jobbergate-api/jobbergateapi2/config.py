@@ -3,14 +3,20 @@ Configuration file, sets all the necessary environment variables, it is better u
 """
 from typing import Optional
 
-from pydantic import BaseSettings, Field, HttpUrl
-
-_DB_RX = r"^(sqlite|postgres)://.+$"
+from pydantic import BaseSettings, Field, HttpUrl, root_validator
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = Field("sqlite:///./sqlite.db?check_same_thread=true", regex=_DB_RX)
     TEST_ENV: bool = Field(False)
+
+    # Database settings
+    DATABASE_HOST: Optional[str]
+    DATABASE_USER: Optional[str]
+    DATABASE_PSWD: Optional[str]
+    DATABASE_NAME: Optional[str]
+    DATABASE_PORT: Optional[int]
+    DATABASE_URL: Optional[str]
+
     S3_STAGE: str = Field("staging")
     S3_REGION: str = Field("eu-north-1")
     S3_BASE_PATH: str = Field("jobbergate-resources")
@@ -21,6 +27,29 @@ class Settings(BaseSettings):
     ARMASEC_DOMAIN: str
     ARMASEC_AUDIENCE: Optional[HttpUrl]
     ARMASEC_DEBUG: bool = Field(False)
+
+    @root_validator
+    def calculate_db_url(cls, values):
+        if not values.get("DATABASE_URL"):
+            expected_keys = {
+                "DATABASE_USER",
+                "DATABASE_PSWD",
+                "DATABASE_HOST",
+                "DATABASE_PORT",
+                "DATABASE_NAME",
+            }
+            missing_keys = expected_keys - set({k: v for (k, v) in values.items() if v is not None})
+            if len(missing_keys) > 0:
+                raise ValueError(f"Missing required database settings: {', '.join(sorted(missing_keys))}")
+
+            values["DATABASE_URL"] = "postgresql://{user}:{pswd}@{host}:{port}/{name}".format(
+                user=values.get("DATABASE_USER"),
+                pswd=values.get("DATABASE_PSWD"),
+                host=values.get("DATABASE_HOST"),
+                port=values.get("DATABASE_PORT"),
+                name=values.get("DATABASE_NAME"),
+            )
+        return values
 
     class Config:
         env_file = ".env"

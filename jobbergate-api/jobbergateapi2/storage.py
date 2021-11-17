@@ -7,7 +7,7 @@ import sqlalchemy
 from jobbergateapi2.config import settings
 from jobbergateapi2.metadata import metadata
 
-database = databases.Database(settings.DATABASE_URL)
+database = databases.Database(str(settings.DATABASE_URL))
 
 
 def create_all_tables():
