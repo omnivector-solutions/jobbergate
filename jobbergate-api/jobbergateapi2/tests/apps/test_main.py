@@ -4,7 +4,7 @@ from fastapi import status
 
 
 @pytest.mark.asyncio
-async def test_health_check(test_client: AsyncClient):
+async def test_health_check(client: AsyncClient):
     """
     Test the health check route
 
@@ -12,6 +12,6 @@ async def test_health_check(test_client: AsyncClient):
     the production and staging environments can configure the load balancing
     """
 
-    response = await test_client.get("/jobbergate/health")
+    response = await client.get("/jobbergate/health")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
