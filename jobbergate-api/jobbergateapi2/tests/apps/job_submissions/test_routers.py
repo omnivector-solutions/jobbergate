@@ -35,7 +35,7 @@ async def test_create_job_submission(
     await insert_objects(job_script, job_scripts_table)
 
     inject_security_header("owner1", "jobbergate:job-submissions:create")
-    response = await client.post("/job-submissions/", json=job_submission_data)
+    response = await client.post("/jobbergate/job-submissions/", json=job_submission_data)
     assert response.status_code == status.HTTP_201_CREATED
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
@@ -53,7 +53,7 @@ async def test_create_job_submission_without_job_script(client, job_submission_d
     the job_submission still does not exists in the database, the correct status code (404) is returned.
     """
     inject_security_header("owner1", "jobbergate:job-submissions:create")
-    response = await client.post("/job-submissions/", json=job_submission_data)
+    response = await client.post("/jobbergate/job-submissions/", json=job_submission_data)
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
@@ -79,7 +79,7 @@ async def test_create_job_submission_bad_permission(
     await insert_objects(job_script, job_scripts_table)
 
     inject_security_header("owner1", "INVALID_PERMISSION")
-    response = await client.post("/job-submissions/", json=job_submission_data)
+    response = await client.post("/jobbergate/job-submissions/", json=job_submission_data)
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
@@ -112,7 +112,7 @@ async def test_get_job_submission_by_id(
     assert count[0][0] == 1
 
     inject_security_header("owner1", "jobbergate:job-submissions:read")
-    response = await client.get("/job-submissions/1")
+    response = await client.get("/jobbergate/job-submissions/1")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -143,7 +143,7 @@ async def test_get_job_submission_by_id_bad_permission(
     await insert_objects(job_submissions, job_submissions_table)
 
     inject_security_header("owner1", "INVALID_PERMISSION")
-    response = await client.get("/job-submissions/1")
+    response = await client.get("/jobbergate/job-submissions/1")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -158,7 +158,7 @@ async def test_get_job_submission_by_id_invalid(client, inject_security_header):
     returned is what we would expect given the job_submission requested doesn't exist (404).
     """
     inject_security_header("owner1", "jobbergate:job-submissions:read")
-    response = await client.get("/job-submissions/10")
+    response = await client.get("/jobbergate/job-submissions/10")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -191,7 +191,7 @@ async def test_list_job_submission_from_user(
     assert count[0][0] == 3
 
     inject_security_header("owner1", "jobbergate:job-submissions:read")
-    response = await client.get("/job-submissions/")
+    response = await client.get("/jobbergate/job-submissions/")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -228,7 +228,7 @@ async def test_list_job_submission_bad_permission(
     assert count[0][0] == 3
 
     inject_security_header("owner1", "INVALID_PERMISSION")
-    response = await client.get("/job-submissions/")
+    response = await client.get("/jobbergate/job-submissions/")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -262,7 +262,7 @@ async def test_list_job_submission_from_user_empty(
     assert count[0][0] == 3
 
     inject_security_header("owner1", "jobbergate:job-submissions:read")
-    response = await client.get("/job-submissions/")
+    response = await client.get("/jobbergate/job-submissions/")
     assert response.status_code == status.HTTP_200_OK
 
     assert len(response.json()) == 0
@@ -298,7 +298,7 @@ async def test_list_job_submission_all(
     assert count[0][0] == 3
 
     inject_security_header("owner1", "jobbergate:job-submissions:read")
-    response = await client.get("/job-submissions/?all=True")
+    response = await client.get("/jobbergate/job-submissions/?all=True")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -336,13 +336,13 @@ async def test_list_job_submission_pagination(
     assert count[0][0] == 3
 
     inject_security_header("owner1", "jobbergate:job-submissions:read")
-    response = await client.get("/job-submissions/?limit=1&skip=0")
+    response = await client.get("/jobbergate/job-submissions/?limit=1&skip=0")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
     assert [d["id"] for d in data] == [1]
 
-    response = await client.get("/job-submissions/?limit=2&skip=1")
+    response = await client.get("/jobbergate/job-submissions/?limit=2&skip=1")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -373,7 +373,7 @@ async def test_update_job_submission(
 
     inject_security_header("owner1", "jobbergate:job-submissions:update")
     response = await client.put(
-        "/job-submissions/1",
+        "/jobbergate/job-submissions/1",
         data={"job_submission_name": "new name", "job_submission_description": "new description"},
     )
 
@@ -417,7 +417,7 @@ async def test_update_job_submission_not_found(
     await insert_objects(job_submissions, job_submissions_table)
 
     inject_security_header("owner1", "jobbergate:job-submissions:update")
-    response = await client.put("/job-submissions/123", data={"job_submission_name": "new name"})
+    response = await client.put("/jobbergate/job-submissions/123", data={"job_submission_name": "new name"})
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -450,7 +450,7 @@ async def test_update_job_submission_bad_permission(
     await insert_objects(job_submissions, job_submissions_table)
 
     inject_security_header("owner1", "INVALID_PERMISSION")
-    response = await client.put("/job-submissions/1", data={"job_submission_name": "new name"})
+    response = await client.put("/jobbergate/job-submissions/1", data={"job_submission_name": "new name"})
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
@@ -486,7 +486,7 @@ async def test_delete_job_submission(
     assert count[0][0] == 1
 
     inject_security_header("owner1", "jobbergate:job-submissions:delete")
-    response = await client.delete("/job-submissions/1")
+    response = await client.delete("/jobbergate/job-submissions/1")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -519,7 +519,7 @@ async def test_delete_job_submission_not_found(
     assert count[0][0] == 1
 
     inject_security_header("owner1", "jobbergate:job-submissions:delete")
-    response = await client.delete("/job-submissions/123")
+    response = await client.delete("/jobbergate/job-submissions/123")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -552,7 +552,7 @@ async def test_delete_job_submission_bad_permission(
     assert count[0][0] == 1
 
     inject_security_header("owner1", "INVALID_PERMISSION")
-    response = await client.delete("/job-submissions/1")
+    response = await client.delete("/jobbergate/job-submissions/1")
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
 

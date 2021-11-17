@@ -3,7 +3,7 @@ Main file to startup the fastapi server
 """
 import ast
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, status
 from loguru import logger
 from mangum import Mangum
 from starlette.middleware.cors import CORSMiddleware
@@ -14,20 +14,27 @@ from jobbergateapi2.apps.job_scripts.routers import router as job_scripts_router
 from jobbergateapi2.apps.job_submissions.routers import router as job_submissions_router
 from jobbergateapi2.config import settings
 
-app = FastAPI(prefix="jobbergate")
-app.add_middleware(
+subapp = FastAPI()
+subapp.add_middleware(
     CORSMiddleware,
     allow_origins=[str(origin) for origin in ast.literal_eval(settings.BACKEND_CORS_ORIGINS)],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(applications_router)
-app.include_router(job_scripts_router)
-app.include_router(job_submissions_router)
+subapp.include_router(applications_router)
+subapp.include_router(job_scripts_router)
+subapp.include_router(job_submissions_router)
+
+@subapp.get("/health",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={204: {"description": "API is healthy"}},
+)
+async def health_check():
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@app.on_event("startup")
+@subapp.on_event("startup")
 async def init_database():
     """
     Connect the database; create it if necessary
@@ -37,7 +44,7 @@ async def init_database():
     await storage.database.connect()
 
 
-@app.on_event("shutdown")
+@subapp.on_event("shutdown")
 async def disconnect_database():
     """
     Disconnect the database
@@ -46,13 +53,5 @@ async def disconnect_database():
     await storage.database.disconnect()
 
 
-def handler(event, context):
-    """
-    Adapt inbound ASGI requests (from API Gateway) using Mangum
-    - Assumes non-ASGI requests (from any other source) are a cloudwatch ping
-    """
-    if not event.get("requestContext"):
-        return
-
-    mangum = Mangum(app)
-    return mangum(event, context)
+app = FastAPI()
+app.mount("/jobbergate", subapp)

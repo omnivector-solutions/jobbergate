@@ -123,7 +123,7 @@ async def test_create_job_script(
 
     inject_security_header("owner1", "jobbergate:job-scripts:create")
     job_script_data["param_dict"] = json.dumps(param_dict)
-    response = await client.post("/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
+    response = await client.post("/jobbergate/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_201_CREATED
     s3man_client_mock.get_object.assert_called_once()
 
@@ -164,7 +164,7 @@ async def test_create_job_script_bad_permission(
 
     inject_security_header("owner1", "INVALID_PERMISSION")
     job_script_data["param_dict"] = json.dumps(param_dict)
-    response = await client.post("/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
+    response = await client.post("/jobbergate/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_403_FORBIDDEN
     s3man_client_mock.get_object.assert_not_called()
 
@@ -190,7 +190,7 @@ async def test_create_job_script_without_application(
 
     inject_security_header("owner1", "jobbergate:job-scripts:create")
     job_script_data["param_dict"] = json.dumps(param_dict)
-    response = await client.post("/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
+    response = await client.post("/jobbergate/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_404_NOT_FOUND
     s3man_client_mock.get_object.assert_not_called()
 
@@ -221,7 +221,7 @@ async def test_create_job_script_file_not_found(
 
     inject_security_header("owner1", "jobbergate:job-scripts:create")
     job_script_data["param_dict"] = json.dumps(param_dict)
-    response = await client.post("/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
+    response = await client.post("/jobbergate/job-scripts/", data=job_script_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_404_NOT_FOUND
     s3man_client_mock.get_object.assert_called_once()
 
@@ -302,7 +302,7 @@ async def test_get_job_script_by_id(client, application_data, job_script_data, i
     assert count[0][0] == 1
 
     inject_security_header("owner1", "jobbergate:job-scripts:read")
-    response = await client.get("/job-scripts/1")
+    response = await client.get("/jobbergate/job-scripts/1")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -324,7 +324,7 @@ async def test_get_job_script_by_id_invalid(client, inject_security_header):
     returned is what we would expect given the job_script requested doesn't exist (404).
     """
     inject_security_header("owner1", "jobbergate:job-scripts:read")
-    response = await client.get("/job-scripts/10")
+    response = await client.get("/jobbergate/job-scripts/10")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -347,7 +347,7 @@ async def test_get_job_script_by_id_bad_permission(
     await insert_objects(job_script, job_scripts_table)
 
     inject_security_header("owner1", "INVALID_PERMISSION")
-    response = await client.get("/job-scripts/1")
+    response = await client.get("/jobbergate/job-scripts/1")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -376,7 +376,7 @@ async def test_list_job_script_from_user(client, application_data, job_script_da
     assert count[0][0] == 3
 
     inject_security_header("owner1", "jobbergate:job-scripts:read")
-    response = await client.get("/job-scripts/")
+    response = await client.get("/jobbergate/job-scripts/")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -408,7 +408,7 @@ async def test_list_job_script_bad_permission(
     assert count[0][0] == 3
 
     inject_security_header("owner1", "INVALID_PERMISSION")
-    response = await client.get("/job-scripts/")
+    response = await client.get("/jobbergate/job-scripts/")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -440,7 +440,7 @@ async def test_list_job_script_from_user_empty(
     assert count[0][0] == 3
 
     inject_security_header("owner1", "jobbergate:job-scripts:read")
-    response = await client.get("/job-scripts/")
+    response = await client.get("/jobbergate/job-scripts/")
     assert response.status_code == status.HTTP_200_OK
 
     assert len(response.json()) == 0
@@ -474,7 +474,7 @@ async def test_list_job_script_all(
     assert count[0][0] == 3
 
     inject_security_header("owner1", "jobbergate:job-scripts:read")
-    response = await client.get("/job-scripts/?all=True")
+    response = await client.get("/jobbergate/job-scripts/?all=True")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -510,13 +510,13 @@ async def test_list_job_script_pagination(
     assert count[0][0] == 3
 
     inject_security_header("owner1", "jobbergate:job-scripts:read")
-    response = await client.get("/job-scripts/?limit=1&skip=0")
+    response = await client.get("/jobbergate/job-scripts/?limit=1&skip=0")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
     assert [d["id"] for d in data] == [1]
 
-    response = await client.get("/job-scripts/?limit=2&skip=1")
+    response = await client.get("/jobbergate/job-scripts/?limit=2&skip=1")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -544,7 +544,7 @@ async def test_update_job_script(
 
     inject_security_header("owner1", "jobbergate:job-scripts:update")
     response = await client.put(
-        "/job-scripts/1",
+        "/jobbergate/job-scripts/1",
         data={
             "job_script_name": "new name",
             "job_script_description": "new description",
@@ -591,7 +591,7 @@ async def test_update_job_script_not_found(
     await insert_objects(job_scripts, job_scripts_table)
 
     inject_security_header("owner1", "jobbergate:job-scripts:update")
-    response = await client.put("/job-scripts/123", data={"job_script_name": "new name"})
+    response = await client.put("/jobbergate/job-scripts/123", data={"job_script_name": "new name"})
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -621,7 +621,7 @@ async def test_update_job_script_bad_permission(
     await insert_objects(job_scripts, job_scripts_table)
 
     inject_security_header("owner1", "INVALID_PERMISSION")
-    response = await client.put("/job-scripts/1", data={"job_script_name": "new name"})
+    response = await client.put("/jobbergate/job-scripts/1", data={"job_script_name": "new name"})
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
@@ -654,7 +654,7 @@ async def test_delete_job_script(
     assert count[0][0] == 1
 
     inject_security_header("owner1", "jobbergate:job-scripts:delete")
-    response = await client.delete("/job-scripts/1")
+    response = await client.delete("/jobbergate/job-scripts/1")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -684,7 +684,7 @@ async def test_delete_job_script_not_found(
     assert count[0][0] == 1
 
     inject_security_header("owner1", "jobbergate:job-scripts:delete")
-    response = await client.delete("/job-scripts/123")
+    response = await client.delete("/jobbergate/job-scripts/123")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -714,7 +714,7 @@ async def test_delete_job_script_bad_permission(
     assert count[0][0] == 1
 
     inject_security_header("owner1", "INVALID_PERMISSION")
-    response = await client.delete("/job-scripts/1")
+    response = await client.delete("/jobbergate/job-scripts/1")
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
 

@@ -28,7 +28,7 @@ async def test_create_application(s3man_client_mock, application_data, client, i
     file_mock = mock.MagicMock(wraps=StringIO("test"))
 
     inject_security_header("owner1", "jobbergate:applications:create")
-    response = await client.post("/applications/", data=application_data, files={"upload_file": file_mock})
+    response = await client.post("/jobbergate/applications/", data=application_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_201_CREATED
     s3man.s3_client.put_object.assert_called_once()
 
@@ -63,7 +63,7 @@ async def test_create_application_bad_permission(
     file_mock = mock.MagicMock(wraps=StringIO("test"))
 
     inject_security_header("owner1", "INVALID_PERMISSION")
-    response = await client.post("/applications/", data=application_data, files={"upload_file": file_mock})
+    response = await client.post("/jobbergate/applications/", data=application_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_403_FORBIDDEN
     s3man.s3_client.put_object.assert_not_called()
 
@@ -89,7 +89,7 @@ async def test_create_without_application_name(
 
     inject_security_header("owner1", "jobbergate:applications:create")
     application_data["application_name"] = None
-    response = await client.post("/applications/", data=application_data, files={"upload_file": file_mock})
+    response = await client.post("/jobbergate/applications/", data=application_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     s3man.s3_client.put_object.assert_not_called()
 
@@ -113,7 +113,7 @@ async def test_create_without_file(
     """
     inject_security_header("owner1", "jobbergate:applications:create")
     application_data["application_name"] = None
-    response = await client.post("/applications/", data=application_data)
+    response = await client.post("/jobbergate/applications/", data=application_data)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     s3man.s3_client.put_object.assert_not_called()
 
@@ -141,7 +141,7 @@ async def test_delete_application(
     assert count[0][0] == 1
 
     inject_security_header("owner1", "jobbergate:applications:delete")
-    response = await client.delete("/applications/1")
+    response = await client.delete("/jobbergate/applications/1")
     assert response.status_code == status.HTTP_204_NO_CONTENT
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
@@ -167,7 +167,7 @@ async def test_delete_application_bad_permission(
     assert count[0][0] == 1
 
     inject_security_header("owner1", "INVALID_PERMISSION")
-    response = await client.delete("/applications/1")
+    response = await client.delete("/jobbergate/applications/1")
     assert response.status_code == status.HTTP_403_FORBIDDEN
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
@@ -193,7 +193,7 @@ async def test_delete_application_not_found(
     assert count[0][0] == 1
 
     inject_security_header("owner1", "jobbergate:applications:delete")
-    response = await client.delete("/applications/999")
+    response = await client.delete("/jobbergate/applications/999")
     assert response.status_code == status.HTTP_404_NOT_FOUND
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
@@ -214,7 +214,7 @@ async def test_delete_application_without_id(
     code is returned for a request made without an application id.
     """
     inject_security_header("owner1", "jobbergate:applications:delete")
-    response = await client.delete("/applications/")
+    response = await client.delete("/jobbergate/applications/")
     assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
     s3man.s3_client.delete_object.assert_not_called()
 
@@ -239,7 +239,7 @@ async def test_get_application_by_id(
     assert count[0][0] == 1
 
     inject_security_header("owner1", "jobbergate:applications:read")
-    response = await client.get("/applications/1")
+    response = await client.get("/jobbergate/applications/1")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -260,7 +260,7 @@ async def test_get_application_by_id_invalid(client, inject_security_header):
     returned is what we would expect given the application requested doesn't exist (404).
     """
     inject_security_header("owner1", "jobbergate:applications:read")
-    response = await client.get("/applications/10")
+    response = await client.get("/jobbergate/applications/10")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -278,7 +278,7 @@ async def test_get_application_by_id_bad_permission(client, application_data, in
     await insert_objects(application, applications_table)
 
     inject_security_header("owner1", "INVALID_PERMISSION")
-    response = await client.get("/applications/1")
+    response = await client.get("/jobbergate/applications/1")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -302,7 +302,7 @@ async def test_get_application_all_from_user(client, application_data, inject_se
     assert count[0][0] == 3
 
     inject_security_header("owner1", "jobbergate:applications:read")
-    response = await client.get("/applications/")
+    response = await client.get("/jobbergate/applications/")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -331,7 +331,7 @@ async def test_get_application_all_from_user_bad_permission(client, application_
     assert count[0][0] == 3
 
     inject_security_header("owner1", "INVALID_PERMISSION")
-    response = await client.get("/applications/")
+    response = await client.get("/jobbergate/applications/")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -356,7 +356,7 @@ async def test_get_application_all_from_user_empty(client, application_data, inj
     assert count[0][0] == 3
 
     inject_security_header("owner1", "jobbergate:applications:read")
-    response = await client.get("/applications/")
+    response = await client.get("/jobbergate/applications/")
     assert response.status_code == status.HTTP_200_OK
     assert len(response.json()) == 0
 
@@ -382,7 +382,7 @@ async def test_get_all_applications(client, application_data, inject_security_he
     assert count[0][0] == 3
 
     inject_security_header("owner1", "jobbergate:applications:read")
-    response = await client.get("/applications/?all=True")
+    response = await client.get("/jobbergate/applications/?all=True")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -411,13 +411,13 @@ async def test_get_all_applications_pagination(client, application_data, inject_
     assert count[0][0] == 3
 
     inject_security_header("owner1", "jobbergate:applications:read")
-    response = await client.get("/applications/?limit=1&skip=0")
+    response = await client.get("/jobbergate/applications/?limit=1&skip=0")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
     assert [d["id"] for d in data] == [1]
 
-    response = await client.get("/applications/?limit=2&skip=1")
+    response = await client.get("/jobbergate/applications/?limit=2&skip=1")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -449,7 +449,7 @@ async def test_update_application(s3man_client_mock, client, application_data, i
     inject_security_header("owner1", "jobbergate:applications:update")
     application_data["application_name"] = "new_name"
     application_data["application_description"] = "new_description"
-    response = await client.put("/applications/1", data=application_data, files={"upload_file": file_mock})
+    response = await client.put("/jobbergate/applications/1", data=application_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_201_CREATED
 
     data = response.json()
@@ -499,7 +499,7 @@ async def test_update_application_bad_permission(
     inject_security_header("owner1", "INVALID_PERMISSION")
     application_data["application_name"] = "new_name"
     application_data["application_description"] = "new_description"
-    response = await client.put("/applications/1", data=application_data, files={"upload_file": file_mock})
+    response = await client.put("/jobbergate/applications/1", data=application_data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
     s3man.s3_client.put_object.assert_not_called()
