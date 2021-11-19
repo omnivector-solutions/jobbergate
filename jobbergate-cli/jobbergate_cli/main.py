@@ -165,25 +165,22 @@ def abort_with_message(message):
     raise click.ClickException(message)
 
 
-def init_token(token, ctx_obj):
-    """Initializes the token for the user.
-
-    Makes sure an unexpired token is available. Then validates its expiration.
-    Caches the token if necessary. Finally, updates the context with the identity
-    information fetched from the login token.
+def validate_token_and_extract_identity(token):
     """
-    if not token and not settings.JOBBERGATE_API_JWT_PATH.exists():
-        abort_with_message("Please supply an access token through the --token option")
+    Validates the token and extracts the identity data.
 
-    should_cache = False
-    if not token:
-        logger.debug("Retrieving token from cache")
-        token = settings.JOBBERGATE_API_JWT_PATH.read_text(token)
-    else:
-        should_cache = True
+    Validations:
+        * Checkstimestamp on the auth token.
+        * Checks for identity data
+        * Checks that all identity elements are present
 
+    Reports an error in the logs and to the user if there is an issue with the token
+
+    :param token: The JWT to use for auth on request to the API
+    :returns: The extracted identity data
+    """
+    logger.debug("Validating token")
     try:
-        logger.debug("Validating token")
         token_data = jwt.decode(
             token,
             None,
@@ -193,13 +190,21 @@ def init_token(token, ctx_obj):
                 verify_exp=True,
             ),
         )
+
     except ExpiredSignatureError:
         abort_with_message(
-            "The auth token is expired. Please retrieve a new one and set it with the --token option"
+            textwrap.dedent(
+                """
+                The auth token is expired. Please retrieve a new and log in again.
+
+                If the problem persists, please contact Omnivector <info@omnivector.solutions>
+                for support.
+                """
+            ).strip()
         )
 
     except Exception as err:
-        logger.error(f"Unknown error while initializing token: {err}")
+        logger.error(f"Unknown error while validating token: {err}")
         if settings.SENTRY_DSN:
             with sentry_sdk.push_scope() as scope:
                 scope.set_context("token", dict(token=token))
@@ -211,7 +216,7 @@ def init_token(token, ctx_obj):
                 """
                 There was an unknown error while initializing the auth token.
 
-                Please try getting the token and setting it with the --token optiona again.
+                Please try retrieving the auth token and logging in again.
 
                 If the problem persists, please contact Omnivector <info@omnivector.solutions>
                 for support.
@@ -226,12 +231,27 @@ def init_token(token, ctx_obj):
         if key not in identity_data:
             abort_with_message(f"No {key} found in token data")
 
+    return identity_data
+
+
+def init_token(ctx_obj):
+    """
+    Retrieves the token for the user.
+
+    Token is retrieved from the cache, validated, and identity data is bound to the context.
+    """
+    if not settings.JOBBERGATE_API_JWT_PATH.exists():
+        abort_with_message("Please login with your auth token first using the ``jobbergate login`` command")
+
+    logger.debug("Retrieving token from cache")
+    token = settings.JOBBERGATE_API_JWT_PATH.read_text()
+    identity_data = validate_token_and_extract_identity(token)
+
     logger.debug(f"Executing with {identity_data=}")
     ctx_obj["identity"] = identity_data
 
-    if should_cache:
-        logger.debug("Caching access token")
-        settings.JOBBERGATE_API_JWT_PATH.write_text(token)
+    logger.debug("Caching access token")
+    settings.JOBBERGATE_API_JWT_PATH.write_text(token)
 
     return token
 
@@ -246,17 +266,7 @@ def init_sentry():
 
 
 # Get the cli input arguments
-# args = get_parsed_args(argv)
-
-
-# def get_parsed_args(argv):
-"""Create argument parser and return cli args.
-"""
-
-
-# Get the cli input arguments
 @click.group(
-    invoke_without_command=True,
     help="""
         Jobbergate CLI.
 
@@ -264,16 +274,11 @@ def init_sentry():
         listed below. Each command may be invoked with --help to see more details and
         available parameters.
 
-        You must supply a security token using the --token method if you have not provided
-        one before. The token will be cached until it expires. If the token has expired,
-        you will be notified that you need to supply a new one. Once the token has been
-        cached, you will not need to supply it to subsequent commands.
+        Before you use any commands besides ``login`` or ``logout``, you must first log in
+        by invoking the ``login`` subcommand with an auth token retrieved from the Armada UI.
+        Once you login, the token will be cached for future commands until it expires. If the
+        token has expired, you will be notified that you need to supply a new one.
     """,
-)
-@click.option(
-    "--token",
-    "-t",
-    help="Supply an auth token for requests to the jobbergate api",
 )
 @click.option(
     "--verbose",
@@ -295,7 +300,7 @@ def init_sentry():
 )
 @click.version_option()
 @click.pass_context
-def main(ctx, token, verbose, raw, full):
+def main(ctx, verbose, raw, full):
     ctx.ensure_object(dict)
 
     init_logs(verbose=verbose)
@@ -307,26 +312,24 @@ def main(ctx, token, verbose, raw, full):
         logger.debug(f"Initializing Sentry with {settings.SENTRY_DSN}")
         init_sentry()
 
-    token = init_token(token, ctx.obj)
-    user_id = ctx.obj["identity"]["user_id"]
+    elif ctx.invoked_subcommand not in ("login", "logout"):
+        token = init_token(ctx.obj)
+        user_id = ctx.obj["identity"]["user_id"]
 
-    if ctx.invoked_subcommand is None:
-        abort_with_message(f"No sub-command supplied\n\n{ctx.get_help()}")
+        if settings.JOBBERGATE_DEBUG:
+            logger.debug("Enabling debug mode for requests")
+            client.debug_requests_on()
 
-    if settings.JOBBERGATE_DEBUG:
-        logger.debug("Enabling debug mode for requests")
-        client.debug_requests_on()
-
-    ctx.obj["api"] = JobbergateApi(
-        token=token,
-        job_script_config=constants.JOBBERGATE_JOB_SCRIPT_CONFIG,
-        job_submission_config=constants.JOBBERGATE_JOB_SUBMISSION_CONFIG,
-        application_config=constants.JOBBERGATE_APPLICATION_CONFIG,
-        api_endpoint=settings.JOBBERGATE_API_ENDPOINT,
-        user_id=user_id,
-        full_output=full,
-    )
-    ctx.obj["raw"] = raw
+        ctx.obj["api"] = JobbergateApi(
+            token=token,
+            job_script_config=constants.JOBBERGATE_JOB_SCRIPT_CONFIG,
+            job_submission_config=constants.JOBBERGATE_JOB_SUBMISSION_CONFIG,
+            application_config=constants.JOBBERGATE_APPLICATION_CONFIG,
+            api_endpoint=settings.JOBBERGATE_API_ENDPOINT,
+            user_id=user_id,
+            full_output=full,
+        )
+        ctx.obj["raw"] = raw
 
 
 @main.command("list-applications")
@@ -752,18 +755,31 @@ def upload_logs(ctx):
     return "Upload complete. Please notify Omnivector <info@omnivector.solutions>."
 
 
+@main.command("login")
+@click.argument("token")
+def login(token):
+    """
+    Log in to the jobbergate-cli by storing the supplied token argument in the cache.
+    """
+    identity_data = validate_token_and_extract_identity(token)
+    logger.debug(f"Storing validated token for {identity_data=}")
+    # Add a blank output line to separate from the loooong token
+    print()
+    print(f"Logged in user {identity_data['username']}")
+    settings.JOBBERGATE_API_JWT_PATH.write_text(token)
+
+
 @main.command("logout")
-@click.pass_context
-@jobbergate_command_wrapper
-def logout(ctx):
+def logout():
     """
     Logs out of the jobbergate-cli. Clears the saved user credentials.
     """
+    logger.debug("Clearing token from cache")
     if not settings.JOBBERGATE_API_JWT_PATH.exists():
-        logger.debug("No user is currently logged in")
-    else:
-        settings.JOBBERGATE_API_JWT_PATH.unlink()
-        logger.debug("Cleared saved auth token")
+        abort_with_message("No user is currently logged in")
+
+    settings.JOBBERGATE_API_JWT_PATH.unlink()
+    print("Cleared saved auth token")
 
 
 if __name__ == "__main__":

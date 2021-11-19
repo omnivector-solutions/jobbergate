@@ -33,32 +33,27 @@ def sample_token():
 
 
 @mark.parametrize(
-    "use_cache,when,is_valid",
+    "when,is_valid",
     [
-        [True, "2021-11-19 00:00:00", True],
-        [True, "2021-11-19 23:59:59", False],
-        [False, "2021-11-19 00:00:00", True],
-        [False, "2021-11-19 23:59:59", False],
+        ["2021-11-19 00:00:00", True],
+        ["2021-11-19 23:59:59", False],
     ],
     ids=[
-        "cache;dwf;valid",
-        "cache;dwf;expired",
-        "nocache;dwf;valid",
-        "nocache;dwf;expired",
+        "dwf;valid",
+        "dwf;expired",
     ],
 )
 @mark.freeze_time()
 @mark.usefixtures("token_cache_mock")
-def test_init_token(use_cache, when, is_valid, freezer, sample_token):
+def test_init_token(when, is_valid, freezer):
     """
-    Do I successfully parse tokens from the cache or explicitly supplied? Do I identify invalid tokens?
+    Do I successfully parse tokens from the cache? Do I identify invalid tokens?
     """
-    token = sample_token if not use_cache else None
     freezer.move_to(when)
     ctx_obj = {}
     if is_valid:
-        assert main.init_token(token, ctx_obj)
+        assert main.init_token(ctx_obj)
         assert "identity" in ctx_obj
     else:
         with pytest.raises(click.ClickException, match="The auth token is expired"):
-            main.init_token(token, ctx_obj)
+            main.init_token(ctx_obj)
