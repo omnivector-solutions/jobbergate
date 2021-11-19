@@ -7,6 +7,8 @@ import logging
 # import locally so we can patch them when tracing
 from requests import Session, delete, get, post, put
 
+from jobbergate_cli import constants
+
 
 (
     get,
@@ -17,9 +19,6 @@ from requests import Session, delete, get, post, put
 
 
 urllib3_logger = logging.getLogger("requests.packages.urllib3")
-
-
-DEFAULT_MAX_BYTES_DEBUG = 1000
 
 
 def debug_body_printer(max_bytes):
@@ -34,7 +33,7 @@ def debug_body_printer(max_bytes):
     return debug_body_print
 
 
-def debug_requests_on(max_bytes=DEFAULT_MAX_BYTES_DEBUG):
+def debug_requests_on(max_bytes=constants.DEFAULT_MAX_BYTES_DEBUG):
     """Switches on logging of the requests module.
 
     Response body will be printed as well, up to max_bytes

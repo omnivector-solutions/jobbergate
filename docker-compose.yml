@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile-dev
       args:
         - PYPI_PASSWORD=${PYPI_PASSWORD}
+    networks:
+      - jobbergate-net
     volumes:
       - ./jobbergate-api/jobbergateapi2:/app/jobbergateapi2
     command: uvicorn jobbergateapi2.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
@@ -30,6 +32,8 @@ services:
   nextgen-db:
     image: postgres
     restart: always
+    networks:
+      - jobbergate-net
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
@@ -41,6 +45,8 @@ services:
 
   minio:
     image: minio/minio
+    networks:
+      - jobbergate-net
     volumes:
       - minio_data:/data
     ports:
@@ -53,6 +59,8 @@ services:
 
   adminer:
     image: adminer
+    networks:
+      - jobbergate-net
     restart: always
     ports:
       - 8080:8080
@@ -60,3 +68,7 @@ services:
 volumes:
     postgres_data:
     minio_data:
+
+networks:
+  jobbergate-net:
+    driver: bridge

@@ -7,22 +7,14 @@ from os.path import exists, isfile
 import pathlib
 from subprocess import PIPE, Popen
 import tarfile
-from urllib.parse import urljoin
 
 import inquirer
 import requests
 import yaml
+import yarl
 
-from jobbergate_cli import appform, client
-from jobbergate_cli.jobbergate_common import (
-    JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
-    JOBBERGATE_APPLICATION_CONFIG_PATH,
-    JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
-    JOBBERGATE_APPLICATION_MODULE_PATH,
-    JOBBERGATE_CACHE_DIR,
-    SBATCH_PATH,
-    TAR_NAME,
-)
+from jobbergate_cli import appform, client, constants
+from jobbergate_cli.config import settings
 
 
 class JobbergateApi:
@@ -42,7 +34,7 @@ class JobbergateApi:
         self.job_script_config = job_script_config
         self.job_submission_config = job_submission_config
         self.application_config = application_config
-        self.api_endpoint = api_endpoint
+        self.api_endpoint = yarl.URL(api_endpoint)
         self.user_id = user_id
         # Suppress from list- and create- application:
         self.application_suppress = (
@@ -229,7 +221,7 @@ class JobbergateApi:
 
     def jobbergate_run(self, filename, *argv):
         """Execute Job Submission."""
-        cmd = [SBATCH_PATH, filename]
+        cmd = [settings.SBATCH_PATH, filename]
         for arg in argv:
             cmd.append(arg)
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
@@ -242,7 +234,7 @@ class JobbergateApi:
     def import_jobbergate_application_module(self):
         """Import jobbergate.py for generating questions."""
         spec = importlib.util.spec_from_file_location(
-            "JobbergateApplication", JOBBERGATE_APPLICATION_MODULE_PATH
+            "JobbergateApplication", settings.JOBBERGATE_APPLICATION_MODULE_PATH
         )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
@@ -375,10 +367,10 @@ class JobbergateApi:
         # check for required files
         local_jobbergate_application_dir = pathlib.Path(application_path)
         local_jobbergate_application_module = (
-            local_jobbergate_application_dir / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+            local_jobbergate_application_dir / constants.JOBBERGATE_APPLICATION_MODULE_FILE_NAME
         )
         local_jobbergate_application_config = (
-            local_jobbergate_application_dir / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
+            local_jobbergate_application_dir / constants.JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
         )
 
         if not local_jobbergate_application_dir.exists():
@@ -389,18 +381,24 @@ class JobbergateApi:
             error_check.append(check)
         if not local_jobbergate_application_module.exists():
             check = self.error_handle(
-                error=(f"Could not find {JOBBERGATE_APPLICATION_MODULE_FILE_NAME} " "in {application_path}"),
+                error=(
+                    f"Could not find {constants.JOBBERGATE_APPLICATION_MODULE_FILE_NAME} "
+                    "in {application_path}"
+                ),
                 solution=(
-                    f"Please ensure {JOBBERGATE_APPLICATION_MODULE_FILE_NAME} "
+                    f"Please ensure {constants.JOBBERGATE_APPLICATION_MODULE_FILE_NAME} "
                     "is in application path provided"
                 ),
             )
             error_check.append(check)
         if not local_jobbergate_application_config.exists():
             check = self.error_handle(
-                error=(f"Could not find {JOBBERGATE_APPLICATION_CONFIG_FILE_NAME} " "in {application_path}"),
+                error=(
+                    f"Could not find {constants.JOBBERGATE_APPLICATION_CONFIG_FILE_NAME} "
+                    "in {application_path}"
+                ),
                 solution=(
-                    f"Please ensure {JOBBERGATE_APPLICATION_CONFIG_FILE_NAME} "
+                    f"Please ensure {constants.JOBBERGATE_APPLICATION_CONFIG_FILE_NAME} "
                     "is in application path provided"
                 ),
             )
@@ -417,7 +415,7 @@ class JobbergateApi:
                     if NOT specified then only the user's job scripts
                     will be returned
         """
-        response = self.jobbergate_request(method="GET", endpoint=urljoin(self.api_endpoint, "/job-scripts/"))
+        response = self.jobbergate_request(method="GET", endpoint=self.api_endpoint / "job-scripts")
 
         try:
             response = [{k: v for k, v in d.items() if k not in self.job_script_suppress} for d in response]
@@ -493,10 +491,7 @@ class JobbergateApi:
         if application_identifier:
             app_data = self.jobbergate_request(
                 method="GET",
-                endpoint=urljoin(
-                    self.api_endpoint,
-                    f"/application/?identifier={application_identifier}",
-                ),
+                endpoint=self.api_endpoint / f"application/?identifier={application_identifier}",
             )
             application_id = app_data.get("id")
 
@@ -519,18 +514,18 @@ class JobbergateApi:
         if not app_data:
             app_data = self.jobbergate_request(
                 method="GET",
-                endpoint=urljoin(self.api_endpoint, f"/application/{application_id}"),
+                endpoint=self.api_endpoint / f"application/{application_id}",
             )
         if "error" in app_data.keys():
             return app_data
 
         # Get the jobbergate application python module
-        JOBBERGATE_APPLICATION_MODULE_PATH.write_text(app_data["application_file"])
+        settings.JOBBERGATE_APPLICATION_MODULE_PATH.write_text(app_data["application_file"])
         # Get the jobbergate application yaml config
-        JOBBERGATE_APPLICATION_CONFIG_PATH.write_text(app_data["application_config"])
+        settings.JOBBERGATE_APPLICATION_CONFIG_PATH.write_text(app_data["application_config"])
 
         # Load the jobbergate yaml
-        config = JOBBERGATE_APPLICATION_CONFIG_PATH.read_text()
+        config = settings.JOBBERGATE_APPLICATION_CONFIG_PATH.read_text()
 
         try:
             param_dict = yaml.load(config, Loader=yaml.FullLoader)
@@ -588,7 +583,7 @@ class JobbergateApi:
             workflow_answers.update(auto_answers)
             param_dict["jobbergate_config"].update(workflow_answers)
 
-        param_filename = f"{JOBBERGATE_CACHE_DIR}/param_dict.json"
+        param_filename = f"{settings.JOBBERGATE_CACHE_DIR}/param_dict.json"
 
         param_file = open(param_filename, "w")
         json.dump(param_dict, param_file)
@@ -610,7 +605,7 @@ class JobbergateApi:
 
         response = self.jobbergate_request(
             method="POST",
-            endpoint=urljoin(self.api_endpoint, "/job-scripts/"),
+            endpoint=self.api_endpoint / "job-scripts",
             data=data,
             files=files,
         )
@@ -680,7 +675,7 @@ class JobbergateApi:
 
         response = self.jobbergate_request(
             method="GET",
-            endpoint=urljoin(self.api_endpoint, f"/job-scripts/{job_script_id}"),
+            endpoint=self.api_endpoint / f"job-scripts/{job_script_id}",
         )
         if "error" in response.keys():
             return response
@@ -721,14 +716,14 @@ class JobbergateApi:
 
         data = self.jobbergate_request(
             method="GET",
-            endpoint=urljoin(self.api_endpoint, f"/job-script/{job_script_id}"),
+            endpoint=self.api_endpoint / f"job-script/{job_script_id}",
         )
         if "error" in data.keys():
             return data
         data["job_script_data_as_string"] = job_script_data_as_string
         response = self.jobbergate_request(
             method="PUT",
-            endpoint=urljoin(self.api_endpoint, f"/job-script/{job_script_id}/"),
+            endpoint=self.api_endpoint / f"job-script/{job_script_id}/",
             data=data,
         )
 
@@ -750,7 +745,7 @@ class JobbergateApi:
 
         response = self.jobbergate_request(
             method="DELETE",
-            endpoint=urljoin(self.api_endpoint, f"/job-script/{job_script_id}"),
+            endpoint=self.api_endpoint / f"job-script/{job_script_id}",
         )
 
         return response
@@ -765,9 +760,7 @@ class JobbergateApi:
                     if NOT specified then only the user's job submissions
                     will be returned
         """
-        response = self.jobbergate_request(
-            method="GET", endpoint=urljoin(self.api_endpoint, "/job-submissions/")
-        )
+        response = self.jobbergate_request(method="GET", endpoint=self.api_endpoint / "job-submissions")
 
         try:
             response = [
@@ -806,7 +799,7 @@ class JobbergateApi:
 
         job_script = self.jobbergate_request(
             method="GET",
-            endpoint=urljoin(self.api_endpoint, f"/job-scripts/{job_script_id}"),
+            endpoint=self.api_endpoint / f"job-scripts/{job_script_id}",
         )
         if "error" in job_script.keys():
             return job_script
@@ -815,7 +808,7 @@ class JobbergateApi:
 
         application = self.jobbergate_request(
             method="GET",
-            endpoint=urljoin(self.api_endpoint, f"/applications/{application_id}"),
+            endpoint=self.api_endpoint / f"applications/{application_id}",
         )
         if "error" in application.keys():
             return application
@@ -837,7 +830,7 @@ class JobbergateApi:
         if render_only:
             response = self.jobbergate_request(
                 method="POST",
-                endpoint=urljoin(self.api_endpoint, "/job-submissions/"),
+                endpoint=self.api_endpoint / "job-submissions",
                 data=data_json,
             )
             if "error" in response.keys():
@@ -860,7 +853,7 @@ class JobbergateApi:
                 data_json = json.dumps(data)
                 response = self.jobbergate_request(
                     method="POST",
-                    endpoint=urljoin(self.api_endpoint, "/job-submissions/"),
+                    endpoint=self.api_endpoint / "job-submissions",
                     data=data_json,
                 )
                 if "error" in response.keys():
@@ -889,7 +882,7 @@ class JobbergateApi:
 
         response = self.jobbergate_request(
             method="GET",
-            endpoint=urljoin(self.api_endpoint, f"/job-submissions/{job_submission_id}"),
+            endpoint=self.api_endpoint / f"job-submissions/{job_submission_id}",
         )
 
         return response
@@ -910,14 +903,14 @@ class JobbergateApi:
 
         data = self.jobbergate_request(
             method="GET",
-            endpoint=urljoin(self.api_endpoint, f"/job-submission/{job_submission_id}"),
+            endpoint=self.api_endpoint / f"job-submission/{job_submission_id}",
         )
         if "error" in data.keys():
             return data
         # TODO how to collect data that will updated for the job-submission
         response = self.jobbergate_request(
             method="PUT",
-            endpoint=urljoin(self.api_endpoint, f"/job-submission/{job_submission_id}/"),
+            endpoint=self.api_endpoint / f"job-submission/{job_submission_id}",
         )
         return response
 
@@ -937,7 +930,7 @@ class JobbergateApi:
 
         response = self.jobbergate_request(
             method="DELETE",
-            endpoint=urljoin(self.api_endpoint, f"/job-submission/{job_submission_id}"),
+            endpoint=self.api_endpoint / f"job-submission/{job_submission_id}",
         )
 
         return response
@@ -955,9 +948,7 @@ class JobbergateApi:
                     supplied, then every application for the user will be shown,
                     even the ones without identifier
         """
-        response = self.jobbergate_request(
-            method="GET", endpoint=urljoin(self.api_endpoint, "/applications/")
-        )
+        response = self.jobbergate_request(method="GET", endpoint=self.api_endpoint / "applications")
         try:
             response = [{k: v for k, v in d.items() if k not in self.application_suppress} for d in response]
         except:  # noqa: E722
@@ -1039,7 +1030,7 @@ class JobbergateApi:
             data["application_description"] = application_desc
 
         tar_list = [application_path, os.path.join(application_path, "templates")]
-        self.tardir(application_path, TAR_NAME, tar_list)
+        self.tardir(application_path, constants.TAR_NAME, tar_list)
 
         with open(os.path.join(application_path, "jobbergate.py")) as app_file:
             application_file = app_file.read()
@@ -1058,11 +1049,11 @@ class JobbergateApi:
         data["application_config"] = application_config
         data["application_file"] = application_file
 
-        files = {"upload_file": open(TAR_NAME, "rb")}
+        files = {"upload_file": open(constants.TAR_NAME, "rb")}
 
         response = self.jobbergate_request(
             method="POST",
-            endpoint=urljoin(self.api_endpoint, "/applications/"),
+            endpoint=self.api_endpoint / "applications",
             data=data,
             files=files,
         )
@@ -1076,7 +1067,7 @@ class JobbergateApi:
             # response is str of error message
             return response
 
-        os.remove(TAR_NAME)
+        os.remove(constants.TAR_NAME)
 
         return response
 
@@ -1102,15 +1093,12 @@ class JobbergateApi:
         if application_id:
             response = self.jobbergate_request(
                 method="GET",
-                endpoint=urljoin(self.api_endpoint, f"/application/{application_id}"),
+                endpoint=self.api_endpoint / f"application/{application_id}",
             )
         else:
             response = self.jobbergate_request(
                 method="GET",
-                endpoint=urljoin(
-                    self.api_endpoint,
-                    f"/application/?identifier={application_identifier}",
-                ),
+                endpoint=self.api_endpoint / f"application/?identifier={application_identifier}",
             )
 
         return response
@@ -1152,10 +1140,8 @@ class JobbergateApi:
             id_value = application_id if application_id else application_identifier
             response = self.jobbergate_request(
                 method="PUT",
-                endpoint=urljoin(
-                    self.api_endpoint,
-                    f"/application-update-identifier/?{id_field}={id_value}&new={update_identifier}",
-                ),
+                endpoint=self.api_endpoint
+                / f"application-update-identifier/?{id_field}={id_value}&new={update_identifier}",
             )
             return response
 
@@ -1175,15 +1161,12 @@ class JobbergateApi:
         if application_id:
             data = self.jobbergate_request(
                 method="GET",
-                endpoint=urljoin(self.api_endpoint, f"/application/{application_id}"),
+                endpoint=self.api_endpoint / f"application/{application_id}",
             )
         else:
             data = self.jobbergate_request(
                 method="GET",
-                endpoint=urljoin(
-                    self.api_endpoint,
-                    f"/application/?identifier={application_identifier}",
-                ),
+                endpoint=self.api_endpoint / f"application/?identifier={application_identifier}",
             )
 
         if "error" in data.keys():
@@ -1199,7 +1182,7 @@ class JobbergateApi:
             data["application_description"] = application_desc
 
         tar_list = [application_path, os.path.join(application_path, "templates")]
-        self.tardir(application_path, TAR_NAME, tar_list)
+        self.tardir(application_path, settings.TAR_NAME, tar_list)
 
         with open(os.path.join(application_path, "jobbergate.py")) as app_file:
             application_file = app_file.read()
@@ -1219,11 +1202,11 @@ class JobbergateApi:
         data["application_config"] = application_config
         data["application_file"] = application_file
 
-        files = {"upload_file": open(TAR_NAME, "rb")}
+        files = {"upload_file": open(settings.TAR_NAME, "rb")}
 
         response = self.jobbergate_request(
             method="PUT",
-            endpoint=urljoin(self.api_endpoint, f"/applications/{application_id}"),
+            endpoint=self.api_endpoint / f"applications/{application_id}",
             data=data,
             files=files,
         )
@@ -1234,7 +1217,7 @@ class JobbergateApi:
             for key in self.application_suppress:
                 response.pop(key, None)
 
-            os.remove(TAR_NAME)
+            os.remove(constants.TAR_NAME)
         except AttributeError:
             # response is str of error message
             return response
@@ -1263,15 +1246,12 @@ class JobbergateApi:
         if application_id:
             response = self.jobbergate_request(
                 method="DELETE",
-                endpoint=urljoin(self.api_endpoint, f"/application/{application_id}"),
+                endpoint=self.api_endpoint / f"application/{application_id}",
             )
         else:
             response = self.jobbergate_request(
                 method="DELETE",
-                endpoint=urljoin(
-                    self.api_endpoint,
-                    f"/application/?identifier={application_identifier}",
-                ),
+                endpoint=self.api_endpoint / f"application/?identifier={application_identifier}",
             )
 
         return response

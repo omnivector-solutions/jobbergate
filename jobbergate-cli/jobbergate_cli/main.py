@@ -1,42 +1,24 @@
-#!/usr/bin/env python3
 from datetime import datetime
 import functools
-import getpass
 import json
 from pathlib import Path
 import sys
 import tarfile
 import tempfile
 import textwrap
+import traceback
 
 import boto3
 import click
-import jwt
+from jose import jwt
+from jose.exceptions import ExpiredSignatureError
 from loguru import logger
-import requests
 import sentry_sdk
 from tabulate import tabulate
 
-from jobbergate_cli import client
+from jobbergate_cli import client, constants
+from jobbergate_cli.config import settings
 from jobbergate_cli.jobbergate_api_wrapper import JobbergateApi
-from jobbergate_cli.jobbergate_common import (
-    JOBBERGATE_API_ENDPOINT,
-    JOBBERGATE_API_JWT_PATH,
-    JOBBERGATE_API_OBTAIN_TOKEN_ENDPOINT,
-    JOBBERGATE_APPLICATION_CONFIG,
-    JOBBERGATE_AWS_ACCESS_KEY_ID,
-    JOBBERGATE_AWS_SECRET_ACCESS_KEY,
-    JOBBERGATE_CACHE_DIR,
-    JOBBERGATE_DEBUG,
-    JOBBERGATE_JOB_SCRIPT_CONFIG,
-    JOBBERGATE_JOB_SUBMISSION_CONFIG,
-    JOBBERGATE_LOG_PATH,
-    JOBBERGATE_PASSWORD,
-    JOBBERGATE_S3_LOG_BUCKET,
-    JOBBERGATE_USER_TOKEN_DIR,
-    JOBBERGATE_USERNAME,
-    SENTRY_DSN,
-)
 
 
 # These are used in help text for the application commands below
@@ -59,34 +41,18 @@ APPLICATION_IDENTIFIER_EXPLANATION = """
 """
 
 
-def interactive_get_username_password():
-    username = input("Please enter your username: ")
-    password = getpass.getpass()
-    return username, password
-
-
-def init_cache_dir():
-    """
-    Make sure that the root Jobbergate cache directory exists.
-    """
-    JOBBERGATE_CACHE_DIR.mkdir(exist_ok=True, parents=True)
-
-
-def init_logs(username=None, verbose=False):
+def init_logs(verbose=False):
     """
     Initialize the rotatating file log handler. Logs will be retained for 1 week.
     """
     # Remove default stderr handler at level INFO
     logger.remove()
-    JOBBERGATE_LOG_PATH.parent.mkdir(exist_ok=True)
 
     if verbose:
         logger.add(sys.stdout, level="DEBUG")
 
-    logger.add(JOBBERGATE_LOG_PATH, rotation="00:00", retention="1 week", level="DEBUG")
+    logger.add(settings.JOBBERGATE_LOG_PATH, rotation="00:00", retention="1 week", level="DEBUG")
     logger.debug("Logging initialized")
-    if username:
-        logger.debug(f"  for user {username}")
 
 
 def tabulate_response(response):
@@ -134,27 +100,36 @@ def jobbergate_command_wrapper(func):
                     raw_response(result)
                 else:
                     tabulate_response(result)
+            else:
+                print("Received no data")
 
             logger.debug(f"Finished command '{ctx.command.name}'")
             return result
 
         except Exception as err:
-            message = "Caught error for {user} ({id_}) in {fn}({args_string})".format(
-                user=ctx.obj["token"]["username"],
-                id_=ctx.obj["token"]["user_id"],
-                fn=func.__name__,
-                args_string=", ".join(list(args) + [f"{k}={v}" for (k, v) in kwargs.items()]),
-            )
+            args_string = ", ".join(list(args) + [f"{k}={v}" for (k, v) in kwargs.items()])
+            message = textwrap.dedent(
+                f"""
+                Caught error {err}:
+                  identity: {ctx.obj["identity"]}
+                  source:   {func.__name__}({args_string})
+                  details:
+
+                """
+            ).lstrip()
+            message += traceback.format_exc()
+
             logger.error(message)
 
             # This allows us to capture exceptions here and still report them to sentry
-            if SENTRY_DSN:
+            if settings.SENTRY_DSN:
                 with sentry_sdk.push_scope() as scope:
                     scope.set_context(
                         "command_info",
                         dict(
-                            username=ctx.obj["token"]["username"],
-                            user_id=ctx.obj["token"]["user_id"],
+                            org_name=ctx.obj["identity"]["org_name"],
+                            username=ctx.obj["identity"]["username"],
+                            user_id=ctx.obj["identity"]["user_id"],
                             function=func.__name__,
                             command=ctx.command.name,
                             args=args,
@@ -183,47 +158,81 @@ def jobbergate_command_wrapper(func):
     return wrapper
 
 
-def init_token(username, password):
-    """Get a new token from the api and write it to the token file."""
-    logger.debug(f"Initializing auth token for {username}")
-    resp = client.post(
-        JOBBERGATE_API_OBTAIN_TOKEN_ENDPOINT,
-        data={"email": username, "password": password},
-    )
-    data = resp.json()
-    ret = data.get("token")
-    JOBBERGATE_API_JWT_PATH.write_text(ret)
-
-
-def is_token_valid():
+def abort_with_message(message):
     """
-    Return true/false depending on whether the token is valid or not.
+    Report an error to the user and exit the cli.
     """
-    token = dict()
+    raise click.ClickException(message)
 
-    if JOBBERGATE_API_JWT_PATH.exists():
-        token = decode_token_to_dict(JOBBERGATE_API_JWT_PATH.read_text())
-        if datetime.fromtimestamp(token["exp"]) > datetime.now():
-            return True
-        else:
-            return False
+
+def init_token(token, ctx_obj):
+    """Initializes the token for the user.
+
+    Makes sure an unexpired token is available. Then validates its expiration.
+    Caches the token if necessary. Finally, updates the context with the identity
+    information fetched from the login token.
+    """
+    if not token and not settings.JOBBERGATE_API_JWT_PATH.exists():
+        abort_with_message("Please supply an access token through the --token option")
+
+    should_cache = False
+    if not token:
+        logger.debug("Retrieving token from cache")
+        token = settings.JOBBERGATE_API_JWT_PATH.read_text(token)
     else:
-        return False
+        should_cache = True
 
-
-def decode_token_to_dict(encoded_token):
-    """
-    Decode Auth token to dict
-    """
     try:
-        token = jwt.decode(
-            encoded_token,
-            verify=False,
+        logger.debug("Validating token")
+        token_data = jwt.decode(
+            token,
+            None,
+            options=dict(
+                verify_signature=False,
+                verify_aud=False,
+                verify_exp=True,
+            ),
         )
-    except jwt.exceptions.InvalidTokenError as e:
-        logger.error(f"Invalid token: {e}")
-        # FIXME - raise an exception (and catch, then ctx.exit())
-        sys.exit()
+    except ExpiredSignatureError:
+        abort_with_message(
+            "The auth token is expired. Please retrieve a new one and set it with the --token option"
+        )
+
+    except Exception as err:
+        logger.error(f"Unknown error while initializing token: {err}")
+        if settings.SENTRY_DSN:
+            with sentry_sdk.push_scope() as scope:
+                scope.set_context("token", dict(token=token))
+                sentry_sdk.capture_exception(err)
+                sentry_sdk.flush()
+
+        abort_with_message(
+            textwrap.dedent(
+                """
+                There was an unknown error while initializing the auth token.
+
+                Please try getting the token and setting it with the --token optiona again.
+
+                If the problem persists, please contact Omnivector <info@omnivector.solutions>
+                for support.
+                """
+            ).strip()
+        )
+
+    identity_data = token_data.get(constants.ARMADA_CLAIMS_KEY)
+    if not identity_data:
+        abort_with_message("No identity data found in token data")
+    for key in ("username", "user_id", "org_name"):
+        if key not in identity_data:
+            abort_with_message(f"No {key} found in token data")
+
+    logger.debug(f"Executing with {identity_data=}")
+    ctx_obj["identity"] = identity_data
+
+    if should_cache:
+        logger.debug("Caching access token")
+        settings.JOBBERGATE_API_JWT_PATH.write_text(token)
+
     return token
 
 
@@ -231,7 +240,7 @@ def init_sentry():
     """Initialize Sentry."""
     logger.debug("Initializing sentry")
     sentry_sdk.init(
-        dsn=SENTRY_DSN,
+        dsn=settings.SENTRY_DSN,
         traces_sample_rate=1.0,
     )
 
@@ -247,37 +256,24 @@ def init_sentry():
 
 # Get the cli input arguments
 @click.group(
-    help=f"""
+    invoke_without_command=True,
+    help="""
         Jobbergate CLI.
 
         Provides a command-line interface to the Jobbergate API. Available commands are
         listed below. Each command may be invoked with --help to see more details and
         available parameters.
 
-        If you have not logged in before and you do not include the --username and
-        --password options, you will be prompted for your login info. You may also supply
-        your username and password through the environment variables JOBBERGATE_USERNAME
-        and JOBBERGATE_PASSWORD.
-
-        Once your username and password have been authenticated, an auth token is issued by
-        the backend. This token is securely saved locally ({JOBBERGATE_USER_TOKEN_DIR})
-        and attached to the requests issued in subsequent commands so you do not need to
-        supply your credentials every time. After some time, the auth token will expire and
-        you will need to supply your username and password again.
+        You must supply a security token using the --token method if you have not provided
+        one before. The token will be cached until it expires. If the token has expired,
+        you will be notified that you need to supply a new one. Once the token has been
+        cached, you will not need to supply it to subsequent commands.
     """,
 )
 @click.option(
-    "--username",
-    "-u",
-    default=JOBBERGATE_USERNAME,
-    help="Your Jobbergate API Username",
-)
-@click.option(
-    "--password",
-    "-p",
-    default=JOBBERGATE_PASSWORD,
-    help="Your Jobbergate API password",
-    hide_input=True,
+    "--token",
+    "-t",
+    help="Supply an auth token for requests to the jobbergate api",
 )
 @click.option(
     "--verbose",
@@ -299,65 +295,34 @@ def init_sentry():
 )
 @click.version_option()
 @click.pass_context
-def main(ctx, username, password, verbose, raw, full):
+def main(ctx, token, verbose, raw, full):
     ctx.ensure_object(dict)
 
+    init_logs(verbose=verbose)
+
     if full and not raw:
-        raise click.ClickException(
-            "--full option must be used with --raw",
-        )
+        abort_with_message("--full option must be used with --raw")
 
-    init_cache_dir()
-    init_logs(username=username, verbose=verbose)
-
-    if SENTRY_DSN:
-        logger.debug(f"Initializing Sentry with {SENTRY_DSN}")
+    if settings.SENTRY_DSN:
+        logger.debug(f"Initializing Sentry with {settings.SENTRY_DSN}")
         init_sentry()
 
-    # create dir for token if it doesnt exist
-    Path(JOBBERGATE_USER_TOKEN_DIR).mkdir(parents=True, exist_ok=True)
+    token = init_token(token, ctx.obj)
+    user_id = ctx.obj["identity"]["user_id"]
 
-    if JOBBERGATE_DEBUG:
+    if ctx.invoked_subcommand is None:
+        abort_with_message(f"No sub-command supplied\n\n{ctx.get_help()}")
+
+    if settings.JOBBERGATE_DEBUG:
+        logger.debug("Enabling debug mode for requests")
         client.debug_requests_on()
 
-    if not is_token_valid():
-        logger.debug("Token is not valid. Getting credentials.")
-        if username and password:
-            logger.debug(f"Logging in with command-line credentials for {username}")
-            ctx.obj["username"] = username
-            ctx.obj["password"] = password
-        else:
-            logger.debug("Getting credentials from interactive prompt")
-            username, password = interactive_get_username_password()
-            logger.debug(f"Logging in with interactive credentials for {username}")
-            ctx.obj["username"] = username
-            ctx.obj["password"] = password
-
-        try:
-            logger.debug(f"Initializing token for {username}")
-            init_token(username, password)
-        except requests.exceptions.ConnectionError as err:
-            message = f"Auth failed to establish connection with API: {str(err)}"
-            sentry_sdk.capture_message(message)
-            logger.error(f"{message}")
-            raise click.ClickException(
-                "Couldn't verify login to the server due to communications problem. Please try again.",
-            )
-        except Exception as err:
-            logger.error(f"Auth Failed for '{username}': {str(err)}")
-            raise click.ClickException(f"Failed to login with '{username}'. Please try again.")
-
-    logger.debug("Decoding auth token")
-    ctx.obj["token"] = decode_token_to_dict(JOBBERGATE_API_JWT_PATH.read_text())
-    username = ctx.obj["token"]["username"]
-    user_id = ctx.obj["token"]["user_id"]
-    logger.debug(f"User invoking jobbergate-cli is {username} ({user_id})")
     ctx.obj["api"] = JobbergateApi(
-        token=JOBBERGATE_API_JWT_PATH.read_text(),
-        job_script_config=JOBBERGATE_JOB_SCRIPT_CONFIG,
-        job_submission_config=JOBBERGATE_JOB_SUBMISSION_CONFIG,
-        application_config=JOBBERGATE_APPLICATION_CONFIG,
-        api_endpoint=JOBBERGATE_API_ENDPOINT,
+        token=token,
+        job_script_config=constants.JOBBERGATE_JOB_SCRIPT_CONFIG,
+        job_submission_config=constants.JOBBERGATE_JOB_SUBMISSION_CONFIG,
+        application_config=constants.JOBBERGATE_APPLICATION_CONFIG,
+        api_endpoint=settings.JOBBERGATE_API_ENDPOINT,
         user_id=user_id,
         full_output=full,
     )
@@ -763,8 +728,8 @@ def upload_logs(ctx):
     logger.debug("Initializing S3 client")
     s3_client = boto3.client(
         "s3",
-        aws_access_key_id=JOBBERGATE_AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=JOBBERGATE_AWS_SECRET_ACCESS_KEY,
+        aws_access_key_id=settings.JOBBERGATE_AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.JOBBERGATE_AWS_SECRET_ACCESS_KEY,
     )
 
     tarball_name = "{user}.{timestamp}.tar.gz".format(
@@ -773,16 +738,16 @@ def upload_logs(ctx):
     )
 
     logger.debug("Creating tarball of user's logs")
-    log_dir = JOBBERGATE_LOG_PATH.parent
+    log_dir = settings.JOBBERGATE_LOG_PATH.parent
     with tempfile.TemporaryDirectory() as temp_dir:
         tarball_path = Path(temp_dir) / tarball_name
         with tarfile.open(tarball_path, "w:gz") as tarball:
             for filename in log_dir.iterdir():
-                if filename.match(f"{JOBBERGATE_LOG_PATH}*"):
+                if filename.match(f"{settings.JOBBERGATE_LOG_PATH}*"):
                     tarball.add(str(filename))
 
         logger.debug(f"Uploading {tarball_name} to S3")
-        s3_client.upload_file(str(tarball_path), JOBBERGATE_S3_LOG_BUCKET, tarball_name)
+        s3_client.upload_file(str(tarball_path), settings.JOBBERGATE_S3_LOG_BUCKET, tarball_name)
 
     return "Upload complete. Please notify Omnivector <info@omnivector.solutions>."
 
@@ -794,10 +759,10 @@ def logout(ctx):
     """
     Logs out of the jobbergate-cli. Clears the saved user credentials.
     """
-    if not JOBBERGATE_API_JWT_PATH.exists():
+    if not settings.JOBBERGATE_API_JWT_PATH.exists():
         logger.debug("No user is currently logged in")
     else:
-        JOBBERGATE_API_JWT_PATH.unlink()
+        settings.JOBBERGATE_API_JWT_PATH.unlink()
         logger.debug("Cleared saved auth token")
 
 
