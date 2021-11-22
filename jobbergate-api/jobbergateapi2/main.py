@@ -35,6 +35,7 @@ async def health_check():
 
 app = FastAPI()
 
+
 @app.on_event("startup")
 async def init_database():
     """
