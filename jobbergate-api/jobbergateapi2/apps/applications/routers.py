@@ -75,7 +75,6 @@ async def application_delete(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Application {application_id=} not found.",
         )
-    application = Application.parse_obj(raw_application)
     delete_query = applications_table.delete().where(where_stmt)
     await database.execute(delete_query)
     s3man.delete(app_id=str(application_id))

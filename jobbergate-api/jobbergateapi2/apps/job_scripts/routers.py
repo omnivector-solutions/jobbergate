@@ -47,16 +47,16 @@ def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str
     return new_job_script_data_as_string
 
 
-def get_s3_object_as_tarfile(current_user_id, application_id):
+def get_s3_object_as_tarfile(application_id):
     """
     Return the tarfile of a S3 object.
     """
     try:
-        s3_application_obj = s3man.get(owner_id=current_user_id, app_id=application_id)
+        s3_application_obj = s3man.get(app_id=application_id)
     except BotoCoreError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application with id={application_id} not found for user={current_user_id} in S3",
+            detail=f"Application with id={application_id} not found in S3",
         )
     s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj["Body"].read()))
     return s3_application_tar
@@ -151,7 +151,7 @@ async def job_script_create(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Application with id={application_id} not found.",
         )
     application = Application.parse_obj(raw_application)
-    s3_application_tar = get_s3_object_as_tarfile(token_payload.sub, application.id)
+    s3_application_tar = get_s3_object_as_tarfile(application.id)
 
     job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, _param_dict)
 
