@@ -22,7 +22,6 @@ class S3Manager:
             endpoint_url=settings.S3_ENDPOINT_URL,
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-
         )
 
     def _get_key(self, app_id):

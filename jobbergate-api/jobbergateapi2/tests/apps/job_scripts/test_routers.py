@@ -246,7 +246,7 @@ async def test_get_s3_object_as_tarfile(s3man_client_mock, param_dict, s3_object
     """
     s3man_client_mock.get_object.return_value = s3_object
 
-    s3_file = get_s3_object_as_tarfile(1, 1)
+    s3_file = get_s3_object_as_tarfile(1)
 
     assert s3_file is not None
     s3man_client_mock.get_object.assert_called_once()
@@ -263,9 +263,9 @@ def test_get_s3_object_not_found(
 
     s3_file = None
     with pytest.raises(HTTPException) as exc:
-        s3_file = get_s3_object_as_tarfile(1, 1)
+        s3_file = get_s3_object_as_tarfile(1)
 
-    assert "Application with id=1 not found for user=1" in str(exc)
+    assert "Application with id=1 not found" in str(exc)
 
     assert s3_file is None
     s3man_client_mock.get_object.assert_called_once()
