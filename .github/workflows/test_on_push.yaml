@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  tests:
+  api-tests:
     name: "jobbergate-api tests"
     runs-on: "ubuntu-latest"
     steps:
@@ -23,7 +23,8 @@ jobs:
           POETRY_HTTP_BASIC_PYPICLOUD_USERNAME: admin
           POETRY_HTTP_BASIC_PYPICLOUD_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: make qa
-
+  
+  cli-tests:
     name: "jobbergate-cli tests"
     runs-on: "ubuntu-latest"
     steps:
