@@ -33,7 +33,9 @@ async def health_check():
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@subapp.on_event("startup")
+app = FastAPI()
+
+@app.on_event("startup")
 async def init_database():
     """
     Connect the database; create it if necessary
@@ -43,7 +45,7 @@ async def init_database():
     await storage.database.connect()
 
 
-@subapp.on_event("shutdown")
+@app.on_event("shutdown")
 async def disconnect_database():
     """
     Disconnect the database
@@ -52,5 +54,4 @@ async def disconnect_database():
     await storage.database.disconnect()
 
 
-app = FastAPI()
 app.mount("/jobbergate", subapp)
