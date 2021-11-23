@@ -12,6 +12,7 @@ class ApplicationRequest(BaseModel):
     Request model for the Application resource.
     """
 
+    identifier: str = Field(None, description="A label used for frequently accessed applications")
     application_name: str = Field(...)
     application_description: Optional[str] = Field("")
     application_owner_email: str = Field(None, description="The owner email of the application")

@@ -361,7 +361,7 @@ async def test_get_job_script_by_id_bad_permission(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_list_job_script_from_user(client, application_data, job_script_data, inject_security_header):
+async def test_get_job_script__no_params(client, application_data, job_script_data, inject_security_header):
     """
     Test GET /job-scripts/ returns only job_scripts owned by the user making the request.
 
@@ -388,14 +388,21 @@ async def test_list_job_script_from_user(client, application_data, job_script_da
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert len(data) == 2
-    assert data[0]["id"] == 1
-    assert data[1]["id"] == 3
+    results = data.get("results")
+    assert results
+    assert [d["id"] for d in results] == [1, 3]
+
+    metadata = data.get("metadata")
+    assert metadata == dict(
+        total=2,
+        page=None,
+        per_page=None,
+    )
 
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_list_job_script_bad_permission(
+async def test_get_job_scripts__bad_permission(
     client, application_data, job_script_data, inject_security_header,
 ):
     """
@@ -422,7 +429,7 @@ async def test_list_job_script_bad_permission(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_list_job_script_from_user_empty(
+async def test_get_job_scripts__excludes_other_owners(
     client, application_data, job_script_data, inject_security_header,
 ):
     """
@@ -431,7 +438,7 @@ async def test_list_job_script_from_user_empty(
     This test proves that the user making the request cannot see job_scripts owned by other users.
     We show this by creating job_scripts that are owned by another user id and assert that
     the user making the request to /job-scripts/ doesn't see any of the other user's
-    job_scripts in the response, len(response.json()) == 0.
+    job_scripts in the response
     """
     application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
     await insert_objects(application, applications_table)
@@ -451,12 +458,21 @@ async def test_list_job_script_from_user_empty(
     response = await client.get("/jobbergate/job-scripts/")
     assert response.status_code == status.HTTP_200_OK
 
-    assert len(response.json()) == 0
+    data = response.json()
+    results = data.get("results")
+    assert results == []
+
+    metadata = data.get("metadata")
+    assert metadata == dict(
+        total=0,
+        page=None,
+        per_page=None,
+    )
 
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_list_job_script_all(
+async def test_get_job_scripts__with_all_param(
     client, application_data, job_script_data, inject_security_header,
 ):
     """
@@ -486,15 +502,21 @@ async def test_list_job_script_all(
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert len(data) == 3
-    assert data[0]["id"] == 1
-    assert data[1]["id"] == 2
-    assert data[2]["id"] == 3
+    results = data.get("results")
+    assert results
+    assert [d["id"] for d in results] == [1, 2, 3]
+
+    metadata = data.get("metadata")
+    assert metadata == dict(
+        total=3,
+        page=None,
+        per_page=None,
+    )
 
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_list_job_script_pagination(
+async def test_get_job_scripts__with_pagination(
     client, application_data, job_script_data, inject_security_header,
 ):
     """
@@ -511,24 +533,60 @@ async def test_list_job_script_pagination(
         JobScript(id=1, job_script_owner_email="owner1@org.com", **job_script_data),
         JobScript(id=2, job_script_owner_email="owner1@org.com", **job_script_data),
         JobScript(id=3, job_script_owner_email="owner1@org.com", **job_script_data),
+        JobScript(id=4, job_script_owner_email="owner1@org.com", **job_script_data),
+        JobScript(id=5, job_script_owner_email="owner1@org.com", **job_script_data),
     ]
     await insert_objects(job_scripts, job_scripts_table)
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 3
+    assert count[0][0] == 5
 
     inject_security_header("owner1@org.com", "jobbergate:job-scripts:read")
-    response = await client.get("/jobbergate/job-scripts/?limit=1&skip=0")
+    response = await client.get("/jobbergate/job-scripts/?page=0&per_page=1")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert [d["id"] for d in data] == [1]
+    results = data.get("results")
+    assert results
+    assert [d["id"] for d in results] == [1]
 
-    response = await client.get("/jobbergate/job-scripts/?limit=2&skip=1")
+    metadata = data.get("metadata")
+    assert metadata == dict(
+        total=5,
+        page=0,
+        per_page=1,
+    )
+
+
+    response = await client.get("/jobbergate/job-scripts/?page=1&per_page=2")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert [d["id"] for d in data] == [2, 3]
+    results = data.get("results")
+    assert results
+    assert [d["id"] for d in results] == [3, 4]
+
+    metadata = data.get("metadata")
+    assert metadata == dict(
+        total=5,
+        page=1,
+        per_page=2,
+    )
+
+    response = await client.get("/jobbergate/job-scripts/?page=2&per_page=2")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    results = data.get("results")
+    assert results
+    assert [d["id"] for d in results] == [5]
+
+    metadata = data.get("metadata")
+    assert metadata == dict(
+        total=5,
+        page=2,
+        per_page=2,
+    )
 
 
 @pytest.mark.freeze_time
