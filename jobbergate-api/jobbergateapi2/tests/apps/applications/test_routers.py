@@ -290,7 +290,7 @@ async def test_get_application_by_id_bad_permission(client, application_data, in
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_get_application_all_from_user(client, application_data, inject_security_header):
+async def test_get_applications__no_params(client, application_data, inject_security_header):
     """
     Test GET /applications returns only applications owned by the user making the request.
 
@@ -299,9 +299,9 @@ async def test_get_application_all_from_user(client, application_data, inject_se
     only applications owned by the user making the request.
     """
     applications = [
-        Application(id=1, application_owner_id="owner1", **application_data),
-        Application(id=2, application_owner_id="owner1", **application_data),
-        Application(id=3, application_owner_id="owner999", **application_data),
+        Application(id=1, identifier="app1", application_owner_id="owner1", **application_data),
+        Application(id=2, identifier="app2", application_owner_id="owner1", **application_data),
+        Application(id=3, identifier="app3", application_owner_id="owner999", **application_data),
     ]
     await insert_objects(applications, applications_table)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -312,14 +312,21 @@ async def test_get_application_all_from_user(client, application_data, inject_se
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert len(data) == 2
-    assert data[0]["id"] == 1
-    assert data[1]["id"] == 2
+    results = data.get("results")
+    assert results
+    assert [d["id"] for d in results] == [1, 2, 3]
+
+    metadata = data.get("metadata")
+    assert metadata == dict(
+        total=3,
+        page=None,
+        per_page=None,
+    )
 
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_get_application_all_from_user_bad_permission(client, application_data, inject_security_header):
+async def test_get_application___bad_permission(client, application_data, inject_security_header):
     """
     Test that it is not possible to list applications without proper permission.
 
@@ -343,35 +350,61 @@ async def test_get_application_all_from_user_bad_permission(client, application_
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_get_application_all_from_user_empty(client, application_data, inject_security_header):
+async def test_get_applications__with_user_param(client, application_data, inject_security_header):
     """
-    Test applications list doesn't include applications owned by other users.
+    Test applications list doesn't include applications owned by other users when the `user`
+    parameter is passed.
 
     This test proves that the user making the request cannot see applications owned by other users.
     We show this by creating applications that are owned by another user id and assert that
     the user making the request to list applications doesn't see any of the other user's
-    applications in the response, len(resp.json()) == 0.
+    applications in the response
     """
     applications = [
-        Application(id=1, application_owner_id=999, **application_data),
-        Application(id=2, application_owner_id=999, **application_data),
-        Application(id=3, application_owner_id=999, **application_data),
+        Application(id=1, identifier="app1", application_owner_id="owner1", **application_data),
+        Application(id=2, identifier="app2", application_owner_id="owner2", **application_data),
+        Application(id=3, identifier="app3", application_owner_id="owner1", **application_data),
     ]
     await insert_objects(applications, applications_table)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 3
 
     inject_security_header("owner1", "jobbergate:applications:read")
-    response = await client.get("/jobbergate/applications/")
+
+    response = await client.get("/jobbergate/applications")
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.json()) == 0
+
+    data = response.json()
+    results = data.get("results")
+    assert [d["id"] for d in results] == [1, 2, 3]
+
+    metadata = data.get("metadata")
+    assert metadata == dict(
+        total=3,
+        page=None,
+        per_page=None,
+    )
+
+    response = await client.get("/jobbergate/applications?user=true")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    results = data.get("results")
+    assert [d["id"] for d in results] == [1, 3]
+
+    metadata = data.get("metadata")
+    assert metadata == dict(
+        total=2,
+        page=None,
+        per_page=None,
+    )
 
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_get_all_applications(client, application_data, inject_security_header):
+async def test_get_applications__with_all_param(client, application_data, inject_security_header):
     """
-    Test that listing applications, when all=True, contains applications owned by other users.
+    Test that listing applications, when all=True, contains applications without identifiers.
 
     This test proves that the user making the request can see applications owned by other users.
     We show this by creating three applications, two that are owned by the user making the request, and one
@@ -379,28 +412,49 @@ async def test_get_all_applications(client, application_data, inject_security_he
     applications.
     """
     applications = [
-        Application(id=1, application_owner_id="owner1", **application_data),
-        Application(id=2, application_owner_id="owner1", **application_data),
-        Application(id=3, application_owner_id="owner999", **application_data),
+        Application(id=1, identifier="app1", application_owner_id="owner1", **application_data),
+        Application(id=2, identifier=None, application_owner_id="owner1", **application_data),
+        Application(id=3, identifier="app3", application_owner_id="owner1", **application_data),
     ]
     await insert_objects(applications, applications_table)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 3
 
     inject_security_header("owner1", "jobbergate:applications:read")
+
+    response = await client.get("/jobbergate/applications")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    results = data.get("results")
+    assert [d["id"] for d in results] == [1, 3]
+
+    metadata = data.get("metadata")
+    assert metadata == dict(
+        total=2,
+        page=None,
+        per_page=None,
+    )
+
     response = await client.get("/jobbergate/applications/?all=True")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert len(data) == 3
-    assert data[0]["id"] == 1
-    assert data[1]["id"] == 2
-    assert data[2]["id"] == 3
+    results = data.get("results")
+    assert results
+    assert [d["id"] for d in results] == [1, 2, 3]
+
+    metadata = data.get("metadata")
+    assert metadata == dict(
+        total=3,
+        page=None,
+        per_page=None,
+    )
 
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_get_all_applications_pagination(client, application_data, inject_security_header):
+async def test_get_applications__with_pagination(client, application_data, inject_security_header):
     """
     Test that listing applications works with pagination.
 
@@ -408,26 +462,61 @@ async def test_get_all_applications_pagination(client, application_data, inject_
     We show this by creating three applications and assert that the response is correctly paginated.
     """
     applications = [
-        Application(id=1, application_owner_id="owner1", **application_data),
-        Application(id=2, application_owner_id="owner1", **application_data),
-        Application(id=3, application_owner_id="owner1", **application_data),
+        Application(id=1, identifier="app1", application_owner_id="owner1", **application_data),
+        Application(id=2, identifier="app2", application_owner_id="owner1", **application_data),
+        Application(id=3, identifier="app3", application_owner_id="owner1", **application_data),
+        Application(id=4, identifier="app4", application_owner_id="owner1", **application_data),
+        Application(id=5, identifier="app5", application_owner_id="owner1", **application_data),
     ]
     await insert_objects(applications, applications_table)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 3
+    assert count[0][0] == 5
 
     inject_security_header("owner1", "jobbergate:applications:read")
-    response = await client.get("/jobbergate/applications/?limit=1&skip=0")
+    response = await client.get("/jobbergate/applications/?page=0&per_page=1")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert [d["id"] for d in data] == [1]
+    results = data.get("results")
+    assert results
+    assert [d["id"] for d in results] == [1]
 
-    response = await client.get("/jobbergate/applications/?limit=2&skip=1")
+    metadata = data.get("metadata")
+    assert metadata == dict(
+        total=5,
+        page=0,
+        per_page=1,
+    )
+
+    response = await client.get("/jobbergate/applications/?page=1&per_page=2")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert [d["id"] for d in data] == [2, 3]
+    results = data.get("results")
+    assert results
+    assert [d["id"] for d in results] == [3, 4]
+
+    metadata = data.get("metadata")
+    assert metadata == dict(
+        total=5,
+        page=1,
+        per_page=2,
+    )
+
+    response = await client.get("/jobbergate/applications/?page=2&per_page=2")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    results = data.get("results")
+    assert results
+    assert [d["id"] for d in results] == [5]
+
+    metadata = data.get("metadata")
+    assert metadata == dict(
+        total=5,
+        page=2,
+        per_page=2,
+    )
 
 
 @pytest.mark.asyncio

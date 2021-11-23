@@ -5,13 +5,14 @@ Router for the Application resource.
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from sqlalchemy import not_
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application, ApplicationRequest
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
-from jobbergateapi2.pagination import Pagination
+from jobbergateapi2.pagination import Pagination, package_response, Response
 from jobbergateapi2.s3_manager import S3Manager
 from jobbergateapi2.security import guard
 from jobbergateapi2.storage import database
@@ -81,10 +82,13 @@ async def application_delete(
 
 
 @router.get(
-    "/applications/", description="Endpoint to list applications", response_model=List[Application],
+    "/applications/",
+    description="Endpoint to list applications",
+    response_model=Response[Application],
 )
 async def applications_list(
-    p: Pagination = Depends(),
+    pagination: Pagination = Depends(),
+    user: Optional[bool] = Query(None),
     all: Optional[bool] = Query(None),
     token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:applications:read")),
 ):
@@ -92,12 +96,12 @@ async def applications_list(
     List all applications
     """
     query = applications_table.select()
-    if not all:
+    if user:
         query = query.where(applications_table.c.application_owner_id == token_payload.sub)
-    query = query.limit(p.limit).offset(p.skip)
-    raw_applications = await database.fetch_all(query)
-    applications = [Application.parse_obj(x) for x in raw_applications]
-    return applications
+    if all is None:
+        query = query.where(not_(applications_table.c.identifier == None))
+    print("QUERY: ", query)
+    return await package_response(Application, query, pagination)
 
 
 @router.get(
