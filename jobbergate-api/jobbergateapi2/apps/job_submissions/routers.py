@@ -2,7 +2,7 @@
 Router for the JobSubmission resource.
 """
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, status
@@ -11,7 +11,7 @@ from jobbergateapi2.apps.job_scripts.models import job_scripts_table
 from jobbergateapi2.apps.job_submissions.models import job_submissions_table
 from jobbergateapi2.apps.job_submissions.schemas import JobSubmission, JobSubmissionRequest
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
-from jobbergateapi2.pagination import Pagination, package_response, Response
+from jobbergateapi2.pagination import Pagination, Response, package_response
 from jobbergateapi2.security import guard
 from jobbergateapi2.storage import database
 
@@ -71,7 +71,9 @@ async def job_submission_get(job_submission_id: int = Query(...)):
 
 
 @router.get(
-    "/job-submissions/", description="Endpoint to list job_submissions", response_model=Response[JobSubmission]
+    "/job-submissions/",
+    description="Endpoint to list job_submissions",
+    response_model=Response[JobSubmission],
 )
 async def job_submission_list(
     pagination: Pagination = Depends(),

@@ -3,16 +3,16 @@ Router for the Application resource.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-from sqlalchemy import not_
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from sqlalchemy import not_
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application, ApplicationRequest
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
-from jobbergateapi2.pagination import Pagination, package_response, Response
+from jobbergateapi2.pagination import Pagination, Response, package_response
 from jobbergateapi2.s3_manager import S3Manager
 from jobbergateapi2.security import guard
 from jobbergateapi2.storage import database
@@ -82,9 +82,7 @@ async def application_delete(
 
 
 @router.get(
-    "/applications/",
-    description="Endpoint to list applications",
-    response_model=Response[Application],
+    "/applications/", description="Endpoint to list applications", response_model=Response[Application],
 )
 async def applications_list(
     pagination: Pagination = Depends(),
@@ -99,8 +97,7 @@ async def applications_list(
     if user:
         query = query.where(applications_table.c.application_owner_id == token_payload.sub)
     if all is None:
-        query = query.where(not_(applications_table.c.identifier == None))
-    print("QUERY: ", query)
+        query = query.where(not_(applications_table.c.identifier.is_(None)))
     return await package_response(Application, query, pagination)
 
 

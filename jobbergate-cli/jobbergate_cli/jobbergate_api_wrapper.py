@@ -975,7 +975,6 @@ class JobbergateApi:
         except Exception:
             return results
 
-
     def create_application(
         self,
         application_name,

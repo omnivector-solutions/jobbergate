@@ -200,11 +200,7 @@ async def test_get_job_submissions__no_param(
     assert [d["id"] for d in results] == [1, 3]
 
     metadata = data.get("metadata")
-    assert metadata == dict(
-        total=2,
-        page=None,
-        per_page=None,
-    )
+    assert metadata == dict(total=2, page=None, per_page=None,)
 
 
 @pytest.mark.asyncio
@@ -277,11 +273,7 @@ async def test_get_job_submission__excludes_other_owners(
     assert results == []
 
     metadata = data.get("metadata")
-    assert metadata == dict(
-        total=0,
-        page=None,
-        per_page=None,
-    )
+    assert metadata == dict(total=0, page=None, per_page=None,)
 
 
 @pytest.mark.asyncio
@@ -323,11 +315,7 @@ async def test_get_job_submissions__with_all_param(
     assert [d["id"] for d in results] == [1, 2, 3]
 
     metadata = data.get("metadata")
-    assert metadata == dict(
-        total=3,
-        page=None,
-        per_page=None,
-    )
+    assert metadata == dict(total=3, page=None, per_page=None,)
 
 
 @pytest.mark.asyncio
@@ -369,11 +357,7 @@ async def test_list_job_submission_pagination(
     assert [d["id"] for d in results] == [1]
 
     metadata = data.get("metadata")
-    assert metadata == dict(
-        total=5,
-        page=0,
-        per_page=1,
-    )
+    assert metadata == dict(total=5, page=0, per_page=1,)
 
     response = await client.get("/jobbergate/job-submissions/?page=1&per_page=2")
     assert response.status_code == status.HTTP_200_OK
@@ -384,11 +368,7 @@ async def test_list_job_submission_pagination(
     assert [d["id"] for d in results] == [3, 4]
 
     metadata = data.get("metadata")
-    assert metadata == dict(
-        total=5,
-        page=1,
-        per_page=2,
-    )
+    assert metadata == dict(total=5, page=1, per_page=2,)
 
     response = await client.get("/jobbergate/job-submissions/?page=2&per_page=2")
     assert response.status_code == status.HTTP_200_OK
@@ -399,11 +379,7 @@ async def test_list_job_submission_pagination(
     assert [d["id"] for d in results] == [5]
 
     metadata = data.get("metadata")
-    assert metadata == dict(
-        total=5,
-        page=2,
-        per_page=2,
-    )
+    assert metadata == dict(total=5, page=2, per_page=2,)
 
 
 @pytest.mark.freeze_time

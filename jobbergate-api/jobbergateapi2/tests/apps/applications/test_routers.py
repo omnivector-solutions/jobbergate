@@ -317,11 +317,7 @@ async def test_get_applications__no_params(client, application_data, inject_secu
     assert [d["id"] for d in results] == [1, 2, 3]
 
     metadata = data.get("metadata")
-    assert metadata == dict(
-        total=3,
-        page=None,
-        per_page=None,
-    )
+    assert metadata == dict(total=3, page=None, per_page=None,)
 
 
 @pytest.mark.asyncio
@@ -379,11 +375,7 @@ async def test_get_applications__with_user_param(client, application_data, injec
     assert [d["id"] for d in results] == [1, 2, 3]
 
     metadata = data.get("metadata")
-    assert metadata == dict(
-        total=3,
-        page=None,
-        per_page=None,
-    )
+    assert metadata == dict(total=3, page=None, per_page=None,)
 
     response = await client.get("/jobbergate/applications?user=true")
     assert response.status_code == status.HTTP_200_OK
@@ -393,11 +385,7 @@ async def test_get_applications__with_user_param(client, application_data, injec
     assert [d["id"] for d in results] == [1, 3]
 
     metadata = data.get("metadata")
-    assert metadata == dict(
-        total=2,
-        page=None,
-        per_page=None,
-    )
+    assert metadata == dict(total=2, page=None, per_page=None,)
 
 
 @pytest.mark.asyncio
@@ -430,11 +418,7 @@ async def test_get_applications__with_all_param(client, application_data, inject
     assert [d["id"] for d in results] == [1, 3]
 
     metadata = data.get("metadata")
-    assert metadata == dict(
-        total=2,
-        page=None,
-        per_page=None,
-    )
+    assert metadata == dict(total=2, page=None, per_page=None,)
 
     response = await client.get("/jobbergate/applications/?all=True")
     assert response.status_code == status.HTTP_200_OK
@@ -445,11 +429,7 @@ async def test_get_applications__with_all_param(client, application_data, inject
     assert [d["id"] for d in results] == [1, 2, 3]
 
     metadata = data.get("metadata")
-    assert metadata == dict(
-        total=3,
-        page=None,
-        per_page=None,
-    )
+    assert metadata == dict(total=3, page=None, per_page=None,)
 
 
 @pytest.mark.asyncio
@@ -482,11 +462,7 @@ async def test_get_applications__with_pagination(client, application_data, injec
     assert [d["id"] for d in results] == [1]
 
     metadata = data.get("metadata")
-    assert metadata == dict(
-        total=5,
-        page=0,
-        per_page=1,
-    )
+    assert metadata == dict(total=5, page=0, per_page=1,)
 
     response = await client.get("/jobbergate/applications/?page=1&per_page=2")
     assert response.status_code == status.HTTP_200_OK
@@ -497,11 +473,7 @@ async def test_get_applications__with_pagination(client, application_data, injec
     assert [d["id"] for d in results] == [3, 4]
 
     metadata = data.get("metadata")
-    assert metadata == dict(
-        total=5,
-        page=1,
-        per_page=2,
-    )
+    assert metadata == dict(total=5, page=1, per_page=2,)
 
     response = await client.get("/jobbergate/applications/?page=2&per_page=2")
     assert response.status_code == status.HTTP_200_OK
@@ -512,11 +484,7 @@ async def test_get_applications__with_pagination(client, application_data, injec
     assert [d["id"] for d in results] == [5]
 
     metadata = data.get("metadata")
-    assert metadata == dict(
-        total=5,
-        page=2,
-        per_page=2,
-    )
+    assert metadata == dict(total=5, page=2, per_page=2,)
 
 
 @pytest.mark.asyncio

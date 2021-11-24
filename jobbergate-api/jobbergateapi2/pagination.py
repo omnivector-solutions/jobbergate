@@ -2,7 +2,7 @@
 Pagination feature for all endpoints.
 """
 
-from typing import Optional, Generic, TypeVar, List
+from typing import Generic, List, Optional, TypeVar
 
 from pydantic import BaseModel
 from pydantic.generics import GenericModel
@@ -45,6 +45,7 @@ class ResponseMetadata(BaseModel):
     """
     A metadata model that describes pagination info.
     """
+
     total: int
     page: Optional[int]
     per_page: Optional[int]
@@ -57,6 +58,7 @@ class Response(GenericModel, Generic[DataT]):
     """
     An envelope for responses including the metadata for pagination.
     """
+
     results: List[DataT]
     metadata: ResponseMetadata
 
@@ -87,5 +89,5 @@ async def package_response(model, query, pagination: Pagination) -> Response:
     raw_response = await database.fetch_all(query)
     return Response(
         results=[model.parse_obj(x) for x in raw_response],
-        metadata=ResponseMetadata(total=total, **pagination.to_dict())
+        metadata=ResponseMetadata(total=total, **pagination.to_dict()),
     )
