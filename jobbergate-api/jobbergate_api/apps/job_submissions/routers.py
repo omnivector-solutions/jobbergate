@@ -2,7 +2,7 @@
 Router for the JobSubmission resource.
 """
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, status
@@ -74,7 +74,9 @@ async def job_submission_get(job_submission_id: int = Query(...)):
 
 
 @router.get(
-    "/job-submissions/", description="Endpoint to list job_submissions", response_model=Response[JobSubmission]
+    "/job-submissions/",
+    description="Endpoint to list job_submissions",
+    response_model=Response[JobSubmission],
 )
 async def job_submission_list(
     pagination: Pagination = Depends(),

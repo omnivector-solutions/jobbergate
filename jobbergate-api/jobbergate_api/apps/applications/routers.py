@@ -3,11 +3,11 @@ Router for the Application resource.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-from sqlalchemy import not_
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from sqlalchemy import not_
 
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import Application, ApplicationRequest
@@ -83,9 +83,7 @@ async def application_delete(
 
 
 @router.get(
-    "/applications/",
-    description="Endpoint to list applications",
-    response_model=Response[Application],
+    "/applications/", description="Endpoint to list applications", response_model=Response[Application],
 )
 async def applications_list(
     pagination: Pagination = Depends(),
@@ -101,7 +99,7 @@ async def applications_list(
     if user:
         query = query.where(applications_table.c.application_owner_email == armada_claims.user_email)
     if all is None:
-        query = query.where(not_(applications_table.c.identifier == None))
+        query = query.where(not_(applications_table.c.identifier.is_(None)))
     return await package_response(Application, query, pagination)
 
 

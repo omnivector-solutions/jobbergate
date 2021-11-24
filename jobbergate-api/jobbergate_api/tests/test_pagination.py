@@ -51,8 +51,7 @@ async def test_package_response__without_pagination():
         application_config="the configuration is here",
     )
     applications = [
-        Application(id=i, application_owner_id=f"owner{i}", **application_data)
-        for i in range(1, 6)
+        Application(id=i, application_owner_id=f"owner{i}", **application_data) for i in range(1, 6)
     ]
     await insert_objects(applications, applications_table)
 
@@ -75,13 +74,7 @@ async def test_package_response__without_pagination():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-        "page,per_page,total",
-        [
-            (0, 1, 1),
-            (6, 2, 13),
-            (2, 3, 10),
-            (7, 2, 13),
-        ],
+    "page,per_page,total", [(0, 1, 1), (6, 2, 13), (2, 3, 10), (7, 2, 13)],
 )
 @database.transaction(force_rollback=True)
 async def test_package_response__with_pagination(page, per_page, total):
@@ -96,8 +89,7 @@ async def test_package_response__with_pagination(page, per_page, total):
         application_config="the configuration is here",
     )
     applications = [
-        Application(id=i, application_owner_id=f"owner{i}", **application_data)
-        for i in range(1, total + 1)
+        Application(id=i, application_owner_id=f"owner{i}", **application_data) for i in range(1, total + 1)
     ]
     await insert_objects(applications, applications_table)
 
