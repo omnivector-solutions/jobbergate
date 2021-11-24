@@ -2,6 +2,7 @@
 Test the pagination.
 """
 import pytest
+from pydantic import ValidationError
 
 from jobbergateapi2.apps.applications.models import applications_table
 from jobbergateapi2.apps.applications.schemas import Application
@@ -14,10 +15,10 @@ def test_init_fails_on_invalid_parameters():
     """
     Tests that the parameters are valid or an exception will be raised.
     """
-    with pytest.raises(ValueError, match="page parameter must be greater than or equal to zero"):
+    with pytest.raises(ValidationError, match="ensure this value is greater than or equal to 0"):
         Pagination(page=-1, per_page=1)
 
-    with pytest.raises(ValueError, match="per_page parameter must be greater than zero"):
+    with pytest.raises(ValidationError, match="ensure this value is greater than 0"):
         Pagination(page=1, per_page=0)
 
 
@@ -27,16 +28,18 @@ def test_string_conversion():
     """
     pagination = Pagination(page=13, per_page=21)
 
-    assert str(pagination) == "page=13, per_page=21"
+    assert str(pagination) == "page=13 per_page=21"
 
 
-def test_to_dict():
+def test_dict():
     """
-    Test the to_dict() method on a pagination instance.
+    Test the dict() method on a pagination instance.
     """
     pagination = Pagination(page=13, per_page=21)
+    assert pagination.dict() == dict(page=13, per_page=21)
 
-    assert pagination.to_dict() == dict(page=13, per_page=21)
+    pagination = Pagination(page=None, per_page=999)
+    assert pagination.dict() == dict()
 
 
 @pytest.mark.asyncio

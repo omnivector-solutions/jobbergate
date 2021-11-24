@@ -4,41 +4,36 @@ Pagination feature for all endpoints.
 
 from typing import Generic, List, Optional, TypeVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic.generics import GenericModel
 from sqlalchemy import func, select
 
 from jobbergateapi2.storage import database
 
 
-class Pagination:
+class Pagination(BaseModel):
     """
     Basic pagination class.
     """
 
-    def __init__(self, page: Optional[int] = None, per_page: int = 10):
+    page: Optional[int] = Field(
+        None,
+        ge=0,
+        description="""
+            The page offset for items.
+            The index for the first item is computed as index == page * per_page.
+            Must be greater than or equal to 0.
+        """,
+    )
+    per_page: int = Field(
+        10, gt=0, description="Number of items to include per page. Must be greater than 0",
+    )
+
+    def dict(self):
         """
-        Pagination constructor.
-
-        Raises an exception if page is negative values.
-        Raises an exception if per_page is less than 1.
-
-        :param page: The start page. If None, no pagination will be applied.
-        :param per_page: The number of items to include per page.
+        Overrides default ``dict()`` behavior so that if ``page`` is None, all fields are omitted.
         """
-        if page is not None and page < 0:
-            raise ValueError("The page parameter must be greater than or equal to zero")
-        if per_page < 1:
-            raise ValueError("The per_page parameter must be greater than zero")
-
-        self.page = page
-        self.per_page = per_page
-
-    def __str__(self):
-        return f"page={self.page}, per_page={self.per_page}"
-
-    def to_dict(self):
-        return dict() if self.page is None else dict(page=self.page, per_page=self.per_page)
+        return dict() if self.page is None else super().dict()
 
 
 class ResponseMetadata(BaseModel):
@@ -57,6 +52,8 @@ DataT = TypeVar("DataT")
 class Response(GenericModel, Generic[DataT]):
     """
     An envelope for responses including the metadata for pagination.
+
+    This is a generic response envelope that can be used for any of list of pydantic models.
     """
 
     results: List[DataT]
@@ -89,5 +86,5 @@ async def package_response(model, query, pagination: Pagination) -> Response:
     raw_response = await database.fetch_all(query)
     return Response(
         results=[model.parse_obj(x) for x in raw_response],
-        metadata=ResponseMetadata(total=total, **pagination.to_dict()),
+        metadata=ResponseMetadata(total=total, **pagination.dict()),
     )
