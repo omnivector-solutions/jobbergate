@@ -1,4 +1,4 @@
-.. figure:: /src/images/logo.png?raw=true
+.. figure:: https://avatars.githubusercontent.com/u/34010109?s=200&v=4
    :alt: Logo
    :align: center
    :width: 80px
