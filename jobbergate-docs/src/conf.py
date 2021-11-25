@@ -2,6 +2,7 @@ import datetime
 import pathlib
 import re
 import shutil
+
 import toml
 
 # Configuration file for the Sphinx documentation builder.
@@ -42,7 +43,7 @@ extensions = [
 #
 html_theme = "sphinx_book_theme"
 html_theme_options = {
-    "repository_url" : repo_url,
+    "repository_url": repo_url,
     "use_repository_button": True,
     "use_issues_button": True,
 }
