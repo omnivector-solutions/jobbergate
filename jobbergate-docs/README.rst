@@ -1,4 +1,4 @@
-.. figure:: https://avatars.githubusercontent.com/u/34010109?s=200&v=4
+.. figure:: https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-docs/src/images/logo.png
    :alt: Logo
    :align: center
    :width: 80px
