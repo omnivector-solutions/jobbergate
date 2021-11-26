@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     ARMASEC_AUDIENCE: Optional[HttpUrl]
     ARMASEC_DEBUG: bool = Field(False)
 
+    # Sentry configuration
+    SENTRY_DSN: Optional[HttpUrl]
+    SENTRY_SAMPLE_RATE: float = Field(1.0)
+
     @root_validator
     def calculate_db_url(cls, values):
         if not values.get("DATABASE_URL"):
