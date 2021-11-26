@@ -18,7 +18,7 @@ from jobbergateapi2.apps.applications.schemas import Application
 from jobbergateapi2.apps.job_scripts.models import job_scripts_table
 from jobbergateapi2.apps.job_scripts.schemas import JobScript, JobScriptRequest
 from jobbergateapi2.compat import INTEGRITY_CHECK_EXCEPTIONS
-from jobbergateapi2.pagination import Pagination
+from jobbergateapi2.pagination import Pagination, Response, package_response
 from jobbergateapi2.s3_manager import S3Manager
 from jobbergateapi2.security import guard
 from jobbergateapi2.storage import database
@@ -198,9 +198,9 @@ async def job_script_get(job_script_id: int = Query(...)):
     return job_script
 
 
-@router.get("/job-scripts/", description="Endpoint to list job_scripts", response_model=List[JobScript])
+@router.get("/job-scripts/", description="Endpoint to list job_scripts", response_model=Response[JobScript])
 async def job_script_list(
-    p: Pagination = Depends(),
+    pagination: Pagination = Depends(),
     all: Optional[bool] = Query(None),
     token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:job-scripts:read")),
 ):
@@ -210,11 +210,7 @@ async def job_script_list(
     query = job_scripts_table.select()
     if not all:
         query = query.where(job_scripts_table.c.job_script_owner_id == token_payload.sub)
-    query = query.limit(p.limit).offset(p.skip)
-    raw_job_scripts = await database.fetch_all(query)
-    job_scripts = [JobScript.parse_obj(x) for x in raw_job_scripts]
-
-    return job_scripts
+    return await package_response(JobScript, query, pagination)
 
 
 @router.delete(

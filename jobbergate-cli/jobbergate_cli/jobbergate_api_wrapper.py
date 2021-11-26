@@ -89,7 +89,7 @@ class JobbergateApi:
                         archive.add(os.path.join(root, file), arcname=file)
         archive.close()
 
-    def jobbergate_request(self, method, endpoint, data=None, files=None):
+    def jobbergate_request(self, method, endpoint, data=None, files=None, params=None):
         """
         Submit HTTP requests.
 
@@ -98,12 +98,13 @@ class JobbergateApi:
             endpoint  -- API End point: application, job-script, job-submission
             data      -- data to be submitted on POST/PUT requests
             files     -- file(s) to be sent with request where applicable
-
+            params    -- Query parameters for GET requests
         """
         if method == "GET":
             try:
                 response = client.get(
                     endpoint,
+                    params=params,
                     headers={"Authorization": "Bearer " + self.token},
                     verify=False,
                 )
@@ -415,18 +416,18 @@ class JobbergateApi:
                     if NOT specified then only the user's job scripts
                     will be returned
         """
-        response = self.jobbergate_request(method="GET", endpoint=self.api_endpoint / "job-scripts")
+        params = dict(all=True) if all else None
+        envelope = self.jobbergate_request(
+            method="GET",
+            endpoint=self.api_endpoint / "job-scripts",
+            params=params,
+        )
+        results = envelope["results"]
 
         try:
-            response = [{k: v for k, v in d.items() if k not in self.job_script_suppress} for d in response]
-        except:  # noqa: E722
-            return response
-
-        if all:
-            return response
-        else:
-            response = [d for d in response if d["job_script_owner"] == self.user_id]
-            return response
+            return [{k: v for k, v in d.items() if k not in self.job_script_suppress} for d in results]
+        except Exception:
+            return results
 
     def create_job_script(
         self,
@@ -760,20 +761,18 @@ class JobbergateApi:
                     if NOT specified then only the user's job submissions
                     will be returned
         """
-        response = self.jobbergate_request(method="GET", endpoint=self.api_endpoint / "job-submissions")
+        params = dict(all=True) if all else None
+        envelope = self.jobbergate_request(
+            method="GET",
+            endpoint=self.api_endpoint / "job-submissions",
+            params=params,
+        )
+        results = envelope["results"]
 
         try:
-            response = [
-                {k: v for k, v in d.items() if k not in self.job_submission_suppress} for d in response
-            ]
-        except:  # noqa: E722
-            return response
-
-        if all:
-            return response
-        else:
-            response = [d for d in response if d["job_submission_owner"] == self.user_id]
-            return response
+            return [{k: v for k, v in d.items() if k not in self.job_submission_suppress} for d in results]
+        except Exception:
+            return results
 
     def create_job_submission(self, job_script_id, render_only, job_submission_name=""):
         """
@@ -948,37 +947,33 @@ class JobbergateApi:
                     supplied, then every application for the user will be shown,
                     even the ones without identifier
         """
-        response = self.jobbergate_request(method="GET", endpoint=self.api_endpoint / "applications")
+        params = dict()
+        if all:
+            params["all"] = True
+        if user:
+            params["user"] = True
+        envelope = self.jobbergate_request(
+            method="GET",
+            endpoint=self.api_endpoint / "applications",
+            params=params,
+        )
+        results = envelope["results"]
+
         try:
-            response = [{k: v for k, v in d.items() if k not in self.application_suppress} for d in response]
-        except:  # noqa: E722
-            return response
-
-        # Sort
-        response.sort(key=lambda app: app["id"], reverse=True)
-        for app in response:
-            app["application_description"] = _fit_line(app["application_description"])
-
-        # List every application of the user
-        if all and user:
-            response = [d for d in response if d["application_owner"] == self.user_id]
-            return response
-        # List all the applications from every user, even the ones without an identifier
-        elif all:
-            return response
-        # List only the applications of the user that have identifier
-        elif user:
-            default_applications = [
-                application for application in response if application.get("application_identifier")
-            ]
-            user_applications = [d for d in default_applications if d["application_owner"] == self.user_id]
-            return user_applications
-        # If no flag is passed, list all the applications, but only the ones that have identifier
-        else:
-            default_applications = [
-                application for application in response if application.get("application_identifier")
-            ]
-            return default_applications
+            return sorted(
+                [
+                    {
+                        k: (v if k != "application_description" else _fit_line(v))
+                        for (k, v) in d.items()
+                        if k not in self.application_suppress
+                    }
+                    for d in results
+                ],
+                key=lambda app: app["id"],
+                reverse=True,
+            )
+        except Exception:
+            return results
 
     def create_application(
         self,
