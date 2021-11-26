@@ -36,6 +36,7 @@ async def health_check():
 app = FastAPI()
 app.mount("/jobbergate", subapp)
 
+
 @app.on_event("startup")
 async def init_database():
     """
