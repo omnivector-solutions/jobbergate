@@ -3,8 +3,10 @@ Main file to startup the fastapi server
 """
 import ast
 
+import sentry_sdk
 from fastapi import FastAPI, Response, status
 from loguru import logger
+from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
 from jobbergateapi2 import storage
@@ -21,6 +23,11 @@ subapp.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+if settings.SENTRY_DSN:
+    sentry_sdk.init(dsn=settings.SENTRY_DSN, traces_sample_rate=settings.SENTRY_SAMPLE_RATE)
+    subapp.add_middleware(SentryAsgiMiddleware)
+
 subapp.include_router(applications_router)
 subapp.include_router(job_scripts_router)
 subapp.include_router(job_submissions_router)
@@ -35,6 +42,7 @@ async def health_check():
 
 app = FastAPI()
 app.mount("/jobbergate", subapp)
+
 
 @app.on_event("startup")
 async def init_database():
