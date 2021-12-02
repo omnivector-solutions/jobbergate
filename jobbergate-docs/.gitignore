@@ -1,0 +1,3 @@
+# Git ignore for main branch and topic branches. Must be revised for docs branch
+
+build/*
