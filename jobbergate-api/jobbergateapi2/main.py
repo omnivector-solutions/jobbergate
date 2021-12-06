@@ -54,6 +54,7 @@ def init_logger():
     logger.add(sys.stderr, level=settings.LOG_LEVEL)
     logger.info(f"Logging configured 📝 Level: {settings.LOG_LEVEL}")
 
+
 @app.on_event("startup")
 async def init_database():
     """

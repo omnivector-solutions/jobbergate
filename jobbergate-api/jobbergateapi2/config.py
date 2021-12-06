@@ -48,7 +48,8 @@ class Settings(BaseSettings):
 
     @root_validator
     def calculate_db_url(cls, values):
-        if not values.get("DATABASE_URL"):
+        db_url = values.get("DATABASE_URL")
+        if not db_url:
             expected_keys = {
                 "DATABASE_USER",
                 "DATABASE_PSWD",
@@ -60,7 +61,7 @@ class Settings(BaseSettings):
             if len(missing_keys) > 0:
                 raise ValueError(f"Missing required database settings: {', '.join(sorted(missing_keys))}")
 
-            values["DATABASE_URL"] = URL.build(
+            db_url = URL.build(
                 scheme="postgresql",
                 user=values.get("DATABASE_USER"),
                 password=values.get("DATABASE_PSWD"),
@@ -68,11 +69,18 @@ class Settings(BaseSettings):
                 port=values.get("DATABASE_PORT"),
                 path="/{}".format(values.get("DATABASE_NAME")),
             )
+        elif not db_url.startswith("sqlite"):
+            # Will url-escapse special characters
+            db_url = URL(values["DATABASE_URL"])
+        else:
+            # For special case of sqlite db url (testing), do not url-escape
+            pass
+
+        values["DATABASE_URL"] = str(db_url)
         return values
 
     class Config:
         env_file = ".env"
-
 
 
 settings = Settings()

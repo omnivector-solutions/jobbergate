@@ -2,9 +2,20 @@ import os
 from unittest import mock
 
 import pytest
-import yarl
 
 from jobbergateapi2.config import Settings
+
+
+def test_calucalte_db_url__url_escapes_existing_DATABASE_URL_setting():
+    """
+    Tests that the Settings object will urlencode an DATABASE_URL existing value to make it url safe.
+    """
+
+    db_settings = dict(DATABASE_URL="postgresql://test-user:test@pswd@test-host:9999/test-name")
+
+    with mock.patch.dict(os.environ, db_settings):
+        test_settings = Settings()
+        assert test_settings.DATABASE_URL == "postgresql://test-user:test%40pswd@test-host:9999/test-name"
 
 
 def test_calucalte_db_url__creates_database_url_from_parts():
@@ -24,7 +35,7 @@ def test_calucalte_db_url__creates_database_url_from_parts():
 
     with mock.patch.dict(os.environ, db_settings):
         test_settings = Settings()
-        assert test_settings.DATABASE_URL == yarl.URL("postgresql://test-user:test-pswd@test-host:9999/test-name")
+        assert test_settings.DATABASE_URL == "postgresql://test-user:test-pswd@test-host:9999/test-name"
 
 
 def test_calucalte_db_url__raises_exception_if_any_part_is_missing():
