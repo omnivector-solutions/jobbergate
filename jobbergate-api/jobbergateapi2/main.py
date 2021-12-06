@@ -2,6 +2,7 @@
 Main file to startup the fastapi server
 """
 import ast
+import sys
 
 import sentry_sdk
 from fastapi import FastAPI, Response, status
@@ -43,6 +44,15 @@ async def health_check():
 app = FastAPI()
 app.mount("/jobbergate", subapp)
 
+
+@app.on_event("startup")
+def init_logger():
+    """
+    Initialize logging.
+    """
+    logger.remove()
+    logger.add(sys.stderr, level=settings.LOG_LEVEL)
+    logger.info(f"Logging configured 📝 Level: {settings.LOG_LEVEL}")
 
 @app.on_event("startup")
 async def init_database():
