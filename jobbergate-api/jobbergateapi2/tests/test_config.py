@@ -8,7 +8,7 @@ from jobbergateapi2.config import Settings
 
 def test_calucalte_db_url__url_escapes_existing_DATABASE_URL_setting():
     """
-    Tests that the Settings object will urlencode an DATABASE_URL existing value to make it url safe.
+    Tests that the Settings object will urlencode an existing DATABASE_URL to make it url safe.
     """
 
     db_settings = dict(DATABASE_URL="postgresql://test-user:test@pswd@test-host:9999/test-name")
