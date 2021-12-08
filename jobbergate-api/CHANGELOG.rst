@@ -2,10 +2,13 @@
  Change Log
 ============
 
-This file keeps track of all notable changes to jobbergate-api-fastapi
+This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+2.0.0 -- 2021-12-08
+-------------------
 * Added support for auth via Armasec & Auth0
 * Added unit tests
 * Migrated model definitions from legacy ``jobbergate-api``
@@ -16,3 +19,5 @@ Unreleased
 * Added CI workflow for github action to test PRs
 * Added basic documentation in README
 * Created project with poetry for dependency and project management
+* Renamed module folder from jobbergateapi2 to jobbergate_api
+* Fixed ownership mapping for entities to use email instead of id
