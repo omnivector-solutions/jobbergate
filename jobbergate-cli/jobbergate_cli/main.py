@@ -127,9 +127,8 @@ def jobbergate_command_wrapper(func):
                     scope.set_context(
                         "command_info",
                         dict(
-                            org_name=ctx.obj["identity"]["org_name"],
-                            username=ctx.obj["identity"]["username"],
-                            user_id=ctx.obj["identity"]["user_id"],
+                            org_name=ctx.obj["identity"].get("org_name"),
+                            user_email=ctx.obj["identity"]["user_email"],
                             function=func.__name__,
                             command=ctx.command.name,
                             args=args,
@@ -227,9 +226,8 @@ def validate_token_and_extract_identity(token):
     identity_data = token_data.get(constants.ARMADA_CLAIMS_KEY)
     if not identity_data:
         abort_with_message("No identity data found in token data")
-    for key in ("username", "user_id", "org_name"):
-        if key not in identity_data:
-            abort_with_message(f"No {key} found in token data")
+    if "user_email" not in identity_data:
+        abort_with_message("No user email found in token data")
 
     return identity_data
 
@@ -314,7 +312,7 @@ def main(ctx, verbose, raw, full):
 
     elif ctx.invoked_subcommand not in ("login", "logout"):
         token = init_token(ctx.obj)
-        user_id = ctx.obj["identity"]["user_id"]
+        user_email = ctx.obj["identity"]["user_email"]
 
         if settings.JOBBERGATE_DEBUG:
             logger.debug("Enabling debug mode for requests")
@@ -326,7 +324,7 @@ def main(ctx, verbose, raw, full):
             job_submission_config=constants.JOBBERGATE_JOB_SUBMISSION_CONFIG,
             application_config=constants.JOBBERGATE_APPLICATION_CONFIG,
             api_endpoint=settings.JOBBERGATE_API_ENDPOINT,
-            user_id=user_id,
+            user_email=user_email,
             full_output=full,
         )
         ctx.obj["raw"] = raw

@@ -14,14 +14,14 @@ JOBBERGATE_APPLICATION_CONFIG = {
 JOBBERGATE_JOB_SCRIPT_CONFIG = {
     "job_script_name": "",
     "job_script_description": "TEST_DESC",
-    "job_script_owner": "",
+    "job_script_owner_email": "",
     "application": "",
 }
 
 JOBBERGATE_JOB_SUBMISSION_CONFIG = {
     "job_submission_name": "",
     "job_submission_description": "TEST_DESC",
-    "job_submission_owner": "",
+    "job_submission_owner_email": "",
     "job_script": "",
 }
 

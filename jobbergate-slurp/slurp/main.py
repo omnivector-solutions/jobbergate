@@ -6,15 +6,12 @@ Provides a Typer app and associated commands.
 import subprocess
 from loguru import logger
 
-import snick
 import typer
 
-from slurp.config import settings
 from slurp.connections import db, build_url
 from slurp.migrators.applications import migrate_applications
 from slurp.migrators.job_scripts import migrate_job_scripts
 from slurp.migrators.job_submissions import migrate_job_submissions
-from slurp.migrators.users import migrate_users
 from slurp.pull_legacy import pull_users, pull_applications, pull_job_scripts, pull_job_submissions
 from slurp.s3_ops import S3Manager, transfer_s3
 
@@ -74,17 +71,3 @@ def migrate():
         transfer_s3(legacy_s3man, nextgen_s3man, applications_map)
 
     logger.debug("Finished migration!")
-
-
-@app.command()
-def update_users():
-    """
-    Updates owner ids in the nextgen database.
-
-    Connects to the Auth0 admin api to pull nextgen users and attemtps to match them
-    to the legacy users pulled in during migration.
-    """
-    logger.debug("Update users")
-    with db(is_legacy=False) as nextgen_db:
-        migrate_users(nextgen_db)
-    logger.debug("Finished updating users")

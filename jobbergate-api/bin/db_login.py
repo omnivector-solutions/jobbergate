@@ -1,6 +1,6 @@
 import subprocess
 
-from jobbergateapi2.config import settings
+from jobbergate_api.config import settings
 
 
 def login():

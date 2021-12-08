@@ -3,9 +3,6 @@ Provides logic for migrating job_script data from legacy db to nextgen db.
 """
 
 from loguru import logger
-import snick
-
-from slurp.connections import db
 
 
 def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_map):
@@ -20,8 +17,7 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_ma
     job_scripts_map = {}
     logger.debug("Migrating job_scripts to nextgen database")
     for job_script in legacy_job_scripts:
-        legacy_email = user_map[job_script["job_script_owner_id"]]["email"]
-        nextgen_interim_owner_id = f"legacy--{legacy_email}"
+        owner_email = user_map[job_script["job_script_owner_id"]]["email"]
         nextgen_application_id = application_map[job_script["application_id"]]
 
         result = nextgen_db.execute(
@@ -30,7 +26,7 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_ma
                 job_script_name,
                 job_script_description,
                 job_script_data_as_string,
-                job_script_owner_id,
+                job_script_owner_email,
                 application_id,
                 created_at,
                 updated_at
@@ -39,7 +35,7 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_ma
                 %(name)s,
                 %(description)s,
                 %(data)s,
-                %(owner_id)s,
+                %(owner_email)s,
                 %(application_id)s,
                 %(created)s,
                 %(updated)s
@@ -50,7 +46,7 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_ma
                 name=job_script["job_script_name"],
                 description=job_script["job_script_description"],
                 data=job_script["job_script_data_as_string"],
-                owner_id=nextgen_interim_owner_id,
+                owner_email=owner_email,
                 application_id=nextgen_application_id,
                 created=job_script["created_at"],
                 updated=job_script["updated_at"],

@@ -2,9 +2,6 @@
 Provides logic for migrating application data from legacy db to nextgen db.
 """
 from loguru import logger
-import snick
-
-from slurp.connections import db
 
 
 def migrate_applications(nextgen_db, legacy_applications, user_map):
@@ -19,16 +16,15 @@ def migrate_applications(nextgen_db, legacy_applications, user_map):
     application_map = {}
     logger.debug("Inserting applications to nextgen database")
     for application in legacy_applications:
-        legacy_email = user_map[application["application_owner_id"]]["email"]
-        nextgen_interim_owner_id = f"legacy--{legacy_email}"
+        owner_email = user_map[application["application_owner_id"]]["email"]
 
-        result = nextgen_db.execute(
+        nextgen_db.execute(
             """
             insert into applications (
                 application_name,
                 application_identifier,
                 application_description,
-                application_owner_id,
+                application_owner_email,
                 application_file,
                 application_config,
                 created_at,
@@ -38,7 +34,7 @@ def migrate_applications(nextgen_db, legacy_applications, user_map):
                 %(name)s,
                 %(identifier)s,
                 %(description)s,
-                %(owner_id)s,
+                %(owner_email)s,
                 %(file)s,
                 %(config)s,
                 %(created)s,
@@ -50,7 +46,7 @@ def migrate_applications(nextgen_db, legacy_applications, user_map):
                 name=application["application_name"],
                 identifier=application["application_identifier"],
                 description=application["application_description"],
-                owner_id=nextgen_interim_owner_id,
+                owner_email=owner_email,
                 file=application["application_file"],
                 config=application["application_config"],
                 created=application["created_at"],
