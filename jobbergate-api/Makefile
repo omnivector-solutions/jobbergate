@@ -1,5 +1,5 @@
 SHELL:=/bin/bash
-PACKAGE_NAME:=jobbergateapi2
+PACKAGE_NAME:=jobbergate_api
 ROOT_DIR:=$(shell dirname $(shell pwd))
 
 install:

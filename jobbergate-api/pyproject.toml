@@ -2,8 +2,8 @@
 authors = [
     "Lucas de Carvalho <lucas.carvalho@omnivector.solutions>"
 ]
-name = "jobbergateapi2"
-description = "jobbergate-api"
+name = "jobbergate-api"
+description = "Jobbergate API"
 license = "MIT"
 version = "0.1.1"
 
@@ -69,11 +69,11 @@ default_section = "THIRDPARTY"
 minversion = "6.0"
 addopts = [
     "--random-order",
-    "--cov=jobbergateapi2",
+    "--cov=jobbergate_api",
     "--cov-report=term-missing",
     "--cov-fail-under=95",
 ]
-testpaths = ["jobbergateapi2/tests"]
+testpaths = ["jobbergate_api/tests"]
 env = [
     "DATABASE_URL = sqlite:///sqlite-testing.db",
     "TEST_ENV = True",
@@ -82,6 +82,15 @@ env = [
     "ARMASEC_DOMAIN = armasec.dev",
     "ARMASEC_DEBUG = True",
 ]
+
+[[tool.mypy.overrides]]
+module = [
+    "boto3",
+    "botocore",
+    "jinja2",
+    "asyncpg",
+]
+ignore_missing_imports = true
 
 [build-system]
 requires = ["poetry>=1.0.0"]

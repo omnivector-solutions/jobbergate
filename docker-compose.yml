@@ -10,8 +10,8 @@ services:
     networks:
       - jobbergate-net
     volumes:
-      - ./jobbergate-api/jobbergateapi2:/app/jobbergateapi2
-    command: uvicorn jobbergateapi2.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
+      - ./jobbergate-api/jobbergate_api:/app/jobbergate_api
+    command: uvicorn jobbergate_api.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
     environment:
       - DATABASE_HOST=${NEXTGEN_DATABASE_HOST:-nextgen-db}
       - DATABASE_USER=${NEXTGEN_DATABASE_USER:-nextgen}

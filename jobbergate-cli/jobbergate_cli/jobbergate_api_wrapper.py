@@ -25,7 +25,7 @@ class JobbergateApi:
         job_submission_config=None,
         application_config=None,
         api_endpoint=None,
-        user_id=None,
+        user_email=None,
         full_output=False,
     ):
         """Initialize JobbergateAPI."""
@@ -35,7 +35,7 @@ class JobbergateApi:
         self.job_submission_config = job_submission_config
         self.application_config = application_config
         self.api_endpoint = yarl.URL(api_endpoint)
-        self.user_id = user_id
+        self.user_email = user_email
         # Suppress from list- and create- application:
         self.application_suppress = (
             [
@@ -425,7 +425,7 @@ class JobbergateApi:
         if all:
             return response
         else:
-            response = [d for d in response if d["job_script_owner"] == self.user_id]
+            response = [d for d in response if d["job_script_owner_email"] == self.user_email]
             return response
 
     def create_job_script(
@@ -485,7 +485,6 @@ class JobbergateApi:
         self.validation_check = {}
         data = self.job_script_config
         data["job_script_name"] = job_script_name
-        data["job_script_owner"] = self.user_id
         app_data = None
 
         if application_identifier:
@@ -772,7 +771,7 @@ class JobbergateApi:
         if all:
             return response
         else:
-            response = [d for d in response if d["job_submission_owner"] == self.user_id]
+            response = [d for d in response if d["job_submission_owner_email"] == self.user_email]
             return response
 
     def create_job_submission(self, job_script_id, render_only, job_submission_name=""):
@@ -795,7 +794,6 @@ class JobbergateApi:
         data = self.job_submission_config
         data["job_submission_name"] = job_submission_name
         data["job_script_id"] = job_script_id
-        data["job_submission_owner_id"] = self.user_id
 
         job_script = self.jobbergate_request(
             method="GET",
@@ -961,7 +959,7 @@ class JobbergateApi:
 
         # List every application of the user
         if all and user:
-            response = [d for d in response if d["application_owner"] == self.user_id]
+            response = [d for d in response if d["application_owner_email"] == self.user_email]
             return response
         # List all the applications from every user, even the ones without an identifier
         elif all:
@@ -971,7 +969,7 @@ class JobbergateApi:
             default_applications = [
                 application for application in response if application.get("application_identifier")
             ]
-            user_applications = [d for d in default_applications if d["application_owner"] == self.user_id]
+            user_applications = [d for d in default_applications if d["application_owner_email"] == self.user_email]
             return user_applications
         # If no flag is passed, list all the applications, but only the ones that have identifier
         else:
@@ -1021,7 +1019,6 @@ class JobbergateApi:
 
         data = self.application_config
         data["application_name"] = application_name
-        data["application_owner"] = self.user_id
 
         if application_identifier:
             data["application_identifier"] = application_identifier
