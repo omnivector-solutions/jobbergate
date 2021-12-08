@@ -6,6 +6,18 @@ import pytest
 from jobbergateapi2.config import Settings
 
 
+def test_calucalte_db_url__url_escapes_existing_DATABASE_URL_setting():
+    """
+    Tests that the Settings object will urlencode an existing DATABASE_URL to make it url safe.
+    """
+
+    db_settings = dict(DATABASE_URL="postgresql://test-user:test@pswd@test-host:9999/test-name")
+
+    with mock.patch.dict(os.environ, db_settings):
+        test_settings = Settings()
+        assert test_settings.DATABASE_URL == "postgresql://test-user:test%40pswd@test-host:9999/test-name"
+
+
 def test_calucalte_db_url__creates_database_url_from_parts():
     """
     Tests that the Settings object will compute a DATABASE_URL value from separate
