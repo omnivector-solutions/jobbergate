@@ -8,8 +8,8 @@ from asgi_lifespan import LifespanManager
 from httpx import AsyncClient
 from pytest import fixture
 
-from jobbergate_api.main import app
 from jobbergate_api.config import settings
+from jobbergate_api.main import app
 
 
 @fixture(scope="session", autouse=True)
@@ -83,7 +83,7 @@ async def inject_security_header(client, build_rs256_token):
     def _helper(owner_email: str, *permissions: typing.List[str]):
         token = build_rs256_token(
             claim_overrides={
-                settings.ARMADA_CLAIMS_KEY: { "user_email": owner_email },
+                settings.ARMADA_CLAIMS_KEY: {"user_email": owner_email},
                 "permissions": permissions,
             }
         )

@@ -13,7 +13,7 @@ from jobbergate_api.apps.applications.schemas import Application, ApplicationReq
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.pagination import Pagination
 from jobbergate_api.s3_manager import S3Manager
-from jobbergate_api.security import guard, ArmadaClaims
+from jobbergate_api.security import ArmadaClaims, guard
 from jobbergate_api.storage import database
 
 router = APIRouter()

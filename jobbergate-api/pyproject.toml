@@ -86,9 +86,9 @@ env = [
 [[tool.mypy.overrides]]
 module = [
     "boto3",
-    "botocore",
+    "botocore.*",
     "jinja2",
-    "asyncpg",
+    "asyncpg.*",
 ]
 ignore_missing_imports = true
 

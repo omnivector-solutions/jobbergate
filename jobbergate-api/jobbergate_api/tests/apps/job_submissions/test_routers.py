@@ -105,7 +105,9 @@ async def test_get_job_submission_by_id(
     job_script = [JobScript(id=1, **job_script_data)]
     await insert_objects(job_script, job_scripts_table)
 
-    job_submissions = [JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data)]
+    job_submissions = [
+        JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data)
+    ]
     await insert_objects(job_submissions, job_submissions_table)
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
@@ -139,7 +141,9 @@ async def test_get_job_submission_by_id_bad_permission(
     job_script = [JobScript(id=1, **job_script_data)]
     await insert_objects(job_script, job_scripts_table)
 
-    job_submissions = [JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data)]
+    job_submissions = [
+        JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data)
+    ]
     await insert_objects(job_submissions, job_submissions_table)
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
@@ -368,7 +372,9 @@ async def test_update_job_submission(
     job_scripts = [JobScript(id=1, **job_script_data)]
     await insert_objects(job_scripts, job_scripts_table)
 
-    job_submissions = [JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data)]
+    job_submissions = [
+        JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data)
+    ]
     await insert_objects(job_submissions, job_submissions_table)
 
     inject_security_header("owner1@org.com", "jobbergate:job-submissions:update")
@@ -413,7 +419,9 @@ async def test_update_job_submission_not_found(
     job_scripts = [JobScript(id=1, **job_script_data)]
     await insert_objects(job_scripts, job_scripts_table)
 
-    job_submissions = [JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data)]
+    job_submissions = [
+        JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data)
+    ]
     await insert_objects(job_submissions, job_submissions_table)
 
     inject_security_header("owner1@org.com", "jobbergate:job-submissions:update")
@@ -446,7 +454,9 @@ async def test_update_job_submission_bad_permission(
     job_scripts = [JobScript(id=1, **job_script_data)]
     await insert_objects(job_scripts, job_scripts_table)
 
-    job_submissions = [JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data)]
+    job_submissions = [
+        JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data)
+    ]
     await insert_objects(job_submissions, job_submissions_table)
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
@@ -479,7 +489,9 @@ async def test_delete_job_submission(
     job_scripts = [JobScript(id=1, **job_script_data)]
     await insert_objects(job_scripts, job_scripts_table)
 
-    job_submissions = [JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data)]
+    job_submissions = [
+        JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data)
+    ]
     await insert_objects(job_submissions, job_submissions_table)
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
@@ -512,7 +524,9 @@ async def test_delete_job_submission_not_found(
     job_scripts = [JobScript(id=1, **job_script_data)]
     await insert_objects(job_scripts, job_scripts_table)
 
-    job_submissions = [JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data)]
+    job_submissions = [
+        JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data)
+    ]
     await insert_objects(job_submissions, job_submissions_table)
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
@@ -545,7 +559,9 @@ async def test_delete_job_submission_bad_permission(
     job_scripts = [JobScript(id=1, **job_script_data)]
     await insert_objects(job_scripts, job_scripts_table)
 
-    job_submissions = [JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data)]
+    job_submissions = [
+        JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data)
+    ]
     await insert_objects(job_submissions, job_submissions_table)
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")

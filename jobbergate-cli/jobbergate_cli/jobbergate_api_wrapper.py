@@ -969,7 +969,9 @@ class JobbergateApi:
             default_applications = [
                 application for application in response if application.get("application_identifier")
             ]
-            user_applications = [d for d in default_applications if d["application_owner_email"] == self.user_email]
+            user_applications = [
+                d for d in default_applications if d["application_owner_email"] == self.user_email
+            ]
             return user_applications
         # If no flag is passed, list all the applications, but only the ones that have identifier
         else:

@@ -445,7 +445,10 @@ async def test_update_application(s3man_client_mock, client, application_data, i
 
     applications = [
         Application(
-            id=1, application_owner_email="owner1@org.com", application_description="old description", **application_data
+            id=1,
+            application_owner_email="owner1@org.com",
+            application_description="old description",
+            **application_data,
         ),
     ]
     await insert_objects(applications, applications_table)

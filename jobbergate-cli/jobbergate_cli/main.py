@@ -127,7 +127,7 @@ def jobbergate_command_wrapper(func):
                     scope.set_context(
                         "command_info",
                         dict(
-                            org_name=ctx.obj["identity"]["org_name"],
+                            org_name=ctx.obj["identity"].get("org_name"),
                             user_email=ctx.obj["identity"]["user_email"],
                             function=func.__name__,
                             command=ctx.command.name,
@@ -226,9 +226,8 @@ def validate_token_and_extract_identity(token):
     identity_data = token_data.get(constants.ARMADA_CLAIMS_KEY)
     if not identity_data:
         abort_with_message("No identity data found in token data")
-    for key in ("user_email", "org_name"):
-        if key not in identity_data:
-            abort_with_message(f"No {key} found in token data")
+    if "user_email" not in identity_data:
+        abort_with_message("No user email found in token data")
 
     return identity_data
 

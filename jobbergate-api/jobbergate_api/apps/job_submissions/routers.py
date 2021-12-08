@@ -12,7 +12,7 @@ from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.apps.job_submissions.schemas import JobSubmission, JobSubmissionRequest
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.pagination import Pagination
-from jobbergate_api.security import guard, ArmadaClaims
+from jobbergate_api.security import ArmadaClaims, guard
 from jobbergate_api.storage import database
 
 router = APIRouter()
@@ -46,7 +46,9 @@ async def job_submission_create(
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=422, detail=str(e))
     return JobSubmission(
-        id=job_submission_created_id, job_submission_owner_email=armada_claims.user_email, **job_submission.dict()
+        id=job_submission_created_id,
+        job_submission_owner_email=armada_claims.user_email,
+        **job_submission.dict(),
     )
 
 
