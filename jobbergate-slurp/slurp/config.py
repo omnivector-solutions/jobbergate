@@ -4,7 +4,14 @@ Settings for the Jobbergate Slurp application.
 
 from typing import Optional
 
-from pydantic import BaseSettings, Field, HttpUrl
+from auto_name_enum import AutoNameEnum, NoMangleMixin, auto
+from pydantic import BaseSettings
+
+
+class DatabaseEnv(AutoNameEnum, NoMangleMixin):
+    LEGACY = auto()
+    NEXTGEN = auto()
+    MIRROR = auto()
 
 
 class Settings(BaseSettings):
@@ -32,6 +39,17 @@ class Settings(BaseSettings):
     NEXTGEN_S3_BUCKET_NAME: str
     NEXTGEN_AWS_ACCESS_KEY_ID: str
     NEXTGEN_AWS_SECRET_ACCESS_KEY: str
+
+    MIRROR_DATABASE_USER: str
+    MIRROR_DATABASE_PSWD: str
+    MIRROR_DATABASE_HOST: str
+    MIRROR_DATABASE_PORT: int
+    MIRROR_DATABASE_NAME: str
+
+    MIRROR_S3_ENDPOINT_URL: Optional[str]
+    MIRROR_S3_BUCKET_NAME: str
+    MIRROR_AWS_ACCESS_KEY_ID: str
+    MIRROR_AWS_SECRET_ACCESS_KEY: str
 
     AUTH0_DOMAIN: str
     AUTH0_AUDIENCE: str

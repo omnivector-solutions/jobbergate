@@ -11,7 +11,7 @@ services:
       - jobbergate-net
     volumes:
       - ./jobbergate-api/jobbergate_api:/app/jobbergate_api
-    command: uvicorn jobbergate_api.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
+    command: uvicorn jobbergate_api.main:app --reload --workers 1 --host 0.0.0.0 --port 5000
     environment:
       - DATABASE_HOST=${NEXTGEN_DATABASE_HOST:-nextgen-db}
       - DATABASE_USER=${NEXTGEN_DATABASE_USER:-nextgen}
@@ -25,7 +25,7 @@ services:
       - ARMASEC_AUDIENCE=${ARMASEC_AUDIENCE}
       - ARMASEC_DEBUG=${ARMASEC_DEBUG}
     ports:
-      - 8000:8000
+      - 5000:5000
     depends_on:
       - nextgen-db
 
@@ -35,7 +35,7 @@ services:
     networks:
       - jobbergate-net
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - nextgen_postgres_data:/var/lib/postgresql/data/
     environment:
       - POSTGRES_PASSWORD=${NEXTGEN_DATABASE_PSWD:-nextgen}
       - POSTGRES_USER=${NEXTGEN_DATABASE_USER:-nextgen}
@@ -43,12 +43,12 @@ services:
     ports:
       - 5432:5432
 
-  minio:
+  nextgen-minio:
     image: minio/minio
     networks:
       - jobbergate-net
     volumes:
-      - minio_data:/data
+      - nextgen_minio_data:/data
     ports:
       - 9000:9000
       - 9001:9001
@@ -57,17 +57,39 @@ services:
       - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY:-FAKE_SECRET_ACCESS_KEY}
     command: ["server", "--compat", "--console-address", ':9001', "/data"]
 
-  adminer:
-    image: adminer
+  mirror-db:
+    image: postgres
+    restart: always
     networks:
       - jobbergate-net
-    restart: always
+    volumes:
+      - mirror_postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_PASSWORD=${NEXTGEN_DATABASE_PSWD:-nextgen}
+      - POSTGRES_USER=${NEXTGEN_DATABASE_USER:-nextgen}
+      - POSTGRES_DB=${NEXTGEN_DATABASE_NAME:-nextgen}
     ports:
-      - 8080:8080
+      - 5433:5432
+
+  mirror-minio:
+    image: minio/minio
+    networks:
+      - jobbergate-net
+    volumes:
+      - mirror_minio_data:/data
+    ports:
+      - 9002:9000
+      - 9003:9001
+    environment:
+      - MINIO_ROOT_USER=${AWS_ACCESS_KEY_ID:-FAKE_ACCESS_KEY_ID}
+      - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY:-FAKE_SECRET_ACCESS_KEY}
+    command: ["server", "--compat", "--console-address", ':9001', "/data"]
 
 volumes:
-    postgres_data:
-    minio_data:
+    nextgen_postgres_data:
+    nextgen_minio_data:
+    mirror_postgres_data:
+    mirror_minio_data:
 
 networks:
   jobbergate-net:

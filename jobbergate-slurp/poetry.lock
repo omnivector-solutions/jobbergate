@@ -16,6 +16,14 @@ test = ["coverage[toml] (>=4.5)", "hypothesis (>=4.0)", "pytest (>=6.0)", "pytes
 trio = ["trio (>=0.16)"]
 
 [[package]]
+name = "auto-name-enum"
+version = "1.0.2"
+description = "String-based Enum class that automatically assigns values"
+category = "main"
+optional = false
+python-versions = ">=3.6,<4.0"
+
+[[package]]
 name = "backports.zoneinfo"
 version = "0.2.1"
 description = "Backport of the standard library zoneinfo module"
@@ -535,12 +543,16 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "452d4855cd0cc28b1a27723cdfa93a1d6ff68382770a284273edb5dd988fbda4"
+content-hash = "8ead2f7325c3bfcfeabdeb86c9954dd2d71a1210a7af8b0f84d72da621edc620"
 
 [metadata.files]
 anyio = [
     {file = "anyio-3.3.4-py3-none-any.whl", hash = "sha256:4fd09a25ab7fa01d34512b7249e366cd10358cdafc95022c7ff8c8f8a5026d66"},
     {file = "anyio-3.3.4.tar.gz", hash = "sha256:67da67b5b21f96b9d3d65daa6ea99f5d5282cb09f50eb4456f8fb51dffefc3ff"},
+]
+auto-name-enum = [
+    {file = "auto-name-enum-1.0.2.tar.gz", hash = "sha256:020e7bde8f36a0f0f7ea60a5192e3e3234244620c7d67aa751702f3c4520ecec"},
+    {file = "auto_name_enum-1.0.2-py3-none-any.whl", hash = "sha256:559057cae30801490fe782d822c42f95326a5672bab0b77fb3ab8dc95c18bd68"},
 ]
 "backports.zoneinfo" = [
     {file = "backports.zoneinfo-0.2.1-cp36-cp36m-macosx_10_14_x86_64.whl", hash = "sha256:da6013fd84a690242c310d77ddb8441a559e9cb3d3d59ebac9aca1a57b2e18bc"},

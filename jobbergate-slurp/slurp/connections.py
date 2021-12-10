@@ -1,29 +1,28 @@
 """
-Methods for creating connections to legacy and nextgen databases.
+Methods for creating connections to databases.
 """
 
-from psycopg import connect
-from psycopg.rows import dict_row
 from contextlib import contextmanager
 
 from loguru import logger
+from psycopg import connect
+from psycopg.rows import dict_row
 
-from slurp.config import settings
+from slurp.config import settings, DatabaseEnv
 
 
-def build_url(is_legacy=False):
+def build_url(db_env: DatabaseEnv = DatabaseEnv.NEXTGEN):
     """
-    Builds a postgres uri for either legacy or nextgen databases based on settings.
+    Builds a postgres uri for the specified environment.
     """
-    env_prefix = 'NEXTGEN' if not is_legacy else 'LEGACY'
     keys = ('user', 'pswd', 'host', 'port', 'name')
     return "postgresql://{user}:{pswd}@{host}:{port}/{name}".format(
-        **{k: getattr(settings, f'{env_prefix}_DATABASE_{k.upper()}') for k in keys}
+        **{k: getattr(settings, f'{db_env}_DATABASE_{k.upper()}') for k in keys}
     )
 
 
 @contextmanager
-def db(is_legacy=False):
+def db(db_env: DatabaseEnv = DatabaseEnv.NEXTGEN):
     """
     Creates a connections to the database.
 
@@ -31,8 +30,8 @@ def db(is_legacy=False):
     Legacy connections will roll-back before close as they are always read-only.
     Nextgen connections will be committed before close unless there is an error.
     """
-    database_url = build_url(is_legacy=is_legacy)
-    logger.debug(f"Starting a connection with {database_url}")
+    database_url = build_url(db_env)
+    logger.debug(f"Starting a connection for {db_env} environment with {database_url}")
     with connect(database_url, row_factory=dict_row) as connection:
         try:
             logger.debug(f"Creating cursor for {database_url}")
@@ -40,7 +39,7 @@ def db(is_legacy=False):
                 yield cursor
 
             logger.debug(f"Finalizing transaction for {database_url}")
-            if not is_legacy:
+            if not db_env == DatabaseEnv.LEGACY:
                 logger.debug(f"Committed transaction for {database_url}")
                 connection.commit()
             else:

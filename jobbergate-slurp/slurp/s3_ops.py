@@ -4,9 +4,10 @@ Provides a convenience class for managing calls to S3.
 import re
 
 import boto3
+import snick
 from loguru import logger
 
-from slurp.config import settings
+from slurp.config import settings, DatabaseEnv
 from slurp.exceptions import SlurpException
 
 
@@ -17,30 +18,18 @@ class S3Manager:
     provide the mappings for buckets and keys.
     """
 
-    def __init__(self, is_legacy=False):
-        self.is_legacy = is_legacy
-        self.bucket_name = (
-            settings.LEGACY_S3_BUCKET_NAME if is_legacy
-            else settings.NEXTGEN_S3_BUCKET_NAME
-        )
+    def __init__(self, db_env=DatabaseEnv.NEXTGEN):
+        self.db_env = db_env
+        self.bucket_name = self.get_env("S3_BUCKET_NAME")
         self.key_template = (
             f"jobbergate-resources/{{owner_id}}/applications/{{app_id}}/jobbergate.tar.gz"
-            if is_legacy
+            if db_env is DatabaseEnv.LEGACY
             else f"applications/{{app_id}}/jobbergate.tar.gz"
         )
 
-        self.url = (
-            settings.LEGACY_S3_ENDPOINT_URL if is_legacy
-            else settings.NEXTGEN_S3_ENDPOINT_URL
-        )
-        access_key_id = (
-            settings.LEGACY_AWS_ACCESS_KEY_ID if is_legacy
-            else settings.NEXTGEN_AWS_ACCESS_KEY_ID
-        )
-        secret_access_key = (
-            settings.LEGACY_AWS_SECRET_ACCESS_KEY if is_legacy
-            else settings.NEXTGEN_AWS_SECRET_ACCESS_KEY
-        )
+        self.url = self.get_env("S3_ENDPOINT_URL")
+        access_key_id = self.get_env("AWS_ACCESS_KEY_ID")
+        secret_access_key = self.get_env("AWS_SECRET_ACCESS_KEY")
         self.s3_client = boto3.client(
             "s3",
             endpoint_url=self.url,
@@ -48,6 +37,15 @@ class S3Manager:
             aws_secret_access_key=secret_access_key,
 
         )
+
+    def get_env(self, env_suffix):
+        key = f"{self.db_env}_{env_suffix}"
+        SlurpException.require_condition(
+            key in settings.schema()["properties"].keys(),
+            f"Trying to access unknown setting {key}",
+        )
+        return getattr(settings, key)
+
 
     def get_key(self, app_id, owner_id=None):
         """
@@ -90,7 +88,7 @@ class S3Manager:
         Ensure that the bucket exists. Skip creation if it alreayd exists.
         """
         SlurpException.require_condition(
-            not self.is_legacy,
+            self.db_env is not DatabaseEnv.LEGACY,
             "Cannot create legacy bucket",
         )
         logger.debug(f"Ensuring bucket {self.bucket_name} exists at {self.url}")
@@ -109,7 +107,7 @@ class S3Manager:
         """
         logger.debug(f"Clearing bucket {self.bucket_name} in {self.url}")
         SlurpException.require_condition(
-            not self.is_legacy,
+            self.db_env is not DatabaseEnv.LEGACY,
             "Cannot clear legacy bucket",
         )
         with SlurpException.handle_errors(
@@ -122,7 +120,7 @@ class S3Manager:
         logger.debug("Finished clearing bucket")
 
 
-def transfer_s3(legacy_s3man, nextgen_s3man, applications_map):
+def transfer_s3(source_s3man, target_s3man, applications_map=None):
     """
     Transfer data from legacy s3 bucket to nextgen s3 bucket.
 
@@ -131,24 +129,36 @@ def transfer_s3(legacy_s3man, nextgen_s3man, applications_map):
     the object. Otherwise put the object into the nextgen s3 bucket with the application
     id mapped to the appropriate nextgen application.
     """
-    logger.debug("Transfering S3 data from legacy to nextgen store")
-    nextgen_s3man.ensure_bucket()
+    SlurpException.require_condition(
+        target_s3man.db_env is not DatabaseEnv.LEGACY,
+        "Cannot transfer to legacy S3",
+    )
+    logger.debug(
+        snick.unwrap(
+            f"""
+            Transfering S3 data from {source_s3man.db_env}
+            to {target_s3man.db_env} store")
+            """
+        )
+    )
+    target_s3man.ensure_bucket()
     bad_pattern_skips = 0
     missing_id_skips = 0
     successful_transfers = 0
-    for legacy_key in legacy_s3man.list_keys():
-        match = re.search(r'applications/(\d+)', legacy_key)
+    mapper = lambda x: applications_map.get(int(x)) if applications_map else lambda x: x
+    for source_key in source_s3man.list_keys():
+        match = re.search(r'applications/(\d+)', source_key)
         if not match:
             bad_pattern_skips += 1
             continue
-        legacy_application_id = match.group(1)
-        nextgen_application_id = applications_map.get(int(legacy_application_id))
-        if not nextgen_application_id:
+        source_application_id = match.group(1)
+        target_application_id = mapper(source_application_id)
+        if not target_application_id:
             missing_id_skips += 1
             continue
-        legacy_obj = legacy_s3man.get(legacy_key)
-        nextgen_key = nextgen_s3man.get_key(nextgen_application_id)
-        nextgen_s3man.put(nextgen_key, legacy_obj)
+        target_obj = source_s3man.get(source_key)
+        target_key = target_s3man.get_key(target_application_id)
+        target_s3man.put(target_key, target_obj)
         successful_transfers += 1
     logger.debug(f"Skipped {bad_pattern_skips} objects due to unparsable key")
     logger.debug(f"Skipped {missing_id_skips} objects due to missing application_id")
