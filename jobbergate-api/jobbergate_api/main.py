@@ -1,7 +1,6 @@
 """
 Main file to startup the fastapi server
 """
-import ast
 import sys
 
 import sentry_sdk
@@ -18,11 +17,7 @@ from jobbergate_api.config import settings
 
 subapp = FastAPI()
 subapp.add_middleware(
-    CORSMiddleware,
-    allow_origins=[str(origin) for origin in ast.literal_eval(settings.BACKEND_CORS_ORIGINS)],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"],
 )
 
 if settings.SENTRY_DSN:

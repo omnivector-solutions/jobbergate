@@ -34,9 +34,6 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: Optional[str]
     AWS_SECRET_ACCESS_KEY: Optional[str]
 
-    # BACKEND_CORS_ORIGINS example: "['https://example1.com', 'https://example2.com']"
-    BACKEND_CORS_ORIGINS: str = Field("[]")
-
     # Security Settings. For details, see https://github.com/omnivector-solutions/armsec
     ARMASEC_DOMAIN: str
     ARMASEC_AUDIENCE: Optional[HttpUrl]
