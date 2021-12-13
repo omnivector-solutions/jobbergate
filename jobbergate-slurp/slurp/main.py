@@ -22,11 +22,11 @@ app = typer.Typer()
 
 
 @app.command()
-def login(is_legacy: bool = False):
+def login(db_env: DatabaseEnv = typer.Argument(DatabaseEnv.NEXTGEN)):
     """
     Runs an interactive postgres shell connected to either legacy or nextgen db.
     """
-    subprocess.run(["pgcli", build_url(is_legacy=is_legacy)])
+    subprocess.run(["pgcli", build_url(db_env=db_env)])
 
 
 @app.command()
