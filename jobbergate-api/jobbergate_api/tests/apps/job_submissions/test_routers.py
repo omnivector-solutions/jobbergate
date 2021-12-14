@@ -18,7 +18,7 @@ from jobbergate_api.tests.apps.conftest import insert_objects
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_create_job_submission(
+async def test_create_job_submission__success(
     job_script_data, application_data, client, job_submission_data, inject_security_header,
 ):
     """

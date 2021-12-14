@@ -17,6 +17,16 @@ from jobbergate_api.storage import database
 
 router = APIRouter()
 
+async def _select_by_id(job_submission_id: int) -> JobSubmission:
+    query = job_submissions_table.select().where(job_submissions_table.c.id == job_submission_id)
+    raw_job_submission = await database.fetch_one(query)
+
+    if not raw_job_submission:
+        raise HTTPException(
+            status_code=404, detail=f"JobSubmission with id={job_submission_id} not found.",
+        )
+    return JobSubmission.parse_obj(raw_job_submission)
+
 
 @router.post("/job-submissions/", status_code=201, description="Endpoint for job_submission creation")
 async def job_submission_create(
@@ -45,11 +55,10 @@ async def job_submission_create(
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=422, detail=str(e))
-    return JobSubmission(
-        id=job_submission_created_id,
-        job_submission_owner_email=armada_claims.user_email,
-        **job_submission.dict(),
-    )
+
+    # We need to select the newly created job_submission so that we can populate any default values
+    job_submission = await _select_by_id(job_submission_created_id)
+    return job_submission
 
 
 @router.get(
@@ -62,14 +71,7 @@ async def job_submission_get(job_submission_id: int = Query(...)):
     """
     Return the job_submission given it's id.
     """
-    query = job_submissions_table.select().where(job_submissions_table.c.id == job_submission_id)
-    raw_job_submission = await database.fetch_one(query)
-
-    if not raw_job_submission:
-        raise HTTPException(
-            status_code=404, detail=f"JobSubmission with id={job_submission_id} not found.",
-        )
-    job_submission = JobSubmission.parse_obj(raw_job_submission)
+    job_submission = await _select_by_id(job_submission_id)
     return job_submission
 
 
