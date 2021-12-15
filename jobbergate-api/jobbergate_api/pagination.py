@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from pydantic.generics import GenericModel
 from sqlalchemy import func, select
 
-from jobbergateapi2.storage import database
+from jobbergate_api.storage import database
 
 
 class Pagination(BaseModel):

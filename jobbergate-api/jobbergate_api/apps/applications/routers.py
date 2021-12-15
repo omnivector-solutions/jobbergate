@@ -12,7 +12,7 @@ from sqlalchemy import not_
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import Application, ApplicationRequest
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
-from jobbergate_api.pagination import Pagination, package_response, Response
+from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.s3_manager import S3Manager
 from jobbergate_api.security import ArmadaClaims, guard
 from jobbergate_api.storage import database

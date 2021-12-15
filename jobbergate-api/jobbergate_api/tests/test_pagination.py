@@ -4,9 +4,9 @@ Test the pagination.
 import pytest
 from pydantic import ValidationError
 
-from jobbergate_api.pagination import Pagination, package_response
-from jobbergate_api.apps.applications.schemas import Application
 from jobbergate_api.apps.applications.models import applications_table
+from jobbergate_api.apps.applications.schemas import Application
+from jobbergate_api.pagination import Pagination, package_response
 from jobbergate_api.storage import database
 from jobbergate_api.tests.apps.conftest import insert_objects
 
@@ -54,7 +54,8 @@ async def test_package_response__without_pagination():
         application_config="the configuration is here",
     )
     applications = [
-        Application(id=i, application_owner_id=f"owner{i}", **application_data) for i in range(1, 6)
+        Application(id=i, application_owner_email=f"owner{i}@org.com", **application_data)
+        for i in range(1, 6)
     ]
     await insert_objects(applications, applications_table)
 
@@ -92,7 +93,8 @@ async def test_package_response__with_pagination(page, per_page, total):
         application_config="the configuration is here",
     )
     applications = [
-        Application(id=i, application_owner_id=f"owner{i}", **application_data) for i in range(1, total + 1)
+        Application(id=i, application_owner_email=f"owner{i}@org.com", **application_data)
+        for i in range(1, total + 1)
     ]
     await insert_objects(applications, applications_table)
 

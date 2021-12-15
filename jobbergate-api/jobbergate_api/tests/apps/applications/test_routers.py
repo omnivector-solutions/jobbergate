@@ -357,9 +357,9 @@ async def test_get_applications__with_user_param(client, application_data, injec
     applications in the response
     """
     applications = [
-        Application(id=1, identifier="app1", application_owner_email=999, **application_data),
-        Application(id=2, identifier="app2", application_owner_email=999, **application_data),
-        Application(id=3, identifier="app3", application_owner_email=999, **application_data),
+        Application(id=1, identifier="app1", application_owner_email="owner1@org.com", **application_data),
+        Application(id=2, identifier="app2", application_owner_email="owner999@org.com", **application_data),
+        Application(id=3, identifier="app3", application_owner_email="owner1@org.com", **application_data),
     ]
     await insert_objects(applications, applications_table)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -400,7 +400,7 @@ async def test_get_applications__with_all_param(client, application_data, inject
     """
     applications = [
         Application(id=1, identifier="app1", application_owner_email="owner1@org.com", **application_data),
-        Application(id=2, identifier=None,   application_owner_email="owner1@org.com", **application_data),
+        Application(id=2, identifier=None, application_owner_email="owner1@org.com", **application_data),
         Application(id=3, identifier="app3", application_owner_email="owner999@org.com", **application_data),
     ]
     await insert_objects(applications, applications_table)

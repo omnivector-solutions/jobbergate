@@ -11,7 +11,7 @@ from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.apps.job_submissions.schemas import JobSubmission, JobSubmissionRequest
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
-from jobbergate_api.pagination import Pagination, package_response, Response
+from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.security import ArmadaClaims, guard
 from jobbergate_api.storage import database
 
