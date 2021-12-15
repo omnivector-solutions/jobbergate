@@ -28,9 +28,8 @@ async def test_create_application(s3man_client_mock, application_data, client, i
     file_mock = mock.MagicMock(wraps=StringIO("test"))
 
     inject_security_header("owner1@org.com", "jobbergate:applications:create")
-    response = await client.post(
-        "/jobbergate/applications/", data=application_data, files={"upload_file": file_mock}
-    )
+    data = dict(application_identifier="test-identifier", **application_data,)
+    response = await client.post("/jobbergate/applications/", data=data, files={"upload_file": file_mock})
     assert response.status_code == status.HTTP_201_CREATED
     s3man.s3_client.put_object.assert_called_once()
 
@@ -42,6 +41,7 @@ async def test_create_application(s3man_client_mock, application_data, client, i
 
     assert application is not None
     assert application.application_name == application_data["application_name"]
+    assert application.application_identifier == "test-identifier"
     assert application.application_owner_email == "owner1@org.com"
     assert application.application_config == application_data["application_config"]
     assert application.application_file == application_data["application_file"]
@@ -299,9 +299,18 @@ async def test_get_applications__no_params(client, application_data, inject_secu
     only applications owned by the user making the request.
     """
     applications = [
-        Application(id=1, identifier="app1", application_owner_email="owner1@org.com", **application_data),
-        Application(id=2, identifier="app2", application_owner_email="owner1@org.com", **application_data),
-        Application(id=3, identifier="app3", application_owner_email="owner999@org.com", **application_data),
+        Application(
+            id=1, application_identifier="app1", application_owner_email="owner1@org.com", **application_data
+        ),
+        Application(
+            id=2, application_identifier="app2", application_owner_email="owner1@org.com", **application_data
+        ),
+        Application(
+            id=3,
+            application_identifier="app3",
+            application_owner_email="owner999@org.com",
+            **application_data,
+        ),
     ]
     await insert_objects(applications, applications_table)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -331,9 +340,18 @@ async def test_get_application___bad_permission(client, application_data, inject
     status code in the response.
     """
     applications = [
-        Application(id=1, application_owner_email="owner1@org.com", **application_data),
-        Application(id=2, application_owner_email="owner1@org.com", **application_data),
-        Application(id=3, application_owner_email="owner999@org.com", **application_data),
+        Application(
+            id=1, application_identifier="app1", application_owner_email="owner1@org.com", **application_data
+        ),
+        Application(
+            id=2, application_identifier="app2", application_owner_email="owner1@org.com", **application_data
+        ),
+        Application(
+            id=3,
+            application_identifier="app3",
+            application_owner_email="owner999@org.com",
+            **application_data,
+        ),
     ]
     await insert_objects(applications, applications_table)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -357,9 +375,18 @@ async def test_get_applications__with_user_param(client, application_data, injec
     applications in the response
     """
     applications = [
-        Application(id=1, identifier="app1", application_owner_email="owner1@org.com", **application_data),
-        Application(id=2, identifier="app2", application_owner_email="owner999@org.com", **application_data),
-        Application(id=3, identifier="app3", application_owner_email="owner1@org.com", **application_data),
+        Application(
+            id=1, application_identifier="app1", application_owner_email="owner1@org.com", **application_data
+        ),
+        Application(
+            id=2,
+            application_identifier="app2",
+            application_owner_email="owner999@org.com",
+            **application_data,
+        ),
+        Application(
+            id=3, application_identifier="app3", application_owner_email="owner1@org.com", **application_data
+        ),
     ]
     await insert_objects(applications, applications_table)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -399,9 +426,18 @@ async def test_get_applications__with_all_param(client, application_data, inject
     applications.
     """
     applications = [
-        Application(id=1, identifier="app1", application_owner_email="owner1@org.com", **application_data),
-        Application(id=2, identifier=None, application_owner_email="owner1@org.com", **application_data),
-        Application(id=3, identifier="app3", application_owner_email="owner999@org.com", **application_data),
+        Application(
+            id=1, application_identifier="app1", application_owner_email="owner1@org.com", **application_data
+        ),
+        Application(
+            id=2, application_identifier=None, application_owner_email="owner1@org.com", **application_data
+        ),
+        Application(
+            id=3,
+            application_identifier="app3",
+            application_owner_email="owner999@org.com",
+            **application_data,
+        ),
     ]
     await insert_objects(applications, applications_table)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -441,11 +477,21 @@ async def test_get_applications__with_pagination(client, application_data, injec
     We show this by creating three applications and assert that the response is correctly paginated.
     """
     applications = [
-        Application(id=1, identifier="app1", application_owner_email="owner1@org.com", **application_data),
-        Application(id=2, identifier="app2", application_owner_email="owner1@org.com", **application_data),
-        Application(id=3, identifier="app3", application_owner_email="owner1@org.com", **application_data),
-        Application(id=4, identifier="app4", application_owner_email="owner1@org.com", **application_data),
-        Application(id=5, identifier="app5", application_owner_email="owner1@org.com", **application_data),
+        Application(
+            id=1, application_identifier="app1", application_owner_email="owner1@org.com", **application_data
+        ),
+        Application(
+            id=2, application_identifier="app2", application_owner_email="owner1@org.com", **application_data
+        ),
+        Application(
+            id=3, application_identifier="app3", application_owner_email="owner1@org.com", **application_data
+        ),
+        Application(
+            id=4, application_identifier="app4", application_owner_email="owner1@org.com", **application_data
+        ),
+        Application(
+            id=5, application_identifier="app5", application_owner_email="owner1@org.com", **application_data
+        ),
     ]
     await insert_objects(applications, applications_table)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -513,6 +559,7 @@ async def test_update_application(s3man_client_mock, client, application_data, i
 
     inject_security_header("owner1@org.com", "jobbergate:applications:update")
     application_data["application_name"] = "new_name"
+    application_data["application_identifier"] = "new_identifier"
     application_data["application_description"] = "new_description"
     response = await client.put(
         "/jobbergate/applications/1", data=application_data, files={"upload_file": file_mock}
@@ -521,6 +568,7 @@ async def test_update_application(s3man_client_mock, client, application_data, i
 
     data = response.json()
     assert data["application_name"] == application_data["application_name"]
+    assert data["application_identifier"] == application_data["application_identifier"]
     assert data["application_description"] == application_data["application_description"]
 
     s3man.s3_client.put_object.assert_called_once()
@@ -530,6 +578,7 @@ async def test_update_application(s3man_client_mock, client, application_data, i
 
     assert application is not None
     assert application.application_name == application_data["application_name"]
+    assert application.application_identifier == application_data["application_identifier"]
     assert application.application_owner_email == "owner1@org.com"
     assert application.application_config == application_data["application_config"]
     assert application.application_file == application_data["application_file"]
