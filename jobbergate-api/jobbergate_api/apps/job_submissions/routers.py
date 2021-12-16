@@ -2,7 +2,7 @@
 Router for the JobSubmission resource.
 """
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, status
@@ -11,7 +11,7 @@ from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.apps.job_submissions.schemas import JobSubmission, JobSubmissionRequest
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
-from jobbergate_api.pagination import Pagination
+from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.security import ArmadaClaims, guard
 from jobbergate_api.storage import database
 
@@ -74,10 +74,12 @@ async def job_submission_get(job_submission_id: int = Query(...)):
 
 
 @router.get(
-    "/job-submissions/", description="Endpoint to list job_submissions", response_model=List[JobSubmission]
+    "/job-submissions/",
+    description="Endpoint to list job_submissions",
+    response_model=Response[JobSubmission],
 )
 async def job_submission_list(
-    p: Pagination = Depends(),
+    pagination: Pagination = Depends(),
     all: Optional[bool] = Query(None),
     token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:job-submissions:read")),
 ):
@@ -88,11 +90,7 @@ async def job_submission_list(
     query = job_submissions_table.select()
     if not all:
         query = query.where(job_submissions_table.c.job_submission_owner_email == armada_claims.user_email)
-    query = query.limit(p.limit).offset(p.skip)
-    raw_job_submissions = await database.fetch_all(query)
-    job_submissions = [JobSubmission.parse_obj(x) for x in raw_job_submissions]
-
-    return job_submissions
+    return await package_response(JobSubmission, query, pagination)
 
 
 @router.delete(

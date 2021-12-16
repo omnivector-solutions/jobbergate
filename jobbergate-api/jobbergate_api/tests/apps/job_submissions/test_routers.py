@@ -168,7 +168,7 @@ async def test_get_job_submission_by_id_invalid(client, inject_security_header):
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_list_job_submission_from_user(
+async def test_get_job_submissions__no_param(
     client, application_data, job_submission_data, job_script_data, inject_security_header,
 ):
     """
@@ -199,14 +199,17 @@ async def test_list_job_submission_from_user(
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert len(data) == 2
-    assert data[0]["id"] == 1
-    assert data[1]["id"] == 3
+    results = data.get("results")
+    assert results
+    assert [d["id"] for d in results] == [1, 3]
+
+    pagination = data.get("pagination")
+    assert pagination == dict(total=2, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_list_job_submission_bad_permission(
+async def test_get_job_submissions__bad_permission(
     client, application_data, job_submission_data, job_script_data, inject_security_header,
 ):
     """
@@ -238,7 +241,7 @@ async def test_list_job_submission_bad_permission(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_list_job_submission_from_user_empty(
+async def test_get_job_submission__excludes_other_owners(
     client, application_data, job_submission_data, job_script_data, inject_security_header,
 ):
     """
@@ -269,12 +272,17 @@ async def test_list_job_submission_from_user_empty(
     response = await client.get("/jobbergate/job-submissions/")
     assert response.status_code == status.HTTP_200_OK
 
-    assert len(response.json()) == 0
+    data = response.json()
+    results = data.get("results")
+    assert results == []
+
+    pagination = data.get("pagination")
+    assert pagination == dict(total=0, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_list_job_submission_all(
+async def test_get_job_submissions__with_all_param(
     client, application_data, job_submission_data, job_script_data, inject_security_header,
 ):
     """
@@ -306,10 +314,12 @@ async def test_list_job_submission_all(
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert len(data) == 3
-    assert data[0]["id"] == 1
-    assert data[1]["id"] == 2
-    assert data[2]["id"] == 3
+    results = data.get("results")
+    assert results
+    assert [d["id"] for d in results] == [1, 2, 3]
+
+    pagination = data.get("pagination")
+    assert pagination == dict(total=3, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
@@ -333,24 +343,47 @@ async def test_list_job_submission_pagination(
         JobSubmission(id=1, job_submission_owner_email="owner1@org.com", **job_submission_data),
         JobSubmission(id=2, job_submission_owner_email="owner1@org.com", **job_submission_data),
         JobSubmission(id=3, job_submission_owner_email="owner1@org.com", **job_submission_data),
+        JobSubmission(id=4, job_submission_owner_email="owner1@org.com", **job_submission_data),
+        JobSubmission(id=5, job_submission_owner_email="owner1@org.com", **job_submission_data),
     ]
     await insert_objects(job_submissions, job_submissions_table)
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
-    assert count[0][0] == 3
+    assert count[0][0] == 5
 
     inject_security_header("owner1@org.com", "jobbergate:job-submissions:read")
-    response = await client.get("/jobbergate/job-submissions/?limit=1&skip=0")
+    response = await client.get("/jobbergate/job-submissions/?start=0&limit=1")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert [d["id"] for d in data] == [1]
+    results = data.get("results")
+    assert results
+    assert [d["id"] for d in results] == [1]
 
-    response = await client.get("/jobbergate/job-submissions/?limit=2&skip=1")
+    pagination = data.get("pagination")
+    assert pagination == dict(total=5, start=0, limit=1,)
+
+    response = await client.get("/jobbergate/job-submissions/?start=1&limit=2")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert [d["id"] for d in data] == [2, 3]
+    results = data.get("results")
+    assert results
+    assert [d["id"] for d in results] == [3, 4]
+
+    pagination = data.get("pagination")
+    assert pagination == dict(total=5, start=1, limit=2,)
+
+    response = await client.get("/jobbergate/job-submissions/?start=2&limit=2")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    results = data.get("results")
+    assert results
+    assert [d["id"] for d in results] == [5]
+
+    pagination = data.get("pagination")
+    assert pagination == dict(total=5, start=2, limit=2)
 
 
 @pytest.mark.freeze_time

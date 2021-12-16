@@ -3,15 +3,16 @@ Router for the Application resource.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from sqlalchemy import not_
 
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import Application, ApplicationRequest
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
-from jobbergate_api.pagination import Pagination
+from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.s3_manager import S3Manager
 from jobbergate_api.security import ArmadaClaims, guard
 from jobbergate_api.storage import database
@@ -82,10 +83,11 @@ async def application_delete(
 
 
 @router.get(
-    "/applications/", description="Endpoint to list applications", response_model=List[Application],
+    "/applications/", description="Endpoint to list applications", response_model=Response[Application],
 )
 async def applications_list(
-    p: Pagination = Depends(),
+    pagination: Pagination = Depends(),
+    user: Optional[bool] = Query(None),
     all: Optional[bool] = Query(None),
     token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:applications:read")),
 ):
@@ -94,12 +96,11 @@ async def applications_list(
     """
     armada_claims = ArmadaClaims.from_token_payload(token_payload)
     query = applications_table.select()
-    if not all:
+    if user:
         query = query.where(applications_table.c.application_owner_email == armada_claims.user_email)
-    query = query.limit(p.limit).offset(p.skip)
-    raw_applications = await database.fetch_all(query)
-    applications = [Application.parse_obj(x) for x in raw_applications]
-    return applications
+    if all is None:
+        query = query.where(not_(applications_table.c.identifier.is_(None)))
+    return await package_response(Application, query, pagination)
 
 
 @router.get(
