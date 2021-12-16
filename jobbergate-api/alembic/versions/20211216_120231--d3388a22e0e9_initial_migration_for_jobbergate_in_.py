@@ -1,7 +1,7 @@
 """Initial migration for Jobbergate in Armada
 
 Revision ID: d3388a22e0e9
-Revises: 
+Revises:
 Create Date: 2021-12-16 12:02:31.989922
 
 """

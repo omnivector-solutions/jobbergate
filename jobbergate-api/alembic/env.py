@@ -4,9 +4,9 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from jobbergate_api.config import settings
-from jobbergate_api.apps.applications import models
-from jobbergate_api.apps.job_scripts import models
-from jobbergate_api.apps.job_submissions import models
+from jobbergate_api.apps.applications import models  # noqa # must be imported for metadata to work
+from jobbergate_api.apps.job_scripts import models  # noqa # must be imported for metadata to work
+from jobbergate_api.apps.job_submissions import models  # noqa # must be imported for metadata to work
 from jobbergate_api.metadata import metadata as jobbergate_api_metadata
 
 # this is the Alembic Config object, which provides
