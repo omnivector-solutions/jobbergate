@@ -203,8 +203,8 @@ async def test_get_job_submissions__no_param(
     assert results
     assert [d["id"] for d in results] == [1, 3]
 
-    metadata = data.get("metadata")
-    assert metadata == dict(total=2, page=None, per_page=None,)
+    pagination = data.get("pagination")
+    assert pagination == dict(total=2, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
@@ -276,8 +276,8 @@ async def test_get_job_submission__excludes_other_owners(
     results = data.get("results")
     assert results == []
 
-    metadata = data.get("metadata")
-    assert metadata == dict(total=0, page=None, per_page=None,)
+    pagination = data.get("pagination")
+    assert pagination == dict(total=0, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
@@ -318,8 +318,8 @@ async def test_get_job_submissions__with_all_param(
     assert results
     assert [d["id"] for d in results] == [1, 2, 3]
 
-    metadata = data.get("metadata")
-    assert metadata == dict(total=3, page=None, per_page=None,)
+    pagination = data.get("pagination")
+    assert pagination == dict(total=3, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
@@ -352,7 +352,7 @@ async def test_list_job_submission_pagination(
     assert count[0][0] == 5
 
     inject_security_header("owner1@org.com", "jobbergate:job-submissions:read")
-    response = await client.get("/jobbergate/job-submissions/?page=0&per_page=1")
+    response = await client.get("/jobbergate/job-submissions/?start=0&limit=1")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -360,10 +360,10 @@ async def test_list_job_submission_pagination(
     assert results
     assert [d["id"] for d in results] == [1]
 
-    metadata = data.get("metadata")
-    assert metadata == dict(total=5, page=0, per_page=1,)
+    pagination = data.get("pagination")
+    assert pagination == dict(total=5, start=0, limit=1,)
 
-    response = await client.get("/jobbergate/job-submissions/?page=1&per_page=2")
+    response = await client.get("/jobbergate/job-submissions/?start=1&limit=2")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -371,10 +371,10 @@ async def test_list_job_submission_pagination(
     assert results
     assert [d["id"] for d in results] == [3, 4]
 
-    metadata = data.get("metadata")
-    assert metadata == dict(total=5, page=1, per_page=2,)
+    pagination = data.get("pagination")
+    assert pagination == dict(total=5, start=1, limit=2,)
 
-    response = await client.get("/jobbergate/job-submissions/?page=2&per_page=2")
+    response = await client.get("/jobbergate/job-submissions/?start=2&limit=2")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -382,8 +382,8 @@ async def test_list_job_submission_pagination(
     assert results
     assert [d["id"] for d in results] == [5]
 
-    metadata = data.get("metadata")
-    assert metadata == dict(total=5, page=2, per_page=2,)
+    pagination = data.get("pagination")
+    assert pagination == dict(total=5, start=2, limit=2)
 
 
 @pytest.mark.freeze_time

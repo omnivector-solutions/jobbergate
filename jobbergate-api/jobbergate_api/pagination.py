@@ -16,34 +16,34 @@ class Pagination(BaseModel):
     Basic pagination class.
     """
 
-    page: Optional[int] = Field(
+    start: Optional[int] = Field(
         None,
         ge=0,
         description="""
-            The page offset for items.
-            The index for the first item is computed as index == page * per_page.
+            The starting page offset for items.
+            The index for the first item is computed as index == start * limit.
             Must be greater than or equal to 0.
         """,
     )
-    per_page: int = Field(
-        10, gt=0, description="Number of items to include per page. Must be greater than 0",
+    limit: int = Field(
+        10, gt=0, description="Limit of items to include per page. Must be greater than 0",
     )
 
     def dict(self):
         """
         Overrides default ``dict()`` behavior so that if ``page`` is None, all fields are omitted.
         """
-        return dict() if self.page is None else super().dict()
+        return dict() if self.start is None else super().dict()
 
 
-class ResponseMetadata(BaseModel):
+class ResponsePagination(BaseModel):
     """
     A metadata model that describes pagination info.
     """
 
     total: int
-    page: Optional[int]
-    per_page: Optional[int]
+    start: Optional[int]
+    limit: Optional[int]
 
 
 DataT = TypeVar("DataT")
@@ -57,7 +57,7 @@ class Response(GenericModel, Generic[DataT]):
     """
 
     results: List[DataT]
-    metadata: ResponseMetadata
+    pagination: ResponsePagination
 
 
 async def package_response(model, query, pagination: Pagination) -> Response:
@@ -70,21 +70,21 @@ async def package_response(model, query, pagination: Pagination) -> Response:
             "results": [result0, result1, ...resultN],
             "metadata": {
                 "total": N,
-                "page": i,
-                "per_page", n,
+                "start": i,
+                "limit", n,
             },
         }
 
-    If pagination.page is None, no pagination is performed
+    If pagination.start is None, no pagination is performed
     """
     # The explicit order_by removes any sorting added to the query for the total computation
     # total = await database.fetch_val(query.with_only_columns([func.count()]).order_by(None))
     count_query = select(func.count()).select_from(query.subquery())
     total = await database.fetch_val(query=count_query)
-    if pagination.page is not None:
-        query = query.limit(pagination.per_page).offset(pagination.page * pagination.per_page)
+    if pagination.start is not None:
+        query = query.limit(pagination.limit).offset(pagination.start * pagination.limit)
     raw_response = await database.fetch_all(query)
     return Response(
         results=[model.parse_obj(x) for x in raw_response],
-        metadata=ResponseMetadata(total=total, **pagination.dict()),
+        pagination=ResponsePagination(total=total, **pagination.dict()),
     )

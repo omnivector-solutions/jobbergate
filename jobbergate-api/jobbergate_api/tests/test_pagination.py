@@ -16,29 +16,29 @@ def test_init_fails_on_invalid_parameters():
     Tests that the parameters are valid or an exception will be raised.
     """
     with pytest.raises(ValidationError, match="ensure this value is greater than or equal to 0"):
-        Pagination(page=-1, per_page=1)
+        Pagination(start=-1, limit=1)
 
     with pytest.raises(ValidationError, match="ensure this value is greater than 0"):
-        Pagination(page=1, per_page=0)
+        Pagination(start=1, limit=0)
 
 
 def test_string_conversion():
     """
     Test the pagination as string.
     """
-    pagination = Pagination(page=13, per_page=21)
+    pagination = Pagination(start=13, limit=21)
 
-    assert str(pagination) == "page=13 per_page=21"
+    assert str(pagination) == "start=13 limit=21"
 
 
 def test_dict():
     """
     Test the dict() method on a pagination instance.
     """
-    pagination = Pagination(page=13, per_page=21)
-    assert pagination.dict() == dict(page=13, per_page=21)
+    pagination = Pagination(start=13, limit=21)
+    assert pagination.dict() == dict(start=13, limit=21)
 
-    pagination = Pagination(page=None, per_page=999)
+    pagination = Pagination(start=None, limit=999)
     assert pagination.dict() == dict()
 
 
@@ -69,19 +69,19 @@ async def test_package_response__without_pagination():
         assert isinstance(results[i], Application)
         assert results[i].id == i + 1
 
-    metadata = response.metadata
-    assert metadata
-    assert metadata.total == 5
-    assert metadata.page is None
-    assert metadata.per_page is None
+    pagination = response.pagination
+    assert pagination
+    assert pagination.total == 5
+    assert pagination.start is None
+    assert pagination.limit is None
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "page,per_page,total", [(0, 1, 1), (6, 2, 13), (2, 3, 10), (7, 2, 13)],
+    "start,limit,total", [(0, 1, 1), (6, 2, 13), (2, 3, 10), (7, 2, 13)],
 )
 @database.transaction(force_rollback=True)
-async def test_package_response__with_pagination(page, per_page, total):
+async def test_package_response__with_pagination(start, limit, total):
     """
     Test the package_response method with pagination.
 
@@ -99,19 +99,19 @@ async def test_package_response__with_pagination(page, per_page, total):
     await insert_objects(applications, applications_table)
 
     query = applications_table.select()
-    pagination = Pagination(page=page, per_page=per_page)
+    pagination = Pagination(start=start, limit=limit)
     response = await package_response(Application, query, pagination)
 
     results = response.results
     # Clamps the expected count at upper bound
-    expected_count = max(0, min(total - page * per_page, per_page))
+    expected_count = max(0, min(total - start * limit, limit))
     assert len(results) == expected_count
     for i in range(expected_count):
         assert isinstance(results[i], Application)
-        assert results[i].id == i + (page * per_page) + 1
+        assert results[i].id == i + (start * limit) + 1
 
-    metadata = response.metadata
-    assert metadata
-    assert metadata.total == total
-    assert metadata.page == page
-    assert metadata.per_page == per_page
+    pagination = response.pagination
+    assert pagination
+    assert pagination.total == total
+    assert pagination.start == start
+    assert pagination.limit == limit

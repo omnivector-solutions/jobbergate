@@ -316,8 +316,8 @@ async def test_get_applications__no_params(client, application_data, inject_secu
     assert results
     assert [d["id"] for d in results] == [1, 2, 3]
 
-    metadata = data.get("metadata")
-    assert metadata == dict(total=3, page=None, per_page=None,)
+    pagination = data.get("pagination")
+    assert pagination == dict(total=3, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
@@ -373,8 +373,8 @@ async def test_get_applications__with_user_param(client, application_data, injec
     results = data.get("results")
     assert [d["id"] for d in results] == [1, 2, 3]
 
-    metadata = data.get("metadata")
-    assert metadata == dict(total=3, page=None, per_page=None,)
+    pagination = data.get("pagination")
+    assert pagination == dict(total=3, start=None, limit=None,)
 
     response = await client.get("/jobbergate/applications?user=true")
     assert response.status_code == status.HTTP_200_OK
@@ -383,8 +383,8 @@ async def test_get_applications__with_user_param(client, application_data, injec
     results = data.get("results")
     assert [d["id"] for d in results] == [1, 3]
 
-    metadata = data.get("metadata")
-    assert metadata == dict(total=2, page=None, per_page=None,)
+    pagination = data.get("pagination")
+    assert pagination == dict(total=2, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
@@ -416,8 +416,8 @@ async def test_get_applications__with_all_param(client, application_data, inject
     results = data.get("results")
     assert [d["id"] for d in results] == [1, 3]
 
-    metadata = data.get("metadata")
-    assert metadata == dict(total=2, page=None, per_page=None,)
+    pagination = data.get("pagination")
+    assert pagination == dict(total=2, start=None, limit=None,)
 
     response = await client.get("/jobbergate/applications/?all=True")
     assert response.status_code == status.HTTP_200_OK
@@ -427,8 +427,8 @@ async def test_get_applications__with_all_param(client, application_data, inject
     assert results
     assert [d["id"] for d in results] == [1, 2, 3]
 
-    metadata = data.get("metadata")
-    assert metadata == dict(total=3, page=None, per_page=None,)
+    pagination = data.get("pagination")
+    assert pagination == dict(total=3, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
@@ -452,7 +452,7 @@ async def test_get_applications__with_pagination(client, application_data, injec
     assert count[0][0] == 5
 
     inject_security_header("owner1@org.com", "jobbergate:applications:read")
-    response = await client.get("/jobbergate/applications/?page=0&per_page=1")
+    response = await client.get("/jobbergate/applications/?start=0&limit=1")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -460,10 +460,10 @@ async def test_get_applications__with_pagination(client, application_data, injec
     assert results
     assert [d["id"] for d in results] == [1]
 
-    metadata = data.get("metadata")
-    assert metadata == dict(total=5, page=0, per_page=1,)
+    pagination = data.get("pagination")
+    assert pagination == dict(total=5, start=0, limit=1,)
 
-    response = await client.get("/jobbergate/applications/?page=1&per_page=2")
+    response = await client.get("/jobbergate/applications/?start=1&limit=2")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -471,10 +471,10 @@ async def test_get_applications__with_pagination(client, application_data, injec
     assert results
     assert [d["id"] for d in results] == [3, 4]
 
-    metadata = data.get("metadata")
-    assert metadata == dict(total=5, page=1, per_page=2,)
+    pagination = data.get("pagination")
+    assert pagination == dict(total=5, start=1, limit=2,)
 
-    response = await client.get("/jobbergate/applications/?page=2&per_page=2")
+    response = await client.get("/jobbergate/applications/?start=2&limit=2")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -482,8 +482,8 @@ async def test_get_applications__with_pagination(client, application_data, injec
     assert results
     assert [d["id"] for d in results] == [5]
 
-    metadata = data.get("metadata")
-    assert metadata == dict(total=5, page=2, per_page=2,)
+    pagination = data.get("pagination")
+    assert pagination == dict(total=5, start=2, limit=2,)
 
 
 @pytest.mark.asyncio
