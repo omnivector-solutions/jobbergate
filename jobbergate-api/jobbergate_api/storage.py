@@ -2,7 +2,6 @@
 Persistent data storage
 """
 import contextlib
-import json
 import re
 
 import asyncpg

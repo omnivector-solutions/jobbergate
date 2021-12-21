@@ -247,7 +247,8 @@ async def test_delete_application__fk_error(
         "jobbergate_api.storage.database.execute",
         side_effect=asyncpg.exceptions.ForeignKeyViolationError(
             """
-            update or delete on table "applications" violates foreign key constraint "job_scripts_application_id_fkey" on table "job_scripts"
+            update or delete on table "applications" violates foreign key constraint
+            "job_scripts_application_id_fkey" on table "job_scripts"
             DETAIL:  Key (id)=(1) is still referenced from table "job_scripts".
             """
         ),
