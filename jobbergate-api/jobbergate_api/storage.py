@@ -25,7 +25,6 @@ def create_all_tables():
     metadata.create_all(engine)
 
 
-
 @contextlib.contextmanager
 def handle_fk_error():
     """
@@ -34,7 +33,9 @@ def handle_fk_error():
     try:
         yield
     except asyncpg.exceptions.ForeignKeyViolationError as err:
-        FK_DETAIL_RX = r"DETAIL:  Key \(id\)=\((?P<pk_id>\d+)\) is still referenced from table \"(?P<table>\w+)\""
+        FK_DETAIL_RX = (
+            r"DETAIL:  Key \(id\)=\((?P<pk_id>\d+)\) is still referenced from table \"(?P<table>\w+)\""
+        )
         matches = re.search(FK_DETAIL_RX, str(err), re.MULTILINE)
         raise fastapi.HTTPException(
             status_code=fastapi.status.HTTP_409_CONFLICT,
