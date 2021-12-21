@@ -13,7 +13,6 @@ applications_table = Table(
     "applications",
     metadata,
     Column("id", Integer, primary_key=True),
-    Column("identifier", String, unique=True, index=True),
     Column("application_name", String, nullable=False, index=True),
     Column("application_identifier", String, unique=True, index=True),
     Column("application_description", String, default=""),

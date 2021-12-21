@@ -90,8 +90,8 @@ async def application_delete(
 )
 async def applications_list(
     pagination: Pagination = Depends(),
-    user: Optional[bool] = Query(None),
-    all: Optional[bool] = Query(None),
+    user: bool = Query(False),
+    all: bool = Query(False),
     token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:applications:read")),
 ):
     """
@@ -101,7 +101,7 @@ async def applications_list(
     query = applications_table.select()
     if user:
         query = query.where(applications_table.c.application_owner_email == armada_claims.user_email)
-    if all is None:
+    if not all:
         query = query.where(not_(applications_table.c.application_identifier.is_(None)))
     return await package_response(Application, query, pagination)
 
