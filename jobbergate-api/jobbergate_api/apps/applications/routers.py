@@ -26,6 +26,7 @@ s3man = S3Manager()
 )
 async def applications_create(
     application_name: str = Form(...),
+    application_identifier: Optional[str] = Form(None),
     application_description: str = Form(""),
     application_config: str = Form(...),
     application_file: str = Form(...),
@@ -38,6 +39,7 @@ async def applications_create(
     armada_claims = ArmadaClaims.from_token_payload(token_payload)
     application = ApplicationRequest(
         application_name=application_name,
+        application_identifier=application_identifier,
         application_description=application_description,
         application_file=application_file,
         application_config=application_config,
@@ -99,7 +101,7 @@ async def applications_list(
     if user:
         query = query.where(applications_table.c.application_owner_email == armada_claims.user_email)
     if all is None:
-        query = query.where(not_(applications_table.c.identifier.is_(None)))
+        query = query.where(not_(applications_table.c.application_identifier.is_(None)))
     return await package_response(Application, query, pagination)
 
 
@@ -133,6 +135,7 @@ async def applications_get_by_id(application_id: int = Query(...)):
 async def application_update(
     application_id: int = Query(...),
     application_name: Optional[str] = Form(None),
+    application_identifier: Optional[str] = Form(None),
     application_description: Optional[str] = Form(None),
     application_config: Optional[str] = Form(None),
     application_file: Optional[str] = Form(None),
@@ -152,6 +155,8 @@ async def application_update(
     update_dict: Dict[str, Any] = {}
     if application_name:
         update_dict["application_name"] = application_name
+    if application_identifier:
+        update_dict["application_identifier"] = application_identifier
     if application_description:
         update_dict["application_description"] = application_description
     if application_file:

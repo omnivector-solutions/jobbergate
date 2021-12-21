@@ -20,9 +20,12 @@ class Pagination(BaseModel):
         None,
         ge=0,
         description="""
-            The starting page offset for items.
-            The index for the first item is computed as index == start * limit.
-            Must be greater than or equal to 0.
+            The page offset for items, where the first page index is 0.
+            The index for the first item on each page is computed as
+
+                index == start * limit.
+
+            Value must be greater than or equal to 0.
         """,
     )
     limit: int = Field(
