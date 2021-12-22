@@ -29,18 +29,25 @@ run:
 update-precommit:
 	poetry run pre-commit autoupdate
 
-clean: clean-eggs clean-build
+# To include a message with the generated migration, set the MESSAGE variable in the make command:
+#   $ make db-migration MESSAGE="this migration applies foo to bar"
+db-migrate: install
+	poetry run alembic --config=alembic/alembic.ini revision --autogenerate --message "$(MESSAGE)"
+
+# To override the upgrade target from head, set the UPGRADE_TARGET variable in the make command:
+#   $ make db-upgrade UPGRADE_TARGET=bf1e9e
+UPGRADE_TARGET ?= head
+db-upgrade: install
+	poetry run alembic --config=alembic/alembic.ini upgrade $(UPGRADE_TARGET)
+
+clean:
 	@find . -iname '*.pyc' -delete
 	@find . -iname '*.pyo' -delete
 	@find . -iname '*~' -delete
 	@find . -iname '*.swp' -delete
 	@find . -iname '__pycache__' -delete
-
-clean-eggs:
 	@find . -name '*.egg' -print0|xargs -0 rm -rf --
 	@rm -rf .eggs/
-
-clean-build:
 	@rm -fr build/
 	@rm -fr dist/
 	@rm -fr *.egg-info
