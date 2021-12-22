@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+2.1.0 -- 2021-12-22
+-------------------
 * Added graceful handling of delete failures due to FK constraints
 * Added Alembic support
 * Added application_identifier to response payload
