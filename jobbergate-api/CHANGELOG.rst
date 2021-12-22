@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+* Added graceful handling of delete failures due to FK constraints
 
 2.0.1 -- 2021-12-10
 -------------------

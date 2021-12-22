@@ -1,9 +1,11 @@
 """
 Tests for the /applications/ endpoint.
 """
+import json
 from io import StringIO
 from unittest import mock
 
+import asyncpg
 import pytest
 from fastapi import status
 
@@ -223,6 +225,40 @@ async def test_delete_application_without_id(
     response = await client.delete("/jobbergate/applications/")
     assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
     s3man.s3_client.delete_object.assert_not_called()
+
+
+@pytest.mark.asyncio
+@mock.patch.object(s3man, "s3_client")
+@database.transaction(force_rollback=True)
+async def test_delete_application__fk_error(
+    s3man_client_mock, client, application_data, inject_security_header
+):
+    """
+    Test DELETE /applications/<id> correctly returns a 409 with a helpful message when a delete is blocked
+    by a foreign-key constraint.
+    """
+    application = [Application(application_owner_email="owner1@org.com", **application_data)]
+    await insert_objects(application, applications_table)
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 1
+
+    inject_security_header("owner1@org.com", "jobbergate:applications:delete")
+    with mock.patch(
+        "jobbergate_api.storage.database.execute",
+        side_effect=asyncpg.exceptions.ForeignKeyViolationError(
+            """
+            update or delete on table "applications" violates foreign key constraint
+            "job_scripts_application_id_fkey" on table "job_scripts"
+            DETAIL:  Key (id)=(1) is still referenced from table "job_scripts".
+            """
+        ),
+    ):
+        response = await client.delete("/jobbergate/applications/1")
+    assert response.status_code == status.HTTP_409_CONFLICT
+    error_data = json.loads(response.text)["detail"]
+    assert error_data["message"] == "Delete failed due to foreign-key constraint"
+    assert error_data["table"] == "job_scripts"
+    assert error_data["pk_id"] == "1"
 
 
 @pytest.mark.asyncio

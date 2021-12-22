@@ -15,7 +15,7 @@ from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.s3_manager import S3Manager
 from jobbergate_api.security import ArmadaClaims, guard
-from jobbergate_api.storage import database
+from jobbergate_api.storage import database, handle_fk_error
 
 router = APIRouter()
 s3man = S3Manager()
@@ -80,7 +80,8 @@ async def application_delete(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Application {application_id=} not found.",
         )
     delete_query = applications_table.delete().where(where_stmt)
-    await database.execute(delete_query)
+    with handle_fk_error():
+        await database.execute(delete_query)
     s3man.delete(app_id=str(application_id))
 
 

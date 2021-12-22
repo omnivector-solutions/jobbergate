@@ -7,6 +7,7 @@ from io import StringIO
 from textwrap import dedent
 from unittest import mock
 
+import asyncpg
 import pytest
 from botocore.exceptions import BotoCoreError
 from fastapi import status
@@ -761,3 +762,40 @@ async def test_delete_job_script_bad_permission(
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_delete_job_script__fk_error(
+    client, application_data, job_script_data, inject_security_header,
+):
+    """
+    Test DELETE /job_script/<id> correctly returns a 409 with a helpful message when a delete is blocked
+    by a foreign-key constraint.
+    """
+    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
+    await insert_objects(application, applications_table)
+
+    job_scripts = [JobScript(id=1, **job_script_data)]
+    await insert_objects(job_scripts, job_scripts_table)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+
+    inject_security_header("owner1@org.com", "jobbergate:job-scripts:delete")
+    with mock.patch(
+        "jobbergate_api.storage.database.execute",
+        side_effect=asyncpg.exceptions.ForeignKeyViolationError(
+            """
+            update or delete on table "job_scripts" violates foreign key constraint
+            "job_submissions_job_script_id_fkey" on table "job_submissions"
+            DETAIL:  Key (id)=(1) is still referenced from table "job_submissions".
+            """
+        ),
+    ):
+        response = await client.delete("/jobbergate/job-scripts/1")
+    assert response.status_code == status.HTTP_409_CONFLICT
+    error_data = json.loads(response.text)["detail"]
+    assert error_data["message"] == "Delete failed due to foreign-key constraint"
+    assert error_data["table"] == "job_submissions"
+    assert error_data["pk_id"] == "1"

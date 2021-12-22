@@ -21,7 +21,7 @@ from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.s3_manager import S3Manager
 from jobbergate_api.security import ArmadaClaims, guard
-from jobbergate_api.storage import database
+from jobbergate_api.storage import database, handle_fk_error
 
 router = APIRouter()
 s3man = S3Manager()
@@ -235,7 +235,8 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
         )
 
     delete_query = job_scripts_table.delete().where(where_stmt)
-    await database.execute(delete_query)
+    with handle_fk_error():
+        await database.execute(delete_query)
 
 
 @router.put(
