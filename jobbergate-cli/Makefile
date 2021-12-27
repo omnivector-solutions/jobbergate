@@ -1,5 +1,3 @@
-# SETTINGS
-# Use one shell for all commands in a target recipe
 .ONESHELL:
 .DEFAULT_GOAL:=help
 SHELL:=/bin/bash
@@ -21,12 +19,20 @@ lint: install
 
 .PHONY: qa
 qa: test lint
-	echo "All tests pass! Ready for deployment"
+	echo "All quality checks pass!"
 
 .PHONY: format
 format: install
 	poetry run black ${PACKAGE_NAME}
 	poetry run isort ${PACKAGE_NAME}
+
+.PHONY: release-%
+release-%:
+	../release-scripts/prepare-release.sh $(subst release-,,$@)
+
+.PHONY: publish
+publish:
+	../release-scripts/publish-release.sh
 
 .PHONY: clean
 clean:
@@ -42,10 +48,6 @@ clean:
 	@rm -fr build/
 	@rm -fr dist/
 	@rm -fr *.egg-info
-
-.PHONY: release-%
-release-%:
-	scripts/release.sh $(subst release-,,$@)
 
 .PHONY: help
 help: # Display target comments in 'make help'
