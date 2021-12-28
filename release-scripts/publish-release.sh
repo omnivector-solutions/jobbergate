@@ -11,7 +11,7 @@ source $SCRIPTS_HOME/check-prereqs.sh
 version_target=$(poetry version --short)
 
 echo "Creating git tag for release"
-git tag --sign --message="Release $version_target" $version_target
+git tag --sign --message="Release $SUBPROJECT $version_target" $SUBPROJECT-$version_target
 
 
 echo "Pushing tag to origin"
