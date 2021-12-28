@@ -10,12 +10,13 @@ source $SCRIPTS_HOME/check-prereqs.sh
 
 version_target=$(poetry version --short)
 
-echo "Creating git tag for release"
-git tag --sign --message="Release $SUBPROJECT $version_target" $SUBPROJECT-$version_target
+tag_name="$SUBPROJECT-$version_target"
+echo "Creating git tag $tag_name for release"
+git tag --sign --message="Release $tag_name" $tag_name
 
 
 echo "Pushing tag to origin"
-git push origin $version_target
+git push origin $tag_name
 
 
 echo "Publishing to pypicloud"
