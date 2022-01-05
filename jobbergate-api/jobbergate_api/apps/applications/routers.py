@@ -80,6 +80,37 @@ async def applications_upload(
         )
     s3man.put(upload_file, app_id=str(application_id))
 
+    update_query = (
+        applications_table.update()
+        .where(applications_table.c.id == application_id)
+        .values(dict(application_uploaded=True))
+    )
+    async with database.transaction():
+        await database.execute(update_query)
+
+
+@router.delete(
+    "/applications/{application_id}/upload",
+    status_code=status.HTTP_204_NO_CONTENT,
+    description="Endpoint for deleting application tarballs",
+    dependencies=[Depends(guard.lockdown("jobbergate:applications:upload"))],
+)
+async def applications_delete(
+    application_id: int = Query(..., description="id of the application for which to delete the file"),
+):
+    """
+    Delete application tarball using an authenticated user token.
+    """
+    s3man.delete(app_id=str(application_id))
+
+    update_query = (
+        applications_table.update()
+        .where(applications_table.c.id == application_id)
+        .values(dict(application_uploaded=False))
+    )
+    async with database.transaction():
+        await database.execute(update_query)
+
 
 @router.delete(
     "/applications/{application_id}",

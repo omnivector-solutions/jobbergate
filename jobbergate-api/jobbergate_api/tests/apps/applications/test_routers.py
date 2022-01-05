@@ -11,7 +11,7 @@ from fastapi import status
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.routers import s3man
 from jobbergate_api.apps.applications.schemas import ApplicationResponse
-from jobbergate_api.storage import database
+from jobbergate_api.storage import database, fetch_instance
 
 
 @pytest.mark.asyncio
@@ -659,15 +659,30 @@ async def test_update_application_bad_permission(client, application_data, injec
 
 
 @pytest.mark.asyncio
-async def test_upload_file__works_with_smal_file(
-    client, inject_security_header, tweak_settings, make_dummy_file, make_files_param,
+@database.transaction(force_rollback=True)
+async def test_upload_file__works_with_small_file(
+    client,
+    inject_security_header,
+    application_data,
+    tweak_settings,
+    make_dummy_file,
+    make_files_param,
 ):
     """
     Test that a file is uploaded.
 
-    This test proves that an application's file is uploaded by making sure that the boto3 put_object method
-    is called once and a 201 status code is returned.
+    This test proves that an application's file is uploaded by making sure that the
+    boto3 put_object method is called once and a 201 status code is returned. It also
+    checks to make sure that the application row in the database has
+    `application_uploded` set.
     """
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data),
+    )
+    application = await fetch_instance(inserted_id, applications_table, ApplicationResponse)
+    assert not application.application_uploaded
+
     dummy_file = make_dummy_file("dummy.py", size=10_000 - 200)  # Need some buffer for file headers, etc
     inject_security_header("owner1@org.com", "jobbergate:applications:upload")
     with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
@@ -677,18 +692,13 @@ async def test_upload_file__works_with_smal_file(
 
     assert response.status_code == status.HTTP_201_CREATED
     mock_s3.put_object.assert_called_once()
+    assert application.application_uploaded
 
 
 @pytest.mark.asyncio
 async def test_upload_file__fails_with_413_on_large_file(
     client, inject_security_header, tweak_settings, make_dummy_file, make_files_param,
 ):
-    """
-    Test that a file is uploaded.
-
-    This test proves that an application's file is uploaded by making sure that the boto3 put_object method
-    is called once and a 201 status code is returned.
-    """
     dummy_file = make_dummy_file("dummy.py", size=10_000 + 200)
     inject_security_header("owner1@org.com", "jobbergate:applications:upload")
     with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
@@ -696,3 +706,31 @@ async def test_upload_file__fails_with_413_on_large_file(
             response = await client.post("/jobbergate/applications/1/upload", files=files_param,)
 
     assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_delete_file(client, inject_security_header, application_data):
+    """
+    Test that a file is uploaded.
+
+    This test proves that an application's file is uploaded by making sure that the boto3 put_object method
+    is called once and a 201 status code is returned.
+    """
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", application_uploaded=True, **application_data),
+    )
+    application: ApplicationResponse = await fetch_instance(
+        inserted_id, applications_table, ApplicationResponse
+    )
+    assert application.application_uploaded
+
+    inject_security_header("owner1@org.com", "jobbergate:applications:upload")
+    with mock.patch.object(s3man, "s3_client") as mock_s3:
+        response = await client.delete(f"/jobbergate/applications/{inserted_id}/upload")
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    mock_s3.delete_object.assert_called_once()
+
+    application = await fetch_instance(inserted_id, applications_table, ApplicationResponse)
+    assert not application.application_uploaded
