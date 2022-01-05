@@ -4,19 +4,22 @@ Router for the JobScript resource.
 import json
 import tarfile
 import tempfile
-from datetime import datetime
 from io import BytesIO, StringIO
 from typing import List, Optional
 
 from armasec import TokenPayload
 from botocore.exceptions import BotoCoreError
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from jinja2 import Template
 
 from jobbergate_api.apps.applications.models import applications_table
-from jobbergate_api.apps.applications.schemas import Application
+from jobbergate_api.apps.applications.schemas import ApplicationResponse
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
-from jobbergate_api.apps.job_scripts.schemas import JobScript, JobScriptRequest
+from jobbergate_api.apps.job_scripts.schemas import (
+    JobScriptCreateRequest,
+    JobScriptResponse,
+    JobScriptUpdateRequest,
+)
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.s3_manager import S3Manager
@@ -33,6 +36,9 @@ def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str
 
     Given the job script as job_script_data_as_string, inject the sbatch params in the correct location.
     """
+    if sbatch_params == []:
+        return job_script_data_as_string
+
     first_sbatch_index = job_script_data_as_string.find("#SBATCH")
     string_slice = job_script_data_as_string[first_sbatch_index:]
     line_end = string_slice.find("\n") + first_sbatch_index + 1
@@ -105,7 +111,7 @@ def build_job_script_data_as_string(s3_application_tar, param_dict):
 
     # Use tempfile to generate .tar in memory - NOT write to disk
     param_dict_flat = {}
-    for key, value in param_dict.items():
+    for key in param_dict.keys():
         for nest_key, nest_value in param_dict[key].items():
             param_dict_flat[nest_key] = nest_value
     with tempfile.NamedTemporaryFile("wb", suffix=".tar.gz", delete=False) as f:
@@ -126,62 +132,62 @@ def build_job_script_data_as_string(s3_application_tar, param_dict):
 
 
 @router.post(
-    "/job-scripts/", status_code=status.HTTP_201_CREATED, description="Endpoint for job_script creation"
+    "/job-scripts/",
+    status_code=status.HTTP_201_CREATED,
+    response_model=JobScriptResponse,
+    description="Endpoint for job_script creation",
 )
 async def job_script_create(
-    job_script_name: str = Form(...),
-    job_script_description: Optional[str] = Form(""),
-    application_id: int = Form(...),
+    job_script: JobScriptCreateRequest,
     token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:job-scripts:create")),
-    upload_file: UploadFile = File(...),
-    sbatch_params: Optional[List[str]] = Form(None),
-    param_dict: Optional[str] = Form(None),
 ):
     """
     Create a new job script.
 
     Make a post request to this endpoint with the required values to create a new job script.
     """
-    _param_dict = json.loads(param_dict) if param_dict is not None else dict()
-    select_query = applications_table.select().where(applications_table.c.id == application_id)
+    select_query = applications_table.select().where(applications_table.c.id == job_script.application_id)
     raw_application = await database.fetch_one(select_query)
 
     if not raw_application:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Application with id={application_id} not found.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application with id={job_script.application_id} not found.",
         )
-    application = Application.parse_obj(raw_application)
+    application = ApplicationResponse.parse_obj(raw_application)
     s3_application_tar = get_s3_object_as_tarfile(application.id)
 
-    job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, _param_dict)
-
-    if sbatch_params:
-        job_script_data_as_string = inject_sbatch_params(job_script_data_as_string, sbatch_params)
-
     armada_claims = ArmadaClaims.from_token_payload(token_payload)
-    job_script = JobScriptRequest(
-        job_script_name=job_script_name,
-        job_script_description=job_script_description,
-        job_script_data_as_string=job_script_data_as_string,
-        job_script_owner_email=armada_claims.user_email,
-        application_id=application_id,
-    )
+    job_script.job_script_owner_email = armada_claims.user_email
+
+    create_dict = job_script.dict(exclude_unset=True)
+
+    param_dict = json.loads(create_dict.pop("param_dict", "{}"))
+    job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, param_dict)
+
+    sbatch_params = create_dict.pop("sbatch_params", [])
+    create_dict["job_script_data_as_string"] = inject_sbatch_params(job_script_data_as_string, sbatch_params)
 
     async with database.transaction():
         try:
             insert_query = job_scripts_table.insert()
-            values = job_script.dict()
-            job_script_created_id = await database.execute(query=insert_query, values=values)
+            inserted_id = await database.execute(query=insert_query, values=create_dict)
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
-    return JobScript(id=job_script_created_id, **job_script.dict())
+
+        # Now fetch the newly inserted row. This is necessary to reflect defaults and db modified columns
+        query = job_scripts_table.select().where(job_scripts_table.c.id == inserted_id)
+        raw_job_script = await database.fetch_one(query)
+        response_job_script = JobScriptResponse.parse_obj(raw_job_script)
+
+    return response_job_script
 
 
 @router.get(
     "/job-scripts/{job_script_id}",
     description="Endpoint to get a job_script",
-    response_model=JobScript,
+    response_model=JobScriptResponse,
     dependencies=[Depends(guard.lockdown("jobbergate:job-scripts:read"))],
 )
 async def job_script_get(job_script_id: int = Query(...)):
@@ -195,14 +201,16 @@ async def job_script_get(job_script_id: int = Query(...)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"JobScript with id={job_script_id} not found.",
         )
-    job_script = JobScript.parse_obj(raw_job_script)
+    job_script = JobScriptResponse.parse_obj(raw_job_script)
     return job_script
 
 
-@router.get("/job-scripts/", description="Endpoint to list job_scripts", response_model=Response[JobScript])
+@router.get(
+    "/job-scripts/", description="Endpoint to list job_scripts", response_model=Response[JobScriptResponse],
+)
 async def job_script_list(
     pagination: Pagination = Depends(),
-    all: Optional[bool] = Query(None),
+    all: Optional[bool] = Query(False),
     token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:job-scripts:read")),
 ):
     """
@@ -212,7 +220,7 @@ async def job_script_list(
     armada_claims = ArmadaClaims.from_token_payload(token_payload)
     if not all:
         query = query.where(job_scripts_table.c.job_script_owner_email == armada_claims.user_email)
-    return await package_response(JobScript, query, pagination)
+    return await package_response(JobScriptResponse, query, pagination)
 
 
 @router.delete(
@@ -243,54 +251,37 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     "/job-scripts/{job_script_id}",
     status_code=status.HTTP_201_CREATED,
     description="Endpoint to update a job_script given the id",
-    response_model=JobScript,
+    response_model=JobScriptResponse,
     dependencies=[Depends(guard.lockdown("jobbergate:job-scripts:update"))],
 )
 async def job_script_update(
-    job_script_id: int = Query(...),
-    job_script_name: Optional[str] = Form(None),
-    job_script_description: Optional[str] = Form(None),
-    job_script_data_as_string: Optional[str] = Form(None),
+    job_script_id: int, job_script: JobScriptUpdateRequest,
 ):
     """
     Update a job_script given its id.
     """
-    query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
-    raw_job_script = await database.fetch_one(query)
-
-    if not raw_job_script:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"JobScript with id={job_script_id} not found.",
-        )
-    job_script_data = JobScript.parse_obj(raw_job_script)
-
-    if job_script_name is not None:
-        job_script_data.job_script_name = job_script_name
-    if job_script_description is not None:
-        job_script_data.job_script_description = job_script_description
-    if job_script_data_as_string is not None:
-        job_script_data.job_script_data_as_string = job_script_data_as_string
-
-    job_script_data.updated_at = datetime.utcnow()
-
-    values = {
-        "job_script_name": job_script_data.job_script_name,
-        "job_script_description": job_script_data.job_script_description,
-        "job_script_data_as_string": job_script_data.job_script_data_as_string,
-        "updated_at": job_script_data.updated_at,
-    }
-    validated_values = {key: value for key, value in values.items() if value is not None}
-
-    q_update = (
-        job_scripts_table.update().where(job_scripts_table.c.id == job_script_id).values(validated_values)
+    update_query = (
+        job_scripts_table.update()
+        .where(job_scripts_table.c.id == job_script_id)
+        .values(job_script.dict(exclude_unset=True))
     )
     async with database.transaction():
         try:
-            await database.execute(q_update)
+            result = await database.execute(update_query)
+
         except INTEGRITY_CHECK_EXCEPTIONS as e:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
-    query = job_scripts_table.select(job_scripts_table.c.id == job_script_id)
-    return JobScript.parse_obj(await database.fetch_one(query))
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"JobScript with id={job_script_id} not found.",
+            )
+
+        select_query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
+        raw_job_script = await database.fetch_one(select_query)
+        response_job_script = JobScriptResponse.parse_obj(raw_job_script)
+
+    return response_job_script
 
 
 def include_router(app):

@@ -1,8 +1,6 @@
 """
 Database model for the Application resource.
 """
-from datetime import datetime
-
 from sqlalchemy import DateTime, Integer, String, Table
 from sqlalchemy.sql import func
 from sqlalchemy.sql.schema import Column
@@ -20,5 +18,5 @@ applications_table = Table(
     Column("application_file", String, nullable=False),
     Column("application_config", String, nullable=False),
     Column("created_at", DateTime, nullable=False, default=func.now()),
-    Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=datetime.utcnow),
+    Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=func.now()),
 )

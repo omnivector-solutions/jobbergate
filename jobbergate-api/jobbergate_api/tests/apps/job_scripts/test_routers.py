@@ -2,8 +2,6 @@
 Tests for the /job-scripts/ endpoint.
 """
 import json
-from datetime import datetime
-from io import StringIO
 from textwrap import dedent
 from unittest import mock
 
@@ -14,7 +12,6 @@ from fastapi import status
 from fastapi.exceptions import HTTPException
 
 from jobbergate_api.apps.applications.models import applications_table
-from jobbergate_api.apps.applications.schemas import Application
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_scripts.routers import (
     build_job_script_data_as_string,
@@ -23,9 +20,8 @@ from jobbergate_api.apps.job_scripts.routers import (
     render_template,
     s3man,
 )
-from jobbergate_api.apps.job_scripts.schemas import JobScript
+from jobbergate_api.apps.job_scripts.schemas import JobScriptResponse
 from jobbergate_api.storage import database
-from jobbergate_api.tests.apps.conftest import insert_objects
 
 
 @pytest.fixture
@@ -98,16 +94,9 @@ def test_inject_sbatch_params(job_script_data_as_string, sbatch_params, new_job_
 
 
 @pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_create_job_script(
-    s3man_client_mock,
-    job_script_data,
-    param_dict,
-    application_data,
-    client,
-    s3_object,
-    inject_security_header,
+    job_script_data, param_dict, application_data, client, inject_security_header, time_frame, s3_object,
 ):
     """
     Test POST /job_scripts/ correctly creates a job_script.
@@ -116,100 +105,102 @@ async def test_create_job_script(
     endpoint. We show this by asserting that the job_script is created in the database after the post
     request is made, the correct status code (201) is returned.
     """
-    s3man_client_mock.get_object.return_value = s3_object
-    file_mock = mock.MagicMock(wraps=StringIO("test"))
-
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data,),
+    )
 
     inject_security_header("owner1@org.com", "jobbergate:job-scripts:create")
-    job_script_data["param_dict"] = json.dumps(param_dict)
-    response = await client.post(
-        "/jobbergate/job-scripts/", data=job_script_data, files={"upload_file": file_mock}
-    )
+    with time_frame() as window:
+        with mock.patch.object(s3man, "s3_client") as s3man_client_mock:
+            s3man_client_mock.get_object.return_value = s3_object
+            response = await client.post(
+                "/jobbergate/job-scripts/",
+                json=dict(
+                    application_id=inserted_application_id,
+                    param_dict=json.dumps(param_dict),
+                    **job_script_data,
+                ),
+            )
+
     assert response.status_code == status.HTTP_201_CREATED
     s3man_client_mock.get_object.assert_called_once()
 
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 1
-    query = job_scripts_table.select(job_scripts_table.c.id == 1)
-    job_script = JobScript.parse_obj(await database.fetch_one(query))
+    id_rows = await database.fetch_all("SELECT id FROM job_scripts")
+    assert len(id_rows) == 1
 
-    assert job_script is not None
+    job_script = JobScriptResponse(**response.json())
+
+    assert job_script.id == id_rows[0][0]
     assert job_script.job_script_name == job_script_data["job_script_name"]
+    assert job_script.job_script_owner_email == "owner1@org.com"
+    assert job_script.job_script_description is None
+    assert job_script.job_script_data_as_string
+    assert job_script.job_script_data_as_string != job_script_data["job_script_data_as_string"]
+    assert job_script.application_id == inserted_application_id
+    assert job_script.created_at in window
+    assert job_script.updated_at in window
 
 
 @pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_create_job_script_bad_permission(
-    s3man_client_mock,
-    job_script_data,
-    param_dict,
-    application_data,
-    client,
-    s3_object,
-    inject_security_header,
+    job_script_data, param_dict, application_data, client, inject_security_header,
 ):
     """
     Test that it is not possible to create job_script without proper permission.
 
     This test proves that is not possible to create a job_script without the proper permission.
     We show this by trying to create a job_script without a permission that allow "create" then assert
-    that the job_script still does not exists in the database, the correct status code (403) is returned
+    that the job_script still does not exists in the database, and the correct status code (403) is returned.
     and that the boto3 method is never called.
     """
-    s3man_client_mock.get_object.return_value = s3_object
-    file_mock = mock.MagicMock(wraps=StringIO("test"))
-
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data,),
+    )
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
-    job_script_data["param_dict"] = json.dumps(param_dict)
     response = await client.post(
-        "/jobbergate/job-scripts/", data=job_script_data, files={"upload_file": file_mock}
+        "/jobbergate/job-scripts/",
+        json=dict(
+            application_id=inserted_application_id, param_dict=json.dumps(param_dict), **job_script_data,
+        ),
     )
+
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    s3man_client_mock.get_object.assert_not_called()
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0
 
 
 @pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_create_job_script_without_application(
-    s3man_client_mock, job_script_data, param_dict, client, inject_security_header,
+    job_script_data, param_dict, client, inject_security_header,
 ):
     """
     Test that is not possible to create a job_script without an application.
 
     This test proves that is not possible to create a job_script without an existing application.
     We show this by trying to create a job_script without an application created before, then assert that the
-    job_script still does not exists in the database, the correct status code (404) is returned and that the
-    boto3 method is never called.
+    job_script still does not exists in the database and the correct status code (404) is returned.
     """
-    file_mock = mock.MagicMock(wraps=StringIO("test"))
-
     inject_security_header("owner1@org.com", "jobbergate:job-scripts:create")
-    job_script_data["param_dict"] = json.dumps(param_dict)
     response = await client.post(
-        "/jobbergate/job-scripts/", data=job_script_data, files={"upload_file": file_mock}
+        "/jobbergate/job-scripts/",
+        json=dict(application_id=9999, param_dict=json.dumps(param_dict), **job_script_data,),
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    s3man_client_mock.get_object.assert_not_called()
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0
 
 
 @pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_create_job_script_file_not_found(
-    s3man_client_mock, job_script_data, param_dict, application_data, client, inject_security_header,
+    job_script_data, param_dict, application_data, client, inject_security_header,
 ):
     """
     Test that is not possible to create a job_script if the application is in the database but not in S3.
@@ -220,17 +211,21 @@ async def test_create_job_script_file_not_found(
     is not in S3 (raises BotoCoreError), then assert that the job_script still does not exists in the
     database, the correct status code (404) is returned and that the boto3 method was called.
     """
-    file_mock = mock.MagicMock(wraps=StringIO("test"))
-    s3man_client_mock.get_object.side_effect = BotoCoreError()
-
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data,),
+    )
 
     inject_security_header("owner1@org.com", "jobbergate:job-scripts:create")
-    job_script_data["param_dict"] = json.dumps(param_dict)
-    response = await client.post(
-        "/jobbergate/job-scripts/", data=job_script_data, files={"upload_file": file_mock}
-    )
+    with mock.patch.object(s3man, "s3_client") as s3man_client_mock:
+        s3man_client_mock.get_object.side_effect = BotoCoreError()
+        response = await client.post(
+            "/jobbergate/job-scripts/",
+            json=dict(
+                application_id=inserted_application_id, param_dict=json.dumps(param_dict), **job_script_data,
+            ),
+        )
+
     assert response.status_code == status.HTTP_404_NOT_FOUND
     s3man_client_mock.get_object.assert_called_once()
 
@@ -241,7 +236,7 @@ async def test_create_job_script_file_not_found(
 @pytest.mark.asyncio
 @mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
-async def test_get_s3_object_as_tarfile(s3man_client_mock, param_dict, s3_object):
+async def test_get_s3_object_as_tarfile(s3man_client_mock, s3_object):
     """
     Test getting a file from S3 with get_s3_object function.
     """
@@ -254,9 +249,7 @@ async def test_get_s3_object_as_tarfile(s3man_client_mock, param_dict, s3_object
 
 
 @mock.patch.object(s3man, "s3_client")
-def test_get_s3_object_not_found(
-    s3man_client_mock, param_dict,
-):
+def test_get_s3_object_not_found(s3man_client_mock):
     """
     Test exception when file not exists in S3 for get_s3_object function.
     """
@@ -301,25 +294,28 @@ async def test_get_job_script_by_id(client, application_data, job_script_data, i
     returned in the response is equal to the job_script data that exists in the database
     for the given job_script id.
     """
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
-
-    job_script = [JobScript(id=1, **job_script_data)]
-    await insert_objects(job_script, job_scripts_table)
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data,),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=dict(application_id=inserted_application_id, **job_script_data,),
+    )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", "jobbergate:job-scripts:read")
-    response = await client.get("/jobbergate/job-scripts/1")
+    response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert data["id"] == 1
+    assert data["id"] == inserted_job_script_id
     assert data["job_script_name"] == job_script_data["job_script_name"]
     assert data["job_script_data_as_string"] == job_script_data["job_script_data_as_string"]
     assert data["job_script_owner_email"] == "owner1@org.com"
-    assert data["application_id"] == 1
+    assert data["application_id"] == inserted_application_id
 
 
 @pytest.mark.asyncio
@@ -333,7 +329,7 @@ async def test_get_job_script_by_id_invalid(client, inject_security_header):
     returned is what we would expect given the job_script requested doesn't exist (404).
     """
     inject_security_header("owner1@org.com", "jobbergate:job-scripts:read")
-    response = await client.get("/jobbergate/job-scripts/10")
+    response = await client.get("/jobbergate/job-scripts/9999")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -349,14 +345,16 @@ async def test_get_job_script_by_id_bad_permission(
     user don't have the proper permission. We show this by asserting that the status code
     returned is what we would expect (403).
     """
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
-
-    job_script = [JobScript(id=1, **job_script_data)]
-    await insert_objects(job_script, job_scripts_table)
-
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data,),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=dict(application_id=inserted_application_id, **job_script_data,),
+    )
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
-    response = await client.get("/jobbergate/job-scripts/1")
+    response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -370,16 +368,33 @@ async def test_get_job_script__no_params(client, application_data, job_script_da
     the request. We show this by asserting that the job_scripts returned in the response are
     only job_scripts owned by the user making the request.
     """
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
-
-    job_script_data.pop("job_script_owner_email")
-    job_scripts = [
-        JobScript(id=1, job_script_owner_email="owner1@org.com", **job_script_data),
-        JobScript(id=2, job_script_owner_email="owner999@org.com", **job_script_data),
-        JobScript(id=3, job_script_owner_email="owner1@org.com", **job_script_data),
-    ]
-    await insert_objects(job_scripts, job_scripts_table)
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data,),
+    )
+    await database.execute_many(
+        query=job_scripts_table.insert(),
+        values=[
+            {
+                **job_script_data,
+                "id": 1,
+                "job_script_owner_email": "owner1@org.com",
+                "application_id": inserted_application_id,
+            },
+            {
+                **job_script_data,
+                "id": 2,
+                "job_script_owner_email": "owner999@org.com",
+                "application_id": inserted_application_id,
+            },
+            {
+                **job_script_data,
+                "id": 3,
+                "job_script_owner_email": "owner1@org.com",
+                "application_id": inserted_application_id,
+            },
+        ],
+    )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 3
@@ -408,59 +423,21 @@ async def test_get_job_scripts__bad_permission(
     This test proves that GET /job-scripts/ returns the 403 status code when the user making the request
     don't have the permission to list. We show this by asserting that the response status code is 403.
     """
-    job_script_data.pop("job_script_owner_email")
-    job_scripts = [
-        JobScript(id=1, job_script_owner_email="owner1@org.com", **job_script_data),
-        JobScript(id=2, job_script_owner_email="owner999@org.com", **job_script_data),
-        JobScript(id=3, job_script_owner_email="owner1@org.com", **job_script_data),
-    ]
-    await insert_objects(job_scripts, job_scripts_table)
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data,),
+    )
+    await database.execute(
+        query=job_scripts_table.insert(),
+        values=dict(application_id=inserted_application_id, **job_script_data,),
+    )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 3
+    assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.get("/jobbergate/job-scripts/")
     assert response.status_code == status.HTTP_403_FORBIDDEN
-
-
-@pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_get_job_scripts__excludes_other_owners(
-    client, application_data, job_script_data, inject_security_header,
-):
-    """
-    Test job_script_list doesn't include job_scripts owned by other users.
-
-    This test proves that the user making the request cannot see job_scripts owned by other users.
-    We show this by creating job_scripts that are owned by another user id and assert that
-    the user making the request to /job-scripts/ doesn't see any of the other user's
-    job_scripts in the response
-    """
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
-
-    job_script_data.pop("job_script_owner_email")
-    job_scripts = [
-        JobScript(id=1, job_script_owner_email=999, **job_script_data),
-        JobScript(id=2, job_script_owner_email=999, **job_script_data),
-        JobScript(id=3, job_script_owner_email=999, **job_script_data),
-    ]
-    await insert_objects(job_scripts, job_scripts_table)
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 3
-
-    inject_security_header("owner1@org.com", "jobbergate:job-scripts:read")
-    response = await client.get("/jobbergate/job-scripts/")
-    assert response.status_code == status.HTTP_200_OK
-
-    data = response.json()
-    results = data.get("results")
-    assert results == []
-
-    pagination = data.get("pagination")
-    assert pagination == dict(total=0, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
@@ -476,16 +453,33 @@ async def test_get_job_scripts__with_all_param(
     owned by another user. Assert that the response to GET /job-scripts/?all=True includes all three
     job_scripts.
     """
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
-
-    job_script_data.pop("job_script_owner_email")
-    job_scripts = [
-        JobScript(id=1, job_script_owner_email="owner1@org.com", **job_script_data),
-        JobScript(id=2, job_script_owner_email="owner999@org.com", **job_script_data),
-        JobScript(id=3, job_script_owner_email="owner1@org.com", **job_script_data),
-    ]
-    await insert_objects(job_scripts, job_scripts_table)
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data,),
+    )
+    await database.execute_many(
+        query=job_scripts_table.insert(),
+        values=[
+            {
+                **job_script_data,
+                "id": 1,
+                "job_script_owner_email": "owner1@org.com",
+                "application_id": inserted_application_id,
+            },
+            {
+                **job_script_data,
+                "id": 2,
+                "job_script_owner_email": "owner999@org.com",
+                "application_id": inserted_application_id,
+            },
+            {
+                **job_script_data,
+                "id": 3,
+                "job_script_owner_email": "owner1@org.com",
+                "application_id": inserted_application_id,
+            },
+        ],
+    )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 3
@@ -514,18 +508,22 @@ async def test_get_job_scripts__with_pagination(
     This test proves that the user making the request can see job_scripts paginated.
     We show this by creating three job_scripts and assert that the response is correctly paginated.
     """
-    applications = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(applications, applications_table)
-
-    job_script_data.pop("job_script_owner_email")
-    job_scripts = [
-        JobScript(id=1, job_script_owner_email="owner1@org.com", **job_script_data),
-        JobScript(id=2, job_script_owner_email="owner1@org.com", **job_script_data),
-        JobScript(id=3, job_script_owner_email="owner1@org.com", **job_script_data),
-        JobScript(id=4, job_script_owner_email="owner1@org.com", **job_script_data),
-        JobScript(id=5, job_script_owner_email="owner1@org.com", **job_script_data),
-    ]
-    await insert_objects(job_scripts, job_scripts_table)
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data,),
+    )
+    await database.execute_many(
+        query=job_scripts_table.insert(),
+        values=[
+            {
+                **job_script_data,
+                "id": i,
+                "job_script_owner_email": "owner1@org.com",
+                "application_id": inserted_application_id,
+            }
+            for i in range(1, 6)
+        ],
+    )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 5
@@ -569,7 +567,7 @@ async def test_get_job_scripts__with_pagination(
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
 async def test_update_job_script(
-    client, application_data, job_script_data, inject_security_header,
+    client, application_data, job_script_data, inject_security_header, time_frame,
 ):
     """
     Test update job_script via PUT.
@@ -578,70 +576,59 @@ async def test_update_job_script(
     /job-scripts/<id> endpoint. We show this by assert the response status code to 201, the response data
     corresponds to the updated data, and the data in the database is also updated.
     """
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
-
-    job_scripts = [JobScript(id=1, **job_script_data)]
-    await insert_objects(job_scripts, job_scripts_table)
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data,),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=dict(application_id=inserted_application_id, **job_script_data,),
+    )
 
     inject_security_header("owner1@org.com", "jobbergate:job-scripts:update")
-    response = await client.put(
-        "/jobbergate/job-scripts/1",
-        data={
-            "job_script_name": "new name",
-            "job_script_description": "new description",
-            "job_script_data_as_string": "new value",
-        },
-    )
+    with time_frame() as window:
+        response = await client.put(
+            f"/jobbergate/job-scripts/{inserted_job_script_id}",
+            json={
+                "job_script_name": "new name",
+                "job_script_description": "new description",
+                "job_script_data_as_string": "new value",
+            },
+        )
 
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
-    now = datetime.now()
 
     assert data["job_script_name"] == "new name"
     assert data["job_script_description"] == "new description"
     assert data["job_script_data_as_string"] == "new value"
     assert data["id"] == 1
-    assert data["updated_at"] == now.isoformat()
 
-    query = job_scripts_table.select(job_scripts_table.c.id == 1)
-    job_script = JobScript.parse_obj(await database.fetch_one(query))
+    query = job_scripts_table.select(job_scripts_table.c.id == inserted_job_script_id)
+    job_script = JobScriptResponse.parse_obj(await database.fetch_one(query))
 
     assert job_script is not None
     assert job_script.job_script_name == "new name"
     assert job_script.job_script_description == "new description"
     assert job_script.job_script_data_as_string == "new value"
-    assert job_script.updated_at == now
+    assert job_script.updated_at in window
 
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
 async def test_update_job_script_not_found(
-    client, application_data, job_script_data, inject_security_header,
+    client, inject_security_header,
 ):
     """
     Test that it is not possible to update a job_script not found.
 
     This test proves that it is not possible to update a job_script if it is not found. We show this by
-    asserting that the response status code of the request is 404, and that the data stored in the
-    database for the job_script is not updated.
+    asserting that the response status code of the request is 404.
     """
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
-
-    job_scripts = [JobScript(id=1, **job_script_data)]
-    await insert_objects(job_scripts, job_scripts_table)
-
     inject_security_header("owner1@org.com", "jobbergate:job-scripts:update")
-    response = await client.put("/jobbergate/job-scripts/123", data={"job_script_name": "new name"})
+    response = await client.put("/jobbergate/job-scripts/123", json={"job_script_name": "new name"})
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
-
-    query = job_scripts_table.select(job_scripts_table.c.id == 1)
-    job_script = JobScript.parse_obj(await database.fetch_one(query))
-
-    assert job_script is not None
-    assert job_script.job_script_name == job_script_data["job_script_name"]
 
 
 @pytest.mark.asyncio
@@ -656,11 +643,14 @@ async def test_update_job_script_bad_permission(
     show this by asserting that the response status code of the request is 403, and that the data stored in
     the database for the job_script is not updated.
     """
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
-
-    job_scripts = [JobScript(id=1, **job_script_data)]
-    await insert_objects(job_scripts, job_scripts_table)
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data,),
+    )
+    await database.execute(
+        query=job_scripts_table.insert(),
+        values=dict(application_id=inserted_application_id, **job_script_data,),
+    )
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.put("/jobbergate/job-scripts/1", data={"job_script_name": "new name"})
@@ -668,7 +658,7 @@ async def test_update_job_script_bad_permission(
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
     query = job_scripts_table.select(job_scripts_table.c.id == 1)
-    job_script = JobScript.parse_obj(await database.fetch_one(query))
+    job_script = JobScriptResponse.parse_obj(await database.fetch_one(query))
 
     assert job_script is not None
     assert job_script.job_script_name == job_script_data["job_script_name"]
@@ -686,17 +676,20 @@ async def test_delete_job_script(
     endpoint. We show this by asserting that the job_script no longer exists in the database after the
     request is made and the correct status code is returned (204).
     """
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
-
-    job_scripts = [JobScript(id=1, **job_script_data)]
-    await insert_objects(job_scripts, job_scripts_table)
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data,),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=dict(application_id=inserted_application_id, **job_script_data,),
+    )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", "jobbergate:job-scripts:delete")
-    response = await client.delete("/jobbergate/job-scripts/1")
+    response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -707,31 +700,18 @@ async def test_delete_job_script(
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
 async def test_delete_job_script_not_found(
-    client, application_data, job_script_data, inject_security_header,
+    client, inject_security_header,
 ):
     """
     Test that it is not possible to delete a job_script that is not found.
 
     This test proves that it is not possible to delete a job_script if it does not exists. We show this by
-    assert that a 404 response status code is returned and the job_script still exists in the database after
-    the request.
+    assert that a 404 response status code is returned.
     """
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
-
-    job_scripts = [JobScript(id=1, **job_script_data)]
-    await insert_objects(job_scripts, job_scripts_table)
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 1
-
     inject_security_header("owner1@org.com", "jobbergate:job-scripts:delete")
-    response = await client.delete("/jobbergate/job-scripts/123")
+    response = await client.delete("/jobbergate/job-scripts/9999")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 1
 
 
 @pytest.mark.asyncio
@@ -746,17 +726,20 @@ async def test_delete_job_script_bad_permission(
     We show this by assert that a 403 response status code is returned and the job_script still exists in
     the database after the request.
     """
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
-
-    job_scripts = [JobScript(id=1, **job_script_data)]
-    await insert_objects(job_scripts, job_scripts_table)
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data,),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=dict(application_id=inserted_application_id, **job_script_data,),
+    )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
-    response = await client.delete("/jobbergate/job-scripts/1")
+    response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
@@ -773,11 +756,14 @@ async def test_delete_job_script__fk_error(
     Test DELETE /job_script/<id> correctly returns a 409 with a helpful message when a delete is blocked
     by a foreign-key constraint.
     """
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
-
-    job_scripts = [JobScript(id=1, **job_script_data)]
-    await insert_objects(job_scripts, job_scripts_table)
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data,),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=dict(application_id=inserted_application_id, **job_script_data,),
+    )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
@@ -793,9 +779,9 @@ async def test_delete_job_script__fk_error(
             """
         ),
     ):
-        response = await client.delete("/jobbergate/job-scripts/1")
+        response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
     assert response.status_code == status.HTTP_409_CONFLICT
     error_data = json.loads(response.text)["detail"]
     assert error_data["message"] == "Delete failed due to foreign-key constraint"
     assert error_data["table"] == "job_submissions"
-    assert error_data["pk_id"] == "1"
+    assert error_data["pk_id"] == f"{inserted_job_script_id}"

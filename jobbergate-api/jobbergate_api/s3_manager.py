@@ -37,17 +37,25 @@ class S3Manager:
 
     def put(self, upload_file: UploadFile, app_id: str = ""):
         """
-        Upload a file to s3 for the given app_id.
+        Upload a file to s3 for the given app_id and returns the.
         """
+        key = self._get_key(app_id)
         self.s3_client.put_object(
-            Body=upload_file.file, Bucket=self.bucket_name, Key=self._get_key(app_id),
+            Body=upload_file.file, Bucket=self.bucket_name, Key=key,
         )
+        return key
 
     def delete(self, app_id: str = ""):
         """
         Delete a file from s3 associated to the given app_id.
         """
-        self.s3_client.delete_object(Bucket=self.bucket_name, Key=self._get_key(app_id))
+        key = self._get_key(app_id)
+        try:
+            self.s3_client.delete_object(Bucket=self.bucket_name, Key=key)
+        except self.s3_client.exceptions.NoSuchBucket:
+            raise KeyError(f"No such bucket: {self.bucket_name}")
+        except self.s3_client.exceptions.NoSuchKey:
+            raise KeyError(f"No such key: {key}")
 
     def get(self, app_id: str = ""):
         """

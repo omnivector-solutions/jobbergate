@@ -2,34 +2,98 @@
 JobScript resource schema.
 """
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
+from jobbergate_api.meta_mapper import MetaField, MetaMapper
+
+job_script_meta_mapper = MetaMapper(
+    id=MetaField(description="The unique database identifier for the instance", example=101,),
+    created_at=MetaField(
+        description="The timestamp for when the instance was created", example="2021-12-28 23:13:00",
+    ),
+    updated_at=MetaField(
+        description="The timestamp for when the instance was last updated", example="2021-12-28 23:52:00",
+    ),
+    job_script_name=MetaField(description="The unique name of the instance", example="test-job-script-88",),
+    job_script_description=MetaField(
+        description="A text field providing a human-friendly description of the job_script",
+        example="This job_scripts runs an Foo job using the bar variant",
+    ),
+    job_script_data_as_string=MetaField(
+        description="The job_script itself",
+        example=" ".join(
+            [
+                '{"application.sh": "#!/bin/bash\n\n#SBATCH --job-name=rats\n#SBATCH',
+                "--partition=partition1\n#SBATCH --output=sample-%j.out\n\n\nsource",
+                "/opt/openfoam8/etc/bashrc\n\nexport",
+                'PATH=$PATH:/opt/openfoam8/platforms/linux64GccDPInt32Opt/bin\n\n\nblockMesh\nsimpleFoam"}',
+            ]
+        ),
+    ),
+    job_script_owner_email=MetaField(
+        description="The email of the owner/creator of the instance", example="tucker@omnivector.solutions",
+    ),
+    application_id=MetaField(
+        description="The foreign-key to the application from which this instance was created", example=71,
+    ),
+    sbatch_params=MetaField(
+        description="SBATCH parameters to inject into the job_script", example=["alpha", "beta", "delta"],
+    ),
+    param_dict=MetaField(
+        description="Parameters to use when rendering the job_script jinja2 template",
+        example='{"param1": 7, "param2": 13}',
+    ),
+)
 
 
-class JobScriptRequest(BaseModel):
+class JobScriptCreateRequest(BaseModel):
     """
-    Request model for the JobScript resource.
+    Request model for creating JobScript instances.
     """
 
-    job_script_name: str = Field(...)
-    job_script_description: Optional[str] = Field("")
-    job_script_data_as_string: str = Field(...)
-    job_script_owner_email: str = Field(..., description="The email address of the owner")
-    application_id: int = Field(..., description="The Application id")
+    job_script_name: str
+    job_script_description: Optional[str]
+    job_script_owner_email: str
+    job_script_data_as_string: str
+    application_id: int
+    sbatch_params: Optional[List[str]]
+    param_dict: Optional[str]
 
     class Config:
-        orm_mode = True
-
-    def __str__(self):
-        return self.job_script_name
+        schema_extra = job_script_meta_mapper
 
 
-class JobScript(JobScriptRequest):
+class JobScriptUpdateRequest(BaseModel):
+    """
+    Request model for updating JobScript instances.
+    """
+
+    job_script_name: Optional[str]
+    job_script_description: Optional[str]
+    job_script_data_as_string: Optional[str]
+    sbatch_params: Optional[List[str]]
+    param_dict: Optional[str]
+
+    class Config:
+        schema_extra = job_script_meta_mapper
+
+
+class JobScriptResponse(BaseModel):
     """
     Complete model to match database for the JobScript resource.
     """
 
-    id: Optional[int] = Field(None)
-    created_at: Optional[datetime] = Field(datetime.utcnow())
-    updated_at: Optional[datetime] = Field(datetime.utcnow())
+    id: Optional[int] = None
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+    job_script_name: str
+    job_script_description: Optional[str]
+    job_script_data_as_string: str
+    job_script_owner_email: str
+    application_id: int
+
+    class Config:
+        orm_mode = True
+        schema_extra = job_script_meta_mapper

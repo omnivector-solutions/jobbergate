@@ -1,6 +1,9 @@
 """
 Configuration of pytest.
 """
+import contextlib
+import dataclasses
+import datetime
 import os
 import typing
 
@@ -88,5 +91,41 @@ async def inject_security_header(client, build_rs256_token):
             }
         )
         client.headers.update({"Authorization": f"Bearer {token}"})
+
+    return _helper
+
+
+@fixture
+def time_frame():
+    """
+    Provides a fixture to use as a context manager where an event can be checked to have happened during the
+    time-frame of the context manager.
+    """
+
+    @dataclasses.dataclass
+    class TimeFrame:
+        """
+        Class for storing the beginning and end of a time frame."
+        """
+
+        now: datetime.datetime
+        later: typing.Optional[datetime.datetime]
+
+        def __contains__(self, moment: datetime.datetime):
+            """
+            Checks if a given moment falls within a time-frame.
+            """
+            if self.later is None:
+                return False
+            return moment >= self.now and moment <= self.later
+
+    @contextlib.contextmanager
+    def _helper():
+        """
+        Context manager for defining the time-frame for the time_frame fixture.
+        """
+        window = TimeFrame(now=datetime.datetime.utcnow().replace(microsecond=0), later=None)
+        yield window
+        window.later = datetime.datetime.utcnow()
 
     return _helper

@@ -5,10 +5,9 @@ import pytest
 from pydantic import ValidationError
 
 from jobbergate_api.apps.applications.models import applications_table
-from jobbergate_api.apps.applications.schemas import Application
+from jobbergate_api.apps.applications.schemas import ApplicationResponse
 from jobbergate_api.pagination import Pagination, package_response
 from jobbergate_api.storage import database
-from jobbergate_api.tests.apps.conftest import insert_objects
 
 
 def test_init_fails_on_invalid_parameters():
@@ -48,25 +47,28 @@ async def test_package_response__without_pagination():
     """
     Test the package_response method without pagination.
     """
-    application_data = dict(
-        application_name="test_name",
-        application_file="the\nfile",
-        application_config="the configuration is here",
+    await database.execute_many(
+        query=applications_table.insert(),
+        values=[
+            dict(
+                id=i,
+                application_owner_email=f"owner{i}@org.com",
+                application_name="test_name",
+                application_file="the\nfile",
+                application_config="the configuration is here",
+            )
+            for i in range(1, 6)
+        ],
     )
-    applications = [
-        Application(id=i, application_owner_email=f"owner{i}@org.com", **application_data)
-        for i in range(1, 6)
-    ]
-    await insert_objects(applications, applications_table)
 
     query = applications_table.select()
     pagination = Pagination()
-    response = await package_response(Application, query, pagination)
+    response = await package_response(ApplicationResponse, query, pagination)
 
     results = response.results
     assert len(results) == 5
     for i in range(5):
-        assert isinstance(results[i], Application)
+        assert isinstance(results[i], ApplicationResponse)
         assert results[i].id == i + 1
 
     pagination = response.pagination
@@ -87,27 +89,30 @@ async def test_package_response__with_pagination(start, limit, total):
 
     Parameters test pagination at upper bound and lower bound of total
     """
-    application_data = dict(
-        application_name="test_name",
-        application_file="the\nfile",
-        application_config="the configuration is here",
+    await database.execute_many(
+        query=applications_table.insert(),
+        values=[
+            dict(
+                id=i,
+                application_owner_email=f"owner{i}@org.com",
+                application_name="test_name",
+                application_file="the\nfile",
+                application_config="the configuration is here",
+            )
+            for i in range(1, total + 1)
+        ],
     )
-    applications = [
-        Application(id=i, application_owner_email=f"owner{i}@org.com", **application_data)
-        for i in range(1, total + 1)
-    ]
-    await insert_objects(applications, applications_table)
 
     query = applications_table.select()
     pagination = Pagination(start=start, limit=limit)
-    response = await package_response(Application, query, pagination)
+    response = await package_response(ApplicationResponse, query, pagination)
 
     results = response.results
     # Clamps the expected count at upper bound
     expected_count = max(0, min(total - start * limit, limit))
     assert len(results) == expected_count
     for i in range(expected_count):
-        assert isinstance(results[i], Application)
+        assert isinstance(results[i], ApplicationResponse)
         assert results[i].id == i + (start * limit) + 1
 
     pagination = response.pagination
