@@ -16,7 +16,7 @@ class S3Manager:
 
     def __init__(self):
         self.bucket_name = settings.S3_BUCKET_NAME
-        self.key_template = "applications/{{app_id}}/jobbergate.tar.gz"
+        self.key_template = "applications/{app_id}/jobbergate.tar.gz"
         self.s3_client = boto3.client(
             "s3",
             endpoint_url=settings.S3_ENDPOINT_URL,

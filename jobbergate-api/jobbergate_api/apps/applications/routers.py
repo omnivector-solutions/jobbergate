@@ -3,7 +3,9 @@ Router for the Application resource.
 """
 
 from armasec import TokenPayload
-from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Query
+from fastapi import Response as FastAPIResponse
+from fastapi import UploadFile, status
 from sqlalchemy import not_
 
 from jobbergate_api.apps.applications.models import applications_table
@@ -96,7 +98,7 @@ async def applications_upload(
     description="Endpoint for deleting application tarballs",
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
-async def applications_delete(
+async def applications_delete_upload(
     application_id: int = Query(..., description="id of the application for which to delete the file"),
 ):
     """
@@ -111,7 +113,7 @@ async def applications_delete(
     application = ApplicationResponse.parse_obj(raw_application)
 
     if not application.application_uploaded:
-        return
+        return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
     s3man.delete(app_id=str(application_id))
 
@@ -122,6 +124,8 @@ async def applications_delete(
     )
     async with database.transaction():
         await database.execute(update_query)
+
+    return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.delete(
@@ -152,6 +156,41 @@ async def application_delete(
         # We should ignore KeyErrors from the S3 manager, because the data may have already been removed
         # outside of the API
         pass
+
+    return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.delete(
+    "/applications",
+    status_code=status.HTTP_204_NO_CONTENT,
+    description="Endpoint to delete application by identifier",
+    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
+)
+async def application_delete_by_identifier(
+    identifier: str = Query(..., description="identifier of the application to delete"),
+):
+    """
+    Delete application from the database and S3 given it's identifier.
+    """
+    where_stmt = applications_table.c.application_identifier == identifier
+    get_query = applications_table.select().where(where_stmt)
+    raw_application = await database.fetch_one(get_query)
+    if not raw_application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Application {identifier=} not found.",
+        )
+    id_ = raw_application["id"]
+    delete_query = applications_table.delete().where(where_stmt)
+    with handle_fk_error():
+        await database.execute(delete_query)
+    try:
+        s3man.delete(app_id=str(id_))
+    except KeyError:
+        # We should ignore KeyErrors from the S3 manager, because the data may have already been removed
+        # outside of the API
+        pass
+
+    return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get(
