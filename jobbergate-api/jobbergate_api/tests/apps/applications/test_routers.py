@@ -114,7 +114,10 @@ async def test_delete_application_no_file_uploaded(client, application_data, inj
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", "jobbergate:applications:delete")
-    response = await client.delete(f"/jobbergate/applications/{inserted_id}")
+    with mock.patch.object(s3man, "s3_client") as mock_s3:
+        response = await client.delete(f"/jobbergate/applications/{inserted_id}")
+        mock_s3.delete_object.assert_called_once()
+
     assert response.status_code == status.HTTP_204_NO_CONTENT
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
