@@ -101,6 +101,17 @@ async def applications_delete(
     """
     Delete application tarball using an authenticated user token.
     """
+    select_query = applications_table.select().where(applications_table.c.id == application_id)
+    raw_application = await database.fetch_one(select_query)
+    if not raw_application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Application {application_id=} not found.",
+        )
+    application = ApplicationResponse.parse_obj(raw_application)
+
+    if not application.application_uploaded:
+        return
+
     s3man.delete(app_id=str(application_id))
 
     update_query = (
