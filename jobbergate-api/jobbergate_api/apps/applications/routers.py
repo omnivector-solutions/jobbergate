@@ -58,7 +58,7 @@ async def applications_create(
 @router.post(
     "/applications/{application_id}/upload",
     status_code=status.HTTP_201_CREATED,
-    description="Endpoint for uploading application tarballs",
+    description="Endpoint for uploading application tarballs. Should be gzipped as `jobbergate.tar.gz`.",
     dependencies=[Depends(guard.lockdown("jobbergate:applications:upload"))],
 )
 async def applications_upload(
