@@ -77,7 +77,6 @@ addopts = [
 testpaths = ["jobbergate_api/tests"]
 env = [
     "DATABASE_URL = sqlite:///sqlite-testing.db",
-    "TEST_ENV = True",
 
     # This setting must align with the rs256_domain fixture from armasec's pytest extension
     "ARMASEC_DOMAIN = armasec.dev",
