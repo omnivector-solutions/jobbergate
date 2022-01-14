@@ -16,11 +16,16 @@ def token_cache_mock(sample_token):
     """
     Mock access to the filesystem path where the jwt token is cached
     """
-    mockpath = create_autospec(pathlib.Path, instance=True)
-    mockpath.exists.return_value = True
-    mockpath.read_text.return_value = sample_token
-    with patch.object(config.settings, "JOBBERGATE_API_JWT_PATH", mockpath):
-        yield mockpath
+    mock_access_token_path = create_autospec(pathlib.Path, instance=True)
+    mock_access_token_path.exists.return_value = True
+    mock_access_token_path.read_text.return_value = sample_token
+
+    mock_refresh_token_path = create_autospec(pathlib.Path, instance=True)
+    mock_refresh_token_path.exists.return_value = False
+
+    with patch.object(config.settings, "JOBBERGATE_API_ACCESS_TOKEN_PATH", mock_access_token_path):
+        with patch.object(config.settings, "JOBBERGATE_API_REFRESH_TOKEN_PATH", mock_refresh_token_path):
+            yield (mock_access_token_path, mock_refresh_token_path)
 
 
 @fixture
@@ -45,15 +50,15 @@ def sample_token():
 )
 @mark.freeze_time()
 @mark.usefixtures("token_cache_mock")
-def test_init_token(when, is_valid, freezer):
+def test_init_access_token(when, is_valid, freezer):
     """
     Do I successfully parse tokens from the cache? Do I identify invalid tokens?
     """
     freezer.move_to(when)
     ctx_obj = {}
     if is_valid:
-        assert main.init_token(ctx_obj)
+        assert main.init_access_token(ctx_obj)
         assert "identity" in ctx_obj
     else:
         with pytest.raises(click.ClickException, match="The auth token is expired"):
-            main.init_token(ctx_obj)
+            main.init_access_token(ctx_obj)

@@ -35,7 +35,15 @@ class Settings(BaseSettings):
     JOBBERGATE_APPLICATION_CONFIG_PATH: Optional[Path]
     JOBBERGATE_LOG_PATH: Optional[Path]
     JOBBERGATE_USER_TOKEN_DIR: Optional[Path]
-    JOBBERGATE_API_JWT_PATH: Optional[Path]
+    JOBBERGATE_API_ACCESS_TOKEN_PATH: Optional[Path]
+    JOBBERGATE_API_REFRESH_TOKEN_PATH: Optional[Path]
+
+    # Auth0 config for machine-to-machine security
+    AUTH0_DOMAIN: str
+    AUTH0_AUDIENCE: str
+    AUTH0_CLIENT_ID: str
+    AUTH0_CLIENT_SECRET: str
+    AUTH0_MAX_POLL_TIME: int = 5 * 60  # 5 Minutes
 
     @root_validator
     def compute_extra_settings(cls, values):
@@ -56,7 +64,8 @@ class Settings(BaseSettings):
         token_dir = cache_dir / "token"
         token_dir.mkdir(exist_ok=True, parents=True)
         values["JOBBERGATE_USER_TOKEN_DIR"] = token_dir
-        values["JOBBERGATE_API_JWT_PATH"] = token_dir / "jobbergate.token"
+        values["JOBBERGATE_API_ACCESS_TOKEN_PATH"] = token_dir / "access.token"
+        values["JOBBERGATE_API_REFRESH_TOKEN_PATH"] = token_dir / "refresh.token"
 
         return values
 

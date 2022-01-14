@@ -1,4 +1,5 @@
-from datetime import datetime
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 import functools
 import json
 from pathlib import Path
@@ -6,13 +7,16 @@ import sys
 import tarfile
 import tempfile
 import textwrap
+import time
 import traceback
+from typing import Optional
 
 import boto3
 import click
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError
 from loguru import logger
+import requests
 import sentry_sdk
 from tabulate import tabulate
 
@@ -36,9 +40,15 @@ APPLICATION_IDENTIFIER_EXPLANATION = """
 
     The identifier allows the user to access commonly used applications with a
     friendly name that is easy to remember. Identifiers should only be used
-    for applicaitons that are frequently used or should be easy to find in the list.
+    for applications that are frequently used or should be easy to find in the list.
     An identifier may be added, removed, or changed on an existing application.
 """
+
+
+@dataclass
+class TokenSet:
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
 
 
 def init_logs(verbose=False):
@@ -161,10 +171,10 @@ def abort_with_message(message):
     """
     Report an error to the user and exit the cli.
     """
-    raise click.ClickException(message)
+    raise click.ClickException(textwrap.dedent(message).strip())
 
 
-def validate_token_and_extract_identity(token):
+def validate_token_and_extract_identity(token: str) -> dict:
     """
     Validates the token and extracts the identity data.
 
@@ -178,7 +188,7 @@ def validate_token_and_extract_identity(token):
     :param token: The JWT to use for auth on request to the API
     :returns: The extracted identity data
     """
-    logger.debug("Validating token")
+    logger.debug("Validating access token")
     try:
         token_data = jwt.decode(
             token,
@@ -191,19 +201,9 @@ def validate_token_and_extract_identity(token):
         )
 
     except ExpiredSignatureError:
-        abort_with_message(
-            textwrap.dedent(
-                """
-                The auth token is expired. Please retrieve a new and log in again.
-
-                If the problem persists, please contact Omnivector <info@omnivector.solutions>
-                for support.
-                """
-            ).strip()
-        )
-
+        raise  # Will be handled in calling context
     except Exception as err:
-        logger.error(f"Unknown error while validating token: {err}")
+        logger.error(f"Unknown error while validating access token: {err}")
         if settings.SENTRY_DSN:
             with sentry_sdk.push_scope() as scope:
                 scope.set_context("token", dict(token=token))
@@ -211,47 +211,231 @@ def validate_token_and_extract_identity(token):
                 sentry_sdk.flush()
 
         abort_with_message(
-            textwrap.dedent(
-                """
-                There was an unknown error while initializing the auth token.
+            """
+            There was an unknown error while initializing the access token.
 
-                Please try retrieving the auth token and logging in again.
+            Please try retrieving the auth token and logging in again.
 
-                If the problem persists, please contact Omnivector <info@omnivector.solutions>
-                for support.
-                """
-            ).strip()
+            If the problem persists, please contact Omnivector <info@omnivector.solutions>
+            for support.
+            """
         )
 
     identity_data = token_data.get(constants.ARMADA_CLAIMS_KEY)
     if not identity_data:
-        abort_with_message("No identity data found in token data")
+        abort_with_message("No identity data found in access token data")
     if "user_email" not in identity_data:
-        abort_with_message("No user email found in token data")
+        abort_with_message("No user email found in access token data")
 
     return identity_data
 
 
-def init_token(ctx_obj):
+def load_tokens_from_cache() -> TokenSet:
     """
-    Retrieves the token for the user.
+    Loads an access token (and a refresh token if one exists) from the cache.
+
+    :returns: A TokenSet instance containing the loaded tokens.
+    """
+    token_set = TokenSet()
+
+    if not settings.JOBBERGATE_API_ACCESS_TOKEN_PATH.exists():
+        abort_with_message("Please login with your auth token first using the `jobbergate login` command")
+
+    logger.debug("Retrieving access token from cache")
+    token_set.access_token = settings.JOBBERGATE_API_ACCESS_TOKEN_PATH.read_text()
+
+    if settings.JOBBERGATE_API_REFRESH_TOKEN_PATH.exists():
+        logger.debug("Retrieving refresh token from cache")
+        token_set.refresh_token = settings.JOBBERGATE_API_REFRESH_TOKEN_PATH.read_text()
+
+    return token_set
+
+
+def save_tokens_to_cache(token_set: TokenSet):
+    """
+    Saves tokens from a token_set to the cache.
+
+    :param token_set: A TokenSet instance containing the tokens to save.
+    """
+    logger.debug(f"Caching access token at {settings.JOBBERGATE_API_ACCESS_TOKEN_PATH}")
+    settings.JOBBERGATE_API_ACCESS_TOKEN_PATH.write_text(token_set.access_token)
+
+    if token_set.refresh_token is not None:
+        logger.debug(f"Caching refresh token at {settings.JOBBERGATE_API_REFRESH_TOKEN_PATH}")
+        settings.JOBBERGATE_API_REFRESH_TOKEN_PATH.write_text(token_set.refresh_token)
+
+
+def clear_token_cache():
+    """
+    Clears the token cache.
+    """
+    logger.debug("Clearing cached tokens")
+
+    logger.debug(f"Removing access token at {settings.JOBBERGATE_API_ACCESS_TOKEN_PATH}")
+    settings.JOBBERGATE_API_ACCESS_TOKEN_PATH.unlink(missing_ok=True)
+
+    logger.debug(f"Removing refresh token at {settings.JOBBERGATE_API_ACCESS_REFRESH_PATH}")
+    settings.JOBBERGATE_API_REFRESH_TOKEN_PATH.unlink(missing_ok=True)
+
+
+def init_access_token(ctx_obj):
+    """
+    Retrieves the access token for the user from the cache.
 
     Token is retrieved from the cache, validated, and identity data is bound to the context.
-    """
-    if not settings.JOBBERGATE_API_JWT_PATH.exists():
-        abort_with_message("Please login with your auth token first using the ``jobbergate login`` command")
 
-    logger.debug("Retrieving token from cache")
-    token = settings.JOBBERGATE_API_JWT_PATH.read_text()
-    identity_data = validate_token_and_extract_identity(token)
+    If the access token is expired, a new one will be acquired via the cached refresh token (if there is one).
+
+    :param ctx_obj: The click context object from the main entry point.
+    :returns: the retrieved access token.
+    """
+    token_set = load_tokens_from_cache()
+    try:
+        identity_data = validate_token_and_extract_identity(token_set.access_token)
+
+    except ExpiredSignatureError:
+        if token_set.refresh_token is None:
+            abort_with_message(
+                """
+                The auth token is expired. Please retrieve a new and log in again.
+
+                If the problem persists, please contact Omnivector <info@omnivector.solutions>
+                for support.
+                """
+            )
+
+        logger.debug("The access token is expired. Attempting to refresh token")
+        token_set.access_token = refresh_access_token(token_set.refresh_token)
+        identity_data = validate_token_and_extract_identity(token_set.access_token)
 
     logger.debug(f"Executing with {identity_data=}")
     ctx_obj["identity"] = identity_data
 
-    logger.debug("Caching access token")
-    settings.JOBBERGATE_API_JWT_PATH.write_text(token)
+    save_tokens_to_cache(token_set)
 
-    return token
+    return token_set.access_token
+
+
+def refresh_access_token(refresh_token: str) -> str:
+    """
+    Attempts to fetch a new access token given a refresh token.
+
+    If refresh fails, the user will be notified that they need to log in again.
+
+    :param refresh_token: The refresh token to be used to retrieve a new access token.
+    :returns: The fetched access token.
+    """
+    url = f"https://{settings.AUTH0_DOMAIN}/oauth/token"
+    logger.debug(f"Requesting refreshed access token from {url}")
+    response = requests.post(
+        url,
+        headers={"content-type": "application/x-www-form-urlencoded"},
+        data=dict(
+            client_id=settings.AUTH0_CLIENT_ID,
+            audience=settings.AUTH0_AUDIENCE,
+            grant_type="refresh_token",
+            refresh_token=refresh_token,
+        ),
+    )
+    data = response.json()
+    if response.status_code != 200:
+        logger.debug(f"Error for refresh request: {data['error_description']}")
+        abort_with_message(
+            """
+            The auth token could not be refreshed. Please try logging in again.
+
+            If the problem persists, please contact Omnivector <info@omnivector.solutions>
+            for support.
+            """
+        )
+    access_token = data["access_token"]
+    return access_token
+
+
+def fetch_auth_tokens() -> TokenSet:
+    """
+    Fetches an access token (and possibly a refresh token) from Auth0.
+
+    Prints out a URL for the user to use to authenticate and polls the token endpoint to fetch it when
+    the browser-based process finishes
+
+    :returns: A TokenSet object carrying the fetched tokens.
+    """
+    url = f"https://{settings.AUTH0_DOMAIN}/oauth/device/code"
+    response = requests.post(
+        url,
+        headers={"content-type": "application/x-www-form-urlencoded"},
+        data=dict(
+            client_id=settings.AUTH0_CLIENT_ID,
+            audience=settings.AUTH0_AUDIENCE,
+            scope="offline_access",  # To get refresh token
+        ),
+    )
+
+    try:
+        data = response.json()
+    except Exception:
+        abort_with_message("Failed unpacking response for verification code")
+
+    data = response.json()
+    logger.debug(f"Response for device code request: {data}")
+    if response.status_code != 200:
+        error_message = data.get("error", "unknown error")
+        abort_with_message(f"Could not authenticate: {error_message}")
+
+    device_code = data["device_code"]
+    verification_uri_complete = data["verification_uri_complete"]
+    sleep_interval = data["interval"]
+
+    print()
+    print("To complete login, please open the following link in a browser:")
+    print()
+    print(f"  {verification_uri_complete}")
+    print()
+    print(f"Waiting up to {settings.AUTH0_MAX_POLL_TIME / 60} minutes for you to complete the process...")
+
+    time_limit = timedelta(seconds=settings.AUTH0_MAX_POLL_TIME)
+    start_time = datetime.now()
+    attempt_count = 0
+    while start_time + time_limit > datetime.now():
+        attempt_count += 1
+        token_url = f"https://{settings.AUTH0_DOMAIN}/oauth/token"
+        token_response = requests.post(
+            token_url,
+            headers={"content-type": "application/x-www-form-urlencoded"},
+            data=dict(
+                grant_type="urn:ietf:params:oauth:grant-type:device_code",
+                device_code=device_code,
+                client_id=settings.AUTH0_CLIENT_ID,
+            ),
+        )
+
+        try:
+            data = token_response.json()
+        except Exception:
+            abort_with_message("Failed unpacking response for tokens")
+
+        logger.debug(f"Response for device token request: {data}")
+        if token_response.status_code != 200:
+            error_message = data.get("error", "unknown error")
+            logger.debug(f"Token fetch attempt #{attempt_count} failed: {error_message}")
+            time.sleep(sleep_interval)
+            continue
+
+        token_set = TokenSet(
+            access_token=data["access_token"],
+            refresh_token=data.get("refresh_token"),
+        )
+        return token_set
+
+    abort_with_message(
+        """
+        Timed out while waiting for user to complete login. Please try again.
+
+        If the problem persists, please contact Omnivector <info@omnivector.solutions>
+        for support.
+        """
+    )
 
 
 def init_sentry():
@@ -311,7 +495,7 @@ def main(ctx, verbose, raw, full):
         init_sentry()
 
     elif ctx.invoked_subcommand not in ("login", "logout"):
-        token = init_token(ctx.obj)
+        token = init_access_token(ctx.obj)
         user_email = ctx.obj["identity"]["user_email"]
 
         if settings.JOBBERGATE_DEBUG:
@@ -754,17 +938,30 @@ def upload_logs(ctx):
 
 
 @main.command("login")
-@click.argument("token")
-def login(token):
+@click.option(
+    "--token",
+    "-t",
+    help=textwrap.dedent(
+        """
+        Supply a token instead of fetching one.
+        This will clear any cached refresh tokens and automatic refresh will be unavailable until you
+        login in again without an explicit access token.
+        """
+    ).strip(),
+)
+def login(token=None, refresh_token=None):
     """
     Log in to the jobbergate-cli by storing the supplied token argument in the cache.
     """
-    identity_data = validate_token_and_extract_identity(token)
-    logger.debug(f"Storing validated token for {identity_data=}")
-    # Add a blank output line to separate from the loooong token
+    if token is not None:
+        clear_token_cache()
+        token_set = TokenSet(access_token=token)
+    else:
+        token_set = fetch_auth_tokens()
+    identity_data = validate_token_and_extract_identity(token_set.access_token)
+    save_tokens_to_cache(token_set)
     print()
-    print(f"Logged in user {identity_data['username']}")
-    settings.JOBBERGATE_API_JWT_PATH.write_text(token)
+    print(f"Logged in user {identity_data['user_email']}")
 
 
 @main.command("logout")
@@ -772,12 +969,8 @@ def logout():
     """
     Logs out of the jobbergate-cli. Clears the saved user credentials.
     """
-    logger.debug("Clearing token from cache")
-    if not settings.JOBBERGATE_API_JWT_PATH.exists():
-        abort_with_message("No user is currently logged in")
-
-    settings.JOBBERGATE_API_JWT_PATH.unlink()
-    print("Cleared saved auth token")
+    clear_token_cache()
+    print("Cleared cached tokens")
 
 
 if __name__ == "__main__":
