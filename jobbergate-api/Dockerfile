@@ -1,19 +1,16 @@
 FROM tiangolo/uvicorn-gunicorn-fastapi:python3.8-slim
 
-RUN apt-get -y update
-RUN apt-get install -y --fix-missing build-essential cmake libpq-dev curl
+ENV MODULE_NAME=jobbergate_api.main
 
-RUN pip install 'poetry==1.1.7'
+RUN apt update && apt install -y curl libpq-dev gcc
 
-ENV MODULE_NAME="jobbergate_api.main"
+RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | POETRY_HOME=/opt/poetry python && \
+    cd /usr/local/bin && \
+    ln -s /opt/poetry/bin/poetry && \
+    poetry config virtualenvs.create false
 
-RUN mkdir app
-WORKDIR app
+COPY ./pyproject.toml ./poetry.lock* /app/
 
-COPY ./pyproject.toml /app/
-COPY ./poetry.lock /app/
+RUN poetry install --no-root --no-dev
 
-RUN poetry config virtualenvs.create false --local
-RUN poetry install
-
-COPY ./jobbergate_api /app/jobbergate_api/
+COPY ./jobbergate_api /app/jobbergate_api
