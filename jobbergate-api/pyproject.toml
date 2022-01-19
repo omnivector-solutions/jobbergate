@@ -5,7 +5,7 @@ authors = [
 name = "jobbergate-api"
 description = "Jobbergate API"
 license = "MIT"
-version = "2.1.0"
+version = "2.1.1"
 
 [tool.poetry.dependencies]
 python = "^3.8"
