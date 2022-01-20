@@ -429,6 +429,90 @@ async def test_list_job_submission_pagination(
     assert pagination == dict(total=5, start=2, limit=2)
 
 
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_get_job_submissions_with_slurm_job_ids_param(
+    client, application_data, job_submission_data, job_script_data, inject_security_header,
+):
+    """
+    Test GET /job-submissions/ returns only job_submissions that have one of the supplied slurm job ids.
+
+    This test proves that GET /job-submissions returns the correct job_submissions with matching slurm_job_id.
+    We show this by asserting that the job_submissions returned in the response have one of the supplied
+    slurm job ids.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data,),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=dict(application_id=inserted_application_id, **job_script_data,),
+    )
+    await database.execute_many(
+        query=job_submissions_table.insert(),
+        values=[
+            dict(
+                id=1,
+                job_script_id=inserted_job_script_id,
+                job_submission_owner_email="owner1@org.com",
+                slurm_job_id=101,
+                **job_submission_data,
+            ),
+            dict(
+                id=2,
+                job_script_id=inserted_job_script_id,
+                job_submission_owner_email="owner2@org.com",
+                slurm_job_id=102,
+                **job_submission_data,
+            ),
+            dict(
+                id=3,
+                job_script_id=inserted_job_script_id,
+                job_submission_owner_email="owner3@org.com",
+                slurm_job_id=103,
+                **job_submission_data,
+            ),
+        ],
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 3
+
+    inject_security_header("owner1@org.com", "jobbergate:job-submissions:read")
+    response = await client.get("/jobbergate/job-submissions?slurm_job_ids=101,103")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    results = data.get("results")
+    assert results
+    assert [d["id"] for d in results] == [1, 3]
+
+    pagination = data.get("pagination")
+    assert pagination == dict(total=2, start=None, limit=None,)
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_get_job_submissions_with_invalid_slurm_job_ids_param(
+    client, application_data, job_submission_data, job_script_data, inject_security_header,
+):
+    """
+    Test GET /job-submissions/ returns a 422 if the slurm_job_id parameter is invalid.
+
+    This test proves that GET /job-submissions requires the slurm_job_ids parameter to be a comma-separated
+    list of integer slurm job ids.
+    """
+    inject_security_header("owner1@org.com", "jobbergate:job-submissions:read")
+    response = await client.get("/jobbergate/job-submissions?slurm_job_ids=101-103")
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert "Invalid slurm_job_ids" in response.text
+
+    response = await client.get("/jobbergate/job-submissions?slurm_job_ids=one-oh-one")
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert "Invalid slurm_job_ids" in response.text
+
+
 @pytest.mark.freeze_time
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
