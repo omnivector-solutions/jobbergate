@@ -5,7 +5,7 @@ authors = [
 name = "jobbergate-api"
 description = "Jobbergate API"
 license = "MIT"
-version = "2.1.0"
+version = "2.1.1"
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -77,7 +77,6 @@ addopts = [
 testpaths = ["jobbergate_api/tests"]
 env = [
     "DATABASE_URL = sqlite:///sqlite-testing.db",
-    "TEST_ENV = True",
 
     # This setting must align with the rs256_domain fixture from armasec's pytest extension
     "ARMASEC_DOMAIN = armasec.dev",

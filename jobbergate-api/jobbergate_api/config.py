@@ -16,8 +16,20 @@ class LogLevelEnum(str, Enum):
     CRITICAL = "CRITICAL"
 
 
+class DeployEnvEnum(str, Enum):
+    """
+    Describes the environment where the app is currently deployed.
+    """
+
+    PROD = "PROD"
+    STAGING = "STAGING"
+    LOCAL = "LOCAL"
+
+
 class Settings(BaseSettings):
-    TEST_ENV: bool = Field(False)
+
+    DEPLOY_ENV: Optional[DeployEnvEnum] = DeployEnvEnum.LOCAL
+
     LOG_LEVEL: LogLevelEnum = LogLevelEnum.INFO
 
     # Database settings
@@ -44,7 +56,7 @@ class Settings(BaseSettings):
 
     # Sentry configuration
     SENTRY_DSN: Optional[HttpUrl]
-    SENTRY_SAMPLE_RATE: float = Field(1.0)
+    SENTRY_SAMPLE_RATE: Optional[float] = Field(1.0, gt=0.0, le=1.0)
 
     # Maximum number of bytes allowed for file uploads
     MAX_UPLOAD_FILE_SIZE: int = 100 * 1024 * 1024  # 100 MB

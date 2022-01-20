@@ -44,6 +44,10 @@ addopts = [
 env = [
     "JOBBERGATE_API_ENDPOINT = https://jobbergate-api-staging.omnivector.solutions",
     "JOBBERGATE_DEBUG = false",
+    "AUTH0_DOMAIN = dummy_auth_domain.com",
+    "AUTH0_AUDIENCE = https://dummy_auth_audience.com",
+    "AUTH0_CLIENT_ID = dummy_client_id",
+    "AUTH0_CLIENT_SECRET = dummy_client_secret",
 ]
 testpaths = ["jobbergate_cli/test"]
 
