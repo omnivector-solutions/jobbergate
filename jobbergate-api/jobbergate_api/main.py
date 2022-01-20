@@ -2,7 +2,6 @@
 Main file to startup the fastapi server
 """
 import sys
-import typing
 
 import sentry_sdk
 from fastapi import FastAPI, Response, status
@@ -22,11 +21,7 @@ subapp.add_middleware(
 )
 
 if settings.SENTRY_DSN:
-    sentry_sdk.init(
-        dsn=settings.SENTRY_DSN,
-        sample_rate=typing.cast(float, settings.SENTRY_SAMPLE_RATE),  # The cast silences mypy
-        environment=settings.DEPLOY_ENV,
-    )
+    sentry_sdk.init(dsn=settings.SENTRY_DSN, traces_sample_rate=settings.SENTRY_SAMPLE_RATE)
     subapp.add_middleware(SentryAsgiMiddleware)
 
 subapp.include_router(applications_router)

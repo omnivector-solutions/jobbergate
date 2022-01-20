@@ -1,8 +1,8 @@
 """
 Database model for the Application resource.
 """
-from sqlalchemy import Boolean, DateTime, Integer, String, Table
-from sqlalchemy.sql import False_, func
+from sqlalchemy import DateTime, Integer, String, Table
+from sqlalchemy.sql import func
 from sqlalchemy.sql.schema import Column
 
 from jobbergate_api.metadata import metadata
@@ -17,7 +17,6 @@ applications_table = Table(
     Column("application_owner_email", String, nullable=False, index=True),
     Column("application_file", String, nullable=False),
     Column("application_config", String, nullable=False),
-    Column("application_uploaded", Boolean, nullable=False, default=False_()),
     Column("created_at", DateTime, nullable=False, default=func.now()),
     Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=func.now()),
 )

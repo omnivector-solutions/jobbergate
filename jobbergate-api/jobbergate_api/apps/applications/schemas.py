@@ -77,9 +77,6 @@ application_meta_mapper = MetaMapper(
             """
         ).strip(),
     ),
-    application_uploaded=MetaField(
-        description="Indicates if the application file zip has been uploaded yet.", example=True,
-    ),
 )
 
 
@@ -116,7 +113,6 @@ class ApplicationResponse(BaseModel):
     application_owner_email: str
     application_file: str
     application_config: str
-    application_uploaded: bool
 
     class Config:
         orm_mode = True
