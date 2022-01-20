@@ -3,7 +3,7 @@ Router for the Application resource.
 """
 
 from armasec import TokenPayload
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, UploadFile, status
 from sqlalchemy import not_
 
 from jobbergate_api.apps.applications.models import applications_table
@@ -13,6 +13,7 @@ from jobbergate_api.apps.applications.schemas import (
     ApplicationUpdateRequest,
 )
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
+from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.s3_manager import S3Manager
 from jobbergate_api.security import ArmadaClaims, guard
@@ -67,10 +68,16 @@ async def applications_create(
 async def applications_upload(
     application_id: int = Query(..., description="id of the application for which to upload a file"),
     upload_file: UploadFile = File(..., description="The gzipped application tar-file to be uploaded"),
+    content_length: int = Header(...),
 ):
     """
     Upload application tarball using an authenticated user token.
     """
+    if content_length > settings.MAX_UPLOAD_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Uploaded files cannot exceed {settings.MAX_UPLOAD_FILE_SIZE} bytes.",
+        )
     s3man.put(upload_file, app_id=str(application_id))
 
 

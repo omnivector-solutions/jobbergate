@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     SENTRY_DSN: Optional[HttpUrl]
     SENTRY_SAMPLE_RATE: float = Field(1.0)
 
+    # Maximum number of bytes allowed for file uploads
+    MAX_UPLOAD_FILE_SIZE: int = 100 * 1024 * 1024  # 100 MB
+
     @root_validator
     def calculate_db_url(cls, values):
         db_url = values.get("DATABASE_URL")

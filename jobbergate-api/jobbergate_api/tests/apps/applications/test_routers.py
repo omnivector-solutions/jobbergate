@@ -2,7 +2,6 @@
 Tests for the /applications/ endpoint.
 """
 import json
-from io import StringIO
 from unittest import mock
 
 import asyncpg
@@ -660,17 +659,40 @@ async def test_update_application_bad_permission(client, application_data, injec
 
 
 @pytest.mark.asyncio
-async def test_upload_file(client, inject_security_header):
+async def test_upload_file__works_with_smal_file(
+    client, inject_security_header, tweak_settings, make_dummy_file, make_files_param,
+):
     """
     Test that a file is uploaded.
 
     This test proves that an application's file is uploaded by making sure that the boto3 put_object method
     is called once and a 201 status code is returned.
     """
-    file_mock = mock.MagicMock(wraps=StringIO("test"))
-
+    dummy_file = make_dummy_file("dummy.py", size=10_000 - 200)  # Need some buffer for file headers, etc
     inject_security_header("owner1@org.com", "jobbergate:applications:upload")
-    with mock.patch.object(s3man, "s3_client") as mock_s3:
-        response = await client.post("/jobbergate/applications/1/upload", files=dict(upload_file=file_mock),)
+    with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
+        with mock.patch.object(s3man, "s3_client") as mock_s3:
+            with make_files_param(dummy_file) as files_param:
+                response = await client.post("/jobbergate/applications/1/upload", files=files_param,)
+
     assert response.status_code == status.HTTP_201_CREATED
     mock_s3.put_object.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_upload_file__fails_with_413_on_large_file(
+    client, inject_security_header, tweak_settings, make_dummy_file, make_files_param,
+):
+    """
+    Test that a file is uploaded.
+
+    This test proves that an application's file is uploaded by making sure that the boto3 put_object method
+    is called once and a 201 status code is returned.
+    """
+    dummy_file = make_dummy_file("dummy.py", size=10_000 + 200)
+    inject_security_header("owner1@org.com", "jobbergate:applications:upload")
+    with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
+        with make_files_param(dummy_file) as files_param:
+            response = await client.post("/jobbergate/applications/1/upload", files=files_param,)
+
+    assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE

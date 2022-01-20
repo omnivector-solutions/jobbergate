@@ -5,6 +5,8 @@ import contextlib
 import dataclasses
 import datetime
 import os
+import random
+import string
 import typing
 
 from asgi_lifespan import LifespanManager
@@ -13,6 +15,9 @@ from pytest import fixture
 
 from jobbergate_api.config import settings
 from jobbergate_api.main import app
+
+# Charset for producing random strings
+CHARSET = string.ascii_letters + string.digits + string.punctuation
 
 
 @fixture(scope="session", autouse=True)
@@ -127,5 +132,63 @@ def time_frame():
         window = TimeFrame(now=datetime.datetime.utcnow().replace(microsecond=0), later=None)
         yield window
         window.later = datetime.datetime.utcnow()
+
+    return _helper
+
+
+@fixture
+def tweak_settings():
+    """
+    Provides a fixture to use as a context manager where the app settings may be temporarily changed.
+    """
+
+    @contextlib.contextmanager
+    def _helper(**kwargs):
+        """
+        Context manager for tweaking app settings temporarily.
+        """
+        previous_values = {}
+        for (key, value) in kwargs.items():
+            previous_values[key] = getattr(settings, key)
+            setattr(settings, key, value)
+        yield
+        for (key, value) in previous_values.items():
+            setattr(settings, key, value)
+
+    return _helper
+
+
+@fixture
+def make_dummy_file(tmp_path):
+    """
+    Provides a fixture that will generate a temporary file with ``size`` random bytes of text data.
+    """
+
+    def _helper(filename, size=100):
+        """
+        Auxillery function that builds the temporary file.
+        """
+        text = "".join(random.choice(CHARSET) for i in range(size))
+        dummy_path = tmp_path / filename
+        dummy_path.write_text(text)
+        return dummy_path
+
+    return _helper
+
+
+@fixture
+def make_files_param():
+    """
+    Provides a fixture to use as a context manager that opens the supplied file and builds a ``files`` param
+    appropriate for using multi-part file uploads with the client.
+    """
+
+    @contextlib.contextmanager
+    def _helper(file_path):
+        """
+        Context manager that opens the file and yields the ``files`` param from it.
+        """
+        with open(file_path, "r") as file_handle:
+            yield dict(upload_file=(file_path.name, file_handle, "text/plain"))
 
     return _helper
