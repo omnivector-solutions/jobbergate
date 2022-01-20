@@ -52,11 +52,14 @@ class Settings(BaseSettings):
     ARMASEC_DEBUG: bool = Field(False)
 
     # Key to custom claims packaged with Auth0 tokens
-    ARMADA_CLAIMS_KEY: str = "https://www.armada-hpc.com"
+    IDENTITY_CLAIMS_KEY: str = "https://omnivector.solutions"
 
     # Sentry configuration
     SENTRY_DSN: Optional[HttpUrl]
     SENTRY_SAMPLE_RATE: Optional[float] = Field(1.0, gt=0.0, le=1.0)
+
+    # Maximum number of bytes allowed for file uploads
+    MAX_UPLOAD_FILE_SIZE: int = 100 * 1024 * 1024  # 100 MB
 
     @root_validator
     def calculate_db_url(cls, values):

@@ -1,24 +1,7 @@
 """
 Pytest helpers to use in all apps.
 """
-from typing import List
-
-import sqlalchemy
-from pydantic import BaseModel
 from pytest import fixture
-
-from jobbergate_api.storage import database
-
-
-async def insert_objects(objects: List[BaseModel], table: sqlalchemy.Table):
-    """
-    Perform a database insertion for the objects passed as the argument, into
-    the specified table.
-    """
-    ModelType = type(objects[0])
-    await database.execute_many(query=table.insert(), values=[obj.dict() for obj in objects])
-    fetched = await database.fetch_all(table.select())
-    return [ModelType.parse_obj(o) for o in fetched]
 
 
 @fixture
@@ -55,5 +38,14 @@ def job_script_data():
         "job_script_name": "test_name",
         "job_script_data_as_string": "the\nfile",
         "job_script_owner_email": "owner1@org.com",
-        "application_id": 1,
+    }
+
+
+@fixture
+def job_submission_data():
+    """
+    Default job_submission data for testing.
+    """
+    return {
+        "job_submission_name": "test_name",
     }

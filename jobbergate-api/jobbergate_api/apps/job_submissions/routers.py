@@ -1,18 +1,21 @@
 """
 Router for the JobSubmission resource.
 """
-from datetime import datetime
 from typing import Optional
 
 from armasec import TokenPayload
-from fastapi import APIRouter, Depends, Form, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_submissions.models import job_submissions_table
-from jobbergate_api.apps.job_submissions.schemas import JobSubmission, JobSubmissionRequest
+from jobbergate_api.apps.job_submissions.schemas import (
+    JobSubmissionCreateRequest,
+    JobSubmissionResponse,
+    JobSubmissionUpdateRequest,
+)
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.pagination import Pagination, Response, package_response
-from jobbergate_api.security import ArmadaClaims, guard
+from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import database
 
 router = APIRouter()
@@ -20,7 +23,7 @@ router = APIRouter()
 
 @router.post("/job-submissions/", status_code=201, description="Endpoint for job_submission creation")
 async def job_submission_create(
-    job_submission: JobSubmissionRequest,
+    job_submission: JobSubmissionCreateRequest,
     token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:job-submissions:create")),
 ):
     """
@@ -28,34 +31,38 @@ async def job_submission_create(
 
     Make a post request to this endpoint with the required values to create a new job submission.
     """
-    armada_claims = ArmadaClaims.from_token_payload(token_payload)
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    job_submission.job_submission_owner_email = identity_claims.user_email
+
     select_query = job_scripts_table.select().where(job_scripts_table.c.id == job_submission.job_script_id)
     raw_job_script = await database.fetch_one(select_query)
 
     if not raw_job_script:
         raise HTTPException(
-            status_code=404, detail=(f"JobScript id={job_submission.job_script_id} not found."),
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(f"JobScript id={job_submission.job_script_id} not found."),
         )
 
     async with database.transaction():
         try:
             insert_query = job_submissions_table.insert()
-            values = {"job_submission_owner_email": armada_claims.user_email, **job_submission.dict()}
-            job_submission_created_id = await database.execute(query=insert_query, values=values)
+            inserted_id = await database.execute(query=insert_query, values=job_submission.dict(),)
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
-            raise HTTPException(status_code=422, detail=str(e))
-    return JobSubmission(
-        id=job_submission_created_id,
-        job_submission_owner_email=armada_claims.user_email,
-        **job_submission.dict(),
-    )
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+
+        # Now fetch the newly inserted row. This is necessary to reflect defaults and db modified columns
+        query = job_submissions_table.select().where(job_submissions_table.c.id == inserted_id)
+        raw_job_submission = await database.fetch_one(query)
+        response_job_submission = JobSubmissionResponse.parse_obj(raw_job_submission)
+
+    return response_job_submission
 
 
 @router.get(
     "/job-submissions/{job_submission_id}",
     description="Endpoint to get a job_submission",
-    response_model=JobSubmission,
+    response_model=JobSubmissionResponse,
     dependencies=[Depends(guard.lockdown("jobbergate:job-submissions:read"))],
 )
 async def job_submission_get(job_submission_id: int = Query(...)):
@@ -69,14 +76,14 @@ async def job_submission_get(job_submission_id: int = Query(...)):
         raise HTTPException(
             status_code=404, detail=f"JobSubmission with id={job_submission_id} not found.",
         )
-    job_submission = JobSubmission.parse_obj(raw_job_submission)
+    job_submission = JobSubmissionResponse.parse_obj(raw_job_submission)
     return job_submission
 
 
 @router.get(
     "/job-submissions/",
     description="Endpoint to list job_submissions",
-    response_model=Response[JobSubmission],
+    response_model=Response[JobSubmissionResponse],
 )
 async def job_submission_list(
     pagination: Pagination = Depends(),
@@ -86,11 +93,11 @@ async def job_submission_list(
     """
     List job_submissions for the authenticated user.
     """
-    armada_claims = ArmadaClaims.from_token_payload(token_payload)
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
     query = job_submissions_table.select()
     if not all:
-        query = query.where(job_submissions_table.c.job_submission_owner_email == armada_claims.user_email)
-    return await package_response(JobSubmission, query, pagination)
+        query = query.where(job_submissions_table.c.job_submission_owner_email == identity_claims.user_email)
+    return await package_response(JobSubmissionResponse, query, pagination)
 
 
 @router.delete(
@@ -123,53 +130,36 @@ async def job_submission_delete(
     "/job-submissions/{job_submission_id}",
     status_code=status.HTTP_201_CREATED,
     description="Endpoint to update a job_submission given the id",
-    response_model=JobSubmission,
+    response_model=JobSubmissionResponse,
     dependencies=[Depends(guard.lockdown("jobbergate:job-submissions:update"))],
 )
-async def job_script_update(
-    job_submission_id: int = Query(...),
-    job_submission_name: Optional[str] = Form(None),
-    job_submission_description: Optional[str] = Form(None),
-):
+async def job_script_update(job_submission_id: int, job_submission: JobSubmissionUpdateRequest):
     """
     Update a job_submission given its id.
     """
-    query = job_submissions_table.select().where(job_submissions_table.c.id == job_submission_id)
-    raw_job_submission = await database.fetch_one(query)
-
-    if not raw_job_submission:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"JobSubmission with id={job_submission_id} not found.",
-        )
-    job_submission_data = JobSubmission.parse_obj(raw_job_submission)
-
-    if job_submission_name is not None:
-        job_submission_data.job_submission_name = job_submission_name
-    if job_submission_description is not None:
-        job_submission_data.job_submission_description = job_submission_description
-
-    job_submission_data.updated_at = datetime.utcnow()
-
-    values = {
-        "job_submission_name": job_submission_data.job_submission_name,
-        "job_submission_description": job_submission_data.job_submission_description,
-        "updated_at": job_submission_data.updated_at,
-    }
-    validated_values = {key: value for key, value in values.items() if value is not None}
-
-    q_update = (
+    update_query = (
         job_submissions_table.update()
         .where(job_submissions_table.c.id == job_submission_id)
-        .values(validated_values)
+        .values(job_submission.dict(exclude_unset=True))
     )
     async with database.transaction():
         try:
-            await database.execute(q_update)
+            result = await database.execute(update_query)
+
         except INTEGRITY_CHECK_EXCEPTIONS as e:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
-    query = job_submissions_table.select(job_submissions_table.c.id == job_submission_id)
-    return JobSubmission.parse_obj(await database.fetch_one(query))
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"JobSubmission with id={job_submission_id} not found.",
+            )
+
+        select_query = job_submissions_table.select().where(job_submissions_table.c.id == job_submission_id)
+        raw_job_submission = await database.fetch_one(select_query)
+        response_job_submission = JobSubmissionResponse.parse_obj(raw_job_submission)
+
+    return response_job_submission
 
 
 def include_router(app):

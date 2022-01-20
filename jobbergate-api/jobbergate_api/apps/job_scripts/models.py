@@ -1,8 +1,6 @@
 """
 Database model for the JobScript resource.
 """
-from datetime import datetime
-
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Table
 from sqlalchemy.sql import func
 from sqlalchemy.sql.schema import Column
@@ -19,5 +17,5 @@ job_scripts_table = Table(
     Column("job_script_owner_email", String, nullable=False, index=True),
     Column("application_id", ForeignKey("applications.id")),
     Column("created_at", DateTime, nullable=False, default=func.now()),
-    Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=datetime.utcnow),
+    Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=func.now()),
 )

@@ -2,7 +2,6 @@
 Tests for the /applications/ endpoint.
 """
 import json
-from io import StringIO
 from unittest import mock
 
 import asyncpg
@@ -11,209 +10,188 @@ from fastapi import status
 
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.routers import s3man
-from jobbergate_api.apps.applications.schemas import Application
+from jobbergate_api.apps.applications.schemas import ApplicationResponse
 from jobbergate_api.storage import database
-from jobbergate_api.tests.apps.conftest import insert_objects
 
 
 @pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
-async def test_create_application(s3man_client_mock, application_data, client, inject_security_header):
+async def test_create_application(application_data, client, inject_security_header, time_frame):
     """
     Test POST /applications/ correctly creates an application.
 
     This test proves that an application is successfully created via a POST request to the /applications/
     endpoint. We show this by asserting that the application is created in the database after the post
-    request is made, the correct status code (201) is returned and the correct boto3 method was called.
+    request is made and the correct status code (201) is returned.
     """
-    file_mock = mock.MagicMock(wraps=StringIO("test"))
+    id_rows = await database.fetch_all("SELECT id FROM applications")
+    assert len(id_rows) == 0
 
     inject_security_header("owner1@org.com", "jobbergate:applications:create")
-    data = dict(application_identifier="test-identifier", **application_data,)
-    response = await client.post("/jobbergate/applications/", data=data, files={"upload_file": file_mock})
+    with time_frame() as window:
+        response = await client.post(
+            "/jobbergate/applications/",
+            json=dict(**application_data, application_identifier="test-identifier",),
+        )
+
     assert response.status_code == status.HTTP_201_CREATED
-    s3man.s3_client.put_object.assert_called_once()
 
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
+    id_rows = await database.fetch_all("SELECT id FROM applications")
+    assert len(id_rows) == 1
 
-    query = applications_table.select(applications_table.c.id == 1)
-    application = Application.parse_obj(await database.fetch_one(query))
+    application = ApplicationResponse(**response.json())
 
-    assert application is not None
+    assert application.id == id_rows[0][0]
     assert application.application_name == application_data["application_name"]
     assert application.application_identifier == "test-identifier"
     assert application.application_owner_email == "owner1@org.com"
     assert application.application_config == application_data["application_config"]
     assert application.application_file == application_data["application_file"]
-    assert application.application_description == ""
+    assert application.application_description is None
+    assert application.created_at in window
+    assert application.updated_at in window
 
 
 @pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
-async def test_create_application_bad_permission(
-    s3man_client_mock, application_data, client, inject_security_header,
-):
+async def test_create_application_bad_permission(application_data, client, inject_security_header):
     """
     Test that it is not possible to create application without proper permission.
 
     This test proves that is not possible to create an application without the proper permission.
     We show this by trying to create an application without an permission that allow "create" then assert
-    that the application still does not exists in the database, the correct status code (403) is returned
-    and that the boto3 method is never called.
+    that the application still does not exists in the database and that the correct status code (403) is
+    returned.
     """
-    file_mock = mock.MagicMock(wraps=StringIO("test"))
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 0
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
-    response = await client.post(
-        "/jobbergate/applications/", data=application_data, files={"upload_file": file_mock}
-    )
+    response = await client.post("/jobbergate/applications/", json=application_data)
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    s3man.s3_client.put_object.assert_not_called()
 
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
 
 
 @pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
-async def test_create_without_application_name(
-    s3man_client_mock, application_data, client, inject_security_header,
-):
+async def test_create_without_application_name(application_data, client, inject_security_header):
     """
-    Test that is not possible to create an application without the required parameters.
+    Test that is not possible to create an application without the required body fields.
 
     This test proves that is not possible to create an application without the name. We show this by
     trying to create an application without the application_name in the request then assert that the
-    application still does not exists in the database, the correct status code (422) is returned and that the
-    boto3 method is never called.
+    application still does not exists in the database and the correct status code (422) is returned.
     """
-    file_mock = mock.MagicMock(wraps=StringIO("test"))
-
     inject_security_header("owner1@org.com", "jobbergate:applications:create")
-    application_data["application_name"] = None
     response = await client.post(
-        "/jobbergate/applications/", data=application_data, files={"upload_file": file_mock}
+        "/jobbergate/applications/",
+        json={k: v for (k, v) in application_data.items() if k != "application_name"},
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    s3man.s3_client.put_object.assert_not_called()
 
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
 
 
 @pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
-async def test_create_without_file(
-    s3man_client_mock, application_data, client, inject_security_header,
-):
-    """
-    Test that is not possible to create an application without a file.
-
-    This test proves that is not possible to create an application without a file. We show this by
-    trying to create an application without a file in the request then assert that the application still
-    does not exists in the database, the correct status code (422) is returned and that the boto3 method
-    is never called.
-    """
-    inject_security_header("owner1@org.com", "jobbergate:applications:create")
-    application_data["application_name"] = None
-    response = await client.post("/jobbergate/applications/", data=application_data)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    s3man.s3_client.put_object.assert_not_called()
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 0
-
-
-@pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
-@database.transaction(force_rollback=True)
-async def test_delete_application(
-    s3man_client_mock, client, application_data, inject_security_header,
-):
+async def test_delete_application_no_file_uploaded(client, application_data, inject_security_header):
     """
     Test DELETE /applications/<id> correctly deletes an application.
 
     This test proves that an application is successfully deleted via a DELETE request to the
-    /applciations/<id> endpoint. We show this by asserting that the application no longer exists in the
-    database after the delete request is made, the correct status code is returned and the correct boto3
-    method was called.
+    /applications/<id> endpoint. We show this by asserting that the application no longer exists in the
+    database after the delete request is made and the correct status code is returned.
     """
-    application = [Application(application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data),
+    )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", "jobbergate:applications:delete")
-    response = await client.delete("/jobbergate/applications/1")
+    with mock.patch.object(s3man, "s3_client") as mock_s3:
+        response = await client.delete(f"/jobbergate/applications/{inserted_id}")
+        mock_s3.delete_object.assert_called_once()
+
     assert response.status_code == status.HTTP_204_NO_CONTENT
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
-    s3man.s3_client.delete_object.assert_called_once()
 
 
 @pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
-async def test_delete_application_bad_permission(
-    s3man_client_mock, client, application_data, inject_security_header,
-):
+async def test_delete_application_with_uploaded_file(client, application_data, inject_security_header):
+    """
+    Test DELETE /applications/<id> correctly deletes an application and it's file.
+
+    This test proves that an application is successfully deleted via a DELETE request to the
+    /applications/<id> endpoint. We show this by asserting that the application no longer exists in the
+    database after the delete request is made, the correct status code is returned and the correct boto3
+    method was called.
+    """
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data),
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 1
+
+    inject_security_header("owner1@org.com", "jobbergate:applications:delete")
+    with mock.patch.object(s3man, "s3_client") as mock_s3:
+        response = await client.delete(f"/jobbergate/applications/{inserted_id}")
+        mock_s3.delete_object.assert_called_once()
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 0
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_delete_application_bad_permission(client, application_data, inject_security_header):
     """
     Test that it is not possible to delete application without proper permission.
 
-    This test proves that an application is not deleted via a DELETE request to the /applciations/<id>
+    This test proves that an application is not deleted via a DELETE request to the /applications/<id>
     endpoint. We show this by asserting that the application still exists in the database after the delete
-    request is made, the correct status code is returned and the boto3 method is never called.
+    request is made and the correct status code is returned.
     """
-    application = [Application(application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data),
+    )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
-    response = await client.delete("/jobbergate/applications/1")
+    response = await client.delete(f"/jobbergate/applications/{inserted_id}")
     assert response.status_code == status.HTTP_403_FORBIDDEN
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
-    s3man.s3_client.delete_object.assert_not_called()
 
 
 @pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
-async def test_delete_application_not_found(
-    s3man_client_mock, client, application_data, inject_security_header,
-):
+async def test_delete_application_not_found(client, inject_security_header):
     """
-    Test DELETE /applications/<id> the correct response code when the application doesn't exist.
+    Test DELETE /applications/<id> the correct respnse code when the application doesn't exist.
 
     This test proves that DELETE /applications/<id> returns the correct response code (404)
     when the application id does not exist in the database. We show this by asserting that a 404 response
     code is returned for a request made with an application id that doesn't exist.
     """
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
-
     inject_security_header("owner1@org.com", "jobbergate:applications:delete")
     response = await client.delete("/jobbergate/applications/999")
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
-    s3man.s3_client.delete_object.assert_not_called()
 
 
 @pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
-async def test_delete_application_without_id(
-    s3man_client_mock, client, application_data, inject_security_header,
-):
+async def test_delete_application_without_id(client, inject_security_header):
     """
     Test DELETE /applications/ without <id> returns the correct response.
 
@@ -224,21 +202,19 @@ async def test_delete_application_without_id(
     inject_security_header("owner1@org.com", "jobbergate:applications:delete")
     response = await client.delete("/jobbergate/applications/")
     assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
-    s3man.s3_client.delete_object.assert_not_called()
 
 
 @pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
-async def test_delete_application__fk_error(
-    s3man_client_mock, client, application_data, inject_security_header
-):
+async def test_delete_application__fk_error(client, application_data, inject_security_header):
     """
     Test DELETE /applications/<id> correctly returns a 409 with a helpful message when a delete is blocked
     by a foreign-key constraint.
     """
-    application = [Application(application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data),
+    )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
@@ -253,19 +229,17 @@ async def test_delete_application__fk_error(
             """
         ),
     ):
-        response = await client.delete("/jobbergate/applications/1")
+        response = await client.delete(f"/jobbergate/applications/{inserted_id}")
     assert response.status_code == status.HTTP_409_CONFLICT
     error_data = json.loads(response.text)["detail"]
     assert error_data["message"] == "Delete failed due to foreign-key constraint"
     assert error_data["table"] == "job_scripts"
-    assert error_data["pk_id"] == "1"
+    assert error_data["pk_id"] == f"{inserted_id}"
 
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_get_application_by_id(
-    client, application_data, inject_security_header,
-):
+async def test_get_application_by_id(client, application_data, inject_security_header):
     """
     Test GET /applications/<id>.
 
@@ -274,18 +248,19 @@ async def test_get_application_by_id(
     returned in the response is equal to the application data that exists in the database
     for the given application id.
     """
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
-
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data),
+    )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", "jobbergate:applications:read")
-    response = await client.get("/jobbergate/applications/1")
+    response = await client.get(f"/jobbergate/applications/{inserted_id}")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert data["id"] == 1
+    assert data["id"] == inserted_id
     assert data["application_name"] == application_data["application_name"]
     assert data["application_config"] == application_data["application_config"]
     assert data["application_file"] == application_data["application_file"]
@@ -316,11 +291,13 @@ async def test_get_application_by_id_bad_permission(client, application_data, in
     user don't have the proper permission. We show this by asserting that the status code
     returned is what we would expect (403).
     """
-    application = [Application(id=1, application_owner_email="owner1@org.com", **application_data)]
-    await insert_objects(application, applications_table)
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data),
+    )
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
-    response = await client.get("/jobbergate/applications/1")
+    response = await client.get(f"/jobbergate/applications/{inserted_id}")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -334,21 +311,29 @@ async def test_get_applications__no_params(client, application_data, inject_secu
     the request. We show this by asserting that the applications returned in the response are
     only applications owned by the user making the request.
     """
-    applications = [
-        Application(
-            id=1, application_identifier="app1", application_owner_email="owner1@org.com", **application_data
-        ),
-        Application(
-            id=2, application_identifier="app2", application_owner_email="owner1@org.com", **application_data
-        ),
-        Application(
-            id=3,
-            application_identifier="app3",
-            application_owner_email="owner999@org.com",
-            **application_data,
-        ),
-    ]
-    await insert_objects(applications, applications_table)
+    await database.execute_many(
+        query=applications_table.insert(),
+        values=[
+            dict(
+                id=1,
+                application_identifier="app1",
+                application_owner_email="owner1@org.com",
+                **application_data,
+            ),
+            dict(
+                id=2,
+                application_identifier="app2",
+                application_owner_email="owner1@org.com",
+                **application_data,
+            ),
+            dict(
+                id=3,
+                application_identifier="app3",
+                application_owner_email="owner999@org.com",
+                **application_data,
+            ),
+        ],
+    )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 3
 
@@ -375,21 +360,29 @@ async def test_get_application___bad_permission(client, application_data, inject
     We show this by making a request with an user without creating the permission, and then asserting the
     status code in the response.
     """
-    applications = [
-        Application(
-            id=1, application_identifier="app1", application_owner_email="owner1@org.com", **application_data
-        ),
-        Application(
-            id=2, application_identifier="app2", application_owner_email="owner1@org.com", **application_data
-        ),
-        Application(
-            id=3,
-            application_identifier="app3",
-            application_owner_email="owner999@org.com",
-            **application_data,
-        ),
-    ]
-    await insert_objects(applications, applications_table)
+    await database.execute_many(
+        query=applications_table.insert(),
+        values=[
+            dict(
+                id=1,
+                application_identifier="app1",
+                application_owner_email="owner1@org.com",
+                **application_data,
+            ),
+            dict(
+                id=2,
+                application_identifier="app2",
+                application_owner_email="owner1@org.com",
+                **application_data,
+            ),
+            dict(
+                id=3,
+                application_identifier="app3",
+                application_owner_email="owner999@org.com",
+                **application_data,
+            ),
+        ],
+    )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 3
 
@@ -410,21 +403,29 @@ async def test_get_applications__with_user_param(client, application_data, injec
     the user making the request to list applications doesn't see any of the other user's
     applications in the response
     """
-    applications = [
-        Application(
-            id=1, application_identifier="app1", application_owner_email="owner1@org.com", **application_data
-        ),
-        Application(
-            id=2,
-            application_identifier="app2",
-            application_owner_email="owner999@org.com",
-            **application_data,
-        ),
-        Application(
-            id=3, application_identifier="app3", application_owner_email="owner1@org.com", **application_data
-        ),
-    ]
-    await insert_objects(applications, applications_table)
+    await database.execute_many(
+        query=applications_table.insert(),
+        values=[
+            dict(
+                id=1,
+                application_identifier="app1",
+                application_owner_email="owner1@org.com",
+                **application_data,
+            ),
+            dict(
+                id=2,
+                application_identifier="app2",
+                application_owner_email="owner1@org.com",
+                **application_data,
+            ),
+            dict(
+                id=3,
+                application_identifier="app3",
+                application_owner_email="owner999@org.com",
+                **application_data,
+            ),
+        ],
+    )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 3
 
@@ -444,7 +445,7 @@ async def test_get_applications__with_user_param(client, application_data, injec
 
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [1, 3]
+    assert [d["id"] for d in results] == [1, 2]
 
     pagination = data.get("pagination")
     assert pagination == dict(total=2, start=None, limit=None,)
@@ -461,21 +462,24 @@ async def test_get_applications__with_all_param(client, application_data, inject
     owned by another user. Assert that the response to GET /applications/?all=True includes all three
     applications.
     """
-    applications = [
-        Application(
-            id=1, application_identifier="app1", application_owner_email="owner1@org.com", **application_data
-        ),
-        Application(
-            id=2, application_identifier=None, application_owner_email="owner1@org.com", **application_data
-        ),
-        Application(
-            id=3,
-            application_identifier="app3",
-            application_owner_email="owner999@org.com",
-            **application_data,
-        ),
-    ]
-    await insert_objects(applications, applications_table)
+    await database.execute_many(
+        query=applications_table.insert(),
+        values=[
+            dict(
+                id=1,
+                application_identifier="app1",
+                application_owner_email="owner1@org.com",
+                **application_data,
+            ),
+            dict(id=2, application_owner_email="owner1@org.com", **application_data),
+            dict(
+                id=3,
+                application_identifier="app3",
+                application_owner_email="owner999@org.com",
+                **application_data,
+            ),
+        ],
+    )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 3
 
@@ -512,29 +516,21 @@ async def test_get_applications__with_pagination(client, application_data, injec
     This test proves that the user making the request can see applications paginated.
     We show this by creating three applications and assert that the response is correctly paginated.
     """
-    applications = [
-        Application(
-            id=1, application_identifier="app1", application_owner_email="owner1@org.com", **application_data
-        ),
-        Application(
-            id=2, application_identifier="app2", application_owner_email="owner1@org.com", **application_data
-        ),
-        Application(
-            id=3, application_identifier="app3", application_owner_email="owner1@org.com", **application_data
-        ),
-        Application(
-            id=4, application_identifier="app4", application_owner_email="owner1@org.com", **application_data
-        ),
-        Application(
-            id=5, application_identifier="app5", application_owner_email="owner1@org.com", **application_data
-        ),
-    ]
-    await insert_objects(applications, applications_table)
+    await database.execute_many(
+        query=applications_table.insert(),
+        values=[
+            dict(id=1, application_owner_email="owner1@org.com", **application_data),
+            dict(id=2, application_owner_email="owner1@org.com", **application_data),
+            dict(id=3, application_owner_email="owner1@org.com", **application_data),
+            dict(id=4, application_owner_email="owner1@org.com", **application_data),
+            dict(id=5, application_owner_email="owner1@org.com", **application_data),
+        ],
+    )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 5
 
     inject_security_header("owner1@org.com", "jobbergate:applications:read")
-    response = await client.get("/jobbergate/applications/?start=0&limit=1")
+    response = await client.get("/jobbergate/applications/?start=0&limit=1&all=true")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -545,7 +541,7 @@ async def test_get_applications__with_pagination(client, application_data, injec
     pagination = data.get("pagination")
     assert pagination == dict(total=5, start=0, limit=1,)
 
-    response = await client.get("/jobbergate/applications/?start=1&limit=2")
+    response = await client.get("/jobbergate/applications/?start=1&limit=2&all=true")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -556,7 +552,7 @@ async def test_get_applications__with_pagination(client, application_data, injec
     pagination = data.get("pagination")
     assert pagination == dict(total=5, start=1, limit=2,)
 
-    response = await client.get("/jobbergate/applications/?start=2&limit=2")
+    response = await client.get("/jobbergate/applications/?start=2&limit=2&all=true")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -569,9 +565,8 @@ async def test_get_applications__with_pagination(client, application_data, injec
 
 
 @pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
-async def test_update_application(s3man_client_mock, client, application_data, inject_security_header):
+async def test_update_application(client, application_data, inject_security_header, time_frame):
     """
     Test that an application is updated via PUT.
 
@@ -579,89 +574,125 @@ async def test_update_application(s3man_client_mock, client, application_data, i
     /application/<id> endpoint. We show this by asserting that the values provided to update the
     application are returned in the response made to the PUT /applciation/<id> endpoint.
     """
-    file_mock = mock.MagicMock(wraps=StringIO("test"))
-
-    applications = [
-        Application(
+    await database.execute(
+        query=applications_table.insert(),
+        values=dict(
             id=1,
+            application_identifier="old_identifier",
             application_owner_email="owner1@org.com",
             application_description="old description",
             **application_data,
         ),
-    ]
-    await insert_objects(applications, applications_table)
+    )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", "jobbergate:applications:update")
-    application_data["application_name"] = "new_name"
-    application_data["application_identifier"] = "new_identifier"
-    application_data["application_description"] = "new_description"
-    response = await client.put(
-        "/jobbergate/applications/1", data=application_data, files={"upload_file": file_mock}
-    )
+    with time_frame() as window:
+        response = await client.put(
+            "/jobbergate/applications/1",
+            json=dict(
+                application_name="new_name",
+                application_identifier="new_identifier",
+                application_description="new_description",
+            ),
+        )
     assert response.status_code == status.HTTP_201_CREATED
 
     data = response.json()
-    assert data["application_name"] == application_data["application_name"]
-    assert data["application_identifier"] == application_data["application_identifier"]
-    assert data["application_description"] == application_data["application_description"]
-
-    s3man.s3_client.put_object.assert_called_once()
+    assert data["application_name"] == "new_name"
+    assert data["application_identifier"] == "new_identifier"
+    assert data["application_description"] == "new_description"
 
     query = applications_table.select(applications_table.c.id == 1)
-    application = Application.parse_obj(await database.fetch_one(query))
+    result = await database.fetch_one(query)
 
-    assert application is not None
-    assert application.application_name == application_data["application_name"]
-    assert application.application_identifier == application_data["application_identifier"]
-    assert application.application_owner_email == "owner1@org.com"
-    assert application.application_config == application_data["application_config"]
-    assert application.application_file == application_data["application_file"]
-    assert application.application_description == application_data["application_description"]
+    assert result is not None
+    assert result["application_name"] == "new_name"
+    assert result["application_identifier"] == "new_identifier"
+    assert result["application_owner_email"] == "owner1@org.com"
+    assert result["application_description"] == "new_description"
+    assert result["updated_at"] in window
 
 
 @pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
-async def test_update_application_bad_permission(
-    s3man_client_mock, client, application_data, inject_security_header,
-):
+async def test_update_application_bad_permission(client, application_data, inject_security_header):
     """
     Test that it is not possible to update applications without proper permission.
 
     This test proves that an application's values are not updated following a PUT request to the
-    /application/<id> endpoint by a user without permission. We show this by asserting that the s3_client is
-    not called, the status code 403 is returned and that the application_data is still the same as before.
+    /application/<id> endpoint by a user without permission. We show this by asserting that the status code
+    403 is returned and that the application_data is still the same as before.
     """
-    file_mock = mock.MagicMock(wraps=StringIO("test"))
-
-    applications = [
-        Application(
+    await database.execute(
+        query=applications_table.insert(),
+        values=dict(
             id=1,
+            application_identifier="old_identifier",
             application_owner_email="owner1@org.com",
             application_description="old description",
             **application_data,
         ),
-    ]
-    await insert_objects(applications, applications_table)
+    )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
-    application_data["application_name"] = "new_name"
-    application_data["application_description"] = "new_description"
     response = await client.put(
-        "/jobbergate/applications/1", data=application_data, files={"upload_file": file_mock}
+        "/jobbergate/applications/1",
+        json=dict(
+            application_name="new_name",
+            application_identifier="new_identifier",
+            application_description="new_description",
+        ),
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    s3man.s3_client.put_object.assert_not_called()
-
     query = applications_table.select(applications_table.c.id == 1)
-    application = Application.parse_obj(await database.fetch_one(query))
+    result = await database.fetch_one(query)
 
-    assert application is not None
-    assert application.application_name != application_data["application_name"]
-    assert application.application_owner_email == "owner1@org.com"
-    assert application.application_description == "old description"
+    assert result is not None
+    assert result["application_name"] == application_data["application_name"]
+    assert result["application_identifier"] == "old_identifier"
+    assert result["application_description"] == "old description"
+
+
+@pytest.mark.asyncio
+async def test_upload_file__works_with_smal_file(
+    client, inject_security_header, tweak_settings, make_dummy_file, make_files_param,
+):
+    """
+    Test that a file is uploaded.
+
+    This test proves that an application's file is uploaded by making sure that the boto3 put_object method
+    is called once and a 201 status code is returned.
+    """
+    dummy_file = make_dummy_file("dummy.py", size=10_000 - 200)  # Need some buffer for file headers, etc
+    inject_security_header("owner1@org.com", "jobbergate:applications:upload")
+    with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
+        with mock.patch.object(s3man, "s3_client") as mock_s3:
+            with make_files_param(dummy_file) as files_param:
+                response = await client.post("/jobbergate/applications/1/upload", files=files_param,)
+
+    assert response.status_code == status.HTTP_201_CREATED
+    mock_s3.put_object.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_upload_file__fails_with_413_on_large_file(
+    client, inject_security_header, tweak_settings, make_dummy_file, make_files_param,
+):
+    """
+    Test that a file is uploaded.
+
+    This test proves that an application's file is uploaded by making sure that the boto3 put_object method
+    is called once and a 201 status code is returned.
+    """
+    dummy_file = make_dummy_file("dummy.py", size=10_000 + 200)
+    inject_security_header("owner1@org.com", "jobbergate:applications:upload")
+    with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
+        with make_files_param(dummy_file) as files_param:
+            response = await client.post("/jobbergate/applications/1/upload", files=files_param,)
+
+    assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
