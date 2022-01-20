@@ -131,7 +131,7 @@ def time_frame():
         """
         window = TimeFrame(now=datetime.datetime.utcnow().replace(microsecond=0), later=None)
         yield window
-        window.later = datetime.datetime.utcnow()
+        window.later = datetime.datetime.utcnow() + datetime.timedelta(seconds=1)
 
     return _helper
 
