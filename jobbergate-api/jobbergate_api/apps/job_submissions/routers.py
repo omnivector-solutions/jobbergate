@@ -15,7 +15,7 @@ from jobbergate_api.apps.job_submissions.schemas import (
 )
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.pagination import Pagination, Response, package_response
-from jobbergate_api.security import ArmadaClaims, guard
+from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import database
 
 router = APIRouter()
@@ -31,8 +31,8 @@ async def job_submission_create(
 
     Make a post request to this endpoint with the required values to create a new job submission.
     """
-    armada_claims = ArmadaClaims.from_token_payload(token_payload)
-    job_submission.job_submission_owner_email = armada_claims.user_email
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    job_submission.job_submission_owner_email = identity_claims.user_email
 
     select_query = job_scripts_table.select().where(job_scripts_table.c.id == job_submission.job_script_id)
     raw_job_script = await database.fetch_one(select_query)
@@ -93,10 +93,10 @@ async def job_submission_list(
     """
     List job_submissions for the authenticated user.
     """
-    armada_claims = ArmadaClaims.from_token_payload(token_payload)
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
     query = job_submissions_table.select()
     if not all:
-        query = query.where(job_submissions_table.c.job_submission_owner_email == armada_claims.user_email)
+        query = query.where(job_submissions_table.c.job_submission_owner_email == identity_claims.user_email)
     return await package_response(JobSubmissionResponse, query, pagination)
 
 

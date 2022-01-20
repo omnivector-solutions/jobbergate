@@ -23,7 +23,7 @@ from jobbergate_api.apps.job_scripts.schemas import (
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.s3_manager import S3Manager
-from jobbergate_api.security import ArmadaClaims, guard
+from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import database, handle_fk_error
 
 router = APIRouter()
@@ -157,8 +157,8 @@ async def job_script_create(
     application = ApplicationResponse.parse_obj(raw_application)
     s3_application_tar = get_s3_object_as_tarfile(application.id)
 
-    armada_claims = ArmadaClaims.from_token_payload(token_payload)
-    job_script.job_script_owner_email = armada_claims.user_email
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    job_script.job_script_owner_email = identity_claims.user_email
 
     create_dict = job_script.dict(exclude_unset=True)
 
@@ -217,9 +217,9 @@ async def job_script_list(
     List job_scripts for the authenticated user.
     """
     query = job_scripts_table.select()
-    armada_claims = ArmadaClaims.from_token_payload(token_payload)
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
     if not all:
-        query = query.where(job_scripts_table.c.job_script_owner_email == armada_claims.user_email)
+        query = query.where(job_scripts_table.c.job_script_owner_email == identity_claims.user_email)
     return await package_response(JobScriptResponse, query, pagination)
 
 

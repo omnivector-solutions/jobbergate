@@ -65,7 +65,7 @@ async def startup_event_force():
 @fixture(autouse=True)
 def enforce_mocked_oidc_provider(mock_openid_server):
     """
-    Enforce that the OIDC provider used by armada-security is the mock_openid_server provided as a fixture.
+    Enforce that the OIDC provider used by armasec is the mock_openid_server provided as a fixture.
     No actual calls to an OIDC provider will be made.
     """
     yield
@@ -91,7 +91,7 @@ async def inject_security_header(client, build_rs256_token):
     def _helper(owner_email: str, *permissions: typing.List[str]):
         token = build_rs256_token(
             claim_overrides={
-                settings.ARMADA_CLAIMS_KEY: {"user_email": owner_email},
+                settings.IDENTITY_CLAIMS_KEY: {"user_email": owner_email},
                 "permissions": permissions,
             }
         )

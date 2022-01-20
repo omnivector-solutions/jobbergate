@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     ARMASEC_DEBUG: bool = Field(False)
 
     # Key to custom claims packaged with Auth0 tokens
-    ARMADA_CLAIMS_KEY: str = "https://www.armada-hpc.com"
+    IDENTITY_CLAIMS_KEY: str = "https://omnivector.solutions"
 
     # Sentry configuration
     SENTRY_DSN: Optional[HttpUrl]

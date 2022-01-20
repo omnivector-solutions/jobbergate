@@ -16,7 +16,7 @@ from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.s3_manager import S3Manager
-from jobbergate_api.security import ArmadaClaims, guard
+from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import database, handle_fk_error
 
 router = APIRouter()
@@ -36,8 +36,8 @@ async def applications_create(
     """
     Create new applications using an authenticated user token.
     """
-    armada_claims = ArmadaClaims.from_token_payload(token_payload)
-    application.application_owner_email = armada_claims.user_email
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    application.application_owner_email = identity_claims.user_email
 
     async with database.transaction():
         try:
@@ -125,10 +125,10 @@ async def applications_list(
     """
     List all applications
     """
-    armada_claims = ArmadaClaims.from_token_payload(token_payload)
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
     query = applications_table.select()
     if user:
-        query = query.where(applications_table.c.application_owner_email == armada_claims.user_email)
+        query = query.where(applications_table.c.application_owner_email == identity_claims.user_email)
     if not all:
         query = query.where(not_(applications_table.c.application_identifier.is_(None)))
     return await package_response(ApplicationResponse, query, pagination)

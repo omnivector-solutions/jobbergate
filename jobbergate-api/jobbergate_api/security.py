@@ -1,5 +1,5 @@
 """
-Instantiates armada-security resources for auth on api endpoints using project settings.
+Instantiates armasec resources for auth on api endpoints using project settings.
 Also provides a factory function for TokenSecurity to reduce boilerplate.
 """
 from typing import Optional
@@ -17,14 +17,15 @@ guard = Armasec(
 )
 
 
-class ArmadaClaims(BaseModel):
+class IdentityClaims(BaseModel):
     org_name: Optional[str]
     user_email: EmailStr
 
     @classmethod
-    def from_token_payload(cls, payload: TokenPayload) -> "ArmadaClaims":
+    def from_token_payload(cls, payload: TokenPayload) -> "IdentityClaims":
         """
-        Creates an instance of ArmadaClaims from a Token payload. Automatically validates that the
-        user_email is present and is an email address
+        Create an instance from a Token payload.
+
+        Automatically validates that the user_email is present and is an email address.
         """
-        return cls(**getattr(payload, settings.ARMADA_CLAIMS_KEY))
+        return cls(**getattr(payload, settings.IDENTITY_CLAIMS_KEY))
