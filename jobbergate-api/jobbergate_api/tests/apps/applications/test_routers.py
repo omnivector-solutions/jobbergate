@@ -661,12 +661,7 @@ async def test_update_application_bad_permission(client, application_data, injec
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
 async def test_upload_file__works_with_small_file(
-    client,
-    inject_security_header,
-    application_data,
-    tweak_settings,
-    make_dummy_file,
-    make_files_param,
+    client, inject_security_header, application_data, tweak_settings, make_dummy_file, make_files_param,
 ):
     """
     Test that a file is uploaded.
@@ -688,10 +683,12 @@ async def test_upload_file__works_with_small_file(
     with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
         with mock.patch.object(s3man, "s3_client") as mock_s3:
             with make_files_param(dummy_file) as files_param:
-                response = await client.post("/jobbergate/applications/1/upload", files=files_param,)
+                response = await client.post("/jobbergate/applications/1/upload", files=files_param)
 
     assert response.status_code == status.HTTP_201_CREATED
     mock_s3.put_object.assert_called_once()
+
+    application = await fetch_instance(inserted_id, applications_table, ApplicationResponse)
     assert application.application_uploaded
 
 
