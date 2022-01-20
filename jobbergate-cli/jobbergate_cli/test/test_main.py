@@ -52,7 +52,7 @@ def sample_token():
 @mark.usefixtures("token_cache_mock")
 def test_init_access_token(when, is_valid, freezer):
     """
-    Do I successfully parse tokens from the cache? Do I identify invalid tokens?
+    Do I successfully parse an access token from the cache? Do I identify an invalid access token?
     """
     freezer.move_to(when)
     ctx_obj = {}

@@ -176,7 +176,7 @@ def abort_with_message(message):
 
 def validate_token_and_extract_identity(token: str) -> dict:
     """
-    Validates the token and extracts the identity data.
+    Validate the token and extract the identity data.
 
     Validations:
         * Checkstimestamp on the auth token.
@@ -318,9 +318,9 @@ def init_access_token(ctx_obj):
 
 def refresh_access_token(refresh_token: str) -> str:
     """
-    Attempts to fetch a new access token given a refresh token.
+    Attempt to fetch a new access token given a refresh token.
 
-    If refresh fails, the user will be notified that they need to log in again.
+    If refresh fails, notify the user that they need to log in again.
 
     :param refresh_token: The refresh token to be used to retrieve a new access token.
     :returns: The fetched access token.
@@ -354,7 +354,7 @@ def refresh_access_token(refresh_token: str) -> str:
 
 def fetch_auth_tokens() -> TokenSet:
     """
-    Fetches an access token (and possibly a refresh token) from Auth0.
+    Fetch an access token (and possibly a refresh token) from Auth0.
 
     Prints out a URL for the user to use to authenticate and polls the token endpoint to fetch it when
     the browser-based process finishes
