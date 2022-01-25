@@ -494,6 +494,23 @@ async def test_get_job_submissions_with_slurm_job_ids_param(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
+async def test_get_job_submissions_fails_with_empty_slurm_job_ids_param(
+    client, inject_security_header,
+):
+    """
+    Test GET /job-submissions/ returns a 422 if the slurm_job_ids param is empty.
+
+    This test proves that GET /job-submissions returns the correct status code (422)
+    when the slurm_job_ids param is an empty string.
+    We show this by asserting that the status code of the response is 422.
+    """
+    inject_security_header("owner1@org.com", "jobbergate:job-submissions:read")
+    response = await client.get("/jobbergate/job-submissions?slurm_job_ids=")
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
 async def test_get_job_submissions_with_invalid_slurm_job_ids_param(
     client, application_data, job_submission_data, job_script_data, inject_security_header,
 ):
