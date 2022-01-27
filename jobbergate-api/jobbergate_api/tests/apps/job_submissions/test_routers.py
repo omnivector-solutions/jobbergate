@@ -8,6 +8,7 @@ from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.apps.job_submissions.schemas import JobSubmissionResponse
+from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.storage import database
 
 
@@ -32,7 +33,7 @@ async def test_create_job_submission(
         values=dict(application_id=inserted_application_id, **job_script_data,),
     )
 
-    inject_security_header("owner1@org.com", "jobbergate:job-submissions:create")
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT)
     with time_frame() as window:
         response = await client.post(
             "/jobbergate/job-submissions/",
@@ -67,7 +68,7 @@ async def test_create_job_submission_without_job_script(client, job_submission_d
     We show this by trying to create a job_submission without a job_script created before, then assert that
     the job_submission still does not exists in the database, the correct status code (404) is returned.
     """
-    inject_security_header("owner1@org.com", "jobbergate:job-submissions:create")
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT)
     response = await client.post(
         "/jobbergate/job-submissions/", json=dict(job_script_id=9999, **job_submission_data,)
     )
@@ -142,7 +143,7 @@ async def test_get_job_submission_by_id(
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 1
 
-    inject_security_header("owner1@org.com", "jobbergate:job-submissions:read")
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
     response = await client.get(f"/jobbergate/job-submissions/{inserted_job_submission_id}")
     assert response.status_code == status.HTTP_200_OK
 
@@ -196,7 +197,7 @@ async def test_get_job_submission_by_id_invalid(client, inject_security_header):
     requested job_submission does not exist. We show this by asserting that the status code
     returned is what we would expect given the job_submission requested doesn't exist (404).
     """
-    inject_security_header("owner1@org.com", "jobbergate:job-submissions:read")
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
     response = await client.get("/jobbergate/job-submissions/9999")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -248,7 +249,7 @@ async def test_get_job_submissions__no_param(
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 3
 
-    inject_security_header("owner1@org.com", "jobbergate:job-submissions:read")
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
     response = await client.get("/jobbergate/job-submissions/")
     assert response.status_code == status.HTTP_200_OK
 
@@ -345,7 +346,7 @@ async def test_get_job_submissions__with_all_param(
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 3
 
-    inject_security_header("owner1@org.com", "jobbergate:job-submissions:read")
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
     response = await client.get("/jobbergate/job-submissions/?all=True")
     assert response.status_code == status.HTTP_200_OK
 
@@ -393,7 +394,7 @@ async def test_list_job_submission_pagination(
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 5
 
-    inject_security_header("owner1@org.com", "jobbergate:job-submissions:read")
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
     response = await client.get("/jobbergate/job-submissions/?start=0&limit=1")
     assert response.status_code == status.HTTP_200_OK
 
@@ -458,7 +459,7 @@ async def test_update_job_submission(
         ),
     )
 
-    inject_security_header("owner1@org.com", "jobbergate:job-submissions:update")
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT)
     with time_frame() as window:
         response = await client.put(
             f"/jobbergate/job-submissions/{inserted_job_submission_id}",
@@ -490,7 +491,7 @@ async def test_update_job_submission_not_found(client, inject_security_header):
     This test proves that it is not possible to update a job_submission if it is not found. We show this by
     asserting that the response status code of the request is 404.
     """
-    inject_security_header("owner1@org.com", "jobbergate:job-submissions:update")
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT)
     response = await client.put("/jobbergate/job-submissions/9999", json=dict(job_submission_name="new name"))
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -572,7 +573,7 @@ async def test_delete_job_submission(
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 1
 
-    inject_security_header("owner1@org.com", "jobbergate:job-submissions:delete")
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT)
     response = await client.delete(f"/jobbergate/job-submissions/{inserted_job_submission_id}")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
@@ -590,7 +591,7 @@ async def test_delete_job_submission_not_found(client, inject_security_header):
     This test proves that it is not possible to delete a job_submission if it does not exists. We show this
     by asserting that a 404 response status code is returned.
     """
-    inject_security_header("owner1@org.com", "jobbergate:job-submissions:delete")
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT)
     response = await client.delete("/jobbergate/job-submissions/9999")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND

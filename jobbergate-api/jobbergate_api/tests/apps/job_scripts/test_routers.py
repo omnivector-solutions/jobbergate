@@ -21,6 +21,7 @@ from jobbergate_api.apps.job_scripts.routers import (
     s3man,
 )
 from jobbergate_api.apps.job_scripts.schemas import JobScriptResponse
+from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.storage import database
 
 
@@ -110,7 +111,7 @@ async def test_create_job_script(
         values=dict(application_owner_email="owner1@org.com", **application_data,),
     )
 
-    inject_security_header("owner1@org.com", "jobbergate:job-scripts:create")
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     with time_frame() as window:
         with mock.patch.object(s3man, "s3_client") as s3man_client_mock:
             s3man_client_mock.get_object.return_value = s3_object
@@ -186,7 +187,7 @@ async def test_create_job_script_without_application(
     We show this by trying to create a job_script without an application created before, then assert that the
     job_script still does not exists in the database and the correct status code (404) is returned.
     """
-    inject_security_header("owner1@org.com", "jobbergate:job-scripts:create")
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     response = await client.post(
         "/jobbergate/job-scripts/",
         json=dict(application_id=9999, param_dict=json.dumps(param_dict), **job_script_data,),
@@ -216,7 +217,7 @@ async def test_create_job_script_file_not_found(
         values=dict(application_owner_email="owner1@org.com", **application_data,),
     )
 
-    inject_security_header("owner1@org.com", "jobbergate:job-scripts:create")
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     with mock.patch.object(s3man, "s3_client") as s3man_client_mock:
         s3man_client_mock.get_object.side_effect = BotoCoreError()
         response = await client.post(
@@ -306,7 +307,7 @@ async def test_get_job_script_by_id(client, application_data, job_script_data, i
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
 
-    inject_security_header("owner1@org.com", "jobbergate:job-scripts:read")
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}")
     assert response.status_code == status.HTTP_200_OK
 
@@ -328,7 +329,7 @@ async def test_get_job_script_by_id_invalid(client, inject_security_header):
     requested job_script does not exist. We show this by asserting that the status code
     returned is what we would expect given the job_script requested doesn't exist (404).
     """
-    inject_security_header("owner1@org.com", "jobbergate:job-scripts:read")
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get("/jobbergate/job-scripts/9999")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -399,7 +400,7 @@ async def test_get_job_script__no_params(client, application_data, job_script_da
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 3
 
-    inject_security_header("owner1@org.com", "jobbergate:job-scripts:read")
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get("/jobbergate/job-scripts/")
     assert response.status_code == status.HTTP_200_OK
 
@@ -484,7 +485,7 @@ async def test_get_job_scripts__with_all_param(
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 3
 
-    inject_security_header("owner1@org.com", "jobbergate:job-scripts:read")
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get("/jobbergate/job-scripts/?all=True")
     assert response.status_code == status.HTTP_200_OK
 
@@ -528,7 +529,7 @@ async def test_get_job_scripts__with_pagination(
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 5
 
-    inject_security_header("owner1@org.com", "jobbergate:job-scripts:read")
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get("/jobbergate/job-scripts/?start=0&limit=1")
     assert response.status_code == status.HTTP_200_OK
 
@@ -585,7 +586,7 @@ async def test_update_job_script(
         values=dict(application_id=inserted_application_id, **job_script_data,),
     )
 
-    inject_security_header("owner1@org.com", "jobbergate:job-scripts:update")
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     with time_frame() as window:
         response = await client.put(
             f"/jobbergate/job-scripts/{inserted_job_script_id}",
@@ -625,7 +626,7 @@ async def test_update_job_script_not_found(
     This test proves that it is not possible to update a job_script if it is not found. We show this by
     asserting that the response status code of the request is 404.
     """
-    inject_security_header("owner1@org.com", "jobbergate:job-scripts:update")
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     response = await client.put("/jobbergate/job-scripts/123", json={"job_script_name": "new name"})
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -688,7 +689,7 @@ async def test_delete_job_script(
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
 
-    inject_security_header("owner1@org.com", "jobbergate:job-scripts:delete")
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
@@ -708,7 +709,7 @@ async def test_delete_job_script_not_found(
     This test proves that it is not possible to delete a job_script if it does not exists. We show this by
     assert that a 404 response status code is returned.
     """
-    inject_security_header("owner1@org.com", "jobbergate:job-scripts:delete")
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     response = await client.delete("/jobbergate/job-scripts/9999")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -768,7 +769,7 @@ async def test_delete_job_script__fk_error(
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
 
-    inject_security_header("owner1@org.com", "jobbergate:job-scripts:delete")
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     with mock.patch(
         "jobbergate_api.storage.database.execute",
         side_effect=asyncpg.exceptions.ForeignKeyViolationError(
