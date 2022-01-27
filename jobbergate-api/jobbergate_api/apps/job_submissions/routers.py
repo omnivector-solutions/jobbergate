@@ -92,8 +92,7 @@ async def job_submission_list(
         None, description="If supplied, do not limit job_submissions to only the current user",
     ),
     slurm_job_ids: Optional[str] = Query(
-        None,
-        description="Non-empty Comma-separated list of slurm-job-ids to match active job_submissions",
+        None, description="Comma-separated list of slurm-job-ids to match active job_submissions",
     ),
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW)),
 ):
@@ -107,20 +106,20 @@ async def job_submission_list(
     """
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     query = job_submissions_table.select()
+
     if not all:
         query = query.where(job_submissions_table.c.job_submission_owner_email == identity_claims.user_email)
-    if slurm_job_ids is not None:
+
+    if slurm_job_ids is not None and slurm_job_ids != "":
         try:
             job_ids = [int(i) for i in slurm_job_ids.split(",")]
-            if len(job_ids) == 0:
-                raise ValueError
         except Exception:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Invalid slurm_job_ids param. Must be a non-empty comma-separated list of ints",
+                detail="Invalid slurm_job_ids param. Must be a comma-separated list of integers",
             )
+        query = query.where(job_submissions_table.c.slurm_job_id.in_(job_ids))
 
-        query = job_submissions_table.select().where(job_submissions_table.c.slurm_job_id.in_(job_ids))
     return await package_response(JobSubmissionResponse, query, pagination)
 
 

@@ -462,14 +462,14 @@ async def test_get_job_submissions_with_slurm_job_ids_param(
             dict(
                 id=2,
                 job_script_id=inserted_job_script_id,
-                job_submission_owner_email="owner2@org.com",
+                job_submission_owner_email="owner1@org.com",
                 slurm_job_id=102,
                 **job_submission_data,
             ),
             dict(
                 id=3,
                 job_script_id=inserted_job_script_id,
-                job_submission_owner_email="owner3@org.com",
+                job_submission_owner_email="owner1@org.com",
                 slurm_job_id=103,
                 **job_submission_data,
             ),
@@ -494,19 +494,62 @@ async def test_get_job_submissions_with_slurm_job_ids_param(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_get_job_submissions_fails_with_empty_slurm_job_ids_param(
-    client, inject_security_header,
+async def test_get_job_submissions_applies_no_slurm_filter_if_slurm_job_ids_is_empty(
+    client, inject_security_header, application_data, job_script_data, job_submission_data,
 ):
     """
-    Test GET /job-submissions/ returns a 422 if the slurm_job_ids param is empty.
+    Test GET /job-submissions/ skips filtering on slurm_job_id if the param is an empty string.
 
-    This test proves that GET /job-submissions returns the correct status code (422)
-    when the slurm_job_ids param is an empty string.
-    We show this by asserting that the status code of the response is 422.
+    This test proves that GET /job-submissions doesn't use the slurm_job_id filter if it is an empty string.
+    We show this by asserting that passing an empty string as a parameter has no effect.
     """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data,),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=dict(application_id=inserted_application_id, **job_script_data,),
+    )
+    await database.execute_many(
+        query=job_submissions_table.insert(),
+        values=[
+            dict(
+                id=1,
+                job_script_id=inserted_job_script_id,
+                job_submission_owner_email="owner1@org.com",
+                slurm_job_id=101,
+                **job_submission_data,
+            ),
+            dict(
+                id=2,
+                job_script_id=inserted_job_script_id,
+                job_submission_owner_email="owner1@org.com",
+                slurm_job_id=102,
+                **job_submission_data,
+            ),
+            dict(
+                id=3,
+                job_script_id=inserted_job_script_id,
+                job_submission_owner_email="owner1@org.com",
+                slurm_job_id=103,
+                **job_submission_data,
+            ),
+        ],
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 3
+
     inject_security_header("owner1@org.com", "jobbergate:job-submissions:read")
-    response = await client.get("/jobbergate/job-submissions?slurm_job_ids=")
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    with_empty_param_response = await client.get("/jobbergate/job-submissions?slurm_job_ids=")
+    assert with_empty_param_response.status_code == status.HTTP_200_OK
+
+    without_param_response = await client.get("/jobbergate/job-submissions")
+    assert without_param_response.status_code == status.HTTP_200_OK
+
+    assert with_empty_param_response.json() == without_param_response.json()
 
 
 @pytest.mark.asyncio
