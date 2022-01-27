@@ -13,6 +13,7 @@ from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionResponse,
     JobSubmissionUpdateRequest,
 )
+from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.security import IdentityClaims, guard
@@ -24,7 +25,7 @@ router = APIRouter()
 @router.post("/job-submissions/", status_code=201, description="Endpoint for job_submission creation")
 async def job_submission_create(
     job_submission: JobSubmissionCreateRequest,
-    token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:job-submissions:create")),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT)),
 ):
     """
     Create a new job submission.
@@ -63,7 +64,7 @@ async def job_submission_create(
     "/job-submissions/{job_submission_id}",
     description="Endpoint to get a job_submission",
     response_model=JobSubmissionResponse,
-    dependencies=[Depends(guard.lockdown("jobbergate:job-submissions:read"))],
+    dependencies=[Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW))],
 )
 async def job_submission_get(job_submission_id: int = Query(...)):
     """
@@ -88,7 +89,7 @@ async def job_submission_get(job_submission_id: int = Query(...)):
 async def job_submission_list(
     pagination: Pagination = Depends(),
     all: Optional[bool] = Query(None),
-    token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:job-submissions:read")),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW)),
 ):
     """
     List job_submissions for the authenticated user.
@@ -104,7 +105,7 @@ async def job_submission_list(
     "/job-submissions/{job_submission_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete job submission",
-    dependencies=[Depends(guard.lockdown("jobbergate:job-submissions:delete"))],
+    dependencies=[Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT))],
 )
 async def job_submission_delete(
     job_submission_id: int = Query(..., description="id of the job submission to delete"),
@@ -131,7 +132,7 @@ async def job_submission_delete(
     status_code=status.HTTP_201_CREATED,
     description="Endpoint to update a job_submission given the id",
     response_model=JobSubmissionResponse,
-    dependencies=[Depends(guard.lockdown("jobbergate:job-submissions:update"))],
+    dependencies=[Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT))],
 )
 async def job_script_update(job_submission_id: int, job_submission: JobSubmissionUpdateRequest):
     """

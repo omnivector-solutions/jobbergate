@@ -11,6 +11,7 @@ from fastapi import status
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.routers import s3man
 from jobbergate_api.apps.applications.schemas import ApplicationResponse
+from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.storage import database, fetch_instance
 
 
@@ -27,7 +28,7 @@ async def test_create_application(application_data, client, inject_security_head
     id_rows = await database.fetch_all("SELECT id FROM applications")
     assert len(id_rows) == 0
 
-    inject_security_header("owner1@org.com", "jobbergate:applications:create")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     with time_frame() as window:
         response = await client.post(
             "/jobbergate/applications/",
@@ -84,7 +85,7 @@ async def test_create_without_application_name(application_data, client, inject_
     trying to create an application without the application_name in the request then assert that the
     application still does not exists in the database and the correct status code (422) is returned.
     """
-    inject_security_header("owner1@org.com", "jobbergate:applications:create")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     response = await client.post(
         "/jobbergate/applications/",
         json={k: v for (k, v) in application_data.items() if k != "application_name"},
@@ -112,7 +113,7 @@ async def test_delete_application_no_file_uploaded(client, application_data, inj
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
-    inject_security_header("owner1@org.com", "jobbergate:applications:delete")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     with mock.patch.object(s3man, "s3_client") as mock_s3:
         response = await client.delete(f"/jobbergate/applications/{inserted_id}")
         mock_s3.delete_object.assert_called_once()
@@ -140,7 +141,7 @@ async def test_delete_application_with_uploaded_file(client, application_data, i
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
-    inject_security_header("owner1@org.com", "jobbergate:applications:delete")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     with mock.patch.object(s3man, "s3_client") as mock_s3:
         response = await client.delete(f"/jobbergate/applications/{inserted_id}")
         mock_s3.delete_object.assert_called_once()
@@ -184,7 +185,7 @@ async def test_delete_application_not_found(client, inject_security_header):
     when the application id does not exist in the database. We show this by asserting that a 404 response
     code is returned for a request made with an application id that doesn't exist.
     """
-    inject_security_header("owner1@org.com", "jobbergate:applications:delete")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     response = await client.delete("/jobbergate/applications/999")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -199,7 +200,7 @@ async def test_delete_application_without_id(client, inject_security_header):
     when an application id is not specified. We show this by asserting that a 405 response
     code is returned for a request made without an application id.
     """
-    inject_security_header("owner1@org.com", "jobbergate:applications:delete")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     response = await client.delete("/jobbergate/applications/")
     assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
@@ -218,7 +219,7 @@ async def test_delete_application__fk_error(client, application_data, inject_sec
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
-    inject_security_header("owner1@org.com", "jobbergate:applications:delete")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     with mock.patch(
         "jobbergate_api.storage.database.execute",
         side_effect=asyncpg.exceptions.ForeignKeyViolationError(
@@ -255,7 +256,7 @@ async def test_get_application_by_id(client, application_data, inject_security_h
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
-    inject_security_header("owner1@org.com", "jobbergate:applications:read")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
     response = await client.get(f"/jobbergate/applications/{inserted_id}")
     assert response.status_code == status.HTTP_200_OK
 
@@ -276,7 +277,7 @@ async def test_get_application_by_id_invalid(client, inject_security_header):
     requested application does not exist. We show this by asserting that the status code
     returned is what we would expect given the application requested doesn't exist (404).
     """
-    inject_security_header("owner1@org.com", "jobbergate:applications:read")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
     response = await client.get("/jobbergate/applications/10")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -337,7 +338,7 @@ async def test_get_applications__no_params(client, application_data, inject_secu
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 3
 
-    inject_security_header("owner1@org.com", "jobbergate:applications:read")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
     response = await client.get("/jobbergate/applications/")
     assert response.status_code == status.HTTP_200_OK
 
@@ -429,7 +430,7 @@ async def test_get_applications__with_user_param(client, application_data, injec
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 3
 
-    inject_security_header("owner1@org.com", "jobbergate:applications:read")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
     response = await client.get("/jobbergate/applications")
     assert response.status_code == status.HTTP_200_OK
 
@@ -483,7 +484,7 @@ async def test_get_applications__with_all_param(client, application_data, inject
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 3
 
-    inject_security_header("owner1@org.com", "jobbergate:applications:read")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
 
     response = await client.get("/jobbergate/applications")
     assert response.status_code == status.HTTP_200_OK
@@ -529,7 +530,7 @@ async def test_get_applications__with_pagination(client, application_data, injec
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 5
 
-    inject_security_header("owner1@org.com", "jobbergate:applications:read")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
     response = await client.get("/jobbergate/applications/?start=0&limit=1&all=true")
     assert response.status_code == status.HTTP_200_OK
 
@@ -587,7 +588,7 @@ async def test_update_application(client, application_data, inject_security_head
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
-    inject_security_header("owner1@org.com", "jobbergate:applications:update")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     with time_frame() as window:
         response = await client.put(
             "/jobbergate/applications/1",
@@ -679,7 +680,7 @@ async def test_upload_file__works_with_small_file(
     assert not application.application_uploaded
 
     dummy_file = make_dummy_file("dummy.py", size=10_000 - 200)  # Need some buffer for file headers, etc
-    inject_security_header("owner1@org.com", "jobbergate:applications:upload")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
         with mock.patch.object(s3man, "s3_client") as mock_s3:
             with make_files_param(dummy_file) as files_param:
@@ -697,7 +698,7 @@ async def test_upload_file__fails_with_413_on_large_file(
     client, inject_security_header, tweak_settings, make_dummy_file, make_files_param,
 ):
     dummy_file = make_dummy_file("dummy.py", size=10_000 + 200)
-    inject_security_header("owner1@org.com", "jobbergate:applications:upload")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
         with make_files_param(dummy_file) as files_param:
             response = await client.post("/jobbergate/applications/1/upload", files=files_param,)
@@ -723,7 +724,7 @@ async def test_delete_file(client, inject_security_header, application_data):
     )
     assert application.application_uploaded
 
-    inject_security_header("owner1@org.com", "jobbergate:applications:upload")
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     with mock.patch.object(s3man, "s3_client") as mock_s3:
         response = await client.delete(f"/jobbergate/applications/{inserted_id}/upload")
     assert response.status_code == status.HTTP_204_NO_CONTENT

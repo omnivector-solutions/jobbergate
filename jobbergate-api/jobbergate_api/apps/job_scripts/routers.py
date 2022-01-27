@@ -20,6 +20,7 @@ from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptResponse,
     JobScriptUpdateRequest,
 )
+from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.s3_manager import S3Manager
@@ -139,7 +140,7 @@ def build_job_script_data_as_string(s3_application_tar, param_dict):
 )
 async def job_script_create(
     job_script: JobScriptCreateRequest,
-    token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:job-scripts:create")),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT)),
 ):
     """
     Create a new job script.
@@ -188,7 +189,7 @@ async def job_script_create(
     "/job-scripts/{job_script_id}",
     description="Endpoint to get a job_script",
     response_model=JobScriptResponse,
-    dependencies=[Depends(guard.lockdown("jobbergate:job-scripts:read"))],
+    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW))],
 )
 async def job_script_get(job_script_id: int = Query(...)):
     """
@@ -211,7 +212,7 @@ async def job_script_get(job_script_id: int = Query(...)):
 async def job_script_list(
     pagination: Pagination = Depends(),
     all: Optional[bool] = Query(False),
-    token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:job-scripts:read")),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW)),
 ):
     """
     List job_scripts for the authenticated user.
@@ -227,7 +228,7 @@ async def job_script_list(
     "/job-scripts/{job_script_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete job script",
-    dependencies=[Depends(guard.lockdown("jobbergate:job-scripts:delete"))],
+    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
 )
 async def job_script_delete(job_script_id: int = Query(..., description="id of the job script to delete")):
     """
@@ -252,7 +253,7 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     status_code=status.HTTP_201_CREATED,
     description="Endpoint to update a job_script given the id",
     response_model=JobScriptResponse,
-    dependencies=[Depends(guard.lockdown("jobbergate:job-scripts:update"))],
+    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
 )
 async def job_script_update(
     job_script_id: int, job_script: JobScriptUpdateRequest,

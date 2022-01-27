@@ -12,6 +12,7 @@ from jobbergate_api.apps.applications.schemas import (
     ApplicationResponse,
     ApplicationUpdateRequest,
 )
+from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, Response, package_response
@@ -31,7 +32,7 @@ s3man = S3Manager()
 )
 async def applications_create(
     application: ApplicationCreateRequest,
-    token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:applications:create")),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
 ):
     """
     Create new applications using an authenticated user token.
@@ -63,7 +64,7 @@ async def applications_create(
         "Endpoint for uploading application files. "
         "The file should be a gzipped tar-file (e.g. `jobbergate.tar.gz`)."
     ),
-    dependencies=[Depends(guard.lockdown("jobbergate:applications:upload"))],
+    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def applications_upload(
     application_id: int = Query(..., description="id of the application for which to upload a file"),
@@ -93,7 +94,7 @@ async def applications_upload(
     "/applications/{application_id}/upload",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint for deleting application tarballs",
-    dependencies=[Depends(guard.lockdown("jobbergate:applications:upload"))],
+    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def applications_delete(
     application_id: int = Query(..., description="id of the application for which to delete the file"),
@@ -127,7 +128,7 @@ async def applications_delete(
     "/applications/{application_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete application",
-    dependencies=[Depends(guard.lockdown("jobbergate:applications:delete"))],
+    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def application_delete(
     application_id: int = Query(..., description="id of the application to delete"),
@@ -162,7 +163,7 @@ async def applications_list(
     user: bool = Query(False),
     all: bool = Query(False),
     pagination: Pagination = Depends(),
-    token_payload: TokenPayload = Depends(guard.lockdown("jobbergate:applications:read")),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW)),
 ):
     """
     List all applications
@@ -180,7 +181,7 @@ async def applications_list(
     "/applications/{application_id}",
     description="Endpoint to return an application given the id",
     response_model=ApplicationResponse,
-    dependencies=[Depends(guard.lockdown("jobbergate:applications:read"))],
+    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW))],
 )
 async def applications_get_by_id(application_id: int = Query(...)):
     """
@@ -202,7 +203,7 @@ async def applications_get_by_id(application_id: int = Query(...)):
     status_code=status.HTTP_201_CREATED,
     description="Endpoint to update an application given the id",
     response_model=ApplicationResponse,
-    dependencies=[Depends(guard.lockdown("jobbergate:applications:update"))],
+    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def application_update(
     application_id: int, application: ApplicationUpdateRequest,
