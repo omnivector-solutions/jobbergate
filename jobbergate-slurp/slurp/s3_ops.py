@@ -136,6 +136,7 @@ def transfer_s3(legacy_s3man, nextgen_s3man, applications_map):
     bad_pattern_skips = 0
     missing_id_skips = 0
     successful_transfers = 0
+    transferred_ids = []
     for legacy_key in legacy_s3man.list_keys():
         match = re.search(r'applications/(\d+)', legacy_key)
         if not match:
@@ -149,7 +150,10 @@ def transfer_s3(legacy_s3man, nextgen_s3man, applications_map):
         legacy_obj = legacy_s3man.get(legacy_key)
         nextgen_key = nextgen_s3man.get_key(nextgen_application_id)
         nextgen_s3man.put(nextgen_key, legacy_obj)
+        transferred_ids.append(nextgen_application_id)
         successful_transfers += 1
     logger.debug(f"Skipped {bad_pattern_skips} objects due to unparsable key")
     logger.debug(f"Skipped {missing_id_skips} objects due to missing application_id")
     logger.debug(f"Finished transfering {successful_transfers} objects")
+
+    return transferred_ids

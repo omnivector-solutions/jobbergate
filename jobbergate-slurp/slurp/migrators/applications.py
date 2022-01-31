@@ -27,6 +27,7 @@ def migrate_applications(nextgen_db, legacy_applications, user_map):
                 application_owner_email,
                 application_file,
                 application_config,
+                application_uploaded,
                 created_at,
                 updated_at
             )
@@ -37,6 +38,7 @@ def migrate_applications(nextgen_db, legacy_applications, user_map):
                 %(owner_email)s,
                 %(file)s,
                 %(config)s,
+                false,
                 %(created)s,
                 %(updated)s
             )
@@ -56,3 +58,22 @@ def migrate_applications(nextgen_db, legacy_applications, user_map):
         application_map[application["id"]] = nextgen_db.fetchone()["id"]
     logger.debug("Finished migrating applications")
     return application_map
+
+
+def mark_uploaded(nextgen_db, ids):
+    """
+    Marks application rows as uploaded.
+
+    Given a list of nextgen application_ids, mark each as uploaded.
+    """
+    logger.debug("Marking uploaded applications in nextgen database")
+
+    nextgen_db.execute(
+        """
+        update applications
+        set application_uploaded = true
+        where id in %(ids)
+        """,
+        dict(ids=ids)
+    )
+    logger.debug("Finished marking uploaded applications")
