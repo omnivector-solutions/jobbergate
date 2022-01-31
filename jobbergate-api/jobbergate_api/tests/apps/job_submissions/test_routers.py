@@ -479,7 +479,7 @@ async def test_get_job_submissions_with_slurm_job_ids_param(
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 3
 
-    inject_security_header("owner1@org.com", "jobbergate:job-submissions:read")
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
     response = await client.get("/jobbergate/job-submissions?slurm_job_ids=101,103")
     assert response.status_code == status.HTTP_200_OK
 
@@ -541,7 +541,7 @@ async def test_get_job_submissions_applies_no_slurm_filter_if_slurm_job_ids_is_e
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 3
 
-    inject_security_header("owner1@org.com", "jobbergate:job-submissions:read")
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
 
     with_empty_param_response = await client.get("/jobbergate/job-submissions?slurm_job_ids=")
     assert with_empty_param_response.status_code == status.HTTP_200_OK
@@ -563,7 +563,7 @@ async def test_get_job_submissions_with_invalid_slurm_job_ids_param(
     This test proves that GET /job-submissions requires the slurm_job_ids parameter to be a comma-separated
     list of integer slurm job ids.
     """
-    inject_security_header("owner1@org.com", "jobbergate:job-submissions:read")
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
     response = await client.get("/jobbergate/job-submissions?slurm_job_ids=101-103")
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert "Invalid slurm_job_ids" in response.text
