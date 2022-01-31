@@ -6,7 +6,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
-* Revised permissions do use a view/edit model for each data model
+* Revised permissions to use a view/edit model for each data model
+* Added parameter to filter job_submissions by slurm_job_id
 
 2.1.1 -- 2022-01-13
 -------------------
