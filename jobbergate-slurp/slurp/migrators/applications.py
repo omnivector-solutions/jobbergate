@@ -68,12 +68,22 @@ def mark_uploaded(nextgen_db, ids):
     """
     logger.debug("Marking uploaded applications in nextgen database")
 
-    nextgen_db.execute(
-        """
-        update applications
-        set application_uploaded = true
-        where id in %(ids)
-        """,
-        dict(ids=ids)
-    )
+    batch_size = 1000
+    id_count = len(ids)
+    batch_start = 0
+    while(batch_start < id_count):
+        batch_end = min(batch_start + batch_size, id_count)
+        logger.debug(f"Marking application {batch_start} through {batch_end} of {id_count}")
+        batch = ids[batch_start:batch_end]
+        nextgen_db.execute(
+            f"""
+            update applications
+            set application_uploaded = true
+            where id = any(%s)
+            """,
+            (batch,),
+        )
+
+        batch_start += batch_size
+
     logger.debug("Finished marking uploaded applications")
