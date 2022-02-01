@@ -9,7 +9,7 @@ from loguru import logger
 import typer
 
 from slurp.connections import db, build_url
-from slurp.migrators.applications import migrate_applications
+from slurp.migrators.applications import migrate_applications, mark_uploaded
 from slurp.migrators.job_scripts import migrate_job_scripts
 from slurp.migrators.job_submissions import migrate_job_submissions
 from slurp.pull_legacy import pull_users, pull_applications, pull_job_scripts, pull_job_submissions
@@ -68,6 +68,8 @@ def migrate():
         legacy_job_submissions = pull_job_submissions(legacy_db)
         migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map, job_scripts_map)
 
-        transfer_s3(legacy_s3man, nextgen_s3man, applications_map)
+        transferred_ids = transfer_s3(legacy_s3man, nextgen_s3man, applications_map)
+
+        mark_uploaded(nextgen_db, transferred_ids)
 
     logger.debug("Finished migration!")
