@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     AUTH0_CLIENT_SECRET: str
     AUTH0_MAX_POLL_TIME: int = 5 * 60  # 5 Minutes
 
+    IDENTITY_CLAIMS_KEY: str = "https://omnivector.solutions"
+
     @root_validator
     def compute_extra_settings(cls, values):
         cache_dir = values["JOBBERGATE_CACHE_DIR"]

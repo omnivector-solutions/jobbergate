@@ -34,7 +34,7 @@ def sample_token():
     A sample JWT that contains info needed for auth through the jobbergate-cli.
     The token expires 2021-11-19 15:52:53.
     """
-    return "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiaHR0cHM6Ly93d3cuYXJtYWRhLWhwYy5jb20iOnsidXNlcl9lbWFpbCI6Im93bmVyMUBvcmcuY29tIn0sImV4cCI6MTYzNzMzNjU3M30.cQZg-iG95FChU1tassJDnlc9Q72xMKJ33EFAKCQde7TiPrw-tBMiDKar0wMdLknXSQZdcL54QAj47rEHg9fkqo1rrVnAqBhLKD-yBLhpHYaHl7yb2Km_3u6f-MkfXsVcWKzS0xveQYb5SdkkqCXaRbJca2BSQhiJh9ulQb3bhESo6JebLYsO8l86c6IEkLz5yek862rs2HdZKPnrqs1nOvkzXMnMyUqxGedY5BM4GpUURh11ob4Z9DgOm5Yx2v9RwpFGyN7MkTExrivLib7m5gGd4PQiHiQKZUy3-tI-S1FW29RZU2HC7zHCnvlLcKzQslyeTIUWVjDOl-nXmUsjUw"  # noqa
+    return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiaHR0cHM6Ly90ZXN0LWRvbWFpbi50ZXN0Ijp7InVzZXJfZW1haWwiOiJvd25lcjFAb3JnLmNvbSJ9LCJleHAiOjE2MzczMzY1NzN9.wfXxrwvVSQrirQn7D_tDCNAPPk-jmGMxaJMiuWC7iaU"  # noqa
 
 
 @mark.parametrize(

@@ -221,7 +221,7 @@ def validate_token_and_extract_identity(token: str) -> dict:
             """
         )
 
-    identity_data = token_data.get(constants.ARMADA_CLAIMS_KEY)
+    identity_data = token_data.get(settings.IDENTITY_CLAIMS_KEY)
     if not identity_data:
         abort_with_message("No identity data found in access token data")
     if "user_email" not in identity_data:
@@ -308,7 +308,7 @@ def init_access_token(ctx_obj):
         token_set.access_token = refresh_access_token(token_set.refresh_token)
         identity_data = validate_token_and_extract_identity(token_set.access_token)
 
-    logger.debug(f"Executing with {identity_data=}")
+    logger.debug(f"Executing with identity data: {identity_data}")
     ctx_obj["identity"] = identity_data
 
     save_tokens_to_cache(token_set)

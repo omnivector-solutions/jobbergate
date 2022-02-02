@@ -30,6 +30,4 @@ JOBBERGATE_APPLICATION_MODULE_FILE_NAME = "jobbergate.py"
 JOBBERGATE_APPLICATION_CONFIG_FILE_NAME = "jobbergate.yaml"
 TAR_NAME = "jobbergate.tar.gz"
 
-ARMADA_CLAIMS_KEY = "https://www.armada-hpc.com"
-
 DEFAULT_MAX_BYTES_DEBUG = 1000
