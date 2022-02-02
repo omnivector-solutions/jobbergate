@@ -48,6 +48,7 @@ env = [
     "AUTH0_AUDIENCE = https://dummy_auth_audience.com",
     "AUTH0_CLIENT_ID = dummy_client_id",
     "AUTH0_CLIENT_SECRET = dummy_client_secret",
+    "IDENTITY_CLAIMS_KEY = https://test-domain.test",
 ]
 testpaths = ["jobbergate_cli/test"]
 
