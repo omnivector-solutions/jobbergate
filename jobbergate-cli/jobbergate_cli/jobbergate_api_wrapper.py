@@ -108,12 +108,6 @@ class JobbergateApi:
                     headers={"Authorization": "Bearer " + self.token},
                     verify=False,
                 )
-                print("ENDPOINT: ", endpoint)
-                print("PARAMS: ", params)
-                print("HEADERS: ", {"Authorization": "Bearer " + self.token}),
-                print("TOKEN: ", self.token)
-                print("RESPONSE CODE: ", response.status_code)
-                print("RESPONSE TEXT: ", response.text)
                 if response.status_code == 200:
                     response = response.json()
                 elif response.status_code == 403:
