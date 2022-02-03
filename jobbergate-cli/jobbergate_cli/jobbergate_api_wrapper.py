@@ -952,7 +952,7 @@ class JobbergateApi:
             params["user"] = True
         envelope = self.jobbergate_request(
             method="GET",
-            endpoint=self.api_endpoint / "applications/",
+            endpoint=self.api_endpoint / "applications",
             params=params,
         )
         results = envelope["results"]
