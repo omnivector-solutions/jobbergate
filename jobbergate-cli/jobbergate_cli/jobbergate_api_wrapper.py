@@ -106,7 +106,7 @@ class JobbergateApi:
                     endpoint,
                     params=params,
                     headers={"Authorization": "Bearer " + self.token},
-                    verify=True,
+                    verify=False,
                 )
                 if response.status_code == 200:
                     response = response.json()
