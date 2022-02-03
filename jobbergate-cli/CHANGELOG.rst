@@ -7,6 +7,10 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+2.2.0 -- 2022-02-03
+-------------------
+- Removed trailing slashes from api endpoints
+
 2.1.2 -- 2022-02-02
 -------------------
 - Revised login workflow to use client-credentials auth workflow
