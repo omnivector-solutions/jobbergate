@@ -7,6 +7,10 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 
+2.2.0 -- 2022-02-03
+-------------------
+- Removed trailing slashes from api endpoints
+
 2.1.2 -- 2022-02-02
 -------------------
 * Revised permissions to use a view/edit model for each data model

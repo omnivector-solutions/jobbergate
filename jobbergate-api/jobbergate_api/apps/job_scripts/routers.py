@@ -133,7 +133,7 @@ def build_job_script_data_as_string(s3_application_tar, param_dict):
 
 
 @router.post(
-    "/job-scripts/",
+    "/job-scripts",
     status_code=status.HTTP_201_CREATED,
     response_model=JobScriptResponse,
     description="Endpoint for job_script creation",
@@ -207,7 +207,7 @@ async def job_script_get(job_script_id: int = Query(...)):
 
 
 @router.get(
-    "/job-scripts/", description="Endpoint to list job_scripts", response_model=Response[JobScriptResponse],
+    "/job-scripts", description="Endpoint to list job_scripts", response_model=Response[JobScriptResponse],
 )
 async def job_script_list(
     pagination: Pagination = Depends(),

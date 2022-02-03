@@ -25,7 +25,7 @@ s3man = S3Manager()
 
 
 @router.post(
-    "/applications/",
+    "/applications",
     status_code=status.HTTP_201_CREATED,
     response_model=ApplicationResponse,
     description="Endpoint for application creation",
@@ -155,7 +155,7 @@ async def application_delete(
 
 
 @router.get(
-    "/applications/",
+    "/applications",
     description="Endpoint to list applications",
     response_model=Response[ApplicationResponse],
 )
