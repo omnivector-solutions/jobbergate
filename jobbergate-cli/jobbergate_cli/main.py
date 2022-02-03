@@ -272,10 +272,12 @@ def clear_token_cache():
     logger.debug("Clearing cached tokens")
 
     logger.debug(f"Removing access token at {settings.JOBBERGATE_API_ACCESS_TOKEN_PATH}")
-    settings.JOBBERGATE_API_ACCESS_TOKEN_PATH.unlink(missing_ok=True)
+    if settings.JOBBERGATE_API_ACCESS_TOKEN_PATH.exists():
+        settings.JOBBERGATE_API_ACCESS_TOKEN_PATH.unlink()
 
-    logger.debug(f"Removing refresh token at {settings.JOBBERGATE_API_ACCESS_REFRESH_PATH}")
-    settings.JOBBERGATE_API_REFRESH_TOKEN_PATH.unlink(missing_ok=True)
+    logger.debug(f"Removing refresh token at {settings.JOBBERGATE_API_REFRESH_TOKEN_PATH}")
+    if settings.JOBBERGATE_API_REFRESH_TOKEN_PATH.exists():
+        settings.JOBBERGATE_API_REFRESH_TOKEN_PATH.unlink()
 
 
 def init_access_token(ctx_obj):

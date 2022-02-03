@@ -22,7 +22,7 @@ from jobbergate_api.storage import database
 router = APIRouter()
 
 
-@router.post("/job-submissions/", status_code=201, description="Endpoint for job_submission creation")
+@router.post("/job-submissions", status_code=201, description="Endpoint for job_submission creation")
 async def job_submission_create(
     job_submission: JobSubmissionCreateRequest,
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT)),
@@ -82,7 +82,7 @@ async def job_submission_get(job_submission_id: int = Query(...)):
 
 
 @router.get(
-    "/job-submissions/",
+    "/job-submissions",
     description="Endpoint to list job_submissions",
     response_model=Response[JobSubmissionResponse],
 )
