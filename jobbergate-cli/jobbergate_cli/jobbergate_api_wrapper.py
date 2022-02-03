@@ -108,6 +108,12 @@ class JobbergateApi:
                     headers={"Authorization": "Bearer " + self.token},
                     verify=False,
                 )
+                print("ENDPOINT: ", endpoint)
+                print("PARAMS: ", params)
+                print("HEADERS: ", {"Authorization": "Bearer " + self.token}),
+                print("TOKEN: ", self.token)
+                print("RESPONSE CODE: ", response.status_code)
+                print("RESPONSE TEXT: ", response.text)
                 if response.status_code == 200:
                     response = response.json()
                 elif response.status_code == 403:
@@ -952,7 +958,7 @@ class JobbergateApi:
             params["user"] = True
         envelope = self.jobbergate_request(
             method="GET",
-            endpoint=self.api_endpoint / "applications/",
+            endpoint=self.api_endpoint / "applications",
             params=params,
         )
         results = envelope["results"]
