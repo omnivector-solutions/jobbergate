@@ -7,6 +7,10 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+2.2.1 -- 2022-02-03
+-------------------
+- Fixed issue with SENTRY_DSN shadowing API initialization
+
 2.2.0 -- 2022-02-03
 -------------------
 - Removed trailing slashes from api endpoints

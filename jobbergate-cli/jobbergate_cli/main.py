@@ -496,7 +496,7 @@ def main(ctx, verbose, raw, full):
         logger.debug(f"Initializing Sentry with {settings.SENTRY_DSN}")
         init_sentry()
 
-    elif ctx.invoked_subcommand not in ("login", "logout"):
+    if ctx.invoked_subcommand not in ("login", "logout"):
         token = init_access_token(ctx.obj)
         user_email = ctx.obj["identity"]["user_email"]
 
