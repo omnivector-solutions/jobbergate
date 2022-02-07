@@ -97,7 +97,6 @@ class JobbergateApi:
             method    -- HTTP request method
             endpoint  -- API End point: application, job-script, job-submission
             data      -- data to be submitted on POST/PUT requests
-            files     -- file(s) to be sent with request where applicable
             params    -- Query parameters for GET requests
         """
         if method == "GET":
@@ -139,11 +138,10 @@ class JobbergateApi:
             try:
                 response = client.put(
                     endpoint,
-                    data=data,
-                    files=files,
+                    json=data,
                     headers={"Authorization": "Bearer " + self.token},
                     verify=False,
-                )  # .json()
+                )
                 if response.status_code == 403:
                     response = self.error_handle(
                         error=f"User is not Authorized to access {endpoint}",
@@ -160,6 +158,7 @@ class JobbergateApi:
             response = client.delete(
                 endpoint,
                 headers={"Authorization": "Bearer " + self.token},
+                params=params,
                 verify=False,
             )
             if response.status_code == 403:
@@ -180,8 +179,7 @@ class JobbergateApi:
         if method == "POST":
             full_response = client.post(
                 endpoint,
-                data=data,
-                files=files,
+                json=data,
                 headers={"Authorization": "Bearer " + self.token},
                 verify=False,
             )
@@ -219,6 +217,52 @@ class JobbergateApi:
                 )
 
         return response
+
+    def jobbergate_upload(self, endpoint, files):
+        """
+        Upload a file to an HTTP endpoint.
+
+        Keyword Arguments:
+            endpoint  -- API End point
+            files     -- file(s) to be sent with request where applicable
+        """
+        full_response = client.post(
+            endpoint,
+            files=files,
+            headers={"Authorization": "Bearer " + self.token},
+            verify=False,
+        )
+        if full_response.status_code == 400:
+            response = self.error_handle(
+                error=f"Error with data uploaded: {full_response.text}",
+                solution="Please resolve issue and re submit",
+            )
+            return response
+        elif full_response.status_code == 500:
+            error = full_response.text
+            start_point = error.find("Exception Type:")
+            # shorter error resp:
+            end_point = error.find("GET:")
+            # Longer error resp:
+            # end_point = error.find("COOKIES")
+            return self.error_handle(
+                error=f"Server Error generated: {error[start_point:end_point]}",
+                solution="Please alert Omnivector for resolution",
+            )
+        elif full_response.status_code == 403:
+            return self.error_handle(
+                error=f"User is not Authorized to access {endpoint}",
+                solution="Please contact your admin for permission",
+            )
+
+        elif full_response.status_code == 201:
+            return full_response.json()
+
+        else:
+            return self.error_handle(
+                error=f"Unhandled response code from server: {full_response.status_code}",
+                solution="Please alert Omnivector for resolution",
+            )
 
     def jobbergate_run(self, filename, *argv):
         """Execute Job Submission."""
@@ -583,15 +627,7 @@ class JobbergateApi:
             workflow_answers.update(auto_answers)
             param_dict["jobbergate_config"].update(workflow_answers)
 
-        param_filename = f"{settings.JOBBERGATE_CACHE_DIR}/param_dict.json"
-
-        param_file = open(param_filename, "w")
-        json.dump(param_dict, param_file)
-        param_file.close()
         data["param_dict"] = json.dumps(param_dict)
-
-        # TODO: Put below in function after testing - DRY
-        files = {"upload_file": open(param_filename, "rb")}
 
         # Possibly overwrite script name
         job_script_name_from_param = param_dict["jobbergate_config"].get("job_script_name")
@@ -607,7 +643,6 @@ class JobbergateApi:
             method="POST",
             endpoint=self.api_endpoint / "job-scripts",
             data=data,
-            files=files,
         )
         if "error" in response.keys():
             return response
@@ -1041,27 +1076,40 @@ class JobbergateApi:
         data["application_config"] = application_config
         data["application_file"] = application_file
 
-        files = {"upload_file": open(constants.TAR_NAME, "rb")}
-
-        response = self.jobbergate_request(
+        create_response = self.jobbergate_request(
             method="POST",
             endpoint=self.api_endpoint / "applications",
             data=data,
+        )
+        if "error" in create_response.keys():
+            return create_response
+
+        application_id = str(create_response.get("id"))
+
+        files = {"upload_file": open(constants.TAR_NAME, "rb")}
+        upload_response = self.jobbergate_upload(
+            endpoint=self.api_endpoint / "applications" / application_id / "upload",
             files=files,
         )
-        if "error" in response.keys():
-            return response
+        if upload_response is not None and "error" in upload_response.keys():
+            response = self.error_handle(
+                error=f"The zipped application files could not be uploaded: {str(upload_response)}",
+                solution="Try updating the application and Contact Omnivector if the problem persists.",
+            )
+            return create_response
+        else:
+            create_response["application_uploaded"] = True
 
         try:
             for key in self.application_suppress:
-                response.pop(key, None)
+                create_response.pop(key, None)
         except AttributeError:
             # response is str of error message
-            return response
+            return create_response
 
         os.remove(constants.TAR_NAME)
 
-        return response
+        return create_response
 
     def get_application(self, application_id, application_identifier):
         """
@@ -1194,16 +1242,22 @@ class JobbergateApi:
         data["application_config"] = application_config
         data["application_file"] = application_file
 
-        files = {"upload_file": open(settings.TAR_NAME, "rb")}
-
         response = self.jobbergate_request(
             method="PUT",
             endpoint=self.api_endpoint / f"applications/{application_id}",
             data=data,
-            files=files,
         )
         if "error" in response.keys():
             return response
+
+        files = {"upload_file": open(constants.TAR_NAME, "rb")}
+        upload_response = self.jobbergate_upload(endpoint=self.api_endpoint / "applications", files=files)
+        if "error" in upload_response.keys():
+            response = self.error_handle(
+                error=f"The zipped application files could not be uploaded: {str(response)}",
+                solution="Try updating the application and Contact Omnivector if the problem persists.",
+            )
+            return upload_response
 
         try:
             for key in self.application_suppress:
@@ -1238,12 +1292,13 @@ class JobbergateApi:
         if application_id:
             response = self.jobbergate_request(
                 method="DELETE",
-                endpoint=self.api_endpoint / f"application/{application_id}",
+                endpoint=self.api_endpoint / f"applications/{application_id}",
             )
         else:
             response = self.jobbergate_request(
                 method="DELETE",
-                endpoint=self.api_endpoint / f"application/?identifier={application_identifier}",
+                endpoint=self.api_endpoint / "applications",
+                params=dict(identifier=application_identifier),
             )
 
         return response

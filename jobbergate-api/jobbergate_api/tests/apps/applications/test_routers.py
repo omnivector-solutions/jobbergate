@@ -153,6 +153,38 @@ async def test_delete_application_with_uploaded_file(client, application_data, i
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
+async def test_delete_application_by_identifier(client, application_data, inject_security_header):
+    """
+    Test DELETE /applications?identifier=<identifier> correctly deletes an application and it's file.
+
+    This test proves that an application is successfully deleted via a DELETE request to the
+    /applications?identifier=<identifier> endpoint. We show this by asserting that the application no longer
+    exists in the database after the delete request is made, the correct status code is returned and the
+    correct boto3 method was called.
+    """
+    await database.execute(
+        query=applications_table.insert(),
+        values=dict(
+            application_owner_email="owner1@org.com",
+            application_identifier="test-identifier",
+            **application_data,
+        ),
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 1
+
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
+    with mock.patch.object(s3man, "s3_client") as mock_s3:
+        response = await client.delete("/jobbergate/applications?identifier=test-identifier")
+        mock_s3.delete_object.assert_called_once()
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 0
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
 async def test_delete_application_bad_permission(client, application_data, inject_security_header):
     """
     Test that it is not possible to delete application without proper permission.
@@ -188,21 +220,6 @@ async def test_delete_application_not_found(client, inject_security_header):
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     response = await client.delete("/jobbergate/applications/999")
     assert response.status_code == status.HTTP_404_NOT_FOUND
-
-
-@pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_delete_application_without_id(client, inject_security_header):
-    """
-    Test DELETE /applications/ without <id> returns the correct response.
-
-    This test proves that DELETE /applications returns the correct response code (405)
-    when an application id is not specified. We show this by asserting that a 405 response
-    code is returned for a request made without an application id.
-    """
-    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    response = await client.delete("/jobbergate/applications/")
-    assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
 
 @pytest.mark.asyncio
