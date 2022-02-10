@@ -173,6 +173,18 @@ class JobbergateApi:
                     solution="Please confirm the id and try again",
                 )
                 return response
+            elif response.status_code == 409:
+                try:
+                    body = response.json()
+                    error = body["detail"]["message"]
+                    table = body["detail"]["table"]
+                    pk_id = body["detail"]["pk_id"]
+                    solution = f"First delete {table} item with id {pk_id}"
+                except:
+                    error = "There was a conflict encountered when deleting"
+                    solution = "Please alert Omnivector for resolution"
+                response = self.error_handle(error=error, solution=solution)
+                return response
             else:
                 response = response.text
 
