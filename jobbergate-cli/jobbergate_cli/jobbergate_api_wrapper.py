@@ -179,7 +179,7 @@ class JobbergateApi:
                     error = body["detail"]["message"]
                     table = body["detail"]["table"]
                     solution = f"First delete all items from {table} that depend on the item to be deleted"
-                except:
+                except Exception:
                     error = "There was a conflict encountered when deleting"
                     solution = "Please alert Omnivector for resolution"
                 response = self.error_handle(error=error, solution=solution)
@@ -1109,11 +1109,11 @@ class JobbergateApi:
             files=files,
         )
         if upload_response is not None and "error" in upload_response.keys():
-            response = self.error_handle(
-                error=f"The zipped application files could not be uploaded: {str(upload_response)}",
-                solution="Try updating the application and Contact Omnivector if the problem persists.",
-            )
-            return create_response
+            # This is a very hacky way to add a message. We will do handle this better in the CLI rewrite
+            create_response[" "] = ""
+            create_response["WARNING"] = "The zipped application files could not be uploaded"
+            create_response["  "] = "Try running `update-application` with the application path to re-upload."
+            create_response["   "] = "Contact Omnivector if the problem persists."
         else:
             create_response["application_uploaded"] = True
 
