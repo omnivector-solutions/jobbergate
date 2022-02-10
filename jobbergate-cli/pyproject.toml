@@ -8,7 +8,7 @@ packages = [ { include = "jobbergate_cli" } ]
 
 
 [tool.poetry.dependencies]
-python = "^3.6.2"
+python = "^3.8"
 click = "^8.0.1"
 inquirer = "^2.7.0"
 PyYAML = "^5.4.1"
@@ -22,6 +22,15 @@ loguru = "^0.6.0"
 python-jose = "^3.3.0"
 pydantic = "^1.8.2"
 yarl = "^1.7.2"
+httpx = "^0.22.0"
+pendulum = "^2.1.2"
+py-buzz = "^3.0.0"
+snick = "^1.1.0"
+rich = "^11.2.0"
+typer = "^0.4.0"
+colorama = "^0.4.4"
+plummet = {extras = ["time-machine"], version = "^1.0.0"}
+auto-name-enum = "^1.0.2"
 
 [tool.poetry.dev-dependencies]
 black = "^21.9b0"
@@ -32,6 +41,9 @@ pytest-responsemock = "^1.0.1"
 flake8 = "^3.9.2"
 isort = "^5.9.3"
 pytest-env = "^0.6.2"
+respx = "^0.19.2"
+plummet = "^1.0.0"
+pyproject-flake8 = "^0.0.1-alpha.2"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -53,17 +65,21 @@ env = [
 testpaths = ["jobbergate_cli/test"]
 
 [tool.black]
-line-length = 110
+line-length = 120
 
 [tool.isort]
-line_length = 110
+line_length = 120
 lines_after_imports = "2"
 # ignore from..import vs import while sorting a section
 force_sort_within_sections = "1"
 profile = "black"
 
+[tool.flake8]
+max-line-length = 120
+max-complexity = 40
+
 [tool.poetry.scripts]
-jobbergate = "jobbergate_cli.main:main"
+jobbergate = "jobbergate_cli.main:app"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
