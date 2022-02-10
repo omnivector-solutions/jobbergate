@@ -178,8 +178,7 @@ class JobbergateApi:
                     body = response.json()
                     error = body["detail"]["message"]
                     table = body["detail"]["table"]
-                    pk_id = body["detail"]["pk_id"]
-                    solution = f"First delete {table} item with id {pk_id}"
+                    solution = f"First delete all items from {table} that depend on the item to be deleted"
                 except:
                     error = "There was a conflict encountered when deleting"
                     solution = "Please alert Omnivector for resolution"
