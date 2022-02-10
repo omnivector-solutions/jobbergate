@@ -791,10 +791,13 @@ class JobbergateApi:
 
         response = self.jobbergate_request(
             method="DELETE",
-            endpoint=self.api_endpoint / f"job-script/{job_script_id}",
+            endpoint=self.api_endpoint / f"job-scripts/{job_script_id}",
         )
 
-        return response
+        if isinstance(response, dict) and "error" in response:
+            return response
+        else:
+            return f"Successfully deleted job_submission {job_script_id}"
 
     # Job Submissions
     def list_job_submissions(self, all):
@@ -973,10 +976,13 @@ class JobbergateApi:
 
         response = self.jobbergate_request(
             method="DELETE",
-            endpoint=self.api_endpoint / f"job-submission/{job_submission_id}",
+            endpoint=self.api_endpoint / f"job-submissions/{job_submission_id}",
         )
 
-        return response
+        if isinstance(response, dict) and "error" in response:
+            return response
+        else:
+            return f"Successfully deleted job_submission {job_submission_id}"
 
     # Applications
     def list_applications(self, all, user):
@@ -1305,14 +1311,20 @@ class JobbergateApi:
                 method="DELETE",
                 endpoint=self.api_endpoint / f"applications/{application_id}",
             )
+            if isinstance(response, dict) and "error" in response:
+                return response
+            else:
+                return f"Successfully deleted application {application_id}"
         else:
             response = self.jobbergate_request(
                 method="DELETE",
                 endpoint=self.api_endpoint / "applications",
                 params=dict(identifier=application_identifier),
             )
-
-        return response
+            if isinstance(response, dict) and "error" in response:
+                return response
+            else:
+                return f"Successfully deleted application with identifier '{application_identifier}'"
 
 
 def _fit_line(s: str, n: int = 79):
