@@ -31,3 +31,5 @@ JOBBERGATE_APPLICATION_CONFIG_FILE_NAME = "jobbergate.yaml"
 TAR_NAME = "jobbergate.tar.gz"
 
 DEFAULT_MAX_BYTES_DEBUG = 1000
+
+OV_CONTACT = "Omnivector Solutions <info@omnivector.solutions>"

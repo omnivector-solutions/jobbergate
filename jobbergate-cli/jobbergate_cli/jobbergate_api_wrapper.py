@@ -16,6 +16,8 @@ import yarl
 from jobbergate_cli import appform, client, constants
 from jobbergate_cli.config import settings
 
+ASSISTANCE_MESSAGE = f"Please contact {constants.OV_CONTACT} for assistance if the problem persists"
+ACCESS_MESSAGE = f"Please ask your Jobbergate admin for permission or contact {constants.OV_CONTACT}"
 
 class JobbergateApi:
     def __init__(
@@ -112,7 +114,7 @@ class JobbergateApi:
                 elif response.status_code == 403:
                     response = self.error_handle(
                         error=f"User is not Authorized to access {endpoint}",
-                        solution="Please contact your admin for permission",
+                        solution=ACCESS_MESSAGE,
                     )
                     return response
                 elif response.status_code == 404:
@@ -145,7 +147,7 @@ class JobbergateApi:
                 if response.status_code == 403:
                     response = self.error_handle(
                         error=f"User is not Authorized to access {endpoint}",
-                        solution="Please contact your admin for permission",
+                        solution=ACCESS_MESSAGE,
                     )
                     return response
                 else:
@@ -164,7 +166,7 @@ class JobbergateApi:
             if response.status_code == 403:
                 response = self.error_handle(
                     error=f"User is not Authorized to access {endpoint}",
-                    solution="Please contact your admin for permission",
+                    solution=ACCESS_MESSAGE,
                 )
                 return response
             elif response.status_code == 404:
@@ -181,7 +183,7 @@ class JobbergateApi:
                     solution = f"First delete all items from {table} that depend on the item to be deleted"
                 except Exception:
                     error = "There was a conflict encountered when deleting"
-                    solution = "Please alert Omnivector for resolution"
+                    solution = ASSISTANCE_MESSAGE
                 response = self.error_handle(error=error, solution=solution)
                 return response
             else:
@@ -197,7 +199,7 @@ class JobbergateApi:
             if full_response.status_code == 400:
                 response = self.error_handle(
                     error=f"Error with data uploaded: {full_response.text}",
-                    solution="Please resolve issue and re submit",
+                    solution=ASSISTANCE_MESSAGE,
                 )
                 return response
             elif full_response.status_code == 500:
@@ -209,12 +211,12 @@ class JobbergateApi:
                 # end_point = error.find("COOKIES")
                 response = self.error_handle(
                     error=f"Server Error generated: {error[start_point:end_point]}",
-                    solution="Please alert Omnivector for resolution",
+                    solution=ASSISTANCE_MESSAGE,
                 )
             elif full_response.status_code == 403:
                 response = self.error_handle(
                     error=f"User is not Authorized to access {endpoint}",
-                    solution="Please contact your admin for permission",
+                    solution=ACCESS_MESSAGE,
                 )
                 return response
 
@@ -224,7 +226,7 @@ class JobbergateApi:
             else:
                 response = self.error_handle(
                     error=f"Unhandled response code from server: {full_response.status_code}",
-                    solution="Please alert Omnivector for resolution",
+                    solution=ASSISTANCE_MESSAGE,
                 )
 
         return response
@@ -246,7 +248,7 @@ class JobbergateApi:
         if full_response.status_code == 400:
             response = self.error_handle(
                 error=f"Error with data uploaded: {full_response.text}",
-                solution="Please resolve issue and re submit",
+                solution=ASSISTANCE_MESSAGE,
             )
             return response
         elif full_response.status_code == 500:
@@ -258,12 +260,12 @@ class JobbergateApi:
             # end_point = error.find("COOKIES")
             return self.error_handle(
                 error=f"Server Error generated: {error[start_point:end_point]}",
-                solution="Please alert Omnivector for resolution",
+                solution=ASSISTANCE_MESSAGE,
             )
         elif full_response.status_code == 403:
             return self.error_handle(
                 error=f"User is not Authorized to access {endpoint}",
-                solution="Please contact your admin for permission",
+                solution=ACCESS_MESSAGE,
             )
 
         elif full_response.status_code == 201:
@@ -272,7 +274,7 @@ class JobbergateApi:
         else:
             return self.error_handle(
                 error=f"Unhandled response code from server: {full_response.status_code}",
-                solution="Please alert Omnivector for resolution",
+                solution=ASSISTANCE_MESSAGE,
             )
 
     def jobbergate_run(self, filename, *argv):
@@ -432,7 +434,7 @@ class JobbergateApi:
         if not local_jobbergate_application_dir.exists():
             check = self.error_handle(
                 error="invalid application path supplied",
-                solution=(f"{application_path} is invalid, please " "review and try again"),
+                solution=(f"{application_path} is invalid, please check the parameter and try again"),
             )
             error_check.append(check)
         if not local_jobbergate_application_module.exists():
@@ -907,7 +909,7 @@ class JobbergateApi:
             else:
                 response = self.error_handle(
                     error=f"Failed to execute submission with error: {err}",
-                    solution="Please resolve error or contact for assistance",
+                    solution=ASSISTANCE_MESSAGE,
                 )
                 return response
         return response
@@ -1113,7 +1115,7 @@ class JobbergateApi:
             create_response[" "] = ""
             create_response["WARNING"] = "The zipped application files could not be uploaded"
             create_response["  "] = "Try running `update-application` with the application path to re-upload."
-            create_response["   "] = "Contact Omnivector if the problem persists."
+            create_response["   "] = ASSISTANCE_MESSAGE
         else:
             create_response["application_uploaded"] = True
 
@@ -1272,7 +1274,7 @@ class JobbergateApi:
         if "error" in upload_response.keys():
             response = self.error_handle(
                 error=f"The zipped application files could not be uploaded: {str(response)}",
-                solution="Try updating the application and Contact Omnivector if the problem persists.",
+                solution=f"Try updating the application and {ASSISTANCE_MESSAGE}.",
             )
             return upload_response
 
