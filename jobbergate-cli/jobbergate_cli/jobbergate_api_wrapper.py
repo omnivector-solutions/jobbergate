@@ -16,8 +16,10 @@ import yarl
 from jobbergate_cli import appform, client, constants
 from jobbergate_cli.config import settings
 
+
 ASSISTANCE_MESSAGE = f"Please contact {constants.OV_CONTACT} for assistance if the problem persists"
 ACCESS_MESSAGE = f"Please ask your Jobbergate admin for permission or contact {constants.OV_CONTACT}"
+
 
 class JobbergateApi:
     def __init__(
