@@ -983,7 +983,7 @@ def show_token(refresh=False, show_prefix=False):
     Shows the access (or refresh) token for the current user.
     """
     token_set: TokenSet = load_tokens_from_cache()
-    prefix = 'Bearer ' if show_prefix else ''
+    prefix = "Bearer " if show_prefix else ""
     token = token_set.refresh_token if refresh else token_set.access_token
     print(f"{prefix}{token}")
 
