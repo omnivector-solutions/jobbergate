@@ -6,7 +6,7 @@ from typing import Optional
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from jobbergate_api.apps.job_scripts.models import job_scripts_table
+from jobbergate_api.apps.job_scripts.models import job_scripts_table, searchable_fields
 from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionCreateRequest,
@@ -17,7 +17,7 @@ from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.security import IdentityClaims, guard
-from jobbergate_api.storage import database
+from jobbergate_api.storage import database, search_clause
 
 router = APIRouter()
 
@@ -94,6 +94,7 @@ async def job_submission_list(
     slurm_job_ids: Optional[str] = Query(
         None, description="Comma-separated list of slurm-job-ids to match active job_submissions",
     ),
+    search: Optional[str] = Query(None),
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW)),
 ):
     """
@@ -119,6 +120,9 @@ async def job_submission_list(
                 detail="Invalid slurm_job_ids param. Must be a comma-separated list of integers",
             )
         query = query.where(job_submissions_table.c.slurm_job_id.in_(job_ids))
+
+    if search is not None:
+        query = query.where(search_clause(search, searchable_fields))
 
     return await package_response(JobSubmissionResponse, query, pagination)
 

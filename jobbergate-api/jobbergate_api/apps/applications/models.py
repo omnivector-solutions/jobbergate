@@ -21,3 +21,10 @@ applications_table = Table(
     Column("created_at", DateTime, nullable=False, default=func.now()),
     Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=func.now()),
 )
+
+searchable_fields = [
+    applications_table.c.application_name,
+    applications_table.c.application_identifier,
+    applications_table.c.application_description,
+    applications_table.c.application_owner_email,
+]

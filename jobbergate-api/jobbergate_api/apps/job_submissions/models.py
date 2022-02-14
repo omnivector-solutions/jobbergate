@@ -19,3 +19,9 @@ job_submissions_table = Table(
     Column("created_at", DateTime, nullable=False, default=func.now()),
     Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=func.now()),
 )
+
+searchable_fields = [
+    job_submissions_table.c.job_submission_name,
+    job_submissions_table.c.job_submission_description,
+    job_submissions_table.c.job_submission_owner_email,
+]

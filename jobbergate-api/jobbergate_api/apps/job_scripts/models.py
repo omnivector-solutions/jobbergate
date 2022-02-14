@@ -19,3 +19,9 @@ job_scripts_table = Table(
     Column("created_at", DateTime, nullable=False, default=func.now()),
     Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=func.now()),
 )
+
+searchable_fields = [
+    job_scripts_table.c.job_script_name,
+    job_scripts_table.c.job_script_description,
+    job_scripts_table.c.job_script_owner_email,
+]

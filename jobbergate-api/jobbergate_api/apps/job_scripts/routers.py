@@ -14,7 +14,7 @@ from jinja2 import Template
 
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import ApplicationResponse
-from jobbergate_api.apps.job_scripts.models import job_scripts_table
+from jobbergate_api.apps.job_scripts.models import job_scripts_table, searchable_fields
 from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptCreateRequest,
     JobScriptResponse,
@@ -25,7 +25,7 @@ from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.s3_manager import S3Manager
 from jobbergate_api.security import IdentityClaims, guard
-from jobbergate_api.storage import database, handle_fk_error
+from jobbergate_api.storage import database, handle_fk_error, search_clause, render_sql
 
 router = APIRouter()
 s3man = S3Manager()
@@ -212,6 +212,7 @@ async def job_script_get(job_script_id: int = Query(...)):
 async def job_script_list(
     pagination: Pagination = Depends(),
     all: Optional[bool] = Query(False),
+    search: Optional[str] = Query(None),
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW)),
 ):
     """
@@ -221,6 +222,9 @@ async def job_script_list(
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     if not all:
         query = query.where(job_scripts_table.c.job_script_owner_email == identity_claims.user_email)
+    if search is not None:
+        query = query.where(search_clause(search, searchable_fields))
+    print("QUERY: ", render_sql(query))
     return await package_response(JobScriptResponse, query, pagination)
 
 

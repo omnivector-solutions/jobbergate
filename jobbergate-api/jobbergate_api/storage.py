@@ -11,12 +11,31 @@ import fastapi
 import pydantic
 import sqlalchemy
 from fastapi.exceptions import HTTPException
+from sqlalchemy.sql.expression import BooleanClauseList
+from sqlalchemy import or_, Column
 from starlette import status
 
 from jobbergate_api.config import settings
 from jobbergate_api.metadata import metadata
 
 database = databases.Database(settings.DATABASE_URL)  # type: ignore
+
+
+def render_sql(query) -> str:
+    """
+    Render a sqlalchemy query into a string for debugging.
+    """
+    return query.compile(dialect=database._backend._dialect, compile_kwargs={"literal_binds": True})
+
+
+def search_clause(
+    search_terms: str,
+    searchable_fields: typing.List[Column],
+) -> BooleanClauseList:
+    """
+    Create search clause across searchable fields with search terms.
+    """
+    return or_(*[field.ilike(f"%{term}%") for field in searchable_fields for term in search_terms.split()])
 
 
 def create_all_tables():

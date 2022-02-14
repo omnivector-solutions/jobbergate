@@ -527,6 +527,75 @@ async def test_get_applications__with_all_param(client, application_data, inject
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
+async def test_get_applications__with_search_param(client, application_data, inject_security_header):
+    """
+    Test that listing applications, when search=<search terms>, returns matches.
+
+    This test proves that the user making the request will be shown applications that match the search string.
+    We show this by creating applications and using various search queries to match against them.
+
+    Assert that the response to GET /applications?search=<search temrms> includes correct matches.
+    """
+    common = dict(application_file="whatever", application_config="whatever")
+    await database.execute_many(
+        query=applications_table.insert(),
+        values=[
+            dict(
+                id=1,
+                application_name="test name one",
+                application_identifier="identifier one",
+                application_owner_email="one@org.com",
+                **common,
+            ),
+            dict(
+                id=2,
+                application_name="test name two",
+                application_identifier="identifier two",
+                application_owner_email="two@org.com",
+                **common,
+            ),
+            dict(
+                id=22,
+                application_name="test name twenty-two",
+                application_identifier="identifier twenty-two",
+                application_owner_email="twenty-two@org.com",
+                application_description="a long description of this application",
+                **common,
+            ),
+        ],
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 3
+
+    inject_security_header("admin@org.com", Permissions.APPLICATIONS_VIEW)
+
+    response = await client.get("/jobbergate/applications?all=true&search=one")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    results = data.get("results")
+    assert [d["id"] for d in results] == [1]
+
+    response = await client.get("/jobbergate/applications?all=true&search=two")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    results = data.get("results")
+    assert [d["id"] for d in results] == [2, 22]
+
+    response = await client.get("/jobbergate/applications?all=true&search=long")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    results = data.get("results")
+    assert [d["id"] for d in results] == [22]
+
+    response = await client.get("/jobbergate/applications?all=true&search=name+test")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    results = data.get("results")
+    assert [d["id"] for d in results] == [1, 2, 22]
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
 async def test_get_applications__with_pagination(client, application_data, inject_security_header):
     """
     Test that listing applications works with pagination.
