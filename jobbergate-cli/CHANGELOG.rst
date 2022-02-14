@@ -7,6 +7,10 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+2.2.5 -- 2022-02-14
+-------------------
+- Removed job_script_data_as_string from create parameters for job_script create in API
+
 2.2.4 -- 2022-02-14
 -------------------
 - Fixed urls in the CLI again
