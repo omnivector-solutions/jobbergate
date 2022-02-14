@@ -554,7 +554,7 @@ class JobbergateApi:
             )
             application_id = app_data.get("id")
 
-        data["application"] = application_id
+        data["application_id"] = application_id
 
         if param_file:
             is_param_file = os.path.isfile(param_file)
