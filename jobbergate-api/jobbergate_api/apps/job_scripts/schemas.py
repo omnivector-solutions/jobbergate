@@ -56,7 +56,6 @@ class JobScriptCreateRequest(BaseModel):
     job_script_name: str
     job_script_description: Optional[str]
     job_script_owner_email: str
-    job_script_data_as_string: str
     application_id: int
     sbatch_params: Optional[List[str]]
     param_dict: Optional[str]

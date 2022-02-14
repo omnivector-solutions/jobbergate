@@ -11,6 +11,7 @@ from armasec import TokenPayload
 from botocore.exceptions import BotoCoreError
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from jinja2 import Template
+from loguru import logger
 
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import ApplicationResponse
@@ -147,6 +148,7 @@ async def job_script_create(
 
     Make a post request to this endpoint with the required values to create a new job script.
     """
+    logger.debug(f"Creating job_script with: {job_script}")
     select_query = applications_table.select().where(applications_table.c.id == job_script.application_id)
     raw_application = await database.fetch_one(select_query)
 
@@ -156,6 +158,7 @@ async def job_script_create(
             detail=f"Application with id={job_script.application_id} not found.",
         )
     application = ApplicationResponse.parse_obj(raw_application)
+    logger.debug("Fetching application tarfile")
     s3_application_tar = get_s3_object_as_tarfile(application.id)
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
@@ -164,11 +167,13 @@ async def job_script_create(
     create_dict = job_script.dict(exclude_unset=True)
 
     param_dict = json.loads(create_dict.pop("param_dict", "{}"))
+    logger.debug("Rendering job_script data as string")
     job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, param_dict)
 
     sbatch_params = create_dict.pop("sbatch_params", [])
     create_dict["job_script_data_as_string"] = inject_sbatch_params(job_script_data_as_string, sbatch_params)
 
+    logger.debug("Inserting job_script")
     async with database.transaction():
         try:
             insert_query = job_scripts_table.insert()
@@ -182,6 +187,7 @@ async def job_script_create(
         raw_job_script = await database.fetch_one(query)
         response_job_script = JobScriptResponse.parse_obj(raw_job_script)
 
+    logger.debug(f"Created job_script id={inserted_id}")
     return response_job_script
 
 
