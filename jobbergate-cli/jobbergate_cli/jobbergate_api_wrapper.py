@@ -550,7 +550,7 @@ class JobbergateApi:
         if application_identifier:
             app_data = self.jobbergate_request(
                 method="GET",
-                endpoint=self.api_endpoint / f"application/?identifier={application_identifier}",
+                endpoint=self.api_endpoint / f"applications?identifier={application_identifier}",
             )
             application_id = app_data.get("id")
 
@@ -573,7 +573,7 @@ class JobbergateApi:
         if not app_data:
             app_data = self.jobbergate_request(
                 method="GET",
-                endpoint=self.api_endpoint / f"application/{application_id}",
+                endpoint=self.api_endpoint / f"applications/{application_id}",
             )
         if "error" in app_data.keys():
             return app_data
@@ -766,14 +766,14 @@ class JobbergateApi:
 
         data = self.jobbergate_request(
             method="GET",
-            endpoint=self.api_endpoint / f"job-script/{job_script_id}",
+            endpoint=self.api_endpoint / f"job-scripts/{job_script_id}",
         )
         if "error" in data.keys():
             return data
         data["job_script_data_as_string"] = job_script_data_as_string
         response = self.jobbergate_request(
             method="PUT",
-            endpoint=self.api_endpoint / f"job-script/{job_script_id}/",
+            endpoint=self.api_endpoint / f"job-scripts/{job_script_id}/",
             data=data,
         )
 
@@ -953,14 +953,14 @@ class JobbergateApi:
 
         data = self.jobbergate_request(
             method="GET",
-            endpoint=self.api_endpoint / f"job-submission/{job_submission_id}",
+            endpoint=self.api_endpoint / f"job-submissions/{job_submission_id}",
         )
         if "error" in data.keys():
             return data
         # TODO how to collect data that will updated for the job-submission
         response = self.jobbergate_request(
             method="PUT",
-            endpoint=self.api_endpoint / f"job-submission/{job_submission_id}",
+            endpoint=self.api_endpoint / f"job-submissions/{job_submission_id}",
         )
         return response
 
@@ -1154,12 +1154,12 @@ class JobbergateApi:
         if application_id:
             response = self.jobbergate_request(
                 method="GET",
-                endpoint=self.api_endpoint / f"application/{application_id}",
+                endpoint=self.api_endpoint / f"applications/{application_id}",
             )
         else:
             response = self.jobbergate_request(
                 method="GET",
-                endpoint=self.api_endpoint / f"application/?identifier={application_identifier}",
+                endpoint=self.api_endpoint / f"applications?identifier={application_identifier}",
             )
 
         return response
@@ -1222,12 +1222,12 @@ class JobbergateApi:
         if application_id:
             data = self.jobbergate_request(
                 method="GET",
-                endpoint=self.api_endpoint / f"application/{application_id}",
+                endpoint=self.api_endpoint / f"applications/{application_id}",
             )
         else:
             data = self.jobbergate_request(
                 method="GET",
-                endpoint=self.api_endpoint / f"application/?identifier={application_identifier}",
+                endpoint=self.api_endpoint / f"applications?identifier={application_identifier}",
             )
 
         if "error" in data.keys():
