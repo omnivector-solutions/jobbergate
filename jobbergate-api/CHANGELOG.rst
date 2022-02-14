@@ -7,6 +7,10 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 
+2.2.3 -- 2022-02-14
+-------------------
+- Improved error messages for users and captured error info in CLI
+
 2.2.2 -- 2022-02-07
 -------------------
 - Fixed applicaiton creation
