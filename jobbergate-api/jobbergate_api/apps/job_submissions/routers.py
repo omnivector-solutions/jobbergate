@@ -7,7 +7,11 @@ from armasec import TokenPayload
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
-from jobbergate_api.apps.job_submissions.models import job_submissions_table
+from jobbergate_api.apps.job_submissions.models import (
+    job_submissions_table,
+    searchable_fields,
+    sortable_fields,
+)
 from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionCreateRequest,
     JobSubmissionResponse,
@@ -17,7 +21,7 @@ from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.security import IdentityClaims, guard
-from jobbergate_api.storage import database
+from jobbergate_api.storage import database, search_clause, sort_clause
 
 router = APIRouter()
 
@@ -94,15 +98,13 @@ async def job_submission_list(
     slurm_job_ids: Optional[str] = Query(
         None, description="Comma-separated list of slurm-job-ids to match active job_submissions",
     ),
+    search: Optional[str] = Query(None),
+    sort_field: Optional[str] = Query(None),
+    sort_ascending: bool = Query(True),
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW)),
 ):
     """
     List job_submissions for the authenticated user.
-
-    :param: all:           Do not limit results to only the current user
-    :param: slurm_job_ids: Limit results job_submissions having one of the supplied slurm_job_ids.
-                           If used, must be a comma separated list of integers.
-                           May not be an empty string.
     """
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     query = job_submissions_table.select()
@@ -119,6 +121,10 @@ async def job_submission_list(
                 detail="Invalid slurm_job_ids param. Must be a comma-separated list of integers",
             )
         query = query.where(job_submissions_table.c.slurm_job_id.in_(job_ids))
+    if search is not None:
+        query = query.where(search_clause(search, searchable_fields))
+    if sort_field is not None:
+        query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
 
     return await package_response(JobSubmissionResponse, query, pagination)
 

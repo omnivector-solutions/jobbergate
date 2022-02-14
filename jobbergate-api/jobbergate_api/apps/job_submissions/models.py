@@ -19,3 +19,19 @@ job_submissions_table = Table(
     Column("created_at", DateTime, nullable=False, default=func.now()),
     Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=func.now()),
 )
+
+searchable_fields = [
+    job_submissions_table.c.job_submission_name,
+    job_submissions_table.c.job_submission_description,
+    job_submissions_table.c.job_submission_owner_email,
+]
+
+sortable_fields = [
+    job_submissions_table.c.id,
+    job_submissions_table.c.job_submission_name,
+    job_submissions_table.c.job_submission_owner_email,
+    job_submissions_table.c.job_script_id,
+    job_submissions_table.c.slurm_job_id,
+    job_submissions_table.c.created_at,
+    job_submissions_table.c.updated_at,
+]
