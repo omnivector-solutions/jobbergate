@@ -15,14 +15,14 @@ JOBBERGATE_JOB_SCRIPT_CONFIG = {
     "job_script_name": "",
     "job_script_description": "TEST_DESC",
     "job_script_owner_email": "",
-    "application": "",
+    "application_id": "",
 }
 
 JOBBERGATE_JOB_SUBMISSION_CONFIG = {
     "job_submission_name": "",
     "job_submission_description": "TEST_DESC",
     "job_submission_owner_email": "",
-    "job_script": "",
+    "job_script_id": "",
 }
 
 JOBBERGATE_DEFAULT_DOTENV_PATH = Path("/etc/default/jobbergate-cli")
