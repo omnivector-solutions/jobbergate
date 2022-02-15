@@ -7,6 +7,10 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 
+2.2.7 -- 2022-02-15
+-------------------
+- Applied fix for requests and added more debug logging in CLI
+
 2.2.6 -- 2022-02-14
 -------------------
 - Added search and sort capability to the list endpoints
