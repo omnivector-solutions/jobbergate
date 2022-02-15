@@ -1,6 +1,7 @@
 """
 Router for the Application resource.
 """
+from typing import Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Query
@@ -8,7 +9,7 @@ from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
 from sqlalchemy import not_
 
-from jobbergate_api.apps.applications.models import applications_table
+from jobbergate_api.apps.applications.models import applications_table, searchable_fields, sortable_fields
 from jobbergate_api.apps.applications.schemas import (
     ApplicationCreateRequest,
     ApplicationResponse,
@@ -20,7 +21,7 @@ from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.s3_manager import S3Manager
 from jobbergate_api.security import IdentityClaims, guard
-from jobbergate_api.storage import database, handle_fk_error
+from jobbergate_api.storage import database, handle_fk_error, search_clause, sort_clause
 
 router = APIRouter()
 s3man = S3Manager()
@@ -201,6 +202,9 @@ async def application_delete_by_identifier(
 async def applications_list(
     user: bool = Query(False),
     all: bool = Query(False),
+    search: Optional[str] = Query(None),
+    sort_field: Optional[str] = Query(None),
+    sort_ascending: bool = Query(True),
     pagination: Pagination = Depends(),
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW)),
 ):
@@ -213,6 +217,11 @@ async def applications_list(
         query = query.where(applications_table.c.application_owner_email == identity_claims.user_email)
     if not all:
         query = query.where(not_(applications_table.c.application_identifier.is_(None)))
+    if search is not None:
+        query = query.where(search_clause(search, searchable_fields))
+    if sort_field is not None:
+        query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
+
     return await package_response(ApplicationResponse, query, pagination)
 
 

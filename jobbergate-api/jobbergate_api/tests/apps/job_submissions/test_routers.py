@@ -361,6 +361,136 @@ async def test_get_job_submissions__with_all_param(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
+async def test_get_job_submissions__with_search_param(
+    client, inject_security_header, application_data, job_script_data
+):
+    """
+    Test that listing job submissions, when search=<search terms>, returns matches.
+
+    This test proves that the user making the request will be shown job submissions that match the search
+    string.  We show this by creating job submissions and using various search queries to match against them.
+
+    Assert that the response to GET /job_submissions?search=<search temrms> includes correct matches.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="owner1@org.com", **application_data),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=dict(application_id=inserted_application_id, **job_script_data),
+    )
+    common = dict(job_script_id=inserted_job_script_id)
+    await database.execute_many(
+        query=job_submissions_table.insert(),
+        values=[
+            dict(
+                id=1, job_submission_name="test name one", job_submission_owner_email="one@org.com", **common,
+            ),
+            dict(
+                id=2, job_submission_name="test name two", job_submission_owner_email="two@org.com", **common,
+            ),
+            dict(
+                id=22,
+                job_submission_name="test name twenty-two",
+                job_submission_owner_email="twenty-two@org.com",
+                job_submission_description="a long description of this job_script",
+                **common,
+            ),
+        ],
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 3
+
+    inject_security_header("admin@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
+
+    response = await client.get("/jobbergate/job-submissions?all=true&search=one")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    results = data.get("results")
+    assert [d["id"] for d in results] == [1]
+
+    response = await client.get("/jobbergate/job-submissions?all=true&search=two")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    results = data.get("results")
+    assert [d["id"] for d in results] == [2, 22]
+
+    response = await client.get("/jobbergate/job-submissions?all=true&search=long")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    results = data.get("results")
+    assert [d["id"] for d in results] == [22]
+
+    response = await client.get("/jobbergate/job-submissions?all=true&search=name+test")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    results = data.get("results")
+    assert [d["id"] for d in results] == [1, 2, 22]
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_get_job_submissions_with_sort_params(
+    client, application_data, job_script_data, inject_security_header
+):
+    """
+    Test that listing job_submissions with sort params returns correctly ordered matches.
+
+    This test proves that the user making the request will be shown job_submissions sorted in the correct
+    order according to the ``sort_field`` and ``sort_ascending`` parameters.
+    We show this by creating job_submissions and using various sort parameters to order them.
+
+    Assert that the response to GET /job_submissions?sort_field=<field>&sort_ascending=<bool> includes
+    correctly sorted job_submissions.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=dict(application_owner_email="admin@org.com", **application_data),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=dict(application_id=inserted_application_id, **job_script_data),
+    )
+    common = dict(job_script_id=inserted_job_script_id, job_submission_owner_email="admin@org.com")
+    await database.execute_many(
+        query=job_submissions_table.insert(),
+        values=[
+            dict(id=1, job_submission_name="Z", **common,),
+            dict(id=2, job_submission_name="Y", **common,),
+            dict(id=22, job_submission_name="X", **common,),
+        ],
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 3
+
+    inject_security_header("admin@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
+
+    response = await client.get("/jobbergate/job-submissions?sort_field=id")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    results = data.get("results")
+    assert [d["id"] for d in results] == [1, 2, 22]
+
+    response = await client.get("/jobbergate/job-submissions?sort_field=id&sort_ascending=false")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    results = data.get("results")
+    assert [d["id"] for d in results] == [22, 2, 1]
+
+    response = await client.get("/jobbergate/job-submissions?sort_field=job_submission_name")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    results = data.get("results")
+    assert [d["id"] for d in results] == [22, 2, 1]
+
+    response = await client.get("/jobbergate/job-submissions?all=true&sort_field=job_submission_description")
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "Invalid sorting column requested" in response.text
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
 async def test_list_job_submission_pagination(
     client, application_data, job_submission_data, job_script_data, inject_security_header,
 ):

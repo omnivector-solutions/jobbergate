@@ -19,3 +19,18 @@ job_scripts_table = Table(
     Column("created_at", DateTime, nullable=False, default=func.now()),
     Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=func.now()),
 )
+
+searchable_fields = [
+    job_scripts_table.c.job_script_name,
+    job_scripts_table.c.job_script_description,
+    job_scripts_table.c.job_script_owner_email,
+]
+
+sortable_fields = [
+    job_scripts_table.c.id,
+    job_scripts_table.c.job_script_name,
+    job_scripts_table.c.job_script_owner_email,
+    job_scripts_table.c.application_id,
+    job_scripts_table.c.created_at,
+    job_scripts_table.c.updated_at,
+]
