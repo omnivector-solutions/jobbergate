@@ -12,6 +12,7 @@ import inquirer
 import requests
 import yaml
 import yarl
+from loguru import logger
 
 from jobbergate_cli import appform, client, constants
 from jobbergate_cli.config import settings
@@ -104,6 +105,7 @@ class JobbergateApi:
             params    -- Query parameters for GET requests
         """
         if method == "GET":
+            logger.debug(f"Issuing get request to {endpoint} with {params}")
             try:
                 response = client.get(
                     endpoint,
@@ -111,6 +113,7 @@ class JobbergateApi:
                     headers={"Authorization": "Bearer " + self.token},
                     verify=False,
                 )
+                logger.debug(f"Received response: {response.text}")
                 if response.status_code == 200:
                     response = response.json()
                 elif response.status_code == 403:
@@ -139,6 +142,7 @@ class JobbergateApi:
                 )
                 return response
         if method == "PUT":
+            logger.debug(f"Issuing put request to {endpoint} with {data}")
             try:
                 response = client.put(
                     endpoint,
@@ -146,6 +150,7 @@ class JobbergateApi:
                     headers={"Authorization": "Bearer " + self.token},
                     verify=False,
                 )
+                logger.debug(f"Received response: {response.text}")
                 if response.status_code == 403:
                     response = self.error_handle(
                         error=f"User is not Authorized to access {endpoint}",
@@ -159,12 +164,14 @@ class JobbergateApi:
                 return response
 
         if method == "DELETE":
+            logger.debug(f"Issuing delete request to {endpoint}")
             response = client.delete(
                 endpoint,
                 headers={"Authorization": "Bearer " + self.token},
                 params=params,
                 verify=False,
             )
+            logger.debug(f"Received response: {response.text}")
             if response.status_code == 403:
                 response = self.error_handle(
                     error=f"User is not Authorized to access {endpoint}",
@@ -192,12 +199,14 @@ class JobbergateApi:
                 response = response.text
 
         if method == "POST":
+            logger.debug(f"Issuing post request to {endpoint} with {data}")
             full_response = client.post(
                 endpoint,
                 json=data,
                 headers={"Authorization": "Bearer " + self.token},
                 verify=False,
             )
+            logger.debug(f"Received response: {full_response.text}")
             if full_response.status_code == 400:
                 response = self.error_handle(
                     error=f"Error with data uploaded: {full_response.text}",
