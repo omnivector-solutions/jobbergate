@@ -7,6 +7,10 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+2.2.6 -- 2022-02-14
+-------------------
+- Added search and sort capability to the list endpoints to the API
+
 2.2.5 -- 2022-02-14
 -------------------
 - Removed job_script_data_as_string from create parameters for job_script create in API
