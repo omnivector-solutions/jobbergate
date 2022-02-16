@@ -40,6 +40,7 @@ class Settings(BaseSettings):
 
     # Auth0 config for machine-to-machine security
     AUTH0_DOMAIN: str
+    AUTH0_LOGIN_DOMAIN: Optional[str]
     AUTH0_AUDIENCE: str
     AUTH0_CLIENT_ID: str
     AUTH0_CLIENT_SECRET: str
@@ -68,6 +69,8 @@ class Settings(BaseSettings):
         values["JOBBERGATE_USER_TOKEN_DIR"] = token_dir
         values["JOBBERGATE_API_ACCESS_TOKEN_PATH"] = token_dir / "access.token"
         values["JOBBERGATE_API_REFRESH_TOKEN_PATH"] = token_dir / "refresh.token"
+
+        values.setdefault("AUTH0_LOGIN_DOMAIN", values["AUTH0_DOMAIN"])
 
         return values
 

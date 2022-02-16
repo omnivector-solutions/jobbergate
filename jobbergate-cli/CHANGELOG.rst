@@ -7,6 +7,11 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+2.2.9 -- 2022-02-16
+-------------------
+- Added AUTH0_LOGIN_DOMAIN setting
+- Adjusted auth workflow to prefer AUTH0_LOGIN_DOMAIN over AUTH0_DOMAIN
+
 2.2.8 -- 2022-02-15
 -------------------
 - Fixed job submission data format for creation POST request
