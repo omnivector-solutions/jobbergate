@@ -7,6 +7,10 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+2.2.8 -- 2022-02-15
+-------------------
+- Fixed job submission data format for creation POST request
+
 2.2.7 -- 2022-02-15
 -------------------
 - Applied fix for requests and added more debug logging

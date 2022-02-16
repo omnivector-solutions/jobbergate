@@ -9,10 +9,10 @@ from subprocess import PIPE, Popen
 import tarfile
 
 import inquirer
+from loguru import logger
 import requests
 import yaml
 import yarl
-from loguru import logger
 
 from jobbergate_cli import appform, client, constants
 from jobbergate_cli.config import settings
@@ -906,14 +906,11 @@ class JobbergateApi:
 
             if rc == 0:
                 print(output)
-                find = output.find("job") + 4
-                slurm_job_id = output[find:]
-                data["slurm_job_id"] = slurm_job_id
-                data_json = json.dumps(data)
+                data["slurm_job_id"] = int(output.split()[-1])
                 response = self.jobbergate_request(
                     method="POST",
                     endpoint=self.api_endpoint / "job-submissions",
-                    data=data_json,
+                    data=data,
                 )
                 if "error" in response.keys():
                     return response
