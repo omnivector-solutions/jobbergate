@@ -327,7 +327,7 @@ def refresh_access_token(refresh_token: str) -> str:
     :param refresh_token: The refresh token to be used to retrieve a new access token.
     :returns: The fetched access token.
     """
-    url = f"https://{settings.AUTH0_DOMAIN}/oauth/token"
+    url = f"https://{settings.AUTH0_LOGIN_DOMAIN}/oauth/token"
     logger.debug(f"Requesting refreshed access token from {url}")
     response = requests.post(
         url,
@@ -363,7 +363,7 @@ def fetch_auth_tokens() -> TokenSet:
 
     :returns: A TokenSet object carrying the fetched tokens.
     """
-    url = f"https://{settings.AUTH0_DOMAIN}/oauth/device/code"
+    url = f"https://{settings.AUTH0_LOGIN_DOMAIN}/oauth/device/code"
     response = requests.post(
         url,
         headers={"content-type": "application/x-www-form-urlencoded"},
@@ -401,7 +401,7 @@ def fetch_auth_tokens() -> TokenSet:
     attempt_count = 0
     while start_time + time_limit > datetime.now():
         attempt_count += 1
-        token_url = f"https://{settings.AUTH0_DOMAIN}/oauth/token"
+        token_url = f"https://{settings.AUTH0_LOGIN_DOMAIN}/oauth/token"
         token_response = requests.post(
             token_url,
             headers={"content-type": "application/x-www-form-urlencoded"},
