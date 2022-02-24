@@ -34,17 +34,13 @@ format: install
 release-%:
 	../release-scripts/prepare-release.sh $(subst release-,,$@)
 
-.PHONY: run
-run:
-	poetry run uvicorn --host 0.0.0.0 jobbergate_api.main:app --reload
-
 .PHONY: publish
 publish:
 	../release-scripts/publish-release.sh
 
 .PHONY: local
 local: install
-	poetry run uvicorn --host 0.0.0.0 jobbergate_api.main:app --reload
+	poetry run jobbergate dev-server
 
 .PHONY: update-precommit
 update-precommit:

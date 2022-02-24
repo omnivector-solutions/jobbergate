@@ -11,23 +11,22 @@ services:
       - jobbergate-net
     volumes:
       - ./jobbergate-api/jobbergate_api:/app/jobbergate_api
-    command: uvicorn jobbergate_api.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
+    command: poetry run jobbergate dev-server --port=8000
     environment:
       - DATABASE_HOST=${NEXTGEN_DATABASE_HOST:-nextgen-db}
       - DATABASE_USER=${NEXTGEN_DATABASE_USER:-nextgen}
       - DATABASE_PSWD=${NEXTGEN_DATABASE_PSWD:-nextgen}
       - DATABASE_NAME=${NEXTGEN_DATABASE_NAME:-nextgen}
       - DATABASE_PORT=${NEXTGEN_DATABASE_PORT:-5432}
-      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL:-http://s3:9000}
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL:-http://minio:9000}
+      - S3_BUCKET_NAME=${S3_ENDPOINT_URL:-jobbergate-resources}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-FAKE_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-FAKE_SECRET_ACCESS_KEY}
-      - ARMASEC_DOMAIN=${ARMASEC_DOMAIN}
-      - ARMASEC_AUDIENCE=${ARMASEC_AUDIENCE}
+      - ARMASEC_DOMAIN=${AUTH0_DOMAIN}
+      - ARMASEC_AUDIENCE=${AUTH0_AUDIENCE}
       - ARMASEC_DEBUG=${ARMASEC_DEBUG}
     ports:
       - 8000:8000
-    depends_on:
-      - nextgen-db
 
   nextgen-db:
     image: postgres
