@@ -717,13 +717,12 @@ class JobbergateApi:
                 ]
             )["sub"]
 
-        # Write local copy of script and supporting files
-        submission_result = self.create_job_submission(
-            job_script_id=response["id"],
-            render_only=not submit,
-            job_submission_name=response["job_script_name"],
-        )
         if submit:
+            submission_result = self.create_job_submission(
+                job_script_id=response["id"],
+                render_only=not submit,
+                job_submission_name=response["job_script_name"],
+            )
             response["submission_result"] = submission_result
 
         return response
@@ -837,26 +836,7 @@ class JobbergateApi:
         except Exception:
             return results
 
-    def create_job_submission(self, job_script_id, render_only, job_submission_name=""):
-        """
-        CREATE Job Submission.
-
-        Keyword Arguments:
-            job_script_id -- id of job script to submit
-            name          -- name for job submission
-            render_only   -- create record in API and return data to CLI
-                             but DO NOT submit job
-        """
-        if job_script_id is None:
-            response = self.error_handle(
-                error="--job-script-id not defined",
-                solution="Please try again with --job-script-id specified",
-            )
-            return response
-
-        data = self.job_submission_config
-        data["job_submission_name"] = job_submission_name
-        data["job_script_id"] = job_script_id
+    def render_job_script(self, job_script_id):
 
         job_script = self.jobbergate_request(
             method="GET",
@@ -887,6 +867,28 @@ class JobbergateApi:
             #     write_file.write(value)
 
         data_json = json.dumps(data)
+
+
+    def create_job_submission(self, job_script_id, render_only, job_submission_name=""):
+        """
+        CREATE Job Submission.
+
+        Keyword Arguments:
+            job_script_id -- id of job script to submit
+            name          -- name for job submission
+            render_only   -- create record in API and return data to CLI
+                             but DO NOT submit job
+        """
+        if job_script_id is None:
+            response = self.error_handle(
+                error="--job-script-id not defined",
+                solution="Please try again with --job-script-id specified",
+            )
+            return response
+
+        data = self.job_submission_config
+        data["job_submission_name"] = job_submission_name
+        data["job_script_id"] = job_script_id
 
         if render_only:
             response = self.jobbergate_request(
