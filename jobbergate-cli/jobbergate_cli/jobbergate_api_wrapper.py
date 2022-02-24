@@ -2,11 +2,13 @@
 import importlib
 import json
 import os
+from base64 import b64decode, b64encode
 from os import listdir
 from os.path import exists, isfile
 import pathlib
 from subprocess import PIPE, Popen
 import tarfile
+from typing import List, Dict, Any, Generator
 
 import inquirer
 from loguru import logger
@@ -475,6 +477,21 @@ class JobbergateApi:
 
         return error_check
 
+    @staticmethod
+    def _decode(text: str) -> str:
+        """
+        Base 64 decode a string.
+        """
+        return b64decode(text.encode('utf-8')).decode('utf-8')
+
+    @staticmethod
+    def _encode(text: str) -> str:
+        """
+        Base 64 encode a string.
+        """
+        return b64encode(text.encode('utf-8')).decode('utf-8')
+
+
     def list_job_scripts(self, all):
         """
         LIST Job Scripts.
@@ -492,8 +509,21 @@ class JobbergateApi:
         )
         results = envelope["results"]
 
+        def _filter_and_decode(results: List[Dict[str, Any]]) -> Generator[Dict[str, Any], None, None]:
+            """
+            Filter suppressed fields from the results and, if it carries encoded job script data, decode it.
+            """
+            for result in results:
+                filtered_result = {k: v for (k, v) in result.items() if k not in self.job_submission_suppress}
+                js_data_str = filtered_result.get("job_script_data_as_string")
+                if js_data_str is not None:
+                    encoded_data = json.loads(js_data_str)
+                    decoded_data = {k: self._decode(v) for (k, v) in encoded_data}
+                    filtered_result["job_script_data_as_string"] = json.dumps(decoded_data, indent=2)
+                yield filtered_result
+
         try:
-            return [{k: v for k, v in d.items() if k not in self.job_script_suppress} for d in results]
+            return list(_filter_and_decode(results))
         except Exception:
             return results
 
@@ -671,25 +701,6 @@ class JobbergateApi:
         if "error" in response.keys():
             return response
 
-        try:
-            rendered_dict = json.loads(response["job_script_data_as_string"])
-        except:  # noqa: E722
-            response = self.error_handle(
-                error="could not load job_script_data_as_string from response",
-                solution=f"Please review response: {response}",
-            )
-            return response
-
-        job_script_data_as_string = ""
-        for key, value in rendered_dict.items():
-            job_script_data_as_string += "\n\nNEW_FILE\n\n"
-            job_script_data_as_string += value
-
-        response["job_script_data_as_string"] = job_script_data_as_string
-
-        if debug is False:
-            del response["job_script_data_as_string"]
-
         # Check if user wants to submit immediately
         if no_submit:
             submit = False
@@ -740,17 +751,13 @@ class JobbergateApi:
             return response
 
         rendered_dict = json.loads(response["job_script_data_as_string"])
+        decoded_dict = {k: self._decode(v) for (k, v) in rendered_dict.items()}
+
         if as_str:
-            return rendered_dict["application.sh"]
-        else:
-            job_script_data_as_string = ""
-            for key, value in rendered_dict.items():
-                job_script_data_as_string += "\nNEW_FILE\n"
-                job_script_data_as_string += value
+            return decoded_dict["application.sh"]
 
-            response["job_script_data_as_string"] = job_script_data_as_string
-
-            return response
+        response["job_script_data_as_string"] = json.dumps(decoded_dict, indent=2)
+        return response
 
     def update_job_script(self, job_script_id, job_script_data_as_string):
         """
@@ -761,29 +768,24 @@ class JobbergateApi:
             job_script_data_as_string  -- data to update job script with
         """
         if job_script_id is None:
-            response = self.error_handle(
+            return self.error_handle(
                 error="--id not defined",
                 solution="Please try again with --id specified",
             )
-            return response
         if job_script_data_as_string is None:
-            response = self.error_handle(
+            return self.error_handle(
                 error="--job-script not defined",
                 solution=f"Provide data to update ID: {job_script_id}",
             )
-            return response
 
-        data = self.jobbergate_request(
-            method="GET",
-            endpoint=self.api_endpoint / f"job-scripts/{job_script_id}",
-        )
-        if "error" in data.keys():
-            return data
-        data["job_script_data_as_string"] = job_script_data_as_string
+        job_script_data = json.loads(job_script_data_as_string)
+        encoded_data = {k: self._encode(v) for (k, v) in job_script_data.items()}
+        encoded_string = json.dumps(encoded_data)
+
         response = self.jobbergate_request(
             method="PUT",
             endpoint=self.api_endpoint / f"job-scripts/{job_script_id}/",
-            data=data,
+            data=dict(job_script_data_as_string=encoded_string),
         )
 
         return response

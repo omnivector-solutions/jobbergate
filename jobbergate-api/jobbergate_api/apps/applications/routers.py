@@ -18,7 +18,7 @@ from jobbergate_api.apps.applications.schemas import (
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.config import settings
-from jobbergate_api.pagination import Pagination, Response, package_response
+from jobbergate_api.pagination import Pagination, package_response, ok_response
 from jobbergate_api.s3_manager import S3Manager
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import database, handle_fk_error, search_clause, sort_clause
@@ -54,10 +54,9 @@ async def applications_create(
 
         # Now fetch the newly inserted row. This is necessary to reflect defaults and db modified columns
         query = applications_table.select().where(applications_table.c.id == inserted_id)
-        raw_application = await database.fetch_one(query)
-        response_application = ApplicationResponse.parse_obj(raw_application)
+        application_data = await database.fetch_one(query)
 
-    return response_application
+    return application_data
 
 
 @router.post(
@@ -197,7 +196,7 @@ async def application_delete_by_identifier(
 @router.get(
     "/applications",
     description="Endpoint to list applications",
-    response_model=Response[ApplicationResponse],
+    responses=ok_response(ApplicationResponse),
 )
 async def applications_list(
     user: bool = Query(False),
@@ -236,14 +235,12 @@ async def applications_get_by_id(application_id: int = Query(...)):
     Return the application given it's id.
     """
     query = applications_table.select().where(applications_table.c.id == application_id)
-    raw_application = await database.fetch_one(query)
-    if not raw_application:
+    application_data = await database.fetch_one(query)
+    if not application_data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Application {application_id=} not found.",
         )
-    application = ApplicationResponse.parse_obj(raw_application)
-
-    return application
+    return application_data
 
 
 @router.put(
@@ -272,10 +269,9 @@ async def application_update(
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
         select_query = applications_table.select().where(applications_table.c.id == application_id)
-        raw_application = await database.fetch_one(select_query)
-        response_application = ApplicationResponse.parse_obj(raw_application)
+        application_data = await database.fetch_one(select_query)
 
-    return response_application
+    return application_data
 
 
 def include_router(app):

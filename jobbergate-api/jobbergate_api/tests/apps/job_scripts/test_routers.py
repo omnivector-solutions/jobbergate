@@ -22,6 +22,7 @@ from jobbergate_api.apps.job_scripts.routers import (
 )
 from jobbergate_api.apps.job_scripts.schemas import JobScriptResponse
 from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.coding import encode
 from jobbergate_api.storage import database
 
 
@@ -44,7 +45,7 @@ def job_script_data_as_string():
                 echo $SLURM_TASKS_PER_NODE
                 echo $SLURM_SUBMIT_DIR
                 """
-            ).strip()
+            ).strip(),
         }
     )
     return content
@@ -72,7 +73,7 @@ def new_job_script_data_as_string():
                 echo $SLURM_TASKS_PER_NODE
                 echo $SLURM_SUBMIT_DIR
                 """
-            ).strip()
+            ).strip(),
         }
     )
     return content
@@ -271,8 +272,9 @@ def test_render_template(param_dict_flat, template_files, job_script_data_as_str
     Test correctly rendered template for job_script template.
     """
     job_script_rendered = render_template(template_files, param_dict_flat)
+    encoded_data = {k: encode(v) for (k, v) in json.loads(job_script_data_as_string).items()}
 
-    assert job_script_rendered == job_script_data_as_string
+    assert json.loads(job_script_rendered) == encoded_data
 
 
 def test_build_job_script_data_as_string(s3_object_as_tar, param_dict, job_script_data_as_string):
@@ -280,8 +282,9 @@ def test_build_job_script_data_as_string(s3_object_as_tar, param_dict, job_scrip
     Test build_job_script_data_as_string function correct output.
     """
     data_as_string = build_job_script_data_as_string(s3_object_as_tar, param_dict)
+    encoded_data = {k: encode(v) for (k, v) in json.loads(job_script_data_as_string).items()}
 
-    assert data_as_string == job_script_data_as_string
+    assert json.loads(data_as_string) == encoded_data
 
 
 @pytest.mark.asyncio

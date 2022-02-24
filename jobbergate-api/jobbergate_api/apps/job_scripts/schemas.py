@@ -1,12 +1,14 @@
 """
 JobScript resource schema.
 """
+from base64 import b64encode, b64decode
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
+from jobbergate_api.coding import encode, decode
 
 job_script_meta_mapper = MetaMapper(
     id=MetaField(description="The unique database identifier for the instance", example=101,),
@@ -22,7 +24,7 @@ job_script_meta_mapper = MetaMapper(
         example="This job_scripts runs an Foo job using the bar variant",
     ),
     job_script_data_as_string=MetaField(
-        description="The job_script itself",
+        description="The job_script itself. This is base64 encoded. Example below is decoded for clarity.",
         example=" ".join(
             [
                 '{"application.sh": "#!/bin/bash\n\n#SBATCH --job-name=rats\n#SBATCH',
@@ -85,10 +87,10 @@ class JobScriptResponse(BaseModel):
     """
 
     id: Optional[int] = None
-    created_at: Optional[datetime]
-    updated_at: Optional[datetime]
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     job_script_name: str
-    job_script_description: Optional[str]
+    job_script_description: Optional[str] = None
     job_script_data_as_string: str
     job_script_owner_email: str
     application_id: int
