@@ -16,8 +16,9 @@ from jobbergate_api.storage import database, fetch_instance
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_create_application(application_data, client, inject_security_header, time_frame):
+async def test_create_application(
+    fill_application_data, client, inject_security_header, time_frame,
+):
     """
     Test POST /applications/ correctly creates an application.
 
@@ -32,7 +33,12 @@ async def test_create_application(application_data, client, inject_security_head
     with time_frame() as window:
         response = await client.post(
             "/jobbergate/applications/",
-            json=dict(**application_data, application_identifier="test-identifier",),
+            json=fill_application_data(
+                application_name="test-name",
+                application_identifier="test-identifier",
+                application_config="""{"test": "config"}""",
+                application_file="test\nfile",
+            ),
         )
 
     assert response.status_code == status.HTTP_201_CREATED
@@ -43,19 +49,20 @@ async def test_create_application(application_data, client, inject_security_head
     application = ApplicationResponse(**response.json())
 
     assert application.id == id_rows[0][0]
-    assert application.application_name == application_data["application_name"]
+    assert application.application_name == "test-name"
     assert application.application_identifier == "test-identifier"
     assert application.application_owner_email == "owner1@org.com"
-    assert application.application_config == application_data["application_config"]
-    assert application.application_file == application_data["application_file"]
+    assert application.application_config == """{"test": "config"}"""
+    assert application.application_file == "test\nfile"
     assert application.application_description is None
     assert application.created_at in window
     assert application.updated_at in window
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_create_application_bad_permission(application_data, client, inject_security_header):
+async def test_create_application_bad_permission(
+    application_data, client, inject_security_header,
+):
     """
     Test that it is not possible to create application without proper permission.
 
@@ -76,8 +83,9 @@ async def test_create_application_bad_permission(application_data, client, injec
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_create_without_application_name(application_data, client, inject_security_header):
+async def test_create_without_application_name(
+    application_data, client, inject_security_header,
+):
     """
     Test that is not possible to create an application without the required body fields.
 
@@ -97,8 +105,9 @@ async def test_create_without_application_name(application_data, client, inject_
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_delete_application_no_file_uploaded(client, application_data, inject_security_header):
+async def test_delete_application_no_file_uploaded(
+    client, application_data, inject_security_header,
+):
     """
     Test DELETE /applications/<id> correctly deletes an application.
 
@@ -106,10 +115,7 @@ async def test_delete_application_no_file_uploaded(client, application_data, inj
     /applications/<id> endpoint. We show this by asserting that the application no longer exists in the
     database after the delete request is made and the correct status code is returned.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data),
-    )
+    inserted_id = await database.execute(query=applications_table.insert(), values=application_data,)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
@@ -124,8 +130,9 @@ async def test_delete_application_no_file_uploaded(client, application_data, inj
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_delete_application_with_uploaded_file(client, application_data, inject_security_header):
+async def test_delete_application_with_uploaded_file(
+    client, application_data, inject_security_header,
+):
     """
     Test DELETE /applications/<id> correctly deletes an application and it's file.
 
@@ -134,10 +141,7 @@ async def test_delete_application_with_uploaded_file(client, application_data, i
     database after the delete request is made, the correct status code is returned and the correct boto3
     method was called.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data),
-    )
+    inserted_id = await database.execute(query=applications_table.insert(), values=application_data,)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
@@ -152,8 +156,9 @@ async def test_delete_application_with_uploaded_file(client, application_data, i
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_delete_application_by_identifier(client, application_data, inject_security_header):
+async def test_delete_application_by_identifier(
+    client, fill_application_data, inject_security_header,
+):
     """
     Test DELETE /applications?identifier=<identifier> correctly deletes an application and it's file.
 
@@ -164,10 +169,8 @@ async def test_delete_application_by_identifier(client, application_data, inject
     """
     await database.execute(
         query=applications_table.insert(),
-        values=dict(
-            application_owner_email="owner1@org.com",
-            application_identifier="test-identifier",
-            **application_data,
+        values=fill_application_data(
+            application_owner_email="owner1@org.com", application_identifier="test-identifier",
         ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -184,8 +187,9 @@ async def test_delete_application_by_identifier(client, application_data, inject
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_delete_application_bad_permission(client, application_data, inject_security_header):
+async def test_delete_application_bad_permission(
+    client, application_data, inject_security_header,
+):
     """
     Test that it is not possible to delete application without proper permission.
 
@@ -193,10 +197,7 @@ async def test_delete_application_bad_permission(client, application_data, injec
     endpoint. We show this by asserting that the application still exists in the database after the delete
     request is made and the correct status code is returned.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data),
-    )
+    inserted_id = await database.execute(query=applications_table.insert(), values=application_data,)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
@@ -208,7 +209,6 @@ async def test_delete_application_bad_permission(client, application_data, injec
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_delete_application_not_found(client, inject_security_header):
     """
     Test DELETE /applications/<id> the correct respnse code when the application doesn't exist.
@@ -223,16 +223,14 @@ async def test_delete_application_not_found(client, inject_security_header):
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_delete_application__fk_error(client, application_data, inject_security_header):
+async def test_delete_application__fk_error(
+    client, application_data, inject_security_header,
+):
     """
     Test DELETE /applications/<id> correctly returns a 409 with a helpful message when a delete is blocked
     by a foreign-key constraint.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data),
-    )
+    inserted_id = await database.execute(query=applications_table.insert(), values=application_data,)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
@@ -240,10 +238,10 @@ async def test_delete_application__fk_error(client, application_data, inject_sec
     with mock.patch(
         "jobbergate_api.storage.database.execute",
         side_effect=asyncpg.exceptions.ForeignKeyViolationError(
-            """
+            f"""
             update or delete on table "applications" violates foreign key constraint
             "job_scripts_application_id_fkey" on table "job_scripts"
-            DETAIL:  Key (id)=(1) is still referenced from table "job_scripts".
+            DETAIL:  Key (id)=({inserted_id}) is still referenced from table "job_scripts".
             """
         ),
     ):
@@ -256,8 +254,9 @@ async def test_delete_application__fk_error(client, application_data, inject_sec
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_get_application_by_id(client, application_data, inject_security_header):
+async def test_get_application_by_id(
+    client, fill_application_data, inject_security_header,
+):
     """
     Test GET /applications/<id>.
 
@@ -267,11 +266,13 @@ async def test_get_application_by_id(client, application_data, inject_security_h
     for the given application id.
     """
     inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data),
+        query=applications_table.insert(), values=fill_application_data(application_identifier="app1"),
+    )
+    await database.execute(
+        query=applications_table.insert(), values=fill_application_data(application_identifier="app2"),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
+    assert count[0][0] == 2
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
     response = await client.get(f"/jobbergate/applications/{inserted_id}")
@@ -279,13 +280,10 @@ async def test_get_application_by_id(client, application_data, inject_security_h
 
     data = response.json()
     assert data["id"] == inserted_id
-    assert data["application_name"] == application_data["application_name"]
-    assert data["application_config"] == application_data["application_config"]
-    assert data["application_file"] == application_data["application_file"]
+    assert data["application_identifier"] == "app1"
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_application_by_id_invalid(client, inject_security_header):
     """
     Test the correct response code is returned when an application does not exist.
@@ -300,8 +298,9 @@ async def test_get_application_by_id_invalid(client, inject_security_header):
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_get_application_by_id_bad_permission(client, application_data, inject_security_header):
+async def test_get_application_by_id_bad_permission(
+    client, application_data, inject_security_header,
+):
     """
     Test that it is not possible to get application without proper permission.
 
@@ -309,10 +308,7 @@ async def test_get_application_by_id_bad_permission(client, application_data, in
     user don't have the proper permission. We show this by asserting that the status code
     returned is what we would expect (403).
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data),
-    )
+    inserted_id = await database.execute(query=applications_table.insert(), values=application_data,)
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.get(f"/jobbergate/applications/{inserted_id}")
@@ -320,8 +316,9 @@ async def test_get_application_by_id_bad_permission(client, application_data, in
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_get_applications__no_params(client, application_data, inject_security_header):
+async def test_get_applications__no_params(
+    client, fill_all_application_data, inject_security_header,
+):
     """
     Test GET /applications returns only applications owned by the user making the request.
 
@@ -330,27 +327,12 @@ async def test_get_applications__no_params(client, application_data, inject_secu
     only applications owned by the user making the request.
     """
     await database.execute_many(
-        query=applications_table.insert(),
-        values=[
-            dict(
-                id=1,
-                application_identifier="app1",
-                application_owner_email="owner1@org.com",
-                **application_data,
-            ),
-            dict(
-                id=2,
-                application_identifier="app2",
-                application_owner_email="owner1@org.com",
-                **application_data,
-            ),
-            dict(
-                id=3,
-                application_identifier="app3",
-                application_owner_email="owner999@org.com",
-                **application_data,
-            ),
-        ],
+        applications_table.insert(),
+        values=fill_all_application_data(
+            dict(application_identifier="app1"),
+            dict(application_identifier="app2"),
+            dict(application_identifier="app3"),
+        ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 3
@@ -362,15 +344,20 @@ async def test_get_applications__no_params(client, application_data, inject_secu
     data = response.json()
     results = data.get("results")
     assert results
-    assert [d["id"] for d in results] == [1, 2, 3]
+    assert [d["application_identifier"] for d in results] == [
+        "app1",
+        "app2",
+        "app3",
+    ]
 
     pagination = data.get("pagination")
     assert pagination == dict(total=3, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_get_application___bad_permission(client, application_data, inject_security_header):
+async def test_get_application___bad_permission(
+    client, fill_all_application_data, inject_security_header,
+):
     """
     Test that it is not possible to list applications without proper permission.
 
@@ -380,26 +367,11 @@ async def test_get_application___bad_permission(client, application_data, inject
     """
     await database.execute_many(
         query=applications_table.insert(),
-        values=[
-            dict(
-                id=1,
-                application_identifier="app1",
-                application_owner_email="owner1@org.com",
-                **application_data,
-            ),
-            dict(
-                id=2,
-                application_identifier="app2",
-                application_owner_email="owner1@org.com",
-                **application_data,
-            ),
-            dict(
-                id=3,
-                application_identifier="app3",
-                application_owner_email="owner999@org.com",
-                **application_data,
-            ),
-        ],
+        values=fill_all_application_data(
+            dict(application_identifier="app1"),
+            dict(application_identifier="app2"),
+            dict(application_identifier="app3"),
+        ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 3
@@ -410,8 +382,9 @@ async def test_get_application___bad_permission(client, application_data, inject
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_get_applications__with_user_param(client, application_data, inject_security_header):
+async def test_get_applications__with_user_param(
+    client, fill_all_application_data, inject_security_header,
+):
     """
     Test applications list doesn't include applications owned by other users when the `user`
     parameter is passed.
@@ -423,26 +396,11 @@ async def test_get_applications__with_user_param(client, application_data, injec
     """
     await database.execute_many(
         query=applications_table.insert(),
-        values=[
-            dict(
-                id=1,
-                application_identifier="app1",
-                application_owner_email="owner1@org.com",
-                **application_data,
-            ),
-            dict(
-                id=2,
-                application_identifier="app2",
-                application_owner_email="owner1@org.com",
-                **application_data,
-            ),
-            dict(
-                id=3,
-                application_identifier="app3",
-                application_owner_email="owner999@org.com",
-                **application_data,
-            ),
-        ],
+        values=fill_all_application_data(
+            dict(application_identifier="app1", application_owner_email="owner1@org.com",),
+            dict(application_identifier="app2", application_owner_email="owner1@org.com",),
+            dict(application_identifier="app3", application_owner_email="owner999@org.com",),
+        ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 3
@@ -453,7 +411,7 @@ async def test_get_applications__with_user_param(client, application_data, injec
 
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [1, 2, 3]
+    assert [d["application_identifier"] for d in results] == ["app1", "app2", "app3"]
 
     pagination = data.get("pagination")
     assert pagination == dict(total=3, start=None, limit=None,)
@@ -463,15 +421,16 @@ async def test_get_applications__with_user_param(client, application_data, injec
 
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [1, 2]
+    assert [d["application_identifier"] for d in results] == ["app1", "app2"]
 
     pagination = data.get("pagination")
     assert pagination == dict(total=2, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_get_applications__with_all_param(client, application_data, inject_security_header):
+async def test_get_applications__with_all_param(
+    client, fill_all_application_data, inject_security_header,
+):
     """
     Test that listing applications, when all=True, contains applications without identifiers.
 
@@ -482,21 +441,11 @@ async def test_get_applications__with_all_param(client, application_data, inject
     """
     await database.execute_many(
         query=applications_table.insert(),
-        values=[
-            dict(
-                id=1,
-                application_identifier="app1",
-                application_owner_email="owner1@org.com",
-                **application_data,
-            ),
-            dict(id=2, application_owner_email="owner1@org.com", **application_data),
-            dict(
-                id=3,
-                application_identifier="app3",
-                application_owner_email="owner999@org.com",
-                **application_data,
-            ),
-        ],
+        values=fill_all_application_data(
+            dict(application_identifier="app1", application_owner_email="owner1@org.com"),
+            dict(application_owner_email="owner1@org.com"),
+            dict(application_identifier="app3", application_owner_email="owner999@org.com"),
+        ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 3
@@ -508,7 +457,7 @@ async def test_get_applications__with_all_param(client, application_data, inject
 
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [1, 3]
+    assert [d["application_identifier"] for d in results] == ["app1", "app3"]
 
     pagination = data.get("pagination")
     assert pagination == dict(total=2, start=None, limit=None,)
@@ -518,16 +467,14 @@ async def test_get_applications__with_all_param(client, application_data, inject
 
     data = response.json()
     results = data.get("results")
-    assert results
-    assert [d["id"] for d in results] == [1, 2, 3]
-
     pagination = data.get("pagination")
     assert pagination == dict(total=3, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_get_applications__with_search_param(client, application_data, inject_security_header):
+async def test_get_applications__with_search_param(
+    client, fill_all_application_data, inject_security_header,
+):
     """
     Test that listing applications, when search=<search terms>, returns matches.
 
@@ -536,33 +483,26 @@ async def test_get_applications__with_search_param(client, application_data, inj
 
     Assert that the response to GET /applications?search=<search temrms> includes correct matches.
     """
-    common = dict(application_file="whatever", application_config="whatever")
     await database.execute_many(
         query=applications_table.insert(),
-        values=[
+        values=fill_all_application_data(
             dict(
-                id=1,
                 application_name="test name one",
-                application_identifier="identifier one",
+                application_identifier="app1",
                 application_owner_email="one@org.com",
-                **common,
             ),
             dict(
-                id=2,
                 application_name="test name two",
-                application_identifier="identifier two",
+                application_identifier="app2",
                 application_owner_email="two@org.com",
-                **common,
             ),
             dict(
-                id=22,
                 application_name="test name twenty-two",
-                application_identifier="identifier twenty-two",
+                application_identifier="app22",
                 application_owner_email="twenty-two@org.com",
                 application_description="a long description of this application",
-                **common,
             ),
-        ],
+        ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 3
@@ -573,30 +513,31 @@ async def test_get_applications__with_search_param(client, application_data, inj
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [1]
+    assert [d["application_identifier"] for d in results] == ["app1"]
 
     response = await client.get("/jobbergate/applications?all=true&search=two")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [2, 22]
+    assert [d["application_identifier"] for d in results] == ["app2", "app22"]
 
     response = await client.get("/jobbergate/applications?all=true&search=long")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [22]
+    assert [d["application_identifier"] for d in results] == ["app22"]
 
     response = await client.get("/jobbergate/applications?all=true&search=name+test")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [1, 2, 22]
+    assert [d["application_identifier"] for d in results] == ["app1", "app2", "app22"]
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_get_applications__with_sort_params(client, application_data, inject_security_header):
+async def test_get_applications__with_sort_params(
+    client, fill_all_application_data, inject_security_header,
+):
     """
     Test that listing applications with sort params returns correctly ordered matches.
 
@@ -607,16 +548,13 @@ async def test_get_applications__with_sort_params(client, application_data, inje
     Assert that the response to GET /applications?sort_field=<field>&sort_ascending=<bool> includes correctly
     sorted applications.
     """
-    common = dict(
-        application_file="whatever", application_config="whatever", application_owner_email="admin@org.com",
-    )
     await database.execute_many(
         query=applications_table.insert(),
-        values=[
-            dict(id=1, application_name="A", application_identifier="Z", **common,),
-            dict(id=2, application_name="B", application_identifier="Y", **common,),
-            dict(id=22, application_name="C", application_identifier="X", **common,),
-        ],
+        values=fill_all_application_data(
+            dict(application_name="A", application_identifier="Z"),
+            dict(application_name="B", application_identifier="Y"),
+            dict(application_name="C", application_identifier="X"),
+        ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 3
@@ -627,7 +565,7 @@ async def test_get_applications__with_sort_params(client, application_data, inje
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [1, 2, 22]
+    assert [d["application_identifier"] for d in results] == ["Z", "Y", "X"]
 
     response = await client.get(
         "/jobbergate/applications?all=true&sort_field=application_name&sort_ascending=false"
@@ -635,13 +573,13 @@ async def test_get_applications__with_sort_params(client, application_data, inje
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [22, 2, 1]
+    assert [d["application_identifier"] for d in results] == ["X", "Y", "Z"]
 
     response = await client.get("/jobbergate/applications?all=true&sort_field=application_identifier")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [22, 2, 1]
+    assert [d["application_identifier"] for d in results] == ["X", "Y", "Z"]
 
     response = await client.get("/jobbergate/applications?all=true&sort_field=application_config")
     assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -649,8 +587,9 @@ async def test_get_applications__with_sort_params(client, application_data, inje
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_get_applications__with_pagination(client, application_data, inject_security_header):
+async def test_get_applications__with_pagination(
+    client, fill_all_application_data, inject_security_header,
+):
     """
     Test that listing applications works with pagination.
 
@@ -659,13 +598,13 @@ async def test_get_applications__with_pagination(client, application_data, injec
     """
     await database.execute_many(
         query=applications_table.insert(),
-        values=[
-            dict(id=1, application_owner_email="owner1@org.com", **application_data),
-            dict(id=2, application_owner_email="owner1@org.com", **application_data),
-            dict(id=3, application_owner_email="owner1@org.com", **application_data),
-            dict(id=4, application_owner_email="owner1@org.com", **application_data),
-            dict(id=5, application_owner_email="owner1@org.com", **application_data),
-        ],
+        values=fill_all_application_data(
+            dict(application_identifier="app1", application_owner_email="owner1@org.com"),
+            dict(application_identifier="app2", application_owner_email="owner1@org.com"),
+            dict(application_identifier="app3", application_owner_email="owner1@org.com"),
+            dict(application_identifier="app4", application_owner_email="owner1@org.com"),
+            dict(application_identifier="app5", application_owner_email="owner1@org.com"),
+        ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 5
@@ -677,7 +616,7 @@ async def test_get_applications__with_pagination(client, application_data, injec
     data = response.json()
     results = data.get("results")
     assert results
-    assert [d["id"] for d in results] == [1]
+    assert [d["application_identifier"] for d in results] == ["app1"]
 
     pagination = data.get("pagination")
     assert pagination == dict(total=5, start=0, limit=1,)
@@ -688,7 +627,7 @@ async def test_get_applications__with_pagination(client, application_data, injec
     data = response.json()
     results = data.get("results")
     assert results
-    assert [d["id"] for d in results] == [3, 4]
+    assert [d["application_identifier"] for d in results] == ["app3", "app4"]
 
     pagination = data.get("pagination")
     assert pagination == dict(total=5, start=1, limit=2,)
@@ -699,15 +638,16 @@ async def test_get_applications__with_pagination(client, application_data, injec
     data = response.json()
     results = data.get("results")
     assert results
-    assert [d["id"] for d in results] == [5]
+    assert [d["application_identifier"] for d in results] == ["app5"]
 
     pagination = data.get("pagination")
     assert pagination == dict(total=5, start=2, limit=2,)
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_update_application(client, application_data, inject_security_header, time_frame):
+async def test_update_application(
+    client, fill_application_data, inject_security_header, time_frame,
+):
     """
     Test that an application is updated via PUT.
 
@@ -717,21 +657,20 @@ async def test_update_application(client, application_data, inject_security_head
     """
     await database.execute(
         query=applications_table.insert(),
-        values=dict(
-            id=1,
+        values=fill_application_data(
             application_identifier="old_identifier",
             application_owner_email="owner1@org.com",
             application_description="old description",
-            **application_data,
         ),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
+    rows = await database.fetch_all("select id from applications")
+    assert len(rows) == 1
+    id = rows[0][0]
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     with time_frame() as window:
         response = await client.put(
-            "/jobbergate/applications/1",
+            f"/jobbergate/applications/{id}",
             json=dict(
                 application_name="new_name",
                 application_identifier="new_identifier",
@@ -745,7 +684,7 @@ async def test_update_application(client, application_data, inject_security_head
     assert data["application_identifier"] == "new_identifier"
     assert data["application_description"] == "new_description"
 
-    query = applications_table.select(applications_table.c.id == 1)
+    query = applications_table.select(applications_table.c.id == id)
     result = await database.fetch_one(query)
 
     assert result is not None
@@ -757,8 +696,9 @@ async def test_update_application(client, application_data, inject_security_head
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_update_application_bad_permission(client, application_data, inject_security_header):
+async def test_update_application_bad_permission(
+    client, fill_application_data, inject_security_header,
+):
     """
     Test that it is not possible to update applications without proper permission.
 
@@ -766,14 +706,13 @@ async def test_update_application_bad_permission(client, application_data, injec
     /application/<id> endpoint by a user without permission. We show this by asserting that the status code
     403 is returned and that the application_data is still the same as before.
     """
-    await database.execute(
+    inserted_id = await database.execute(
         query=applications_table.insert(),
-        values=dict(
-            id=1,
+        values=fill_application_data(
+            application_name="old-name",
             application_identifier="old_identifier",
             application_owner_email="owner1@org.com",
             application_description="old description",
-            **application_data,
         ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -781,7 +720,7 @@ async def test_update_application_bad_permission(client, application_data, injec
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.put(
-        "/jobbergate/applications/1",
+        f"/jobbergate/applications/{inserted_id}",
         json=dict(
             application_name="new_name",
             application_identifier="new_identifier",
@@ -790,19 +729,18 @@ async def test_update_application_bad_permission(client, application_data, injec
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    query = applications_table.select(applications_table.c.id == 1)
+    query = applications_table.select(applications_table.c.id == inserted_id)
     result = await database.fetch_one(query)
 
     assert result is not None
-    assert result["application_name"] == application_data["application_name"]
+    assert result["application_name"] == "old-name"
     assert result["application_identifier"] == "old_identifier"
     assert result["application_description"] == "old description"
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_upload_file__works_with_small_file(
-    client, inject_security_header, application_data, tweak_settings, make_dummy_file, make_files_param,
+    client, inject_security_header, fill_application_data, tweak_settings, make_dummy_file, make_files_param,
 ):
     """
     Test that a file is uploaded.
@@ -814,7 +752,7 @@ async def test_upload_file__works_with_small_file(
     """
     inserted_id = await database.execute(
         query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
     )
     application = await fetch_instance(inserted_id, applications_table, ApplicationResponse)
     assert not application.application_uploaded
@@ -824,7 +762,9 @@ async def test_upload_file__works_with_small_file(
     with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
         with mock.patch.object(s3man, "s3_client") as mock_s3:
             with make_files_param(dummy_file) as files_param:
-                response = await client.post("/jobbergate/applications/1/upload", files=files_param)
+                response = await client.post(
+                    f"/jobbergate/applications/{inserted_id}/upload", files=files_param,
+                )
 
     assert response.status_code == status.HTTP_201_CREATED
     mock_s3.put_object.assert_called_once()
@@ -847,8 +787,9 @@ async def test_upload_file__fails_with_413_on_large_file(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_delete_file(client, inject_security_header, application_data):
+async def test_delete_file(
+    client, inject_security_header, fill_application_data,
+):
     """
     Test that a file is uploaded.
 
@@ -857,7 +798,7 @@ async def test_delete_file(client, inject_security_header, application_data):
     """
     inserted_id = await database.execute(
         query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", application_uploaded=True, **application_data),
+        values=fill_application_data(application_owner_email="owner1@org.com", application_uploaded=True),
     )
     application: ApplicationResponse = await fetch_instance(
         inserted_id, applications_table, ApplicationResponse

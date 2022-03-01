@@ -4,65 +4,53 @@ Configuration of pytest.
 import contextlib
 import dataclasses
 import datetime
-import os
 import random
 import string
 import typing
 
+import pytest
+import sqlalchemy
 from asgi_lifespan import LifespanManager
 from httpx import AsyncClient
-from pytest import fixture
 
+from jobbergate_api.apps.applications.models import applications_table
+from jobbergate_api.apps.job_scripts.models import job_scripts_table
+from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.config import settings
 from jobbergate_api.main import app
+from jobbergate_api.metadata import metadata
+from jobbergate_api.storage import build_db_url, database
 
 # Charset for producing random strings
 CHARSET = string.ascii_letters + string.digits + string.punctuation
 
 
-@fixture(scope="session", autouse=True)
-def backend_testing_database():
-    """
-    Override whatever is set for DATABASE_URL during testing.
-    """
-    # defer import of storage until now, to prevent the database
-    # from being initialized implicitly on import
-    from jobbergate_api.storage import create_all_tables
-
-    create_all_tables()
-    yield
-    os.remove("./sqlite-testing.db")
-
-
-@fixture(autouse=True)
-def enforce_testing_database():
-    """
-    Ensure that we are using a testing database.
-    """
-    from jobbergate_api.storage import database
-
-    assert "-testing" in database.url.database
-
-
-@fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="session")
 async def enforce_empty_database():
     """
     Make sure our database is empty at the end of each test.
     """
+    engine = sqlalchemy.create_engine(build_db_url())
+    metadata.create_all(engine)
     yield
-    from jobbergate_api.storage import database
 
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 0
+    await database.connect()
+    for table in (applications_table, job_scripts_table, job_submissions_table):
+        count = await database.execute(sqlalchemy.select([sqlalchemy.func.count()]).select_from(table))
+        assert count == 0
+    await database.disconnect()
+
+    metadata.drop_all(engine)
 
 
-@fixture(autouse=True)
+@pytest.fixture(autouse=True)
+@pytest.mark.enforce_empty_database()
 async def startup_event_force():
     async with LifespanManager(app):
         yield
 
 
-@fixture(autouse=True)
+@pytest.fixture(autouse=True)
 def enforce_mocked_oidc_provider(mock_openid_server):
     """
     Enforce that the OIDC provider used by armasec is the mock_openid_server provided as a fixture.
@@ -71,8 +59,8 @@ def enforce_mocked_oidc_provider(mock_openid_server):
     yield
 
 
-@fixture
-async def client(startup_event_force):
+@pytest.fixture
+async def client():
     """
     A client that can issue fake requests against fastapi endpoint functions in the backend.
     """
@@ -80,7 +68,7 @@ async def client(startup_event_force):
         yield client
 
 
-@fixture
+@pytest.fixture
 async def inject_security_header(client, build_rs256_token):
     """
     Provides a helper method that will inject a security token into the requests for a test client. If no
@@ -100,7 +88,7 @@ async def inject_security_header(client, build_rs256_token):
     return _helper
 
 
-@fixture
+@pytest.fixture
 def time_frame():
     """
     Provides a fixture to use as a context manager where an event can be checked to have happened during the
@@ -136,7 +124,7 @@ def time_frame():
     return _helper
 
 
-@fixture
+@pytest.fixture
 def tweak_settings():
     """
     Provides a fixture to use as a context manager where the app settings may be temporarily changed.
@@ -158,7 +146,7 @@ def tweak_settings():
     return _helper
 
 
-@fixture
+@pytest.fixture
 def make_dummy_file(tmp_path):
     """
     Provides a fixture that will generate a temporary file with ``size`` random bytes of text data.
@@ -176,7 +164,7 @@ def make_dummy_file(tmp_path):
     return _helper
 
 
-@fixture
+@pytest.fixture
 def make_files_param():
     """
     Provides a fixture to use as a context manager that opens the supplied file and builds a ``files`` param

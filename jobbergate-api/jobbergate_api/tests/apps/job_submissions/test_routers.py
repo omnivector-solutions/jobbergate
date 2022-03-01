@@ -13,9 +13,13 @@ from jobbergate_api.storage import database
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_create_job_submission(
-    job_script_data, application_data, client, job_submission_data, inject_security_header, time_frame,
+    fill_application_data,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    time_frame,
 ):
     """
     Test POST /job-submissions/ correctly creates a job_submission.
@@ -25,19 +29,21 @@ async def test_create_job_submission(
     request is made, the correct status code (201) is returned.
     """
     inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data,),
+        query=applications_table.insert(), values=fill_application_data(),
     )
     inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(application_id=inserted_application_id, **job_script_data,),
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
 
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT)
     with time_frame() as window:
         response = await client.post(
             "/jobbergate/job-submissions/",
-            json=dict(job_script_id=inserted_job_script_id, **job_submission_data,),
+            json=fill_job_submission_data(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub1",
+                job_submission_owner_email="owner1@org.com",
+            ),
         )
 
     assert response.status_code == status.HTTP_201_CREATED
@@ -50,7 +56,7 @@ async def test_create_job_submission(
 
     job_submission = JobSubmissionResponse(**response.json())
     assert job_submission.id == id_rows[0][0]
-    assert job_submission.job_submission_name == job_submission_data["job_submission_name"]
+    assert job_submission.job_submission_name == "sub1"
     assert job_submission.job_submission_owner_email == "owner1@org.com"
     assert job_submission.job_submission_description is None
     assert job_submission.job_script_id == inserted_job_script_id
@@ -59,8 +65,9 @@ async def test_create_job_submission(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_create_job_submission_without_job_script(client, job_submission_data, inject_security_header):
+async def test_create_job_submission_without_job_script(
+    client, fill_job_submission_data, inject_security_header,
+):
     """
     Test that is not possible to create a job_submission without a job_script.
 
@@ -70,7 +77,7 @@ async def test_create_job_submission_without_job_script(client, job_submission_d
     """
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT)
     response = await client.post(
-        "/jobbergate/job-submissions/", json=dict(job_script_id=9999, **job_submission_data,)
+        "/jobbergate/job-submissions/", json=fill_job_submission_data(job_script_id=9999)
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -79,9 +86,8 @@ async def test_create_job_submission_without_job_script(client, job_submission_d
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_create_job_submission_bad_permission(
-    client, job_submission_data, application_data, job_script_data, inject_security_header
+    client, fill_application_data, fill_job_script_data, fill_job_submission_data, inject_security_header,
 ):
     """
     Test that is not possible to create a job_submission without the permission.
@@ -91,18 +97,15 @@ async def test_create_job_submission_bad_permission(
     the job_submission still does not exists in the database and the correct status code (403) is returned.
     """
     inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data,),
+        query=applications_table.insert(), values=fill_application_data(),
     )
     inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(application_id=inserted_application_id, **job_script_data,),
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.post(
-        "/jobbergate/job-submissions/",
-        json=dict(job_script_id=inserted_job_script_id, **job_submission_data,),
+        "/jobbergate/job-submissions/", json=fill_job_submission_data(job_script_id=inserted_job_script_id),
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
@@ -111,9 +114,8 @@ async def test_create_job_submission_bad_permission(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_submission_by_id(
-    client, application_data, job_script_data, job_submission_data, inject_security_header,
+    client, fill_application_data, fill_job_script_data, fill_job_submission_data, inject_security_header,
 ):
     """
     Test GET /job-submissions/<id>.
@@ -124,19 +126,17 @@ async def test_get_job_submission_by_id(
     for the given job_submission id.
     """
     inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data,),
+        query=applications_table.insert(), values=fill_application_data(),
     )
     inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(application_id=inserted_application_id, **job_script_data,),
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
     inserted_job_submission_id = await database.execute(
         query=job_submissions_table.insert(),
-        values=dict(
+        values=fill_job_submission_data(
             job_script_id=inserted_job_script_id,
+            job_submission_name="sub1",
             job_submission_owner_email="owner1@org.com",
-            **job_submission_data,
         ),
     )
 
@@ -149,15 +149,14 @@ async def test_get_job_submission_by_id(
 
     data = response.json()
     assert data["id"] == inserted_job_submission_id
-    assert data["job_submission_name"] == job_submission_data["job_submission_name"]
+    assert data["job_submission_name"] == "sub1"
     assert data["job_submission_owner_email"] == "owner1@org.com"
     assert data["job_script_id"] == inserted_job_script_id
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_submission_by_id_bad_permission(
-    client, application_data, job_script_data, job_submission_data, inject_security_header,
+    client, fill_application_data, fill_job_script_data, fill_job_submission_data, inject_security_header,
 ):
     """
     Test the correct response code is returned when the user don't have the proper permission.
@@ -166,19 +165,15 @@ async def test_get_job_submission_by_id_bad_permission(
     have proper permission. We show this by asserting that the status code returned is 403.
     """
     inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data,),
+        query=applications_table.insert(), values=fill_application_data(),
     )
     inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(application_id=inserted_application_id, **job_script_data,),
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
     inserted_job_submission_id = await database.execute(
         query=job_submissions_table.insert(),
-        values=dict(
-            job_script_id=inserted_job_script_id,
-            job_submission_owner_email="owner1@org.com",
-            **job_submission_data,
+        values=fill_job_submission_data(
+            job_script_id=inserted_job_script_id, job_submission_owner_email="owner1@org.com",
         ),
     )
 
@@ -188,7 +183,6 @@ async def test_get_job_submission_by_id_bad_permission(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_submission_by_id_invalid(client, inject_security_header):
     """
     Test the correct response code is returned when a job_submission does not exist.
@@ -203,9 +197,8 @@ async def test_get_job_submission_by_id_invalid(client, inject_security_header):
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_submissions__no_param(
-    client, application_data, job_submission_data, job_script_data, inject_security_header,
+    client, fill_application_data, fill_job_script_data, fill_all_job_submission_data, inject_security_header,
 ):
     """
     Test GET /job-submissions/ returns only job_submissions owned by the user making the request.
@@ -215,35 +208,30 @@ async def test_get_job_submissions__no_param(
     only job_submissions owned by the user making the request.
     """
     inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data,),
+        query=applications_table.insert(), values=fill_application_data(),
     )
     inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(application_id=inserted_application_id, **job_script_data,),
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
     await database.execute_many(
         query=job_submissions_table.insert(),
-        values=[
+        values=fill_all_job_submission_data(
             dict(
-                id=1,
                 job_script_id=inserted_job_script_id,
+                job_submission_name="sub1",
                 job_submission_owner_email="owner1@org.com",
-                **job_submission_data,
             ),
             dict(
-                id=2,
                 job_script_id=inserted_job_script_id,
+                job_submission_name="sub2",
                 job_submission_owner_email="owner999@org.com",
-                **job_submission_data,
             ),
             dict(
-                id=3,
                 job_script_id=inserted_job_script_id,
+                job_submission_name="sub3",
                 job_submission_owner_email="owner1@org.com",
-                **job_submission_data,
             ),
-        ],
+        ),
     )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
@@ -256,16 +244,15 @@ async def test_get_job_submissions__no_param(
     data = response.json()
     results = data.get("results")
     assert results
-    assert [d["id"] for d in results] == [1, 3]
+    assert [d["job_submission_name"] for d in results] == ["sub1", "sub3"]
 
     pagination = data.get("pagination")
     assert pagination == dict(total=2, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_submissions__bad_permission(
-    client, application_data, job_submission_data, job_script_data, inject_security_header,
+    client, fill_application_data, fill_job_script_data, fill_job_submission_data, inject_security_header,
 ):
     """
     Test GET /job-submissions/ returns 403 for a user without permission.
@@ -274,19 +261,15 @@ async def test_get_job_submissions__bad_permission(
     permission. We show this by asserting that the status code of the response is 403.
     """
     inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data,),
+        query=applications_table.insert(), values=fill_application_data(),
     )
     inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(application_id=inserted_application_id, **job_script_data,),
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
     await database.execute(
         query=job_submissions_table.insert(),
-        values=dict(
-            job_script_id=inserted_job_script_id,
-            job_submission_owner_email="owner1@org.com",
-            **job_submission_data,
+        values=fill_job_submission_data(
+            job_script_id=inserted_job_script_id, job_submission_owner_email="owner1@org.com",
         ),
     )
 
@@ -299,9 +282,8 @@ async def test_get_job_submissions__bad_permission(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_submissions__with_all_param(
-    client, application_data, job_submission_data, job_script_data, inject_security_header,
+    client, fill_application_data, fill_job_script_data, fill_all_job_submission_data, inject_security_header,
 ):
     """
     Test that listing job_submissions, when all=True, contains job_submissions owned by other users.
@@ -312,35 +294,30 @@ async def test_get_job_submissions__with_all_param(
     job_submissions.
     """
     inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data,),
+        query=applications_table.insert(), values=fill_application_data(),
     )
     inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(application_id=inserted_application_id, **job_script_data,),
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
     await database.execute_many(
         query=job_submissions_table.insert(),
-        values=[
+        values=fill_all_job_submission_data(
             dict(
-                id=1,
                 job_script_id=inserted_job_script_id,
+                job_submission_name="sub1",
                 job_submission_owner_email="owner1@org.com",
-                **job_submission_data,
             ),
             dict(
-                id=2,
                 job_script_id=inserted_job_script_id,
+                job_submission_name="sub2",
                 job_submission_owner_email="owner999@org.com",
-                **job_submission_data,
             ),
             dict(
-                id=3,
                 job_script_id=inserted_job_script_id,
+                job_submission_name="sub3",
                 job_submission_owner_email="owner1@org.com",
-                **job_submission_data,
             ),
-        ],
+        ),
     )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
@@ -353,16 +330,15 @@ async def test_get_job_submissions__with_all_param(
     data = response.json()
     results = data.get("results")
     assert results
-    assert [d["id"] for d in results] == [1, 2, 3]
+    assert [d["job_submission_name"] for d in results] == ["sub1", "sub2", "sub3"]
 
     pagination = data.get("pagination")
     assert pagination == dict(total=3, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_submissions__with_search_param(
-    client, inject_security_header, application_data, job_script_data
+    client, inject_security_header, fill_application_data, fill_job_script_data, fill_all_job_submission_data,
 ):
     """
     Test that listing job submissions, when search=<search terms>, returns matches.
@@ -373,31 +349,31 @@ async def test_get_job_submissions__with_search_param(
     Assert that the response to GET /job_submissions?search=<search temrms> includes correct matches.
     """
     inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data),
+        query=applications_table.insert(), values=fill_application_data(),
     )
     inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(application_id=inserted_application_id, **job_script_data),
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
-    common = dict(job_script_id=inserted_job_script_id)
     await database.execute_many(
         query=job_submissions_table.insert(),
-        values=[
+        values=fill_all_job_submission_data(
             dict(
-                id=1, job_submission_name="test name one", job_submission_owner_email="one@org.com", **common,
+                job_script_id=inserted_job_script_id,
+                job_submission_name="test name one",
+                job_submission_owner_email="one@org.com",
             ),
             dict(
-                id=2, job_submission_name="test name two", job_submission_owner_email="two@org.com", **common,
+                job_script_id=inserted_job_script_id,
+                job_submission_name="test name two",
+                job_submission_owner_email="two@org.com",
             ),
             dict(
-                id=22,
+                job_script_id=inserted_job_script_id,
                 job_submission_name="test name twenty-two",
                 job_submission_owner_email="twenty-two@org.com",
                 job_submission_description="a long description of this job_script",
-                **common,
             ),
-        ],
+        ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 3
@@ -408,31 +384,34 @@ async def test_get_job_submissions__with_search_param(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [1]
+    assert [d["job_submission_name"] for d in results] == ["test name one"]
 
     response = await client.get("/jobbergate/job-submissions?all=true&search=two")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [2, 22]
+    assert [d["job_submission_name"] for d in results] == ["test name two", "test name twenty-two"]
 
     response = await client.get("/jobbergate/job-submissions?all=true&search=long")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [22]
+    assert [d["job_submission_name"] for d in results] == ["test name twenty-two"]
 
     response = await client.get("/jobbergate/job-submissions?all=true&search=name+test")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [1, 2, 22]
+    assert [d["job_submission_name"] for d in results] == [
+        "test name one",
+        "test name two",
+        "test name twenty-two",
+    ]
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_submissions_with_sort_params(
-    client, application_data, job_script_data, inject_security_header
+    client, fill_application_data, fill_job_script_data, fill_all_job_submission_data, inject_security_header,
 ):
     """
     Test that listing job_submissions with sort params returns correctly ordered matches.
@@ -445,21 +424,30 @@ async def test_get_job_submissions_with_sort_params(
     correctly sorted job_submissions.
     """
     inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="admin@org.com", **application_data),
+        query=applications_table.insert(), values=fill_application_data(),
     )
     inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(application_id=inserted_application_id, **job_script_data),
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
-    common = dict(job_script_id=inserted_job_script_id, job_submission_owner_email="admin@org.com")
     await database.execute_many(
         query=job_submissions_table.insert(),
-        values=[
-            dict(id=1, job_submission_name="Z", **common,),
-            dict(id=2, job_submission_name="Y", **common,),
-            dict(id=22, job_submission_name="X", **common,),
-        ],
+        values=fill_all_job_submission_data(
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="Z",
+                job_submission_owner_email="admin@org.com",
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="Y",
+                job_submission_owner_email="admin@org.com",
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="X",
+                job_submission_owner_email="admin@org.com",
+            ),
+        ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 3
@@ -470,19 +458,19 @@ async def test_get_job_submissions_with_sort_params(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [1, 2, 22]
+    assert [d["job_submission_name"] for d in results] == ["Z", "Y", "X"]
 
     response = await client.get("/jobbergate/job-submissions?sort_field=id&sort_ascending=false")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [22, 2, 1]
+    assert [d["job_submission_name"] for d in results] == ["X", "Y", "Z"]
 
     response = await client.get("/jobbergate/job-submissions?sort_field=job_submission_name")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     results = data.get("results")
-    assert [d["id"] for d in results] == [22, 2, 1]
+    assert [d["job_submission_name"] for d in results] == ["X", "Y", "Z"]
 
     response = await client.get("/jobbergate/job-submissions?all=true&sort_field=job_submission_description")
     assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -490,9 +478,8 @@ async def test_get_job_submissions_with_sort_params(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_list_job_submission_pagination(
-    client, application_data, job_submission_data, job_script_data, inject_security_header,
+    client, fill_application_data, fill_job_script_data, fill_all_job_submission_data, inject_security_header,
 ):
     """
     Test that listing job_submissions works with pagination.
@@ -502,23 +489,23 @@ async def test_list_job_submission_pagination(
     """
     inserted_application_id = await database.execute(
         query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data,),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
     )
     inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(application_id=inserted_application_id, **job_script_data,),
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
     await database.execute_many(
         query=job_submissions_table.insert(),
-        values=[
-            dict(
-                id=i,
-                job_script_id=inserted_job_script_id,
-                job_submission_owner_email="owner1@org.com",
-                **job_submission_data,
-            )
-            for i in range(1, 6)
-        ],
+        values=fill_all_job_submission_data(
+            *[
+                dict(
+                    job_submission_name=f"sub{i}",
+                    job_script_id=inserted_job_script_id,
+                    job_submission_owner_email="owner1@org.com",
+                )
+                for i in range(1, 6)
+            ]
+        ),
     )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
@@ -531,7 +518,7 @@ async def test_list_job_submission_pagination(
     data = response.json()
     results = data.get("results")
     assert results
-    assert [d["id"] for d in results] == [1]
+    assert [d["job_submission_name"] for d in results] == ["sub1"]
 
     pagination = data.get("pagination")
     assert pagination == dict(total=5, start=0, limit=1,)
@@ -542,7 +529,7 @@ async def test_list_job_submission_pagination(
     data = response.json()
     results = data.get("results")
     assert results
-    assert [d["id"] for d in results] == [3, 4]
+    assert [d["job_submission_name"] for d in results] == ["sub3", "sub4"]
 
     pagination = data.get("pagination")
     assert pagination == dict(total=5, start=1, limit=2,)
@@ -553,16 +540,15 @@ async def test_list_job_submission_pagination(
     data = response.json()
     results = data.get("results")
     assert results
-    assert [d["id"] for d in results] == [5]
+    assert [d["job_submission_name"] for d in results] == ["sub5"]
 
     pagination = data.get("pagination")
     assert pagination == dict(total=5, start=2, limit=2)
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_submissions_with_slurm_job_ids_param(
-    client, application_data, job_submission_data, job_script_data, inject_security_header,
+    client, fill_application_data, fill_job_script_data, fill_all_job_submission_data, inject_security_header,
 ):
     """
     Test GET /job-submissions/ returns only job_submissions that have one of the supplied slurm job ids.
@@ -572,38 +558,33 @@ async def test_get_job_submissions_with_slurm_job_ids_param(
     slurm job ids.
     """
     inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data,),
+        query=applications_table.insert(), values=fill_application_data(),
     )
     inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(application_id=inserted_application_id, **job_script_data,),
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
     await database.execute_many(
         query=job_submissions_table.insert(),
-        values=[
+        values=fill_all_job_submission_data(
             dict(
-                id=1,
+                job_submission_name="sub1",
                 job_script_id=inserted_job_script_id,
                 job_submission_owner_email="owner1@org.com",
                 slurm_job_id=101,
-                **job_submission_data,
             ),
             dict(
-                id=2,
+                job_submission_name="sub2",
                 job_script_id=inserted_job_script_id,
                 job_submission_owner_email="owner1@org.com",
                 slurm_job_id=102,
-                **job_submission_data,
             ),
             dict(
-                id=3,
+                job_submission_name="sub3",
                 job_script_id=inserted_job_script_id,
                 job_submission_owner_email="owner1@org.com",
                 slurm_job_id=103,
-                **job_submission_data,
             ),
-        ],
+        ),
     )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
@@ -616,16 +597,15 @@ async def test_get_job_submissions_with_slurm_job_ids_param(
     data = response.json()
     results = data.get("results")
     assert results
-    assert [d["id"] for d in results] == [1, 3]
+    assert [d["job_submission_name"] for d in results] == ["sub1", "sub3"]
 
     pagination = data.get("pagination")
     assert pagination == dict(total=2, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_submissions_applies_no_slurm_filter_if_slurm_job_ids_is_empty(
-    client, inject_security_header, application_data, job_script_data, job_submission_data,
+    client, inject_security_header, fill_application_data, fill_job_script_data, fill_all_job_submission_data,
 ):
     """
     Test GET /job-submissions/ skips filtering on slurm_job_id if the param is an empty string.
@@ -634,38 +614,30 @@ async def test_get_job_submissions_applies_no_slurm_filter_if_slurm_job_ids_is_e
     We show this by asserting that passing an empty string as a parameter has no effect.
     """
     inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data,),
+        query=applications_table.insert(), values=fill_application_data(),
     )
     inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(application_id=inserted_application_id, **job_script_data,),
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
     await database.execute_many(
         query=job_submissions_table.insert(),
-        values=[
+        values=fill_all_job_submission_data(
             dict(
-                id=1,
                 job_script_id=inserted_job_script_id,
                 job_submission_owner_email="owner1@org.com",
                 slurm_job_id=101,
-                **job_submission_data,
             ),
             dict(
-                id=2,
                 job_script_id=inserted_job_script_id,
                 job_submission_owner_email="owner1@org.com",
                 slurm_job_id=102,
-                **job_submission_data,
             ),
             dict(
-                id=3,
                 job_script_id=inserted_job_script_id,
                 job_submission_owner_email="owner1@org.com",
                 slurm_job_id=103,
-                **job_submission_data,
             ),
-        ],
+        ),
     )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
@@ -683,9 +655,8 @@ async def test_get_job_submissions_applies_no_slurm_filter_if_slurm_job_ids_is_e
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_submissions_with_invalid_slurm_job_ids_param(
-    client, application_data, job_submission_data, job_script_data, inject_security_header,
+    client, inject_security_header,
 ):
     """
     Test GET /job-submissions/ returns a 422 if the slurm_job_id parameter is invalid.
@@ -705,9 +676,13 @@ async def test_get_job_submissions_with_invalid_slurm_job_ids_param(
 
 @pytest.mark.freeze_time
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_update_job_submission(
-    client, application_data, job_script_data, job_submission_data, inject_security_header, time_frame,
+    client,
+    fill_application_data,
+    fill_job_script_data,
+    fill_job_submission_data,
+    inject_security_header,
+    time_frame,
 ):
     """
     Test update job_submission via PUT.
@@ -717,19 +692,15 @@ async def test_update_job_submission(
     corresponds to the updated data, and the data in the database is also updated.
     """
     inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data,),
+        query=applications_table.insert(), values=fill_application_data(),
     )
     inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(application_id=inserted_application_id, **job_script_data,),
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
     inserted_job_submission_id = await database.execute(
         query=job_submissions_table.insert(),
-        values=dict(
-            job_script_id=inserted_job_script_id,
-            job_submission_owner_email="owner1@org.com",
-            **job_submission_data,
+        values=fill_job_submission_data(
+            job_script_id=inserted_job_script_id, job_submission_owner_email="owner1@org.com",
         ),
     )
 
@@ -737,7 +708,7 @@ async def test_update_job_submission(
     with time_frame() as window:
         response = await client.put(
             f"/jobbergate/job-submissions/{inserted_job_submission_id}",
-            json=dict(job_submission_name="new name", job_submission_description="new description",),
+            json=dict(job_submission_name="new name", job_submission_description="new description"),
         )
 
     assert response.status_code == status.HTTP_201_CREATED
@@ -747,17 +718,16 @@ async def test_update_job_submission(
     assert data["job_submission_description"] == "new description"
     assert data["id"] == inserted_job_submission_id
 
-    query = job_submissions_table.select(job_submissions_table.c.id == 1)
-    job_submission = JobSubmissionResponse.parse_obj(await database.fetch_one(query))
+    query = job_submissions_table.select(job_submissions_table.c.id == inserted_job_submission_id)
+    job_submission_data = await database.fetch_one(query)
 
-    assert job_submission is not None
-    assert job_submission.job_submission_name == "new name"
-    assert job_submission.job_submission_description == "new description"
-    assert job_submission.updated_at in window
+    assert job_submission_data is not None
+    assert job_submission_data["job_submission_name"] == "new name"
+    assert job_submission_data["job_submission_description"] == "new description"
+    assert job_submission_data["updated_at"] in window
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_update_job_submission_not_found(client, inject_security_header):
     """
     Test that it is not possible to update a job_submission not found.
@@ -772,9 +742,8 @@ async def test_update_job_submission_not_found(client, inject_security_header):
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_update_job_submission_bad_permission(
-    client, application_data, job_script_data, job_submission_data, inject_security_header,
+    client, fill_application_data, fill_job_script_data, fill_job_submission_data, inject_security_header,
 ):
     """
     Test that it is not possible to update a job_submission without the permission.
@@ -784,19 +753,17 @@ async def test_update_job_submission_bad_permission(
     the database for the job_submission is not updated.
     """
     inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data,),
+        query=applications_table.insert(), values=fill_application_data(),
     )
     inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(application_id=inserted_application_id, **job_script_data,),
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
     inserted_job_submission_id = await database.execute(
         query=job_submissions_table.insert(),
-        values=dict(
+        values=fill_job_submission_data(
             job_script_id=inserted_job_script_id,
+            job_submission_name="old name",
             job_submission_owner_email="owner1@org.com",
-            **job_submission_data,
         ),
     )
 
@@ -812,13 +779,12 @@ async def test_update_job_submission_bad_permission(
     job_submission = JobSubmissionResponse.parse_obj(await database.fetch_one(query))
 
     assert job_submission is not None
-    assert job_submission.job_submission_name == job_submission_data["job_submission_name"]
+    assert job_submission.job_submission_name == "old name"
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_delete_job_submission(
-    client, application_data, job_script_data, job_submission_data, inject_security_header,
+    client, fill_application_data, fill_job_script_data, fill_job_submission_data, inject_security_header,
 ):
     """
     Test delete job_submission via DELETE.
@@ -828,19 +794,15 @@ async def test_delete_job_submission(
     the database after the request is made and the correct status code is returned (204).
     """
     inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data,),
+        query=applications_table.insert(), values=fill_application_data(),
     )
     inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(application_id=inserted_application_id, **job_script_data,),
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
     inserted_job_submission_id = await database.execute(
         query=job_submissions_table.insert(),
-        values=dict(
-            job_script_id=inserted_job_script_id,
-            job_submission_owner_email="owner1@org.com",
-            **job_submission_data,
+        values=fill_job_submission_data(
+            job_script_id=inserted_job_script_id, job_submission_owner_email="owner1@org.com",
         ),
     )
 
@@ -857,7 +819,6 @@ async def test_delete_job_submission(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_delete_job_submission_not_found(client, inject_security_header):
     """
     Test that it is not possible to delete a job_submission that is not found.
@@ -872,9 +833,8 @@ async def test_delete_job_submission_not_found(client, inject_security_header):
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_delete_job_submission_bad_permission(
-    client, application_data, job_script_data, job_submission_data, inject_security_header,
+    client, fill_application_data, fill_job_script_data, fill_job_submission_data, inject_security_header,
 ):
     """
     Test that it is not possible to delete a job_submission with an user without proper permission.
@@ -884,19 +844,15 @@ async def test_delete_job_submission_bad_permission(
     in the database after the request.
     """
     inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=dict(application_owner_email="owner1@org.com", **application_data,),
+        query=applications_table.insert(), values=fill_application_data(),
     )
     inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(application_id=inserted_application_id, **job_script_data,),
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
     inserted_job_submission_id = await database.execute(
         query=job_submissions_table.insert(),
-        values=dict(
-            job_script_id=inserted_job_script_id,
-            job_submission_owner_email="owner1@org.com",
-            **job_submission_data,
+        values=fill_job_submission_data(
+            job_script_id=inserted_job_script_id, job_submission_owner_email="owner1@org.com",
         ),
     )
 

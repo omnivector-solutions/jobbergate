@@ -11,25 +11,24 @@ services:
       - jobbergate-net
     volumes:
       - ./jobbergate-api/jobbergate_api:/app/jobbergate_api
-    command: uvicorn jobbergate_api.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
+    command: poetry run jobbergate dev-server --port=8000
     environment:
-      - DATABASE_HOST=${NEXTGEN_DATABASE_HOST:-nextgen-db}
-      - DATABASE_USER=${NEXTGEN_DATABASE_USER:-nextgen}
-      - DATABASE_PSWD=${NEXTGEN_DATABASE_PSWD:-nextgen}
-      - DATABASE_NAME=${NEXTGEN_DATABASE_NAME:-nextgen}
-      - DATABASE_PORT=${NEXTGEN_DATABASE_PORT:-5432}
-      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL:-http://s3:9000}
+      - DATABASE_HOST=${DATABASE_HOST:-db}
+      - DATABASE_USER=${DATABASE_USER:-omnivector}
+      - DATABASE_PSWD=${DATABASE_PSWD:-local-pswd}
+      - DATABASE_NAME=${DATABASE_NAME:-jobergate}
+      - DATABASE_PORT=${DATABASE_PORT:-5432}
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL:-http://minio:9000}
+      - S3_BUCKET_NAME=${S3_ENDPOINT_URL:-jobbergate-resources}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-FAKE_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-FAKE_SECRET_ACCESS_KEY}
-      - ARMASEC_DOMAIN=${ARMASEC_DOMAIN}
-      - ARMASEC_AUDIENCE=${ARMASEC_AUDIENCE}
+      - ARMASEC_DOMAIN=${AUTH0_DOMAIN}
+      - ARMASEC_AUDIENCE=${AUTH0_AUDIENCE}
       - ARMASEC_DEBUG=${ARMASEC_DEBUG}
     ports:
       - 8000:8000
-    depends_on:
-      - nextgen-db
 
-  nextgen-db:
+  db:
     image: postgres
     restart: always
     networks:
@@ -37,11 +36,25 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_PASSWORD=${NEXTGEN_DATABASE_PSWD:-nextgen}
-      - POSTGRES_USER=${NEXTGEN_DATABASE_USER:-nextgen}
-      - POSTGRES_DB=${NEXTGEN_DATABASE_NAME:-nextgen}
+      - POSTGRES_PASSWORD=${NEXTGEN_DATABASE_PSWD:-local-pswd}
+      - POSTGRES_USER=${NEXTGEN_DATABASE_USER:-omnivector}
+      - POSTGRES_DB=${NEXTGEN_DATABASE_NAME:-jobbergate}
     ports:
       - 5432:5432
+
+  test-db:
+    image: postgres
+    restart: always
+    networks:
+      - jobbergate-net
+    tmpfs:
+      - /var/lib/postgresql/data:rw
+    environment:
+      - POSTGRES_PASSWORD=${NEXTGEN_DATABASE_PSWD:-test-pswd}
+      - POSTGRES_USER=${NEXTGEN_DATABASE_USER:-test}
+      - POSTGRES_DB=${NEXTGEN_DATABASE_NAME:-test-jobbergate}
+    ports:
+      - 5433:5432
 
   minio:
     image: minio/minio

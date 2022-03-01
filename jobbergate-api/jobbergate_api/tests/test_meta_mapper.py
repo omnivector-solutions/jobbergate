@@ -26,3 +26,25 @@ def test___init___fails_if_keyword_argument_is_not_a_MetaField():
     MetaMapper(foo=ValidDuckField(description="foo description", example="foo example"))  # type:ignore
     with pytest.raises(ValueError, match="Keyword argument 'foo' does not have attribute 'example'"):
         MetaMapper(foo=InvalidDuckField(description="foo description"))  # type:ignore
+
+
+def test__call___remaps_fields_when_they_are_present_in_the_schema_being_mapped():
+    mapper = MetaMapper(
+        foo=MetaField(description="new foo description", example="new foo example",),
+        bar=MetaField(example="new bar example",),
+        baz=MetaField(description="new baz description",),
+    )
+    full_instance = dict(
+        properties=dict(
+            foo=dict(description="foo description", example="foo example",),
+            bar=dict(description="bar description", example="bar example",),
+            baz=dict(description="baz description", example="baz example",),
+        ),
+    )
+    mapper(full_instance)
+    assert full_instance["properties"]["foo"]["description"] == "new foo description"
+    assert full_instance["properties"]["foo"]["example"] == "new foo example"
+    assert full_instance["properties"]["bar"]["description"] == "bar description"
+    assert full_instance["properties"]["bar"]["example"] == "new bar example"
+    assert full_instance["properties"]["baz"]["description"] == "new baz description"
+    assert full_instance["properties"]["baz"]["example"] == "baz example"

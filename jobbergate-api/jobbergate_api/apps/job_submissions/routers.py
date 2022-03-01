@@ -18,15 +18,19 @@ from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionUpdateRequest,
 )
 from jobbergate_api.apps.permissions import Permissions
-from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
-from jobbergate_api.pagination import Pagination, Response, package_response
+from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.security import IdentityClaims, guard
-from jobbergate_api.storage import database, search_clause, sort_clause
+from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause
 
 router = APIRouter()
 
 
-@router.post("/job-submissions", status_code=201, description="Endpoint for job_submission creation")
+@router.post(
+    "/job-submissions",
+    status_code=201,
+    description="Endpoint for job_submission creation",
+    response_model=JobSubmissionResponse,
+)
 async def job_submission_create(
     job_submission: JobSubmissionCreateRequest,
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT)),
@@ -50,18 +54,13 @@ async def job_submission_create(
 
     async with database.transaction():
         try:
-            insert_query = job_submissions_table.insert()
-            inserted_id = await database.execute(query=insert_query, values=job_submission.dict(),)
+            insert_query = job_submissions_table.insert().returning(job_submissions_table)
+            job_submission_data = await database.fetch_one(query=insert_query, values=job_submission.dict())
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
-        # Now fetch the newly inserted row. This is necessary to reflect defaults and db modified columns
-        query = job_submissions_table.select().where(job_submissions_table.c.id == inserted_id)
-        raw_job_submission = await database.fetch_one(query)
-        response_job_submission = JobSubmissionResponse.parse_obj(raw_job_submission)
-
-    return response_job_submission
+    return job_submission_data
 
 
 @router.get(
@@ -75,20 +74,17 @@ async def job_submission_get(job_submission_id: int = Query(...)):
     Return the job_submission given it's id.
     """
     query = job_submissions_table.select().where(job_submissions_table.c.id == job_submission_id)
-    raw_job_submission = await database.fetch_one(query)
+    job_submission_data = await database.fetch_one(query)
 
-    if not raw_job_submission:
-        raise HTTPException(
-            status_code=404, detail=f"JobSubmission with id={job_submission_id} not found.",
-        )
-    job_submission = JobSubmissionResponse.parse_obj(raw_job_submission)
-    return job_submission
+    if not job_submission_data:
+        raise HTTPException(status_code=404, detail=f"JobSubmission with id={job_submission_id} not found.")
+    return job_submission_data
 
 
 @router.get(
     "/job-submissions",
     description="Endpoint to list job_submissions",
-    response_model=Response[JobSubmissionResponse],
+    responses=ok_response(JobSubmissionResponse),
 )
 async def job_submission_list(
     pagination: Pagination = Depends(),
@@ -170,25 +166,22 @@ async def job_script_update(job_submission_id: int, job_submission: JobSubmissio
         job_submissions_table.update()
         .where(job_submissions_table.c.id == job_submission_id)
         .values(job_submission.dict(exclude_unset=True))
+        .returning(job_submissions_table)
     )
     async with database.transaction():
         try:
-            result = await database.execute(update_query)
+            job_submission_data = await database.fetch_one(update_query)
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
-        if not result:
+        if not job_submission_data:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"JobSubmission with id={job_submission_id} not found.",
             )
 
-        select_query = job_submissions_table.select().where(job_submissions_table.c.id == job_submission_id)
-        raw_job_submission = await database.fetch_one(select_query)
-        response_job_submission = JobSubmissionResponse.parse_obj(raw_job_submission)
-
-    return response_job_submission
+    return job_submission_data
 
 
 def include_router(app):

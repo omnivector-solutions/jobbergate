@@ -4,8 +4,7 @@ Configuration file, sets all the necessary environment variables, it is better u
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseSettings, Field, HttpUrl, root_validator
-from yarl import URL
+from pydantic import BaseSettings, Field, HttpUrl
 
 
 class LogLevelEnum(str, Enum):
@@ -24,6 +23,7 @@ class DeployEnvEnum(str, Enum):
     PROD = "PROD"
     STAGING = "STAGING"
     LOCAL = "LOCAL"
+    TEST = "TEST"
 
 
 class Settings(BaseSettings):
@@ -32,13 +32,19 @@ class Settings(BaseSettings):
 
     LOG_LEVEL: LogLevelEnum = LogLevelEnum.INFO
 
-    # Database settings
-    DATABASE_HOST: Optional[str]
-    DATABASE_USER: Optional[str]
-    DATABASE_PSWD: Optional[str]
-    DATABASE_NAME: Optional[str]
+    # Database settings  # Default to values from docker-compose.yml
+    DATABASE_HOST: str
+    DATABASE_USER: str
+    DATABASE_PSWD: str
+    DATABASE_NAME: str
     DATABASE_PORT: Optional[int] = 5432
-    DATABASE_URL: Optional[str]
+
+    # Test database settings
+    TEST_DATABASE_HOST: Optional[str] = "localhost"
+    TEST_DATABASE_USER: Optional[str] = "test"
+    TEST_DATABASE_PSWD: Optional[str] = "test-pswd"
+    TEST_DATABASE_NAME: Optional[str] = "test-jobbergate"
+    TEST_DATABASE_PORT: Optional[int] = 5433
 
     # S3 configuration
     S3_BUCKET_NAME: str = Field("jobbergate-staging-eu-north-1-resources")
@@ -60,39 +66,6 @@ class Settings(BaseSettings):
 
     # Maximum number of bytes allowed for file uploads
     MAX_UPLOAD_FILE_SIZE: int = 100 * 1024 * 1024  # 100 MB
-
-    @root_validator
-    def calculate_db_url(cls, values):
-        db_url = values.get("DATABASE_URL")
-        if not db_url:
-            expected_keys = {
-                "DATABASE_USER",
-                "DATABASE_PSWD",
-                "DATABASE_HOST",
-                "DATABASE_PORT",
-                "DATABASE_NAME",
-            }
-            missing_keys = expected_keys - set({k: v for (k, v) in values.items() if v is not None})
-            if len(missing_keys) > 0:
-                raise ValueError(f"Missing required database settings: {', '.join(sorted(missing_keys))}")
-
-            db_url = URL.build(
-                scheme="postgresql",
-                user=values.get("DATABASE_USER"),
-                password=values.get("DATABASE_PSWD"),
-                host=values.get("DATABASE_HOST"),
-                port=values.get("DATABASE_PORT"),
-                path="/{}".format(values.get("DATABASE_NAME")),
-            )
-        elif not db_url.startswith("sqlite"):
-            # Will url-escapse special characters
-            db_url = URL(values["DATABASE_URL"])
-        else:
-            # For special case of sqlite db url (testing), do not url-escape
-            pass
-
-        values["DATABASE_URL"] = str(db_url)
-        return values
 
     class Config:
         env_file = ".env"

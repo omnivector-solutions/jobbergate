@@ -22,11 +22,10 @@ from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptUpdateRequest,
 )
 from jobbergate_api.apps.permissions import Permissions
-from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
-from jobbergate_api.pagination import Pagination, Response, package_response
+from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.s3_manager import S3Manager
 from jobbergate_api.security import IdentityClaims, guard
-from jobbergate_api.storage import database, handle_fk_error, search_clause, sort_clause
+from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause
 
 router = APIRouter()
 s3man = S3Manager()
@@ -72,7 +71,7 @@ def get_s3_object_as_tarfile(application_id):
 
 def render_template(template_files, param_dict_flat):
     """
-    Render the template as string using jinja2.
+    Render the templates as strings using jinja2.
     """
     for key, value in template_files.items():
         template = Template(value)
@@ -174,21 +173,15 @@ async def job_script_create(
     create_dict["job_script_data_as_string"] = inject_sbatch_params(job_script_data_as_string, sbatch_params)
 
     logger.debug("Inserting job_script")
-    async with database.transaction():
-        try:
-            insert_query = job_scripts_table.insert()
-            inserted_id = await database.execute(query=insert_query, values=create_dict)
+    try:
+        insert_query = job_scripts_table.insert().returning(job_scripts_table)
+        job_script_data = await database.fetch_one(query=insert_query, values=create_dict)
 
-        except INTEGRITY_CHECK_EXCEPTIONS as e:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    except INTEGRITY_CHECK_EXCEPTIONS as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
-        # Now fetch the newly inserted row. This is necessary to reflect defaults and db modified columns
-        query = job_scripts_table.select().where(job_scripts_table.c.id == inserted_id)
-        raw_job_script = await database.fetch_one(query)
-        response_job_script = JobScriptResponse.parse_obj(raw_job_script)
-
-    logger.debug(f"Created job_script id={inserted_id}")
-    return response_job_script
+    logger.debug(f"Created job_script={job_script_data}")
+    return job_script_data
 
 
 @router.get(
@@ -199,21 +192,20 @@ async def job_script_create(
 )
 async def job_script_get(job_script_id: int = Query(...)):
     """
-    Return the job_script given it's id.
+    Return the job_script given its id.
     """
     query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
-    raw_job_script = await database.fetch_one(query)
+    job_script = await database.fetch_one(query)
 
-    if not raw_job_script:
+    if not job_script:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"JobScript with id={job_script_id} not found.",
         )
-    job_script = JobScriptResponse.parse_obj(raw_job_script)
     return job_script
 
 
 @router.get(
-    "/job-scripts", description="Endpoint to list job_scripts", response_model=Response[JobScriptResponse],
+    "/job-scripts", description="Endpoint to list job_scripts", responses=ok_response(JobScriptResponse),
 )
 async def job_script_list(
     pagination: Pagination = Depends(),
@@ -225,6 +217,12 @@ async def job_script_list(
 ):
     """
     List job_scripts for the authenticated user.
+
+    Note::
+
+       Use responses instead of response_model to skip a second round of validation and serialization. This
+       is already happening in the ``package_response`` method. So, we uses ``responses`` so that FastAPI
+       can generate the correct OpenAPI spec but not post-process the response.
     """
     query = job_scripts_table.select()
     identity_claims = IdentityClaims.from_token_payload(token_payload)
@@ -257,8 +255,7 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
         )
 
     delete_query = job_scripts_table.delete().where(where_stmt)
-    with handle_fk_error():
-        await database.execute(delete_query)
+    await database.execute(delete_query)
 
 
 @router.put(
@@ -268,9 +265,7 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     response_model=JobScriptResponse,
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
 )
-async def job_script_update(
-    job_script_id: int, job_script: JobScriptUpdateRequest,
-):
+async def job_script_update(job_script_id: int, job_script: JobScriptUpdateRequest):
     """
     Update a job_script given its id.
     """
@@ -278,24 +273,19 @@ async def job_script_update(
         job_scripts_table.update()
         .where(job_scripts_table.c.id == job_script_id)
         .values(job_script.dict(exclude_unset=True))
+        .returning(job_scripts_table)
     )
-    async with database.transaction():
-        try:
-            result = await database.execute(update_query)
+    try:
+        result = await database.fetch_one(update_query)
+    except INTEGRITY_CHECK_EXCEPTIONS as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
-        except INTEGRITY_CHECK_EXCEPTIONS as e:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"JobScript with id={job_script_id} not found.",
+        )
 
-        if not result:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=f"JobScript with id={job_script_id} not found.",
-            )
-
-        select_query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
-        raw_job_script = await database.fetch_one(select_query)
-        response_job_script = JobScriptResponse.parse_obj(raw_job_script)
-
-    return response_job_script
+    return result
 
 
 def include_router(app):
