@@ -93,7 +93,7 @@ def make_request(
     url_path: str,
     method: str,
     *,
-    expected_status: int = 200,
+    expected_status: typing.Optional[int] = None,
     abort_message: str = "There was an error communicating with the API",
     abort_subject: str = "REQUEST FAILED",
     support: bool = True,
@@ -129,7 +129,7 @@ def make_request(
             ),
             subject=abort_subject,
             support=support,
-            log_message=f"Got an error code for request: {response.status_code}",
+            log_message=f"Got an error code for request: {response.status_code}: {response.text}",
         )
 
     # TODO: constrain methods with a named enum

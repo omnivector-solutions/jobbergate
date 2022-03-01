@@ -2,7 +2,7 @@
 Utilities for handling auth in jobbergate-cli.
 """
 from time import sleep
-from typing import Optional, Type, TypeVar
+from typing import Optional, Dict, cast
 
 import httpx
 import pydantic
@@ -11,7 +11,7 @@ from jose import jwt
 from jose.exceptions import ExpiredSignatureError
 from loguru import logger
 
-from jobbergate_cli.exceptions import Abort
+from jobbergate_cli.exceptions import Abort, JobbergateCliError
 from jobbergate_cli.config import settings
 from jobbergate_cli.cli_helpers import terminal_message
 from jobbergate_cli.time_loop import TimeLoop
@@ -184,10 +184,15 @@ def refresh_access_token(ctx: JobbergateContext, token_set: TokenSet):
     url = f"https://{settings.AUTH0_DOMAIN}/oauth/token"
     logger.debug(f"Requesting refreshed access token from {url}")
 
-    # Make mypy happy
+    JobbergateCliError.require_condition(
+        ctx.client is not None,
+        "Attempted to refresh with a null client. This should not happen",
+    )
+
+    # Make static type-checkers happy
     assert ctx.client is not None
 
-    refreshed_token_set = make_request(
+    refreshed_token_set = cast(TokenSet, make_request(
         ctx.client,
         "/oauth/token",
         "POST",
@@ -201,87 +206,9 @@ def refresh_access_token(ctx: JobbergateContext, token_set: TokenSet):
             grant_type="refresh_token",
             refresh_token=token_set.refresh_token,
         ),
-    )
+    ))
 
-    # Make mypy happy
-    assert isinstance(refreshed_token_set, TokenSet)
     token_set.access_token = refreshed_token_set.access_token
-
-
-ResponseModel = TypeVar('ResponseModel', bound=pydantic.BaseModel)
-
-
-def _fetch_and_unpack(
-    url_path: str,
-    params: dict,
-    user_error_message: str,
-    user_error_subject: str,
-    abort_not_ok: bool,
-    response_model: Type[ResponseModel],
-) -> Optional[ResponseModel]:
-    """
-    Fetch data from the auth provider URL and unpack it into a response model.
-    Should not be used outside of the ``auth`` module.
-    """
-    url = f"https://{settings.AUTH0_DOMAIN}{url_path}"
-    logger.debug(f"Posting request to auth provider at {url} with {params=}")
-    response = httpx.post(
-        url,
-        headers={"content-type": "application/x-www-form-urlencoded"},
-        data=params,
-    )
-
-    logger.debug("Extracting json data from response")
-    try:
-        data = response.json()
-    except Exception as err:
-        raise Abort(
-            snick.unwrap(
-                f"""
-                {user_error_message}:
-                Response carried no data.
-                """
-            ),
-            subject=user_error_subject,
-            support=True,
-            log_message=f"Failed unpacking json ({response.status_code}): {response.text}",
-            original_error=err,
-        )
-    logger.debug(f"Response from request: {data}")
-
-    logger.debug(f"Checking response status code: {response.status_code}")
-    if response.status_code != 200:
-        if abort_not_ok:
-            raise Abort(
-                snick.unwrap(
-                    f"""
-                    {user_error_message}:
-                    Received an error response.
-                    """
-                ),
-                subject=user_error_subject,
-                support=True,
-                log_message=f"Got an error response code ({response.status_code}): {response.text}",
-            )
-        else:
-            return None
-
-    logger.debug("Validating response data with ResponseModel")
-    try:
-        return response_model(**data)
-    except pydantic.ValidationError as err:
-        raise Abort(
-            snick.unwrap(
-                f"""
-                {user_error_message}:
-                Unexpected data in response.
-                """
-            ),
-            subject=user_error_subject,
-            support=True,
-            log_message=f"Unexpeced format in response data: {data}",
-            original_error=err,
-        )
 
 
 def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
@@ -291,26 +218,14 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
     Prints out a URL for the user to use to authenticate and polls the token endpoint to fetch it when
     the browser-based process finishes
     """
-    device_code_data = _fetch_and_unpack(
-        url_path="/oauth/device/code",
-        params=dict(
-            client_id=settings.AUTH0_CLIENT_ID,
-            audience=settings.AUTH0_AUDIENCE,
-            scope="offline_access",  # To get refresh token
-        ),
-        user_error_message="There was a problem retrieving a device verification code from the auth provider",
-        user_error_subject="COULD NOT RETRIEVE TOKEN",
-        abort_not_ok=True,
-        response_model=DeviceCodeData,
-    )
-
-    # make mypy happy
+    # Make static type-checkers happy
     assert ctx.client is not None
 
-    device_code_data = make_request(
+    device_code_data = cast(DeviceCodeData, make_request(
         ctx.client,
-        "/oauth/token",
+        "/oauth/device/code",
         "POST",
+        expected_status=200,
         abort_message="There was a problem retrieving a device verification code from the auth provider",
         abort_subject="COULD NOT RETRIEVE TOKEN",
         support=True,
@@ -320,10 +235,7 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
             audience=settings.AUTH0_AUDIENCE,
             scope="offline_access",  # To get refresh token
         ),
-    )
-
-    # Make mypy happy (this will never be None)
-    assert device_code_data is not None
+    ))
 
     terminal_message(
         f"""
@@ -340,26 +252,40 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
         settings.AUTH0_MAX_POLL_TIME,
         message="Waiting for web login",
     ):
-        # YOU LEFT OFF HERE, DUMBASS
-        token_set = _fetch_and_unpack(
-            url_path="/oauth/token",
-            params=dict(
+
+        response_data = cast(Dict, make_request(
+            ctx.client,
+            "/oauth/token",
+            "POST",
+            abort_message="There was a problem retrieving a device verification code from the auth provider",
+            abort_subject="COULD NOT FETCH ACCESS TOKEN",
+            support=True,
+            data=dict(
                 grant_type="urn:ietf:params:oauth:grant-type:device_code",
                 device_code=device_code_data.device_code,
                 client_id=settings.AUTH0_CLIENT_ID,
             ),
-            user_error_message="There was a problem retrieving your access token from the auth provider",
-            user_error_subject="COULD NOT FETCH ACCESS TOKEN",
-            abort_not_ok=False,
-            response_model=TokenSet,
-        )
-        if token_set is not None:
-            # Make mypy happy
-            assert isinstance(token_set, TokenSet)
-            return token_set
+        ))
+        if 'error' in response_data:
+            if response_data["error"] == "authorization_pending":
+                logger.debug(f"Token fetch attempt #{tick.counter} failed")
+                sleep(device_code_data.interval)
+            else:
+                # TODO: Test this failure condition
+                raise Abort(
+                    snick.unwrap(
+                        """
+                        There was a problem retrieving a device verification code from the auth provider:
+                        Unexpected failure retrieving access token.
+                        """
+                    ),
+                    subject="UNEXPECTED ERROR",
+                    support=True,
+                    log_message=f"Unexpected error response: {response_data}",
+                )
+        else:
+            return TokenSet(**response_data)
 
-        logger.debug(f"Token fetch attempt #{tick.counter} failed")
-        sleep(device_code_data.interval)
 
     raise Abort(
         "Login process was not completed in time. Please try again.",

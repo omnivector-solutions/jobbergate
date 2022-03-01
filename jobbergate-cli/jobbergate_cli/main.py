@@ -44,7 +44,7 @@ def main(
     else:
         persona = None
         client=httpx.Client(
-            base_url=f"https://{settings.AUTH0_DOMAIN}",
+            base_url=f"https://{settings.AUTH0_LOGIN_DOMAIN}",
             headers={"content-type": "application/x-www-form-urlencoded"},
         )
 
@@ -57,6 +57,7 @@ def main(
 
 
 @app.command()
+@handle_abort
 def login(ctx: typer.Context):
     """
     Log in to the jobbergate-cli by storing the supplied token argument in the cache.
@@ -70,6 +71,7 @@ def login(ctx: typer.Context):
 
 
 @app.command()
+@handle_abort
 def logout():
     """
     Logs out of the jobbergate-cli. Clears the saved user credentials.
