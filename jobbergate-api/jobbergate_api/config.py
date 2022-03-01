@@ -33,10 +33,10 @@ class Settings(BaseSettings):
     LOG_LEVEL: LogLevelEnum = LogLevelEnum.INFO
 
     # Database settings  # Default to values from docker-compose.yml
-    DATABASE_HOST: str
-    DATABASE_USER: str
-    DATABASE_PSWD: str
-    DATABASE_NAME: str
+    DATABASE_HOST: Optional[str] = "db"
+    DATABASE_USER: Optional[str] = "omnivector"
+    DATABASE_PSWD: Optional[str] = "local-pswd"
+    DATABASE_NAME: Optional[str] = "jobbergate"
     DATABASE_PORT: Optional[int] = 5432
 
     # Test database settings
