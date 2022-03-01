@@ -35,7 +35,7 @@ jobs:
         working-directory: jobbergate-api
         env:
           DEPLOY_ENV: TEST
-          TEST_DATABASE_HOST: test-db
+          TEST_DATABASE_HOST: localhost
           TEST_DATABASE_USER: test
           TEST_DATABASE_PSWD: test-pswd
           TEST_DATABASE_NAME: test-jobbergate
