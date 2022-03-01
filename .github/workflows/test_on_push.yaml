@@ -10,6 +10,13 @@ jobs:
   api-tests:
     name: "jobbergate-api tests"
     runs-on: "ubuntu-latest"
+    services:
+      test-db:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: test-pswd
+          POSTGRES_USER: test
+          POSTGRES_DB: test-jobbergate
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
@@ -23,7 +30,7 @@ jobs:
           POETRY_HTTP_BASIC_PYPICLOUD_USERNAME: admin
           POETRY_HTTP_BASIC_PYPICLOUD_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: make qa
-  
+
   cli-tests:
     name: "jobbergate-cli tests"
     runs-on: "ubuntu-latest"

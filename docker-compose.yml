@@ -16,7 +16,7 @@ services:
       - DATABASE_HOST=${DATABASE_HOST:-db}
       - DATABASE_USER=${DATABASE_USER:-omnivector}
       - DATABASE_PSWD=${DATABASE_PSWD:-local-pswd}
-      - DATABASE_NAME=${DATABASE_NAME:-jobergate}
+      - DATABASE_NAME=${DATABASE_NAME:-jobbergate}
       - DATABASE_PORT=${DATABASE_PORT:-5432}
       - S3_ENDPOINT_URL=${S3_ENDPOINT_URL:-http://minio:9000}
       - S3_BUCKET_NAME=${S3_ENDPOINT_URL:-jobbergate-resources}

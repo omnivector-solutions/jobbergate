@@ -3,7 +3,7 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from jobbergate_api.config import settings
+from jobbergate_api.storage import build_db_url
 from jobbergate_api.apps.applications import models  # noqa # must be imported for metadata to work
 from jobbergate_api.apps.job_scripts import models  # noqa # must be imported for metadata to work
 from jobbergate_api.apps.job_submissions import models  # noqa # must be imported for metadata to work
@@ -42,7 +42,7 @@ def run_migrations_offline():
 
     """
     context.configure(
-        url=settings.DATABASE_URL,
+        url=build_db_url(),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -60,7 +60,7 @@ def run_migrations_online():
 
     """
     ini_section = config.get_section(config.config_ini_section)
-    ini_section["sqlalchemy.url"] = settings.DATABASE_URL
+    ini_section["sqlalchemy.url"] = build_db_url()
     connectable = engine_from_config(
         ini_section,
         prefix="sqlalchemy.",
