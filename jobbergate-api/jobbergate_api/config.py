@@ -34,7 +34,7 @@ class Settings(BaseSettings):
 
     # Database settings  # Default to values from docker-compose.yml
     DATABASE_HOST: Optional[str] = "db"
-    DATABASE_USER: Optional[str] = "omnivector"
+    DATABASE_USER: Optional[str] = "jobbergate"
     DATABASE_PSWD: Optional[str] = "local-pswd"
     DATABASE_NAME: Optional[str] = "jobbergate"
     DATABASE_PORT: Optional[int] = 5432

@@ -17,6 +17,13 @@ jobs:
           POSTGRES_PASSWORD: test-pswd
           POSTGRES_USER: test
           POSTGRES_DB: test-jobbergate
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5433:5432
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
