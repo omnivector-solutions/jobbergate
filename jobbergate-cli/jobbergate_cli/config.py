@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     JOBBERGATE_API_ACCESS_TOKEN_PATH: Optional[Path]
     JOBBERGATE_API_REFRESH_TOKEN_PATH: Optional[Path]
 
+    # Compatibility mode: If True, add commands as they appear in the legacy app
+    JOBBERGATE_COMPATIBILITY_MODE: Optional[bool] = False
+
     # Auth0 config for machine-to-machine security
     AUTH0_DOMAIN: str
     AUTH0_LOGIN_DOMAIN: Optional[str]

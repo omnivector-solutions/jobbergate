@@ -1,9 +1,12 @@
 import typing
 
+import typer
+
 from jobbergate_cli.constants import SortOrder
-from jobbergate_cli.exceptions import Abort
+from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
-from jobbergate_cli.crud_helpers import StyleMapper, render_list_results, render_single_result
+from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result
+from jobbergate_cli.requests import make_request
 
 
 # move hidden field logic to the API
@@ -40,19 +43,25 @@ style_mapper = StyleMapper(
 )
 
 
-def list_applications(
-    ctx: JobbergateContext,
-    show_all: bool,
-    user_only: bool,
-    search: typing.Optional[str],
-    sort_order: SortOrder,
-    sort_field: typing.Optional[str],
-):
-    persona = ctx.persona
-    client = ctx.client
-    # Should not happen, but this will make mypy happy
-    assert persona is not None
+app = typer.Typer(
+    help="Commands to interact with applications",
+)
 
+
+@app.command()
+@handle_abort
+def list_all(
+    ctx: typer.Context,
+    show_all: bool = typer.Option(False, "--all", help="Show all applications, even the ones without identifier"),
+    user_only: bool = typer.Option(False, "--user", help="Show only applications owned by the current user"),
+    search: typing.Optional[str] = typer.Option(None, help="Apply a search term to results"),
+    sort_order: SortOrder = typer.Option(SortOrder.UNSORTED, help="Specify sort order"),
+    sort_field: typing.Optional[str] = typer.Option(None, help="The field by which results should be sorted"),
+):
+    """
+    Show available applications
+    """
+    jg_ctx: JobbergateContext = ctx.obj
     params: typing.Dict[str, typing.Any] = dict(
         all=show_all,
         user=user_only,
@@ -64,12 +73,21 @@ def list_applications(
     if sort_field is not None:
         params["sort_field"] = sort_field
 
-    # Make mypy happy
-    assert client is not None
-    raw_response = client.get(f"/applications", params=params).json()
-    envelope = ListResponseEnvelope(**raw_response)
+    # Make static type checkers happy
+    assert jg_ctx.client is not None
+
+    envelope = typing.cast(ListResponseEnvelope, make_request(
+        jg_ctx.client,
+        "/applications",
+        "GET",
+        expected_status=200,
+        abort_message="Couldn't retrieve applications list from API",
+        support=True,
+        response_model=ListResponseEnvelope,
+        data=params,
+    ))
     render_list_results(
-        ctx,
+        jg_ctx,
         envelope,
         title="Applications List",
         style_mapper=style_mapper,
@@ -77,17 +95,23 @@ def list_applications(
     )
 
 
-def get_application(
-    ctx: JobbergateContext,
-    id: typing.Optional[int] = None,
-    identifier: typing.Optional[str] = None,
+@app.command()
+@handle_abort
+def get_one(
+    ctx: typer.Context,
+    id: typing.Optional[int] = typer.Option(
+        None,
+        help=f"The specific id of the application. {ID_NOTE}",
+    ),
+    identifier: typing.Optional[str] = typer.Option(
+        None,
+        help=f"The human-friendly identifier of the application. {IDENTIFIER_NOTE}",
+    ),
 ):
-
-    persona = ctx.persona
-    client = ctx.client
-    # Should not happen, but this will make mypy happy
-    assert persona is not None
-
+    """
+    Get a single application by id or identifier
+    """
+    jg_ctx: JobbergateContext = ctx.obj
     url = f"/applications/{id}"
     params = dict()
     if id is None and identifier is None:
@@ -110,10 +134,21 @@ def get_application(
         url = f"/applications"
         params["identifier"] = identifier
 
-    assert client is not None
-    result = client.get(url, params=params).json()
+    # Make static type checkers happy
+    assert jg_ctx.client is not None
+
+    stub = f"{id=}" if id is not None else f"{identifier=}"
+    result = typing.cast(typing.Dict[str, typing.Any], make_request(
+        jg_ctx.client,
+        url,
+        "GET",
+        expected_status=200,
+        abort_message=f"Couldn't retrieve application {stub} from API",
+        support=True,
+        params=params,
+    ))
     render_single_result(
-        ctx,
+        jg_ctx,
         result,
         hidden_fields=HIDDEN_FIELDS,
         title="Application",

@@ -4,7 +4,6 @@ from unittest import mock
 import httpx
 import pendulum
 import plummet
-import pydantic
 import pytest
 from jose import jwt, ExpiredSignatureError
 
@@ -16,21 +15,25 @@ from jobbergate_cli.auth import (
     init_persona,
     refresh_access_token,
     fetch_auth_tokens,
-    _fetch_and_unpack,
     TokenSet
 )
+from jobbergate_cli.schemas import JobbergateContext
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.config import settings
 from jobbergate_cli.time_loop import Tick
 
+LOGIN_DOMAIN = "https://dummy-auth.com"
 
-class DummyResponseModel(pydantic.BaseModel):
-    """
-    Just a dummy pydantic model for testing.
-    """
-    foo: int
-    bar: str
 
+@pytest.fixture
+def dummy_context():
+    return JobbergateContext(
+        persona=None,
+        client=httpx.Client(
+            base_url=LOGIN_DOMAIN,
+            headers={"content-type": "application/x-www-form-urlencoded"}
+        ),
+    )
 
 
 @pytest.fixture
@@ -295,7 +298,7 @@ def test_clear_token_cache__does_not_fail_if_no_tokens_are_in_cache(make_token, 
             clear_token_cache()
 
 
-def test_init_persona__success(make_token, tmp_path):
+def test_init_persona__success(make_token, tmp_path, dummy_context):
     """
     Validate that the ``init_persona()`` function will load tokens from the cache, validate them,
     extract identity data, and return a new ``Persona`` instance with the tokens and identity data contained
@@ -317,7 +320,7 @@ def test_init_persona__success(make_token, tmp_path):
     with mock.patch.object(settings, "JOBBERGATE_API_ACCESS_TOKEN_PATH", new=access_token_path):
         with mock.patch.object(settings, "JOBBERGATE_API_REFRESH_TOKEN_PATH", new=refresh_token_path):
             with plummet.frozen_time("2022-02-16 21:30:00"):
-                persona = init_persona()
+                persona = init_persona(dummy_context)
 
     assert persona.token_set.access_token == access_token
     assert persona.token_set.refresh_token == refresh_token
@@ -325,7 +328,7 @@ def test_init_persona__success(make_token, tmp_path):
     assert persona.identity_data.org_name == "good_org"
 
 
-def test_init_persona__uses_passed_token_set(make_token, tmp_path):
+def test_init_persona__uses_passed_token_set(make_token, tmp_path, dummy_context):
     """
     Validate that the ``init_persona()`` function will used the passed ``TokenSet`` instance instead of
     loading it from the cache and will write the tokens to the cache after validating them.
@@ -352,7 +355,7 @@ def test_init_persona__uses_passed_token_set(make_token, tmp_path):
     with mock.patch.object(settings, "JOBBERGATE_API_ACCESS_TOKEN_PATH", new=access_token_path):
         with mock.patch.object(settings, "JOBBERGATE_API_REFRESH_TOKEN_PATH", new=refresh_token_path):
             with plummet.frozen_time("2022-02-16 21:30:00"):
-                persona = init_persona(token_set)
+                persona = init_persona(dummy_context, token_set)
 
     assert persona.token_set.access_token == access_token
     assert persona.token_set.refresh_token == refresh_token
@@ -364,7 +367,7 @@ def test_init_persona__uses_passed_token_set(make_token, tmp_path):
     assert refresh_token_path.exists()
 
 
-def test_init_persona__refreshes_access_token_if_it_is_expired(make_token, tmp_path, respx_mock):
+def test_init_persona__refreshes_access_token_if_it_is_expired(make_token, tmp_path, respx_mock, dummy_context):
     """
     Validate that the ``init_persona()`` function will refresh the access token if it is expired and, after
     validating it, save it to the cache.
@@ -390,7 +393,7 @@ def test_init_persona__refreshes_access_token_if_it_is_expired(make_token, tmp_p
         expires="2022-02-17 22:30:00",
     )
 
-    respx_mock.post(f"https://{settings.AUTH0_DOMAIN}/oauth/token").mock(
+    respx_mock.post(f"{LOGIN_DOMAIN}/oauth/token").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(access_token=refreshed_access_token),
@@ -400,7 +403,7 @@ def test_init_persona__refreshes_access_token_if_it_is_expired(make_token, tmp_p
     with mock.patch.object(settings, "JOBBERGATE_API_ACCESS_TOKEN_PATH", new=access_token_path):
         with mock.patch.object(settings, "JOBBERGATE_API_REFRESH_TOKEN_PATH", new=refresh_token_path):
             with plummet.frozen_time("2022-02-16 23:30:00"):
-                persona = init_persona()
+                persona = init_persona(dummy_context)
 
     assert persona.token_set.access_token == refreshed_access_token
     assert persona.token_set.refresh_token == refresh_token
@@ -413,7 +416,7 @@ def test_init_persona__refreshes_access_token_if_it_is_expired(make_token, tmp_p
     assert refresh_token_path.read_text() == refresh_token
 
 
-def test_refresh_access_token__success(make_token, respx_mock):
+def test_refresh_access_token__success(make_token, respx_mock, dummy_context):
     """
     Validate that the ``refreshed_access_token()`` function uses a refresh token to retrieve a new access
     token from the ``oauth/token`` endpoint of the ``settings.AUTH0_DOMAIN``.
@@ -430,18 +433,18 @@ def test_refresh_access_token__success(make_token, respx_mock):
         expires="2022-02-17 22:30:00",
     )
 
-    respx_mock.post(f"https://{settings.AUTH0_DOMAIN}/oauth/token").mock(
+    respx_mock.post(f"{LOGIN_DOMAIN}/oauth/token").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(access_token=refreshed_access_token),
         ),
     )
 
-    refresh_access_token(token_set)
+    refresh_access_token(dummy_context, token_set)
     assert token_set.access_token == refreshed_access_token
 
 
-def test_refresh_access_token__raises_abort_on_non_200_response(respx_mock):
+def test_refresh_access_token__raises_abort_on_non_200_response(respx_mock, dummy_context):
     """
     Validate that the ``refreshed_access_token()`` function raises an abort if the response from the
     ``oauth/token`` endpoint of the ``settings.AUTH0_DOMAIN`` is not a 200.
@@ -450,7 +453,7 @@ def test_refresh_access_token__raises_abort_on_non_200_response(respx_mock):
     refresh_token = "dummy-refresh-token"
     token_set = TokenSet(access_token=access_token, refresh_token=refresh_token)
 
-    respx_mock.post(f"https://{settings.AUTH0_DOMAIN}/oauth/token").mock(
+    respx_mock.post(f"{LOGIN_DOMAIN}/oauth/token").mock(
         return_value=httpx.Response(
             httpx.codes.BAD_REQUEST,
             json=dict(error_description="BOOM!"),
@@ -458,140 +461,19 @@ def test_refresh_access_token__raises_abort_on_non_200_response(respx_mock):
     )
 
     with pytest.raises(Abort, match="auth token could not be refreshed"):
-        refresh_access_token(token_set)
+        refresh_access_token(dummy_context, token_set)
 
 
-def test__fetch_and_unpack__success(respx_mock):
-    """
-    Validate that the ``fetch_auth_tokens()`` function will make a request to the supplied path for the
-    auth provider, check the status code, extract the data, valiate it, and return an instance of the
-    supplied response model.
-    """
-    respx_mock.post(f"https://{settings.AUTH0_DOMAIN}/fake-path").mock(
-        return_value=httpx.Response(
-            httpx.codes.OK,
-            json=dict(
-                foo=1,
-                bar="one",
-            ),
-        ),
-    )
-    dummy_response_instance = _fetch_and_unpack(
-        url_path="/fake-path",
-        params=dict(),
-        user_error_message="There was a big problem",
-        user_error_subject="BIG PROBLEM",
-        abort_not_ok=True,
-        response_model=DummyResponseModel,
-    )
-    assert dummy_response_instance.foo == 1
-    assert dummy_response_instance.bar == "one"
-
-
-def test__fetch_and_unpack__raises_Abort_when_request_returns_non_json(respx_mock):
-    """
-    Validate that the ``_fetch_and_unpack()`` function will raise an Abort if the response returned from
-    the request does not contain json data.
-    """
-    respx_mock.post(f"https://{settings.AUTH0_DOMAIN}/fake-path").mock(
-        return_value=httpx.Response(
-            httpx.codes.OK,
-            text="Womp, Womp",
-        ),
-    )
-    with pytest.raises(Abort, match="There was a big problem: Response carried no data"):
-        _fetch_and_unpack(
-            url_path="/fake-path",
-            params=dict(),
-            user_error_message="There was a big problem",
-            user_error_subject="BIG PROBLEM",
-            abort_not_ok=True,
-            response_model=DummyResponseModel,
-        )
-
-
-def test__fetch_and_unpack__raises_Abort_when_status_code_is_not_200_and_abort_not_ok_is_True(respx_mock):
-    """
-    Validate that the ``fetch_auth_tokens()`` function will raise an Abort if the response status code
-    for the request is not 200 and the ``abort_not_ok`` param is ``True``.
-    """
-    respx_mock.post(f"https://{settings.AUTH0_DOMAIN}/fake-path").mock(
-        return_value=httpx.Response(
-            httpx.codes.BAD_REQUEST,
-            json=dict(
-                foo=1,
-                bar="one",
-            ),
-        ),
-    )
-    with pytest.raises(Abort, match="There was a big problem: Received an error response"):
-        _fetch_and_unpack(
-            url_path="/fake-path",
-            params=dict(),
-            user_error_message="There was a big problem",
-            user_error_subject="BIG PROBLEM",
-            abort_not_ok=True,
-            response_model=DummyResponseModel,
-        )
-
-
-def test__fetch_and_unpack__returns_None_when_status_code_is_not_200_and_abort_not_ok_is_False(respx_mock):
-    """
-    Validate that the ``fetch_auth_tokens()`` function will return None if the response status code
-    for the request is not 200 and the ``abort_not_ok`` param is ``False``.
-    """
-    respx_mock.post(f"https://{settings.AUTH0_DOMAIN}/fake-path").mock(
-        return_value=httpx.Response(
-            httpx.codes.BAD_REQUEST,
-            json=dict(
-                foo=1,
-                bar="one",
-            ),
-        ),
-    )
-    assert _fetch_and_unpack(
-        url_path="/fake-path",
-        params=dict(),
-        user_error_message="There was a big problem",
-        user_error_subject="BIG PROBLEM",
-        abort_not_ok=False,
-        response_model=DummyResponseModel,
-    ) is None
-
-
-def test__fetch_and_unpack__raises_Abort_response_data_cannot_be_validated(respx_mock):
-    """
-    Validate that the ``fetch_auth_tokens()`` function will raise an Abort if the response data cannot be
-    validated.
-    """
-    respx_mock.post(f"https://{settings.AUTH0_DOMAIN}/fake-path").mock(
-        return_value=httpx.Response(
-            httpx.codes.OK,
-            json=dict(
-                bad="data",
-            ),
-        ),
-    )
-    with pytest.raises(Abort, match="There was a big problem: Unexpected data in response"):
-        _fetch_and_unpack(
-            url_path="/fake-path",
-            params=dict(),
-            user_error_message="There was a big problem",
-            user_error_subject="BIG PROBLEM",
-            abort_not_ok=True,
-            response_model=DummyResponseModel,
-        )
-
-
-def test_fetch_auth_tokens__success(respx_mock):
+def test_fetch_auth_tokens__success(respx_mock, dummy_context):
     """
     Validate that the ``fetch_auth_tokens()`` function can successfully retrieve auth tokens from the
     OIDC provider.
     """
+
     access_token = "dummy-access-token"
     refresh_token = "dummy-refresh-token"
 
-    respx_mock.post(f"https://{settings.AUTH0_DOMAIN}/oauth/device/code").mock(
+    respx_mock.post(f"{LOGIN_DOMAIN}/oauth/device/code").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(
@@ -601,7 +483,7 @@ def test_fetch_auth_tokens__success(respx_mock):
             )
         ),
     )
-    respx_mock.post(f"https://{settings.AUTH0_DOMAIN}/oauth/token").mock(
+    respx_mock.post(f"{LOGIN_DOMAIN}/oauth/token").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(
@@ -610,17 +492,17 @@ def test_fetch_auth_tokens__success(respx_mock):
             )
         ),
     )
-    token_set = fetch_auth_tokens()
+    token_set = fetch_auth_tokens(dummy_context)
     assert token_set.access_token == access_token
     assert token_set.refresh_token == refresh_token
 
 
-def test_fetch_auth_tokens__raises_Abort_when_it_times_out_waiting_for_the_user(respx_mock):
+def test_fetch_auth_tokens__raises_Abort_when_it_times_out_waiting_for_the_user(respx_mock, dummy_context):
     """
     Validate that the ``fetch_auth_tokens()`` function will raise an Abort if the time runs out before a user
     completes the login process.
     """
-    respx_mock.post(f"https://{settings.AUTH0_DOMAIN}/oauth/device/code").mock(
+    respx_mock.post(f"{LOGIN_DOMAIN}/oauth/device/code").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(
@@ -630,8 +512,8 @@ def test_fetch_auth_tokens__raises_Abort_when_it_times_out_waiting_for_the_user(
             )
         ),
     )
-    respx_mock.post(f"https://{settings.AUTH0_DOMAIN}/oauth/token").mock(
-        return_value=httpx.Response(httpx.codes.BAD_REQUEST, json=dict(still="waiting")),
+    respx_mock.post(f"{LOGIN_DOMAIN}/oauth/token").mock(
+        return_value=httpx.Response(httpx.codes.BAD_REQUEST, json=dict(error="authorization_pending")),
     )
     one_tick = Tick(
         counter=1,
@@ -640,4 +522,4 @@ def test_fetch_auth_tokens__raises_Abort_when_it_times_out_waiting_for_the_user(
     )
     with mock.patch('jobbergate_cli.auth.TimeLoop', return_value=[one_tick]):
         with pytest.raises(Abort, match="not completed in time"):
-            fetch_auth_tokens()
+            fetch_auth_tokens(dummy_context)

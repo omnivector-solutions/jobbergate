@@ -4,7 +4,6 @@ Utilities for handling auth in jobbergate-cli.
 from time import sleep
 from typing import Optional, Dict, cast
 
-import httpx
 import pydantic
 import snick
 from jose import jwt
@@ -13,10 +12,10 @@ from loguru import logger
 
 from jobbergate_cli.exceptions import Abort, JobbergateCliError
 from jobbergate_cli.config import settings
-from jobbergate_cli.cli_helpers import terminal_message
+from jobbergate_cli.render import terminal_message
 from jobbergate_cli.time_loop import TimeLoop
 from jobbergate_cli.schemas import TokenSet, IdentityData, Persona, DeviceCodeData, JobbergateContext
-from jobbergate_cli.crud_helpers import make_request
+from jobbergate_cli.requests import make_request
 
 
 def validate_token_and_extract_identity(token_set: TokenSet) -> IdentityData:
@@ -130,7 +129,7 @@ def clear_token_cache():
         settings.JOBBERGATE_API_REFRESH_TOKEN_PATH.unlink()
 
 
-def init_persona(token_set: Optional[TokenSet] = None):
+def init_persona(ctx: JobbergateContext, token_set: Optional[TokenSet] = None):
     """
     Initializes the "persona" which contains the tokens and identity data for a user.
 
@@ -160,7 +159,7 @@ def init_persona(token_set: Optional[TokenSet] = None):
         )
 
         logger.debug("The access token is expired. Attempting to refresh token")
-        refresh_access_token(token_set)
+        refresh_access_token(ctx, token_set)
         identity_data = validate_token_and_extract_identity(token_set)
 
     logger.debug(f"Persona created with identity data: {identity_data}")
@@ -200,7 +199,7 @@ def refresh_access_token(ctx: JobbergateContext, token_set: TokenSet):
         abort_subject="EXPIRED ACCESS TOKEN",
         support=True,
         response_model=TokenSet,
-        request_kwargs=dict(
+        data=dict(
             client_id=settings.AUTH0_CLIENT_ID,
             audience=settings.AUTH0_AUDIENCE,
             grant_type="refresh_token",
