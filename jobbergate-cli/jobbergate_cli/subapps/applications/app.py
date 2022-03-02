@@ -1,12 +1,21 @@
+import copy
+import pathlib
 import typing
 
 import typer
+import yaml
 
-from jobbergate_cli.constants import SortOrder
+from jobbergate_cli.constants import (
+    SortOrder,
+    JOBBERGATE_APPLICATION_CONFIG,
+    JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
+    JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
+)
 from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result
 from jobbergate_cli.requests import make_request
+from jobbergate_cli.subapps.applications.file_tools import validate_application_files, find_templates, dump_full_config
 
 
 # move hidden field logic to the API
@@ -62,6 +71,11 @@ def list_all(
     Show available applications
     """
     jg_ctx: JobbergateContext = ctx.obj
+
+    # Make static type checkers happy
+    assert jg_ctx is not None
+    assert jg_ctx.client is not None
+
     params: typing.Dict[str, typing.Any] = dict(
         all=show_all,
         user=user_only,
@@ -73,8 +87,6 @@ def list_all(
     if sort_field is not None:
         params["sort_field"] = sort_field
 
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
 
     envelope = typing.cast(ListResponseEnvelope, make_request(
         jg_ctx.client,
@@ -153,3 +165,43 @@ def get_one(
         hidden_fields=HIDDEN_FIELDS,
         title="Application",
     )
+
+
+@app.command()
+@handle_abort
+def create(
+    ctx: typer.Context,
+    name: str = typer.Option(
+        ...,
+        help=f"The name of the applicaion to create",
+    ),
+    identifier: typing.Optional[str] = typer.Option(
+        None,
+        help=f"The human-friendly identifier of the application. {IDENTIFIER_NOTE}",
+    ),
+    application_path: pathlib.Path = typer.Option(
+        ...,
+        help="The path to the directory where the application files are located",
+    ),
+    application_desc: typing.Optional[str] = typer.Option(
+        None,
+        help="A helpful description of the application",
+    ),
+):
+    """
+    Create a new application.
+    """
+    req_data = copy.deepcopy(JOBBERGATE_APPLICATION_CONFIG)
+    req_data["application_name"] = name
+
+    if identifier:
+        req_data["application_identifier"] = identifier
+
+    if application_desc:
+        req_data["application_description"] = application_desc
+
+    validate_application_files(application_path)
+
+    req_data["application_config"] = dump_full_config(application_path)
+    req_data["application_file"] = (application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME).read_text()
+
