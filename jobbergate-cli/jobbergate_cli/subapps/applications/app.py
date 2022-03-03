@@ -1,9 +1,11 @@
 import copy
 import pathlib
+import tempfile
 import typing
 
 import typer
 import yaml
+from loguru import logger
 
 from jobbergate_cli.constants import (
     SortOrder,
@@ -13,9 +15,14 @@ from jobbergate_cli.constants import (
 )
 from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
-from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result
+from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.subapps.applications.file_tools import validate_application_files, find_templates, dump_full_config
+from jobbergate_cli.subapps.applications.file_tools import (
+    validate_application_files,
+    find_templates,
+    dump_full_config,
+    build_application_tarball,
+)
 
 
 # move hidden field logic to the API
@@ -167,13 +174,30 @@ def get_one(
     )
 
 
+def _upload_application(jg_ctx: JobbergateContext, application_path: pathlib.Path, application_id: int) -> bool:
+    with tempfile.TemporaryDirectory() as temp_dir_str:
+        build_path = pathlib.Path(temp_dir_str)
+        logger.debug("Building application tar file at {build_path}")
+        tar_path = build_application_tarball(application_path, build_path)
+        response_code = typing.cast(int, make_request(
+            jg_ctx.client,
+            f"/applications/{application_id}/upload",
+            "POST",
+            expect_response=False,
+            abort_message=f"Request to upload application files was not accepted by the API",
+            support=True,
+            files=dict(upload_file=open(tar_path, "rb")),
+        ))
+        return response_code == 201
+
+
 @app.command()
 @handle_abort
 def create(
     ctx: typer.Context,
     name: str = typer.Option(
         ...,
-        help=f"The name of the applicaion to create",
+        help=f"The name of the application to create",
     ),
     identifier: typing.Optional[str] = typer.Option(
         None,
@@ -205,3 +229,118 @@ def create(
     req_data["application_config"] = dump_full_config(application_path)
     req_data["application_file"] = (application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME).read_text()
 
+    jg_ctx: JobbergateContext = ctx.obj
+
+    # Make static type checkers happy
+    assert jg_ctx.client is not None
+
+    result = typing.cast(typing.Dict[str, typing.Any], make_request(
+        jg_ctx.client,
+        "/applications",
+        "POST",
+        expected_status=200,
+        abort_message=f"Request to create application was not accepted by the API",
+        support=True,
+        data=req_data,
+    ))
+    application_id = result["id"]
+
+    successful_upload = _upload_application(jg_ctx, application_path, application_id)
+    if not successful_upload:
+        terminal_message(
+            """
+            The zipped application files could not be uploaded.
+
+            Try running the `update` command including the application path to re-upload.
+
+            [yellow]If the problem persists, please contact [bold]Omnivector <info@omnivector.solutions>[/bold]
+            for support and trouble-shooting
+            """,
+            subject="FILE UPLOAD FAILED",
+            color="yellow",
+        )
+    else:
+        result["application_uploaded"] = True
+
+    render_single_result(
+        jg_ctx,
+        result,
+        hidden_fields=HIDDEN_FIELDS,
+        title="Created Application",
+    )
+
+
+@app.command()
+@handle_abort
+def update(
+    ctx: typer.Context,
+    id: str = typer.Option(
+        ...,
+        help=f"The specific id of the application to update. {ID_NOTE}",
+    ),
+    application_path: typing.Optional[pathlib.Path] = typer.Option(
+        None,
+        help="The path to the directory where the application files are located",
+    ),
+    identifier: typing.Optional[str] = typer.Option(
+        None,
+        help="Optional new application identifier to be set",
+    ),
+    application_desc: typing.Optional[str] = typer.Option(
+        None,
+        help="Optional new application description to be set",
+    ),
+):
+    """
+    Update an existing application.
+    """
+    req_data = dict()
+
+    if identifier:
+        req_data["application_identifier"] = identifier
+
+    if application_desc:
+        req_data["application_description"] = application_desc
+
+    if application_path is not None:
+        validate_application_files(application_path)
+        req_data["application_config"] = dump_full_config(application_path)
+        req_data["application_file"] = (application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME).read_text()
+
+    jg_ctx: JobbergateContext = ctx.obj
+
+    # Make static type checkers happy
+    assert jg_ctx.client is not None
+
+    result = typing.cast(typing.Dict[str, typing.Any], make_request(
+        jg_ctx.client,
+        f"/applications/{id}",
+        "PUT",
+        expected_status=202,
+        abort_message=f"Request to update application was not accepted by the API",
+        support=True,
+        data=req_data,
+    ))
+
+    if application_path is not None:
+        successful_upload = _upload_application(jg_ctx, application_path, id)
+        if not successful_upload:
+            terminal_message(
+                """
+                The zipped application files could not be uploaded.
+
+                [yellow]If the problem persists, please contact [bold]Omnivector <info@omnivector.solutions>[/bold]
+                for support and trouble-shooting
+                """,
+                subject="FILE UPLOAD FAILED",
+                color="yellow",
+            )
+        else:
+            result["application_uploaded"] = True
+
+    render_single_result(
+        jg_ctx,
+        result,
+        hidden_fields=HIDDEN_FIELDS,
+        title="Updated Application",
+    )

@@ -25,10 +25,10 @@ class StyleMapper:
         )
 
 
-def terminal_message(message, subject=None):
+def terminal_message(message, subject=None, color="green"):
     panel_kwargs = dict(padding=1)
     if subject is not None:
-        panel_kwargs["title"] = f"[green]{subject}"
+        panel_kwargs["title"] = f"[{color}]{subject}"
     print(
         Panel(
             snick.indent(snick.dedent(message), prefix="  "),

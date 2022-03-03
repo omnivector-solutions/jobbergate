@@ -2,7 +2,8 @@ import typer
 
 from jobbergate_cli.subapps.applications.app import (
     list_all as list_applications,
-    get_one as get_application
+    get_one as get_application,
+    create as create_application,
 
 )
 
@@ -16,3 +17,7 @@ def add_legacy_compatible_commands(app: typer.Typer):
         name="get-application",
         help="GET an Application.",
     )(get_application)
+    app.command(
+        name="create-application",
+        help="CREATE an Application.",
+    )(create_application)

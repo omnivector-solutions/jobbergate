@@ -75,9 +75,9 @@ def find_templates(application_path: pathlib.Path) -> typing.Iterator[pathlib.Pa
     """
     Finds templates in the application path.
     """
-    templates_path = application_path / "templates"
-    if templates_path.exists():
-        for path in templates_path.iterdir():
+    template_root_path = application_path / "templates"
+    if template_root_path.exists():
+        for path in template_root_path.iterdir():
             if path.is_file():
                 yield pathlib.Path("templates") / path.name
 
@@ -92,15 +92,21 @@ def dump_full_config(application_path: pathlib.Path) -> str:
     return yaml.dump(config)
 
 
-def build_application_tarball(application_path: pathlib.Path, build_dir: pathlib.Path):
+def build_application_tarball(application_path: pathlib.Path, build_dir: pathlib.Path) -> pathlib.Path:
     # TODO: Need to test this next. Also verify the logic for adding files (skip all dirs but templates?)
     # with tempfile.TemporaryDirectory() as temp_dir:
     tar_path = build_dir / TAR_NAME
-    with tarfile.open(tar_path, "w|gz") as archive:
-        for file_path in application_path.iterdir():
-            if file_path.is_file:
-                archive.add(file_path, arcname=f"/{file_path.name}")
+    with tarfile.open(str(tar_path), "w|gz") as archive:
+        module_path = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+        archive.add(module_path, arcname=f"/{module_path.name}")
 
-        for template_path in (application_path / "templates").iterdir():
-            if template_path.is_file:
-                archive.add(template_path, arcname=f"/templates/{template_path.name}")
+        config_path = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
+        archive.add(config_path, arcname=f"/{config_path.name}")
+
+        template_root_path = application_path / "templates"
+        if template_root_path.exists():
+            for template_path in template_root_path.iterdir():
+                if template_path.is_file:
+                    rel_path = template_path.relative_to(application_path)
+                    archive.add(template_path, arcname=f"/{rel_path}")
+    return tar_path

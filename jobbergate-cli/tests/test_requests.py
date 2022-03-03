@@ -157,7 +157,7 @@ def test_make_request__does_not_raise_Abort_when_expected_status_is_None_and_res
     assert err.error == "It blowed up"
 
 
-def test_make_request__returns_None_if_the_method_is_DELETE(respx_mock, dummy_client):
+def test_make_request__returns_the_response_status_code_if_the_method_is_DELETE(respx_mock, dummy_client):
     """
     Validate that the ``make_request()`` function will return None if the ``method`` arg is DELETE and the request
     was successfull.
@@ -167,12 +167,27 @@ def test_make_request__returns_None_if_the_method_is_DELETE(respx_mock, dummy_cl
 
     respx_mock.delete(f"{DEFAULT_DOMAIN}{req_path}").mock(
         return_value=httpx.Response(
-            httpx.codes.BAD_REQUEST,
+            httpx.codes.OK,
             json=dict(error="It blowed up"),
         ),
     )
 
-    assert make_request(client, req_path, "DELETE") is None
+    assert make_request(client, req_path, "DELETE") == httpx.codes.OK
+
+
+def test_make_request__returns_the_response_status_code_if_expect_response_is_False(respx_mock, dummy_client):
+    """
+    Validate that the ``make_request()`` function will return None if the ``expect_response`` arg is False and the
+    request was successfull.
+    """
+    client = dummy_client(headers={"content-type": "garbage"})
+    req_path = "/fake-path"
+
+    respx_mock.post(f"{DEFAULT_DOMAIN}{req_path}").mock(
+        return_value=httpx.Response(httpx.codes.BAD_REQUEST),
+    )
+
+    assert make_request(client, req_path, "POST", expect_response=False) == httpx.codes.BAD_REQUEST
 
 
 def test_make_request__raises_an_Abort_if_the_response_cannot_be_deserialized_with_JSON(respx_mock, dummy_client):

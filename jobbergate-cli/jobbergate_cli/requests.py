@@ -17,12 +17,13 @@ def make_request(
     method: str,
     *,
     expected_status: typing.Optional[int] = None,
+    expect_response: bool = True,
     abort_message: str = "There was an error communicating with the API",
     abort_subject: str = "REQUEST FAILED",
     support: bool = True,
     response_model: typing.Optional[typing.Type[ResponseModel]] = None,
     **request_kwargs: typing.Any,
-) -> typing.Union[ResponseModel, typing.Dict, None]:
+) -> typing.Union[ResponseModel, typing.Dict, int]:
 
     logger.debug(f"Making request to {url_path=}")
     request = client.build_request(method, url_path, **request_kwargs)
@@ -58,8 +59,8 @@ def make_request(
         )
 
     # TODO: constrain methods with a named enum
-    if method == "DELETE":
-        return
+    if method == "DELETE" or expect_response is False:
+        return response.status_code
 
     try:
         data = response.json()

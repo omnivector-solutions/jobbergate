@@ -3,11 +3,17 @@ import re
 
 import snick
 import pytest
+import tarfile
 import yaml
 
 from jobbergate_cli.constants import JOBBERGATE_APPLICATION_MODULE_FILE_NAME, JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
 from jobbergate_cli.exceptions import Abort
-from jobbergate_cli.subapps.applications.file_tools import validate_application_files, find_templates, dump_full_config
+from jobbergate_cli.subapps.applications.file_tools import (
+    validate_application_files,
+    find_templates,
+    dump_full_config,
+    build_application_tarball,
+)
 
 
 def test_validate_application_files__success(tmp_path):
@@ -108,13 +114,13 @@ def test_find_templates(tmp_path):
     assert list(find_templates(application_path)) == []
 
     application_path.mkdir()
-    templates_path = application_path / "templates"
-    templates_path.mkdir()
-    file1 = templates_path / "file1"
+    template_root_path = application_path / "templates"
+    template_root_path.mkdir()
+    file1 = template_root_path / "file1"
     file1.write_text("foo")
-    file2 = templates_path / "file2"
+    file2 = template_root_path / "file2"
     file2.write_text("bar")
-    dir1 = templates_path / "dir1"
+    dir1 = template_root_path / "dir1"
     dir1.mkdir()
     file3 = dir1 / "file3"
     file3.write_text("baz")
@@ -124,11 +130,11 @@ def test_find_templates(tmp_path):
 def test_dump_full_config(tmp_path):
     application_path = tmp_path / "dummy"
     application_path.mkdir()
-    templates_path = application_path / "templates"
-    templates_path.mkdir()
-    file1 = templates_path / "file1"
+    template_root_path = application_path / "templates"
+    template_root_path.mkdir()
+    file1 = template_root_path / "file1"
     file1.write_text("foo")
-    file2 = templates_path / "file2"
+    file2 = template_root_path / "file2"
     file2.write_text("bar")
     config_path = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
     config_path.write_text(
@@ -156,3 +162,41 @@ def test_dump_full_config(tmp_path):
             partition="debug",
         )
     )
+
+
+def test_build_application_tarball(
+    tmp_path,
+    dummy_application,
+    dummy_config_source,
+    dummy_module_source,
+    dummy_template_source,
+):
+    build_path = tmp_path / "build"
+    build_path.mkdir()
+    tar_path = build_application_tarball(dummy_application, build_path)
+
+    assert tar_path.exists()
+    assert tarfile.is_tarfile(tar_path)
+
+    extract_path = tmp_path / "extract"
+    extract_path.mkdir()
+    with tarfile.open(tar_path) as tar_file:
+        tar_file.extractall(extract_path)
+
+    module_path = extract_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+    assert module_path.exists()
+    assert module_path.read_text() == dummy_module_source
+
+    config_path = extract_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
+    assert config_path.exists()
+    assert config_path.read_text() == dummy_config_source
+
+    template_root_path = extract_path / "templates"
+    assert template_root_path.exists()
+
+    template_path = template_root_path / "job-script-template.py.j2"
+    assert template_path.exists()
+    assert template_path.read_text() == dummy_template_source
+
+    ignored_path = extract_path / "ignored"
+    assert not ignored_path.exists()
