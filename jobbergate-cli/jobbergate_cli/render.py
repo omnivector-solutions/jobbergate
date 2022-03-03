@@ -25,16 +25,16 @@ class StyleMapper:
         )
 
 
-def terminal_message(message, subject=None, color="green"):
+def terminal_message(message, subject=None, color="green", footer=None, indent=True):
     panel_kwargs = dict(padding=1)
     if subject is not None:
         panel_kwargs["title"] = f"[{color}]{subject}"
-    print(
-        Panel(
-            snick.indent(snick.dedent(message), prefix="  "),
-            **panel_kwargs,
-        )
-    )
+    if footer is not None:
+        panel_kwargs["subtitle"] = f"[dim italic]{footer}[/dim italic]"
+    text = snick.dedent(message)
+    if indent:
+        text = snick.indent(text, prefix="  ")
+    print(Panel(text, **panel_kwargs))
 
 
 def render_list_results(
@@ -67,7 +67,9 @@ def render_list_results(
         for row in filtered_results:
             table.add_row(*[str(v) for v in row.values()])
 
+        console.print()
         console.print(table)
+        console.print()
 
 
 def render_single_result(
@@ -91,4 +93,6 @@ def render_single_result(
             if key not in hidden_fields:
                 table.add_row(key, str(value))
 
+        console.print()
         console.print(table)
+        console.print()

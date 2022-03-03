@@ -6,12 +6,18 @@ import pytest
 import tarfile
 import yaml
 
-from jobbergate_cli.constants import JOBBERGATE_APPLICATION_MODULE_FILE_NAME, JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
+from jobbergate_cli.constants import (
+    JOBBERGATE_APPLICATION_CONFIG,
+    JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
+    JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
+)
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.subapps.applications.file_tools import (
     validate_application_files,
     find_templates,
+    load_default_config,
     dump_full_config,
+    read_application_module,
     build_application_tarball,
 )
 
@@ -162,6 +168,23 @@ def test_dump_full_config(tmp_path):
             partition="debug",
         )
     )
+
+
+def test_load_default_config():
+    default_config = load_default_config()
+    assert default_config == JOBBERGATE_APPLICATION_CONFIG
+    default_config["foo"] = "bar"
+    assert default_config != JOBBERGATE_APPLICATION_CONFIG
+
+
+def test_read_application_module(tmp_path):
+    application_path = tmp_path / "dummy"
+    application_path.mkdir()
+
+    module_path = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+    module_path.write_text("print('foo')")
+
+    assert read_application_module(application_path) == "print('foo')"
 
 
 def test_build_application_tarball(

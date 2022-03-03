@@ -1,13 +1,14 @@
 import ast
+import copy
 import pathlib
 import tarfile
-import tempfile
 import typing
 
 import snick
 import yaml
 
 from jobbergate_cli.constants import (
+    JOBBERGATE_APPLICATION_CONFIG,
     JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
     JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
     TAR_NAME,
@@ -82,6 +83,13 @@ def find_templates(application_path: pathlib.Path) -> typing.Iterator[pathlib.Pa
                 yield pathlib.Path("templates") / path.name
 
 
+def load_default_config() -> typing.Dict[str, typing.Any]:
+    """
+    Load the default config for an application.
+    """
+    return copy.deepcopy(JOBBERGATE_APPLICATION_CONFIG)
+
+
 def dump_full_config(application_path: pathlib.Path) -> str:
     """
     Dump the application config as text. Add existing template file paths into the config.
@@ -90,6 +98,14 @@ def dump_full_config(application_path: pathlib.Path) -> str:
     config = yaml.safe_load(config_path.read_text())
     config["jobbergate_config"]["template_files"] = sorted(str(t) for t in find_templates(application_path))
     return yaml.dump(config)
+
+
+def read_application_module(application_path: pathlib.Path) -> str:
+    """
+    Read the text from the application module found in the supplied application path.
+    """
+    module_path = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+    return module_path.read_text()
 
 
 def build_application_tarball(application_path: pathlib.Path, build_dir: pathlib.Path) -> pathlib.Path:

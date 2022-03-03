@@ -1,26 +1,20 @@
-import copy
 import pathlib
 import tempfile
 import typing
 
 import typer
-import yaml
 from loguru import logger
 
-from jobbergate_cli.constants import (
-    SortOrder,
-    JOBBERGATE_APPLICATION_CONFIG,
-    JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
-    JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
-)
+from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.subapps.applications.file_tools import (
     validate_application_files,
-    find_templates,
+    load_default_config,
     dump_full_config,
+    read_application_module,
     build_application_tarball,
 )
 
@@ -59,9 +53,7 @@ style_mapper = StyleMapper(
 )
 
 
-app = typer.Typer(
-    help="Commands to interact with applications",
-)
+app = typer.Typer(help="Commands to interact with applications")
 
 
 @app.command()
@@ -215,7 +207,7 @@ def create(
     """
     Create a new application.
     """
-    req_data = copy.deepcopy(JOBBERGATE_APPLICATION_CONFIG)
+    req_data = load_default_config()
     req_data["application_name"] = name
 
     if identifier:
@@ -227,7 +219,7 @@ def create(
     validate_application_files(application_path)
 
     req_data["application_config"] = dump_full_config(application_path)
-    req_data["application_file"] = (application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME).read_text()
+    req_data["application_file"] = read_application_module(application_path)
 
     jg_ctx: JobbergateContext = ctx.obj
 
@@ -274,7 +266,7 @@ def create(
 @handle_abort
 def update(
     ctx: typer.Context,
-    id: str = typer.Option(
+    id: int = typer.Option(
         ...,
         help=f"The specific id of the application to update. {ID_NOTE}",
     ),
@@ -305,7 +297,7 @@ def update(
     if application_path is not None:
         validate_application_files(application_path)
         req_data["application_config"] = dump_full_config(application_path)
-        req_data["application_file"] = (application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME).read_text()
+        req_data["application_file"] = read_application_module(application_path)
 
     jg_ctx: JobbergateContext = ctx.obj
 
@@ -344,3 +336,55 @@ def update(
         hidden_fields=HIDDEN_FIELDS,
         title="Updated Application",
     )
+
+
+@app.command()
+@handle_abort
+def delete(
+    ctx: typer.Context,
+    id: int = typer.Option(
+        ...,
+        help=f"the specific id of the application to delete. {ID_NOTE}",
+    ),
+):
+    """
+    Delete an existing application.
+    """
+    jg_ctx: JobbergateContext = ctx.obj
+    print("CONTEXT SET AS: ", jg_ctx)
+
+    # Make static type checkers happy
+    assert jg_ctx.client is not None
+
+    make_request(
+        jg_ctx.client,
+        f"/applications/{id}",
+        "DELETE",
+        expected_status=204,
+        expect_response=False,
+        abort_message=f"Request to delete application was not accepted by the API",
+        support=True,
+    )
+    status_code = typing.cast(int, make_request(
+        jg_ctx.client,
+        f"/applications/{id}/upload",
+        "DELETE",
+        expect_response=False,
+        abort_message=f"Request to delete application was not accepted by the API",
+        support=True,
+    ))
+    if status_code != 204:
+        terminal_message(
+            """
+            The uploaded application files could not be deleted, but the application entry was removed.
+            """,
+            subject="FILE DELETE FAILED",
+            color="yellow",
+        )
+    else:
+        terminal_message(
+            """
+            The application was successfully deleted.
+            """,
+            subject="APPLICATION DELETE SUCCEEDED",
+        )

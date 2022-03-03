@@ -1,55 +1,21 @@
 import shlex
-import typing
 from unittest import mock
 
 import httpx
-import pytest
 import snick
-import typer
-from typer.testing import CliRunner
 
 from jobbergate_cli.subapps.applications.app import (
     list_all,
     get_one,
     create,
     update,
+    delete,
     style_mapper,
     HIDDEN_FIELDS,
 )
-from jobbergate_cli.schemas import JobbergateContext, Pagination, ListResponseEnvelope
-from jobbergate_cli.exceptions import Abort
+from jobbergate_cli.schemas import Pagination, ListResponseEnvelope
 
-DUMMY_DOMAIN = "https://dummy.com"
-
-
-runner = CliRunner()
-
-
-@pytest.fixture
-def make_test_app(dummy_context):
-
-    def _main_callback(ctx: typer.Context):
-        ctx.obj = dummy_context
-
-    def _helper(command_name: str, command_function: typing.Callable):
-        main_app = typer.Typer()
-        main_app.callback()(_main_callback)
-        main_app.command(name=command_name)(command_function)
-        return main_app
-
-    return _helper
-
-
-
-@pytest.fixture
-def dummy_context():
-    return JobbergateContext(
-        persona=None,
-        client=httpx.Client(
-            base_url=DUMMY_DOMAIN,
-            headers={"Authorization": "Bearer XXXXXXXX"}
-        ),
-    )
+from tests.subapps.conftest import cli_runner, DUMMY_DOMAIN
 
 
 def test_list_all__makes_request_and_renders_results(respx_mock, make_test_app, dummy_context, dummy_data):
@@ -66,8 +32,8 @@ def test_list_all__makes_request_and_renders_results(respx_mock, make_test_app, 
     )
     test_app = make_test_app("list-all", list_all)
     with mock.patch("jobbergate_cli.subapps.applications.app.render_list_results") as mocked_render:
-        result = runner.invoke(test_app, ["list-all"])
-        assert result.exit_code == 0
+        result = cli_runner.invoke(test_app, ["list-all"])
+        assert result.exit_code == 0, f"list-all failed: {result.stdout}"
         mocked_render.assert_called_once_with(
             dummy_context,
             ListResponseEnvelope(
@@ -89,8 +55,8 @@ def test_get_one__success__using_id(respx_mock, make_test_app, dummy_context, du
     )
     test_app = make_test_app("get-one", get_one)
     with mock.patch("jobbergate_cli.subapps.applications.app.render_single_result") as mocked_render:
-        result = runner.invoke(test_app, shlex.split("get-one --id=1"))
-        assert result.exit_code == 0
+        result = cli_runner.invoke(test_app, shlex.split("get-one --id=1"))
+        assert result.exit_code == 0, f"get-one failed: {result.stdout}"
         mocked_render.assert_called_once_with(
             dummy_context,
             dummy_data[0],
@@ -108,8 +74,8 @@ def test_get_one__success__using_identifier(respx_mock, make_test_app, dummy_con
     )
     test_app = make_test_app("get-one", get_one)
     with mock.patch("jobbergate_cli.subapps.applications.app.render_single_result") as mocked_render:
-        result = runner.invoke(test_app, shlex.split("get-one --identifier=dummy"))
-        assert result.exit_code == 0
+        result = cli_runner.invoke(test_app, shlex.split("get-one --identifier=dummy"))
+        assert result.exit_code == 0, f"get-one failed: {result.stdout}"
         mocked_render.assert_called_once_with(
             dummy_context,
             dummy_data[0],
@@ -120,14 +86,14 @@ def test_get_one__success__using_identifier(respx_mock, make_test_app, dummy_con
 
 def test_get_one__fails_with_neither_id_or_identifier(make_test_app):
     test_app = make_test_app("get-one", get_one)
-    result = runner.invoke(test_app, shlex.split("get-one"))
+    result = cli_runner.invoke(test_app, shlex.split("get-one"))
     assert result.exit_code != 0
     assert "You must supply either" in result.stdout
 
 
 def test_get_one__fails_with_both_id_and_identifier(make_test_app):
     test_app = make_test_app("get-one", get_one)
-    result = runner.invoke(test_app, shlex.split("get-one --id=1 --identifier=dummy"))
+    result = cli_runner.invoke(test_app, shlex.split("get-one --id=1 --identifier=dummy"))
     assert result.exit_code != 0
     assert "You may not supply both" in result.stdout
 
@@ -152,7 +118,7 @@ def test_create__success(respx_mock, make_test_app, dummy_context, dummy_data, d
 
     test_app = make_test_app("create", create)
     with mock.patch("jobbergate_cli.subapps.applications.app.render_single_result") as mocked_render:
-        result = runner.invoke(
+        result = cli_runner.invoke(
             test_app,
             shlex.split(
                 snick.unwrap(
@@ -164,7 +130,7 @@ def test_create__success(respx_mock, make_test_app, dummy_context, dummy_data, d
                 )
             ),
         )
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"create failed: {result.stdout}"
         assert create_route.called
         assert upload_route.called
 
@@ -196,7 +162,7 @@ def test_create__warns_but_does_not_abort_if_upload_fails(respx_mock, make_test_
 
     test_app = make_test_app("create", create)
     with mock.patch("jobbergate_cli.subapps.applications.app.render_single_result") as mocked_render:
-        result = runner.invoke(
+        result = cli_runner.invoke(
             test_app,
             shlex.split(
                 snick.unwrap(
@@ -208,7 +174,7 @@ def test_create__warns_but_does_not_abort_if_upload_fails(respx_mock, make_test_
                 )
             ),
         )
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"create failed: {result.stdout}"
         assert create_route.called
         assert upload_route.called
         assert "zipped application files could not be uploaded" in result.stdout
@@ -241,7 +207,7 @@ def test_update__success(respx_mock, make_test_app, dummy_context, dummy_data, d
 
     test_app = make_test_app("update", update)
     with mock.patch("jobbergate_cli.subapps.applications.app.render_single_result") as mocked_render:
-        result = runner.invoke(
+        result = cli_runner.invoke(
             test_app,
             shlex.split(
                 snick.unwrap(
@@ -253,7 +219,7 @@ def test_update__success(respx_mock, make_test_app, dummy_context, dummy_data, d
                 )
             ),
         )
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"update failed: {result.stdout}"
         assert update_route.called
         assert upload_route.called
 
@@ -285,7 +251,7 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(respx_mock,
 
     test_app = make_test_app("update", update)
     with mock.patch("jobbergate_cli.subapps.applications.app.render_single_result") as mocked_render:
-        result = runner.invoke(
+        result = cli_runner.invoke(
             test_app,
             shlex.split(
                 snick.unwrap(
@@ -296,7 +262,7 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(respx_mock,
                 )
             ),
         )
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"update failed: {result.stdout}"
         assert update_route.called
         assert not upload_route.called
 
@@ -328,7 +294,7 @@ def test_update__warns_but_does_not_abort_if_upload_fails(respx_mock, make_test_
 
     test_app = make_test_app("update", update)
     with mock.patch("jobbergate_cli.subapps.applications.app.render_single_result") as mocked_render:
-        result = runner.invoke(
+        result = cli_runner.invoke(
             test_app,
             shlex.split(
                 snick.unwrap(
@@ -340,7 +306,7 @@ def test_update__warns_but_does_not_abort_if_upload_fails(respx_mock, make_test_
                 )
             ),
         )
-        assert result.exit_code == 0
+        assert result.exit_code == 0, f"update failed: {result.stdout}"
         assert update_route.called
         assert upload_route.called
         assert "zipped application files could not be uploaded" in result.stdout
@@ -351,3 +317,39 @@ def test_update__warns_but_does_not_abort_if_upload_fails(respx_mock, make_test_
             title="Updated Application",
             hidden_fields=HIDDEN_FIELDS,
         )
+
+
+def test_delete__success(respx_mock, make_test_app):
+    delete_route = respx_mock.delete(f"{DUMMY_DOMAIN}/applications/1")
+    delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
+
+    delete_upload_route = respx_mock.delete(f"{DUMMY_DOMAIN}/applications/1/upload")
+    delete_upload_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
+
+    test_app = make_test_app("delete", delete)
+    result = cli_runner.invoke(
+        test_app,
+        shlex.split("delete --id=1")
+    )
+    assert result.exit_code == 0, f"delete failed: {result.stdout}"
+    assert delete_route.called
+    assert delete_upload_route.called
+    assert "APPLICATION DELETE SUCCEEDED" in result.stdout
+
+
+def test_delete__warns_but_does_not_abort_if_delete_upload_fails(respx_mock, make_test_app):
+    delete_route = respx_mock.delete(f"{DUMMY_DOMAIN}/applications/1")
+    delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
+
+    delete_upload_route = respx_mock.delete(f"{DUMMY_DOMAIN}/applications/1/upload")
+    delete_upload_route.mock(return_value=httpx.Response(httpx.codes.BAD_REQUEST))
+
+    test_app = make_test_app("delete", delete)
+    result = cli_runner.invoke(
+        test_app,
+        shlex.split("delete --id=1")
+    )
+    assert result.exit_code == 0, f"delete failed: {result.stdout}"
+    assert delete_route.called
+    assert delete_upload_route.called
+    assert "FILE DELETE FAILED" in result.stdout
