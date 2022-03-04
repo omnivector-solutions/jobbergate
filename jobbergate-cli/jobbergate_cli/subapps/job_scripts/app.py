@@ -7,7 +7,7 @@ from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.subapps.application.tools import fetch_application_data, validate_application_data
+from jobbergate_cli.subapps.application.tools import fetch_application_data, validate_application_data, execute_application
 from jobbergate_cli.subapps.job_scripts.tools import validate_parameter_file
 
 
@@ -154,9 +154,45 @@ def create(
     """
     jg_ctx: JobbergateContext = ctx.obj
 
+    # Make static type checkers happy
+    assert jg_ctx.client is not None
+
     app_data = fetch_application_data(jg_ctx, id=application_id, identifier=application_identifier)
     (app_module, app_config) = validate_application_data(app_data)
 
     supplied_params = {}
     if param_file:
         supplied_params.update(validate_parameter_file(param_file))
+
+    data = execute_application(
+        app_module,
+        app_config,
+        supplied_params,
+        sbatch_params=sbatch_params,
+        fast_mode=fast_mode,
+    )
+
+    result = typing.cast(typing.Dict[str, typing.Any], make_request(
+        jg_ctx.client,
+        f"/job-scripts",
+        "POST",
+        expected_status=201,
+        abort_message=f"Couldn't create job script",
+        support=True,
+        data=data,
+    ))
+    render_single_result(
+        jg_ctx,
+        result,
+        hidden_fields=HIDDEN_FIELDS,
+        title="Created Job Script",
+    )
+
+    if no_submit:
+        return
+
+    if not fast:
+        if not typer.confirm("Would you like to submit this job immediately?"):
+            return
+
+    # create a method for creating submission to be called here and in job_submission subapp

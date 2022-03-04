@@ -2,6 +2,7 @@
 Abstraction layer for questions. Each class represents different question types.
 """
 
+from itertools import chain
 from typing import Dict, Any, List, Optional, Type, TypeVar, cast
 
 import inquirer
@@ -40,7 +41,6 @@ class QuestionBase():
     ):
         self.variablename = variablename
         self.default = default
-        self.inquirer_args = (variablename,)
         self.inquirer_kwargs = dict(
             message=message,
             default=default,
@@ -53,7 +53,7 @@ class QuestionBase():
             **self.inquirer_kwargs,
             **override_kwargs,
         }
-        return [self.inquirer_type(*self.inquirer_args, **final_kwargs)]
+        return [self.inquirer_type(self.variablename, **final_kwargs)]
 
 
 class Text(QuestionBase):
@@ -70,8 +70,15 @@ class Integer(QuestionBase):
     :param maxval: Maximum value
     """
 
-    def __init__(self, *args, minval: Optional[int] = None, maxval: Optional[int] = None, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        variablename: str,
+        message: str,
+        minval: Optional[int] = None,
+        maxval: Optional[int] = None,
+        **kwargs,
+    ):
+        super().__init__(variablename, message, **kwargs)
         self.minval = minval
         self.maxval = maxval
         self.inquirer_kwargs.update(validate=self._validator)
@@ -99,8 +106,8 @@ class List(QuestionBase):
     :param choices: List with choices
     """
 
-    def __init__(self, *args, choices: list, **kwargs):
-        super().__init__(*args, inquirer_type=inquirer.List, **kwargs)
+    def __init__(self, variablename: str, message: str, choices: list, **kwargs):
+        super().__init__(variablename, message, inquirer_type=inquirer.List, **kwargs)
         self.inquirer_kwargs.update(choices=choices)
 
 
@@ -111,8 +118,8 @@ class Directory(QuestionBase):
     :param exists: Checks if given directory exists
     """
 
-    def __init__(self, *args, exists: Optional[bool] = None, **kwargs):
-        super().__init__(*args, inquirer_type=inquirer.Path, **kwargs)
+    def __init__(self, variablename: str, message: str, exists: Optional[bool] = None, **kwargs):
+        super().__init__(variablename, message, inquirer_type=inquirer.Path, **kwargs)
         self.inquirer_kwargs.update(path_type=inquirer.Path.DIRECTORY)
         if exists is not None:
             self.inquirer_kwargs.update(exists=exists)
@@ -123,8 +130,8 @@ class File(QuestionBase):
     Asks for a file name. If `exists` is `True` it checks if path exists and is NOT a directory.
     """
 
-    def __init__(self, *args, exists: Optional[bool] = None, **kwargs):
-        super().__init__(*args, inquirer_type=inquirer.Path, **kwargs)
+    def __init__(self, variablename: str, message: str, exists: Optional[bool] = None, **kwargs):
+        super().__init__(variablename, message, inquirer_type=inquirer.Path, **kwargs)
         self.inquirer_kwargs.update(path_type=inquirer.Path.FILE)
         if exists is not None:
             self.inquirer_kwargs.update(exists=exists)
@@ -135,8 +142,8 @@ class Checkbox(QuestionBase):
     Gives the user a list to choose multiple entries from.
     """
 
-    def __init__(self, *args, choices: list, **kwargs):
-        super().__init__(*args, inquirer_type=inquirer.Checkbox, **kwargs)
+    def __init__(self, variablename: str, message: str, choices: list, **kwargs):
+        super().__init__(variablename, message, inquirer_type=inquirer.Checkbox, **kwargs)
         self.inquirer_kwargs.update(choices=choices)
 
 
@@ -145,8 +152,8 @@ class Confirm(QuestionBase):
     Asks a question with a boolean answer (true/false).
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, inquirer_type=inquirer.Confirm, **kwargs)
+    def __init__(self, variablename: str, message: str, **kwargs):
+        super().__init__(variablename, message, inquirer_type=inquirer.Confirm, **kwargs)
 
 
 class BooleanList(Confirm):
@@ -161,25 +168,26 @@ class BooleanList(Confirm):
     def __init__(
         self,
         variablename: str,
-        *args,
+        message: str,
         whentrue=None,
         whenfalse=None,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(variablename, message, **kwargs)
         if whentrue is None and whenfalse is None:
             raise ValueError("Empty questions lists")
         self.whentrue = whentrue
         self.whenfalse = whenfalse
-        self.ignore = lambda a: a[variablename]
-        self.noignore = lambda a: not a[variablename]
 
-    def make_prompts(self):
-        retval = super().make_prompts()
+        self.ignore = lambda a: a.get(variablename, True)
+        self.noignore = lambda a: not a.get(variablename, False)
+
+    def make_prompts(self, **override_kwargs):
+        retval = super().make_prompts(**override_kwargs)
         if self.whenfalse is not None:
-            retval.extend([wf.make_prompts(ignore=self.ignore) for wf in self.whenfalse])
+            retval.extend(chain.from_iterable(wf.make_prompts(ignore=self.ignore) for wf in self.whenfalse))
         if self.whentrue is not None:
-            retval.extend([wf.make_prompts(ignore=self.noignore) for wf in self.whentrue])
+            retval.extend(chain.from_iterable(wf.make_prompts(ignore=self.noignore) for wf in self.whentrue))
         return retval
 
 
@@ -189,39 +197,11 @@ class Const(Text):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, variablename: str, **kwargs):
+        super().__init__(variablename, "", **kwargs)
 
     def make_prompts(self):
         return super().make_prompts(ignore=True)
-
-
-# def workflow(func=None, *, name=None):
-#     """A decorator for workflows. Adds an workflow question and all questions
-#     added in the decorated question is asked after selecting workflow.
-#     :param name: (optional) Descriptional name that is shown when choosing workflow
-#     Add a workflow named debug:
-#     .. code-block:: python
-#         @workflow
-#         def debug(data):
-#             return [appform.File("debugfile", "Name of debug file")]
-#     Add a workflow with longer name:
-#     .. code-block:: python
-#         @workflow(name="Secondary Eigen step")
-#         def 2ndstep(data):
-#             return [appform.Text("eigendata", "Definition of eigendata")]
-#     """
-#
-#     if func is None:
-#         return partial(workflow, name=name)
-#
-#     @wraps(func)
-#     def _(*args, **kvargs):
-#         return func(*args, **kvargs)
-#
-#     workflows[name or func.__name__] = func
-#
-#     return
 
 
 def gather_config_values(
@@ -275,4 +255,3 @@ def gather_config_values(
             render_dict(auto_answers, title="Default values used")
 
         next_method = config.pop("nextworkflow", None)
-

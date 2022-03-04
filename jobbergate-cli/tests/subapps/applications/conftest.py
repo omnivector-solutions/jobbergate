@@ -1,3 +1,5 @@
+import typing
+
 import pytest
 import snick
 
@@ -147,3 +149,18 @@ def dummy_application(tmp_path, dummy_config_source, dummy_module_source, dummy_
     ignored_file.write_text("This file should be ignored")
 
     return application_path
+
+
+class DummyRender:
+    prepared_input: typing.Dict[str, typing.Any]
+
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+
+    def render(self, question, *_):
+        if question.ignore:
+            return question.default
+        value = self.prepared_input[question.name]
+        question.validate(value)
+        return value

@@ -1,11 +1,12 @@
 import ast
 import copy
 import importlib
+import importlib.util
 import json
 import pathlib
 import tarfile
 import tempfile
-from typing import Optional, Dict, Tuple, Any, Iterator, cast
+from typing import Optional, Dict, Tuple, List, Any, Iterator, cast
 
 import snick
 import yaml
@@ -249,11 +250,9 @@ def import_from_text(app_module: str):
     """
     Import a python module from a text string by creating a temporary file and importing it with importlib.
     """
-    with tempfile.NamedTemporaryFile() as temp_module:
+    with tempfile.NamedTemporaryFile(suffix=".py") as temp_module:
         temp_path = pathlib.Path(temp_module.name)
         temp_path.write_text(app_module)
-
-
         spec = importlib.util.spec_from_file_location("JobbergateApplication", temp_path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
@@ -264,7 +263,7 @@ def execute_application(
     app_module: str,
     app_config: Dict[str, Any],
     supplied_params: Dict[str, Any],
-    sbatch_params: Optional[Dict[str, Any]] = None,
+    sbatch_params: Optional[List[Any]] = None,
     fast_mode: bool = False,
 ) -> Dict[str, Any]:
     """
@@ -274,10 +273,10 @@ def execute_application(
     application = module.JobbergateApplication(app_config)
     gather_config_values(application, app_config, supplied_params, fast_mode=fast_mode)
 
-    rendered_params = dict(app_config=json.dumps(app_config))
+    rendered_params = dict(param_dict=json.dumps(app_config))
 
     # Possibly overwrite script name
-    job_script_name_from_param = app_config["jobbergate_config"].get("job_script_name")
+    job_script_name_from_param = app_config.get("job_script_name")
     if job_script_name_from_param:
         rendered_params["job_script_name"] = job_script_name_from_param
 

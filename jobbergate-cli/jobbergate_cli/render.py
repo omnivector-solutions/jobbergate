@@ -77,6 +77,9 @@ def render_dict(
     title: str = "Data",
     hidden_fields: typing.Optional[typing.List[str]] = None,
 ):
+    if hidden_fields is None:
+        hidden_fields = []
+
     table = Table(title=title)
     table.add_column("Key", header_style="bold yellow", style="yellow")
     table.add_column("Value", header_style="bold white", style="white")

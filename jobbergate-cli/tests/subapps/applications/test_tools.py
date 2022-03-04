@@ -1,5 +1,8 @@
+import importlib
+import json
 import pathlib
 import re
+from unittest import mock
 
 import httpx
 import snick
@@ -22,9 +25,12 @@ from jobbergate_cli.subapps.applications.tools import (
     build_application_tarball,
     fetch_application_data,
     validate_application_data,
+    execute_application,
 )
+from jobbergate_cli.subapps.applications.questions import Text, gather_config_values
 
 from tests.subapps.conftest import DUMMY_DOMAIN
+from tests.subapps.applications.conftest import DummyRender
 
 
 def test_validate_application_files__success(tmp_path):
@@ -371,3 +377,108 @@ def test_validate_application_data__fails_if_application_config_is_not_valid_YAM
 
     with pytest.raises(Abort, match=match_pattern):
         validate_application_data(app_data)
+
+
+def test_execute_application__basic():
+    module_text = snick.dedent(
+        """
+        from jobbergate_cli.subapps.applications.questions import Text
+
+
+        class JobbergateApplication:
+
+            def __init__(self, data):
+                self.data = data
+
+            def mainflow(self, data):
+                data["nextworkflow"] = "subflow"
+                return [Text("foo", message="gimme the foo!"), Text("bar", message="gimme the bar!")]
+
+            def subflow(self, data):
+                return [Text("baz", message="gimme the baz!")]
+        """
+    )
+
+    DummyRender.prepared_input = dict(
+        foo="FOO",
+        bar="BAR",
+        baz="BAZ",
+    )
+
+    config = dict()
+    supplied_params = dict()
+    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=DummyRender):
+        rendered_data = execute_application(
+            module_text,
+            config,
+            supplied_params,
+        )
+        assert rendered_data == dict(
+            param_dict=json.dumps(
+                dict(
+                    foo="FOO",
+                    bar="BAR",
+                    baz="BAZ",
+                ),
+            )
+        )
+
+
+def test_execute_application__with_all_the_extras():
+    module_text = snick.dedent(
+        """
+        from jobbergate_cli.subapps.applications.questions import Text
+
+
+        class JobbergateApplication:
+
+            def __init__(self, data):
+                self.data = data
+
+            def mainflow(self, data):
+                data["nextworkflow"] = "subflow"
+                return [Text("foo", message="gimme the foo!"), Text("bar", message="gimme the bar!")]
+
+            def subflow(self, data):
+                return [Text("baz", message="gimme the baz!", default="zab")]
+        """
+    )
+
+    DummyRender.prepared_input = dict(
+        foo="FOO",
+        bar="BAR",
+        baz="BAZ",
+    )
+
+    config = dict(
+        extra="stuff",
+        job_script_name="overridden",
+    )
+    supplied_params = dict(foo="oof")
+    sbatch_params = [1, 2, 3]
+    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=DummyRender):
+        rendered_data = execute_application(
+            module_text,
+            config,
+            supplied_params,
+            sbatch_params=sbatch_params,
+            fast_mode=True,
+        )
+
+        # Un-jsonify the param_dict to make testing deterministic
+        rendered_data["param_dict"] = json.loads(rendered_data["param_dict"])
+
+        assert rendered_data == dict(
+            param_dict= dict(
+                foo="oof",
+                bar="BAR",
+                baz="zab",
+                extra="stuff",
+                job_script_name="overridden",
+            ),
+            job_script_name="overridden",
+            sbatch_params_0=1,
+            sbatch_params_1=2,
+            sbatch_params_2=3,
+            sbatch_params_len=3,
+        )
