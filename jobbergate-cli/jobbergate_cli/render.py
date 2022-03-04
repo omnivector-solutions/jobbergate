@@ -2,7 +2,7 @@ import json
 import typing
 
 import snick
-from rich import print
+from rich import print, print_json
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -72,27 +72,34 @@ def render_list_results(
         console.print()
 
 
+def render_dict(
+    data: typing.Dict[str, typing.Any],
+    title: str = "Data",
+    hidden_fields: typing.Optional[typing.List[str]] = None,
+):
+    table = Table(title=title)
+    table.add_column("Key", header_style="bold yellow", style="yellow")
+    table.add_column("Value", header_style="bold white", style="white")
+
+    for (key, value) in data.items():
+        if key not in hidden_fields:
+            table.add_row(key, str(value))
+
+    console = Console()
+    console.print()
+    console.print(table)
+    console.print()
+
+
 def render_single_result(
     ctx: JobbergateContext,
     result: typing.Dict[str, typing.Any],
     hidden_fields: typing.Optional[typing.List[str]] = None,
     title: str = "Result",
 ):
-    console = Console()
     if ctx.raw_output:
-        console.print_json(json.dumps(result))
+        print_json(json.dumps(result))
     else:
         if ctx.full_output or hidden_fields is None:
             hidden_fields = []
-
-        table = Table(title=title)
-        table.add_column("Key", header_style="bold yellow", style="yellow")
-        table.add_column("Value", header_style="bold white", style="white")
-
-        for (key, value) in result.items():
-            if key not in hidden_fields:
-                table.add_row(key, str(value))
-
-        console.print()
-        console.print(table)
-        console.print()
+        render_dict(result, hidden_fields=hidden_fields, title=title)

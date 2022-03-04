@@ -1,6 +1,7 @@
 import pathlib
 import re
 
+import httpx
 import snick
 import pytest
 import tarfile
@@ -12,14 +13,18 @@ from jobbergate_cli.constants import (
     JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
 )
 from jobbergate_cli.exceptions import Abort
-from jobbergate_cli.subapps.applications.file_tools import (
+from jobbergate_cli.subapps.applications.tools import (
     validate_application_files,
     find_templates,
     load_default_config,
     dump_full_config,
     read_application_module,
     build_application_tarball,
+    fetch_application_data,
+    validate_application_data,
 )
+
+from tests.subapps.conftest import DUMMY_DOMAIN
 
 
 def test_validate_application_files__success(tmp_path):
@@ -223,3 +228,146 @@ def test_build_application_tarball(
 
     ignored_path = extract_path / "ignored"
     assert not ignored_path.exists()
+
+
+def test_fetch_application_data__success__using_id(respx_mock, dummy_context, dummy_data):
+    app_data = dummy_data[0]
+    app_id = app_data["id"]
+    fetch_route = respx_mock.get(f"{DUMMY_DOMAIN}/applications/{app_id}")
+    fetch_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=app_data,
+        ),
+    )
+
+    result = fetch_application_data(dummy_context, id=app_id)
+    assert fetch_route.called
+    assert result == app_data
+
+
+def test_fetch_application_data__success__using_identifier(respx_mock, dummy_context, dummy_data):
+    app_data = dummy_data[0]
+    app_identifier = app_data["application_identifier"]
+    fetch_route = respx_mock.get(f"{DUMMY_DOMAIN}/applications?identifier={app_identifier}")
+    fetch_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=app_data,
+        ),
+    )
+
+    result = fetch_application_data(dummy_context, identifier=app_identifier)
+    assert fetch_route.called
+    assert result == app_data
+
+
+def test_fetch_application_data__fails_with_both_id_or_identifier(dummy_context):
+    with pytest.raises(Abort, match="You may not supply both"):
+        fetch_application_data(dummy_context, id=1, identifier="one")
+
+
+def test_fetch_application_data__fails_with_neither_id_or_identifier(dummy_context):
+    with pytest.raises(Abort, match="You must supply either"):
+        fetch_application_data(dummy_context)
+
+
+def test_validate_application_data__success():
+    app_data = {
+        JOBBERGATE_APPLICATION_MODULE_FILE_NAME: snick.dedent(
+            """
+            import sys
+
+            print(f"Got some args, yo: {sys.argv}")
+            """
+        ),
+        JOBBERGATE_APPLICATION_CONFIG_FILE_NAME: snick.dedent(
+            """
+            foo:
+              bar: baz
+            """
+        ),
+    }
+    (app_module, app_config) = validate_application_data(app_data)
+    assert isinstance(app_module, str)
+    assert app_config == dict(foo=dict(bar="baz"))
+
+
+def test_validate_application_files__fails_if_application_module_is_not_present():
+    app_data = {
+        JOBBERGATE_APPLICATION_CONFIG_FILE_NAME: snick.dedent(
+            """
+            foo:
+              bar: baz
+            """
+        ),
+    }
+
+    match_pattern = re.compile(
+        f"files fetched from the API were invalid.*does not contain {JOBBERGATE_APPLICATION_MODULE_FILE_NAME}",
+        flags=re.DOTALL,
+    )
+
+    with pytest.raises(Abort, match=match_pattern):
+        validate_application_data(app_data)
+
+
+def test_validate_application_data__fails_if_application_module_is_not_valid_python():
+    app_data = {
+        JOBBERGATE_APPLICATION_MODULE_FILE_NAME: "invalid python",
+        JOBBERGATE_APPLICATION_CONFIG_FILE_NAME: snick.dedent(
+            """
+            foo:
+              bar: baz
+            """
+        ),
+    }
+
+    match_pattern = re.compile(
+        f"files fetched from the API were invalid.*not valid python",
+        flags=re.DOTALL,
+    )
+
+    with pytest.raises(Abort, match=match_pattern):
+        validate_application_data(app_data)
+
+
+def test_validate_application_data__fails_if_application_config_is_not_present():
+    app_data = {
+        JOBBERGATE_APPLICATION_MODULE_FILE_NAME: snick.dedent(
+            """
+            import sys
+
+            print(f"Got some args, yo: {sys.argv}")
+            """
+        ),
+    }
+
+    match_pattern = re.compile(
+        f"files fetched from the API were invalid.*does not contain {JOBBERGATE_APPLICATION_CONFIG_FILE_NAME}",
+        flags=re.DOTALL,
+    )
+
+    with pytest.raises(Abort, match=match_pattern):
+        validate_application_data(app_data)
+
+
+def test_validate_application_data__fails_if_application_config_is_not_valid_YAML():
+    app_data = {
+        JOBBERGATE_APPLICATION_MODULE_FILE_NAME: snick.dedent(
+            """
+            import sys
+
+            print(f"Got some args, yo: {sys.argv}")
+            """
+        ),
+        JOBBERGATE_APPLICATION_CONFIG_FILE_NAME: ":",
+    }
+
+    match_pattern = re.compile(
+        f"files fetched from the API were invalid.*not valid YAML",
+        flags=re.DOTALL,
+    )
+
+    with pytest.raises(Abort, match=match_pattern):
+        validate_application_data(app_data)

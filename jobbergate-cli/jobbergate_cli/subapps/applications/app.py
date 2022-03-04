@@ -10,12 +10,14 @@ from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.subapps.applications.file_tools import (
+from jobbergate_cli.subapps.applications.tools import (
     validate_application_files,
     load_default_config,
     dump_full_config,
     read_application_module,
     build_application_tarball,
+    fetch_application_data,
+    upload_application,
 )
 
 
@@ -123,41 +125,7 @@ def get_one(
     Get a single application by id or identifier
     """
     jg_ctx: JobbergateContext = ctx.obj
-    url = f"/applications/{id}"
-    params = dict()
-    if id is None and identifier is None:
-        raise Abort(
-            """
-            You must supply either [yellow]id[/yellow] or [yellow]identifier[/yellow].
-            """,
-            subject="INVALID PARAMS",
-            warn_only=True,
-        )
-    elif id is not None and identifier is not None:
-        raise Abort(
-            """
-            You may not supply both [yellow]id[/yellow] and [yellow]identifier[/yellow].
-            """,
-            subject="INVALID PARAMS",
-            warn_only=True,
-        )
-    elif identifier is not None:
-        url = f"/applications"
-        params["identifier"] = identifier
-
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
-
-    stub = f"{id=}" if id is not None else f"{identifier=}"
-    result = typing.cast(typing.Dict[str, typing.Any], make_request(
-        jg_ctx.client,
-        url,
-        "GET",
-        expected_status=200,
-        abort_message=f"Couldn't retrieve application {stub} from API",
-        support=True,
-        params=params,
-    ))
+    result = fetch_application_data(jg_ctx, id=id, identifier=identifier)
     render_single_result(
         jg_ctx,
         result,
@@ -237,7 +205,7 @@ def create(
     ))
     application_id = result["id"]
 
-    successful_upload = _upload_application(jg_ctx, application_path, application_id)
+    successful_upload = upload_application(jg_ctx, application_path, application_id)
     if not successful_upload:
         terminal_message(
             """

@@ -7,7 +7,8 @@ from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.subapps.job_scripts.tools import validate_parameter_file, validate_application_data
+from jobbergate_cli.subapps.application.tools import fetch_application_data, validate_application_data
+from jobbergate_cli.subapps.job_scripts.tools import validate_parameter_file
 
 
 # move hidden field logic to the API
@@ -151,46 +152,11 @@ def create(
     """
     Create a new job script.
     """
-    application_url = f"/applications/{application_id}"
-    application_params = dict()
-    if application_id is None and application_identifier is None:
-        raise Abort(
-            """
-            You must supply either [yellow]application-id[/yellow] or [yellow]applicaiton-identifier[/yellow].
-            """,
-            subject="INVALID PARAMS",
-            warn_only=True,
-        )
-    elif application_id is not None and application_identifier is not None:
-        raise Abort(
-            """
-            You may not supply both [yellow]applicaiton-id[/yellow] and [yellow]application-identifier[/yellow].
-            """,
-            subject="INVALID PARAMS",
-            warn_only=True,
-        )
-    elif application_identifier is not None:
-        application_url = f"/applications"
-        application_params["identifier"] = application_identifier
-
     jg_ctx: JobbergateContext = ctx.obj
 
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
-
-    stub = f"{id=}" if id is not None else f"{identifier=}"
-    app_data = typing.cast(typing.Dict[str, typing.Any], make_request(
-        jg_ctx.client,
-        application_url,
-        "GET",
-        expected_status=200,
-        abort_message=f"Couldn't retrieve application {stub} from API",
-        support=True,
-        params=application_params,
-    ))
+    app_data = fetch_application_data(jg_ctx, id=application_id, identifier=application_identifier)
     (app_module, app_config) = validate_application_data(app_data)
 
     supplied_params = {}
     if param_file:
-        supplied_params = validate_parameter_file(param_file)
-
+        supplied_params.update(validate_parameter_file(param_file))
