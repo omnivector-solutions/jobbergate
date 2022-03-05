@@ -56,12 +56,8 @@ class Settings(BaseSettings):
         cache_dir = values["JOBBERGATE_CACHE_DIR"]
         cache_dir.mkdir(exist_ok=True, parents=True)
 
-        values["JOBBERGATE_APPLICATION_MODULE_PATH"] = (
-            cache_dir / constants.JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-        )
-        values["JOBBERGATE_APPLICATION_CONFIG_PATH"] = (
-            cache_dir / constants.JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-        )
+        values["JOBBERGATE_APPLICATION_MODULE_PATH"] = cache_dir / constants.JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+        values["JOBBERGATE_APPLICATION_CONFIG_PATH"] = cache_dir / constants.JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
 
         log_dir = cache_dir / "logs"
         log_dir.mkdir(exist_ok=True, parents=True)

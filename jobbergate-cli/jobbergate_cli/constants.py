@@ -36,10 +36,12 @@ DEFAULT_MAX_BYTES_DEBUG = 1000
 
 OV_CONTACT = "Omnivector Solutions <info@omnivector.solutions>"
 
+
 class SortOrder(AutoNameEnum):
     """
     Enum descring the type of sort orders that are available for list commands.
     """
+
     ASCENDING = auto()
     DESCENDING = auto()
     UNSORTED = auto()

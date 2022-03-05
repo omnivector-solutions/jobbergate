@@ -1,14 +1,21 @@
+import pathlib
 import typing
 
 import typer
 
 from jobbergate_cli.constants import SortOrder
-from jobbergate_cli.exceptions import Abort, handle_abort
-from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
-from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
+from jobbergate_cli.exceptions import handle_abort
+from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.subapps.application.tools import fetch_application_data, validate_application_data, execute_application
-from jobbergate_cli.subapps.job_scripts.tools import validate_parameter_file
+from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
+from jobbergate_cli.subapps.applications.tools import (
+    execute_application,
+    fetch_application_data,
+    validate_application_data,
+)
+from jobbergate_cli.subapps.job_scripts.tools import fetch_job_script_data, validate_parameter_file
+from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS
+from jobbergate_cli.subapps.job_submissions.tools import create_job_submission
 
 
 # move hidden field logic to the API
@@ -20,8 +27,8 @@ HIDDEN_FIELDS = [
 
 
 style_mapper = StyleMapper(
-    id = "green",
-    job_script_name = "cyan",
+    id="green",
+    job_script_name="cyan",
 )
 
 
@@ -54,17 +61,19 @@ def list_all(
     if sort_field is not None:
         params["sort_field"] = sort_field
 
-
-    envelope = typing.cast(ListResponseEnvelope, make_request(
-        jg_ctx.client,
-        "/job-scripts",
-        "GET",
-        expected_status=200,
-        abort_message="Couldn't retrieve job scripts list from API",
-        support=True,
-        response_model=ListResponseEnvelope,
-        params=params,
-    ))
+    envelope = typing.cast(
+        ListResponseEnvelope,
+        make_request(
+            jg_ctx.client,
+            "/job-scripts",
+            "GET",
+            expected_status=200,
+            abort_message="Couldn't retrieve job scripts list from API",
+            support=True,
+            response_model=ListResponseEnvelope,
+            params=params,
+        ),
+    )
     render_list_results(
         jg_ctx,
         envelope,
@@ -78,29 +87,13 @@ def list_all(
 @handle_abort
 def get_one(
     ctx: typer.Context,
-    id: typing.Optional[int] = typer.Option(
-        None,
-        help=f"The specific id of the job script.",
-    ),
+    id: int = typer.Option(int, help=f"The specific id of the job script."),
 ):
     """
     Get a single job script by id
     """
     jg_ctx: JobbergateContext = ctx.obj
-    params = dict()
-
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
-
-    result = typing.cast(typing.Dict[str, typing.Any], make_request(
-        jg_ctx.client,
-        f"/job-scripts/{id}",
-        "GET",
-        expected_status=200,
-        abort_message=f"Couldn't retrieve job script {id} from API",
-        support=True,
-        params=params,
-    ))
+    result = fetch_job_script_data(jg_ctx, id)
     render_single_result(
         jg_ctx,
         result,
@@ -144,10 +137,6 @@ def create(
         False,
         help="Do not ask the user if they want to submit a job",
     ),
-    debug: bool = typer.Option(
-        False,
-        help="View job script data in the CLI ooutput",
-    ),
 ):
     """
     Create a new job script.
@@ -160,7 +149,10 @@ def create(
     app_data = fetch_application_data(jg_ctx, id=application_id, identifier=application_identifier)
     (app_module, app_config) = validate_application_data(app_data)
 
-    supplied_params = {}
+    supplied_params = dict(
+        job_script_name=name,
+        application_id=application_id,
+    )
     if param_file:
         supplied_params.update(validate_parameter_file(param_file))
 
@@ -169,21 +161,24 @@ def create(
         app_config,
         supplied_params,
         sbatch_params=sbatch_params,
-        fast_mode=fast_mode,
+        fast_mode=fast,
     )
 
-    result = typing.cast(typing.Dict[str, typing.Any], make_request(
-        jg_ctx.client,
-        f"/job-scripts",
-        "POST",
-        expected_status=201,
-        abort_message=f"Couldn't create job script",
-        support=True,
-        data=data,
-    ))
+    job_script_result = typing.cast(
+        typing.Dict[str, typing.Any],
+        make_request(
+            jg_ctx.client,
+            f"/job-scripts",
+            "POST",
+            expected_status=201,
+            abort_message=f"Couldn't create job script",
+            support=True,
+            json=data,
+        ),
+    )
     render_single_result(
         jg_ctx,
-        result,
+        job_script_result,
         hidden_fields=HIDDEN_FIELDS,
         title="Created Job Script",
     )
@@ -195,4 +190,12 @@ def create(
         if not typer.confirm("Would you like to submit this job immediately?"):
             return
 
-    # create a method for creating submission to be called here and in job_submission subapp
+    job_script_id = job_script_result["id"]
+    job_script_name = job_script_result["job_script_name"]
+    job_submission_result = create_job_submission(jg_ctx, job_script_id, job_script_name)
+    render_single_result(
+        jg_ctx,
+        job_submission_result,
+        hidden_fields=HIDDEN_FIELDS,
+        title="Created Job Submission (Fast Mode)",
+    )

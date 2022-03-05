@@ -588,9 +588,7 @@ def create_job_submission(
     CREATE Job Submission.
     """
     api = ctx.obj["api"]
-    return api.create_job_submission(
-        job_script_id=job_script_id, job_submission_name=name, render_only=dry_run
-    )
+    return api.create_job_submission(job_script_id=job_script_id, job_submission_name=name, render_only=dry_run)
 
 
 @main.command("get-job-submission")
@@ -708,7 +706,7 @@ def show_token(refresh=False, show_prefix=False):
     Shows the access (or refresh) token for the current user.
     """
     token_set: TokenSet = load_tokens_from_cache()
-    prefix = 'Bearer ' if show_prefix else ''
+    prefix = "Bearer " if show_prefix else ""
     token = token_set.refresh_token if refresh else token_set.access_token
     print(f"{prefix}{token}")
 

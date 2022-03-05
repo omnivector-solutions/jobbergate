@@ -1,9 +1,10 @@
 import json
 import pathlib
-from typing import Dict, Any
-
+from typing import Any, Dict, cast
 
 from jobbergate_cli.exceptions import Abort
+from jobbergate_cli.requests import make_request
+from jobbergate_cli.schemas import JobbergateContext
 
 
 def validate_parameter_file(parameter_path: pathlib.Path) -> Dict[str, Any]:
@@ -37,3 +38,26 @@ def validate_parameter_file(parameter_path: pathlib.Path) -> Dict[str, Any]:
     # Make static type checkers happy
     assert data is not None
     return data
+
+
+def fetch_job_script_data(
+    jg_ctx: JobbergateContext,
+    id: int,
+) -> Dict[str, Any]:
+    """
+    Retrieve a job_script from the API by ``id``
+    """
+    # Make static type checkers happy
+    assert jg_ctx.client is not None
+
+    return cast(
+        Dict[str, Any],
+        make_request(
+            jg_ctx.client,
+            f"/job-scripts/{id}",
+            "GET",
+            expected_status=200,
+            abort_message=f"Couldn't retrieve job script ({id}) from API",
+            support=True,
+        ),
+    )

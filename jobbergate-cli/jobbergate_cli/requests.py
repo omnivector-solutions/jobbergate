@@ -1,14 +1,14 @@
 import typing
 
 import httpx
+from loguru import logger
 import pydantic
 import snick
-from loguru import logger
 
 from jobbergate_cli.exceptions import Abort
 
 
-ResponseModel = typing.TypeVar('ResponseModel', bound=pydantic.BaseModel)
+ResponseModel = typing.TypeVar("ResponseModel", bound=pydantic.BaseModel)
 
 
 def make_request(

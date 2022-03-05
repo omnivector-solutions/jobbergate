@@ -12,15 +12,20 @@ from jobbergate_cli.subapps.job_scripts.app import (
 )
 from jobbergate_cli.schemas import Pagination, ListResponseEnvelope
 
-from tests.subapps.conftest import cli_runner, DUMMY_DOMAIN
 
-
-def test_list_all__makes_request_and_renders_results(respx_mock, make_test_app, dummy_context, dummy_data):
-    respx_mock.get(f"{DUMMY_DOMAIN}/job-scripts?all=false").mock(
+def test_list_all__makes_request_and_renders_results(
+    respx_mock,
+    make_test_app,
+    dummy_context,
+    dummy_job_script_data,
+    dummy_domain,
+    cli_runner,
+):
+    respx_mock.get(f"{dummy_domain}/job-scripts?all=false").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(
-                results=dummy_data,
+                results=dummy_job_script_data,
                 pagination=dict(
                     total=3,
                 )
@@ -34,7 +39,7 @@ def test_list_all__makes_request_and_renders_results(respx_mock, make_test_app, 
         mocked_render.assert_called_once_with(
             dummy_context,
             ListResponseEnvelope(
-                results=dummy_data,
+                results=dummy_job_script_data,
                 pagination=Pagination(total=3),
             ),
             title="Job Scripts List",
@@ -43,11 +48,18 @@ def test_list_all__makes_request_and_renders_results(respx_mock, make_test_app, 
         )
 
 
-def test_get_one__success(respx_mock, make_test_app, dummy_context, dummy_data):
-    respx_mock.get(f"{DUMMY_DOMAIN}/job-scripts/1").mock(
+def test_get_one__success(
+    respx_mock,
+    make_test_app,
+    dummy_context,
+    dummy_job_script_data,
+    dummy_domain,
+    cli_runner,
+):
+    respx_mock.get(f"{dummy_domain}/job-scripts/1").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
-            json=dummy_data[0],
+            json=dummy_job_script_data[0],
         ),
     )
     test_app = make_test_app("get-one", get_one)
@@ -56,18 +68,71 @@ def test_get_one__success(respx_mock, make_test_app, dummy_context, dummy_data):
         assert result.exit_code == 0, f"get-one failed: {result.stdout}"
         mocked_render.assert_called_once_with(
             dummy_context,
-            dummy_data[0],
+            dummy_job_script_data[0],
             title="Job Script",
             hidden_fields=HIDDEN_FIELDS,
         )
 
 
-# def test_create__success(respx_mock, make_test_app, dummy_context, dummy_data, dummy_application):
-#     response_data = dummy_data[0]
+def test_create__success(
+    respx_mock,
+    make_test_app,
+    dummy_context,
+    dummy_job_script_data,
+    dummy_application,
+    dummy_domain,
+    cli_runner,
+):
+    """STOPPED HERE"""
+    response_data = dummy_job_script_data[0]
+    response_data["application_uploaded"] = False
+    application_id = response_data["id"]
+
+    create_route = respx_mock.post(f"{dummy_domain}/applications")
+    create_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=response_data,
+        ),
+    )
+
+    upload_route = respx_mock.post(f"{dummy_domain}/applications/{application_id}/upload")
+    upload_route.mock(
+        return_value=httpx.Response(httpx.codes.CREATED),
+    )
+
+    test_app = make_test_app("create", create)
+    with mock.patch("jobbergate_cli.subapps.applications.app.render_single_result") as mocked_render:
+        result = cli_runner.invoke(
+            test_app,
+            shlex.split(
+                snick.unwrap(
+                    f"""
+                    create --name=dummy-name --identifier=dummy-identifier
+                           --application-path={dummy_application}
+                           --application-desc="This application is kinda dumb, actually"
+                    """
+                )
+            ),
+        )
+        assert result.exit_code == 0, f"create failed: {result.stdout}"
+        assert create_route.called
+        assert upload_route.called
+
+        mocked_render.assert_called_once_with(
+            dummy_context,
+            {**response_data, "application_uploaded": True},
+            title="Created Application",
+            hidden_fields=HIDDEN_FIELDS,
+        )
+
+
+# def test_create__warns_but_does_not_abort_if_upload_fails(respx_mock, make_test_app, dummy_context, dummy_job_script_data, dummy_application):
+#     response_data = dummy_job_script_data[0]
 #     response_data["application_uploaded"] = False
 #     application_id = response_data["id"]
 #
-#     create_route = respx_mock.post(f"{DUMMY_DOMAIN}/applications")
+#     create_route = respx_mock.post(f"{dummy_domain}/applications")
 #     create_route.mock(
 #         return_value=httpx.Response(
 #             httpx.codes.OK,
@@ -75,51 +140,7 @@ def test_get_one__success(respx_mock, make_test_app, dummy_context, dummy_data):
 #         ),
 #     )
 #
-#     upload_route = respx_mock.post(f"{DUMMY_DOMAIN}/applications/{application_id}/upload")
-#     upload_route.mock(
-#         return_value=httpx.Response(httpx.codes.CREATED),
-#     )
-#
-#     test_app = make_test_app("create", create)
-#     with mock.patch("jobbergate_cli.subapps.applications.app.render_single_result") as mocked_render:
-#         result = cli_runner.invoke(
-#             test_app,
-#             shlex.split(
-#                 snick.unwrap(
-#                     f"""
-#                     create --name=dummy-name --identifier=dummy-identifier
-#                            --application-path={dummy_application}
-#                            --application-desc="This application is kinda dumb, actually"
-#                     """
-#                 )
-#             ),
-#         )
-#         assert result.exit_code == 0, f"create failed: {result.stdout}"
-#         assert create_route.called
-#         assert upload_route.called
-#
-#         mocked_render.assert_called_once_with(
-#             dummy_context,
-#             {**response_data, "application_uploaded": True},
-#             title="Created Application",
-#             hidden_fields=HIDDEN_FIELDS,
-#         )
-#
-#
-# def test_create__warns_but_does_not_abort_if_upload_fails(respx_mock, make_test_app, dummy_context, dummy_data, dummy_application):
-#     response_data = dummy_data[0]
-#     response_data["application_uploaded"] = False
-#     application_id = response_data["id"]
-#
-#     create_route = respx_mock.post(f"{DUMMY_DOMAIN}/applications")
-#     create_route.mock(
-#         return_value=httpx.Response(
-#             httpx.codes.OK,
-#             json=response_data,
-#         ),
-#     )
-#
-#     upload_route = respx_mock.post(f"{DUMMY_DOMAIN}/applications/{application_id}/upload")
+#     upload_route = respx_mock.post(f"{dummy_domain}/applications/{application_id}/upload")
 #     upload_route.mock(
 #         return_value=httpx.Response(httpx.codes.BAD_REQUEST),
 #     )
@@ -151,12 +172,12 @@ def test_get_one__success(respx_mock, make_test_app, dummy_context, dummy_data):
 #         )
 #
 #
-# def test_update__success(respx_mock, make_test_app, dummy_context, dummy_data, dummy_application):
-#     response_data = dummy_data[0]
+# def test_update__success(respx_mock, make_test_app, dummy_context, dummy_job_script_data, dummy_application):
+#     response_data = dummy_job_script_data[0]
 #     response_data["application_uploaded"] = False
 #     application_id = response_data["id"]
 #
-#     update_route = respx_mock.put(f"{DUMMY_DOMAIN}/applications/{application_id}")
+#     update_route = respx_mock.put(f"{dummy_domain}/applications/{application_id}")
 #     update_route.mock(
 #         return_value=httpx.Response(
 #             httpx.codes.ACCEPTED,
@@ -164,7 +185,7 @@ def test_get_one__success(respx_mock, make_test_app, dummy_context, dummy_data):
 #         ),
 #     )
 #
-#     upload_route = respx_mock.post(f"{DUMMY_DOMAIN}/applications/{application_id}/upload")
+#     upload_route = respx_mock.post(f"{dummy_domain}/applications/{application_id}/upload")
 #     upload_route.mock(
 #         return_value=httpx.Response(httpx.codes.CREATED),
 #     )
@@ -195,12 +216,12 @@ def test_get_one__success(respx_mock, make_test_app, dummy_context, dummy_data):
 #         )
 #
 #
-# def test_update__does_not_upload_if_application_path_is_not_supplied(respx_mock, make_test_app, dummy_context, dummy_data, dummy_application):
-#     response_data = dummy_data[0]
+# def test_update__does_not_upload_if_application_path_is_not_supplied(respx_mock, make_test_app, dummy_context, dummy_job_script_data, dummy_application):
+#     response_data = dummy_job_script_data[0]
 #     response_data["application_uploaded"] = False
 #     application_id = response_data["id"]
 #
-#     update_route = respx_mock.put(f"{DUMMY_DOMAIN}/applications/{application_id}")
+#     update_route = respx_mock.put(f"{dummy_domain}/applications/{application_id}")
 #     update_route.mock(
 #         return_value=httpx.Response(
 #             httpx.codes.ACCEPTED,
@@ -208,7 +229,7 @@ def test_get_one__success(respx_mock, make_test_app, dummy_context, dummy_data):
 #         ),
 #     )
 #
-#     upload_route = respx_mock.post(f"{DUMMY_DOMAIN}/applications/{application_id}/upload")
+#     upload_route = respx_mock.post(f"{dummy_domain}/applications/{application_id}/upload")
 #     upload_route.mock(
 #         return_value=httpx.Response(httpx.codes.CREATED),
 #     )
@@ -238,12 +259,12 @@ def test_get_one__success(respx_mock, make_test_app, dummy_context, dummy_data):
 #         )
 #
 #
-# def test_update__warns_but_does_not_abort_if_upload_fails(respx_mock, make_test_app, dummy_context, dummy_data, dummy_application):
-#     response_data = dummy_data[0]
+# def test_update__warns_but_does_not_abort_if_upload_fails(respx_mock, make_test_app, dummy_context, dummy_job_script_data, dummy_application):
+#     response_data = dummy_job_script_data[0]
 #     response_data["application_uploaded"] = False
 #     application_id = response_data["id"]
 #
-#     update_route = respx_mock.put(f"{DUMMY_DOMAIN}/applications/{application_id}")
+#     update_route = respx_mock.put(f"{dummy_domain}/applications/{application_id}")
 #     update_route.mock(
 #         return_value=httpx.Response(
 #             httpx.codes.ACCEPTED,
@@ -251,7 +272,7 @@ def test_get_one__success(respx_mock, make_test_app, dummy_context, dummy_data):
 #         ),
 #     )
 #
-#     upload_route = respx_mock.post(f"{DUMMY_DOMAIN}/applications/{application_id}/upload")
+#     upload_route = respx_mock.post(f"{dummy_domain}/applications/{application_id}/upload")
 #     upload_route.mock(
 #         return_value=httpx.Response(httpx.codes.BAD_REQUEST),
 #     )
@@ -284,10 +305,10 @@ def test_get_one__success(respx_mock, make_test_app, dummy_context, dummy_data):
 #
 #
 # def test_delete__success(respx_mock, make_test_app):
-#     delete_route = respx_mock.delete(f"{DUMMY_DOMAIN}/applications/1")
+#     delete_route = respx_mock.delete(f"{dummy_domain}/applications/1")
 #     delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
 #
-#     delete_upload_route = respx_mock.delete(f"{DUMMY_DOMAIN}/applications/1/upload")
+#     delete_upload_route = respx_mock.delete(f"{dummy_domain}/applications/1/upload")
 #     delete_upload_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
 #
 #     test_app = make_test_app("delete", delete)
@@ -302,10 +323,10 @@ def test_get_one__success(respx_mock, make_test_app, dummy_context, dummy_data):
 #
 #
 # def test_delete__warns_but_does_not_abort_if_delete_upload_fails(respx_mock, make_test_app):
-#     delete_route = respx_mock.delete(f"{DUMMY_DOMAIN}/applications/1")
+#     delete_route = respx_mock.delete(f"{dummy_domain}/applications/1")
 #     delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
 #
-#     delete_upload_route = respx_mock.delete(f"{DUMMY_DOMAIN}/applications/1/upload")
+#     delete_upload_route = respx_mock.delete(f"{dummy_domain}/applications/1/upload")
 #     delete_upload_route.mock(return_value=httpx.Response(httpx.codes.BAD_REQUEST))
 #
 #     test_app = make_test_app("delete", delete)

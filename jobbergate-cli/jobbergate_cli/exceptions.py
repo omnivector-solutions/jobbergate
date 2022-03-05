@@ -1,13 +1,12 @@
 from functools import wraps
 
 import buzz
+from loguru import logger
+from rich import print, traceback
+from rich.panel import Panel
 import sentry_sdk
 import snick
 import typer
-from loguru import logger
-from rich import print
-from rich.panel import Panel
-from rich import traceback
 
 from jobbergate_cli.config import settings
 

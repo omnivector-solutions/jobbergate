@@ -3,12 +3,11 @@ Abstraction layer for questions. Each class represents different question types.
 """
 
 from itertools import chain
-from typing import Dict, Any, List, Optional, Type, TypeVar, cast
+from typing import Any, Dict, List, Optional, Type, TypeVar, cast
 
 import inquirer
-import inquirer.questions
 import inquirer.errors
-
+import inquirer.questions
 
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import render_dict
@@ -20,7 +19,7 @@ workflows = {}
 TInquirerType = TypeVar("TInquirerType", bound=inquirer.questions.Question)
 
 
-class QuestionBase():
+class QuestionBase:
     """
     Baseclass for questions.
 
@@ -87,15 +86,17 @@ class Integer(QuestionBase):
         try:
             int_val = int(current)
         except ValueError:
-            raise inquirer.errors.ValidationError('', reason=f"{current} is not an integer")
+            raise inquirer.errors.ValidationError("", reason=f"{current} is not an integer")
 
         min_str = str(self.minval) if self.minval is not None else "-∞"
         max_str = str(self.maxval) if self.maxval is not None else "∞"
-        if any([
-            self.minval is not None and int_val < self.minval,
-            self.maxval is not None and int_val > self.maxval,
-        ]):
-            raise inquirer.errors.ValidationError('', reason=f"{current} is out of range [{min_str}, {max_str}]")
+        if any(
+            [
+                self.minval is not None and int_val < self.minval,
+                self.maxval is not None and int_val > self.maxval,
+            ]
+        ):
+            raise inquirer.errors.ValidationError("", reason=f"{current} is out of range [{min_str}, {max_str}]")
         return True
 
 

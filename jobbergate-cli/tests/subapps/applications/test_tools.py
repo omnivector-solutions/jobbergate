@@ -27,10 +27,6 @@ from jobbergate_cli.subapps.applications.tools import (
     validate_application_data,
     execute_application,
 )
-from jobbergate_cli.subapps.applications.questions import Text, gather_config_values
-
-from tests.subapps.conftest import DUMMY_DOMAIN
-from tests.subapps.applications.conftest import DummyRender
 
 
 def test_validate_application_files__success(tmp_path):
@@ -236,10 +232,15 @@ def test_build_application_tarball(
     assert not ignored_path.exists()
 
 
-def test_fetch_application_data__success__using_id(respx_mock, dummy_context, dummy_data):
-    app_data = dummy_data[0]
+def test_fetch_application_data__success__using_id(
+    respx_mock,
+    dummy_context,
+    dummy_application_data,
+    dummy_domain,
+):
+    app_data = dummy_application_data[0]
     app_id = app_data["id"]
-    fetch_route = respx_mock.get(f"{DUMMY_DOMAIN}/applications/{app_id}")
+    fetch_route = respx_mock.get(f"{dummy_domain}/applications/{app_id}")
     fetch_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -252,10 +253,15 @@ def test_fetch_application_data__success__using_id(respx_mock, dummy_context, du
     assert result == app_data
 
 
-def test_fetch_application_data__success__using_identifier(respx_mock, dummy_context, dummy_data):
-    app_data = dummy_data[0]
+def test_fetch_application_data__success__using_identifier(
+    respx_mock,
+    dummy_context,
+    dummy_application_data,
+    dummy_domain,
+):
+    app_data = dummy_application_data[0]
     app_identifier = app_data["application_identifier"]
-    fetch_route = respx_mock.get(f"{DUMMY_DOMAIN}/applications?identifier={app_identifier}")
+    fetch_route = respx_mock.get(f"{dummy_domain}/applications?identifier={app_identifier}")
     fetch_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -379,7 +385,7 @@ def test_validate_application_data__fails_if_application_config_is_not_valid_YAM
         validate_application_data(app_data)
 
 
-def test_execute_application__basic():
+def test_execute_application__basic(dummy_render_class):
     module_text = snick.dedent(
         """
         from jobbergate_cli.subapps.applications.questions import Text
@@ -399,7 +405,7 @@ def test_execute_application__basic():
         """
     )
 
-    DummyRender.prepared_input = dict(
+    dummy_render_class.prepared_input = dict(
         foo="FOO",
         bar="BAR",
         baz="BAZ",
@@ -407,7 +413,7 @@ def test_execute_application__basic():
 
     config = dict()
     supplied_params = dict()
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=DummyRender):
+    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
         rendered_data = execute_application(
             module_text,
             config,
@@ -424,7 +430,7 @@ def test_execute_application__basic():
         )
 
 
-def test_execute_application__with_all_the_extras():
+def test_execute_application__with_all_the_extras(dummy_render_class):
     module_text = snick.dedent(
         """
         from jobbergate_cli.subapps.applications.questions import Text
@@ -444,7 +450,7 @@ def test_execute_application__with_all_the_extras():
         """
     )
 
-    DummyRender.prepared_input = dict(
+    dummy_render_class.prepared_input = dict(
         foo="FOO",
         bar="BAR",
         baz="BAZ",
@@ -456,7 +462,7 @@ def test_execute_application__with_all_the_extras():
     )
     supplied_params = dict(foo="oof")
     sbatch_params = [1, 2, 3]
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=DummyRender):
+    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
         rendered_data = execute_application(
             module_text,
             config,

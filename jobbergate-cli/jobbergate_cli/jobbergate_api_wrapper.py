@@ -393,13 +393,9 @@ class JobbergateApi:
             ]
 
             if question.whenfalse:
-                retval.extend(
-                    [self.assemble_questions(wf, ignore=question.ignore) for wf in question.whenfalse]
-                )
+                retval.extend([self.assemble_questions(wf, ignore=question.ignore) for wf in question.whenfalse])
             if question.whentrue:
-                retval.extend(
-                    [self.assemble_questions(wt, ignore=question.noignore) for wt in question.whentrue]
-                )
+                retval.extend([self.assemble_questions(wt, ignore=question.noignore) for wt in question.whentrue])
 
             return retval
 
@@ -450,10 +446,7 @@ class JobbergateApi:
             error_check.append(check)
         if not local_jobbergate_application_module.exists():
             check = self.error_handle(
-                error=(
-                    f"Could not find {constants.JOBBERGATE_APPLICATION_MODULE_FILE_NAME} "
-                    "in {application_path}"
-                ),
+                error=(f"Could not find {constants.JOBBERGATE_APPLICATION_MODULE_FILE_NAME} " "in {application_path}"),
                 solution=(
                     f"Please ensure {constants.JOBBERGATE_APPLICATION_MODULE_FILE_NAME} "
                     "is in application path provided"
@@ -462,10 +455,7 @@ class JobbergateApi:
             error_check.append(check)
         if not local_jobbergate_application_config.exists():
             check = self.error_handle(
-                error=(
-                    f"Could not find {constants.JOBBERGATE_APPLICATION_CONFIG_FILE_NAME} "
-                    "in {application_path}"
-                ),
+                error=(f"Could not find {constants.JOBBERGATE_APPLICATION_CONFIG_FILE_NAME} " "in {application_path}"),
                 solution=(
                     f"Please ensure {constants.JOBBERGATE_APPLICATION_CONFIG_FILE_NAME} "
                     "is in application path provided"

@@ -1,7 +1,7 @@
 import sys
 
-import sentry_sdk
 from loguru import logger
+import sentry_sdk
 
 from jobbergate_cli.config import settings
 

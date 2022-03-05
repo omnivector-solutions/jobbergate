@@ -1,16 +1,10 @@
 import json
-import re
 
 import pathlib
 import pytest
-import snick
 
 
 from jobbergate_cli.exceptions import Abort
-from jobbergate_cli.constants import (
-    JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
-    JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
-)
 from jobbergate_cli.subapps.job_scripts.tools import (
     validate_parameter_file,
 )

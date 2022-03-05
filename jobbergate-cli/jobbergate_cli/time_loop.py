@@ -13,6 +13,7 @@ class Tick(pydantic.BaseModel):
 
     Contains a counter, elapsed time since the last tick, and total elapsed time.
     """
+
     counter: int
     elapsed: pendulum.Duration
     total_elapsed: pendulum.Duration
@@ -25,6 +26,7 @@ class TimeLoop:
     Uses a progress meter to show the user how much time is left.
     Each iteration of the time-loop produces a tick.
     """
+
     advent: typing.Optional[pendulum.DateTime]
     moment: typing.Optional[pendulum.DateTime]
     last_moment: typing.Optional[pendulum.DateTime]
@@ -91,7 +93,7 @@ class TimeLoop:
         self.counter += 1
         self.last_moment = self.moment
         self.moment: pendulum.DateTime = pendulum.now()
-        elapsed: pendulum.Duration  = self.moment - self.last_moment
+        elapsed: pendulum.Duration = self.moment - self.last_moment
         total_elapsed: pendulum.Duration = self.moment - self.advent
 
         for task_id in self.progress.task_ids:

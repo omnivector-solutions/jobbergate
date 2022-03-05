@@ -2,22 +2,22 @@ import pathlib
 import tempfile
 import typing
 
-import typer
 from loguru import logger
+import typer
 
 from jobbergate_cli.constants import SortOrder
-from jobbergate_cli.exceptions import Abort, handle_abort
-from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
+from jobbergate_cli.exceptions import handle_abort
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
+from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 from jobbergate_cli.subapps.applications.tools import (
-    validate_application_files,
-    load_default_config,
-    dump_full_config,
-    read_application_module,
     build_application_tarball,
+    dump_full_config,
     fetch_application_data,
+    load_default_config,
+    read_application_module,
     upload_application,
+    validate_application_files,
 )
 
 
@@ -49,9 +49,9 @@ IDENTIFIER_NOTE = """
 
 
 style_mapper = StyleMapper(
-    id = "green",
-    application_name = "cyan",
-    application_identifier = "magenta",
+    id="green",
+    application_name="cyan",
+    application_identifier="magenta",
 )
 
 
@@ -88,17 +88,19 @@ def list_all(
     if sort_field is not None:
         params["sort_field"] = sort_field
 
-
-    envelope = typing.cast(ListResponseEnvelope, make_request(
-        jg_ctx.client,
-        "/applications",
-        "GET",
-        expected_status=200,
-        abort_message="Couldn't retrieve applications list from API",
-        support=True,
-        response_model=ListResponseEnvelope,
-        data=params,
-    ))
+    envelope = typing.cast(
+        ListResponseEnvelope,
+        make_request(
+            jg_ctx.client,
+            "/applications",
+            "GET",
+            expected_status=200,
+            abort_message="Couldn't retrieve applications list from API",
+            support=True,
+            response_model=ListResponseEnvelope,
+            params=params,
+        ),
+    )
     render_list_results(
         jg_ctx,
         envelope,
@@ -139,15 +141,18 @@ def _upload_application(jg_ctx: JobbergateContext, application_path: pathlib.Pat
         build_path = pathlib.Path(temp_dir_str)
         logger.debug("Building application tar file at {build_path}")
         tar_path = build_application_tarball(application_path, build_path)
-        response_code = typing.cast(int, make_request(
-            jg_ctx.client,
-            f"/applications/{application_id}/upload",
-            "POST",
-            expect_response=False,
-            abort_message=f"Request to upload application files was not accepted by the API",
-            support=True,
-            files=dict(upload_file=open(tar_path, "rb")),
-        ))
+        response_code = typing.cast(
+            int,
+            make_request(
+                jg_ctx.client,
+                f"/applications/{application_id}/upload",
+                "POST",
+                expect_response=False,
+                abort_message=f"Request to upload application files was not accepted by the API",
+                support=True,
+                files=dict(upload_file=open(tar_path, "rb")),
+            ),
+        )
         return response_code == 201
 
 
@@ -177,7 +182,6 @@ def create(
     """
     req_data = load_default_config()
     req_data["application_name"] = name
-
     if identifier:
         req_data["application_identifier"] = identifier
 
@@ -194,15 +198,18 @@ def create(
     # Make static type checkers happy
     assert jg_ctx.client is not None
 
-    result = typing.cast(typing.Dict[str, typing.Any], make_request(
-        jg_ctx.client,
-        "/applications",
-        "POST",
-        expected_status=200,
-        abort_message=f"Request to create application was not accepted by the API",
-        support=True,
-        data=req_data,
-    ))
+    result = typing.cast(
+        typing.Dict[str, typing.Any],
+        make_request(
+            jg_ctx.client,
+            "/applications",
+            "POST",
+            expected_status=201,
+            abort_message=f"Request to create application was not accepted by the API",
+            support=True,
+            json=req_data,
+        ),
+    )
     application_id = result["id"]
 
     successful_upload = upload_application(jg_ctx, application_path, application_id)
@@ -272,15 +279,18 @@ def update(
     # Make static type checkers happy
     assert jg_ctx.client is not None
 
-    result = typing.cast(typing.Dict[str, typing.Any], make_request(
-        jg_ctx.client,
-        f"/applications/{id}",
-        "PUT",
-        expected_status=202,
-        abort_message=f"Request to update application was not accepted by the API",
-        support=True,
-        data=req_data,
-    ))
+    result = typing.cast(
+        typing.Dict[str, typing.Any],
+        make_request(
+            jg_ctx.client,
+            f"/applications/{id}",
+            "PUT",
+            expected_status=202,
+            abort_message=f"Request to update application was not accepted by the API",
+            support=True,
+            json=req_data,
+        ),
+    )
 
     if application_path is not None:
         successful_upload = _upload_application(jg_ctx, application_path, id)
@@ -319,7 +329,6 @@ def delete(
     Delete an existing application.
     """
     jg_ctx: JobbergateContext = ctx.obj
-    print("CONTEXT SET AS: ", jg_ctx)
 
     # Make static type checkers happy
     assert jg_ctx.client is not None
@@ -333,14 +342,17 @@ def delete(
         abort_message=f"Request to delete application was not accepted by the API",
         support=True,
     )
-    status_code = typing.cast(int, make_request(
-        jg_ctx.client,
-        f"/applications/{id}/upload",
-        "DELETE",
-        expect_response=False,
-        abort_message=f"Request to delete application was not accepted by the API",
-        support=True,
-    ))
+    status_code = typing.cast(
+        int,
+        make_request(
+            jg_ctx.client,
+            f"/applications/{id}/upload",
+            "DELETE",
+            expect_response=False,
+            abort_message=f"Request to delete application was not accepted by the API",
+            support=True,
+        ),
+    )
     if status_code != 204:
         terminal_message(
             """

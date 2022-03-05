@@ -2,29 +2,27 @@ import httpx
 import pyperclip
 import typer
 
-from jobbergate_cli.auth import (
-    clear_token_cache,
-    load_tokens_from_cache,
-    fetch_auth_tokens,
-    init_persona,
-)
-from jobbergate_cli.schemas import TokenSet, Persona, JobbergateContext
+from jobbergate_cli.auth import clear_token_cache, fetch_auth_tokens, init_persona, load_tokens_from_cache
+from jobbergate_cli.config import settings
+from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.logging import init_logs, init_sentry
 from jobbergate_cli.render import terminal_message
-from jobbergate_cli.exceptions import handle_abort, Abort
-from jobbergate_cli.config import settings
+from jobbergate_cli.schemas import JobbergateContext, Persona, TokenSet
 
 
 app = typer.Typer()
 
 if settings.JOBBERGATE_COMPATIBILITY_MODE:
     from jobbergate_cli.compat import add_legacy_compatible_commands
+
     add_legacy_compatible_commands(app)
 else:
     from jobbergate_cli.subapps.applications.app import app as applications_app
+
     app.add_typer(applications_app, name="applications")
 
     from jobbergate_cli.subapps.job_scripts.app import app as job_scripts_app
+
     app.add_typer(job_scripts_app, name="job-scripts")
 
 
@@ -134,7 +132,7 @@ def show_token(
             ),
         )
 
-    prefix = 'Bearer ' if show_prefix else ''
+    prefix = "Bearer " if show_prefix else ""
     token_text = f"{prefix}{token}"
     pyperclip.copy(token_text)
     if plain:

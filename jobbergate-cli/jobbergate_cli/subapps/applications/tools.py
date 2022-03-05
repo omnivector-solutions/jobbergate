@@ -6,21 +6,21 @@ import json
 import pathlib
 import tarfile
 import tempfile
-from typing import Optional, Dict, Tuple, List, Any, Iterator, cast
+from typing import Any, Dict, Iterator, List, Optional, Tuple, cast
 
+from loguru import logger
 import snick
 import yaml
-from loguru import logger
 
 from jobbergate_cli.constants import (
     JOBBERGATE_APPLICATION_CONFIG,
-    JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
     JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
+    JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
     TAR_NAME,
 )
+from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext
-from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.subapps.applications.questions import gather_config_values
 
 
@@ -170,15 +170,18 @@ def fetch_application_data(
     assert jg_ctx.client is not None
 
     stub = f"{id=}" if id is not None else f"{identifier=}"
-    return cast(Dict[str, Any], make_request(
-        jg_ctx.client,
-        url,
-        "GET",
-        expected_status=200,
-        abort_message=f"Couldn't retrieve application {stub} from API",
-        support=True,
-        params=params,
-    ))
+    return cast(
+        Dict[str, Any],
+        make_request(
+            jg_ctx.client,
+            url,
+            "GET",
+            expected_status=200,
+            abort_message=f"Couldn't retrieve application {stub} from API",
+            support=True,
+            params=params,
+        ),
+    )
 
 
 def validate_application_data(app_data: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
@@ -222,7 +225,11 @@ def validate_application_data(app_data: Dict[str, Any]) -> Tuple[str, Dict[str, 
     return (app_module, app_config)
 
 
-def upload_application(jg_ctx: JobbergateContext, application_path: pathlib.Path, application_id: int) -> bool:
+def upload_application(
+    jg_ctx: JobbergateContext,
+    application_path: pathlib.Path,
+    application_id: int,
+) -> bool:
     """
     Upload an application given an application path and the application id.
     """
@@ -234,15 +241,18 @@ def upload_application(jg_ctx: JobbergateContext, application_path: pathlib.Path
         build_path = pathlib.Path(temp_dir_str)
         logger.debug("Building application tar file at {build_path}")
         tar_path = build_application_tarball(application_path, build_path)
-        response_code = cast(int, make_request(
-            jg_ctx.client,
-            f"/applications/{application_id}/upload",
-            "POST",
-            expect_response=False,
-            abort_message=f"Request to upload application files was not accepted by the API",
-            support=True,
-            files=dict(upload_file=open(tar_path, "rb")),
-        ))
+        response_code = cast(
+            int,
+            make_request(
+                jg_ctx.client,
+                f"/applications/{application_id}/upload",
+                "POST",
+                expect_response=False,
+                abort_message=f"Request to upload application files was not accepted by the API",
+                support=True,
+                files=dict(upload_file=open(tar_path, "rb")),
+            ),
+        )
         return response_code == 201
 
 

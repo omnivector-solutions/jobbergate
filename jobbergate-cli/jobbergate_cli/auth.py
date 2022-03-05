@@ -2,20 +2,20 @@
 Utilities for handling auth in jobbergate-cli.
 """
 from time import sleep
-from typing import Optional, Dict, cast
+from typing import Dict, Optional, cast
 
-import pydantic
-import snick
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError
 from loguru import logger
+import pydantic
+import snick
 
-from jobbergate_cli.exceptions import Abort, JobbergateCliError
 from jobbergate_cli.config import settings
+from jobbergate_cli.exceptions import Abort, JobbergateCliError
 from jobbergate_cli.render import terminal_message
-from jobbergate_cli.time_loop import TimeLoop
-from jobbergate_cli.schemas import TokenSet, IdentityData, Persona, DeviceCodeData, JobbergateContext
 from jobbergate_cli.requests import make_request
+from jobbergate_cli.schemas import DeviceCodeData, IdentityData, JobbergateContext, Persona, TokenSet
+from jobbergate_cli.time_loop import TimeLoop
 
 
 def validate_token_and_extract_identity(token_set: TokenSet) -> IdentityData:
@@ -191,21 +191,24 @@ def refresh_access_token(ctx: JobbergateContext, token_set: TokenSet):
     # Make static type-checkers happy
     assert ctx.client is not None
 
-    refreshed_token_set = cast(TokenSet, make_request(
-        ctx.client,
-        "/oauth/token",
-        "POST",
-        abort_message="The auth token could not be refreshed. Please try logging in again.",
-        abort_subject="EXPIRED ACCESS TOKEN",
-        support=True,
-        response_model=TokenSet,
-        data=dict(
-            client_id=settings.AUTH0_CLIENT_ID,
-            audience=settings.AUTH0_AUDIENCE,
-            grant_type="refresh_token",
-            refresh_token=token_set.refresh_token,
+    refreshed_token_set = cast(
+        TokenSet,
+        make_request(
+            ctx.client,
+            "/oauth/token",
+            "POST",
+            abort_message="The auth token could not be refreshed. Please try logging in again.",
+            abort_subject="EXPIRED ACCESS TOKEN",
+            support=True,
+            response_model=TokenSet,
+            data=dict(
+                client_id=settings.AUTH0_CLIENT_ID,
+                audience=settings.AUTH0_AUDIENCE,
+                grant_type="refresh_token",
+                refresh_token=token_set.refresh_token,
+            ),
         ),
-    ))
+    )
 
     token_set.access_token = refreshed_token_set.access_token
 
@@ -220,21 +223,24 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
     # Make static type-checkers happy
     assert ctx.client is not None
 
-    device_code_data = cast(DeviceCodeData, make_request(
-        ctx.client,
-        "/oauth/device/code",
-        "POST",
-        expected_status=200,
-        abort_message="There was a problem retrieving a device verification code from the auth provider",
-        abort_subject="COULD NOT RETRIEVE TOKEN",
-        support=True,
-        response_model=DeviceCodeData,
-        data=dict(
-            client_id=settings.AUTH0_CLIENT_ID,
-            audience=settings.AUTH0_AUDIENCE,
-            scope="offline_access",  # To get refresh token
+    device_code_data = cast(
+        DeviceCodeData,
+        make_request(
+            ctx.client,
+            "/oauth/device/code",
+            "POST",
+            expected_status=200,
+            abort_message="There was a problem retrieving a device verification code from the auth provider",
+            abort_subject="COULD NOT RETRIEVE TOKEN",
+            support=True,
+            response_model=DeviceCodeData,
+            data=dict(
+                client_id=settings.AUTH0_CLIENT_ID,
+                audience=settings.AUTH0_AUDIENCE,
+                scope="offline_access",  # To get refresh token
+            ),
         ),
-    ))
+    )
 
     terminal_message(
         f"""
@@ -252,20 +258,23 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
         message="Waiting for web login",
     ):
 
-        response_data = cast(Dict, make_request(
-            ctx.client,
-            "/oauth/token",
-            "POST",
-            abort_message="There was a problem retrieving a device verification code from the auth provider",
-            abort_subject="COULD NOT FETCH ACCESS TOKEN",
-            support=True,
-            data=dict(
-                grant_type="urn:ietf:params:oauth:grant-type:device_code",
-                device_code=device_code_data.device_code,
-                client_id=settings.AUTH0_CLIENT_ID,
+        response_data = cast(
+            Dict,
+            make_request(
+                ctx.client,
+                "/oauth/token",
+                "POST",
+                abort_message="There was a problem retrieving a device verification code from the auth provider",
+                abort_subject="COULD NOT FETCH ACCESS TOKEN",
+                support=True,
+                data=dict(
+                    grant_type="urn:ietf:params:oauth:grant-type:device_code",
+                    device_code=device_code_data.device_code,
+                    client_id=settings.AUTH0_CLIENT_ID,
+                ),
             ),
-        ))
-        if 'error' in response_data:
+        )
+        if "error" in response_data:
             if response_data["error"] == "authorization_pending":
                 logger.debug(f"Token fetch attempt #{tick.counter} failed")
                 sleep(device_code_data.interval)
@@ -285,9 +294,8 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
         else:
             return TokenSet(**response_data)
 
-
     raise Abort(
         "Login process was not completed in time. Please try again.",
         subject="TIMED OUT",
-        log_message="Timed out while waiting for user to complete login"
+        log_message="Timed out while waiting for user to complete login",
     )

@@ -1,11 +1,11 @@
 import json
 import typing
 
-import snick
 from rich import print, print_json
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+import snick
 
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 
@@ -15,7 +15,6 @@ class StyleMapper:
 
     def __init__(self, **colors: str):
         self.colors = colors
-
 
     def map_style(self, column: str) -> typing.Dict[str, typing.Any]:
         color = self.colors.get(column, "white")
