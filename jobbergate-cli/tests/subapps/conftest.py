@@ -1,3 +1,4 @@
+import json
 import typing
 
 import httpx
@@ -52,7 +53,7 @@ def dummy_context(dummy_domain):
 
 
 @pytest.fixture
-def dummy_application_data():
+def dummy_application_data(dummy_module_source, dummy_template_source):
     return [
         dict(
             id=1,
@@ -60,7 +61,7 @@ def dummy_application_data():
             application_identifier="test-app-1",
             application_description="Test Application Number 1",
             application_owner_email="tucker.beck@omnivector.com",
-            application_file="print('test1')",
+            application_file=dummy_module_source,
             application_config="config1",
             application_uploaded=True,
             created_at="2022-03-01 17:31:00",
@@ -94,7 +95,7 @@ def dummy_application_data():
 
 
 @pytest.fixture
-def dummy_job_script_data():
+def dummy_job_script_data(dummy_application_data):
     return [
         dict(
           id=1,
@@ -102,9 +103,9 @@ def dummy_job_script_data():
           updated_at="2022-03-02 22:08:00",
           job_script_name="script1",
           job_script_description="Job Script 1",
-          job_script_data_as_string="{\"application.sh\": \"#!/bin/python3\\n# from conf: test\\n# cluster: Nash\\n# stageup: False\\n\\necho {'blank': '', 'default_template': 'template.j2', 'preexisting': 'test', 'template_files': ['templates/template.j2'], 'cluster': 'Nash', 'simsteps': '100', 'stageup': False}\"}",
+          job_script_data_as_string=json.dumps({"application.sh": dummy_template_source}),
           job_script_owner_email="tucker@omnivector.com",
-          application_id=1
+          application_id=dummy_application_data[0]["id"],
         ),
         dict(
           id=2,
@@ -146,19 +147,20 @@ def dummy_config_source():
 def dummy_module_source():
     return snick.dedent(
         """
-        from jobbergate_cli.application_base import JobbergateApplicationBase
-        from jobbergate_cli import appform
+        from jobbergate_cli.subapps.applications.questions import Text
 
-        class JobbergateApplication(JobbergateApplicationBase):
+
+        class JobbergateApplication:
+
+            def __init__(self, data):
+                self.data = data
+
             def mainflow(self, data):
-                questions = []
+                data["nextworkflow"] = "subflow"
+                return [Text("foo", message="gimme the foo!"), Text("bar", message="gimme the bar!")]
 
-                questions.append(appform.Text(
-                    "partition",
-                    message="Choose a partition",
-                    default="compute"
-                ))
-                return questions
+            def subflow(self, data):
+                return [Text("baz", message="gimme the baz!", default="zab")]
         """
     )
 
@@ -169,35 +171,10 @@ def dummy_template_source():
         """
         #!/bin/python3
 
-        # Select Partition, Cores, Jobname, Hardware
-        #SBATCH --partition {{data.partition}}
-        #SBATCH -J 00_smallcase
-
-        # Time limit
-        #SBATCH -t 60  # TODO no soft limit in SLURM, check if users want hard limit instead
-
-        import os
-        import subprocess
-
-
-        def parse_slurm_nodes(hostlist):
-            ''' Takes a contracted hostlist and returns an expanded one.
-                e.g.: "node[1,3-4]" -> "node1,node3,node4"
-            '''
-            cmd_args = ['scontrol', 'show', 'hostnames', hostlist]
-            try:
-                cmd_results = subprocess.run(cmd_args, stdout=subprocess.PIPE)
-                # Skip last line (empty), strip quotation marks
-                expanded_hostlist = cmd_results.stdout.decode().split("\n")[:-1]
-            except BaseException:
-                print("Could not retrieve queue information from SLURM.")
-                return ""
-
-            return ",".join(expanded_hostlist)
-
-        hoststring = os.getenv('SLURM_JOB_NODELIST')
-        hostlist = parse_slurm_nodes(hoststring)
-        print(f"hosts: {hoststring} ({hostlist})", flush=True)
+        #SBATCH --partition {{data.foo}}
+        #SBATCH -J dummy_job
+        #SBATCH -t 60
+        print("I am a very, very dumb job script")
         """
     )
 

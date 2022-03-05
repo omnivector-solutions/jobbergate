@@ -277,7 +277,6 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(
     make_test_app,
     dummy_context,
     dummy_application_data,
-    dummy_application,
     dummy_domain,
     cli_runner,
 ):

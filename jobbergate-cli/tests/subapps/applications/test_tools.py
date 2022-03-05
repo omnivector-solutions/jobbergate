@@ -124,7 +124,7 @@ def test_validate_application_files__fails_if_application_config_is_not_valid_ya
 
 def test_find_templates(tmp_path):
     application_path = tmp_path / "dummy"
-    assert list(find_templates(application_path)) == []
+    assert find_templates(application_path) == []
 
     application_path.mkdir()
     template_root_path = application_path / "templates"
@@ -137,7 +137,11 @@ def test_find_templates(tmp_path):
     dir1.mkdir()
     file3 = dir1 / "file3"
     file3.write_text("baz")
-    assert sorted(find_templates(application_path)) == [pathlib.Path(f"templates/file{i}") for i in (1, 2)]
+    assert find_templates(application_path) == [
+        pathlib.Path("templates/dir1/file3"),
+        pathlib.Path("templates/file1"),
+        pathlib.Path("templates/file2"),
+    ]
 
 
 def test_dump_full_config(tmp_path):
@@ -385,26 +389,7 @@ def test_validate_application_data__fails_if_application_config_is_not_valid_YAM
         validate_application_data(app_data)
 
 
-def test_execute_application__basic(dummy_render_class):
-    module_text = snick.dedent(
-        """
-        from jobbergate_cli.subapps.applications.questions import Text
-
-
-        class JobbergateApplication:
-
-            def __init__(self, data):
-                self.data = data
-
-            def mainflow(self, data):
-                data["nextworkflow"] = "subflow"
-                return [Text("foo", message="gimme the foo!"), Text("bar", message="gimme the bar!")]
-
-            def subflow(self, data):
-                return [Text("baz", message="gimme the baz!")]
-        """
-    )
-
+def test_execute_application__basic(dummy_render_class, dummy_module_source):
     dummy_render_class.prepared_input = dict(
         foo="FOO",
         bar="BAR",
@@ -415,7 +400,7 @@ def test_execute_application__basic(dummy_render_class):
     supplied_params = dict()
     with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
         rendered_data = execute_application(
-            module_text,
+            dummy_module_source,
             config,
             supplied_params,
         )
@@ -430,26 +415,7 @@ def test_execute_application__basic(dummy_render_class):
         )
 
 
-def test_execute_application__with_all_the_extras(dummy_render_class):
-    module_text = snick.dedent(
-        """
-        from jobbergate_cli.subapps.applications.questions import Text
-
-
-        class JobbergateApplication:
-
-            def __init__(self, data):
-                self.data = data
-
-            def mainflow(self, data):
-                data["nextworkflow"] = "subflow"
-                return [Text("foo", message="gimme the foo!"), Text("bar", message="gimme the bar!")]
-
-            def subflow(self, data):
-                return [Text("baz", message="gimme the baz!", default="zab")]
-        """
-    )
-
+def test_execute_application__with_all_the_extras(dummy_render_class, dummy_module_source):
     dummy_render_class.prepared_input = dict(
         foo="FOO",
         bar="BAR",
@@ -464,7 +430,7 @@ def test_execute_application__with_all_the_extras(dummy_render_class):
     sbatch_params = [1, 2, 3]
     with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
         rendered_data = execute_application(
-            module_text,
+            dummy_module_source,
             config,
             supplied_params,
             sbatch_params=sbatch_params,

@@ -80,15 +80,19 @@ def validate_application_files(application_path: pathlib.Path):
         checker(is_valid_yaml, f"The application config at {application_config} is not valid YAML")
 
 
-def find_templates(application_path: pathlib.Path) -> Iterator[pathlib.Path]:
+def find_templates(application_path: pathlib.Path) -> List[pathlib.Path]:
     """
     Finds templates in the application path.
     """
     template_root_path = application_path / "templates"
     if template_root_path.exists():
-        for path in template_root_path.iterdir():
-            if path.is_file():
-                yield pathlib.Path("templates") / path.name
+        return sorted(
+            p.relative_to(application_path)
+            for p in template_root_path.glob("**/*")
+            if p.is_file()
+        )
+    else:
+        return list()
 
 
 def load_default_config() -> Dict[str, Any]:

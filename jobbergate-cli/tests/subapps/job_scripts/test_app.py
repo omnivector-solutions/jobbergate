@@ -78,12 +78,12 @@ def test_create__success(
     respx_mock,
     make_test_app,
     dummy_context,
+    dummy_application_data,
     dummy_job_script_data,
     dummy_application,
     dummy_domain,
     cli_runner,
 ):
-    """STOPPED HERE"""
     response_data = dummy_job_script_data[0]
     response_data["application_uploaded"] = False
     application_id = response_data["id"]
