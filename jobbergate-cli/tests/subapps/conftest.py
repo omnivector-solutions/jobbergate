@@ -171,10 +171,14 @@ def dummy_template_source():
         """
         #!/bin/python3
 
-        #SBATCH --partition {{data.foo}}
         #SBATCH -J dummy_job
         #SBATCH -t 60
         print("I am a very, very dumb job script")
+        print(f"foo='{{foo}}'")
+        print(f"bar='{{bar}}'")
+        print(f"baz='{{baz}}'")
+        print(f"qux='{{qux}}'")
+        print(f"quux='{{quux}}'")
         """
     )
 
