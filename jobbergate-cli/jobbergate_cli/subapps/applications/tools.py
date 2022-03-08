@@ -6,7 +6,7 @@ import json
 import pathlib
 import tarfile
 import tempfile
-from typing import Any, Dict, Iterator, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from loguru import logger
 import snick
@@ -196,7 +196,7 @@ def validate_application_data(app_data: Dict[str, Any]) -> Tuple[str, Dict[str, 
             log_message=f"Application files retrieved from the API were invalid",
         ),
     ) as checker:
-        app_module = app_data.get(JOBBERGATE_APPLICATION_MODULE_FILE_NAME)
+        app_module = app_data.get("application_file")
         checker(
             app_module is not None,
             f"Application data does not contain {JOBBERGATE_APPLICATION_MODULE_FILE_NAME}",
@@ -209,7 +209,7 @@ def validate_application_data(app_data: Dict[str, Any]) -> Tuple[str, Dict[str, 
                 is_valid_python = False
             checker(is_valid_python, f"The application module from the API is not valid python code")
 
-        app_config = app_data.get(JOBBERGATE_APPLICATION_CONFIG_FILE_NAME)
+        app_config = app_data.get("application_config")
         checker(
             app_config is not None,
             f"Application data does not contain {JOBBERGATE_APPLICATION_CONFIG_FILE_NAME}",

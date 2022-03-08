@@ -289,35 +289,35 @@ def test_fetch_application_data__fails_with_neither_id_or_identifier(dummy_conte
 
 
 def test_validate_application_data__success():
-    app_data = {
-        JOBBERGATE_APPLICATION_MODULE_FILE_NAME: snick.dedent(
+    app_data = dict(
+        application_file=snick.dedent(
             """
             import sys
 
             print(f"Got some args, yo: {sys.argv}")
             """
         ),
-        JOBBERGATE_APPLICATION_CONFIG_FILE_NAME: snick.dedent(
+        application_config=snick.dedent(
             """
             foo:
               bar: baz
             """
         ),
-    }
+    )
     (app_module, app_config) = validate_application_data(app_data)
     assert isinstance(app_module, str)
     assert app_config == dict(foo=dict(bar="baz"))
 
 
 def test_validate_application_files__fails_if_application_module_is_not_present():
-    app_data = {
-        JOBBERGATE_APPLICATION_CONFIG_FILE_NAME: snick.dedent(
+    app_data = dict(
+        application_config=snick.dedent(
             """
             foo:
               bar: baz
             """
         ),
-    }
+    )
 
     match_pattern = re.compile(
         f"files fetched from the API were invalid.*does not contain {JOBBERGATE_APPLICATION_MODULE_FILE_NAME}",
@@ -329,15 +329,15 @@ def test_validate_application_files__fails_if_application_module_is_not_present(
 
 
 def test_validate_application_data__fails_if_application_module_is_not_valid_python():
-    app_data = {
-        JOBBERGATE_APPLICATION_MODULE_FILE_NAME: "invalid python",
-        JOBBERGATE_APPLICATION_CONFIG_FILE_NAME: snick.dedent(
+    app_data = dict(
+        application_file="invalid python",
+        application_config=snick.dedent(
             """
             foo:
               bar: baz
             """
         ),
-    }
+    )
 
     match_pattern = re.compile(
         f"files fetched from the API were invalid.*not valid python",
@@ -349,15 +349,15 @@ def test_validate_application_data__fails_if_application_module_is_not_valid_pyt
 
 
 def test_validate_application_data__fails_if_application_config_is_not_present():
-    app_data = {
-        JOBBERGATE_APPLICATION_MODULE_FILE_NAME: snick.dedent(
+    app_data = dict(
+        application_file=snick.dedent(
             """
             import sys
 
             print(f"Got some args, yo: {sys.argv}")
             """
         ),
-    }
+    )
 
     match_pattern = re.compile(
         f"files fetched from the API were invalid.*does not contain {JOBBERGATE_APPLICATION_CONFIG_FILE_NAME}",
@@ -369,16 +369,16 @@ def test_validate_application_data__fails_if_application_config_is_not_present()
 
 
 def test_validate_application_data__fails_if_application_config_is_not_valid_YAML():
-    app_data = {
-        JOBBERGATE_APPLICATION_MODULE_FILE_NAME: snick.dedent(
+    app_data = dict(
+        application_file=snick.dedent(
             """
             import sys
 
             print(f"Got some args, yo: {sys.argv}")
             """
         ),
-        JOBBERGATE_APPLICATION_CONFIG_FILE_NAME: ":",
-    }
+        application_config=":",
+    )
 
     match_pattern = re.compile(
         f"files fetched from the API were invalid.*not valid YAML",

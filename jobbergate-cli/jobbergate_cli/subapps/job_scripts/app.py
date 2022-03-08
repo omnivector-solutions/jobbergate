@@ -114,7 +114,7 @@ def create(
         None,
         help=f"The id of the application from which to create the job script",
     ),
-    application_identifier: typing.Optional[int] = typer.Option(
+    application_identifier: typing.Optional[str] = typer.Option(
         None,
         help=f"The identifier of the application from which to create the job script",
     ),

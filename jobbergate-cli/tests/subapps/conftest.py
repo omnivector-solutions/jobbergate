@@ -53,16 +53,16 @@ def dummy_context(dummy_domain):
 
 
 @pytest.fixture
-def dummy_application_data(dummy_module_source, dummy_template_source):
+def dummy_application_data(dummy_module_source, dummy_config_source):
     return [
         dict(
             id=1,
             application_name="test-app-1",
             application_identifier="test-app-1",
             application_description="Test Application Number 1",
-            application_owner_email="tucker.beck@omnivector.com",
+            application_owner_email="tucker.beck@omnivector.solutions",
             application_file=dummy_module_source,
-            application_config="config1",
+            application_config=dummy_config_source,
             application_uploaded=True,
             created_at="2022-03-01 17:31:00",
             updated_at="2022-03-01 17:31:00",
@@ -72,7 +72,7 @@ def dummy_application_data(dummy_module_source, dummy_template_source):
             application_name="test-app-2",
             application_identifier="test-app-2",
             application_description="Test Application Number 2",
-            application_owner_email="tucker.beck@omnivector.com",
+            application_owner_email="tucker.beck@omnivector.solutions",
             application_file="print('test2')",
             application_config="config2",
             application_uploaded=True,
@@ -84,7 +84,7 @@ def dummy_application_data(dummy_module_source, dummy_template_source):
             application_name="test-app-3",
             application_identifier="test-app-3",
             application_description="Test Application Number 3",
-            application_owner_email="tucker.beck@omnivector.com",
+            application_owner_email="tucker.beck@omnivector.solutions",
             application_file="print('test3')",
             application_config="config3",
             application_uploaded=True,
@@ -95,7 +95,7 @@ def dummy_application_data(dummy_module_source, dummy_template_source):
 
 
 @pytest.fixture
-def dummy_job_script_data(dummy_application_data):
+def dummy_job_script_data(dummy_application_data, dummy_template_source):
     return [
         dict(
           id=1,
@@ -104,7 +104,7 @@ def dummy_job_script_data(dummy_application_data):
           job_script_name="script1",
           job_script_description="Job Script 1",
           job_script_data_as_string=json.dumps({"application.sh": dummy_template_source}),
-          job_script_owner_email="tucker@omnivector.com",
+          job_script_owner_email="tucker@omnivector.solutions",
           application_id=dummy_application_data[0]["id"],
         ),
         dict(
@@ -114,7 +114,7 @@ def dummy_job_script_data(dummy_application_data):
           job_script_name="script2",
           job_script_description="Job Script 2",
           job_script_data_as_string="{}",
-          job_script_owner_email="tucker@omnivector.com",
+          job_script_owner_email="tucker@omnivector.solutions",
           application_id=1
         ),
         dict(
@@ -124,8 +124,44 @@ def dummy_job_script_data(dummy_application_data):
           job_script_name="script3",
           job_script_description="Job Script 3",
           job_script_data_as_string="{}",
-          job_script_owner_email="james@omnivector.com",
+          job_script_owner_email="james@omnivector.solutions",
           application_id=1
+        ),
+    ]
+
+
+@pytest.fixture
+def dummy_job_submission_data(dummy_job_script_data):
+    return [
+        dict(
+          id=1,
+          created_at="2022-03-02 22:08:00",
+          updated_at="2022-03-02 22:08:00",
+          job_submission_name="sub1",
+          job_submission_description="Job Submission 1",
+          job_submission_owner_email="tucker@omnivector.solutions",
+          job_script_id=dummy_job_script_data[0]["id"],
+          slurm_job_id=13,
+        ),
+        dict(
+          id=1,
+          created_at="2022-03-02 22:08:00",
+          updated_at="2022-03-02 22:08:00",
+          job_submission_name="sub1",
+          job_submission_description="Job Submission 1",
+          job_submission_owner_email="tucker@omnivector.solutions",
+          job_script_id=88,
+          slurm_job_id=8888,
+        ),
+        dict(
+          id=3,
+          created_at="2022-03-02 22:08:00",
+          updated_at="2022-03-02 22:08:00",
+          job_submission_name="sub3",
+          job_submission_description="Job Submission 3",
+          job_submission_owner_email="tucker@omnivector.solutions",
+          job_script_id=99,
+          slurm_job_id=9999,
         ),
     ]
 
