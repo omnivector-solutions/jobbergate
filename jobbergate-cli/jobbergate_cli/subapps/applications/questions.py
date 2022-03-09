@@ -4,7 +4,7 @@ Abstraction layer for questions. Each class represents different question types.
 
 from functools import partial
 from itertools import chain
-from typing import Any, Dict, List, Optional, Type, TypeVar, Callable, cast
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, cast
 
 import inquirer
 import inquirer.errors
@@ -199,8 +199,7 @@ class BooleanList(Confirm):
             elif child.variablename in self.whenfalse_child_map:
                 return False
             else:
-                return False # This child wasn't registered. This should not happen. But, don't ignore to be safe.
-
+                return False  # This child wasn't registered. This should not happen. But, don't ignore to be safe.
 
     def make_ignore_partial(self, child: QuestionBase) -> Callable[[Dict[str, Any]], bool]:
         return partial(self.ignore_child, child)

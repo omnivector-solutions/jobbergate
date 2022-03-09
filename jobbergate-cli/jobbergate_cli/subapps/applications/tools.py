@@ -86,11 +86,7 @@ def find_templates(application_path: pathlib.Path) -> List[pathlib.Path]:
     """
     template_root_path = application_path / "templates"
     if template_root_path.exists():
-        return sorted(
-            p.relative_to(application_path)
-            for p in template_root_path.glob("**/*")
-            if p.is_file()
-        )
+        return sorted(p.relative_to(application_path) for p in template_root_path.glob("**/*") if p.is_file())
     else:
         return list()
 

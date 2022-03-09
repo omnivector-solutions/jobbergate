@@ -1,12 +1,12 @@
 """ApplicationBase."""
 
 import pathlib
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 import snick
 
-from jobbergate_cli.subapps.applications.tools import find_templates
 from jobbergate_cli.render import terminal_message
+from jobbergate_cli.subapps.applications.tools import find_templates
 
 
 class JobbergateApplicationBase:
@@ -17,12 +17,10 @@ class JobbergateApplicationBase:
         self.jobbergate_config = jobbergate_yaml["jobbergate_config"]
         self.application_config = jobbergate_yaml["application_config"]
 
-
     def mainflow(self, data: Dict[str, Any]):
         """Implements the main question asking workflow."""
         data  # Makes linters happy
         raise NotImplementedError("Inheriting class must override this method.")
-
 
     def get_template_files(self) -> List[pathlib.Path]:
         template_file_paths = find_templates(pathlib.Path.cwd())

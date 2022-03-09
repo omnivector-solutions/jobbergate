@@ -4,7 +4,7 @@ import typing
 import typer
 
 from jobbergate_cli.constants import SortOrder
-from jobbergate_cli.exceptions import handle_abort, Abort
+from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
@@ -13,9 +13,9 @@ from jobbergate_cli.subapps.applications.tools import (
     fetch_application_data,
     validate_application_data,
 )
+from jobbergate_cli.subapps.job_scripts.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
 from jobbergate_cli.subapps.job_scripts.tools import fetch_job_script_data, validate_parameter_file
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS
-from jobbergate_cli.subapps.job_scripts.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
 from jobbergate_cli.subapps.job_submissions.tools import create_job_submission
 
 
@@ -230,7 +230,7 @@ def update(
             Format: string form of dictionary with main script as entry "application.sh"
 
             Example: '{"application.sh":"#!/bin/bash \\n hostname"}'
-        """
+        """,
     ),
 ):
     """
