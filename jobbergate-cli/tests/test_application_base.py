@@ -4,7 +4,7 @@ import pathlib
 
 import pytest
 
-from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
+from jobbergate_cli.application_base import JobbergateApplicationBase
 
 
 @pytest.fixture

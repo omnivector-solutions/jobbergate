@@ -1,7 +1,15 @@
 import contextlib
 import pytest
+from loguru import logger
 
 from jobbergate_cli.config import settings
+
+
+@pytest.fixture
+def caplog(caplog):
+    handler_id = logger.add(caplog.handler, format="{message}")
+    yield caplog
+    logger.remove(handler_id)
 
 
 @pytest.fixture

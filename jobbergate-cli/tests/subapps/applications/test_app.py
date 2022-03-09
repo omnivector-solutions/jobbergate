@@ -1,5 +1,4 @@
 import shlex
-from unittest import mock
 
 import httpx
 import snick
@@ -23,6 +22,7 @@ def test_list_all__makes_request_and_renders_results(
     dummy_application_data,
     dummy_domain,
     cli_runner,
+    mocker,
 ):
     respx_mock.get(f"{dummy_domain}/applications").mock(
         return_value=httpx.Response(
@@ -36,19 +36,19 @@ def test_list_all__makes_request_and_renders_results(
         ),
     )
     test_app = make_test_app("list-all", list_all)
-    with mock.patch("jobbergate_cli.subapps.applications.app.render_list_results") as mocked_render:
-        result = cli_runner.invoke(test_app, ["list-all"])
-        assert result.exit_code == 0, f"list-all failed: {result.stdout}"
-        mocked_render.assert_called_once_with(
-            dummy_context,
-            ListResponseEnvelope(
-                results=dummy_application_data,
-                pagination=Pagination(total=3),
-            ),
-            title="Applications List",
-            style_mapper=style_mapper,
-            hidden_fields=HIDDEN_FIELDS,
-        )
+    mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_list_results")
+    result = cli_runner.invoke(test_app, ["list-all"])
+    assert result.exit_code == 0, f"list-all failed: {result.stdout}"
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        ListResponseEnvelope(
+            results=dummy_application_data,
+            pagination=Pagination(total=3),
+        ),
+        title="Applications List",
+        style_mapper=style_mapper,
+        hidden_fields=HIDDEN_FIELDS,
+    )
 
 
 def test_get_one__success__using_id(
@@ -58,6 +58,7 @@ def test_get_one__success__using_id(
     dummy_application_data,
     dummy_domain,
     cli_runner,
+    mocker,
 ):
     respx_mock.get(f"{dummy_domain}/applications/1").mock(
         return_value=httpx.Response(
@@ -66,15 +67,15 @@ def test_get_one__success__using_id(
         ),
     )
     test_app = make_test_app("get-one", get_one)
-    with mock.patch("jobbergate_cli.subapps.applications.app.render_single_result") as mocked_render:
-        result = cli_runner.invoke(test_app, shlex.split("get-one --id=1"))
-        assert result.exit_code == 0, f"get-one failed: {result.stdout}"
-        mocked_render.assert_called_once_with(
-            dummy_context,
-            dummy_application_data[0],
-            title="Application",
-            hidden_fields=HIDDEN_FIELDS,
-        )
+    mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
+    result = cli_runner.invoke(test_app, shlex.split("get-one --id=1"))
+    assert result.exit_code == 0, f"get-one failed: {result.stdout}"
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        dummy_application_data[0],
+        title="Application",
+        hidden_fields=HIDDEN_FIELDS,
+    )
 
 
 def test_get_one__success__using_identifier(
@@ -84,6 +85,7 @@ def test_get_one__success__using_identifier(
     dummy_application_data,
     dummy_domain,
     cli_runner,
+    mocker,
 ):
     respx_mock.get(f"{dummy_domain}/applications?identifier=dummy").mock(
         return_value=httpx.Response(
@@ -92,15 +94,15 @@ def test_get_one__success__using_identifier(
         ),
     )
     test_app = make_test_app("get-one", get_one)
-    with mock.patch("jobbergate_cli.subapps.applications.app.render_single_result") as mocked_render:
-        result = cli_runner.invoke(test_app, shlex.split("get-one --identifier=dummy"))
-        assert result.exit_code == 0, f"get-one failed: {result.stdout}"
-        mocked_render.assert_called_once_with(
-            dummy_context,
-            dummy_application_data[0],
-            title="Application",
-            hidden_fields=HIDDEN_FIELDS,
-        )
+    mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
+    result = cli_runner.invoke(test_app, shlex.split("get-one --identifier=dummy"))
+    assert result.exit_code == 0, f"get-one failed: {result.stdout}"
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        dummy_application_data[0],
+        title="Application",
+        hidden_fields=HIDDEN_FIELDS,
+    )
 
 
 def test_get_one__fails_with_neither_id_or_identifier(make_test_app, cli_runner):
@@ -125,6 +127,7 @@ def test_create__success(
     dummy_application,
     dummy_domain,
     cli_runner,
+    mocker,
 ):
     response_data = dummy_application_data[0]
     response_data["application_uploaded"] = False
@@ -142,29 +145,29 @@ def test_create__success(
     upload_route.mock(return_value=httpx.Response(httpx.codes.CREATED))
 
     test_app = make_test_app("create", create)
-    with mock.patch("jobbergate_cli.subapps.applications.app.render_single_result") as mocked_render:
-        result = cli_runner.invoke(
-            test_app,
-            shlex.split(
-                snick.unwrap(
-                    f"""
-                    create --name=dummy-name --identifier=dummy-identifier
-                           --application-path={dummy_application}
-                           --application-desc="This application is kinda dumb, actually"
-                    """
-                )
-            ),
-        )
-        assert result.exit_code == 0, f"create failed: {result.stdout}"
-        assert create_route.called
-        assert upload_route.called
+    mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
+    result = cli_runner.invoke(
+        test_app,
+        shlex.split(
+            snick.unwrap(
+                f"""
+                create --name=dummy-name --identifier=dummy-identifier
+                       --application-path={dummy_application}
+                       --application-desc="This application is kinda dumb, actually"
+                """
+            )
+        ),
+    )
+    assert result.exit_code == 0, f"create failed: {result.stdout}"
+    assert create_route.called
+    assert upload_route.called
 
-        mocked_render.assert_called_once_with(
-            dummy_context,
-            {**response_data, "application_uploaded": True},
-            title="Created Application",
-            hidden_fields=HIDDEN_FIELDS,
-        )
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        {**response_data, "application_uploaded": True},
+        title="Created Application",
+        hidden_fields=HIDDEN_FIELDS,
+    )
 
 
 def test_create__warns_but_does_not_abort_if_upload_fails(
@@ -175,6 +178,7 @@ def test_create__warns_but_does_not_abort_if_upload_fails(
     dummy_application,
     dummy_domain,
     cli_runner,
+    mocker,
 ):
     response_data = dummy_application_data[0]
     response_data["application_uploaded"] = False
@@ -194,30 +198,30 @@ def test_create__warns_but_does_not_abort_if_upload_fails(
     )
 
     test_app = make_test_app("create", create)
-    with mock.patch("jobbergate_cli.subapps.applications.app.render_single_result") as mocked_render:
-        result = cli_runner.invoke(
-            test_app,
-            shlex.split(
-                snick.unwrap(
-                    f"""
-                    create --name=dummy-name --identifier=dummy-identifier
-                           --application-path={dummy_application}
-                           --application-desc="This application is kinda dumb, actually"
-                    """
-                )
-            ),
-        )
-        assert result.exit_code == 0, f"create failed: {result.stdout}"
-        assert create_route.called
-        assert upload_route.called
-        assert "zipped application files could not be uploaded" in result.stdout
+    mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
+    result = cli_runner.invoke(
+        test_app,
+        shlex.split(
+            snick.unwrap(
+                f"""
+                create --name=dummy-name --identifier=dummy-identifier
+                       --application-path={dummy_application}
+                       --application-desc="This application is kinda dumb, actually"
+                """
+            )
+        ),
+    )
+    assert result.exit_code == 0, f"create failed: {result.stdout}"
+    assert create_route.called
+    assert upload_route.called
+    assert "zipped application files could not be uploaded" in result.stdout
 
-        mocked_render.assert_called_once_with(
-            dummy_context,
-            {**response_data, "application_uploaded": False},
-            title="Created Application",
-            hidden_fields=HIDDEN_FIELDS,
-        )
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        {**response_data, "application_uploaded": False},
+        title="Created Application",
+        hidden_fields=HIDDEN_FIELDS,
+    )
 
 
 def test_update__success(
@@ -228,6 +232,7 @@ def test_update__success(
     dummy_application,
     dummy_domain,
     cli_runner,
+    mocker,
 ):
     response_data = dummy_application_data[0]
     response_data["application_uploaded"] = False
@@ -247,29 +252,29 @@ def test_update__success(
     )
 
     test_app = make_test_app("update", update)
-    with mock.patch("jobbergate_cli.subapps.applications.app.render_single_result") as mocked_render:
-        result = cli_runner.invoke(
-            test_app,
-            shlex.split(
-                snick.unwrap(
-                    f"""
-                    update --id={application_id} --identifier=dummy-identifier
-                           --application-path={dummy_application}
-                           --application-desc="This application is kinda dumb, actually"
-                    """
-                )
-            ),
-        )
-        assert result.exit_code == 0, f"update failed: {result.stdout}"
-        assert update_route.called
-        assert upload_route.called
+    mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
+    result = cli_runner.invoke(
+        test_app,
+        shlex.split(
+            snick.unwrap(
+                f"""
+                update --id={application_id} --identifier=dummy-identifier
+                       --application-path={dummy_application}
+                       --application-desc="This application is kinda dumb, actually"
+                """
+            )
+        ),
+    )
+    assert result.exit_code == 0, f"update failed: {result.stdout}"
+    assert update_route.called
+    assert upload_route.called
 
-        mocked_render.assert_called_once_with(
-            dummy_context,
-            {**response_data, "application_uploaded": True},
-            title="Updated Application",
-            hidden_fields=HIDDEN_FIELDS,
-        )
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        {**response_data, "application_uploaded": True},
+        title="Updated Application",
+        hidden_fields=HIDDEN_FIELDS,
+    )
 
 
 def test_update__does_not_upload_if_application_path_is_not_supplied(
@@ -279,6 +284,7 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(
     dummy_application_data,
     dummy_domain,
     cli_runner,
+    mocker,
 ):
     response_data = dummy_application_data[0]
     response_data["application_uploaded"] = False
@@ -298,28 +304,28 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(
     )
 
     test_app = make_test_app("update", update)
-    with mock.patch("jobbergate_cli.subapps.applications.app.render_single_result") as mocked_render:
-        result = cli_runner.invoke(
-            test_app,
-            shlex.split(
-                snick.unwrap(
-                    f"""
-                    update --id={application_id} --identifier=dummy-identifier
-                           --application-desc="This application is kinda dumb, actually"
-                    """
-                )
-            ),
-        )
-        assert result.exit_code == 0, f"update failed: {result.stdout}"
-        assert update_route.called
-        assert not upload_route.called
+    mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
+    result = cli_runner.invoke(
+        test_app,
+        shlex.split(
+            snick.unwrap(
+                f"""
+                update --id={application_id} --identifier=dummy-identifier
+                       --application-desc="This application is kinda dumb, actually"
+                """
+            )
+        ),
+    )
+    assert result.exit_code == 0, f"update failed: {result.stdout}"
+    assert update_route.called
+    assert not upload_route.called
 
-        mocked_render.assert_called_once_with(
-            dummy_context,
-            {**response_data, "application_uploaded": False},
-            title="Updated Application",
-            hidden_fields=HIDDEN_FIELDS,
-        )
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        {**response_data, "application_uploaded": False},
+        title="Updated Application",
+        hidden_fields=HIDDEN_FIELDS,
+    )
 
 
 def test_update__warns_but_does_not_abort_if_upload_fails(
@@ -330,6 +336,7 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
     dummy_application,
     dummy_domain,
     cli_runner,
+    mocker,
 ):
     response_data = dummy_application_data[0]
     response_data["application_uploaded"] = False
@@ -349,30 +356,30 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
     )
 
     test_app = make_test_app("update", update)
-    with mock.patch("jobbergate_cli.subapps.applications.app.render_single_result") as mocked_render:
-        result = cli_runner.invoke(
-            test_app,
-            shlex.split(
-                snick.unwrap(
-                    f"""
-                    update --id={application_id} --identifier=dummy-identifier
-                           --application-path={dummy_application}
-                           --application-desc="This application is kinda dumb, actually"
-                    """
-                )
-            ),
-        )
-        assert result.exit_code == 0, f"update failed: {result.stdout}"
-        assert update_route.called
-        assert upload_route.called
-        assert "zipped application files could not be uploaded" in result.stdout
+    mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
+    result = cli_runner.invoke(
+        test_app,
+        shlex.split(
+            snick.unwrap(
+                f"""
+                update --id={application_id} --identifier=dummy-identifier
+                       --application-path={dummy_application}
+                       --application-desc="This application is kinda dumb, actually"
+                """
+            )
+        ),
+    )
+    assert result.exit_code == 0, f"update failed: {result.stdout}"
+    assert update_route.called
+    assert upload_route.called
+    assert "zipped application files could not be uploaded" in result.stdout
 
-        mocked_render.assert_called_once_with(
-            dummy_context,
-            {**response_data, "application_uploaded": False},
-            title="Updated Application",
-            hidden_fields=HIDDEN_FIELDS,
-        )
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        {**response_data, "application_uploaded": False},
+        title="Updated Application",
+        hidden_fields=HIDDEN_FIELDS,
+    )
 
 
 def test_delete__success(respx_mock, make_test_app, dummy_domain, cli_runner):

@@ -37,6 +37,7 @@ class QuestionBase:
         ignore: bool = False,
         default: Optional[Any] = None,
         inquirer_type: Type[TInquirerType] = inquirer.Text,
+        conditional_parents: Optional[Dict[str, bool]] = None
     ):
         self.variablename = variablename
         self.default = default
@@ -177,18 +178,43 @@ class BooleanList(Confirm):
         super().__init__(variablename, message, **kwargs)
         if whentrue is None and whenfalse is None:
             raise ValueError("Empty questions lists")
-        self.whentrue = whentrue
-        self.whenfalse = whenfalse
 
-        self.ignore = lambda a: a.get(variablename, True)
-        self.noignore = lambda a: not a.get(variablename, False)
+        self.child_ignore_map = dict()
+        if whentrue is not None:
+            self.child_ignore_map.update(
+                **{c.variablename: False for c in whentrue}
+            )
+        if whenfalse is not None:
+            self.child_ignore_map.update(
+                **{c.variablename: True for c in whenfalse}
+            )
+
+    def ignore_child(self, child: QuestionBase, answers: Dict[str, Any]):
+        my_answer = answers.get(self.variablename)
+        Abort.require_condition(
+            my_answer is not None,
+            "Questions were asked out of order. Please check your Application for consistency",
+        )
+        child_ignore = self.child_ignore_map.get(child.variablename)
+        if child_ignore is None:
+            return False  # we don't know about this child...somehow. So, don't ignore it?
+
+        if my_answer is True:
+            return child_ignore
+        else:
+            return not child_ignore
 
     def make_prompts(self, **override_kwargs):
         retval = super().make_prompts(**override_kwargs)
+        for
+        retval.extend(chain.from_iterable(
         if self.whenfalse is not None:
             retval.extend(chain.from_iterable(wf.make_prompts(ignore=self.ignore) for wf in self.whenfalse))
         if self.whentrue is not None:
+            print("ADDING QUESTIONS BECAUSE WHENTRUE")
+            print("RETVAL BEFORE: ", retval)
             retval.extend(chain.from_iterable(wf.make_prompts(ignore=self.noignore) for wf in self.whentrue))
+            print("RETVAL AFTER: ", retval)
         return retval
 
 

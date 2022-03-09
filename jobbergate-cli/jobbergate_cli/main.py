@@ -18,12 +18,12 @@ if settings.JOBBERGATE_COMPATIBILITY_MODE:
     add_legacy_compatible_commands(app)
 else:
     from jobbergate_cli.subapps.applications.app import app as applications_app
+    from jobbergate_cli.subapps.job_scripts.app import app as job_scripts_app
+    from jobbergate_cli.subapps.job_submissions.app import app as job_submissions_app
 
     app.add_typer(applications_app, name="applications")
-
-    from jobbergate_cli.subapps.job_scripts.app import app as job_scripts_app
-
     app.add_typer(job_scripts_app, name="job-scripts")
+    app.add_typer(job_submissions_app, name="job-submissions")
 
 
 @app.callback()

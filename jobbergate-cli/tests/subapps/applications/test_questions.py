@@ -1,5 +1,4 @@
 import importlib
-from unittest import mock
 
 import pytest
 from inquirer import prompt
@@ -20,85 +19,85 @@ from jobbergate_cli.subapps.applications.questions import (
 )
 
 
-def test_Text__success(dummy_render_class):
+def test_Text__success(dummy_render_class, mocker):
     variablename = "foo"
     question = Text(variablename, "gimme the foo!")
     prompts = question.make_prompts()
 
     dummy_render_class.prepared_input = dict(foo="bar")
 
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        answers = prompt(prompts)
-        assert answers["foo"] == "bar"
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    answers = prompt(prompts)
+    assert answers["foo"] == "bar"
 
 
-def test_Integer__success(dummy_render_class):
+def test_Integer__success(dummy_render_class, mocker):
     variablename = "foo"
     question = Integer(variablename, "gimme the foo!")
     prompts = question.make_prompts()
 
     dummy_render_class.prepared_input = dict(foo=13)
 
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        answers = prompt(prompts)
-        assert answers["foo"] == 13
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    answers = prompt(prompts)
+    assert answers["foo"] == 13
 
 
-def test_Integer__fails_with_outside_of_range(dummy_render_class):
+def test_Integer__fails_with_outside_of_range(dummy_render_class, mocker):
     variablename = "foo"
     question = Integer(variablename, "gimme the foo!", minval=14, maxval=16)
     prompts = question.make_prompts()
 
     dummy_render_class.prepared_input = dict(foo=13)
 
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        with pytest.raises(ValidationError):
-            prompt(prompts)
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    with pytest.raises(ValidationError):
+        prompt(prompts)
 
     dummy_render_class.prepared_input = dict(foo=17)
 
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        with pytest.raises(ValidationError):
-            prompt(prompts)
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    with pytest.raises(ValidationError):
+        prompt(prompts)
 
 
-def test_List__success(dummy_render_class):
+def test_List__success(dummy_render_class, mocker):
     variablename = "foo"
     question = List(variablename, "gimme the foo!", ["a", "b", "c"])
     prompts = question.make_prompts()
 
     dummy_render_class.prepared_input = dict(foo="b")
 
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        answers = prompt(prompts)
-        assert answers["foo"] == "b"
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    answers = prompt(prompts)
+    assert answers["foo"] == "b"
 
 
-def test_Directory__success(tmp_path, dummy_render_class):
+def test_Directory__success(tmp_path, dummy_render_class, mocker):
     variablename = "foo"
     question = Directory(variablename, "gimme the foo!", exists=True)
     prompts = question.make_prompts()
 
     dummy_render_class.prepared_input = dict(foo=tmp_path)
 
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        answers = prompt(prompts)
-        assert answers["foo"] == tmp_path
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    answers = prompt(prompts)
+    assert answers["foo"] == tmp_path
 
 
-def test_Directory__fails_if_directory_does_not_exist(dummy_render_class):
+def test_Directory__fails_if_directory_does_not_exist(dummy_render_class, mocker):
     variablename = "foo"
     question = Directory(variablename, "gimme the foo!", exists=True)
     prompts = question.make_prompts()
 
     dummy_render_class.prepared_input = dict(foo="not/a/real/path")
 
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        with pytest.raises(ValidationError):
-            prompt(prompts)
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    with pytest.raises(ValidationError):
+        prompt(prompts)
 
 
-def test_File__success(tmp_path, dummy_render_class):
+def test_File__success(tmp_path, dummy_render_class, mocker):
     variablename = "foo"
     question = File(variablename, "gimme the foo!", exists=True)
     prompts = question.make_prompts()
@@ -107,61 +106,60 @@ def test_File__success(tmp_path, dummy_render_class):
     dummy_file.write_text("just some dome stuff")
     dummy_render_class.prepared_input = dict(foo=dummy_file)
 
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        answers = prompt(prompts)
-        assert answers["foo"] == dummy_file
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    answers = prompt(prompts)
+    assert answers["foo"] == dummy_file
 
 
-def test_File__fails_if_file_does_not_exist(dummy_render_class):
+def test_File__fails_if_file_does_not_exist(dummy_render_class, mocker):
     variablename = "foo"
     question = File(variablename, "gimme the foo!", exists=True)
     prompts = question.make_prompts()
 
     dummy_render_class.prepared_input = dict(foo="not/a/real/path")
 
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        with pytest.raises(ValidationError):
-            prompt(prompts)
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    with pytest.raises(ValidationError):
+        prompt(prompts)
 
 
-def test_Checkbox__success(dummy_render_class):
+def test_Checkbox__success(dummy_render_class, mocker):
     variablename = "foo"
     question = Checkbox(variablename, "gimme the foo!", ["a", "b", "c"])
     prompts = question.make_prompts()
 
     dummy_render_class.prepared_input = dict(foo=["a", "b"])
 
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        answers = prompt(prompts)
-        assert answers["foo"] == ["a", "b"]
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    answers = prompt(prompts)
+    assert answers["foo"] == ["a", "b"]
 
 
-def test_Confirm__success(dummy_render_class):
+def test_Confirm__success(dummy_render_class, mocker):
     variablename = "foo"
     question = Confirm(variablename, "gimme the foo?")
     prompts = question.make_prompts()
 
     dummy_render_class.prepared_input = dict(foo=True)
 
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        answers = prompt(prompts)
-        assert answers["foo"] == True
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    answers = prompt(prompts)
+    assert answers["foo"] == True
 
 
-def test_Const__success(dummy_render_class):
+def test_Const__success(dummy_render_class, mocker):
     variablename = "foo"
     question = Const(variablename, default="bar")
     prompts = question.make_prompts()
 
     dummy_render_class.prepared_input = dict()
 
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        answers = prompt(prompts)
-        assert answers["foo"] == "bar"
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    answers = prompt(prompts)
+    assert answers["foo"] == "bar"
 
 
-@pytest.mark.xfail(reason="Need to understand this method better before I can finish the test")
-def test_BooleanList__success(dummy_render_class):
+def test_BooleanList__success(dummy_render_class, mocker):
     variablenameTT1 = "fooTT1"
     questionTT1 = Confirm(variablenameTT1, message="gimme the fooTT1!")
 
@@ -197,12 +195,13 @@ def test_BooleanList__success(dummy_render_class):
         foo=True,
     )
 
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        answers = prompt(prompts)
-        assert False
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    answers = prompt(prompts)
+    print("ANSWERS: ", answers)
+    assert False
 
 
-def test_gather_config_values__basic(dummy_render_class):
+def test_gather_config_values__basic(dummy_render_class, mocker):
     variablename1 = "foo"
     question1 = Text(variablename1, message="gimme the foo!")
 
@@ -229,16 +228,16 @@ def test_gather_config_values__basic(dummy_render_class):
     )
 
     config = dict()
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        gather_config_values(DummyApplication(), config)
-        assert config == dict(
-            foo="FOO",
-            bar="BAR",
-            baz="BAZ",
-        )
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    gather_config_values(DummyApplication(), config)
+    assert config == dict(
+        foo="FOO",
+        bar="BAR",
+        baz="BAZ",
+    )
 
 
-def test_gather_config_values__fast_mode(dummy_render_class):
+def test_gather_config_values__fast_mode(dummy_render_class, mocker):
     variablename1 = "foo"
     question1 = Text(variablename1, message="gimme the foo!", default="oof")
 
@@ -265,16 +264,16 @@ def test_gather_config_values__fast_mode(dummy_render_class):
     )
 
     config = dict()
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        gather_config_values(DummyApplication(), config, fast_mode=True)
-        assert config == dict(
-            foo="oof",
-            bar="BAR",
-            baz="BAZ",
-        )
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    gather_config_values(DummyApplication(), config, fast_mode=True)
+    assert config == dict(
+        foo="oof",
+        bar="BAR",
+        baz="BAZ",
+    )
 
 
-def test_gather_config_values__with_supplied_params(dummy_render_class):
+def test_gather_config_values__with_supplied_params(dummy_render_class, mocker):
     variablename1 = "foo"
     question1 = Text(variablename1, message="gimme the foo!", default="oof")
 
@@ -301,16 +300,16 @@ def test_gather_config_values__with_supplied_params(dummy_render_class):
     )
 
     config = dict()
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        gather_config_values(DummyApplication(), config, supplied_params=dict(bar="rab"))
-        assert config == dict(
-            foo="FOO",
-            bar="rab",
-            baz="BAZ",
-        )
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    gather_config_values(DummyApplication(), config, supplied_params=dict(bar="rab"))
+    assert config == dict(
+        foo="FOO",
+        bar="rab",
+        baz="BAZ",
+    )
 
 
-def test_gather_config_values__raises_Abort_if_method_not_implemented(dummy_render_class):
+def test_gather_config_values__raises_Abort_if_method_not_implemented(dummy_render_class, mocker):
     variablename1 = "foo"
     question1 = Text(variablename1, message="gimme the foo!")
 
@@ -328,6 +327,6 @@ def test_gather_config_values__raises_Abort_if_method_not_implemented(dummy_rend
     )
 
     config = dict()
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        with pytest.raises(Abort, match="not implemented"):
-            gather_config_values(DummyApplication(), config)
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    with pytest.raises(Abort, match="not implemented"):
+        gather_config_values(DummyApplication(), config)

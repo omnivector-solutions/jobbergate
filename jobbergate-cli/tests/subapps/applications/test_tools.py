@@ -2,7 +2,6 @@ import importlib
 import json
 import pathlib
 import re
-from unittest import mock
 
 import httpx
 import snick
@@ -389,7 +388,7 @@ def test_validate_application_data__fails_if_application_config_is_not_valid_YAM
         validate_application_data(app_data)
 
 
-def test_execute_application__basic(dummy_render_class, dummy_module_source):
+def test_execute_application__basic(dummy_render_class, dummy_module_source, mocker):
     dummy_render_class.prepared_input = dict(
         foo="FOO",
         bar="BAR",
@@ -398,24 +397,24 @@ def test_execute_application__basic(dummy_render_class, dummy_module_source):
 
     config = dict()
     supplied_params = dict()
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        rendered_data = execute_application(
-            dummy_module_source,
-            config,
-            supplied_params,
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    rendered_data = execute_application(
+        dummy_module_source,
+        config,
+        supplied_params,
+    )
+    assert rendered_data == dict(
+        param_dict=json.dumps(
+            dict(
+                foo="FOO",
+                bar="BAR",
+                baz="BAZ",
+            ),
         )
-        assert rendered_data == dict(
-            param_dict=json.dumps(
-                dict(
-                    foo="FOO",
-                    bar="BAR",
-                    baz="BAZ",
-                ),
-            )
-        )
+    )
 
 
-def test_execute_application__with_all_the_extras(dummy_render_class, dummy_module_source):
+def test_execute_application__with_all_the_extras(dummy_render_class, dummy_module_source, mocker):
     dummy_render_class.prepared_input = dict(
         foo="FOO",
         bar="BAR",
@@ -428,29 +427,29 @@ def test_execute_application__with_all_the_extras(dummy_render_class, dummy_modu
     )
     supplied_params = dict(foo="oof")
     sbatch_params = [1, 2, 3]
-    with mock.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class):
-        rendered_data = execute_application(
-            dummy_module_source,
-            config,
-            supplied_params,
-            sbatch_params=sbatch_params,
-            fast_mode=True,
-        )
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    rendered_data = execute_application(
+        dummy_module_source,
+        config,
+        supplied_params,
+        sbatch_params=sbatch_params,
+        fast_mode=True,
+    )
 
-        # Un-jsonify the param_dict to make testing deterministic
-        rendered_data["param_dict"] = json.loads(rendered_data["param_dict"])
+    # Un-jsonify the param_dict to make testing deterministic
+    rendered_data["param_dict"] = json.loads(rendered_data["param_dict"])
 
-        assert rendered_data == dict(
-            param_dict= dict(
-                foo="oof",
-                bar="BAR",
-                baz="zab",
-                extra="stuff",
-                job_script_name="overridden",
-            ),
+    assert rendered_data == dict(
+        param_dict= dict(
+            foo="oof",
+            bar="BAR",
+            baz="zab",
+            extra="stuff",
             job_script_name="overridden",
-            sbatch_params_0=1,
-            sbatch_params_1=2,
-            sbatch_params_2=3,
-            sbatch_params_len=3,
-        )
+        ),
+        job_script_name="overridden",
+        sbatch_params_0=1,
+        sbatch_params_1=2,
+        sbatch_params_2=3,
+        sbatch_params_len=3,
+    )

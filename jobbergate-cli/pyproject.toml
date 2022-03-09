@@ -46,6 +46,7 @@ respx = "^0.19.2"
 plummet = "^1.0.0"
 pyproject-flake8 = "^0.0.1-alpha.2"
 mypy = "^0.931"
+pytest-mock = "^3.7.0"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -53,7 +54,7 @@ addopts = [
     "--random-order",
     "--cov=jobbergate_cli",
     "--cov-report=term-missing",
-    "--cov-fail-under=25",
+    "--cov-fail-under=85",
 ]
 env = [
     "JOBBERGATE_API_ENDPOINT = https://jobbergate-api-staging.omnivector.solutions",
@@ -64,7 +65,6 @@ env = [
     "AUTH0_CLIENT_SECRET = dummy_client_secret",
     "IDENTITY_CLAIMS_KEY = https://test-domain.test",
 ]
-testpaths = ["jobbergate_cli/test"]
 
 [tool.black]
 line-length = 120

@@ -115,8 +115,8 @@ def create_job_submission(
     """
 
     # Make static type checkers happy
-    assert jg_ctx.client is not None
-    assert jg_ctx.persona is not None
+    assert jg_ctx.client is not None, "jg_ctx.client is uninitialized"
+    assert jg_ctx.persona is not None, "jg_ctx.persona is uninitialized"
 
     job_script_data = fetch_job_script_data(jg_ctx, job_script_id)
 
@@ -125,7 +125,6 @@ def create_job_submission(
     application_name = application_data["application_name"]
 
     slurm_job_id = run_job_script(job_script_data, application_name)
-    print("SLURM JOB ID: ", slurm_job_id)
     owner_email = jg_ctx.persona.identity_data.user_email
 
     job_submission_data = dict(
@@ -149,3 +148,26 @@ def create_job_submission(
         ),
     )
     return result
+
+
+def fetch_job_submission_data(
+    jg_ctx: JobbergateContext,
+    job_submission_id: int,
+) -> Dict[str, Any]:
+    """
+    Retrieve a job submission from the API by ``id``
+    """
+    # Make static type checkers happy
+    assert jg_ctx.client is not None, "Client is uninitialized"
+
+    return cast(
+        Dict[str, Any],
+        make_request(
+            jg_ctx.client,
+            f"/job-submissions/{job_submission_id}",
+            "GET",
+            expected_status=200,
+            abort_message=f"Couldn't retrieve job submission {job_submission_id} from API",
+            support=True,
+        ),
+    )
