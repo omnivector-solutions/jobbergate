@@ -1,6 +1,7 @@
 """
-Constants used throughout the tool
+Provide constants that may be used throughout the CLI modules.
 """
+
 from pathlib import Path
 
 from auto_name_enum import AutoNameEnum, auto
@@ -31,8 +32,6 @@ JOBBERGATE_DEFAULT_DOTENV_PATH = Path("/etc/default/jobbergate-cli")
 JOBBERGATE_APPLICATION_MODULE_FILE_NAME = "jobbergate.py"
 JOBBERGATE_APPLICATION_CONFIG_FILE_NAME = "jobbergate.yaml"
 TAR_NAME = "jobbergate.tar.gz"
-
-DEFAULT_MAX_BYTES_DEBUG = 1000
 
 OV_CONTACT = "Omnivector Solutions <info@omnivector.solutions>"
 

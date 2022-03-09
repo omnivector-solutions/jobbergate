@@ -1,6 +1,7 @@
 """
 Utilities for handling auth in jobbergate-cli.
 """
+
 from time import sleep
 from typing import Dict, Optional, cast
 

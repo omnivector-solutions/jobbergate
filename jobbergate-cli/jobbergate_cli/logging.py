@@ -1,3 +1,7 @@
+"""
+Provide initializers for logging.
+"""
+
 import sys
 
 from loguru import logger
@@ -27,7 +31,7 @@ def init_logs(verbose=False):
 
 
 def init_sentry():
-    """Initialize Sentry."""
+    """Initialize Sentry if the ``SENTRY_DSN`` environment variable is present."""
     if settings.SENTRY_DSN:
         logger.debug("Initializing sentry")
         sentry_sdk.init(

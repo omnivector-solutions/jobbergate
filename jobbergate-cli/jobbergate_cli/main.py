@@ -1,3 +1,7 @@
+"""
+Provide main entry point for the Jobbergate CLI App.
+"""
+
 import httpx
 import pyperclip
 import typer
@@ -12,6 +16,8 @@ from jobbergate_cli.schemas import JobbergateContext, Persona, TokenSet
 
 app = typer.Typer()
 
+
+# If "compatibility" mode is set through the environment, map the commands at their familiar placement on the main app.
 if settings.JOBBERGATE_COMPATIBILITY_MODE:
     from jobbergate_cli.compat import add_legacy_compatible_commands
 
@@ -48,6 +54,8 @@ def main(
         headers={"content-type": "application/x-www-form-urlencoded"},
     )
     context = JobbergateContext(persona=None, client=client)
+
+    # TODO: Figure out how to show help and exit if there are no inoked_subcommands
 
     if ctx.invoked_subcommand not in ("login", "logout"):
         persona = init_persona(context)

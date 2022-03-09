@@ -1,3 +1,7 @@
+"""
+Provide exceptions and custom handlers for the CLI.
+"""
+
 from functools import wraps
 
 import buzz
@@ -9,8 +13,10 @@ import snick
 import typer
 
 from jobbergate_cli.config import settings
+from jobbergate_cli.constants import OV_CONTACT
 
 
+# Enables prettified traceback printing via rich
 traceback.install()
 
 
@@ -83,9 +89,9 @@ def handle_abort(func):
             message = snick.dedent(err.message)
             if err.support:
                 support_message = snick.unwrap(
-                    """
+                    f"""
                     [yellow]If the problem persists,
-                    please contact [bold]Omnivector <info@omnivector.solutions>[/bold]
+                    please contact [bold]{OV_CONTACT}[/bold]
                     for support and trouble-shooting
                     """
                 )

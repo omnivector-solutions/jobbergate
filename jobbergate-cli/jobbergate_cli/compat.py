@@ -1,3 +1,8 @@
+"""
+Provide compatibility to the previous version of Jobbergate CLI for users who have automation or are
+familiar with the old commands
+"""
+
 import typer
 
 from jobbergate_cli.subapps.applications.app import create as create_application
@@ -17,6 +22,10 @@ from jobbergate_cli.subapps.job_submissions.app import list_all as list_job_subm
 
 
 def add_legacy_compatible_commands(app: typer.Typer):
+    """
+    Add commands from the restructured CLI under the previous names for the commands
+    to the root ``typer`` app.
+    """
 
     # Applications
     app.command(
