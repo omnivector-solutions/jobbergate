@@ -154,26 +154,25 @@ def test_Const__success(dummy_render_class, mocker):
 
     dummy_render_class.prepared_input = dict()
 
-    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
-    answers = prompt(prompts)
+    answers = prompt(prompts, render=dummy_render_class())
     assert answers["foo"] == "bar"
 
 
 def test_BooleanList__success(dummy_render_class, mocker):
     variablenameTT1 = "fooTT1"
-    questionTT1 = Confirm(variablenameTT1, message="gimme the fooTT1!")
+    questionTT1 = Confirm(variablenameTT1, message="gimme the fooTT1!", default=False)
 
     variablenameT1 = "fooT1"
-    questionT1 = BooleanList(variablenameT1, message="gimme the fooT1!", whentrue=[questionTT1])
+    questionT1 = BooleanList(variablenameT1, message="gimme the fooT1!", whentrue=[questionTT1], default=False)
 
     variablenameT2 = "fooT2"
-    questionT2 = Confirm(variablenameT2, message="gimme the fooT2!")
+    questionT2 = Confirm(variablenameT2, message="gimme the fooT2!", default=False)
 
     variablenameFF1 = "fooFF1"
-    questionFF1 = Confirm(variablenameFF1, message="gimme the fooFF1!")
+    questionFF1 = Confirm(variablenameFF1, message="gimme the fooFF1!", default=False)
 
     variablenameF1 = "fooF1"
-    questionF1 = BooleanList(variablenameF1, message="gimme the fooF1!", whenfalse=[questionFF1])
+    questionF1 = BooleanList(variablenameF1, message="gimme the fooF1!", whentrue=[questionFF1], default=False)
 
     variablename = "foo"
     question = BooleanList(
@@ -181,11 +180,12 @@ def test_BooleanList__success(dummy_render_class, mocker):
         message="gimme the foo1!",
         whentrue=[questionT1, questionT2],
         whenfalse=[questionF1],
+        default=False,
     )
 
     prompts = question.make_prompts()
-    print("PROMPTS: ", prompts)
 
+    # We'll answer True to any questions asked to make sure we are ignoring the correct ones
     dummy_render_class.prepared_input = dict(
         fooTT1=True,
         fooT1=True,
@@ -196,9 +196,18 @@ def test_BooleanList__success(dummy_render_class, mocker):
     )
 
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
-    answers = prompt(prompts)
-    print("ANSWERS: ", answers)
-    assert False
+    answers = dict()
+    answers = prompt(prompts, answers=answers, render=dummy_render_class())
+
+    # Only ignored questions should be false
+    assert answers == dict(
+        fooTT1=True,
+        fooT1=True,
+        fooT2=True,
+        fooFF1=False,
+        fooF1=False,
+        foo=True,
+    )
 
 
 def test_gather_config_values__basic(dummy_render_class, mocker):

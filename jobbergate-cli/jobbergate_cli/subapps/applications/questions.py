@@ -2,8 +2,9 @@
 Abstraction layer for questions. Each class represents different question types.
 """
 
+from functools import partial
 from itertools import chain
-from typing import Any, Dict, List, Optional, Type, TypeVar, cast
+from typing import Any, Dict, List, Optional, Type, TypeVar, Callable, cast
 
 import inquirer
 import inquirer.errors
@@ -158,11 +159,6 @@ class Confirm(QuestionBase):
         super().__init__(variablename, message, inquirer_type=inquirer.Confirm, **kwargs)
 
 
-class IgnorableChild(pydantic.BaseModel):
-    question: QuestionBase
-    ignore_if_true: bool
-
-
 class BooleanList(Confirm):
     """
     Gives the use a boolean question, and depending on answer it shows `whentrue` or `whenfalse` questions.
@@ -181,36 +177,39 @@ class BooleanList(Confirm):
         **kwargs,
     ):
         super().__init__(variablename, message, **kwargs)
-        if whentrue is None and whenfalse is None:
-            raise ValueError("Empty questions lists")
+        self.whentrue_child_map = {c.variablename: c for c in (whentrue if whentrue is not None else [])}
+        self.whenfalse_child_map = {c.variablename: c for c in (whenfalse if whenfalse is not None else [])}
 
-        self.child_ignore_map = dict()
-        if whentrue is not None:
-            self.child_ignore_map.update(
-                **{c.variablename: IgnorableChild(question=c, ignore_if_true=False) for c in whentrue}
-            )
-        if whenfalse is not None:
-            self.child_ignore_map.update(
-                **{c.variablename: IgnorableChild(question=c, ignore_if_true=True) for c in whenfalse}
-            )
-
-    def ignore_child(self, child: QuestionBase, answers: Dict[str, Any]):
+    def ignore_child(self, child: QuestionBase, answers: Dict[str, Any]) -> bool:
         my_answer = answers.get(self.variablename)
         Abort.require_condition(
             my_answer is not None,
             "Questions were asked out of order. Please check your Application for consistency",
         )
-        ignorable_child = self.child_ignore_map.get(child.variablename)
-        if ignorable_child is None:
-            return False  # we don't know about this child...somehow. So, don't ignore it?
+        if my_answer is True:
+            if child.variablename in self.whentrue_child_map:
+                return False
+            elif child.variablename in self.whenfalse_child_map:
+                return True
+            else:
+                return False  # This child wasn't registered. This should not happen. But, don't ignore to be safe.
+        else:
+            if child.variablename in self.whentrue_child_map:
+                return True
+            elif child.variablename in self.whenfalse_child_map:
+                return False
+            else:
+                return False # This child wasn't registered. This should not happen. But, don't ignore to be safe.
 
-        return ignorable_child.ignore_if_true is my_answer
+
+    def make_ignore_partial(self, child: QuestionBase) -> Callable[[Dict[str, Any]], bool]:
+        return partial(self.ignore_child, child)
 
     def make_prompts(self, **override_kwargs):
         retval = super().make_prompts(**override_kwargs)
-        for (name, child) in self.child_ignore_map.items():
-            retval.extend(child.make_prompts(ignore=lambda a: self.ignore_child(child.question, a)))
-
+        all_children = [*self.whentrue_child_map.values(), *self.whenfalse_child_map.values()]
+        for child in all_children:
+            retval.extend(child.make_prompts(ignore=self.make_ignore_partial(child)))
         return retval
 
 

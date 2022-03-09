@@ -267,9 +267,17 @@ def dummy_render_class():
             self.args = args
             self.kwargs = kwargs
 
-        def render(self, question, *_):
-            if question.ignore:
+        def render(self, question, answers=None):
+            question.answers = answers if answers is not None else dict()
+
+            try:
+                ignore = question.ignore(answers)
+            except TypeError as err:
+                ignore = question.ignore
+
+            if ignore:
                 return question.default
+
             value = self.prepared_input[question.name]
             question.validate(value)
             return value
