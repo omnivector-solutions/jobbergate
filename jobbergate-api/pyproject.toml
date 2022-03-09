@@ -50,7 +50,7 @@ py-docker-gadgets = "^0.1.0"
 pyproject-flake8 = "^0.0.1-alpha.2"
 
 [tool.poetry.scripts]
-jobbergate = "jobbergate_api.cli:app"
+dev-tools = "jobbergate_api.cli:app"
 
 [tool.black]
 line-length = 110
