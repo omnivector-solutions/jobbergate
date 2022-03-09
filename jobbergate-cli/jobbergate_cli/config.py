@@ -15,6 +15,9 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class Settings(BaseSettings):
+    """
+    Provide a ``pydantic`` settings model to hold configuration values loaded from the environment.
+    """
 
     JOBBERGATE_CACHE_DIR: Path = Field(Path.home() / ".local/share/jobbergate")
     JOBBERGATE_API_ENDPOINT: AnyHttpUrl = Field("https://jobbergateapi2-staging.omnivector.solutions")
@@ -38,6 +41,9 @@ class Settings(BaseSettings):
     JOBBERGATE_API_ACCESS_TOKEN_PATH: Optional[Path]
     JOBBERGATE_API_REFRESH_TOKEN_PATH: Optional[Path]
 
+    # Compatibility mode: If True, add commands as they appear in the legacy app
+    JOBBERGATE_COMPATIBILITY_MODE: Optional[bool] = False
+
     # Auth0 config for machine-to-machine security
     AUTH0_DOMAIN: str
     AUTH0_LOGIN_DOMAIN: Optional[str]
@@ -50,15 +56,14 @@ class Settings(BaseSettings):
 
     @root_validator
     def compute_extra_settings(cls, values):
+        """
+        Compute settings values that are based on other settings values.
+        """
         cache_dir = values["JOBBERGATE_CACHE_DIR"]
         cache_dir.mkdir(exist_ok=True, parents=True)
 
-        values["JOBBERGATE_APPLICATION_MODULE_PATH"] = (
-            cache_dir / constants.JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-        )
-        values["JOBBERGATE_APPLICATION_CONFIG_PATH"] = (
-            cache_dir / constants.JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-        )
+        values["JOBBERGATE_APPLICATION_MODULE_PATH"] = cache_dir / constants.JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+        values["JOBBERGATE_APPLICATION_CONFIG_PATH"] = cache_dir / constants.JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
 
         log_dir = cache_dir / "logs"
         log_dir.mkdir(exist_ok=True, parents=True)
@@ -75,10 +80,15 @@ class Settings(BaseSettings):
         return values
 
     class Config:
+        """
+        Customize behavior of the Settings class. Especially, enable the use of dotenv to load settings from a ``.env``
+        file instead of the environment.
+        """
+
         if constants.JOBBERGATE_DEFAULT_DOTENV_PATH.is_file():
             env_file = constants.JOBBERGATE_DEFAULT_DOTENV_PATH
         else:
-            env_file = ".env"
+            env_file = Path(".env")
 
 
 settings = Settings()
