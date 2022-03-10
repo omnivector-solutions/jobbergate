@@ -1,5 +1,13 @@
 """
 Abstraction layer for questions. Each class represents different question types.
+
+The questions describe literal questions that are asked of the user in an interactive
+mode via the ``inquirer`` package.
+
+Questions will be skipped and use the default value if the `ignore` property resolves
+to True.
+
+Questions will also resolve to their default values if running in "fast mode".
 """
 
 from functools import partial
