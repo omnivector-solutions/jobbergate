@@ -153,7 +153,7 @@ async def job_submission_delete(
 
 @router.put(
     "/job-submissions/{job_submission_id}",
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     description="Endpoint to update a job_submission given the id",
     response_model=JobSubmissionResponse,
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT))],
