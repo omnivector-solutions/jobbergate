@@ -250,7 +250,7 @@ def update(
             jg_ctx.client,
             f"/job-scripts/{id}",
             "PUT",
-            expected_status=202,
+            expected_status=200,
             abort_message="Couldn't update job script",
             support=True,
             json=dict(job_script_data_as_string=job_script),

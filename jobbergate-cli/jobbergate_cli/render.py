@@ -5,7 +5,7 @@ Provide helpers to render output for users.
 import json
 from typing import Any, Dict, List, Optional
 
-from rich import print, print_json
+from rich import print_json
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table

@@ -300,7 +300,7 @@ def update(
             jg_ctx.client,
             f"/applications/{id}",
             "PUT",
-            expected_status=202,
+            expected_status=200,
             abort_message="Request to update application was not accepted by the API",
             support=True,
             json=req_data,

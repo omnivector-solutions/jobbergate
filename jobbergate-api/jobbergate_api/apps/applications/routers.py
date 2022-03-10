@@ -233,7 +233,7 @@ async def applications_get_by_id(application_id: int = Query(...)):
 
 @router.put(
     "/applications/{application_id}",
-    status_code=status.HTTP_202_ACCEPTED,
+    status_code=status.HTTP_200_OK,
     description="Endpoint to update an application given the id",
     response_model=ApplicationResponse,
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],

@@ -339,7 +339,7 @@ def test_update__makes_request_and_renders_results(
         "job_script_data_as_string": new_job_script_data_as_string,
     }
     respx_mock.put(f"{dummy_domain}/job-scripts/{job_script_id}").mock(
-        return_value=httpx.Response(httpx.codes.ACCEPTED, json=new_job_script_data),
+        return_value=httpx.Response(httpx.codes.OK, json=new_job_script_data),
     )
     test_app = make_test_app("update", update)
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")

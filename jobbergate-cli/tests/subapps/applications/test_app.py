@@ -241,7 +241,7 @@ def test_update__success(
     update_route = respx_mock.put(f"{dummy_domain}/applications/{application_id}")
     update_route.mock(
         return_value=httpx.Response(
-            httpx.codes.ACCEPTED,
+            httpx.codes.OK,
             json=response_data,
         ),
     )
@@ -293,7 +293,7 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(
     update_route = respx_mock.put(f"{dummy_domain}/applications/{application_id}")
     update_route.mock(
         return_value=httpx.Response(
-            httpx.codes.ACCEPTED,
+            httpx.codes.OK,
             json=response_data,
         ),
     )
@@ -345,7 +345,7 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
     update_route = respx_mock.put(f"{dummy_domain}/applications/{application_id}")
     update_route.mock(
         return_value=httpx.Response(
-            httpx.codes.ACCEPTED,
+            httpx.codes.OK,
             json=response_data,
         ),
     )
