@@ -260,7 +260,7 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
 
 @router.put(
     "/job-scripts/{job_script_id}",
-    status_code=status.HTTP_202_UPDATED,
+    status_code=status.HTTP_200_OK,
     description="Endpoint to update a job_script given the id",
     response_model=JobScriptResponse,
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],

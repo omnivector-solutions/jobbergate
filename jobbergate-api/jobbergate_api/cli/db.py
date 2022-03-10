@@ -27,7 +27,7 @@ def start_dev():
         image="postgres:14.1",
         env=dict(
             POSTGRES_PASSWORD=settings.DATABASE_PSWD,
-            POSTGRES_DATABASE=settings.DATABASE_NAME,
+            POSTGRES_DB=settings.DATABASE_NAME,
             POSTGRES_USER=settings.DATABASE_USER,
         ),
         ports={"5432/tcp": settings.DATABASE_PORT},
@@ -41,7 +41,7 @@ def start_test():
         image="postgres:14.1",
         env=dict(
             POSTGRES_PASSWORD=settings.TEST_DATABASE_PSWD,
-            POSTGRES_DATABASE=settings.TEST_DATABASE_NAME,
+            POSTGRES_DB=settings.TEST_DATABASE_NAME,
             POSTGRES_USER=settings.TEST_DATABASE_USER,
         ),
         ports={"5432/tcp": settings.TEST_DATABASE_PORT},

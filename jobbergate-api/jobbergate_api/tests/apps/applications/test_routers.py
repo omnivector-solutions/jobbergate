@@ -677,7 +677,7 @@ async def test_update_application(
                 application_description="new_description",
             ),
         )
-    assert response.status_code == status.HTTP_201_CREATED
+    assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
     assert data["application_name"] == "new_name"

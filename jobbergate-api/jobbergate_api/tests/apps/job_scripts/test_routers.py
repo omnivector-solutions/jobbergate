@@ -711,7 +711,7 @@ async def test_update_job_script(
             },
         )
 
-    assert response.status_code == status.HTTP_201_CREATED
+    assert response.status_code == status.HTTP_200_OK
     data = response.json()
 
     assert data["job_script_name"] == "new name"
