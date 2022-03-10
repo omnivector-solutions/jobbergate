@@ -38,5 +38,5 @@ def init_sentry():
         logger.debug("Initializing sentry")
         sentry_sdk.init(
             dsn=settings.SENTRY_DSN,
-            traces_sample_rate=1.0,
+            traces_sample_rate=settings.SENTRY_TRACE_RATE,
         )
