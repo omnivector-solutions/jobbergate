@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional, cast
 import typer
 from loguru import logger
 
-from jobbergate_cli.constants import SortOrder
+from jobbergate_cli.constants import SortOrder, OV_CONTACT
 from jobbergate_cli.exceptions import handle_abort
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
@@ -230,13 +230,13 @@ def create(
     successful_upload = upload_application(jg_ctx, application_path, application_id)
     if not successful_upload:
         terminal_message(
-            """
+            f"""
             The zipped application files could not be uploaded.
 
             Try running the `update` command including the application path to re-upload.
 
-            [yellow]If the problem persists, please contact [bold]Omnivector <info@omnivector.solutions>[/bold]
-            for support and trouble-shooting
+            [yellow]If the problem persists, please contact [bold]{OV_CONTACT}[/bold]
+            for support and trouble-shooting[/yellow]
             """,
             subject="File upload failed",
             color="yellow",
@@ -311,11 +311,11 @@ def update(
         successful_upload = _upload_application(jg_ctx, application_path, id)
         if not successful_upload:
             terminal_message(
-                """
+                f"""
                 The zipped application files could not be uploaded.
 
-                [yellow]If the problem persists, please contact [bold]Omnivector <info@omnivector.solutions>[/bold]
-                for support and trouble-shooting
+                [yellow]If the problem persists, please contact [bold]{OV_CONTACT}[/bold]
+                for support and trouble-shooting[/yellow]
                 """,
                 subject="File upload failed",
                 color="yellow",
