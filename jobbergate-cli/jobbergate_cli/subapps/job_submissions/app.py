@@ -158,5 +158,5 @@ def delete(
     )
     terminal_message(
         "The job submission was successfully deleted.",
-        subject="JOB SUBMISSION DELETE SUCCEEDED",
+        subject="Job submission delete succeeded",
     )

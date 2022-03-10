@@ -49,7 +49,7 @@ def run_job_script(
             """
         ),
         raise_kwargs=dict(
-            subject="SBATCH EXECUTABLE NOT FOUND",
+            subject="Sbatch executable not found",
             support=True,
         ),
     )
@@ -69,7 +69,7 @@ def run_job_script(
                 """
             ),
             raise_kwargs=dict(
-                subject="BUILD DIR DOES NOT EXIST",
+                subject="Build dir does not exist",
                 support=True,
             ),
         )
@@ -93,7 +93,7 @@ def run_job_script(
         ),
         raise_kwargs=dict(
             support=True,
-            subject="INVALID JOB SCRIPT",
+            subject="Invalid job script",
             log_message="job_script {job_script_id} is missing `application.sh`. It cannot be submitted.",
         ),
     )
@@ -109,7 +109,7 @@ def run_job_script(
         proc.returncode == 0,
         f"Failed to execute job submission with error: {proc.stderr}.",
         raise_kwargs=dict(
-            subject="JOB EXECUTION FAILED",
+            subject="Job execution failed",
             support=True,
         ),
     )

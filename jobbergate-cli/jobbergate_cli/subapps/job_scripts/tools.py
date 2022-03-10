@@ -23,7 +23,7 @@ def validate_parameter_file(parameter_path: pathlib.Path) -> Dict[str, Any]:
     with Abort.check_expressions(
         f"The parameter file at {parameter_path} was invalid",
         raise_kwargs=dict(
-            subject="INVALID PARAMETER FILE",
+            subject="Invalid parameter file",
             log_message=f"Parameter file located at {parameter_path} failed validation",
         ),
     ) as checker:

@@ -394,7 +394,7 @@ def test_delete__success(respx_mock, make_test_app, dummy_domain, cli_runner):
     assert result.exit_code == 0, f"delete failed: {result.stdout}"
     assert delete_route.called
     assert delete_upload_route.called
-    assert "APPLICATION DELETE SUCCEEDED" in result.stdout
+    assert "Application delete succeeded" in result.stdout
 
 
 def test_delete__warns_but_does_not_abort_if_delete_upload_fails(respx_mock, make_test_app, dummy_domain, cli_runner):
@@ -409,4 +409,4 @@ def test_delete__warns_but_does_not_abort_if_delete_upload_fails(respx_mock, mak
     assert result.exit_code == 0, f"delete failed: {result.stdout}"
     assert delete_route.called
     assert delete_upload_route.called
-    assert "FILE DELETE FAILED" in result.stdout
+    assert "File delete failed" in result.stdout

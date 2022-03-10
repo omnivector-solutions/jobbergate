@@ -203,7 +203,7 @@ def create(
     except Exception as err:
         raise Abort(
             "Failed to immediately submit the job after job script creation",
-            subject="AUTOMATIC JOB SUBMISSION FAILED",
+            subject="Automatic job submission failed",
             support=True,
             log_message=f"There was an issue submitting the job immediately {job_script_id=}, {job_script_name=}",
             original_error=err,
@@ -291,5 +291,5 @@ def delete(
     )
     terminal_message(
         "The job script was successfully deleted.",
-        subject="JOB SCRIPT DELETE SUCCEEDED",
+        subject="Job script delete succeeded",
     )
