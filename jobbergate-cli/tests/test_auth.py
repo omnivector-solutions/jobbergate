@@ -1,10 +1,10 @@
 from pathlib import Path
 
 import httpx
-from jose import ExpiredSignatureError, jwt
 import pendulum
 import plummet
 import pytest
+from jose import ExpiredSignatureError, jwt
 
 from jobbergate_cli.auth import (
     TokenSet,

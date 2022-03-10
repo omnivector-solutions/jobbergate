@@ -5,11 +5,11 @@ Provide helpers to render output for users.
 import json
 from typing import Any, Dict, List, Optional
 
+import snick
 from rich import print_json
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-import snick
 
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 
@@ -18,8 +18,31 @@ class StyleMapper:
     """
     Provide a mapper that can set ``rich`` styles for rendered output of data tables and dicts.
 
-    Each subapp configures its own style mapper (based on the columns of its data types) and
-    passes it to the ``render*()`` functions below.
+    The subapps have list endpoints that return sets of values. These are rendered as tables in
+    the output. The StyleMapper class provides a way to simply define styles that should be applied
+    to the columns of the table.
+
+    Example:
+
+    The following code will print a table where the columns are colored according to the style_mapper
+
+    .. code-block: python
+
+       style_mapper = StyleMapper(
+           a="bold green",
+           b="red",
+           c="blue",
+       )
+       envelope = dict(
+           results=[
+               dict(a=1, b=2, c=3),
+               dict(a=4, b=5, c=6),
+               dict(a=7, b=8, c=9),
+           ],
+           pagination=dict(total=3)
+       )
+       render_list_results(jb_ctx, envelope, style_mapper)
+
     """
 
     colors: Dict[str, str]
@@ -32,7 +55,7 @@ class StyleMapper:
 
     def map_style(self, column: str) -> Dict[str, Any]:
         """
-        Map a column name to the style that should be used to render it.
+        Map a column name from the table to display to the style that should be used to render it.
         """
         color = self.colors.get(column, "white")
         return dict(

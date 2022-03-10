@@ -5,13 +5,13 @@ Provide exceptions and custom handlers for the CLI.
 from functools import wraps
 
 import buzz
+import sentry_sdk
+import snick
+import typer
 from loguru import logger
 from rich import traceback
 from rich.console import Console
 from rich.panel import Panel
-import sentry_sdk
-import snick
-import typer
 
 from jobbergate_cli.config import settings
 from jobbergate_cli.constants import OV_CONTACT

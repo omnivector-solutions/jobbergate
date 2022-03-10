@@ -6,8 +6,8 @@ import pathlib
 import tempfile
 from typing import Any, Dict, Optional, cast
 
-from loguru import logger
 import typer
+from loguru import logger
 
 from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import handle_abort

@@ -4,8 +4,8 @@ Provide initializers for logging.
 
 import sys
 
-from loguru import logger
 import sentry_sdk
+from loguru import logger
 
 from jobbergate_cli.config import settings
 

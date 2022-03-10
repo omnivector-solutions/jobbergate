@@ -4,9 +4,9 @@ Provide utilities for making requests against the Jobbergate API.
 from typing import Any, Dict, Optional, Type, TypeVar, Union
 
 import httpx
-from loguru import logger
 import pydantic
 import snick
+from loguru import logger
 
 from jobbergate_cli.exceptions import Abort
 

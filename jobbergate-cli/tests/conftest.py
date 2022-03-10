@@ -1,7 +1,7 @@
 import contextlib
 
-from loguru import logger
 import pytest
+from loguru import logger
 
 from jobbergate_cli.config import settings
 
