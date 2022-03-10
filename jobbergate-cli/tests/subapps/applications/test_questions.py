@@ -1,8 +1,8 @@
 import importlib
 
+import pytest
 from inquirer import prompt
 from inquirer.errors import ValidationError
-import pytest
 
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.subapps.applications.questions import (

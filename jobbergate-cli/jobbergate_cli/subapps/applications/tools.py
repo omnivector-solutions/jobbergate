@@ -12,9 +12,9 @@ import tarfile
 import tempfile
 from typing import Any, Dict, List, Optional, Tuple, cast
 
-from loguru import logger
 import snick
 import yaml
+from loguru import logger
 
 from jobbergate_cli.constants import (
     JOBBERGATE_APPLICATION_CONFIG,

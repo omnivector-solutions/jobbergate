@@ -5,11 +5,11 @@ Utilities for handling auth in jobbergate-cli.
 from time import sleep
 from typing import Dict, Optional, cast
 
+import pydantic
+import snick
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError
 from loguru import logger
-import pydantic
-import snick
 
 from jobbergate_cli.config import settings
 from jobbergate_cli.exceptions import Abort, JobbergateCliError
