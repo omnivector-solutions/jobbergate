@@ -2,6 +2,7 @@
 Provide main entry point for the Jobbergate CLI App.
 """
 
+from importlib.metadata import version as package_version
 from typing import Optional
 
 import httpx
@@ -42,12 +43,17 @@ def main(
     verbose: bool = typer.Option(False, help="Enable verbose logging to the terminal"),
     full: bool = typer.Option(False, help="Print all fields from CRUD commands"),
     raw: bool = typer.Option(False, help="Print output from CRUD commands as raw json"),
+    version: bool = typer.Option(False, help="Print the version of jobbergate-cli and exit"),
 ):
     """
     Welcome to the Jobbergate CLI!
 
     More information can be shown for each command listed below by running it with the --help option.
     """
+    if version:
+        typer.echo(package_version('jobbergate-cli'))
+        raise typer.Exit()
+
     if ctx.invoked_subcommand is None:
         terminal_message(
             snick.conjoin(

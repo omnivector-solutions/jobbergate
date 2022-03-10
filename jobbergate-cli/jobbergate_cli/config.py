@@ -6,12 +6,9 @@ from pathlib import Path
 from typing import Optional
 
 from pydantic import AnyHttpUrl, BaseSettings, Field, root_validator
-import urllib3
 
 from jobbergate_cli import constants
 
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class Settings(BaseSettings):
