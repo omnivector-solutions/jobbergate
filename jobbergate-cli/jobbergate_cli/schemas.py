@@ -42,7 +42,6 @@ class DeviceCodeData(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     """
 
     device_code: str
-    # verification_uri_complete: pydantic.HttpUrl
     verification_uri_complete: str
     interval: int
 
