@@ -51,7 +51,7 @@ def main(
     More information can be shown for each command listed below by running it with the --help option.
     """
     if version:
-        typer.echo(package_version('jobbergate-cli'))
+        typer.echo(package_version("jobbergate-cli"))
         raise typer.Exit()
 
     if ctx.invoked_subcommand is None:
@@ -61,7 +61,7 @@ def main(
                 "",
                 f"[yellow]{ctx.get_help()}[/yellow]",
             ),
-            subject="NEED A JOBBERGATE COMMAND",
+            subject="Need a jobbergate command",
         )
         raise typer.Exit()
 
@@ -147,7 +147,7 @@ def show_token(
             token is not None,
             "User is not logged in. Please log in first.",
             raise_kwargs=dict(
-                subject="NOT LOGGED IN",
+                subject="Not logged in",
             ),
         )
     else:
@@ -157,7 +157,7 @@ def show_token(
             token is not None,
             "User is not logged in or does not have a refresh token. Please try loggin in again.",
             raise_kwargs=dict(
-                subject="NO REFRESH TOKEN",
+                subject="No refresh token",
             ),
         )
 

@@ -335,7 +335,7 @@ def gather_config_values(
 
                 Please implement {method_to_call.__name__} in your class.",
                 """,
-                subject="INVALID APPLICATION MODULE",
+                subject="Invalid application module",
             )
 
         prompts = []

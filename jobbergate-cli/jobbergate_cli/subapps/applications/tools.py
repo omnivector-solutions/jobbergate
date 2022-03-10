@@ -40,7 +40,7 @@ def validate_application_files(application_path: pathlib.Path):
     with Abort.check_expressions(
         f"The application files in {application_path} were invalid",
         raise_kwargs=dict(
-            subject="INVALID APPLICATION FILES",
+            subject="Invalid application files",
             log_message=f"Application files located at {application_path} failed validation",
         ),
     ) as checker:
@@ -163,7 +163,7 @@ def fetch_application_data(
             """
             You must supply either [yellow]id[/yellow] or [yellow]identifier[/yellow].
             """,
-            subject="INVALID PARAMS",
+            subject="Invalid params",
             warn_only=True,
         )
     elif id is not None and identifier is not None:
@@ -171,7 +171,7 @@ def fetch_application_data(
             """
             You may not supply both [yellow]id[/yellow] and [yellow]identifier[/yellow].
             """,
-            subject="INVALID PARAMS",
+            subject="Invalid params",
             warn_only=True,
         )
     elif identifier is not None:
@@ -206,7 +206,7 @@ def validate_application_data(app_data: Dict[str, Any]) -> Tuple[str, Dict[str, 
     with Abort.check_expressions(
         "The application files fetched from the API were invalid",
         raise_kwargs=dict(
-            subject="INVALID APPLICATION FILES",
+            subject="Invalid application files",
             log_message="Application files retrieved from the API were invalid",
         ),
     ) as checker:

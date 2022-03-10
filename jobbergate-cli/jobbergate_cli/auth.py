@@ -50,7 +50,7 @@ def validate_token_and_extract_identity(token_set: TokenSet) -> IdentityData:
 
             Please try logging in again.
             """,
-            subject="INVALID ACCESS TOKEN",
+            subject="Invalid access token",
             support=True,
             log_message=f"Unknown error while validating access access token: {err}",
             sentry_context=dict(access_token=dict(access_token=token_set.access_token)),
@@ -63,7 +63,7 @@ def validate_token_and_extract_identity(token_set: TokenSet) -> IdentityData:
         identity_claims,
         "No identity data found in access token data",
         raise_kwargs=dict(
-            subject="NO IDENTITY FOUND",
+            subject="No identity found",
             support=True,
         ),
     )
@@ -76,7 +76,7 @@ def validate_token_and_extract_identity(token_set: TokenSet) -> IdentityData:
 
             Please try logging in again.
             """,
-            subject="INVALID IDENTITY DATA",
+            subject="Invalid identity data",
             support=True,
             log_message=f"Identity data is incomplete: {err}",
             sentry_context=dict(access_token=dict(access_token=token_set.access_token)),
@@ -95,7 +95,7 @@ def load_tokens_from_cache() -> TokenSet:
     Abort.require_condition(
         settings.JOBBERGATE_API_ACCESS_TOKEN_PATH.exists(),
         "Please login with your auth token first using the `jobbergate login` command",
-        raise_kwargs=dict(subject="YOU NEED TO LOGIN"),
+        raise_kwargs=dict(subject="You need to login"),
     )
 
     logger.debug("Retrieving access token from cache")
@@ -164,7 +164,7 @@ def init_persona(ctx: JobbergateContext, token_set: Optional[TokenSet] = None):
             token_set.refresh_token is not None,
             "The auth token is expired. Please retrieve a new and log in again.",
             raise_kwargs=dict(
-                subject="EXPIRED ACCESS TOKEN",
+                subject="Expired access token",
                 support=True,
             ),
         )
@@ -298,7 +298,7 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
                         Unexpected failure retrieving access token.
                         """
                     ),
-                    subject="UNEXPECTED ERROR",
+                    subject="Unexpected error",
                     support=True,
                     log_message=f"Unexpected error response: {response_data}",
                 )
@@ -307,6 +307,6 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
 
     raise Abort(
         "Login process was not completed in time. Please try again.",
-        subject="TIMED OUT",
+        subject="Timed out",
         log_message="Timed out while waiting for user to complete login",
     )

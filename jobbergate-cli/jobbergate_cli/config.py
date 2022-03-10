@@ -10,7 +10,6 @@ from pydantic import AnyHttpUrl, BaseSettings, Field, root_validator
 from jobbergate_cli import constants
 
 
-
 class Settings(BaseSettings):
     """
     Provide a ``pydantic`` settings model to hold configuration values loaded from the environment.

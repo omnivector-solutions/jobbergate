@@ -6,7 +6,8 @@ from functools import wraps
 
 import buzz
 from loguru import logger
-from rich import print, traceback
+from rich import traceback
+from rich.console import Console
 from rich.panel import Panel
 import sentry_sdk
 import snick
@@ -97,7 +98,10 @@ def handle_abort(func):
                 )
                 message = f"{message}\n\n{support_message}"
 
-            print(Panel(message, **panel_kwargs))
+            console = Console()
+            console.print()
+            console.print(Panel(message, **panel_kwargs))
+            console.print()
             raise typer.Exit(code=1)
 
     return wrapper

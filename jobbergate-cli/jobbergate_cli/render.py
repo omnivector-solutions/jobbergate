@@ -59,7 +59,10 @@ def terminal_message(message, subject=None, color="green", footer=None, indent=T
     text = snick.dedent(message)
     if indent:
         text = snick.indent(text, prefix="  ")
-    print(Panel(text, **panel_kwargs))
+    console = Console()
+    console.print()
+    console.print(Panel(text, **panel_kwargs))
+    console.print()
 
 
 def render_list_results(

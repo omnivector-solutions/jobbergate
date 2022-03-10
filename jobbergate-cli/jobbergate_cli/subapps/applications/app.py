@@ -238,7 +238,7 @@ def create(
             [yellow]If the problem persists, please contact [bold]Omnivector <info@omnivector.solutions>[/bold]
             for support and trouble-shooting
             """,
-            subject="FILE UPLOAD FAILED",
+            subject="File upload failed",
             color="yellow",
         )
     else:
@@ -317,7 +317,7 @@ def update(
                 [yellow]If the problem persists, please contact [bold]Omnivector <info@omnivector.solutions>[/bold]
                 for support and trouble-shooting
                 """,
-                subject="FILE UPLOAD FAILED",
+                subject="File upload failed",
                 color="yellow",
             )
         else:
@@ -373,7 +373,7 @@ def delete(
             """
             The uploaded application files could not be deleted, but the application entry was removed.
             """,
-            subject="FILE DELETE FAILED",
+            subject="File delete failed",
             color="yellow",
         )
     else:
@@ -381,5 +381,5 @@ def delete(
             """
             The application was successfully deleted.
             """,
-            subject="APPLICATION DELETE SUCCEEDED",
+            subject="Application delete succeeded",
         )
