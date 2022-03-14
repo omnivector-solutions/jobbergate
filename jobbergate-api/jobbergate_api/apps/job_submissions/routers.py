@@ -41,7 +41,9 @@ async def job_submission_create(
     Make a post request to this endpoint with the required values to create a new job submission.
     """
     identity_claims = IdentityClaims.from_token_payload(token_payload)
-    job_submission.job_submission_owner_email = identity_claims.user_email
+    create_dict = dict(
+        **job_submission.dict(exclude_unset=True), job_submission_owner_email=identity_claims.user_email,
+    )
 
     select_query = job_scripts_table.select().where(job_scripts_table.c.id == job_submission.job_script_id)
     raw_job_script = await database.fetch_one(select_query)
@@ -55,7 +57,7 @@ async def job_submission_create(
     async with database.transaction():
         try:
             insert_query = job_submissions_table.insert().returning(job_submissions_table)
-            job_submission_data = await database.fetch_one(query=insert_query, values=job_submission.dict())
+            job_submission_data = await database.fetch_one(query=insert_query, values=create_dict)
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))

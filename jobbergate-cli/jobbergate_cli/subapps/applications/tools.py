@@ -4,13 +4,10 @@ Provide tool functions for working with Application data
 
 import ast
 import copy
-import importlib
-import importlib.util
-import json
 import pathlib
 import tarfile
 import tempfile
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, Optional, Tuple, cast
 
 import snick
 import yaml
@@ -24,8 +21,9 @@ from jobbergate_cli.constants import (
 )
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobbergateContext
-from jobbergate_cli.subapps.applications.questions import gather_config_values
+from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig, JobbergateContext
+from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
+from jobbergate_cli.subapps.applications.questions import gather_param_values
 
 
 def validate_application_files(application_path: pathlib.Path):
@@ -84,17 +82,6 @@ def validate_application_files(application_path: pathlib.Path):
         checker(is_valid_yaml, f"The application config at {application_config} is not valid YAML")
 
 
-def find_templates(application_path: pathlib.Path) -> List[pathlib.Path]:
-    """
-    Finds templates in the application path.
-    """
-    template_root_path = application_path / "templates"
-    if template_root_path.exists():
-        return sorted(p.relative_to(application_path) for p in template_root_path.glob("**/*") if p.is_file())
-    else:
-        return list()
-
-
 def load_default_config() -> Dict[str, Any]:
     """
     Load the default config for an application.
@@ -108,7 +95,9 @@ def dump_full_config(application_path: pathlib.Path) -> str:
     """
     config_path = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
     config = yaml.safe_load(config_path.read_text())
-    config["jobbergate_config"]["template_files"] = sorted(str(t) for t in find_templates(application_path))
+    config["jobbergate_config"]["template_files"] = sorted(
+        str(t) for t in JobbergateApplicationBase.find_templates(application_path)
+    )
     return yaml.dump(config)
 
 
@@ -148,13 +137,14 @@ def fetch_application_data(
     jg_ctx: JobbergateContext,
     id: Optional[int] = None,
     identifier: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> ApplicationResponse:
     """
     Retrieve an application from the API by ``id`` or ``identifier``.
 
     :param: jg_ctx:     The JobbergateContext. Needed to access the Httpx client with which to make API calls
     :param: id:         The id of the application to fetch
     :param: identifier: If supplied, look for an application instance with the provided identifier
+    :returns: An instance of ApplicationResponse containing the application data
     """
     url = f"/applications/{id}"
     params = dict()
@@ -183,64 +173,53 @@ def fetch_application_data(
 
     stub = f"{id=}" if id is not None else f"{identifier=}"
     return cast(
-        Dict[str, Any],
+        ApplicationResponse,
         make_request(
             jg_ctx.client,
             url,
             "GET",
             expected_status=200,
             abort_message=f"Couldn't retrieve application {stub} from API",
+            response_model=ApplicationResponse,
             support=True,
             params=params,
         ),
     )
 
 
-def validate_application_data(app_data: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+def load_application_data(
+    app_data: ApplicationResponse,
+) -> Tuple[JobbergateApplicationConfig, JobbergateApplicationBase]:
     """
-    Validates the data for an application contained in a dictionary.
+    Validates and loads the data for an application returned from the API's applications GET endpoint.
 
     :param: app_data: A dictionary containing the application data
-    :returns: A tuple containing the source code for the module and the configuration dict for the application
+    :returns: A tuple containing the application config and the application module
     """
-    with Abort.check_expressions(
-        "The application files fetched from the API were invalid",
-        raise_kwargs=dict(
-            subject="Invalid application files",
-            log_message="Application files retrieved from the API were invalid",
-        ),
-    ) as checker:
-        app_module = app_data.get("application_file")
-        checker(
-            app_module is not None,
-            f"Application data does not contain {JOBBERGATE_APPLICATION_MODULE_FILE_NAME}",
+    try:
+        app_config = load_application_config_from_source(app_data.application_config)
+    except Exception as err:
+        print("ERR: ", err)
+        raise Abort(
+            "The application config fetched from the API is not valid",
+            subject="Invalid application config",
+            support=True,
+            log_message="Invalid application config",
+            original_error=err,
         )
-        if app_module is not None:
-            try:
-                ast.parse(app_module)
-                is_valid_python = True
-            except Exception:
-                is_valid_python = False
-            checker(is_valid_python, "The application module from the API is not valid python code")
 
-        app_config = app_data.get("application_config")
-        checker(
-            app_config is not None,
-            f"Application data does not contain {JOBBERGATE_APPLICATION_CONFIG_FILE_NAME}",
+    try:
+        app_module = load_application_from_source(app_data.application_file, app_config)
+    except Exception as err:
+        raise Abort(
+            "The application source fetched from the API is not valid",
+            subject="Invalid application config",
+            support=True,
+            log_message="Invalid application module",
+            original_error=err,
         )
-        if app_config is not None:
-            try:
-                app_config = yaml.safe_load(app_config)
-                is_valid_yaml = True
-            except Exception:
-                is_valid_yaml = False
-            checker(is_valid_yaml, "The application config from the API is not valid YAML")
 
-    # Make static type checkers happy
-    app_module = cast(str, app_module)
-    app_config = cast(Dict[str, Any], app_config)
-
-    return (app_module, app_config)
+    return (app_config, app_module)
 
 
 def upload_application(
@@ -279,55 +258,53 @@ def upload_application(
         return response_code == 201
 
 
-def import_from_text(app_module: str):
+def load_application_config_from_source(config_source: str) -> JobbergateApplicationConfig:
     """
-    Import a python module from a text string by creating a temporary file and importing it with importlib.
+    Load the JobbergateApplicationConfig from a text string containing the config as YAML.
+
+    :param: config_source: The YAML containing the config
+    :returns: A JobbergateApplicationConfig instance with the config values
     """
-    with tempfile.NamedTemporaryFile(suffix=".py") as temp_module:
-        temp_path = pathlib.Path(temp_module.name)
-        temp_path.write_text(app_module)
-        spec = importlib.util.spec_from_file_location("JobbergateApplication", temp_path)
+    config_data = yaml.safe_load(config_source)
+    config = JobbergateApplicationConfig(**config_data)
+    return config
 
-        # Make static type checkers happy
-        assert spec is not None
-        assert spec.loader is not None
 
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
+def load_application_from_source(app_source: str, app_config: JobbergateApplicationConfig) -> JobbergateApplicationBase:
+    """
+    Load the JobbergateApplication class from a text string containing the source file.
+
+    Creates the module in a temporary file and importins it with importlib.
+
+    Adapted from: https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
+
+    :param: app_source: The JobbergateApplication source code to load
+    :param: app_config: The JobbergateApplicationConfig needed to instantiate the JobbergateApplication
+    """
+    app_locals: Dict[str, Any] = dict()
+    exec(app_source, app_locals, app_locals)
+    jobbergate_application_class = app_locals["JobbergateApplication"]
+    application = jobbergate_application_class(app_config.dict())
+    return application
 
 
 def execute_application(
-    app_module: str,
-    app_config: Dict[str, Any],
-    supplied_params: Dict[str, Any],
-    sbatch_params: Optional[List[Any]] = None,
+    app_module: JobbergateApplicationBase,
+    app_config: JobbergateApplicationConfig,
+    supplied_params: Optional[Dict[str, Any]] = None,
     fast_mode: bool = False,
-) -> Dict[str, Any]:
+):
     """
     Execute the jobbergate application python module.
 
+    Updates the app_config with values gathered in the question workflow
+
     :param: app_module:      The source code for the application to execute
-    :param: app_config:      The configuration dict for the application
-    :param: supplied_params: Configuration settings to override
-    :param: sbatch_params:   An optional list of parameters for sbatch to include in the data for rendering templates
+    :param: app_config:      The configuration for the JobbergateApplication
+    :param: supplied_params: Pre-set values for the parameters. Any questions about these values will be skipped.
     :param: fast_mode:       If true, do not ask the user questions. Just use supplied_params or defaults
     :returns: The configuration values collected from the user by executing the application
     """
-    module = import_from_text(app_module)
-    application = module.JobbergateApplication(app_config)
-    gather_config_values(application, app_config, supplied_params, fast_mode=fast_mode)
-
-    rendered_params: Dict[str, Any] = dict(param_dict=json.dumps(app_config))
-
-    # Possibly overwrite script name
-    job_script_name_from_param = app_config.get("job_script_name")
-    if job_script_name_from_param:
-        rendered_params["job_script_name"] = job_script_name_from_param
-
-    if sbatch_params is not None:
-        for (i, param) in enumerate(sbatch_params):
-            rendered_params[f"sbatch_params_{i}"] = param
-        rendered_params["sbatch_params_len"] = len(sbatch_params)
-
-    return rendered_params
+    app_params = gather_param_values(app_module, supplied_params=supplied_params, fast_mode=fast_mode)
+    app_config.application_config.update(**app_params)
+    return app_params

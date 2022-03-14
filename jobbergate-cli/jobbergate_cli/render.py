@@ -3,8 +3,9 @@ Provide helpers to render output for users.
 """
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
+import pydantic
 import snick
 from rich import print_json
 from rich.console import Console
@@ -163,7 +164,7 @@ def render_dict(
 
 def render_single_result(
     ctx: JobbergateContext,
-    result: Dict[str, Any],
+    result: Union[Dict[str, Any], pydantic.BaseModel],
     hidden_fields: Optional[List[str]] = None,
     title: str = "Result",
 ):
@@ -171,10 +172,12 @@ def render_single_result(
     Render a single data item in a ``rich`` ``Table.
 
     :param: ctx:           The JobbergateContext. This is needed to detect if ``full` or ``raw`` output is needed
-    :param: result:        The data item to display
+    :param: result:        The data item to display. May be a dict or a pydantic model.
     :param: hidden_fields: Rows that should (if not using ``full`` mode) be hidden in the ``Table`` output
     :param: title:         The title header to include above the ``Tale`` output
     """
+    if isinstance(result, pydantic.BaseModel):
+        result = result.dict()
     if ctx.raw_output:
         print_json(json.dumps(result))
     else:

@@ -2,7 +2,7 @@
 JobScript resource schema.
 """
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -43,7 +43,7 @@ job_script_meta_mapper = MetaMapper(
     ),
     param_dict=MetaField(
         description="Parameters to use when rendering the job_script jinja2 template",
-        example='{"param1": 7, "param2": 13}',
+        example={"param1": 7, "param2": 13},
     ),
 )
 
@@ -55,10 +55,9 @@ class JobScriptCreateRequest(BaseModel):
 
     job_script_name: str
     job_script_description: Optional[str]
-    job_script_owner_email: str
     application_id: int
     sbatch_params: Optional[List[str]]
-    param_dict: Optional[str]
+    param_dict: Optional[Dict[str, Any]]
 
     class Config:
         schema_extra = job_script_meta_mapper

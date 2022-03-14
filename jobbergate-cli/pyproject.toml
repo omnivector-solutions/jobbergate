@@ -42,6 +42,7 @@ pyproject-flake8 = "^0.0.1-alpha.2"
 mypy = "^0.931"
 pytest-mock = "^3.7.0"
 types-PyYAML = "^6.0.4"
+ipython = "^8.1.1"
 
 [tool.poetry.scripts]
 jobbergate = "jobbergate_cli.main:app"

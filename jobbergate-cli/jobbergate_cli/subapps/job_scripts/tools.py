@@ -8,7 +8,7 @@ from typing import Any, Dict, cast
 
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobbergateContext
+from jobbergate_cli.schemas import JobbergateContext, JobScriptResponse
 
 
 def validate_parameter_file(parameter_path: pathlib.Path) -> Dict[str, Any]:
@@ -47,7 +47,7 @@ def validate_parameter_file(parameter_path: pathlib.Path) -> Dict[str, Any]:
 def fetch_job_script_data(
     jg_ctx: JobbergateContext,
     id: int,
-) -> Dict[str, Any]:
+) -> JobScriptResponse:
     """
     Retrieve a job_script from the API by ``id``
     """
@@ -55,7 +55,7 @@ def fetch_job_script_data(
     assert jg_ctx.client is not None
 
     return cast(
-        Dict[str, Any],
+        JobScriptResponse,
         make_request(
             jg_ctx.client,
             f"/job-scripts/{id}",
@@ -63,5 +63,6 @@ def fetch_job_script_data(
             expected_status=200,
             abort_message=f"Couldn't retrieve job script ({id}) from API",
             support=True,
+            response_model=JobScriptResponse,
         ),
     )

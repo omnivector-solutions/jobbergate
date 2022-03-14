@@ -40,12 +40,13 @@ async def applications_create(
     Create new applications using an authenticated user token.
     """
     identity_claims = IdentityClaims.from_token_payload(token_payload)
-    application.application_owner_email = identity_claims.user_email
+    create_dict = dict(
+        **application.dict(exclude_unset=True), application_owner_email=identity_claims.user_email,
+    )
 
     try:
         insert_query = applications_table.insert().returning(applications_table)
-        values = application.dict()
-        application_data = await database.fetch_one(query=insert_query, values=values)
+        application_data = await database.fetch_one(query=insert_query, values=create_dict)
 
     except INTEGRITY_CHECK_EXCEPTIONS as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
