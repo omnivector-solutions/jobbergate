@@ -85,14 +85,13 @@ def build_job_script_data_as_string(s3_application_tar, param_dict):
     """
     Return the job_script_data_as string from the S3 application and the templates.
     """
-    try:
-        support_files_output = param_dict["jobbergate_config"]["supporting_files_output_name"]
-    except KeyError:
-        support_files_output = {}
-    try:
-        supporting_files = param_dict["jobbergate_config"]["supporting_files"]
-    except KeyError:
-        supporting_files = []
+    support_files_output = param_dict["jobbergate_config"].get("supporting_files_output_name")
+    if support_files_output is None:
+        support_files_output = dict()
+
+    supporting_files = param_dict["jobbergate_config"].get("supporting_files")
+    if supporting_files is None:
+        supporting_files = list()
 
     default_template = [
         default_template := param_dict["jobbergate_config"].get("default_template"),
