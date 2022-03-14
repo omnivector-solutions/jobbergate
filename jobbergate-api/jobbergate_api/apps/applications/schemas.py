@@ -87,7 +87,6 @@ class ApplicationCreateRequest(BaseModel):
     application_name: str
     application_identifier: Optional[str]
     application_description: Optional[str] = None
-    application_owner_email: Optional[str]
     application_file: str
     application_config: str
 

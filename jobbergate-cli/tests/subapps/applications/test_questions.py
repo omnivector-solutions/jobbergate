@@ -15,7 +15,7 @@ from jobbergate_cli.subapps.applications.questions import (
     Integer,
     List,
     Text,
-    gather_config_values,
+    gather_param_values,
 )
 
 
@@ -234,10 +234,9 @@ def test_gather_config_values__basic(dummy_render_class, mocker):
         baz="BAZ",
     )
 
-    config = dict()
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
-    gather_config_values(DummyApplication(), config)
-    assert config == dict(
+    params = gather_param_values(DummyApplication())
+    assert params == dict(
         foo="FOO",
         bar="BAR",
         baz="BAZ",
@@ -268,17 +267,16 @@ def test_gather_config_values__fast_mode(dummy_render_class, mocker):
         baz="BAZ",
     )
 
-    config = dict()
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
-    gather_config_values(DummyApplication(), config, fast_mode=True)
-    assert config == dict(
+    params = gather_param_values(DummyApplication(), fast_mode=True)
+    assert params == dict(
         foo="oof",
         bar="BAR",
         baz="BAZ",
     )
 
 
-def test_gather_config_values__with_supplied_params(dummy_render_class, mocker):
+def test_gather_config_values__skips_supplied_params(dummy_render_class, mocker):
     variablename1 = "foo"
     question1 = Text(variablename1, message="gimme the foo!", default="oof")
 
@@ -302,10 +300,10 @@ def test_gather_config_values__with_supplied_params(dummy_render_class, mocker):
         baz="BAZ",
     )
 
-    config = dict()
+    supplied_params = dict(bar="rab")
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
-    gather_config_values(DummyApplication(), config, supplied_params=dict(bar="rab"))
-    assert config == dict(
+    params = gather_param_values(DummyApplication(), supplied_params=supplied_params)
+    assert params == dict(
         foo="FOO",
         bar="rab",
         baz="BAZ",
@@ -328,7 +326,6 @@ def test_gather_config_values__raises_Abort_if_method_not_implemented(dummy_rend
         foo="FOO",
     )
 
-    config = dict()
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
     with pytest.raises(Abort, match="not implemented"):
-        gather_config_values(DummyApplication(), config)
+        gather_param_values(DummyApplication())

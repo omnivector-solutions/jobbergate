@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional, cast
 import typer
 from loguru import logger
 
-from jobbergate_cli.constants import SortOrder, OV_CONTACT
+from jobbergate_cli.constants import OV_CONTACT, SortOrder
 from jobbergate_cli.exceptions import handle_abort
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
@@ -348,6 +348,7 @@ def delete(
     # Make static type checkers happy
     assert jg_ctx.client is not None
 
+    # Delete the upload. The API will also remove the application data files
     make_request(
         jg_ctx.client,
         f"/applications/{id}",
@@ -357,29 +358,9 @@ def delete(
         abort_message="Request to delete application was not accepted by the API",
         support=True,
     )
-    status_code = cast(
-        int,
-        make_request(
-            jg_ctx.client,
-            f"/applications/{id}/upload",
-            "DELETE",
-            expect_response=False,
-            abort_message="Request to delete application was not accepted by the API",
-            support=True,
-        ),
+    terminal_message(
+        """
+        The application was successfully deleted.
+        """,
+        subject="Application delete succeeded",
     )
-    if status_code != 204:
-        terminal_message(
-            """
-            The uploaded application files could not be deleted, but the application entry was removed.
-            """,
-            subject="File delete failed",
-            color="yellow",
-        )
-    else:
-        terminal_message(
-            """
-            The application was successfully deleted.
-            """,
-            subject="Application delete succeeded",
-        )

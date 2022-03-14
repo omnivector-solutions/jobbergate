@@ -1,10 +1,10 @@
-import copy
 import json
 
 import httpx
 import pytest
 
 from jobbergate_cli.exceptions import Abort
+from jobbergate_cli.schemas import JobScriptResponse, JobSubmissionResponse
 from jobbergate_cli.subapps.job_submissions.tools import (
     create_job_submission,
     fetch_job_submission_data,
@@ -19,8 +19,8 @@ def test_run_job_script__success(tweak_settings, tmp_path, dummy_job_script_data
     build_path = tmp_path / "dummy-build"
     build_path.mkdir()
 
-    job_script_data = dummy_job_script_data[0]
-    job_script_name = job_script_data["job_script_name"]
+    job_script_data = JobScriptResponse(**dummy_job_script_data[0])
+    job_script_name = job_script_data.job_script_name
 
     with tweak_settings(SBATCH_PATH=sbatch_path):
         patched_run = mocker.patch("jobbergate_cli.subapps.job_submissions.tools.subprocess.run")
@@ -39,9 +39,7 @@ def test_run_job_script__success(tweak_settings, tmp_path, dummy_job_script_data
         )
         built_script_path = build_path / f"{job_script_name}.job"
         assert built_script_path.exists()
-        assert (
-            built_script_path.read_text() == json.loads(job_script_data["job_script_data_as_string"])["application.sh"]
-        )
+        assert built_script_path.read_text() == json.loads(job_script_data.job_script_data_as_string)["application.sh"]
 
 
 def test_run_job_script__raises_Abort_if_SBATCH_PATH_does_not_exist(tweak_settings, tmp_path, dummy_job_script_data):
@@ -50,7 +48,7 @@ def test_run_job_script__raises_Abort_if_SBATCH_PATH_does_not_exist(tweak_settin
     build_path = tmp_path / "dummy-build"
     build_path.mkdir()
 
-    job_script_data = dummy_job_script_data[0]
+    job_script_data = JobScriptResponse(**dummy_job_script_data[0])
 
     with tweak_settings(SBATCH_PATH=sbatch_path):
         with pytest.raises(Abort, match="sbatch executable was not found"):
@@ -63,7 +61,7 @@ def test_run_job_script__raises_Abort_if_build_path_does_not_exist(tweak_setting
 
     build_path = tmp_path / "dummy-build"
 
-    job_script_data = dummy_job_script_data[0]
+    job_script_data = JobScriptResponse(**dummy_job_script_data[0])
 
     with tweak_settings(SBATCH_PATH=sbatch_path):
         with pytest.raises(Abort, match="build directory does not exist"):
@@ -79,8 +77,8 @@ def test_run_job_script__uses_temporary_directory_if_build_path_is_None(
     build_path = tmp_path / "dummy-build"
     build_path.mkdir()
 
-    job_script_data = dummy_job_script_data[0]
-    job_script_name = job_script_data["job_script_name"]
+    job_script_data = JobScriptResponse(**dummy_job_script_data[0])
+    job_script_name = job_script_data.job_script_name
 
     with tweak_settings(SBATCH_PATH=sbatch_path):
         patched_temp_dir = mocker.patch("jobbergate_cli.subapps.job_submissions.tools.tempfile.TemporaryDirectory")
@@ -104,9 +102,7 @@ def test_run_job_script__uses_temporary_directory_if_build_path_is_None(
         )
         built_script_path = build_path / f"{job_script_name}.job"
         assert built_script_path.exists()
-        assert (
-            built_script_path.read_text() == json.loads(job_script_data["job_script_data_as_string"])["application.sh"]
-        )
+        assert built_script_path.read_text() == json.loads(job_script_data.job_script_data_as_string)["application.sh"]
 
 
 def test_run_job_script__raises_abort_if_no_executable_script_was_found(
@@ -118,9 +114,9 @@ def test_run_job_script__raises_abort_if_no_executable_script_was_found(
     build_path = tmp_path / "dummy-build"
     build_path.mkdir()
 
-    job_script_data = copy.deepcopy(dummy_job_script_data[0])
-    job_script_data["job_script_data_as_string"] = json.dumps(
-        {k: v for (k, v) in json.loads(job_script_data["job_script_data_as_string"]).items() if k != "application.sh"}
+    job_script_data = JobScriptResponse(**dummy_job_script_data[0])
+    job_script_data.job_script_data_as_string = json.dumps(
+        {k: v for (k, v) in json.loads(job_script_data.job_script_data_as_string).items() if k != "application.sh"}
     )
 
     with tweak_settings(SBATCH_PATH=sbatch_path):
@@ -137,7 +133,7 @@ def test_run_job_script__raises_abort_if_exit_code_from_sbatch_is_not_0(
     build_path = tmp_path / "dummy-build"
     build_path.mkdir()
 
-    job_script_data = dummy_job_script_data[0]
+    job_script_data = JobScriptResponse(**dummy_job_script_data[0])
 
     with tweak_settings(SBATCH_PATH=sbatch_path):
         patched_run = mocker.patch("jobbergate_cli.subapps.job_submissions.tools.subprocess.run")
@@ -216,7 +212,7 @@ def test_create_job_submission__success(
             job_submission_name,
             job_submission_description,
         )
-        assert new_job_submission == job_submission_data
+        assert new_job_submission == JobSubmissionResponse(**job_submission_data)
 
 
 def test_fetch_job_submission_data__success__using_id(
@@ -237,4 +233,4 @@ def test_fetch_job_submission_data__success__using_id(
 
     result = fetch_job_submission_data(dummy_context, job_submission_id)
     assert fetch_route.called
-    assert result == job_submission_data
+    assert result == JobSubmissionResponse(**job_submission_data)

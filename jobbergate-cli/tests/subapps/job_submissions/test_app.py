@@ -3,7 +3,7 @@ import shlex
 import httpx
 import snick
 
-from jobbergate_cli.schemas import ListResponseEnvelope, Pagination
+from jobbergate_cli.schemas import JobSubmissionResponse, ListResponseEnvelope, Pagination
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS, create, delete, get_one, list_all, style_mapper
 
 
@@ -14,10 +14,10 @@ def test_create__full_run_including_non_fast_mode_and_job_submission(
     cli_runner,
     mocker,
 ):
-    job_submission_data = dummy_job_submission_data[0]
-    job_submission_name = job_submission_data["job_submission_name"]
-    job_submission_description = job_submission_data["job_submission_description"]
-    job_script_id = job_submission_data["job_script_id"]
+    job_submission_data = JobSubmissionResponse(**dummy_job_submission_data[0])
+    job_submission_name = job_submission_data.job_submission_name
+    job_submission_description = job_submission_data.job_submission_description
+    job_script_id = job_submission_data.id
 
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_submissions.app.render_single_result")
     patched_create_job_submission = mocker.patch("jobbergate_cli.subapps.job_submissions.app.create_job_submission")
@@ -103,7 +103,7 @@ def test_get_one__success(
     assert result.exit_code == 0, f"get-one failed: {result.stdout}"
     mocked_render.assert_called_once_with(
         dummy_context,
-        dummy_job_submission_data[0],
+        JobSubmissionResponse(**dummy_job_submission_data[0]),
         title="Job Submission",
         hidden_fields=HIDDEN_FIELDS,
     )

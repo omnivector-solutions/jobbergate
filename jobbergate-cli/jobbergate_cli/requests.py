@@ -44,7 +44,19 @@ def make_request(
 
     logger.debug(f"Making request to {url_path=}")
     request = client.build_request(method, url_path, **request_kwargs)
-    logger.debug(f"Request built as {request=}")
+    logger.debug(
+        snick.dedent(
+            f"""
+            Request built with:
+              url: {request.url}
+              method: {method}
+              headers: {request.headers}
+              params: {request_kwargs.get("params")}
+              data: {request_kwargs.get("data")}
+              json: {request_kwargs.get("json")}
+            """
+        )
+    )
 
     try:
         response = client.send(request)

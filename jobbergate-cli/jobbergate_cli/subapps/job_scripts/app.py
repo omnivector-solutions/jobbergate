@@ -5,18 +5,20 @@ Provide a ``typer`` app that can interact with Job Script data in a cruddy manne
 import pathlib
 from typing import Any, Dict, List, Optional, cast
 
+import snick
 import typer
 
 from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
-from jobbergate_cli.subapps.applications.tools import (
-    execute_application,
-    fetch_application_data,
-    validate_application_data,
+from jobbergate_cli.schemas import (
+    JobbergateContext,
+    JobScriptCreateRequestData,
+    JobScriptResponse,
+    ListResponseEnvelope,
 )
+from jobbergate_cli.subapps.applications.tools import execute_application, fetch_application_data, load_application_data
 from jobbergate_cli.subapps.job_scripts.tools import fetch_job_script_data, validate_parameter_file
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
 from jobbergate_cli.subapps.job_submissions.tools import create_job_submission
@@ -128,17 +130,19 @@ def create(
     ),
     param_file: Optional[pathlib.Path] = typer.Option(
         None,
-        help="""
+        help=snick.dedent(
+            """
             Supply a yaml file that contains the parameters for populating templates.
-            If this is not supplied, the question asking in the applicaiton is trigered.
-        """,
+            If this is not supplied, the question asking in the application is triggered.
+            """
+        ),
     ),
     fast: bool = typer.Option(
         False,
         help="Use default answers (when available) instead of asking the user.",
     ),
-    no_submit: bool = typer.Option(
-        False,
+    submit: bool = typer.Option(
+        True,
         help="Do not ask the user if they want to submit a job",
     ),
 ):
@@ -151,25 +155,23 @@ def create(
     assert jg_ctx.client is not None
 
     app_data = fetch_application_data(jg_ctx, id=application_id, identifier=application_identifier)
-    (app_module, app_config) = validate_application_data(app_data)
+    (app_config, app_module) = load_application_data(app_data)
 
-    supplied_params = dict(
+    request_data = JobScriptCreateRequestData(
+        application_id=app_data.id,
         job_script_name=name,
-        application_id=application_id,
-    )
-    if param_file:
-        supplied_params.update(validate_parameter_file(param_file))
-
-    data = execute_application(
-        app_module,
-        app_config,
-        supplied_params,
         sbatch_params=sbatch_params,
-        fast_mode=fast,
+        param_dict=app_config,
     )
+
+    supplied_params = validate_parameter_file(param_file) if param_file else dict()
+    execute_application(app_module, app_config, supplied_params, fast_mode=fast)
+
+    if app_config.jobbergate_config.job_script_name is not None:
+        request_data.job_script_name = app_config.jobbergate_config.job_script_name
 
     job_script_result = cast(
-        Dict[str, Any],
+        JobScriptResponse,
         make_request(
             jg_ctx.client,
             "/job-scripts",
@@ -177,7 +179,8 @@ def create(
             expected_status=201,
             abort_message="Couldn't create job script",
             support=True,
-            json=data,
+            content=request_data.json(),
+            response_model=JobScriptResponse,
         ),
     )
     render_single_result(
@@ -187,25 +190,20 @@ def create(
         title="Created Job Script",
     )
 
-    should_submit = True
-    if no_submit:
-        should_submit = False
-    elif not fast:
-        should_submit = typer.confirm("Would you like to submit this job immediately?")
+    if not fast:
+        submit = typer.confirm("Would you like to submit this job immediately?")
 
-    if not should_submit:
+    if not submit:
         return
 
     try:
-        job_script_id = job_script_result["id"]
-        job_script_name = job_script_result["job_script_name"]
-        job_submission_result = create_job_submission(jg_ctx, job_script_id, job_script_name)
+        job_submission_result = create_job_submission(jg_ctx, job_script_result.id, job_script_result.job_script_name)
     except Exception as err:
         raise Abort(
             "Failed to immediately submit the job after job script creation",
             subject="Automatic job submission failed",
             support=True,
-            log_message=f"There was an issue submitting the job immediately {job_script_id=}, {job_script_name=}",
+            log_message=f"There was an issue submitting the job immediately job_script_id={job_script_result.id}",
             original_error=err,
         )
 
@@ -245,7 +243,7 @@ def update(
     assert jg_ctx.client is not None
 
     job_script_result = cast(
-        Dict[str, Any],
+        JobScriptResponse,
         make_request(
             jg_ctx.client,
             f"/job-scripts/{id}",
@@ -254,6 +252,7 @@ def update(
             abort_message="Couldn't update job script",
             support=True,
             json=dict(job_script_data_as_string=job_script),
+            response_model=JobScriptResponse,
         ),
     )
     render_single_result(

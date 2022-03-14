@@ -10,6 +10,7 @@ to True.
 Questions will also resolve to their default values if running in "fast mode".
 """
 
+from copy import deepcopy
 from functools import partial
 from typing import Any, Callable, Dict, Optional, Type, TypeVar, cast
 
@@ -19,6 +20,7 @@ import inquirer.questions
 
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import render_dict
+from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 
 
 TInquirerType = TypeVar("TInquirerType", bound=inquirer.questions.Question)
@@ -308,26 +310,27 @@ class Const(Text):
         return super().make_prompts(ignore=True)
 
 
-def gather_config_values(
-    application,
-    config: Dict[str, Any],
+def gather_param_values(
+    application: JobbergateApplicationBase,
     supplied_params: Optional[Dict[str, Any]] = None,
     fast_mode: bool = False,
-):
+) -> Dict[str, Any]:
     """
-    Gather the config values by executing the application methods.
+    Gather the parameter values by executing the application methods.
 
     Prompt users for answers or use defaults as needed.
-    Update the config dict in place.
 
     :param: application:     The application instance to pull questions from
-    :param: config:          The settings dict to update with answers to the application questions
-    :param: supplied_params: If provided, do not ask questions for these key/values. Just set them in the answers dict
+    :param: supplied_params: Pre-supplied parameters.
+                             Any questions where the variablename matches a pre-supplied key in the dict
+                             at the start of execution will be skipped.
     :param: fast_mode:       Do not ask the user questions. Just use the supplied params and defaults.
+    :returns: A dict of the gathered parameter values
     """
     if supplied_params is None:
         supplied_params = dict()
-    config.update(supplied_params)
+
+    config = deepcopy(supplied_params)
 
     next_method = "mainflow"
 
@@ -350,7 +353,7 @@ def gather_config_values(
         auto_answers = {}
 
         for question in workflow_questions:
-            if question.variablename in supplied_params.keys():
+            if question.variablename in supplied_params:
                 continue
             elif fast_mode and question.default is not None:
                 auto_answers[question.variablename] = question.default
@@ -364,3 +367,5 @@ def gather_config_values(
             render_dict(auto_answers, title="Default values used")
 
         next_method = config.pop("nextworkflow", None)
+
+    return config

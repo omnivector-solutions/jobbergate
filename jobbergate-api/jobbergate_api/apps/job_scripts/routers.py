@@ -112,9 +112,12 @@ def build_job_script_data_as_string(s3_application_tar, param_dict):
 
     # Use tempfile to generate .tar in memory - NOT write to disk
     param_dict_flat = {}
-    for key in param_dict.keys():
-        for nest_key, nest_value in param_dict[key].items():
-            param_dict_flat[nest_key] = nest_value
+    for (key, value) in param_dict.items():
+        if isinstance(value, dict):
+            for nest_key, nest_value in value.items():
+                param_dict_flat[nest_key] = nest_value
+        else:
+            param_dict_flat[key] = value
     with tempfile.NamedTemporaryFile("wb", suffix=".tar.gz", delete=False) as f:
         with tarfile.open(fileobj=f, mode="w:gz") as rendered_tar:
             for member in s3_application_tar.getmembers():
@@ -161,13 +164,14 @@ async def job_script_create(
     s3_application_tar = get_s3_object_as_tarfile(application.id)
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
-    job_script.job_script_owner_email = identity_claims.user_email
 
-    create_dict = job_script.dict(exclude_unset=True)
+    create_dict = dict(
+        **{k: v for (k, v) in job_script.dict(exclude_unset=True).items() if k != "param_dict"},
+        job_script_owner_email=identity_claims.user_email,
+    )
 
-    param_dict = json.loads(create_dict.pop("param_dict", "{}"))
     logger.debug("Rendering job_script data as string")
-    job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, param_dict)
+    job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, job_script.param_dict)
 
     sbatch_params = create_dict.pop("sbatch_params", [])
     create_dict["job_script_data_as_string"] = inject_sbatch_params(job_script_data_as_string, sbatch_params)

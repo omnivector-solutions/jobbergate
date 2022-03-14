@@ -42,7 +42,6 @@ class JobSubmissionCreateRequest(BaseModel):
 
     job_submission_name: str
     job_submission_description: Optional[str]
-    job_submission_owner_email: Optional[str]
     job_script_id: int
     slurm_job_id: Optional[int]
 
