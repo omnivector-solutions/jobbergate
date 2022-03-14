@@ -11,7 +11,7 @@ services:
       - jobbergate-net
     volumes:
       - ./jobbergate-api/jobbergate_api:/app/jobbergate_api
-    command: poetry run jobbergate dev-server --port=8000
+    command: poetry run dev-tools dev-server --port=8000
     environment:
       - DATABASE_HOST=${DATABASE_HOST:-db}
       - DATABASE_USER=${DATABASE_USER:-omnivector}

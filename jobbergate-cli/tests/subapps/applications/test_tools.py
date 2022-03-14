@@ -1,5 +1,4 @@
 import importlib
-import json
 import pathlib
 import re
 import tarfile
@@ -15,16 +14,17 @@ from jobbergate_cli.constants import (
     JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
 )
 from jobbergate_cli.exceptions import Abort
+from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig
+from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.tools import (
     build_application_tarball,
     dump_full_config,
     execute_application,
     fetch_application_data,
-    find_templates,
-    import_from_text,
+    load_application_data,
+    load_application_from_source,
     load_default_config,
     read_application_module,
-    validate_application_data,
     validate_application_files,
 )
 
@@ -122,28 +122,6 @@ def test_validate_application_files__fails_if_application_config_is_not_valid_ya
         validate_application_files(application_path)
 
 
-def test_find_templates(tmp_path):
-    application_path = tmp_path / "dummy"
-    assert find_templates(application_path) == []
-
-    application_path.mkdir()
-    template_root_path = application_path / "templates"
-    template_root_path.mkdir()
-    file1 = template_root_path / "file1"
-    file1.write_text("foo")
-    file2 = template_root_path / "file2"
-    file2.write_text("bar")
-    dir1 = template_root_path / "dir1"
-    dir1.mkdir()
-    file3 = dir1 / "file3"
-    file3.write_text("baz")
-    assert find_templates(application_path) == [
-        pathlib.Path("templates/dir1/file3"),
-        pathlib.Path("templates/file1"),
-        pathlib.Path("templates/file2"),
-    ]
-
-
 def test_dump_full_config(tmp_path):
     application_path = tmp_path / "dummy"
     application_path.mkdir()
@@ -200,14 +178,14 @@ def test_read_application_module(tmp_path):
 
 def test_build_application_tarball(
     tmp_path,
-    dummy_application,
+    dummy_application_dir,
     dummy_config_source,
     dummy_module_source,
     dummy_template_source,
 ):
     build_path = tmp_path / "build"
     build_path.mkdir()
-    tar_path = build_application_tarball(dummy_application, build_path)
+    tar_path = build_application_tarball(dummy_application_dir, build_path)
 
     assert tar_path.exists()
     assert tarfile.is_tarfile(tar_path)
@@ -254,7 +232,7 @@ def test_fetch_application_data__success__using_id(
 
     result = fetch_application_data(dummy_context, id=app_id)
     assert fetch_route.called
-    assert result == app_data
+    assert result == ApplicationResponse(**app_data)
 
 
 def test_fetch_application_data__success__using_identifier(
@@ -275,7 +253,7 @@ def test_fetch_application_data__success__using_identifier(
 
     result = fetch_application_data(dummy_context, identifier=app_identifier)
     assert fetch_route.called
-    assert result == app_data
+    assert result == ApplicationResponse(**app_data)
 
 
 def test_fetch_application_data__fails_with_both_id_or_identifier(dummy_context):
@@ -288,179 +266,156 @@ def test_fetch_application_data__fails_with_neither_id_or_identifier(dummy_conte
         fetch_application_data(dummy_context)
 
 
-def test_validate_application_data__success():
-    app_data = dict(
-        application_file=snick.dedent(
-            """
-            import sys
-
-            print(f"Got some args, yo: {sys.argv}")
-            """
-        ),
-        application_config=snick.dedent(
-            """
-            foo:
-              bar: baz
-            """
-        ),
+def test_load_application_data__success(dummy_module_source, dummy_config_source):
+    app_data = ApplicationResponse(
+        id=13,
+        application_name="dummy",
+        application_owner_email="dummy@dummy.org",
+        application_uploaded=True,
+        application_file=dummy_module_source,
+        application_config=dummy_config_source,
     )
-    (app_module, app_config) = validate_application_data(app_data)
-    assert isinstance(app_module, str)
-    assert app_config == dict(foo=dict(bar="baz"))
+    (app_config, app_module) = load_application_data(app_data)
+    assert isinstance(app_module, JobbergateApplicationBase)
+    assert isinstance(app_config, JobbergateApplicationConfig)
 
 
-def test_validate_application_files__fails_if_application_module_is_not_present():
-    app_data = dict(
-        application_config=snick.dedent(
-            """
-            foo:
-              bar: baz
-            """
-        ),
+def test_load_application_data__fails_if_application_module_cannot_be_loaded_from_source(dummy_config_source):
+    app_data = ApplicationResponse(
+        id=13,
+        application_name="dummy",
+        application_owner_email="dummy@dummy.org",
+        application_uploaded=True,
+        application_file="Not python at all",
+        application_config=dummy_config_source,
     )
 
-    match_pattern = re.compile(
-        f"files fetched from the API were invalid.*does not contain {JOBBERGATE_APPLICATION_MODULE_FILE_NAME}",
-        flags=re.DOTALL,
-    )
-
-    with pytest.raises(Abort, match=match_pattern):
-        validate_application_data(app_data)
+    with pytest.raises(Abort, match="The application source fetched from the API is not valid"):
+        load_application_data(app_data)
 
 
-def test_validate_application_data__fails_if_application_module_is_not_valid_python():
-    app_data = dict(
-        application_file="invalid python",
-        application_config=snick.dedent(
-            """
-            foo:
-              bar: baz
-            """
-        ),
-    )
-
-    match_pattern = re.compile(
-        "files fetched from the API were invalid.*not valid python",
-        flags=re.DOTALL,
-    )
-
-    with pytest.raises(Abort, match=match_pattern):
-        validate_application_data(app_data)
-
-
-def test_validate_application_data__fails_if_application_config_is_not_present():
-    app_data = dict(
-        application_file=snick.dedent(
-            """
-            import sys
-
-            print(f"Got some args, yo: {sys.argv}")
-            """
-        ),
-    )
-
-    match_pattern = re.compile(
-        f"files fetched from the API were invalid.*does not contain {JOBBERGATE_APPLICATION_CONFIG_FILE_NAME}",
-        flags=re.DOTALL,
-    )
-
-    with pytest.raises(Abort, match=match_pattern):
-        validate_application_data(app_data)
-
-
-def test_validate_application_data__fails_if_application_config_is_not_valid_YAML():
-    app_data = dict(
-        application_file=snick.dedent(
-            """
-            import sys
-
-            print(f"Got some args, yo: {sys.argv}")
-            """
-        ),
+def test_load_application_data__fails_if_application_config_is_not_valid_YAML(dummy_module_source):
+    app_data = ApplicationResponse(
+        id=13,
+        application_name="dummy",
+        application_owner_email="dummy@dummy.org",
+        application_uploaded=True,
+        application_file=dummy_module_source,
         application_config=":",
     )
 
-    match_pattern = re.compile(
-        "files fetched from the API were invalid.*not valid YAML",
-        flags=re.DOTALL,
+    with pytest.raises(Abort, match="The application config fetched from the API is not valid"):
+        load_application_data(app_data)
+
+
+def test_load_application_data__fails_if_application_config_is_not_valid_JobbergateApplicationConfig(
+    dummy_module_source,
+):
+    app_data = ApplicationResponse(
+        id=13,
+        application_name="dummy",
+        application_owner_email="dummy@dummy.org",
+        application_uploaded=True,
+        application_file=dummy_module_source,
+        application_config=snick.dedent(
+            """
+            foo: bar
+            """
+        ),
     )
 
-    with pytest.raises(Abort, match=match_pattern):
-        validate_application_data(app_data)
+    with pytest.raises(Abort, match="The application config fetched from the API is not valid"):
+        load_application_data(app_data)
 
 
-def test_import_from_text__success():
-    text = snick.dedent(
-        """
-        foo = "bar"
-        """
+def test_load_application_from_source__success(dummy_module_source, dummy_jobbergate_application_config):
+    application = load_application_from_source(dummy_module_source, dummy_jobbergate_application_config)
+    assert isinstance(application, JobbergateApplicationBase)
+    assert application.mainflow
+    assert application.jobbergate_config == dict(
+        default_template="test-job-script.py.j2",
+        template_files=[pathlib.Path("test-job-script.py.j2")],
+        output_directory=pathlib.Path("."),
+        supporting_files=None,
+        supporting_files_output_name=None,
+        job_script_name=None,
     )
-    module = import_from_text(text)
-    assert module.foo == "bar"
+    assert application.application_config == dict(
+        foo="foo",
+        bar="bar",
+        baz="baz",
+    )
 
 
-def test_execute_application__basic(dummy_render_class, dummy_module_source, mocker):
+def test_execute_application__basic(
+    dummy_render_class,
+    dummy_jobbergate_application_config,
+    dummy_jobbergate_application_module,
+    mocker,
+):
     dummy_render_class.prepared_input = dict(
         foo="FOO",
         bar="BAR",
         baz="BAZ",
     )
 
-    config = dict()
-    supplied_params = dict()
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
-    rendered_data = execute_application(
-        dummy_module_source,
-        config,
-        supplied_params,
+    app_params = execute_application(
+        dummy_jobbergate_application_module,
+        dummy_jobbergate_application_config,
     )
-    assert rendered_data == dict(
-        param_dict=json.dumps(
-            dict(
-                foo="FOO",
-                bar="BAR",
-                baz="BAZ",
-            ),
-        )
+    assert app_params == dict(
+        foo="FOO",
+        bar="BAR",
+        baz="BAZ",
     )
 
 
-def test_execute_application__with_all_the_extras(dummy_render_class, dummy_module_source, mocker):
+def test_execute_application__with_supplied_params(
+    dummy_render_class,
+    dummy_jobbergate_application_config,
+    dummy_jobbergate_application_module,
+    mocker,
+):
     dummy_render_class.prepared_input = dict(
         foo="FOO",
         bar="BAR",
         baz="BAZ",
     )
 
-    config = dict(
-        extra="stuff",
-        job_script_name="overridden",
-    )
-    supplied_params = dict(foo="oof")
-    sbatch_params = [1, 2, 3]
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
-    rendered_data = execute_application(
-        dummy_module_source,
-        config,
-        supplied_params,
-        sbatch_params=sbatch_params,
+    app_params = execute_application(
+        dummy_jobbergate_application_module,
+        dummy_jobbergate_application_config,
+        supplied_params=dict(foo="oof"),
+    )
+    assert app_params == dict(
+        foo="oof",
+        bar="BAR",
+        baz="BAZ",
+    )
+
+
+def test_execute_application__with_fast_mode(
+    dummy_render_class,
+    dummy_jobbergate_application_config,
+    dummy_jobbergate_application_module,
+    mocker,
+):
+    dummy_render_class.prepared_input = dict(
+        foo="FOO",
+        bar="BAR",
+        baz="BAZ",
+    )
+
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    app_params = execute_application(
+        dummy_jobbergate_application_module,
+        dummy_jobbergate_application_config,
         fast_mode=True,
     )
-
-    # Un-jsonify the param_dict to make testing deterministic
-    rendered_data["param_dict"] = json.loads(rendered_data["param_dict"])
-
-    assert rendered_data == dict(
-        param_dict=dict(
-            foo="oof",
-            bar="BAR",
-            baz="zab",
-            extra="stuff",
-            job_script_name="overridden",
-        ),
-        job_script_name="overridden",
-        sbatch_params_0=1,
-        sbatch_params_1=2,
-        sbatch_params_2=3,
-        sbatch_params_len=3,
+    assert app_params == dict(
+        foo="FOO",
+        bar="BAR",
+        baz="zab",  # Only 'baz' has a default value, so it should be used
     )

@@ -15,7 +15,7 @@ from jobbergate_cli.config import settings
 from jobbergate_cli.constants import JOBBERGATE_JOB_SUBMISSION_CONFIG
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobbergateContext
+from jobbergate_cli.schemas import JobbergateContext, JobScriptResponse, JobSubmissionResponse
 from jobbergate_cli.subapps.applications.tools import fetch_application_data
 from jobbergate_cli.subapps.job_scripts.tools import fetch_job_script_data
 
@@ -28,14 +28,14 @@ def load_default_config() -> Dict[str, Any]:
 
 
 def run_job_script(
-    job_script_data: Dict[str, Any],
+    job_script_data: JobScriptResponse,
     application_name: str,
     build_path: Optional[pathlib.Path] = None,
 ) -> int:
     """
     Submit a Job Script to slurm via ``sbatch``.
 
-    :param: job_script_data: A dictionary of job_script_data including the script and its configuration
+    :param: job_script_data: A JobScriptResponse including the script and its configuration
     :param: application_name: The name of the application to pass to ``sbatch``
     :param: build_path:       An optional directory where the job script templates and job script should be unpacked
     :returns: The ``slurm_job_id`` for the submitted job
@@ -54,8 +54,8 @@ def run_job_script(
         ),
     )
 
-    job_script_name = job_script_data["job_script_name"]
-    unpacked_data = json.loads(job_script_data["job_script_data_as_string"])
+    job_script_name = job_script_data.job_script_name
+    unpacked_data = json.loads(job_script_data.job_script_data_as_string)
 
     if build_path is None:
         temp_build_dir = tempfile.TemporaryDirectory()
@@ -88,7 +88,7 @@ def run_job_script(
         snick.dedent(
             f"""
             Could not find an executable script in retrieved job script data.
-            It's likely that this job_script ({job_script_data["id"]}) is broken.
+            It's likely that this job_script ({job_script_data.id}) is broken.
             """,
         ),
         raise_kwargs=dict(
@@ -122,7 +122,7 @@ def create_job_submission(
     job_script_id: int,
     name: str,
     description: Optional[str] = None,
-) -> Dict[Any, str]:
+) -> JobSubmissionResponse:
     """
     Creae a Job Submission from the given Job Script.
 
@@ -140,9 +140,9 @@ def create_job_submission(
 
     job_script_data = fetch_job_script_data(jg_ctx, job_script_id)
 
-    application_id = job_script_data["application_id"]
+    application_id = job_script_data.application_id
     application_data = fetch_application_data(jg_ctx, id=application_id)
-    application_name = application_data["application_name"]
+    application_name = application_data.application_name
 
     slurm_job_id = run_job_script(job_script_data, application_name)
     owner_email = jg_ctx.persona.identity_data.user_email
@@ -156,7 +156,7 @@ def create_job_submission(
     )
 
     result = cast(
-        Dict[str, Any],
+        JobSubmissionResponse,
         make_request(
             jg_ctx.client,
             "/job-submissions",
@@ -165,6 +165,7 @@ def create_job_submission(
             abort_message="Couldn't create job submission",
             support=True,
             json=job_submission_data,
+            response_model=JobSubmissionResponse,
         ),
     )
     return result
@@ -173,7 +174,7 @@ def create_job_submission(
 def fetch_job_submission_data(
     jg_ctx: JobbergateContext,
     job_submission_id: int,
-) -> Dict[str, Any]:
+) -> JobSubmissionResponse:
     """
     Retrieve a job submission from the API by ``id``
     """
@@ -181,7 +182,7 @@ def fetch_job_submission_data(
     assert jg_ctx.client is not None, "Client is uninitialized"
 
     return cast(
-        Dict[str, Any],
+        JobSubmissionResponse,
         make_request(
             jg_ctx.client,
             f"/job-submissions/{job_submission_id}",
@@ -189,5 +190,6 @@ def fetch_job_submission_data(
             expected_status=200,
             abort_message=f"Couldn't retrieve job submission {job_submission_id} from API",
             support=True,
+            response_model=JobSubmissionResponse,
         ),
     )

@@ -4,11 +4,13 @@ from typing import Any, Callable, Dict
 import httpx
 import pytest
 import snick
+import yaml
 from typer import Context, Typer
 from typer.testing import CliRunner
 
 from jobbergate_cli.constants import JOBBERGATE_APPLICATION_CONFIG_FILE_NAME, JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-from jobbergate_cli.schemas import IdentityData, JobbergateContext, Persona, TokenSet
+from jobbergate_cli.schemas import IdentityData, JobbergateApplicationConfig, JobbergateContext, Persona, TokenSet
+from jobbergate_cli.subapps.applications.tools import load_application_from_source
 
 
 @pytest.fixture
@@ -177,9 +179,16 @@ def dummy_config_source():
         """
         jobbergate_config:
           default_template: test-job-script.py.j2
+          template_files:
+            - test-job-script.py.j2
           output_directory: .
+          supporting_files_output_name:
+          supporting_files:
+          job_script_name:
         application_config:
-          partition: debug
+          foo: foo
+          bar: bar
+          baz: baz
         """
     )
 
@@ -188,13 +197,11 @@ def dummy_config_source():
 def dummy_module_source():
     return snick.dedent(
         """
+        from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
         from jobbergate_cli.subapps.applications.questions import Text
 
 
-        class JobbergateApplication:
-
-            def __init__(self, data):
-                self.data = data
+        class JobbergateApplication(JobbergateApplicationBase):
 
             def mainflow(self, data):
                 data["nextworkflow"] = "subflow"
@@ -218,14 +225,22 @@ def dummy_template_source():
         print(f"foo='{{foo}}'")
         print(f"bar='{{bar}}'")
         print(f"baz='{{baz}}'")
-        print(f"qux='{{qux}}'")
-        print(f"quux='{{quux}}'")
         """
     )
 
 
 @pytest.fixture
-def dummy_application(tmp_path, dummy_config_source, dummy_module_source, dummy_template_source):
+def dummy_jobbergate_application_config(dummy_config_source):
+    return JobbergateApplicationConfig(**yaml.safe_load(dummy_config_source))
+
+
+@pytest.fixture
+def dummy_jobbergate_application_module(dummy_module_source, dummy_jobbergate_application_config):
+    return load_application_from_source(dummy_module_source, dummy_jobbergate_application_config)
+
+
+@pytest.fixture
+def dummy_application_dir(tmp_path, dummy_config_source, dummy_module_source, dummy_template_source):
     application_path = tmp_path / "dummy"
     application_path.mkdir()
 

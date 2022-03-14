@@ -3,7 +3,7 @@ import shlex
 import httpx
 import snick
 
-from jobbergate_cli.schemas import ListResponseEnvelope, Pagination
+from jobbergate_cli.schemas import ApplicationResponse, ListResponseEnvelope, Pagination
 from jobbergate_cli.subapps.applications.app import (
     HIDDEN_FIELDS,
     create,
@@ -72,7 +72,7 @@ def test_get_one__success__using_id(
     assert result.exit_code == 0, f"get-one failed: {result.stdout}"
     mocked_render.assert_called_once_with(
         dummy_context,
-        dummy_application_data[0],
+        ApplicationResponse(**dummy_application_data[0]),
         title="Application",
         hidden_fields=HIDDEN_FIELDS,
     )
@@ -99,7 +99,7 @@ def test_get_one__success__using_identifier(
     assert result.exit_code == 0, f"get-one failed: {result.stdout}"
     mocked_render.assert_called_once_with(
         dummy_context,
-        dummy_application_data[0],
+        ApplicationResponse(**dummy_application_data[0]),
         title="Application",
         hidden_fields=HIDDEN_FIELDS,
     )
@@ -124,7 +124,7 @@ def test_create__success(
     make_test_app,
     dummy_context,
     dummy_application_data,
-    dummy_application,
+    dummy_application_dir,
     dummy_domain,
     cli_runner,
     mocker,
@@ -152,7 +152,7 @@ def test_create__success(
             snick.unwrap(
                 f"""
                 create --name=dummy-name --identifier=dummy-identifier
-                       --application-path={dummy_application}
+                       --application-path={dummy_application_dir}
                        --application-desc="This application is kinda dumb, actually"
                 """
             )
@@ -175,7 +175,7 @@ def test_create__warns_but_does_not_abort_if_upload_fails(
     make_test_app,
     dummy_context,
     dummy_application_data,
-    dummy_application,
+    dummy_application_dir,
     dummy_domain,
     cli_runner,
     mocker,
@@ -205,7 +205,7 @@ def test_create__warns_but_does_not_abort_if_upload_fails(
             snick.unwrap(
                 f"""
                 create --name=dummy-name --identifier=dummy-identifier
-                       --application-path={dummy_application}
+                       --application-path={dummy_application_dir}
                        --application-desc="This application is kinda dumb, actually"
                 """
             )
@@ -229,7 +229,7 @@ def test_update__success(
     make_test_app,
     dummy_context,
     dummy_application_data,
-    dummy_application,
+    dummy_application_dir,
     dummy_domain,
     cli_runner,
     mocker,
@@ -259,7 +259,7 @@ def test_update__success(
             snick.unwrap(
                 f"""
                 update --id={application_id} --identifier=dummy-identifier
-                       --application-path={dummy_application}
+                       --application-path={dummy_application_dir}
                        --application-desc="This application is kinda dumb, actually"
                 """
             )
@@ -333,7 +333,7 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
     make_test_app,
     dummy_context,
     dummy_application_data,
-    dummy_application,
+    dummy_application_dir,
     dummy_domain,
     cli_runner,
     mocker,
@@ -363,7 +363,7 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
             snick.unwrap(
                 f"""
                 update --id={application_id} --identifier=dummy-identifier
-                       --application-path={dummy_application}
+                       --application-path={dummy_application_dir}
                        --application-desc="This application is kinda dumb, actually"
                 """
             )
@@ -386,27 +386,8 @@ def test_delete__success(respx_mock, make_test_app, dummy_domain, cli_runner):
     delete_route = respx_mock.delete(f"{dummy_domain}/applications/1")
     delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
 
-    delete_upload_route = respx_mock.delete(f"{dummy_domain}/applications/1/upload")
-    delete_upload_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
-
     test_app = make_test_app("delete", delete)
     result = cli_runner.invoke(test_app, shlex.split("delete --id=1"))
     assert result.exit_code == 0, f"delete failed: {result.stdout}"
     assert delete_route.called
-    assert delete_upload_route.called
     assert "Application delete succeeded" in result.stdout
-
-
-def test_delete__warns_but_does_not_abort_if_delete_upload_fails(respx_mock, make_test_app, dummy_domain, cli_runner):
-    delete_route = respx_mock.delete(f"{dummy_domain}/applications/1")
-    delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
-
-    delete_upload_route = respx_mock.delete(f"{dummy_domain}/applications/1/upload")
-    delete_upload_route.mock(return_value=httpx.Response(httpx.codes.BAD_REQUEST))
-
-    test_app = make_test_app("delete", delete)
-    result = cli_runner.invoke(test_app, shlex.split("delete --id=1"))
-    assert result.exit_code == 0, f"delete failed: {result.stdout}"
-    assert delete_route.called
-    assert delete_upload_route.called
-    assert "File delete failed" in result.stdout
