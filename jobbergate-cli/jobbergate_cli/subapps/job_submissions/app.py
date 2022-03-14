@@ -21,7 +21,7 @@ HIDDEN_FIELDS = [
 ]
 
 
-style_mapper = StyleMapper(id="green", job_script_name="cyan", slurm_job_id="orange")
+style_mapper = StyleMapper(id="green", job_script_name="cyan", slurm_job_id="dark_orange")
 
 
 app = typer.Typer(help="Commands to interact with job submissions")

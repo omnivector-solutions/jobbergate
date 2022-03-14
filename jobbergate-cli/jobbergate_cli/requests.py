@@ -9,6 +9,7 @@ import snick
 from loguru import logger
 
 from jobbergate_cli.exceptions import Abort
+from jobbergate_cli.schemas import ForeignKeyError
 
 
 ResponseModel = TypeVar("ResponseModel", bound=pydantic.BaseModel)
@@ -75,20 +76,34 @@ def make_request(
         )
 
     if expected_status is not None and response.status_code != expected_status:
-        raise Abort(
-            snick.unwrap(
-                f"""
-                {abort_message}:
-                Received an error response.
-                """
-            ),
-            subject=abort_subject,
-            support=support,
-            log_message=f"Got an error code for request: {response.status_code}: {response.text}",
-        )
+        if method == "DELETE" and response.status_code == 409:
+            details = response.json()["detail"]
+            fk_error = ForeignKeyError(**details)
+            raise Abort(
+                snick.dedent(
+                    f"""
+                    {abort_message}:
+                    There are [red]{fk_error.table}[/red] that reference id [bold yellow]{fk_error.pk_id}[/bold yellow].
+                    """,
+                ),
+                subject=abort_subject,
+                log_message=f"Could not delete due to foreign-key constraint: {response.text}",
+            )
+        else:
+            raise Abort(
+                snick.unwrap(
+                    f"""
+                    {abort_message}:
+                    Received an error response.
+                    """
+                ),
+                subject=abort_subject,
+                support=support,
+                log_message=f"Got an error code for request: {response.status_code}: {response.text}",
+            )
 
     # TODO: constrain methods with a named enum
-    if method == "DELETE" or expect_response is False:
+    if expect_response is False or method == "DELETE":
         return response.status_code
 
     try:
