@@ -4,7 +4,8 @@ Router for the JobSubmission resource.
 from typing import Optional, List
 
 from armasec import TokenPayload
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Body
+from sqlalchemy import select
 
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
@@ -23,7 +24,7 @@ from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.security import IdentityClaims, guard
-from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause, render_sql
+from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause
 
 router = APIRouter()
 
@@ -150,43 +151,6 @@ async def job_submission_list(
     return await package_response(JobSubmissionResponse, query, pagination)
 
 
-@router.get(
-    "/pending-job-submissions",
-    description="Endpoint to list pending job_submissions for the requesting client",
-    response_model=List[PendingJobSubmission]
-)
-async def pending_job_submissions(
-    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW)),
-):
-    """
-    Get a list of pending job submissions for the cluster-agent.
-    """
-    if token_payload.client_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Access token does not contain a `client_id`. Cannot fetch pending submissions",
-        )
-
-    query = job_submissions_table.select(
-    ).join(job_scripts_table).join(applications_table).where(
-        job_submissions_table.c.status == JobSubmissionStatus.CREATED,
-        job_submissions_table.c.cluster_client_id == token_payload.client_id,
-    ).with_entities(
-        job_submissions_table.c.id,
-        job_submissions_table.c.job_submission_name,
-        job_scripts_table.c.job_script_name,
-        job_scripts_table.c.job_script_data_as_string,
-        applications_table.c.application_name,
-    )
-
-    print(render_sql(query))
-
-
-    rows = await database.fetch_all(query)
-    print("ROWS: ", [dict(r) for r in rows])
-    return rows
-
-
 @router.delete(
     "/job-submissions/{job_submission_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -220,7 +184,7 @@ async def job_submission_delete(
     response_model=JobSubmissionResponse,
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT))],
 )
-async def job_script_update(job_submission_id: int, job_submission: JobSubmissionUpdateRequest):
+async def job_submission_update(job_submission_id: int, job_submission: JobSubmissionUpdateRequest):
     """
     Update a job_submission given its id.
     """
@@ -244,6 +208,89 @@ async def job_script_update(job_submission_id: int, job_submission: JobSubmissio
             )
 
     return job_submission_data
+
+
+# The "agent" routes are used for agents to fetch pending job submissions and update their statuses
+@router.get(
+    "/job-submissions/agent/pending",
+    description="Endpoint to list pending job_submissions for the requesting client",
+    response_model=List[PendingJobSubmission]
+)
+async def job_submissions_agent_pending(
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW)),
+):
+    """
+    Get a list of pending job submissions for the cluster-agent.
+    """
+    if token_payload.client_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Access token does not contain a `client_id`. Cannot fetch pending submissions",
+        )
+
+    query = select(
+        columns=[
+            job_submissions_table.c.id,
+            job_submissions_table.c.job_submission_name,
+            job_scripts_table.c.job_script_name,
+            job_scripts_table.c.job_script_data_as_string,
+            applications_table.c.application_name,
+        ]
+    ).select_from(
+        job_submissions_table
+        .join(job_scripts_table)
+        .join(applications_table)
+    ).where(
+        job_submissions_table.c.status == JobSubmissionStatus.CREATED,
+    ).where(
+        job_submissions_table.c.cluster_client_id == token_payload.client_id,
+    )
+
+    rows = await database.fetch_all(query)
+    return rows
+
+
+@router.put(
+    "/job-submissions/agent/{job_submission_id}",
+    status_code=200,
+    description="Endpoint for an agent to update the status of a job_submission",
+    response_model=JobSubmissionResponse,
+)
+async def job_submission_agent_update(
+    job_submission_id: int,
+    new_status: str = Body(..., embed=True),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT)),
+):
+    """
+    Update a job_submission with a new status.
+
+    Make a put request to this endpoint with the new status to update a job_submission.
+    """
+    client_id = token_payload.client_id
+    if client_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Access token does not contain a `client_id`. Cannot update job_submission",
+        )
+
+    update_query = (
+        job_submissions_table.update()
+        .where(job_submissions_table.c.id == job_submission_id)
+        .where(job_submissions_table.c.cluster_client_id == client_id)
+        .values(status=new_status)
+        .returning(job_submissions_table)
+    )
+    from jobbergate_api.storage import render_sql
+    print(render_sql(update_query))
+    result = await database.fetch_one(update_query)
+
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"JobSubmission with id={job_submission_id} and cluster_client_id={client_id} not found.",
+        )
+
+    return result
 
 
 def include_router(app):
