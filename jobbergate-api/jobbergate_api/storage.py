@@ -55,7 +55,10 @@ def render_sql(query) -> str:
     return query.compile(dialect=database._backend._dialect, compile_kwargs={"literal_binds": True})
 
 
-def search_clause(search_terms: str, searchable_fields: typing.List[Column],) -> BooleanClauseList:
+def search_clause(
+    search_terms: str,
+    searchable_fields: typing.List[Column],
+) -> BooleanClauseList:
     """
     Create search clause across searchable fields with search terms.
     """
@@ -63,7 +66,9 @@ def search_clause(search_terms: str, searchable_fields: typing.List[Column],) ->
 
 
 def sort_clause(
-    sort_field: str, sortable_fields: typing.List[Column], sort_ascending: bool,
+    sort_field: str,
+    sortable_fields: typing.List[Column],
+    sort_ascending: bool,
 ) -> typing.Union[Column, UnaryExpression]:
     """
     Create a sort clause given a sort field, the list of sortable fields, and a sort_ascending flag.
@@ -83,7 +88,8 @@ def sort_clause(
 
 
 def handle_fk_error(
-    _: fastapi.Request, err: asyncpg.exceptions.ForeignKeyViolationError,
+    _: fastapi.Request,
+    err: asyncpg.exceptions.ForeignKeyViolationError,
 ):
     """
     This method is used to unpack metadata from a ForeignKeyViolationError
@@ -100,7 +106,11 @@ def handle_fk_error(
     return fastapi.responses.JSONResponse(
         status_code=fastapi.status.HTTP_409_CONFLICT,
         content=dict(
-            detail=dict(message="Delete failed due to foreign-key constraint", table=table, pk_id=pk_id,),
+            detail=dict(
+                message="Delete failed due to foreign-key constraint",
+                table=table,
+                pk_id=pk_id,
+            ),
         ),
     )
 

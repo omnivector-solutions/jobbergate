@@ -10,15 +10,21 @@ from pydantic import BaseModel
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
 application_meta_mapper = MetaMapper(
-    id=MetaField(description="The unique database identifier for the instance", example=101,),
+    id=MetaField(
+        description="The unique database identifier for the instance",
+        example=101,
+    ),
     created_at=MetaField(
-        description="The timestamp for when the instance was created", example="2021-12-28 23:13:00",
+        description="The timestamp for when the instance was created",
+        example="2021-12-28 23:13:00",
     ),
     updated_at=MetaField(
-        description="The timestamp for when the instance was last updated", example="2021-12-28 23:52:00",
+        description="The timestamp for when the instance was last updated",
+        example="2021-12-28 23:52:00",
     ),
     application_name=MetaField(
-        description="The unique name of the application", example="test-application-88",
+        description="The unique name of the application",
+        example="test-application-88",
     ),
     application_identifier=MetaField(
         description="A human-friendly label used for lookup on frequently accessed applications",
@@ -78,7 +84,8 @@ application_meta_mapper = MetaMapper(
         ).strip(),
     ),
     application_uploaded=MetaField(
-        description="Indicates if the application file zip has been uploaded yet.", example=True,
+        description="Indicates if the application file zip has been uploaded yet.",
+        example=True,
     ),
 )
 

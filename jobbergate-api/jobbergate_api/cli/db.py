@@ -76,7 +76,9 @@ def migrate(
 
 
 @app.command()
-def upgrade(target: str = typer.Option("head", help="The migration to which the db should be upgraded"),):
+def upgrade(
+    target: str = typer.Option("head", help="The migration to which the db should be upgraded"),
+):
     """
     Logs into a local database.
     """

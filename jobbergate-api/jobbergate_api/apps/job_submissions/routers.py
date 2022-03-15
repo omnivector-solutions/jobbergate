@@ -1,11 +1,12 @@
 """
 Router for the JobSubmission resource.
 """
-from typing import Optional
+from typing import Optional, List
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_submissions.models import (
     job_submissions_table,
@@ -16,11 +17,13 @@ from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionCreateRequest,
     JobSubmissionResponse,
     JobSubmissionUpdateRequest,
+    PendingJobSubmission,
 )
+from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.security import IdentityClaims, guard
-from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause
+from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause, render_sql
 
 router = APIRouter()
 
@@ -41,9 +44,20 @@ async def job_submission_create(
     Make a post request to this endpoint with the required values to create a new job submission.
     """
     identity_claims = IdentityClaims.from_token_payload(token_payload)
+    client_id = job_submission.cluster_client_id or token_payload.client_id
+    if client_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not find a client_id in the request body or auth token.",
+        )
+
     create_dict = dict(
-        **job_submission.dict(exclude_unset=True), job_submission_owner_email=identity_claims.user_email,
+        **job_submission.dict(exclude_unset=True),
+        job_submission_owner_email=identity_claims.user_email,
+        status=JobSubmissionStatus.CREATED,
     )
+    if job_submission.cluster_client_id is None:
+        create_dict.update(cluster_client_id=token_payload.client_id)
 
     select_query = job_scripts_table.select().where(job_scripts_table.c.id == job_submission.job_script_id)
     raw_job_script = await database.fetch_one(select_query)
@@ -51,7 +65,7 @@ async def job_submission_create(
     if not raw_job_script:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=(f"JobScript id={job_submission.job_script_id} not found."),
+            detail=f"JobScript id={job_submission.job_script_id} not found.",
         )
 
     async with database.transaction():
@@ -91,10 +105,16 @@ async def job_submission_get(job_submission_id: int = Query(...)):
 async def job_submission_list(
     pagination: Pagination = Depends(),
     all: Optional[bool] = Query(
-        None, description="If supplied, do not limit job_submissions to only the current user",
+        None,
+        description="If supplied, do not limit job_submissions to only the current user",
     ),
     slurm_job_ids: Optional[str] = Query(
-        None, description="Comma-separated list of slurm-job-ids to match active job_submissions",
+        None,
+        description="Comma-separated list of slurm-job-ids to match active job_submissions",
+    ),
+    status: Optional[JobSubmissionStatus] = Query(
+        None,
+        description="Limit results to those with matching status",
     ),
     search: Optional[str] = Query(None),
     sort_field: Optional[str] = Query(None),
@@ -106,6 +126,9 @@ async def job_submission_list(
     """
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     query = job_submissions_table.select()
+
+    if status:
+        query = query.where(job_submissions_table.c.status == status)
 
     if not all:
         query = query.where(job_submissions_table.c.job_submission_owner_email == identity_claims.user_email)
@@ -125,6 +148,43 @@ async def job_submission_list(
         query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
 
     return await package_response(JobSubmissionResponse, query, pagination)
+
+
+@router.get(
+    "/pending-job-submissions",
+    description="Endpoint to list pending job_submissions for the requesting client",
+    response_model=List[PendingJobSubmission]
+)
+async def pending_job_submissions(
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW)),
+):
+    """
+    Get a list of pending job submissions for the cluster-agent.
+    """
+    if token_payload.client_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Access token does not contain a `client_id`. Cannot fetch pending submissions",
+        )
+
+    query = job_submissions_table.select(
+    ).join(job_scripts_table).join(applications_table).where(
+        job_submissions_table.c.status == JobSubmissionStatus.CREATED,
+        job_submissions_table.c.cluster_client_id == token_payload.client_id,
+    ).with_entities(
+        job_submissions_table.c.id,
+        job_submissions_table.c.job_submission_name,
+        job_scripts_table.c.job_script_name,
+        job_scripts_table.c.job_script_data_as_string,
+        applications_table.c.application_name,
+    )
+
+    print(render_sql(query))
+
+
+    rows = await database.fetch_all(query)
+    print("ROWS: ", [dict(r) for r in rows])
+    return rows
 
 
 @router.delete(

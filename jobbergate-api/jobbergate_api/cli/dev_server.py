@@ -38,5 +38,9 @@ def dev_server(
         typer.Exit(1)
 
     uvicorn.run(
-        "jobbergate_api.main:app", host="0.0.0.0", port=port, reload=True, log_level=log_level.lower(),
+        "jobbergate_api.main:app",
+        host="0.0.0.0",
+        port=port,
+        reload=True,
+        log_level=log_level.lower(),
     )

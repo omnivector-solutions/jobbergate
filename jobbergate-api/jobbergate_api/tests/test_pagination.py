@@ -80,7 +80,8 @@ async def test_package_response__without_pagination():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "start,limit,total", [(0, 1, 1), (6, 2, 13), (2, 3, 10), (7, 2, 13)],
+    "start,limit,total",
+    [(0, 1, 1), (6, 2, 13), (2, 3, 10), (7, 2, 13)],
 )
 @database.transaction(force_rollback=True)
 async def test_package_response__with_pagination(start, limit, total):
