@@ -87,7 +87,7 @@ def test_get_one__success(
     )
 
 
-def test_create__full_run_including_non_fast_mode_and_job_submission(
+def test_create__non_fast_mode_and_job_submission(
     respx_mock,
     make_test_app,
     dummy_context,

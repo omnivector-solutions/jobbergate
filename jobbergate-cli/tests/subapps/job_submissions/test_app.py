@@ -7,7 +7,7 @@ from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS, create, de
 from jobbergate_cli.text_tools import unwrap
 
 
-def test_create__full_run_including_non_fast_mode_and_job_submission(
+def test_create(
     make_test_app,
     dummy_context,
     dummy_job_submission_data,

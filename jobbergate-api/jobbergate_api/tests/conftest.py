@@ -78,17 +78,23 @@ async def inject_security_header(client, build_rs256_token):
     """
     Provide a helper method that will inject a security token into the requests for a test client.
 
-    If no permisions are provided, the security token will still be valid but will not carry any permissions.
-    Uses the `build_rs256_token()` fixture from the armasec package.
+    If no permissions are provided, the security token will still be valid but will not carry any permissions.
+    Uses the `build_rs256_token()` fixture from the armasec package. If `cluster_client_id` is provided, it will
+    be injected into the `azp` claim.
     """
 
-    def _helper(owner_email: str, *permissions: typing.List[str]):
-        token = build_rs256_token(
-            claim_overrides={
-                settings.IDENTITY_CLAIMS_KEY: {"user_email": owner_email},
-                "permissions": permissions,
-            }
-        )
+    def _helper(
+        owner_email: str,
+        *permissions: typing.List[str],
+        cluster_client_id: typing.Optional[str] = None,
+    ):
+        claim_overrides = {
+            settings.IDENTITY_CLAIMS_KEY: {"user_email": owner_email},
+            "permissions": permissions,
+        }
+        if cluster_client_id is not None:
+            claim_overrides.update(azp=cluster_client_id)
+        token = build_rs256_token(claim_overrides=claim_overrides)
         client.headers.update({"Authorization": f"Bearer {token}"})
 
     return _helper

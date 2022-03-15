@@ -3,6 +3,8 @@ Pytest helpers to use in all apps.
 """
 from pytest import fixture
 
+from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
+
 
 @fixture
 def application_data():
@@ -91,6 +93,8 @@ def job_submission_data():
     return {
         "job_submission_name": "test_name",
         "job_submission_owner_email": "owner1@org.com",
+        "cluster_client_id": "dummy-cluster-id",
+        "status": JobSubmissionStatus.CREATED,
     }
 
 
