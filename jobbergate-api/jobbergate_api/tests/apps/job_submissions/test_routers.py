@@ -1200,3 +1200,87 @@ async def test_job_submissions_agent_update__returns_400_if_token_does_not_carry
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "token does not contain a `client_id`" in response.text
+
+
+@pytest.mark.asyncio
+async def test_job_submissions_agent_active__success(
+    client, fill_application_data, fill_job_script_data, fill_all_job_submission_data, inject_security_header,
+):
+    """
+    Test GET /job-submissions/agent/active returns only active job_submissions owned by the requesting agent.
+
+    This test proves that GET /job-submissions/agent/active returns the correct job_submissions for the agent
+    making the request. We show this by asserting that the job_submissions returned in the response are
+    only job_submissions with a ``cluster_client_id`` that matches the ``client_id`` found in the request's
+    token payload and have a status of ``SUBMITTED``.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(), values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
+    )
+    await database.execute_many(
+        query=job_submissions_table.insert(),
+        values=fill_all_job_submission_data(
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub1",
+                status=JobSubmissionStatus.CREATED,
+                cluster_client_id="dummy-client",
+                slurm_job_id=11,
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub2",
+                status=JobSubmissionStatus.SUBMITTED,
+                cluster_client_id="dummy-client",
+                slurm_job_id=22,
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub3",
+                status=JobSubmissionStatus.SUBMITTED,
+                cluster_client_id="silly-client",
+                slurm_job_id=33,
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub4",
+                status=JobSubmissionStatus.SUBMITTED,
+                cluster_client_id="dummy-client",
+                slurm_job_id=44,
+            ),
+        ),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 4
+
+    inject_security_header(
+        "who@cares.com", Permissions.JOB_SUBMISSIONS_VIEW, cluster_client_id="dummy-client",
+    )
+    response = await client.get("/jobbergate/job-submissions/agent/active")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert [d["job_submission_name"] for d in data] == ["sub2", "sub4"]
+    assert [d["slurm_job_id"] for d in data] == [22, 44]
+
+
+@pytest.mark.asyncio
+async def test_job_submissions_agent_active__returns_400_if_token_does_not_carry_client_id(
+    client, inject_security_header,
+):
+    """
+    Test GET /job-submissions/agent/active returns a 400 if the token payload does not include a client_id.
+
+    This test proves that GET /job-submissions/agent/active returns a 400 status if the access token used
+    to query the route does not include a ``client_id``.
+    """
+    inject_security_header(
+        "who@cares.com", Permissions.JOB_SUBMISSIONS_VIEW,
+    )
+    response = await client.get("/jobbergate/job-submissions/agent/active")
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "token does not contain a `client_id`" in response.text

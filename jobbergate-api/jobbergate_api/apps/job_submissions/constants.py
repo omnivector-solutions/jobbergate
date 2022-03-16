@@ -13,6 +13,7 @@ class JobSubmissionStatus(str, Enum):
     CREATED = "CREATED"
     SUBMITTED = "SUBMITTED"
     COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
 
     @classmethod
     def pretty_list(cls):

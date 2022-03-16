@@ -16,6 +16,7 @@ from jobbergate_api.apps.job_submissions.models import (
     sortable_fields,
 )
 from jobbergate_api.apps.job_submissions.schemas import (
+    ActiveJobSubmission,
     JobSubmissionCreateRequest,
     JobSubmissionResponse,
     JobSubmissionUpdateRequest,
@@ -284,6 +285,33 @@ async def job_submission_agent_update(
         )
 
     return result
+
+
+@router.get(
+    "/job-submissions/agent/active",
+    description="Endpoint to list active job_submissions for the requesting client",
+    response_model=List[ActiveJobSubmission],
+)
+async def job_submissions_agent_active(
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW)),
+):
+    """
+    Get a list of active job submissions for the cluster-agent.
+    """
+    if token_payload.client_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Access token does not contain a `client_id`. Cannot fetch pending submissions",
+        )
+
+    query = (
+        job_submissions_table.select()
+        .where(job_submissions_table.c.status == JobSubmissionStatus.SUBMITTED)
+        .where(job_submissions_table.c.cluster_client_id == token_payload.client_id)
+    )
+
+    rows = await database.fetch_all(query)
+    return rows
 
 
 def include_router(app):
