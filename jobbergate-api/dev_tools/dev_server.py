@@ -1,3 +1,6 @@
+"""
+Provide command for starting a local development server for the API.
+"""
 from time import sleep
 
 import typer
@@ -9,6 +12,13 @@ from jobbergate_api.config import settings
 
 
 def _wait_for_db(wait_count, wait_interval):
+    """
+    Wait for a database connection.
+
+    Loop for a maximum of ``wait_count`` times where each lasts for ``wait_interval`` seconds. If the
+    connection resolves before the time is up, return normally. If the database fails to connect, raise a
+    ``RuntimeError``.
+    """
     count = 0
     while count < wait_count:
         logger.debug(f"Checking health of database at {settings.DATABASE_URL}: Attempt #{count}")
@@ -31,6 +41,9 @@ def dev_server(
     port: int = typer.Option(5000, help="The port where the server should listen"),
     log_level: str = typer.Option("DEBUG", help="The level to log uvicorn output"),
 ):
+    """
+    Start a development server locally.
+    """
     try:
         _wait_for_db(db_wait_count, db_wait_interval)
     except Exception:

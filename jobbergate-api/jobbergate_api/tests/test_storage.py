@@ -1,9 +1,15 @@
+"""
+Test the storage module.
+"""
+
 from jobbergate_api.config import DeployEnvEnum
 from jobbergate_api.storage import build_db_url
 
 
 def test_build_db_url__creates_database_url_from_parts(tweak_settings):
     """
+    Provide a test ase for the ``build_db_url()`` function.
+
     Tests that the build_db_url function computes a database url value from separate
     DATABASE_ settings when the DEPLOY_ENV is not TEST.
     """
@@ -27,6 +33,8 @@ def test_build_db_url__creates_database_url_from_parts(tweak_settings):
 
 def test_build_db_url__uses_TEST_prefixed_database_settings_if_passed_the_force_test_flag(tweak_settings):
     """
+    Provide a test ase for the ``build_db_url()`` function.
+
     Tests that the build_db_url function computes a database url value from separate
     TEST_DATABASE_ settings when the DEPLOY_ENV is TEST.
     """

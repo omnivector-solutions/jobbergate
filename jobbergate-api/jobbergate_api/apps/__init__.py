@@ -1,3 +1,3 @@
 """
-Resources of the API
+Resources of the API.
 """

@@ -196,7 +196,7 @@ async def applications_list(
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW)),
 ):
     """
-    List all applications
+    List all applications.
     """
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     query = applications_table.select()
@@ -261,4 +261,7 @@ async def application_update(
 
 
 def include_router(app):
+    """
+    Include the router for this module in the app.
+    """
     app.include_router(router)

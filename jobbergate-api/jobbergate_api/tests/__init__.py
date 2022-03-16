@@ -1,3 +1,3 @@
 """
-Tests using pytest for the API
+Provide unit tests for the API.
 """

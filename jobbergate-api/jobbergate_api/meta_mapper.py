@@ -1,6 +1,7 @@
 """
-Provides a metadata-mapper for re-using descriptions and examples across many pydantic models
+Provides a metadata-mapper for re-using descriptions and examples across many pydantic models.
 """
+
 from dataclasses import dataclass, fields
 from typing import Any, Dict, Optional
 
@@ -76,8 +77,10 @@ class MetaMapper:
 
     def __init__(self, **kwargs: MetaField):
         """
-        Map the kwargs into the field_dict. All kwargs *should* be MetaFields, but any object duck-typed
-        to include all the attributes of a MetaField will be accepted.
+        Map the kwargs into the field_dict.
+
+        All kwargs *should* be MetaFields, but any object duck-typed to include all the attributes of a
+        MetaField will be accepted.
         """
         required_fields = (f.name for f in fields(MetaField))
         for (key, value) in kwargs.items():
@@ -91,8 +94,9 @@ class MetaMapper:
 
     def __call__(self, schema: Dict[str, Any], *_) -> None:
         """
-        Map the MetaFields onto the metadata properties of a schema. Should be used in a pydantic Model's
-        Config class
+        Map the MetaFields onto the metadata properties of a schema.
+
+        Should be used in a pydantic Model's Config class.
         """
         for (key, old_metadata) in schema["properties"].items():
             new_metadata = self.field_dict.get(key)

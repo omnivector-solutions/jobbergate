@@ -1,5 +1,7 @@
 """
-Configuration file, sets all the necessary environment variables, it is better used with a .env file
+Provide configuration settings for the app.
+
+Pull settings from environment variables or a .env file if available.
 """
 from enum import Enum
 from typing import Optional
@@ -8,6 +10,10 @@ from pydantic import BaseSettings, Field, HttpUrl
 
 
 class LogLevelEnum(str, Enum):
+    """
+    Provide an enumeration class describing the available log levels.
+    """
+
     DEBUG = "DEBUG"
     INFO = "INFO"
     WARNING = "WARNING"
@@ -17,7 +23,7 @@ class LogLevelEnum(str, Enum):
 
 class DeployEnvEnum(str, Enum):
     """
-    Describes the environment where the app is currently deployed.
+    Describe the environment where the app is currently deployed.
     """
 
     PROD = "PROD"
@@ -27,6 +33,9 @@ class DeployEnvEnum(str, Enum):
 
 
 class Settings(BaseSettings):
+    """
+    Provide a pydantic ``BaseSettings`` model for the application settings.
+    """
 
     DEPLOY_ENV: Optional[DeployEnvEnum] = DeployEnvEnum.LOCAL
 

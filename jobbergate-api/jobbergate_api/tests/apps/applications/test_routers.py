@@ -227,8 +227,9 @@ async def test_delete_application__fk_error(
     client, application_data, inject_security_header,
 ):
     """
-    Test DELETE /applications/<id> correctly returns a 409 with a helpful message when a delete is blocked
-    by a foreign-key constraint.
+    Test DELETE /applications/<id> correctly returns a 409 when a foreign-key error occurs.
+
+    Test that a helpful message when a delete is blocked by a foreign-key constraint.
     """
     inserted_id = await database.execute(query=applications_table.insert(), values=application_data,)
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -386,8 +387,7 @@ async def test_get_applications__with_user_param(
     client, fill_all_application_data, inject_security_header,
 ):
     """
-    Test applications list doesn't include applications owned by other users when the `user`
-    parameter is passed.
+    Test applications list doesn't include applications owned by other users with `user` param.
 
     This test proves that the user making the request cannot see applications owned by other users.
     We show this by creating applications that are owned by another user id and assert that
@@ -777,6 +777,9 @@ async def test_upload_file__works_with_small_file(
 async def test_upload_file__fails_with_413_on_large_file(
     client, inject_security_header, tweak_settings, make_dummy_file, make_files_param,
 ):
+    """
+    Test that upload fails when the file is too large.
+    """
     dummy_file = make_dummy_file("dummy.py", size=10_000 + 200)
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):

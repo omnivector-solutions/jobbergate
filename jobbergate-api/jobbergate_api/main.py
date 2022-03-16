@@ -1,5 +1,5 @@
 """
-Main file to startup the fastapi server
+Main file to startup the fastapi server.
 """
 import sys
 import typing
@@ -40,6 +40,9 @@ subapp.exception_handler(asyncpg.exceptions.ForeignKeyViolationError)(handle_fk_
     "/health", status_code=status.HTTP_204_NO_CONTENT, responses={204: {"description": "API is healthy"}},
 )
 async def health_check():
+    """
+    Provide a health-check endpoint for the app.
+    """
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -60,7 +63,7 @@ def init_logger():
 @app.on_event("startup")
 async def init_database():
     """
-    Connect the database; create it if necessary
+    Connect the database; create it if necessary.
     """
     logger.debug("Initializing database")
     await database.connect()
@@ -69,7 +72,7 @@ async def init_database():
 @app.on_event("shutdown")
 async def disconnect_database():
     """
-    Disconnect the database
+    Disconnect the database.
     """
     logger.debug("Disconnecting database")
     await database.disconnect()

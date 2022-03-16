@@ -36,7 +36,7 @@ class Pagination(BaseModel):
 
     def dict(self):
         """
-        Overrides default ``dict()`` behavior so that if ``page`` is None, all fields are omitted.
+        Override default ``dict()`` behavior so that if ``page`` is None, all fields are omitted.
         """
         return dict() if self.start is None else super().dict()
 
@@ -73,13 +73,12 @@ def ok_response(_: Type[TResponseModel],) -> Dict[Union[int, str], Dict[str, Typ
     return a dictionary that contains a ``Response`` for that model type.
 
     """
-
     return {200: {"model": Response[TResponseModel]}}
 
 
 async def package_response(model: Type[TResponseModel], query, pagination: Pagination) -> JSONResponse:
     """
-    Packages the response in an envelope that includes the response and the metadata.
+    Package the response in an envelope that includes the response and the metadata.
 
     Return a JSONREsponse containing the packaged data.
 

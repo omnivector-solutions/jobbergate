@@ -48,9 +48,10 @@ isort = "^5.9.3"
 respx = "^0.17.1"
 py-docker-gadgets = "^0.1.0"
 pyproject-flake8 = "^0.0.1-alpha.2"
+flake8-docstrings = "^1.6.0"
 
 [tool.poetry.scripts]
-dev-tools = "jobbergate_api.cli:app"
+dev-tools = "dev_tools:app"
 
 [tool.black]
 line-length = 110
@@ -62,6 +63,9 @@ include_trailing_comma = true
 
 [tool.flake8]
 max_line_length = 110
+exclude = "alembic/*"
+ignore = "D200,D106,D402"
+
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -76,9 +80,6 @@ env = [
 [tool.coverage.report]
     fail_under = 95
     show_missing = true
-
-[tool.coverage.run]
-    omit = ["jobbergate_api/cli/*"]
 
 [[tool.mypy.overrides]]
 module = [

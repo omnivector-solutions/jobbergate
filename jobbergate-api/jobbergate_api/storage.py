@@ -1,5 +1,5 @@
 """
-Persistent data storage
+Provide functions to interact with persistent data storage.
 """
 import re
 import typing
@@ -25,10 +25,10 @@ INTEGRITY_CHECK_EXCEPTIONS = (UniqueViolationError,)
 
 def build_db_url(force_test: bool = False) -> str:
     """
-    Helper method to build a database url based on settings. If ``is_test`` is passed, it will build from
-    the test database settings.
+    Build a database url based on settings.
 
-    The ``force_test`` param allows you to override the check for the DEPLOY_ENV setting.
+    If the ``DEPLOY_ENV`` setting is "TEST" or if the ``force_test`` is passed, build from the test database
+    settings.
     """
     is_test = force_test or settings.DEPLOY_ENV == DeployEnvEnum.TEST
     prefix = "TEST_" if is_test else ""
@@ -86,7 +86,7 @@ def handle_fk_error(
     _: fastapi.Request, err: asyncpg.exceptions.ForeignKeyViolationError,
 ):
     """
-    This method is used to unpack metadata from a ForeignKeyViolationError
+    Unpack metadata from a ForeignKeyViolationError and return a 409 response.
     """
     FK_DETAIL_RX = r"DETAIL:  Key \(id\)=\((?P<pk_id>\d+)\) is still referenced from table \"(?P<table>\w+)\""
     matches = re.search(FK_DETAIL_RX, str(err), re.MULTILINE)

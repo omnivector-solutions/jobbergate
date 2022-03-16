@@ -1,5 +1,5 @@
 """
-Holds the metadata for all apps
+Holds the metadata for all apps.
 """
 from sqlalchemy import MetaData
 

@@ -185,4 +185,7 @@ async def job_script_update(job_submission_id: int, job_submission: JobSubmissio
 
 
 def include_router(app):
+    """
+    Include the router for this module in the app.
+    """
     app.include_router(router)

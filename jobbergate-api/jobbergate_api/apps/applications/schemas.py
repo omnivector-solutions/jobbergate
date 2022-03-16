@@ -84,6 +84,10 @@ application_meta_mapper = MetaMapper(
 
 
 class ApplicationCreateRequest(BaseModel):
+    """
+    Request model for creating Application instances.
+    """
+
     application_name: str
     application_identifier: Optional[str]
     application_description: Optional[str] = None
@@ -96,6 +100,10 @@ class ApplicationCreateRequest(BaseModel):
 
 
 class ApplicationUpdateRequest(BaseModel):
+    """
+    Request model for updating Application instances.
+    """
+
     application_name: Optional[str]
     application_identifier: Optional[str]
     application_description: Optional[str]
@@ -107,6 +115,10 @@ class ApplicationUpdateRequest(BaseModel):
 
 
 class ApplicationResponse(BaseModel):
+    """
+    Complete model to match database for the Application resource.
+    """
+
     id: Optional[int]
     created_at: Optional[datetime] = datetime.utcnow()
     updated_at: Optional[datetime] = datetime.utcnow()

@@ -1,6 +1,7 @@
 """
 Configuration of pytest.
 """
+
 import contextlib
 import dataclasses
 import datetime
@@ -46,6 +47,9 @@ async def enforce_empty_database():
 @pytest.fixture(autouse=True)
 @pytest.mark.enforce_empty_database()
 async def startup_event_force():
+    """
+    Force the async event loop to begin.
+    """
     async with LifespanManager(app):
         yield
 
@@ -54,6 +58,7 @@ async def startup_event_force():
 def enforce_mocked_oidc_provider(mock_openid_server):
     """
     Enforce that the OIDC provider used by armasec is the mock_openid_server provided as a fixture.
+
     No actual calls to an OIDC provider will be made.
     """
     yield
@@ -62,7 +67,7 @@ def enforce_mocked_oidc_provider(mock_openid_server):
 @pytest.fixture
 async def client():
     """
-    A client that can issue fake requests against fastapi endpoint functions in the backend.
+    Provide a client that can issue fake requests against fastapi endpoint functions in the backend.
     """
     async with AsyncClient(app=app, base_url="http://test") as client:
         yield client
@@ -71,9 +76,10 @@ async def client():
 @pytest.fixture
 async def inject_security_header(client, build_rs256_token):
     """
-    Provides a helper method that will inject a security token into the requests for a test client. If no
-    permisions are provided, the security token will still be valid but will not carry any permissions. Uses
-    the `build_rs256_token()` fixture from the armasec package.
+    Provide a helper method that will inject a security token into the requests for a test client.
+
+    If no permisions are provided, the security token will still be valid but will not carry any permissions.
+    Uses the `build_rs256_token()` fixture from the armasec package.
     """
 
     def _helper(owner_email: str, *permissions: typing.List[str]):
@@ -91,14 +97,13 @@ async def inject_security_header(client, build_rs256_token):
 @pytest.fixture
 def time_frame():
     """
-    Provides a fixture to use as a context manager where an event can be checked to have happened during the
-    time-frame of the context manager.
+    Provide a fixture to use as a context manager for asserting events happened in a window of time.
     """
 
     @dataclasses.dataclass
     class TimeFrame:
         """
-        Class for storing the beginning and end of a time frame."
+        Class for storing the beginning and end of a time frame.
         """
 
         now: datetime.datetime
@@ -106,7 +111,7 @@ def time_frame():
 
         def __contains__(self, moment: datetime.datetime):
             """
-            Checks if a given moment falls within a time-frame.
+            Check if a given moment falls within a time-frame.
             """
             if self.later is None:
                 return False
@@ -127,7 +132,7 @@ def time_frame():
 @pytest.fixture
 def tweak_settings():
     """
-    Provides a fixture to use as a context manager where the app settings may be temporarily changed.
+    Provide a fixture to use as a context manager where the app settings may be temporarily changed.
     """
 
     @contextlib.contextmanager
@@ -149,7 +154,7 @@ def tweak_settings():
 @pytest.fixture
 def make_dummy_file(tmp_path):
     """
-    Provides a fixture that will generate a temporary file with ``size`` random bytes of text data.
+    Provide a fixture that will generate a temporary file with ``size`` random bytes of text data.
     """
 
     def _helper(filename, size=100):
@@ -167,8 +172,10 @@ def make_dummy_file(tmp_path):
 @pytest.fixture
 def make_files_param():
     """
-    Provides a fixture to use as a context manager that opens the supplied file and builds a ``files`` param
-    appropriate for using multi-part file uploads with the client.
+    Provide a fixture to use as a context manager that builds the ``files`` parameter.
+
+    Open the supplied file and build a ``files`` param appropriate for using multi-part file uploads with the
+    client.
     """
 
     @contextlib.contextmanager

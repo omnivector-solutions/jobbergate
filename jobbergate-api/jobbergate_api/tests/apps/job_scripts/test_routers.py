@@ -28,7 +28,7 @@ from jobbergate_api.storage import database
 @pytest.fixture
 def job_script_data_as_string():
     """
-    Example of a default application script.
+    Provide a fixture that returns an example of a default application script.
     """
     content = json.dumps(
         {
@@ -53,7 +53,7 @@ def job_script_data_as_string():
 @pytest.fixture
 def new_job_script_data_as_string():
     """
-    Example of an application script after the injection of the sbatch params.
+    Provide a fixture that returns an application script after the injection of the sbatch params.
     """
     content = json.dumps(
         {
@@ -81,7 +81,7 @@ def new_job_script_data_as_string():
 @pytest.fixture
 def sbatch_params():
     """
-    String content of the argument --sbatch-params.
+    Provide a fixture that returns string content of the argument --sbatch-params.
     """
     return ["--comment=some_comment", "--nice=-1", "-N 10"]
 
@@ -862,8 +862,7 @@ async def test_delete_job_script__fk_error(
     client, fill_application_data, fill_job_script_data, inject_security_header,
 ):
     """
-    Test DELETE /job_script/<id> correctly returns a 409 with a helpful message when a delete is blocked
-    by a foreign-key constraint.
+    Test DELETE /job_script/<id> correctly returns a 409 on a foreign-key constraint error.
     """
     inserted_application_id = await database.execute(
         query=applications_table.insert(), values=fill_application_data(),

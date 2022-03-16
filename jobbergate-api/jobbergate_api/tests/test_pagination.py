@@ -1,6 +1,7 @@
 """
 Test the pagination.
 """
+
 import json
 
 import pytest

@@ -6,6 +6,9 @@ from pytest import fixture
 
 @fixture
 def application_data():
+    """
+    Provide a fixture that supplies test application data.
+    """
     return {
         "application_owner_email": "test@email.com",
         "application_name": "test_name",
@@ -43,6 +46,9 @@ def fill_all_application_data(fill_application_data):
 
 @fixture
 def job_script_data():
+    """
+    Provide a fixture that supplies test job_script data.
+    """
     return {
         "job_script_name": "test_name",
         "job_script_data_as_string": "the\nfile",
@@ -79,6 +85,9 @@ def fill_all_job_script_data(fill_job_script_data):
 
 @fixture
 def job_submission_data():
+    """
+    Provide a fixture that supplies test job_submission data.
+    """
     return {
         "job_submission_name": "test_name",
         "job_submission_owner_email": "owner1@org.com",
