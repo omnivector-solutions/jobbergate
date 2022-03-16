@@ -1,6 +1,7 @@
 """
-Provides project-wide constants.
+Describe constants for the job_submissions module.
 """
+
 
 from enum import Enum
 
