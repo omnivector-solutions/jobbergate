@@ -93,7 +93,6 @@ class Settings(BaseSettings):
                     clean_values[key] = value
         return clean_values
 
-
     class Config:
         env_file = ".env"
 
