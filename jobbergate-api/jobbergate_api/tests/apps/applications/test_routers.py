@@ -519,7 +519,7 @@ async def test_get_applications__with_search_param(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     results = data.get("results")
-    assert [d["application_identifier"] for d in results] == ["app2", "app22"]
+    assert sorted([d["application_identifier"] for d in results]) == ["app2", "app22"]
 
     response = await client.get("/jobbergate/applications?all=true&search=long")
     assert response.status_code == status.HTTP_200_OK
@@ -531,7 +531,7 @@ async def test_get_applications__with_search_param(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     results = data.get("results")
-    assert [d["application_identifier"] for d in results] == ["app1", "app2", "app22"]
+    assert sorted([d["application_identifier"] for d in results]) == ["app1", "app2", "app22"]
 
 
 @pytest.mark.asyncio

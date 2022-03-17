@@ -87,6 +87,7 @@ module = [
     "botocore.*",
     "uvicorn",
     "asyncpg.*",
+    "auto-name-enum",
 ]
 ignore_missing_imports = true
 
