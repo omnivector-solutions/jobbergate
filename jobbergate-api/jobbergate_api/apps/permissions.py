@@ -1,3 +1,7 @@
+"""
+Provide a module that describes permissions in the API.
+"""
+
 from enum import Enum
 
 

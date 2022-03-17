@@ -10,11 +10,16 @@ from jobbergate_api.config import settings
 
 class S3Manager:
     """
-    This clas prepares the bucket_name and s3 key template from project settings. It also initializes an s3
-    client. It's methods are thin wrappers around s3 calls but provide the mappings for buckets and keys.
+    Provide a class for managing connection to an S3 bucket.
+
+    Prepares the bucket_name and s3 key template from project settings. Also initialize an s3
+    client. Provide methods as thin wrappers around s3 calls but provide the mappings for buckets and keys.
     """
 
     def __init__(self):
+        """
+        Initialize the S3Manager class instance.
+        """
         self.bucket_name = settings.S3_BUCKET_NAME
         self.key_template = "applications/{app_id}/jobbergate.tar.gz"
         self.s3_client = boto3.client(

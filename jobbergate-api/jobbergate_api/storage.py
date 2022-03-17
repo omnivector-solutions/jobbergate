@@ -1,24 +1,51 @@
 """
-Persistent data storage
+Provide functions to interact with persistent data storage.
 """
-import contextlib
 import re
 import typing
 
 import asyncpg
 import databases
+import databases.core
 import fastapi
 import pydantic
 import sqlalchemy
+from asyncpg.exceptions import UniqueViolationError
 from fastapi.exceptions import HTTPException
+from loguru import logger
 from sqlalchemy import Column, or_
 from sqlalchemy.sql.expression import BooleanClauseList, UnaryExpression
 from starlette import status
+from yarl import URL
 
-from jobbergate_api.config import settings
-from jobbergate_api.metadata import metadata
+from jobbergate_api.config import DeployEnvEnum, settings
 
-database = databases.Database(settings.DATABASE_URL)  # type: ignore
+INTEGRITY_CHECK_EXCEPTIONS = (UniqueViolationError,)
+
+
+def build_db_url(force_test: bool = False) -> str:
+    """
+    Build a database url based on settings.
+
+    If the ``DEPLOY_ENV`` setting is "TEST" or if the ``force_test`` is passed, build from the test database
+    settings.
+    """
+    is_test = force_test or settings.DEPLOY_ENV == DeployEnvEnum.TEST
+    prefix = "TEST_" if is_test else ""
+
+    return str(
+        URL.build(
+            scheme="postgresql",
+            user=getattr(settings, f"{prefix}DATABASE_USER"),
+            password=getattr(settings, f"{prefix}DATABASE_PSWD"),
+            host=getattr(settings, f"{prefix}DATABASE_HOST"),
+            port=getattr(settings, f"{prefix}DATABASE_PORT"),
+            path="/{}".format(getattr(settings, f"{prefix}DATABASE_NAME")),
+        )
+    )
+
+
+database = databases.Database(build_db_url(), force_rollback=settings.DEPLOY_ENV == DeployEnvEnum.TEST)
 
 
 def render_sql(query) -> str:
@@ -55,35 +82,27 @@ def sort_clause(
     return sort_column
 
 
-def create_all_tables():
+def handle_fk_error(
+    _: fastapi.Request, err: asyncpg.exceptions.ForeignKeyViolationError,
+):
     """
-    Create all the tables in the database
+    Unpack metadata from a ForeignKeyViolationError and return a 409 response.
     """
-    engine = sqlalchemy.create_engine(settings.DATABASE_URL)
+    FK_DETAIL_RX = r"DETAIL:  Key \(id\)=\((?P<pk_id>\d+)\) is still referenced from table \"(?P<table>\w+)\""
+    matches = re.search(FK_DETAIL_RX, str(err), re.MULTILINE)
+    (table, pk_id) = (None, None)
+    if matches:
+        table = matches.group("table")
+        pk_id = matches.group("pk_id")
 
-    metadata.create_all(engine)
+    logger.error(f"Delete failed due to foreign-key constraint: {table=} {pk_id=}")
 
-
-@contextlib.contextmanager
-def handle_fk_error():
-    """
-    This method is used to unpack metadata from a ForeignKeyViolationError
-    """
-    try:
-        yield
-    except asyncpg.exceptions.ForeignKeyViolationError as err:
-        FK_DETAIL_RX = (
-            r"DETAIL:  Key \(id\)=\((?P<pk_id>\d+)\) is still referenced from table \"(?P<table>\w+)\""
-        )
-        matches = re.search(FK_DETAIL_RX, str(err), re.MULTILINE)
-        raise fastapi.HTTPException(
-            status_code=fastapi.status.HTTP_409_CONFLICT,
-            detail=dict(
-                message="Delete failed due to foreign-key constraint",
-                table=matches.group("table") if matches else None,
-                pk_id=matches.group("pk_id") if matches else None,
-            ),
-        )
+    return fastapi.responses.JSONResponse(
+        status_code=fastapi.status.HTTP_409_CONFLICT,
+        content=dict(
+            detail=dict(message="Delete failed due to foreign-key constraint", table=table, pk_id=pk_id,),
+        ),
+    )
 
 
 T = typing.TypeVar("T", bound=pydantic.BaseModel)

@@ -10,6 +10,20 @@ jobs:
   api-tests:
     name: "jobbergate-api tests"
     runs-on: "ubuntu-latest"
+    services:
+      test-db:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: test-pswd
+          POSTGRES_USER: test
+          POSTGRES_DB: test-jobbergate
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5433:5432
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
@@ -20,10 +34,15 @@ jobs:
       - name: "run quality control checks"
         working-directory: jobbergate-api
         env:
+          DEPLOY_ENV: TEST
+          TEST_DATABASE_HOST: localhost
+          TEST_DATABASE_USER: test
+          TEST_DATABASE_PSWD: test-pswd
+          TEST_DATABASE_NAME: test-jobbergate
           POETRY_HTTP_BASIC_PYPICLOUD_USERNAME: admin
           POETRY_HTTP_BASIC_PYPICLOUD_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: make qa
-  
+
   cli-tests:
     name: "jobbergate-cli tests"
     runs-on: "ubuntu-latest"

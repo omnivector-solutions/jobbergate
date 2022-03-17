@@ -1,12 +1,15 @@
 """
 Test the pagination.
 """
+
+import json
+
 import pytest
 from pydantic import ValidationError
 
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import ApplicationResponse
-from jobbergate_api.pagination import Pagination, package_response
+from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.storage import database
 
 
@@ -51,9 +54,8 @@ async def test_package_response__without_pagination():
         query=applications_table.insert(),
         values=[
             dict(
-                id=i,
                 application_owner_email=f"owner{i}@org.com",
-                application_name="test_name",
+                application_name=f"app{i}",
                 application_file="the\nfile",
                 application_config="the configuration is here",
             )
@@ -63,19 +65,18 @@ async def test_package_response__without_pagination():
 
     query = applications_table.select()
     pagination = Pagination()
-    response = await package_response(ApplicationResponse, query, pagination)
+    raw_response = await package_response(ApplicationResponse, query, pagination)
+    response = Response[ApplicationResponse].parse_obj(json.loads(raw_response.body))
 
     results = response.results
     assert len(results) == 5
-    for i in range(5):
-        assert isinstance(results[i], ApplicationResponse)
-        assert results[i].id == i + 1
+    for (i, result) in enumerate(results):
+        assert isinstance(result, ApplicationResponse)
+        assert result.application_name == f"app{i + 1}"
 
-    pagination = response.pagination
-    assert pagination
-    assert pagination.total == 5
-    assert pagination.start is None
-    assert pagination.limit is None
+    assert response.pagination.total == 5
+    assert response.pagination.start is None
+    assert response.pagination.limit is None
 
 
 @pytest.mark.asyncio
@@ -95,7 +96,7 @@ async def test_package_response__with_pagination(start, limit, total):
             dict(
                 id=i,
                 application_owner_email=f"owner{i}@org.com",
-                application_name="test_name",
+                application_name=f"app{i}",
                 application_file="the\nfile",
                 application_config="the configuration is here",
             )
@@ -105,18 +106,18 @@ async def test_package_response__with_pagination(start, limit, total):
 
     query = applications_table.select()
     pagination = Pagination(start=start, limit=limit)
-    response = await package_response(ApplicationResponse, query, pagination)
+    raw_response = await package_response(ApplicationResponse, query, pagination)
+    response = Response[ApplicationResponse].parse_obj(json.loads(raw_response.body))
 
     results = response.results
     # Clamps the expected count at upper bound
     expected_count = max(0, min(total - start * limit, limit))
     assert len(results) == expected_count
-    for i in range(expected_count):
-        assert isinstance(results[i], ApplicationResponse)
-        assert results[i].id == i + (start * limit) + 1
+    for (i, result) in enumerate(results):
+        assert isinstance(result, ApplicationResponse)
+        assert result.application_name == f"app{i + (start * limit) + 1}"
 
-    pagination = response.pagination
-    assert pagination
-    assert pagination.total == total
-    assert pagination.start == start
-    assert pagination.limit == limit
+    assert response.pagination
+    assert response.pagination.total == total
+    assert response.pagination.start == start
+    assert response.pagination.limit == limit

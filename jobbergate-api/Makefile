@@ -19,7 +19,7 @@ mypy: install
 lint: install
 	poetry run black --check ${PACKAGE_NAME}
 	poetry run isort --check ${PACKAGE_NAME}
-	poetry run flake8 --max-line-length=110
+	poetry run pflake8 ${PACKAGE_NAME}
 
 .PHONY: qa
 qa: test mypy lint
@@ -34,17 +34,13 @@ format: install
 release-%:
 	../release-scripts/prepare-release.sh $(subst release-,,$@)
 
-.PHONY: run
-run:
-	poetry run uvicorn --host 0.0.0.0 jobbergate_api.main:app --reload
-
 .PHONY: publish
 publish:
 	../release-scripts/publish-release.sh
 
 .PHONY: local
 local: install
-	poetry run uvicorn --host 0.0.0.0 jobbergate_api.main:app --reload
+	poetry run jobbergate dev-server
 
 .PHONY: update-precommit
 update-precommit:

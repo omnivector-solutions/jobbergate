@@ -1,5 +1,6 @@
 """
 Instantiates armasec resources for auth on api endpoints using project settings.
+
 Also provides a factory function for TokenSecurity to reduce boilerplate.
 """
 from typing import Optional
@@ -18,6 +19,10 @@ guard = Armasec(
 
 
 class IdentityClaims(BaseModel):
+    """
+    Provide a pydantic data model containing user data extracted from an access token.
+    """
+
     org_name: Optional[str]
     user_email: EmailStr
 

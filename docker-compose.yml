@@ -11,25 +11,30 @@ services:
       - jobbergate-net
     volumes:
       - ./jobbergate-api/jobbergate_api:/app/jobbergate_api
-    command: uvicorn jobbergate_api.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
+      - ./jobbergate-api/dev_tools:/app/dev_tools
+    command: poetry run dev-tools dev-server --port=8000
     environment:
-      - DATABASE_HOST=${NEXTGEN_DATABASE_HOST:-nextgen-db}
-      - DATABASE_USER=${NEXTGEN_DATABASE_USER:-nextgen}
-      - DATABASE_PSWD=${NEXTGEN_DATABASE_PSWD:-nextgen}
-      - DATABASE_NAME=${NEXTGEN_DATABASE_NAME:-nextgen}
-      - DATABASE_PORT=${NEXTGEN_DATABASE_PORT:-5432}
-      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL:-http://s3:9000}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-FAKE_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-FAKE_SECRET_ACCESS_KEY}
-      - ARMASEC_DOMAIN=${ARMASEC_DOMAIN}
-      - ARMASEC_AUDIENCE=${ARMASEC_AUDIENCE}
+      - DATABASE_HOST=${DATABASE_HOST:-db}
+      - DATABASE_USER=${DATABASE_USER:-compose-db-user}
+      - DATABASE_PSWD=${DATABASE_PSWD:-compose-db-pswd}
+      - DATABASE_NAME=${DATABASE_NAME:-compose-db-name}
+      - DATABASE_PORT=${DATABASE_PORT:-5432}
+      - TEST_DATABASE_HOST=test-db
+      - TEST_DATABASE_USER=compose-test-db-user
+      - TEST_DATABASE_PSWD=compose-test-db-pswd
+      - TEST_DATABASE_NAME=compose-test-db-name
+      - TEST_DATABASE_PORT=5432
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL:-http://minio:9000}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-compose-s3-key}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-compose-s3-secret}
+      - ARMASEC_DOMAIN=${AUTH0_DOMAIN}
+      - ARMASEC_AUDIENCE=${AUTH0_AUDIENCE}
       - ARMASEC_DEBUG=${ARMASEC_DEBUG}
     ports:
       - 8000:8000
-    depends_on:
-      - nextgen-db
 
-  nextgen-db:
+  db:
     image: postgres
     restart: always
     networks:
@@ -37,11 +42,25 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_PASSWORD=${NEXTGEN_DATABASE_PSWD:-nextgen}
-      - POSTGRES_USER=${NEXTGEN_DATABASE_USER:-nextgen}
-      - POSTGRES_DB=${NEXTGEN_DATABASE_NAME:-nextgen}
+      - POSTGRES_PASSWORD=compose-db-pswd
+      - POSTGRES_USER=compose-db-user
+      - POSTGRES_DB=compose-db-name
     ports:
       - 5432:5432
+
+  test-db:
+    image: postgres
+    restart: always
+    networks:
+      - jobbergate-net
+    tmpfs:
+      - /var/lib/postgresql/data:rw
+    environment:
+      - POSTGRES_PASSWORD=compose-test-db-pswd
+      - POSTGRES_USER=compose-test-db-user
+      - POSTGRES_DB=compose-test-db-name
+    ports:
+      - 5433:5432
 
   minio:
     image: minio/minio
@@ -53,8 +72,8 @@ services:
       - 9000:9000
       - 9001:9001
     environment:
-      - MINIO_ROOT_USER=${AWS_ACCESS_KEY_ID:-FAKE_ACCESS_KEY_ID}
-      - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY:-FAKE_SECRET_ACCESS_KEY}
+      - MINIO_ROOT_USER=compose-s3-key
+      - MINIO_ROOT_PASSWORD=compose-s3-secret
     command: ["server", "--compat", "--console-address", ':9001', "/data"]
 
   adminer:

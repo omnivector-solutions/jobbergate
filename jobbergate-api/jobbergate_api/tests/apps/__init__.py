@@ -1,3 +1,3 @@
 """
-Tests for the Apps
+Tests for the Apps.
 """

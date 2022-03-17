@@ -1,14 +1,19 @@
 """
-Configuration file, sets all the necessary environment variables, it is better used with a .env file
+Provide configuration settings for the app.
+
+Pull settings from environment variables or a .env file if available.
 """
 from enum import Enum
 from typing import Optional
 
 from pydantic import BaseSettings, Field, HttpUrl, root_validator
-from yarl import URL
 
 
 class LogLevelEnum(str, Enum):
+    """
+    Provide an enumeration class describing the available log levels.
+    """
+
     DEBUG = "DEBUG"
     INFO = "INFO"
     WARNING = "WARNING"
@@ -18,27 +23,37 @@ class LogLevelEnum(str, Enum):
 
 class DeployEnvEnum(str, Enum):
     """
-    Describes the environment where the app is currently deployed.
+    Describe the environment where the app is currently deployed.
     """
 
     PROD = "PROD"
     STAGING = "STAGING"
     LOCAL = "LOCAL"
+    TEST = "TEST"
 
 
 class Settings(BaseSettings):
+    """
+    Provide a pydantic ``BaseSettings`` model for the application settings.
+    """
 
-    DEPLOY_ENV: Optional[DeployEnvEnum] = DeployEnvEnum.LOCAL
+    DEPLOY_ENV: DeployEnvEnum = DeployEnvEnum.LOCAL
 
     LOG_LEVEL: LogLevelEnum = LogLevelEnum.INFO
 
-    # Database settings
-    DATABASE_HOST: Optional[str]
-    DATABASE_USER: Optional[str]
-    DATABASE_PSWD: Optional[str]
-    DATABASE_NAME: Optional[str]
-    DATABASE_PORT: Optional[int] = 5432
-    DATABASE_URL: Optional[str]
+    # Database settings  # Default to values from docker-compose.yml
+    DATABASE_HOST: str = "localhost"
+    DATABASE_USER: str = "local-user"
+    DATABASE_PSWD: str = "local-pswd"
+    DATABASE_NAME: str = "local-db"
+    DATABASE_PORT: int = 5432
+
+    # Test database settings
+    TEST_DATABASE_HOST: str = "localhost"
+    TEST_DATABASE_USER: str = "test-user"
+    TEST_DATABASE_PSWD: str = "test-pswd"
+    TEST_DATABASE_NAME: str = "test-db"
+    TEST_DATABASE_PORT: int = 5433
 
     # S3 configuration
     S3_BUCKET_NAME: str = Field("jobbergate-staging-eu-north-1-resources")
@@ -56,43 +71,27 @@ class Settings(BaseSettings):
 
     # Sentry configuration
     SENTRY_DSN: Optional[HttpUrl]
-    SENTRY_SAMPLE_RATE: Optional[float] = Field(1.0, gt=0.0, le=1.0)
+    SENTRY_SAMPLE_RATE: float = Field(1.0, gt=0.0, le=1.0)
 
     # Maximum number of bytes allowed for file uploads
     MAX_UPLOAD_FILE_SIZE: int = 100 * 1024 * 1024  # 100 MB
 
-    @root_validator
-    def calculate_db_url(cls, values):
-        db_url = values.get("DATABASE_URL")
-        if not db_url:
-            expected_keys = {
-                "DATABASE_USER",
-                "DATABASE_PSWD",
-                "DATABASE_HOST",
-                "DATABASE_PORT",
-                "DATABASE_NAME",
-            }
-            missing_keys = expected_keys - set({k: v for (k, v) in values.items() if v is not None})
-            if len(missing_keys) > 0:
-                raise ValueError(f"Missing required database settings: {', '.join(sorted(missing_keys))}")
+    @root_validator(pre=True)
+    def remove_blank_env(cls, values):
+        """
+        Remove any settings from the environment that are blank strings.
 
-            db_url = URL.build(
-                scheme="postgresql",
-                user=values.get("DATABASE_USER"),
-                password=values.get("DATABASE_PSWD"),
-                host=values.get("DATABASE_HOST"),
-                port=values.get("DATABASE_PORT"),
-                path="/{}".format(values.get("DATABASE_NAME")),
-            )
-        elif not db_url.startswith("sqlite"):
-            # Will url-escapse special characters
-            db_url = URL(values["DATABASE_URL"])
-        else:
-            # For special case of sqlite db url (testing), do not url-escape
-            pass
-
-        values["DATABASE_URL"] = str(db_url)
-        return values
+        This allows the defaults to be set if ``docker-compose`` defaults a missing
+        environment variable to a blank string.
+        """
+        clean_values = dict()
+        for (key, value) in values.items():
+            if not isinstance(value, str):
+                clean_values[key] = value
+            else:
+                if value.strip() != "":
+                    clean_values[key] = value
+        return clean_values
 
     class Config:
         env_file = ".env"

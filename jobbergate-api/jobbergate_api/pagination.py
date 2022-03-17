@@ -2,8 +2,10 @@
 Pagination feature for all endpoints.
 """
 
-from typing import Generic, List, Optional, TypeVar
+from typing import Dict, Generic, List, Optional, Type, TypeVar, Union
 
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from pydantic.generics import GenericModel
 from sqlalchemy import func, select
@@ -34,7 +36,7 @@ class Pagination(BaseModel):
 
     def dict(self):
         """
-        Overrides default ``dict()`` behavior so that if ``page`` is None, all fields are omitted.
+        Override default ``dict()`` behavior so that if ``page`` is None, all fields are omitted.
         """
         return dict() if self.start is None else super().dict()
 
@@ -49,23 +51,36 @@ class ResponsePagination(BaseModel):
     limit: Optional[int]
 
 
-DataT = TypeVar("DataT")
+TResponseModel = TypeVar("TResponseModel", bound=BaseModel)
 
 
-class Response(GenericModel, Generic[DataT]):
+class Response(GenericModel, Generic[TResponseModel]):
     """
     An envelope for responses including the metadata for pagination.
 
     This is a generic response envelope that can be used for any of list of pydantic models.
     """
 
-    results: List[DataT]
+    results: List[TResponseModel]
     pagination: ResponsePagination
 
 
-async def package_response(model, query, pagination: Pagination) -> Response:
+def ok_response(_: Type[TResponseModel],) -> Dict[Union[int, str], Dict[str, Type[Response[TResponseModel]]]]:
     """
-    Packages the response in an envelope that includes the response and the metadata.
+    Package up a response type compatible with FastAPI's ``responses`` argument.
+
+    The typing is intense here, but is just basically saying that given some generic model input,
+    return a dictionary that contains a ``Response`` for that model type.
+
+    """
+    return {200: {"model": Response[TResponseModel]}}
+
+
+async def package_response(model: Type[TResponseModel], query, pagination: Pagination) -> JSONResponse:
+    """
+    Package the response in an envelope that includes the response and the metadata.
+
+    Return a JSONREsponse containing the packaged data.
 
     Structure of response is::
 
@@ -87,7 +102,9 @@ async def package_response(model, query, pagination: Pagination) -> Response:
     if pagination.start is not None:
         query = query.limit(pagination.limit).offset(pagination.start * pagination.limit)
     raw_response = await database.fetch_all(query)
-    return Response(
+    validated_response = Response[TResponseModel](
         results=[model.parse_obj(x) for x in raw_response],
         pagination=ResponsePagination(total=total, **pagination.dict()),
     )
+    jsonable_response = jsonable_encoder(validated_response)
+    return JSONResponse(content=jsonable_response)

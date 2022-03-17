@@ -5,24 +5,12 @@ from pytest import fixture
 
 
 @fixture
-def user_data():
-    """
-    Default user data for testing.
-    """
-    return {
-        "email": "user1@email.com",
-        "full_name": "username",
-        "password": "supersecret123456",
-        "principals": "role:admin",
-    }
-
-
-@fixture
 def application_data():
     """
-    Default application data for testing.
+    Provide a fixture that supplies test application data.
     """
     return {
+        "application_owner_email": "test@email.com",
         "application_name": "test_name",
         "application_file": "the\nfile",
         "application_config": "the configuration is here",
@@ -30,9 +18,36 @@ def application_data():
 
 
 @fixture
+def fill_application_data(application_data):
+    """
+    Combine user supplied application data with defaults. If there are overlaps, use the user supplied data.
+    """
+
+    def _helper(**fields):
+        return {
+            **application_data,
+            **fields,
+        }
+
+    return _helper
+
+
+@fixture
+def fill_all_application_data(fill_application_data):
+    """
+    Combine many fields of user supplied application data with defaults.
+    """
+
+    def _helper(*all_fields):
+        return [fill_application_data(**f) for f in all_fields]
+
+    return _helper
+
+
+@fixture
 def job_script_data():
     """
-    Default job_script data for testing.
+    Provide a fixture that supplies test job_script data.
     """
     return {
         "job_script_name": "test_name",
@@ -42,10 +57,65 @@ def job_script_data():
 
 
 @fixture
+def fill_job_script_data(job_script_data):
+    """
+    Combine user supplied job_script data with defaults. If there are overlaps, use the user supplied data.
+    """
+
+    def _helper(**fields):
+        return {
+            **job_script_data,
+            **fields,
+        }
+
+    return _helper
+
+
+@fixture
+def fill_all_job_script_data(fill_job_script_data):
+    """
+    Combine many fields of user supplied job_script data with defaults.
+    """
+
+    def _helper(*all_fields):
+        return [fill_job_script_data(**f) for f in all_fields]
+
+    return _helper
+
+
+@fixture
 def job_submission_data():
     """
-    Default job_submission data for testing.
+    Provide a fixture that supplies test job_submission data.
     """
     return {
         "job_submission_name": "test_name",
+        "job_submission_owner_email": "owner1@org.com",
     }
+
+
+@fixture
+def fill_job_submission_data(job_submission_data):
+    """
+    Combine user supplied job_script data with defaults. If there are overlaps, use the user supplied data.
+    """
+
+    def _helper(**fields):
+        return {
+            **job_submission_data,
+            **fields,
+        }
+
+    return _helper
+
+
+@fixture
+def fill_all_job_submission_data(fill_job_submission_data):
+    """
+    Combine many fields of user supplied job_submission data with defaults.
+    """
+
+    def _helper(*all_fields):
+        return [fill_job_submission_data(**f) for f in all_fields]
+
+    return _helper

@@ -16,12 +16,11 @@ from jobbergate_api.apps.applications.schemas import (
     ApplicationUpdateRequest,
 )
 from jobbergate_api.apps.permissions import Permissions
-from jobbergate_api.compat import INTEGRITY_CHECK_EXCEPTIONS
 from jobbergate_api.config import settings
-from jobbergate_api.pagination import Pagination, Response, package_response
+from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.s3_manager import S3Manager
 from jobbergate_api.security import IdentityClaims, guard
-from jobbergate_api.storage import database, handle_fk_error, search_clause, sort_clause
+from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause
 
 router = APIRouter()
 s3man = S3Manager()
@@ -43,21 +42,15 @@ async def applications_create(
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     application.application_owner_email = identity_claims.user_email
 
-    async with database.transaction():
-        try:
-            insert_query = applications_table.insert()
-            values = application.dict()
-            inserted_id = await database.execute(query=insert_query, values=values)
+    try:
+        insert_query = applications_table.insert().returning(applications_table)
+        values = application.dict()
+        application_data = await database.fetch_one(query=insert_query, values=values)
 
-        except INTEGRITY_CHECK_EXCEPTIONS as e:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except INTEGRITY_CHECK_EXCEPTIONS as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
-        # Now fetch the newly inserted row. This is necessary to reflect defaults and db modified columns
-        query = applications_table.select().where(applications_table.c.id == inserted_id)
-        raw_application = await database.fetch_one(query)
-        response_application = ApplicationResponse.parse_obj(raw_application)
-
-    return response_application
+    return application_data
 
 
 @router.post(
@@ -89,8 +82,7 @@ async def applications_upload(
         .where(applications_table.c.id == application_id)
         .values(dict(application_uploaded=True))
     )
-    async with database.transaction():
-        await database.execute(update_query)
+    await database.execute(update_query)
 
 
 @router.delete(
@@ -123,8 +115,7 @@ async def applications_delete_upload(
         .where(applications_table.c.id == application_id)
         .values(dict(application_uploaded=False))
     )
-    async with database.transaction():
-        await database.execute(update_query)
+    await database.execute(update_query)
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -149,8 +140,7 @@ async def application_delete(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Application {application_id=} not found.",
         )
     delete_query = applications_table.delete().where(where_stmt)
-    with handle_fk_error():
-        await database.execute(delete_query)
+    await database.execute(delete_query)
     try:
         s3man.delete(app_id=str(application_id))
     except KeyError:
@@ -182,8 +172,7 @@ async def application_delete_by_identifier(
         )
     id_ = raw_application["id"]
     delete_query = applications_table.delete().where(where_stmt)
-    with handle_fk_error():
-        await database.execute(delete_query)
+    await database.execute(delete_query)
     try:
         s3man.delete(app_id=str(id_))
     except KeyError:
@@ -195,9 +184,7 @@ async def application_delete_by_identifier(
 
 
 @router.get(
-    "/applications",
-    description="Endpoint to list applications",
-    response_model=Response[ApplicationResponse],
+    "/applications", description="Endpoint to list applications", responses=ok_response(ApplicationResponse),
 )
 async def applications_list(
     user: bool = Query(False),
@@ -209,7 +196,7 @@ async def applications_list(
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW)),
 ):
     """
-    List all applications
+    List all applications.
     """
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     query = applications_table.select()
@@ -236,14 +223,12 @@ async def applications_get_by_id(application_id: int = Query(...)):
     Return the application given it's id.
     """
     query = applications_table.select().where(applications_table.c.id == application_id)
-    raw_application = await database.fetch_one(query)
-    if not raw_application:
+    application_data = await database.fetch_one(query)
+    if not application_data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Application {application_id=} not found.",
         )
-    application = ApplicationResponse.parse_obj(raw_application)
-
-    return application
+    return application_data
 
 
 @router.put(
@@ -263,20 +248,20 @@ async def application_update(
         applications_table.update()
         .where(applications_table.c.id == application_id)
         .values(application.dict(exclude_unset=True))
+        .returning(applications_table)
     )
     async with database.transaction():
         try:
-            await database.execute(update_query)
+            application_data = await database.fetch_one(update_query)
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
-        select_query = applications_table.select().where(applications_table.c.id == application_id)
-        raw_application = await database.fetch_one(select_query)
-        response_application = ApplicationResponse.parse_obj(raw_application)
-
-    return response_application
+    return application_data
 
 
 def include_router(app):
+    """
+    Include the router for this module in the app.
+    """
     app.include_router(router)
