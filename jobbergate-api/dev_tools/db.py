@@ -74,6 +74,7 @@ def migrate(
     """
     Create alembic migrations for a local database.
     """
+    logger.debug(f"Creating migration with message: {message}")
     commands = [
         "alembic",
         "--config=alembic/alembic.ini",
@@ -91,6 +92,7 @@ def upgrade(target: str = typer.Option("head", help="The migration to which the 
     """
     Apply alembic migrations to a local database.
     """
+    logger.debug("Upgrading database...")
     commands = [
         "alembic",
         "--config=alembic/alembic.ini",

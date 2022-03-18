@@ -6,6 +6,7 @@ from typing import List, Optional
 from armasec import TokenPayload
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from sqlalchemy import select
+from loguru import logger
 
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
@@ -46,11 +47,11 @@ async def job_submission_create(
     Make a post request to this endpoint with the required values to create a new job submission.
     """
     identity_claims = IdentityClaims.from_token_payload(token_payload)
-    client_id = job_submission.cluster_client_id or token_payload.client_id
-    if client_id is None:
+    cluster_id = job_submission.cluster_id or identity_claims.cluster_id
+    if cluster_id is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not find a client_id in the request body or auth token.",
+            detail="Could not find a cluster_id in the request body or auth token.",
         )
 
     create_dict = dict(
@@ -58,8 +59,8 @@ async def job_submission_create(
         job_submission_owner_email=identity_claims.user_email,
         status=JobSubmissionStatus.CREATED,
     )
-    if job_submission.cluster_client_id is None:
-        create_dict.update(cluster_client_id=token_payload.client_id)
+    if job_submission.cluster_id is None:
+        create_dict.update(cluster_id=cluster_id)
 
     select_query = job_scripts_table.select().where(job_scripts_table.c.id == job_submission.job_script_id)
     raw_job_script = await database.fetch_one(select_query)
@@ -220,11 +221,14 @@ async def job_submissions_agent_pending(
     """
     Get a list of pending job submissions for the cluster-agent.
     """
-    if token_payload.client_id is None:
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    if identity_claims.cluster_id is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Access token does not contain a `client_id`. Cannot fetch pending submissions",
+            detail="Access token does not contain a `cluster_id`. Cannot fetch pending submissions",
         )
+
+    logger.info(f"Fetching newly created job_submissions for cluster_id: {identity_claims.cluster_id}")
 
     query = (
         select(
@@ -238,7 +242,7 @@ async def job_submissions_agent_pending(
         )
         .select_from(job_submissions_table.join(job_scripts_table).join(applications_table))
         .where(job_submissions_table.c.status == JobSubmissionStatus.CREATED,)
-        .where(job_submissions_table.c.cluster_client_id == token_payload.client_id,)
+        .where(job_submissions_table.c.cluster_id == identity_claims.cluster_id,)
     )
 
     rows = await database.fetch_all(query)
@@ -254,7 +258,7 @@ async def job_submissions_agent_pending(
 async def job_submission_agent_update(
     job_submission_id: int,
     new_status: str = Body(..., embed=True),
-    slurm_job_id: int = Body(..., embed=True),
+    slurm_job_id: Optional[int] = Body(None, embed=True),
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT)),
 ):
     """
@@ -262,18 +266,28 @@ async def job_submission_agent_update(
 
     Make a put request to this endpoint with the new status to update a job_submission.
     """
-    client_id = token_payload.client_id
-    if client_id is None:
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    if identity_claims.cluster_id is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Access token does not contain a `client_id`. Cannot update job_submission",
+            detail="Access token does not contain a `cluster_id`. Cannot update job_submission",
         )
+
+    logger.info(
+        f"Setting status to: {new_status} "
+        f"for job_submission: {job_submission_id} "
+        f"on cluster_id: {identity_claims.cluster_id}"
+    )
+
+    update_values = dict(status=new_status)
+    if slurm_job_id is not None:
+        update_values.update(slurm_job_id=slurm_job_id)
 
     update_query = (
         job_submissions_table.update()
         .where(job_submissions_table.c.id == job_submission_id)
-        .where(job_submissions_table.c.cluster_client_id == client_id)
-        .values(status=new_status, slurm_job_id=slurm_job_id,)
+        .where(job_submissions_table.c.cluster_id == identity_claims.cluster_id)
+        .values(**update_values)
         .returning(job_submissions_table)
     )
     result = await database.fetch_one(update_query)
@@ -281,7 +295,7 @@ async def job_submission_agent_update(
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"JobSubmission with id={job_submission_id} and cluster_client_id={client_id} not found.",
+            detail=f"JobSubmission with id={job_submission_id} and cluster_id={cluster_id} not found.",
         )
 
     return result
@@ -298,16 +312,19 @@ async def job_submissions_agent_active(
     """
     Get a list of active job submissions for the cluster-agent.
     """
-    if token_payload.client_id is None:
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    if identity_claims.cluster_id is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Access token does not contain a `client_id`. Cannot fetch pending submissions",
+            detail="Access token does not contain a `cluster_id`. Cannot fetch pending submissions",
         )
+
+    logger.info(f"Fetching active job_submissions for cluster_id: {identity_claims.cluster_id}")
 
     query = (
         job_submissions_table.select()
         .where(job_submissions_table.c.status == JobSubmissionStatus.SUBMITTED)
-        .where(job_submissions_table.c.cluster_client_id == token_payload.client_id)
+        .where(job_submissions_table.c.cluster_id == identity_claims.cluster_id)
     )
 
     rows = await database.fetch_all(query)
