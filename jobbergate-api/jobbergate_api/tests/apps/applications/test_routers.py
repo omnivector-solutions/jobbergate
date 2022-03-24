@@ -345,7 +345,7 @@ async def test_get_applications__no_params(
     data = response.json()
     results = data.get("results")
     assert results
-    assert sorted([d["application_identifier"]) for d in results] == [
+    assert sorted([d["application_identifier"] for d in results]) == [
         "app1",
         "app2",
         "app3",
