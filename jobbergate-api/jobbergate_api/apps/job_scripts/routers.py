@@ -85,14 +85,13 @@ def build_job_script_data_as_string(s3_application_tar, param_dict):
     """
     Return the job_script_data_as string from the S3 application and the templates.
     """
-    try:
-        support_files_output = param_dict["jobbergate_config"]["supporting_files_output_name"]
-    except KeyError:
-        support_files_output = {}
-    try:
-        supporting_files = param_dict["jobbergate_config"]["supporting_files"]
-    except KeyError:
-        supporting_files = []
+    support_files_output = param_dict["jobbergate_config"].get("supporting_files_output_name")
+    if support_files_output is None:
+        support_files_output = dict()
+
+    supporting_files = param_dict["jobbergate_config"].get("supporting_files")
+    if supporting_files is None:
+        supporting_files = list()
 
     default_template = [
         default_template := param_dict["jobbergate_config"].get("default_template"),
@@ -112,9 +111,12 @@ def build_job_script_data_as_string(s3_application_tar, param_dict):
 
     # Use tempfile to generate .tar in memory - NOT write to disk
     param_dict_flat = {}
-    for key in param_dict.keys():
-        for nest_key, nest_value in param_dict[key].items():
-            param_dict_flat[nest_key] = nest_value
+    for (key, value) in param_dict.items():
+        if isinstance(value, dict):
+            for nest_key, nest_value in value.items():
+                param_dict_flat[nest_key] = nest_value
+        else:
+            param_dict_flat[key] = value
     with tempfile.NamedTemporaryFile("wb", suffix=".tar.gz", delete=False) as f:
         with tarfile.open(fileobj=f, mode="w:gz") as rendered_tar:
             for member in s3_application_tar.getmembers():
@@ -161,13 +163,14 @@ async def job_script_create(
     s3_application_tar = get_s3_object_as_tarfile(application.id)
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
-    job_script.job_script_owner_email = identity_claims.user_email
 
-    create_dict = job_script.dict(exclude_unset=True)
+    create_dict = dict(
+        **{k: v for (k, v) in job_script.dict(exclude_unset=True).items() if k != "param_dict"},
+        job_script_owner_email=identity_claims.user_email,
+    )
 
-    param_dict = json.loads(create_dict.pop("param_dict", "{}"))
     logger.debug("Rendering job_script data as string")
-    job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, param_dict)
+    job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, job_script.param_dict)
 
     sbatch_params = create_dict.pop("sbatch_params", [])
     create_dict["job_script_data_as_string"] = inject_sbatch_params(job_script_data_as_string, sbatch_params)
@@ -260,7 +263,7 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
 
 @router.put(
     "/job-scripts/{job_script_id}",
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     description="Endpoint to update a job_script given the id",
     response_model=JobScriptResponse,
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],

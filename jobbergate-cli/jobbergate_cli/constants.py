@@ -1,6 +1,8 @@
 """
-Constants used throughout the tool
+Provide constants that may be used throughout the CLI modules.
 """
+
+from enum import Enum
 from pathlib import Path
 
 
@@ -30,6 +32,14 @@ JOBBERGATE_APPLICATION_MODULE_FILE_NAME = "jobbergate.py"
 JOBBERGATE_APPLICATION_CONFIG_FILE_NAME = "jobbergate.yaml"
 TAR_NAME = "jobbergate.tar.gz"
 
-DEFAULT_MAX_BYTES_DEBUG = 1000
-
 OV_CONTACT = "Omnivector Solutions <info@omnivector.solutions>"
+
+
+class SortOrder(str, Enum):
+    """
+    Enum descring the type of sort orders that are available for list commands.
+    """
+
+    ASCENDING = "ASCENDING"
+    DESCENDING = "DESCENDING"
+    UNSORTED = "UNSORTED"

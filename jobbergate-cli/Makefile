@@ -13,18 +13,22 @@ test: install
 
 .PHONY: lint
 lint: install
-	poetry run black --check ${PACKAGE_NAME}
-	poetry run isort --check ${PACKAGE_NAME}
-	poetry run flake8 --max-line-length=110 --max-complexity=40 ${PACKAGE_NAME}
+	poetry run black --check ${PACKAGE_NAME} tests
+	poetry run isort --check ${PACKAGE_NAME} tests
+	poetry run pflake8 ${PACKAGE_NAME} tests
+
+.PHONY: mypy
+mypy: install
+	poetry run mypy ${PACKAGE_NAME} --pretty
 
 .PHONY: qa
-qa: test lint
+qa: test lint mypy
 	echo "All quality checks pass!"
 
 .PHONY: format
 format: install
-	poetry run black ${PACKAGE_NAME}
-	poetry run isort ${PACKAGE_NAME}
+	poetry run black ${PACKAGE_NAME} tests
+	poetry run isort ${PACKAGE_NAME} tests
 
 .PHONY: release-%
 release-%:
@@ -41,8 +45,8 @@ clean:
 	@find . -iname '*~' -delete
 	@find . -iname '*.swp' -delete
 	@find . -iname '__pycache__' -delete
-	@rm -r .mypy_cache
-	@rm -r .pytest_cache
+	@rm -rf .mypy_cache
+	@rm -rf .pytest_cache
 	@find . -name '*.egg' -print0|xargs -0 rm -rf --
 	@rm -rf .eggs/
 	@rm -fr build/
