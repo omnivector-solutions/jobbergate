@@ -52,7 +52,6 @@ class JobSubmissionCreateRequest(BaseModel):
     job_submission_name: str
     job_submission_description: Optional[str]
     job_script_id: int
-    slurm_job_id: Optional[int]
     cluster_client_id: Optional[str]
 
     class Config:
