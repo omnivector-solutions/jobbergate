@@ -1,12 +1,12 @@
 """
 Router for the JobSubmission resource.
 """
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
-from sqlalchemy import select
 from loguru import logger
+from sqlalchemy import select
 
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
@@ -279,7 +279,7 @@ async def job_submission_agent_update(
         f"on cluster_id: {identity_claims.cluster_id}"
     )
 
-    update_values = dict(status=new_status)
+    update_values: Dict[str, Any] = dict(status=new_status)
     if slurm_job_id is not None:
         update_values.update(slurm_job_id=slurm_job_id)
 
@@ -295,7 +295,10 @@ async def job_submission_agent_update(
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"JobSubmission with id={job_submission_id} and cluster_id={cluster_id} not found.",
+            detail=(
+                f"JobSubmission with id={job_submission_id} "
+                "and cluster_id={identity_claims.cluster_id} not found."
+            ),
         )
 
     return result
