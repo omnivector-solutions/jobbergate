@@ -24,13 +24,14 @@ class IdentityClaims(BaseModel):
     """
 
     org_name: Optional[str]
-    user_email: EmailStr
+    user_email: Optional[EmailStr]
+    cluster_id: Optional[str]
 
     @classmethod
     def from_token_payload(cls, payload: TokenPayload) -> "IdentityClaims":
         """
         Create an instance from a Token payload.
 
-        Automatically validates that the user_email is present and is an email address.
+        Automatically validates that the user_email is an email address if it is provided.
         """
         return cls(**getattr(payload, settings.IDENTITY_CLAIMS_KEY))

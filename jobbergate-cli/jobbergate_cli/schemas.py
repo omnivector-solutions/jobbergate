@@ -125,10 +125,11 @@ class JobSubmissionResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
 
     id: int
     job_script_id: int
-    slurm_job_id: int
+    slurm_job_id: Optional[int]
     job_submission_name: str
     job_submission_description: Optional[str] = None
     job_submission_owner_email: str
+    status: str
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
 

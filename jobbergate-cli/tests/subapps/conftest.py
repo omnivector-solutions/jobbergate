@@ -149,6 +149,7 @@ def dummy_job_submission_data(dummy_job_script_data):
             job_submission_owner_email="tucker@omnivector.solutions",
             job_script_id=dummy_job_script_data[0]["id"],
             slurm_job_id=13,
+            status="CREATED",
         ),
         dict(
             id=1,
@@ -159,6 +160,7 @@ def dummy_job_submission_data(dummy_job_script_data):
             job_submission_owner_email="tucker@omnivector.solutions",
             job_script_id=88,
             slurm_job_id=8888,
+            status="CREATED",
         ),
         dict(
             id=3,
@@ -169,6 +171,7 @@ def dummy_job_submission_data(dummy_job_script_data):
             job_submission_owner_email="tucker@omnivector.solutions",
             job_script_id=99,
             slurm_job_id=9999,
+            status="CREATED",
         ),
     ]
 

@@ -12,7 +12,8 @@ services:
     volumes:
       - ./jobbergate-api/jobbergate_api:/app/jobbergate_api
       - ./jobbergate-api/dev_tools:/app/dev_tools
-    command: poetry run dev-tools dev-server --port=8000
+      - ./jobbergate-api/alembic:/app/alembic
+    entrypoint: /app/entrypoint.sh
     environment:
       - DATABASE_HOST=${DATABASE_HOST:-db}
       - DATABASE_USER=${DATABASE_USER:-compose-db-user}
@@ -75,14 +76,6 @@ services:
       - MINIO_ROOT_USER=compose-s3-key
       - MINIO_ROOT_PASSWORD=compose-s3-secret
     command: ["server", "--compat", "--console-address", ':9001', "/data"]
-
-  adminer:
-    image: adminer
-    networks:
-      - jobbergate-net
-    restart: always
-    ports:
-      - 8080:8080
 
 volumes:
     postgres_data:

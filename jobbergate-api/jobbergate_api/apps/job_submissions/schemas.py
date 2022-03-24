@@ -33,9 +33,9 @@ job_submission_meta_mapper = MetaMapper(
     slurm_job_id=MetaField(
         description="The id for the slurm job executing this job_submission", example="1883",
     ),
-    cluster_client_id=MetaField(
-        description="The client_id of the cluster where this job submission should execute",
-        example="D9p5eD9lEVj7S6h7hXAYoOAnrITSbmOK",
+    cluster_id=MetaField(
+        description="The cluster_id of the cluster where this job submission should execute",
+        example="mega-cluster-1",
     ),
     status=MetaField(
         description=f"The status of the job submission. Must be one of {JobSubmissionStatus.pretty_list()}",
@@ -52,7 +52,7 @@ class JobSubmissionCreateRequest(BaseModel):
     job_submission_name: str
     job_submission_description: Optional[str]
     job_script_id: int
-    cluster_client_id: Optional[str]
+    cluster_id: Optional[str]
 
     class Config:
         schema_extra = job_submission_meta_mapper
@@ -84,7 +84,7 @@ class JobSubmissionResponse(BaseModel):
     job_submission_owner_email: str
     job_script_id: int
     slurm_job_id: Optional[int]
-    cluster_client_id: Optional[str]
+    cluster_id: Optional[str]
     status: JobSubmissionStatus
 
     class Config:
@@ -94,9 +94,9 @@ class JobSubmissionResponse(BaseModel):
 
 class PendingJobSubmission(BaseModel, extra=Extra.ignore):
     """
-    Specialized model for the cluster-agent to pull a pending job_submissions.
+    Specialized model for the cluster-agent to pull pending job_submissions.
 
-    Also includes data from its job_script and application sources.
+    Model also includes data from its job_script and application sources.
     """
 
     id: Optional[int] = Field(None)
@@ -104,3 +104,13 @@ class PendingJobSubmission(BaseModel, extra=Extra.ignore):
     job_script_name: str
     job_script_data_as_string: str
     application_name: str
+
+
+class ActiveJobSubmission(BaseModel, extra=Extra.ignore):
+    """
+    Specialized model for the cluster-agent to pull an active job_submission.
+    """
+
+    id: int
+    job_submission_name: str
+    slurm_job_id: int

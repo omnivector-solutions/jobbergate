@@ -1,6 +1,7 @@
 """
-Provides project-wide constants.
+Describe constants for the job_submissions module.
 """
+
 
 from enum import Enum
 
@@ -13,6 +14,8 @@ class JobSubmissionStatus(str, Enum):
     CREATED = "CREATED"
     SUBMITTED = "SUBMITTED"
     COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    UNKNOWN = "UNKNOWN"
 
     @classmethod
     def pretty_list(cls):
