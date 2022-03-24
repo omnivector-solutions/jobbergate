@@ -124,9 +124,7 @@ async def test_create_job_script(
             s3man_client_mock.get_object.return_value = s3_object
             response = await client.post(
                 "/jobbergate/job-scripts/",
-                json=fill_job_script_data(
-                    application_id=inserted_application_id, param_dict=json.dumps(param_dict),
-                ),
+                json=fill_job_script_data(application_id=inserted_application_id, param_dict=param_dict,),
             )
 
     assert response.status_code == status.HTTP_201_CREATED
@@ -169,7 +167,7 @@ async def test_create_job_script_bad_permission(
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.post(
         "/jobbergate/job-scripts/",
-        json=fill_job_script_data(application_id=inserted_application_id, param_dict=json.dumps(param_dict),),
+        json=fill_job_script_data(application_id=inserted_application_id, param_dict=param_dict,),
     )
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -192,8 +190,7 @@ async def test_create_job_script_without_application(
     """
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     response = await client.post(
-        "/jobbergate/job-scripts/",
-        json=fill_job_script_data(application_id=9999, param_dict=json.dumps(param_dict)),
+        "/jobbergate/job-scripts/", json=fill_job_script_data(application_id=9999, param_dict=param_dict),
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -225,9 +222,7 @@ async def test_create_job_script_file_not_found(
         s3man_client_mock.get_object.side_effect = BotoCoreError()
         response = await client.post(
             "/jobbergate/job-scripts/",
-            json=fill_job_script_data(
-                application_id=inserted_application_id, param_dict=json.dumps(param_dict),
-            ),
+            json=fill_job_script_data(application_id=inserted_application_id, param_dict=param_dict,),
         )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -711,7 +706,7 @@ async def test_update_job_script(
             },
         )
 
-    assert response.status_code == status.HTTP_201_CREATED
+    assert response.status_code == status.HTTP_200_OK
     data = response.json()
 
     assert data["job_script_name"] == "new name"

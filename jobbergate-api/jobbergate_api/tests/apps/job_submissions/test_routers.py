@@ -711,7 +711,7 @@ async def test_update_job_submission(
             json=dict(job_submission_name="new name", job_submission_description="new description"),
         )
 
-    assert response.status_code == status.HTTP_201_CREATED
+    assert response.status_code == status.HTTP_200_OK
     data = response.json()
 
     assert data["job_submission_name"] == "new name"

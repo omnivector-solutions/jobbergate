@@ -1,22 +1,37 @@
-#!/usr/bin/env python3
-"""ApplicationBase."""
-import os
+"""
+Provide a stub module to maintain compatibility with previous versions.
+
+Issue a deprecation warning when this module is imported from if JOBBERGATE_COMPATIBILITY_MODE is enabled.
+
+If JOBBERGATE_COMPATIBILITY_MODE is not enabled, raise an import error when this module is imported.
+"""
+
+import warnings
+
+from jobbergate_cli.config import settings
+from jobbergate_cli.text_tools import dedent, unwrap
 
 
-class JobbergateApplicationBase:
-    """JobbergateApplicationBase."""
+if settings.JOBBERGATE_COMPATIBILITY_MODE:
 
-    def __init__(self, jobbergate_yaml):
-        """Initialize class attributes."""
-        self.jobbergate_config = jobbergate_yaml["jobbergate_config"]
-        self.application_config = jobbergate_yaml["application_config"]
+    from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase  # noqa
 
-    def mainflow(self, data):
-        """Implements the main question asking workflow."""
-        raise NotImplementedError("Inheriting class must override this method.")
-
-    def get_template_files(self):
-        templates = [template for root, directory, template in os.walk("./templates")]
-        print(f"templates are: {templates}")
-        print(os.getcwd())
-        return templates[0]
+    warnings.warn(
+        dedent(
+            """
+            Importing application_base from jobbergate_cli is deprecated.
+            The module has been moved.
+            Import 'application_base' from 'jobbergate_cli.subapps.applications' instead",
+            """
+        ),
+        DeprecationWarning,
+    )
+else:
+    raise ImportError(
+        unwrap(
+            """
+            JobbergateApplicationBase has been moved to
+            'jobbergate_cli.subapps.applications.application_base.JobbergateApplicationBase'
+            """
+        )
+    )
