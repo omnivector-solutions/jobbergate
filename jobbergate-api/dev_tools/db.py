@@ -16,7 +16,7 @@ app = typer.Typer()
 
 
 @app.command()
-def login(test: bool = typer.Option(False, help="Log into the test database instead")):
+def login(test: bool = typer.Option(False, help="Log into the test database.")):
     """
     Log into a local database.
     """
@@ -26,7 +26,7 @@ def login(test: bool = typer.Option(False, help="Log into the test database inst
 
 
 @app.command()
-def start(test: bool = typer.Option(False, help="Start a test database instead")):
+def start(test: bool = typer.Option(False, help="Start a test database.")):
     """
     Start a local postgres database for local development.
     """
@@ -68,7 +68,7 @@ def start_all():
 
 @app.command()
 def migrate(
-    message: str = typer.Option("Unlabeled migration", help="The message to attach to the migration"),
+    message: str = typer.Option("Unlabeled migration", help="The message to attach to the migration."),
     blank: bool = typer.Option(False, help="Produce a blank migration"),
 ):
     """
@@ -87,7 +87,7 @@ def migrate(
 
 
 @app.command()
-def upgrade(target: str = typer.Option("head", help="The migration to which the db should be upgraded"),):
+def upgrade(target: str = typer.Option("head", help="The migration to which the db should be upgraded."),):
     """
     Apply alembic migrations to a local database.
     """

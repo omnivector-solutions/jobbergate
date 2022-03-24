@@ -96,7 +96,7 @@ def get_one(
     id: int = typer.Option(int, help="The specific id of the job script."),
 ):
     """
-    Get a single job script by id
+    Get a single job script by id.
     """
     jg_ctx: JobbergateContext = ctx.obj
     result = fetch_job_script_data(jg_ctx, id)
@@ -114,19 +114,19 @@ def create(
     ctx: typer.Context,
     name: str = typer.Option(
         ...,
-        help="The name of the job script to create",
+        help="The name of the job script to create.",
     ),
     application_id: Optional[int] = typer.Option(
         None,
-        help="The id of the application from which to create the job script",
+        help="The id of the application from which to create the job script.",
     ),
     application_identifier: Optional[str] = typer.Option(
         None,
-        help="The identifier of the application from which to create the job script",
+        help="The identifier of the application from which to create the job script.",
     ),
     sbatch_params: Optional[List[str]] = typer.Option(
         None,
-        help="Optional parameter to submit raw sbatch parameters",
+        help="Optional parameter to submit raw sbatch parameters.",
     ),
     param_file: Optional[pathlib.Path] = typer.Option(
         None,
@@ -143,7 +143,7 @@ def create(
     ),
     submit: bool = typer.Option(
         True,
-        help="Do not ask the user if they want to submit a job",
+        help="Do not ask the user if they want to submit a job.",
     ),
 ):
     """
@@ -200,10 +200,10 @@ def create(
         job_submission_result = create_job_submission(jg_ctx, job_script_result.id, job_script_result.job_script_name)
     except Exception as err:
         raise Abort(
-            "Failed to immediately submit the job after job script creation",
+            "Failed to immediately submit the job after job script creation.",
             subject="Automatic job submission failed",
             support=True,
-            log_message=f"There was an issue submitting the job immediately job_script_id={job_script_result.id}",
+            log_message=f"There was an issue submitting the job immediately job_script_id={job_script_result.id}.",
             original_error=err,
         )
 

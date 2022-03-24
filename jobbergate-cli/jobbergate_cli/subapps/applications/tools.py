@@ -1,5 +1,5 @@
 """
-Provide tool functions for working with Application data
+Provide tool functions for working with Application data.
 """
 
 import ast

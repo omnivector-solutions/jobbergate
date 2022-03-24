@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "fake-sbatch"
 version = "0.1.0"
-description = "An executable that pretends to be sbatch for testing purposes"
+description = "An executable that pretends to be sbatch for testing purposes."
 authors = ["Omnivector Solutions <info@omnivector.solutions>"]
 license = "MIT"
 

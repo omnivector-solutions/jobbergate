@@ -1,8 +1,8 @@
 =============
- Fake Sbatch
+ Fake sbatch
 =============
 
-An stupid app that pretends to be sbatch.
+A testing utility that returns ``sbatch`` output assuming a certain failure percentage.
 
 By default, ``fake-sbatch`` will fail 10% of the time (for testing error cases).
 
