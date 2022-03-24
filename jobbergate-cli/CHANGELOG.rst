@@ -6,12 +6,12 @@ This file keeps track of all notable changes to jobbergate-cli
 
 Unreleased
 ----------
-* Complete re-write of the Jobbergate CLI
-  * Used typer to implement the application
-  * Styled user output with Rich formatting
-  * Broke the code up into modules and functions for easier maintenance and reading
-  * Refactored the question asking system in applications
-  * Added over 100 unit tests
+- Complete re-write of the Jobbergate CLI
+- Used typer to implement the application
+- Styled user output with Rich formatting
+- Broke the code up into modules and functions for easier maintenance and reading
+- Refactored the question asking system in applications
+- Added over 100 unit tests
 
 
 2.2.9 -- 2022-02-16
