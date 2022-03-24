@@ -1,7 +1,22 @@
-from auto_name_enum import AutoNameEnum, NoMangleMixin, auto
+"""
+Provides project-wide constants.
+"""
+
+from enum import Enum
 
 
-class JobSubmissionStatus(AutoNameEnum, NoMangleMixin):
-    CREATED = auto()
-    SUBMITTED = auto()
-    COMPLETED = auto()
+class JobSubmissionStatus(str, Enum):
+    """
+    Defines the set of possible statuses for a Job Submission.
+    """
+
+    CREATED = "CREATED"
+    SUBMITTED = "SUBMITTED"
+    COMPLETED = "COMPLETED"
+
+    @classmethod
+    def pretty_list(cls):
+        """
+        Return a comma-separated list of possible statuses.
+        """
+        return ", ".join(str(e) for e in cls)

@@ -6,7 +6,6 @@ from typing import Optional, cast
 
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobSubmissionResponse
-from jobbergate_cli.schemas import JobbergateContext, JobSubmissionResponse
 
 
 def create_job_submission(

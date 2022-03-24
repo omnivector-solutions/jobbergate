@@ -95,8 +95,9 @@ class JobSubmissionResponse(BaseModel):
 
 class PendingJobSubmission(BaseModel, extra=Extra.ignore):
     """
-    Specialized model for the cluster-agent to pull a pending job_submission along with
-    data from its job_script and application sources.
+    Specialized model for the cluster-agent to pull a pending job_submissions.
+
+    Also includes data from its job_script and application sources.
     """
 
     id: Optional[int] = Field(None)

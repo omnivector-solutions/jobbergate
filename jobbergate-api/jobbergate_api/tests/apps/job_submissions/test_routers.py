@@ -1186,8 +1186,7 @@ async def test_job_submissions_agent_update__returns_400_if_token_does_not_carry
     client, inject_security_header,
 ):
     """
-    Test PUT /job-submissions/agent/{job_submission_id} returns a 400 if the token payload does not include a
-    client_id.
+    Test PUT /job-submissions/agent/{job_submission_id} returns 400 if client_id not in token payload.
 
     This test proves that PUT /job-submissions/agent/{job_submission_id} returns a 400 status if the access
     token used to query the route does not include a ``client_id``.
