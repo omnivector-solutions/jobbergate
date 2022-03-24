@@ -6,6 +6,7 @@ from fastapi import status
 
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
+from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.apps.job_submissions.schemas import JobSubmissionResponse
 from jobbergate_api.apps.permissions import Permissions
@@ -13,7 +14,7 @@ from jobbergate_api.storage import database
 
 
 @pytest.mark.asyncio
-async def test_create_job_submission(
+async def test_create_job_submission__with_client_id_in_token(
     fill_application_data,
     fill_job_script_data,
     fill_job_submission_data,
@@ -26,7 +27,8 @@ async def test_create_job_submission(
 
     This test proves that a job_submission is successfully created via a POST request to the /job-submissions/
     endpoint. We show this by asserting that the job_submission is created in the database after the post
-    request is made, the correct status code (201) is returned.
+    request is made, the correct status code (201) is returned. We also show that the ``cluster_client_id``
+    is pulled from the token and the created job_submission is connected to that cluster id.
     """
     inserted_application_id = await database.execute(
         query=applications_table.insert(), values=fill_application_data(),
@@ -35,7 +37,69 @@ async def test_create_job_submission(
         query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
     )
 
-    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT)
+    inject_security_header(
+        "owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT, cluster_client_id="dummy-cluster-client",
+    )
+    create_data = fill_job_submission_data(
+        job_script_id=inserted_job_script_id,
+        job_submission_name="sub1",
+        job_submission_owner_email="owner1@org.com",
+    )
+
+    # Removed defaults to make sure these are correctly set by other mechanisms
+    create_data.pop("status", None)
+    create_data.pop("cluster_client_id", None)
+
+    with time_frame() as window:
+        response = await client.post("/jobbergate/job-submissions/", json=create_data,)
+
+    assert response.status_code == status.HTTP_201_CREATED
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 1
+
+    id_rows = await database.fetch_all("SELECT id FROM job_submissions")
+    assert len(id_rows) == 1
+
+    job_submission = JobSubmissionResponse(**response.json())
+    assert job_submission.id == id_rows[0][0]
+    assert job_submission.job_submission_name == "sub1"
+    assert job_submission.job_submission_owner_email == "owner1@org.com"
+    assert job_submission.job_submission_description is None
+    assert job_submission.job_script_id == inserted_job_script_id
+    assert job_submission.cluster_client_id == "dummy-cluster-client"
+    assert job_submission.status == JobSubmissionStatus.CREATED
+    assert job_submission.created_at in window
+    assert job_submission.updated_at in window
+
+
+@pytest.mark.asyncio
+async def test_create_job_submission__with_client_id_in_request_body(
+    fill_application_data,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    time_frame,
+):
+    """
+    Test POST /job-submissions/ correctly creates a job_submission.
+
+    This test proves that a job_submission is successfully created via a POST request to the /job-submissions/
+    endpoint. We show this by asserting that the job_submission is created in the database after the post
+    request is made, the correct status code (201) is returned. We also show that the ``cluster_client_id``
+    in the request body overrides the client id in the token.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(), values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
+    )
+
+    inject_security_header(
+        "owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT, cluster_client_id="dummy-cluster-client",
+    )
     with time_frame() as window:
         response = await client.post(
             "/jobbergate/job-submissions/",
@@ -43,6 +107,7 @@ async def test_create_job_submission(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub1",
                 job_submission_owner_email="owner1@org.com",
+                cluster_client_id="silly-cluster-client",
             ),
         )
 
@@ -60,6 +125,8 @@ async def test_create_job_submission(
     assert job_submission.job_submission_owner_email == "owner1@org.com"
     assert job_submission.job_submission_description is None
     assert job_submission.job_script_id == inserted_job_script_id
+    assert job_submission.cluster_client_id == "silly-cluster-client"
+    assert job_submission.status == JobSubmissionStatus.CREATED
     assert job_submission.created_at in window
     assert job_submission.updated_at in window
 
@@ -108,6 +175,41 @@ async def test_create_job_submission_bad_permission(
         "/jobbergate/job-submissions/", json=fill_job_submission_data(job_script_id=inserted_job_script_id),
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 0
+
+
+@pytest.mark.asyncio
+async def test_create_job_submission_without_cluster_client_id(
+    fill_application_data, fill_job_script_data, fill_job_submission_data, client, inject_security_header,
+):
+    """
+    Test that it is not possible to create a job_submission without a ``cluster_client_id``.
+
+    This test proves that it is not possible to create a job_submission without including a
+    ``cluster_client_id`` in either the request body or embedded in the access token. If none are supplied,
+    we assert that a 400 response is returned.k
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(), values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
+    )
+
+    inject_security_header(
+        "owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT,
+    )
+    create_data = fill_job_submission_data(
+        job_script_id=inserted_job_script_id,
+        job_submission_name="sub1",
+        job_submission_owner_email="owner1@org.com",
+    )
+    create_data.pop("cluster_client_id", None)
+    response = await client.post("/jobbergate/job-submissions/", json=create_data,)
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 0
@@ -334,6 +436,62 @@ async def test_get_job_submissions__with_all_param(
 
     pagination = data.get("pagination")
     assert pagination == dict(total=3, start=None, limit=None,)
+
+
+@pytest.mark.asyncio
+async def test_get_job_submissions__with_status_param(
+    client, fill_application_data, fill_job_script_data, fill_all_job_submission_data, inject_security_header,
+):
+    """
+    Test that listing job_submissions, when status is set, contains job_submissions with matching status.
+
+    This test proves that job_submissions are filtered by the status parameter. We do this by setting the
+    status param and making sure that only job_submissions with that status are returned.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(), values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
+    )
+    await database.execute_many(
+        query=job_submissions_table.insert(),
+        values=fill_all_job_submission_data(
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub1",
+                job_submission_owner_email="owner1@org.com",
+                status=JobSubmissionStatus.CREATED,
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub2",
+                job_submission_owner_email="owner1@org.com",
+                status=JobSubmissionStatus.CREATED,
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub3",
+                job_submission_owner_email="owner1@org.com",
+                status=JobSubmissionStatus.COMPLETED,
+            ),
+        ),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 3
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
+    response = await client.get(f"/jobbergate/job-submissions/?submit_status={JobSubmissionStatus.CREATED}")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    results = data.get("results")
+    assert results
+    assert [d["job_submission_name"] for d in results] == ["sub1", "sub2"]
+
+    pagination = data.get("pagination")
+    assert pagination == dict(total=2, start=None, limit=None,)
 
 
 @pytest.mark.asyncio
@@ -866,3 +1024,179 @@ async def test_delete_job_submission_bad_permission(
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 1
+
+
+@pytest.mark.asyncio
+async def test_job_submissions_agent_pending__success(
+    client, fill_application_data, fill_job_script_data, fill_all_job_submission_data, inject_security_header,
+):
+    """
+    Test GET /job-submissions/agent/pending returns only job_submissions owned by the requesting agent.
+
+    This test proves that GET /job-submissions/agent/pending returns the correct job_submissions for the agent
+    making the request. We show this by asserting that the job_submissions returned in the response are
+    only job_submissions with a ``cluster_client_id`` that matches the ``client_id`` found in the request's
+    token payload.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(), values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
+    )
+    await database.execute_many(
+        query=job_submissions_table.insert(),
+        values=fill_all_job_submission_data(
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub1",
+                status=JobSubmissionStatus.CREATED,
+                cluster_client_id="dummy-client",
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub2",
+                status=JobSubmissionStatus.COMPLETED,
+                cluster_client_id="dummy-client",
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub3",
+                status=JobSubmissionStatus.CREATED,
+                cluster_client_id="silly-client",
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub4",
+                status=JobSubmissionStatus.CREATED,
+                cluster_client_id="dummy-client",
+            ),
+        ),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 4
+
+    inject_security_header(
+        "who@cares.com", Permissions.JOB_SUBMISSIONS_VIEW, cluster_client_id="dummy-client",
+    )
+    response = await client.get("/jobbergate/job-submissions/agent/pending")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert [d["job_submission_name"] for d in data] == ["sub1", "sub4"]
+
+
+@pytest.mark.asyncio
+async def test_job_submissions_agent_pending__returns_400_if_token_does_not_carry_client_id(
+    client, inject_security_header,
+):
+    """
+    Test GET /job-submissions/agent/pending returns a 400 if the token payload does not include a client_id.
+
+    This test proves that GET /job-submissions/agent/pending returns a 400 status if the access token used
+    to query the route does not include a ``client_id``.
+    """
+    inject_security_header(
+        "who@cares.com", Permissions.JOB_SUBMISSIONS_VIEW,
+    )
+    response = await client.get("/jobbergate/job-submissions/agent/pending")
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "token does not contain a `client_id`" in response.text
+
+
+@pytest.mark.asyncio
+async def test_job_submissions_agent_update__success(
+    fill_application_data, fill_job_script_data, fill_all_job_submission_data, client, inject_security_header,
+):
+    """
+    Test PUT /job-submissions/{job_submission_id} correctly updates a job_submission status.
+
+    This test proves that a job_submission is successfully updated via a PUT request to the
+    /job-submissions/{job_submission_id} endpoint. We show this by asserting that the job_submission is
+    updated in the database after the post request is made, the correct status code (200) is returned.
+    We also show that the ``status`` column is set to the new status value.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(), values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(), values=fill_job_script_data(application_id=inserted_application_id),
+    )
+    await database.execute_many(
+        query=job_submissions_table.insert(),
+        values=fill_all_job_submission_data(
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub1",
+                status=JobSubmissionStatus.CREATED,
+                cluster_client_id="dummy-client",
+                slurm_job_id=None,
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub2",
+                status=JobSubmissionStatus.COMPLETED,
+                cluster_client_id="dummy-client",
+                slurm_job_id=None,
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub3",
+                status=JobSubmissionStatus.CREATED,
+                cluster_client_id="silly-client",
+                slurm_job_id=None,
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub4",
+                status=JobSubmissionStatus.CREATED,
+                cluster_client_id="dummy-client",
+                slurm_job_id=None,
+            ),
+        ),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 4
+
+    target_job_submission = await database.fetch_one(
+        query=job_submissions_table.select().where(job_submissions_table.c.job_submission_name == "sub1")
+    )
+    assert target_job_submission is not None
+    job_submission_id = target_job_submission["id"]
+
+    inject_security_header(
+        "who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, cluster_client_id="dummy-client",
+    )
+    response = await client.put(
+        f"/jobbergate/job-submissions/agent/{job_submission_id}",
+        json=dict(new_status=JobSubmissionStatus.SUBMITTED.value, slurm_job_id=111,),
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert data["id"] == job_submission_id
+    assert data["status"] == JobSubmissionStatus.SUBMITTED
+    assert data["slurm_job_id"] == 111
+
+
+@pytest.mark.asyncio
+async def test_job_submissions_agent_update__returns_400_if_token_does_not_carry_client_id(
+    client, inject_security_header,
+):
+    """
+    Test PUT /job-submissions/agent/{job_submission_id} returns 400 if client_id not in token payload.
+
+    This test proves that PUT /job-submissions/agent/{job_submission_id} returns a 400 status if the access
+    token used to query the route does not include a ``client_id``.
+    """
+    inject_security_header(
+        "who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT,
+    )
+    response = await client.put(
+        "/jobbergate/job-submissions/agent/1",
+        json=dict(new_status=JobSubmissionStatus.SUBMITTED, slurm_job_id=111,),
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "token does not contain a `client_id`" in response.text

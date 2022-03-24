@@ -21,7 +21,6 @@ class Settings(BaseSettings):
     # enable http tracing
     JOBBERGATE_DEBUG: bool = Field(False)
 
-    SBATCH_PATH: Path = Field("/usr/bin/sbatch")
     SENTRY_DSN: Optional[str]
     SENTRY_TRACE_RATE: float = Field(1.0, gt=0.0, le=1.0)
 

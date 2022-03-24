@@ -1,0 +1,7 @@
+jobbergate_config:
+  default_template: dummy-script.py.j2
+  output_directory: .
+application_config:
+  foo: FOO
+  bar: BAR
+  baz: BAZ
