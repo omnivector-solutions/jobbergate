@@ -1,10 +1,10 @@
 import shlex
 
 import httpx
-import snick
 
 from jobbergate_cli.schemas import JobSubmissionResponse, ListResponseEnvelope, Pagination
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS, create, delete, get_one, list_all, style_mapper
+from jobbergate_cli.text_tools import unwrap
 
 
 def test_create__full_run_including_non_fast_mode_and_job_submission(
@@ -27,7 +27,7 @@ def test_create__full_run_including_non_fast_mode_and_job_submission(
     result = cli_runner.invoke(
         test_app,
         shlex.split(
-            snick.unwrap(
+            unwrap(
                 f"""
                 create --name={job_submission_name}
                        --description='{job_submission_description}'

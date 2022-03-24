@@ -9,8 +9,6 @@ import subprocess
 import tempfile
 from typing import Any, Dict, Optional, cast
 
-import snick
-
 from jobbergate_cli.config import settings
 from jobbergate_cli.constants import JOBBERGATE_JOB_SUBMISSION_CONFIG
 from jobbergate_cli.exceptions import Abort
@@ -18,6 +16,7 @@ from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobScriptResponse, JobSubmissionResponse
 from jobbergate_cli.subapps.applications.tools import fetch_application_data
 from jobbergate_cli.subapps.job_scripts.tools import fetch_job_script_data
+from jobbergate_cli.text_tools import dedent
 
 
 def load_default_config() -> Dict[str, Any]:
@@ -42,7 +41,7 @@ def run_job_script(
     """
     Abort.require_condition(
         settings.SBATCH_PATH.exists(),
-        snick.dedent(
+        dedent(
             f"""
             sbatch executable was not found at {settings.SBATCH_PATH}.
             Please confirm that sbatch is installed and the environment variable SBATCH_PATH directs to it.
@@ -63,7 +62,7 @@ def run_job_script(
     else:
         Abort.require_condition(
             build_path.exists(),
-            snick.dedent(
+            dedent(
                 f"""
                 The supplied build directory does not exist: {build_path}.
                 """
@@ -85,7 +84,7 @@ def run_job_script(
 
     Abort.require_condition(
         script_path is not None,
-        snick.dedent(
+        dedent(
             f"""
             Could not find an executable script in retrieved job script data.
             It's likely that this job_script ({job_script_data.id}) is broken.

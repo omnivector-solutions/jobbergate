@@ -3,7 +3,6 @@ import json
 import shlex
 
 import httpx
-import snick
 
 from jobbergate_cli.schemas import (
     ApplicationResponse,
@@ -22,6 +21,7 @@ from jobbergate_cli.subapps.job_scripts.app import (
     style_mapper,
     update,
 )
+from jobbergate_cli.text_tools import unwrap
 
 
 def test_list_all__makes_request_and_renders_results(
@@ -147,7 +147,7 @@ def test_create__full_run_including_non_fast_mode_and_job_submission(
     result = cli_runner.invoke(
         test_app,
         shlex.split(
-            snick.unwrap(
+            unwrap(
                 f"""
                 create --name=dummy-name
                        --application-id={application_response.id}
@@ -258,7 +258,7 @@ def test_create__with_fast_mode_and_no_job_submission(
     result = cli_runner.invoke(
         test_app,
         shlex.split(
-            snick.unwrap(
+            unwrap(
                 f"""
                 create --name=dummy-name
                        --application-id={application_response.id}
@@ -332,7 +332,7 @@ def test_update__makes_request_and_renders_results(
     result = cli_runner.invoke(
         test_app,
         shlex.split(
-            snick.unwrap(
+            unwrap(
                 f"""
                 update --id={job_script_id}
                        --job-script='{new_job_script_data_as_string}'

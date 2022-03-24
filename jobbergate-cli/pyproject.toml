@@ -8,7 +8,7 @@ packages = [ { include = "jobbergate_cli" } ]
 
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.6.2"
 click = "^8.0.1"
 inquirer = "^2.7.0"
 PyYAML = "^5.4.1"
@@ -21,11 +21,9 @@ pydantic = "^1.8.2"
 yarl = "^1.7.2"
 httpx = "^0.22.0"
 pendulum = "^2.1.2"
-py-buzz = "^3.0.0"
-snick = "^1.2"
+py-buzz = "^3.1.0"
 rich = "^11.2.0"
 typer = "^0.4.0"
-auto-name-enum = "^1.1.0"
 pyperclip = "^1.8.2"
 
 [tool.poetry.dev-dependencies]
@@ -37,12 +35,12 @@ pytest-responsemock = "^1.0.1"
 isort = "^5.9.3"
 pytest-env = "^0.6.2"
 respx = "^0.19.2"
-plummet = {extras = ["time-machine"], version = "^1.0.0"}
+plummet = {extras = ["time-machine"], version = "^1.1.0"}
 pyproject-flake8 = "^0.0.1-alpha.2"
 mypy = "^0.931"
-pytest-mock = "^3.7.0"
+pytest-mock = "^3.6.0"
 types-PyYAML = "^6.0.4"
-ipython = "^8.1.1"
+ipython = "^7.10"
 
 [tool.poetry.scripts]
 jobbergate = "jobbergate_cli.main:app"

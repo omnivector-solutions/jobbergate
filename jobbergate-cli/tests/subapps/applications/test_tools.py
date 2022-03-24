@@ -5,7 +5,6 @@ import tarfile
 
 import httpx
 import pytest
-import snick
 import yaml
 
 from jobbergate_cli.constants import (
@@ -27,6 +26,7 @@ from jobbergate_cli.subapps.applications.tools import (
     read_application_module,
     validate_application_files,
 )
+from jobbergate_cli.text_tools import dedent
 
 
 def test_validate_application_files__success(tmp_path):
@@ -34,7 +34,7 @@ def test_validate_application_files__success(tmp_path):
     application_path.mkdir()
     application_module = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
     application_module.write_text(
-        snick.dedent(
+        dedent(
             """
             import sys
 
@@ -44,7 +44,7 @@ def test_validate_application_files__success(tmp_path):
     )
     application_config = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
     application_config.write_text(
-        snick.dedent(
+        dedent(
             """
             foo:
               bar: baz
@@ -133,7 +133,7 @@ def test_dump_full_config(tmp_path):
     file2.write_text("bar")
     config_path = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
     config_path.write_text(
-        snick.dedent(
+        dedent(
             """
             jobbergate_config:
               default_template: test-job-script.py.j2
@@ -317,7 +317,7 @@ def test_load_application_data__fails_if_application_config_is_not_valid_Jobberg
         application_owner_email="dummy@dummy.org",
         application_uploaded=True,
         application_file=dummy_module_source,
-        application_config=snick.dedent(
+        application_config=dedent(
             """
             foo: bar
             """

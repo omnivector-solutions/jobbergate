@@ -167,6 +167,7 @@ class ForeignKeyError(pydantic.BaseModel):
     """
     A model describing the structure of a foreign-key constraint error on delete.
     """
+
     message: str
     table: str
     pk_id: int

@@ -6,13 +6,14 @@ import json
 from typing import Any, Dict, List, Optional, Union
 
 import pydantic
-import snick
 from rich import print_json
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
+from jobbergate_cli.text_tools import dedent
+from jobbergate_cli.text_tools import indent as indent_text
 
 
 class StyleMapper:
@@ -80,9 +81,9 @@ def terminal_message(message, subject=None, color="green", footer=None, indent=T
         panel_kwargs["title"] = f"[{color}]{subject}"
     if footer is not None:
         panel_kwargs["subtitle"] = f"[dim italic]{footer}[/dim italic]"
-    text = snick.dedent(message)
+    text = dedent(message)
     if indent:
-        text = snick.indent(text, prefix="  ")
+        text = indent_text(text, prefix="  ")
     console = Console()
     console.print()
     console.print(Panel(text, **panel_kwargs))

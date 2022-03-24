@@ -2,9 +2,8 @@
 Provide constants that may be used throughout the CLI modules.
 """
 
+from enum import Enum
 from pathlib import Path
-
-from auto_name_enum import AutoNameEnum, auto
 
 
 JOBBERGATE_APPLICATION_CONFIG = {
@@ -36,11 +35,11 @@ TAR_NAME = "jobbergate.tar.gz"
 OV_CONTACT = "Omnivector Solutions <info@omnivector.solutions>"
 
 
-class SortOrder(AutoNameEnum):
+class SortOrder(str, Enum):
     """
     Enum descring the type of sort orders that are available for list commands.
     """
 
-    ASCENDING = auto()
-    DESCENDING = auto()
-    UNSORTED = auto()
+    ASCENDING = "ASCENDING"
+    DESCENDING = "DESCENDING"
+    UNSORTED = "UNSORTED"

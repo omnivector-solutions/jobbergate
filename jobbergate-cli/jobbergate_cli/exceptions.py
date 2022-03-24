@@ -6,7 +6,6 @@ from functools import wraps
 
 import buzz
 import sentry_sdk
-import snick
 import typer
 from loguru import logger
 from rich import traceback
@@ -15,6 +14,7 @@ from rich.panel import Panel
 
 from jobbergate_cli.config import settings
 from jobbergate_cli.constants import OV_CONTACT
+from jobbergate_cli.text_tools import dedent, unwrap
 
 
 # Enables prettified traceback printing via rich
@@ -87,9 +87,9 @@ def handle_abort(func):
             panel_kwargs = dict()
             if err.subject is not None:
                 panel_kwargs["title"] = f"[red]{err.subject}"
-            message = snick.dedent(err.message)
+            message = dedent(err.message)
             if err.support:
-                support_message = snick.unwrap(
+                support_message = unwrap(
                     f"""
                     [yellow]If the problem persists,
                     please contact [bold]{OV_CONTACT}[/bold]

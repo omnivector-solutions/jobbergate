@@ -6,7 +6,6 @@ from time import sleep
 from typing import Dict, Optional, cast
 
 import pydantic
-import snick
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError
 from loguru import logger
@@ -16,6 +15,7 @@ from jobbergate_cli.exceptions import Abort, JobbergateCliError
 from jobbergate_cli.render import terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import DeviceCodeData, IdentityData, JobbergateContext, Persona, TokenSet
+from jobbergate_cli.text_tools import unwrap
 from jobbergate_cli.time_loop import TimeLoop
 
 
@@ -292,7 +292,7 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
             else:
                 # TODO: Test this failure condition
                 raise Abort(
-                    snick.unwrap(
+                    unwrap(
                         """
                         There was a problem retrieving a device verification code from the auth provider:
                         Unexpected failure retrieving access token.

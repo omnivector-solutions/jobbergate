@@ -5,7 +5,6 @@ Provide a ``typer`` app that can interact with Job Script data in a cruddy manne
 import pathlib
 from typing import Any, Dict, List, Optional, cast
 
-import snick
 import typer
 
 from jobbergate_cli.constants import SortOrder
@@ -22,6 +21,7 @@ from jobbergate_cli.subapps.applications.tools import execute_application, fetch
 from jobbergate_cli.subapps.job_scripts.tools import fetch_job_script_data, validate_parameter_file
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
 from jobbergate_cli.subapps.job_submissions.tools import create_job_submission
+from jobbergate_cli.text_tools import dedent
 
 
 # move hidden field logic to the API
@@ -130,7 +130,7 @@ def create(
     ),
     param_file: Optional[pathlib.Path] = typer.Option(
         None,
-        help=snick.dedent(
+        help=dedent(
             """
             Supply a yaml file that contains the parameters for populating templates.
             If this is not supplied, the question asking in the application is triggered.

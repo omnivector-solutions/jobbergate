@@ -1,7 +1,6 @@
 import shlex
 
 import httpx
-import snick
 
 from jobbergate_cli.schemas import ApplicationResponse, ListResponseEnvelope, Pagination
 from jobbergate_cli.subapps.applications.app import (
@@ -13,6 +12,7 @@ from jobbergate_cli.subapps.applications.app import (
     style_mapper,
     update,
 )
+from jobbergate_cli.text_tools import unwrap
 
 
 def test_list_all__makes_request_and_renders_results(
@@ -149,7 +149,7 @@ def test_create__success(
     result = cli_runner.invoke(
         test_app,
         shlex.split(
-            snick.unwrap(
+            unwrap(
                 f"""
                 create --name=dummy-name --identifier=dummy-identifier
                        --application-path={dummy_application_dir}
@@ -202,7 +202,7 @@ def test_create__warns_but_does_not_abort_if_upload_fails(
     result = cli_runner.invoke(
         test_app,
         shlex.split(
-            snick.unwrap(
+            unwrap(
                 f"""
                 create --name=dummy-name --identifier=dummy-identifier
                        --application-path={dummy_application_dir}
@@ -256,7 +256,7 @@ def test_update__success(
     result = cli_runner.invoke(
         test_app,
         shlex.split(
-            snick.unwrap(
+            unwrap(
                 f"""
                 update --id={application_id} --identifier=dummy-identifier
                        --application-path={dummy_application_dir}
@@ -308,7 +308,7 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(
     result = cli_runner.invoke(
         test_app,
         shlex.split(
-            snick.unwrap(
+            unwrap(
                 f"""
                 update --id={application_id} --identifier=dummy-identifier
                        --application-desc="This application is kinda dumb, actually"
@@ -360,7 +360,7 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
     result = cli_runner.invoke(
         test_app,
         shlex.split(
-            snick.unwrap(
+            unwrap(
                 f"""
                 update --id={application_id} --identifier=dummy-identifier
                        --application-path={dummy_application_dir}

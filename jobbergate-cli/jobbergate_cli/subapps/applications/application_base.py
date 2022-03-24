@@ -3,9 +3,8 @@
 import pathlib
 from typing import Any, Dict, List
 
-import snick
-
 from jobbergate_cli.render import terminal_message
+from jobbergate_cli.text_tools import dedent_all
 
 
 class JobbergateApplicationBase:
@@ -35,7 +34,7 @@ class JobbergateApplicationBase:
     def get_template_files(self) -> List[pathlib.Path]:
         template_file_paths = self.find_templates(pathlib.Path.cwd())
         terminal_message(
-            snick.dedent_all(
+            dedent_all(
                 f"""
                 Here are all of the included templates:
                 [yellow](in {pathlib.Path.cwd()})[/yellow]

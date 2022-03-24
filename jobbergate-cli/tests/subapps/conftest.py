@@ -3,7 +3,6 @@ from typing import Any, Callable, Dict
 
 import httpx
 import pytest
-import snick
 import yaml
 from typer import Context, Typer
 from typer.testing import CliRunner
@@ -11,6 +10,7 @@ from typer.testing import CliRunner
 from jobbergate_cli.constants import JOBBERGATE_APPLICATION_CONFIG_FILE_NAME, JOBBERGATE_APPLICATION_MODULE_FILE_NAME
 from jobbergate_cli.schemas import IdentityData, JobbergateApplicationConfig, JobbergateContext, Persona, TokenSet
 from jobbergate_cli.subapps.applications.tools import load_application_from_source
+from jobbergate_cli.text_tools import dedent
 
 
 @pytest.fixture
@@ -175,7 +175,7 @@ def dummy_job_submission_data(dummy_job_script_data):
 
 @pytest.fixture(scope="module")
 def dummy_config_source():
-    return snick.dedent(
+    return dedent(
         """
         jobbergate_config:
           default_template: test-job-script.py.j2
@@ -195,7 +195,7 @@ def dummy_config_source():
 
 @pytest.fixture(scope="module")
 def dummy_module_source():
-    return snick.dedent(
+    return dedent(
         """
         from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
         from jobbergate_cli.subapps.applications.questions import Text
@@ -215,7 +215,7 @@ def dummy_module_source():
 
 @pytest.fixture(scope="module")
 def dummy_template_source():
-    return snick.dedent(
+    return dedent(
         """
         #!/bin/python3
 

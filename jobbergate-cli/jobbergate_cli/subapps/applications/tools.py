@@ -9,7 +9,6 @@ import tarfile
 import tempfile
 from typing import Any, Dict, Optional, Tuple, cast
 
-import snick
 import yaml
 from loguru import logger
 
@@ -24,6 +23,7 @@ from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig, JobbergateContext
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.questions import gather_param_values
+from jobbergate_cli.text_tools import unwrap
 
 
 def validate_application_files(application_path: pathlib.Path):
@@ -50,7 +50,7 @@ def validate_application_files(application_path: pathlib.Path):
         application_module = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
         checker(
             application_module.exists(),
-            snick.unwrap(
+            unwrap(
                 f"""
                 Application directory does not contain required application module
                 {JOBBERGATE_APPLICATION_MODULE_FILE_NAME}
@@ -67,7 +67,7 @@ def validate_application_files(application_path: pathlib.Path):
         application_config = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
         checker(
             application_config.exists(),
-            snick.unwrap(
+            unwrap(
                 f"""
                 Application directory does not contain required configuration file
                 {JOBBERGATE_APPLICATION_MODULE_FILE_NAME}

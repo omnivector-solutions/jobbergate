@@ -8,9 +8,8 @@ If JOBBERGATE_COMPATIBILITY_MODE is not enabled, raise an import error when this
 
 import warnings
 
-import snick
-
 from jobbergate_cli.config import settings
+from jobbergate_cli.text_tools import dedent, unwrap
 
 
 if settings.JOBBERGATE_COMPATIBILITY_MODE:
@@ -18,7 +17,7 @@ if settings.JOBBERGATE_COMPATIBILITY_MODE:
     from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase  # noqa
 
     warnings.warn(
-        snick.dedent(
+        dedent(
             """
             Importing application_base from jobbergate_cli is deprecated.
             The module has been moved.
@@ -29,7 +28,7 @@ if settings.JOBBERGATE_COMPATIBILITY_MODE:
     )
 else:
     raise ImportError(
-        snick.unwrap(
+        unwrap(
             """
             JobbergateApplicationBase has been moved to
             'jobbergate_cli.subapps.applications.application_base.JobbergateApplicationBase'

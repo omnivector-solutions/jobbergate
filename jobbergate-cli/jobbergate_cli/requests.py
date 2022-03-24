@@ -5,11 +5,11 @@ from typing import Any, Dict, Optional, Type, TypeVar, Union
 
 import httpx
 import pydantic
-import snick
 from loguru import logger
 
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ForeignKeyError
+from jobbergate_cli.text_tools import dedent, unwrap
 
 
 ResponseModel = TypeVar("ResponseModel", bound=pydantic.BaseModel)
@@ -46,7 +46,7 @@ def make_request(
     logger.debug(f"Making request to {url_path=}")
     request = client.build_request(method, url_path, **request_kwargs)
     logger.debug(
-        snick.dedent(
+        dedent(
             f"""
             Request built with:
               url: {request.url}
@@ -63,7 +63,7 @@ def make_request(
         response = client.send(request)
     except httpx.RequestError as err:
         raise Abort(
-            snick.unwrap(
+            unwrap(
                 f"""
                 {abort_message}:
                 Communication with the API failed.
@@ -80,7 +80,7 @@ def make_request(
             details = response.json()["detail"]
             fk_error = ForeignKeyError(**details)
             raise Abort(
-                snick.dedent(
+                dedent(
                     f"""
                     {abort_message}:
                     There are [red]{fk_error.table}[/red] that reference id [bold yellow]{fk_error.pk_id}[/bold yellow].
@@ -91,7 +91,7 @@ def make_request(
             )
         else:
             raise Abort(
-                snick.unwrap(
+                unwrap(
                     f"""
                     {abort_message}:
                     Received an error response.
@@ -110,7 +110,7 @@ def make_request(
         data = response.json()
     except Exception as err:
         raise Abort(
-            snick.unwrap(
+            unwrap(
                 f"""
                 {abort_message}:
                 Response carried no data.
@@ -131,7 +131,7 @@ def make_request(
         return response_model(**data)
     except pydantic.ValidationError as err:
         raise Abort(
-            snick.unwrap(
+            unwrap(
                 f"""
                 {abort_message}:
                 Unexpected data in response.
