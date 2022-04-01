@@ -62,7 +62,7 @@ style_mapper = StyleMapper(
 app = typer.Typer(help="Commands to interact with applications")
 
 
-@app.command()
+@app.command("list")
 @handle_abort
 def list_all(
     ctx: typer.Context,
@@ -101,7 +101,7 @@ def list_all(
             expected_status=200,
             abort_message="Couldn't retrieve applications list from API",
             support=True,
-            response_model=ListResponseEnvelope,
+            response_model_cls=ListResponseEnvelope,
             params=params,
         ),
     )

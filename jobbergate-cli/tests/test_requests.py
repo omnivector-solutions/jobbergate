@@ -6,7 +6,7 @@ import pydantic
 import pytest
 
 from jobbergate_cli.exceptions import Abort
-from jobbergate_cli.requests import make_request
+from jobbergate_cli.requests import _deserialize_request_model, make_request
 
 
 DEFAULT_DOMAIN = "https://dummy-domain.com"
@@ -47,6 +47,53 @@ class ErrorResponseModel(pydantic.BaseModel):
     error: str
 
 
+def test__deserialize_request_model__success():
+    """
+    Validate that the ``_deserialize_request_model`` method can successfully deserialize a pydantic model instance into
+    the ``content`` part of the ``request_kwargs``. Also, validate that the ``content-type`` part of the request is set
+    to ``application/json``.
+    """
+    request_kwargs = dict()
+    _deserialize_request_model(
+        DummyResponseModel(foo=1, bar="one"),
+        request_kwargs,
+        "Abort message does not matter here",
+        "Whatever Subject",
+    )
+    assert json.loads(request_kwargs["content"]) == dict(foo=1, bar="one")
+    assert request_kwargs["headers"] == {"Content-Type": "application/json"}
+
+
+def test__deserialize_request_model__raises_Abort_if_request_kwargs_already_has_other_body_parts():
+    """
+    Validate that the ``_deserialize_request_model`` raises an Abort if the ``request_kwargs`` already has a "body" part
+    (``data``, ``json``, or ``content``).
+    """
+    with pytest.raises(Abort, match="Request was incorrectly structured"):
+        _deserialize_request_model(
+            DummyResponseModel(foo=1, bar="one"),
+            dict(data=dict(foo=11)),
+            "Abort message does not matter here",
+            "Whatever Subject",
+        )
+
+    with pytest.raises(Abort, match="Request was incorrectly structured"):
+        _deserialize_request_model(
+            DummyResponseModel(foo=1, bar="one"),
+            dict(json=dict(foo=11)),
+            "Abort message does not matter here",
+            "Whatever Subject",
+        )
+
+    with pytest.raises(Abort, match="Request was incorrectly structured"):
+        _deserialize_request_model(
+            DummyResponseModel(foo=1, bar="one"),
+            dict(content=json.dumps(dict(foo=11))),
+            "Abort message does not matter here",
+            "Whatever Subject",
+        )
+
+
 def test_make_request__success(respx_mock, dummy_client):
     """
     Validate that the ``make_request()`` function will make a request to the supplied path for the
@@ -71,7 +118,7 @@ def test_make_request__success(respx_mock, dummy_client):
         req_path,
         "GET",
         expected_status=200,
-        response_model=DummyResponseModel,
+        response_model_cls=DummyResponseModel,
     )
     assert isinstance(dummy_response_instance, DummyResponseModel)
     assert dummy_response_instance.foo == 1
@@ -153,7 +200,7 @@ def test_make_request__does_not_raise_Abort_when_expected_status_is_None_and_res
         client,
         req_path,
         "GET",
-        response_model=ErrorResponseModel,
+        response_model_cls=ErrorResponseModel,
     )
     assert err.error == "It blowed up"
 
@@ -215,10 +262,10 @@ def test_make_request__raises_an_Abort_if_the_response_cannot_be_deserialized_wi
     assert isinstance(err_info.value.original_error, json.decoder.JSONDecodeError)
 
 
-def test_make_request__returns_a_plain_dict_if_response_model_is_None(respx_mock, dummy_client):
+def test_make_request__returns_a_plain_dict_if_response_model_cls_is_None(respx_mock, dummy_client):
     """
     Validate that the ``make_request()`` function will return a plain dictionary containing the response data if the
-    ``response_model`` argument is not supplied.
+    ``response_model_cls`` argument is not supplied.
     """
     client = dummy_client(headers={"content-type": "garbage"})
     req_path = "/fake-path"
@@ -233,12 +280,12 @@ def test_make_request__returns_a_plain_dict_if_response_model_is_None(respx_mock
     assert make_request(client, req_path, "GET") == dict(a=1, b=2, c=3)
 
 
-def test_make_request__raises_an_Abort_if_the_response_data_cannot_be_serialized_into_the_response_model(
+def test_make_request__raises_an_Abort_if_the_response_data_cannot_be_serialized_into_the_response_model_cls(
     respx_mock, dummy_client
 ):
     """
     Validate that the ``make_request()`` function will raise an Abort if the response data cannot be serialized as and
-    validated with the ``response_model``.
+    validated with the ``response_model_cls``.
     """
     client = dummy_client(headers={"content-type": "garbage"})
     req_path = "/fake-path"
@@ -258,9 +305,44 @@ def test_make_request__raises_an_Abort_if_the_response_data_cannot_be_serialized
             abort_message="There was a big problem",
             abort_subject="BIG PROBLEM",
             support=True,
-            response_model=DummyResponseModel,
+            response_model_cls=DummyResponseModel,
         )
     assert err_info.value.subject == "BIG PROBLEM"
     assert err_info.value.support is True
     assert err_info.value.log_message == f"Unexpected format in response data: {dict(a=1, b=2, c=3)}"
     assert isinstance(err_info.value.original_error, pydantic.ValidationError)
+
+
+def test_make_request__uses_request_model_instance_for_request_body_if_passed(respx_mock, dummy_client):
+    """
+    Validate that the ``make_request()`` function will use a pydantic model instance to build the body of the request if
+    the ``request_model`` argument is passed.
+    """
+
+    client = dummy_client(headers={"content-type": "garbage"})
+    req_path = "/fake-path"
+
+    dummy_route = respx_mock.post(f"{DEFAULT_DOMAIN}{req_path}")
+    dummy_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.CREATED,
+            json=dict(
+                foo=1,
+                bar="one",
+            ),
+        ),
+    )
+    dummy_response_instance = make_request(
+        client,
+        req_path,
+        "POST",
+        expected_status=201,
+        response_model_cls=DummyResponseModel,
+        request_model=DummyResponseModel(foo=1, bar="one"),
+    )
+    assert isinstance(dummy_response_instance, DummyResponseModel)
+    assert dummy_response_instance.foo == 1
+    assert dummy_response_instance.bar == "one"
+
+    assert dummy_route.calls.last.request.content == json.dumps(dict(foo=1, bar="one")).encode("utf-8")
+    assert dummy_route.calls.last.request.headers["Content-Type"] == "application/json"

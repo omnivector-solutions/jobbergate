@@ -63,6 +63,6 @@ def fetch_job_script_data(
             expected_status=200,
             abort_message=f"Couldn't retrieve job script ({id}) from API",
             support=True,
-            response_model=JobScriptResponse,
+            response_model_cls=JobScriptResponse,
         ),
     )

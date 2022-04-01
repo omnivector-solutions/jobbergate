@@ -6,9 +6,10 @@ import typing
 
 import asyncpg
 import sentry_sdk
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, Request, Response, status
 from loguru import logger
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
 from jobbergate_api.apps.applications.routers import router as applications_router
@@ -76,3 +77,15 @@ async def disconnect_database():
     """
     logger.debug("Disconnecting database")
     await database.disconnect()
+
+
+async def db_xtn_wrapper(request: Request, call_next) -> Response:
+    """
+    Create a separate database transaction for each request.
+    """
+    async with database.connection() as cnx:
+        async with cnx.transaction():
+            return await call_next(request)
+
+
+subapp.add_middleware(BaseHTTPMiddleware, dispatch=db_xtn_wrapper)
