@@ -79,13 +79,13 @@ async def disconnect_database():
     await database.disconnect()
 
 
-async def db_xtn_wrapper(request: Request, call_next) -> Response:
-    """
-    Create a separate database transaction for each request.
-    """
-    async with database.connection() as cnx:
-        async with cnx.transaction():
-            return await call_next(request)
-
-
-subapp.add_middleware(BaseHTTPMiddleware, dispatch=db_xtn_wrapper)
+# async def db_xtn_wrapper(request: Request, call_next) -> Response:
+#     """
+#     Create a separate database transaction for each request.
+#     """
+#     async with database.connection() as cnx:
+#         async with cnx.transaction():
+#             return await call_next(request)
+#
+#
+# subapp.add_middleware(BaseHTTPMiddleware, dispatch=db_xtn_wrapper)
