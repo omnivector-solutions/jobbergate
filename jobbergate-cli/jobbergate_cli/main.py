@@ -6,6 +6,7 @@ from importlib.metadata import version as package_version
 from typing import Optional
 
 import httpx
+import jose
 import pyperclip
 import typer
 
@@ -13,7 +14,7 @@ from jobbergate_cli.auth import clear_token_cache, fetch_auth_tokens, init_perso
 from jobbergate_cli.config import settings
 from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.logging import init_logs, init_sentry
-from jobbergate_cli.render import terminal_message
+from jobbergate_cli.render import terminal_message, render_json
 from jobbergate_cli.schemas import JobbergateContext, Persona, TokenSet
 from jobbergate_cli.text_tools import conjoin
 
@@ -122,15 +123,26 @@ def logout():
 def show_token(
     plain: bool = typer.Option(
         False,
-        help="Show the token in plain text",
+        help="Show the token in plain text.",
     ),
     refresh: bool = typer.Option(
         False,
-        help="Show the refresh token instead of the access token",
+        help="Show the refresh token instead of the access token.",
     ),
     show_prefix: bool = typer.Option(
         False,
-        help="Include the 'Bearer' prefix in the output",
+        "--prefix",
+        help="Include the 'Bearer' prefix in the output.",
+    ),
+    show_header: bool = typer.Option(
+        False,
+        "--header",
+        help="Show the token as it would appear in a request header.",
+    ),
+    decode: bool = typer.Option(
+        False,
+        "--decode",
+        help="Show the content of the decoded access token.",
     ),
 ):
     """
@@ -161,8 +173,32 @@ def show_token(
             ),
         )
 
-    prefix = "Bearer " if show_prefix else ""
-    token_text = f"{prefix}{token}"
+    if decode:
+        # Decode the token with ALL verification turned off (we just want to unpack it)
+        content = jose.jwt.decode(
+            token,
+            "secret-will-be-ignored",
+            options=dict(
+                verify_signature=False,
+                verify_aud=False,
+                verify_iat=False,
+                verify_exp=False,
+                verify_nbf=False,
+                verify_iss=False,
+                verify_sub=False,
+                verify_jti=False,
+                verify_at_hash=False,
+            ),
+        )
+        render_json(content)
+        return
+
+    if show_header:
+        token_text = f"""{{ "Authorization": "Bearer {token}" }}"""
+    else:
+        prefix = "Bearer " if show_prefix else ""
+        token_text = f"{prefix}{token}"
+
     pyperclip.copy(token_text)
     if plain:
         print(token_text)

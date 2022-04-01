@@ -101,6 +101,7 @@ class PendingJobSubmission(BaseModel, extra=Extra.ignore):
 
     id: Optional[int] = Field(None)
     job_submission_name: str
+    job_submission_owner_email: str
     job_script_name: str
     job_script_data_as_string: str
     application_name: str

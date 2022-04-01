@@ -45,7 +45,7 @@ def create_job_submission(
             abort_message="Couldn't create job submission",
             support=True,
             json=job_submission_data,
-            response_model=JobSubmissionResponse,
+            response_model_cls=JobSubmissionResponse,
         ),
     )
     return result
@@ -70,6 +70,6 @@ def fetch_job_submission_data(
             expected_status=200,
             abort_message=f"Couldn't retrieve job submission {job_submission_id} from API",
             support=True,
-            response_model=JobSubmissionResponse,
+            response_model_cls=JobSubmissionResponse,
         ),
     )

@@ -90,6 +90,16 @@ def terminal_message(message, subject=None, color="green", footer=None, indent=T
     console.print()
 
 
+def render_json(data: Any):
+    """
+    Print nicely formatted representation of a JSON serializable python primitive.
+    """
+    console = Console()
+    console.print()
+    console.print_json(json.dumps(data))
+    console.print()
+
+
 def render_list_results(
     ctx: JobbergateContext,
     envelope: ListResponseEnvelope,
@@ -110,9 +120,8 @@ def render_list_results(
         terminal_message("There are no results to display", subject="Nothing here...")
         return
 
-    console = Console()
     if ctx.raw_output:
-        console.print_json(json.dumps(envelope.results))
+        render_json(envelope.results)
     else:
         if ctx.full_output or hidden_fields is None:
             filtered_results = envelope.results
@@ -129,6 +138,7 @@ def render_list_results(
         for row in filtered_results:
             table.add_row(*[str(v) for v in row.values()])
 
+        console = Console()
         console.print()
         console.print(table)
         console.print()

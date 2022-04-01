@@ -1050,24 +1050,28 @@ async def test_job_submissions_agent_pending__success(
             dict(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub1",
+                job_submission_owner_email="email1@dummy.com",
                 status=JobSubmissionStatus.CREATED,
                 cluster_id="dummy-client",
             ),
             dict(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub2",
+                job_submission_owner_email="email2@dummy.com",
                 status=JobSubmissionStatus.COMPLETED,
                 cluster_id="dummy-client",
             ),
             dict(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub3",
+                job_submission_owner_email="email3@dummy.com",
                 status=JobSubmissionStatus.CREATED,
                 cluster_id="silly-client",
             ),
             dict(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub4",
+                job_submission_owner_email="email4@dummy.com",
                 status=JobSubmissionStatus.CREATED,
                 cluster_id="dummy-client",
             ),
@@ -1084,7 +1088,8 @@ async def test_job_submissions_agent_pending__success(
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert [d["job_submission_name"] for d in data] == ["sub1", "sub4"]
+    assert sorted([d["job_submission_name"] for d in data]) == ["sub1", "sub4"]
+    assert sorted([d["job_submission_owner_email"] for d in data]) == ["email1@dummy.com", "email4@dummy.com"]
 
 
 @pytest.mark.asyncio

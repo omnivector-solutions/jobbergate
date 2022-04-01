@@ -26,7 +26,7 @@ from jobbergate_api.apps.job_submissions.schemas import (
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.security import IdentityClaims, guard
-from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause
+from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause, render_sql
 
 router = APIRouter()
 
@@ -124,9 +124,12 @@ async def job_submission_list(
     """
     List job_submissions for the authenticated user.
     """
+    logger.debug("Fetching job submissions")
     identity_claims = IdentityClaims.from_token_payload(token_payload)
+    logger.debug(f"Extracted identity claims from token: {identity_claims}")
     query = job_submissions_table.select()
 
+    logger.debug("Building query")
     if submit_status:
         query = query.where(job_submissions_table.c.status == submit_status)
 
@@ -147,7 +150,13 @@ async def job_submission_list(
     if sort_field is not None:
         query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
 
-    return await package_response(JobSubmissionResponse, query, pagination)
+
+    logger.debug(f"Query built as: {render_sql(query)}")
+
+    logger.debug("Awaiting query and response package")
+    response = await package_response(JobSubmissionResponse, query, pagination)
+    logger.debug(f"Response built as: {response}")
+    return response
 
 
 @router.delete(
@@ -235,6 +244,7 @@ async def job_submissions_agent_pending(
             columns=[
                 job_submissions_table.c.id,
                 job_submissions_table.c.job_submission_name,
+                job_submissions_table.c.job_submission_owner_email,
                 job_scripts_table.c.job_script_name,
                 job_scripts_table.c.job_script_data_as_string,
                 applications_table.c.application_name,
