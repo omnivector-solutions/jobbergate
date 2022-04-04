@@ -26,7 +26,13 @@ from jobbergate_api.apps.job_submissions.schemas import (
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.security import IdentityClaims, guard
-from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause, render_sql
+from jobbergate_api.storage import (
+    INTEGRITY_CHECK_EXCEPTIONS,
+    database,
+    render_sql,
+    search_clause,
+    sort_clause,
+)
 
 router = APIRouter()
 
@@ -149,7 +155,6 @@ async def job_submission_list(
         query = query.where(search_clause(search, searchable_fields))
     if sort_field is not None:
         query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
-
 
     logger.debug(f"Query built as: {render_sql(query)}")
 
