@@ -180,7 +180,7 @@ def fetch_application_data(
             "GET",
             expected_status=200,
             abort_message=f"Couldn't retrieve application {stub} from API",
-            response_model=ApplicationResponse,
+            response_model_cls=ApplicationResponse,
             support=True,
             params=params,
         ),

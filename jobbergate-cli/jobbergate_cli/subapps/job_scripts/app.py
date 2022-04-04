@@ -41,7 +41,7 @@ style_mapper = StyleMapper(
 app = typer.Typer(help="Commands to interact with job scripts")
 
 
-@app.command()
+@app.command("list")
 @handle_abort
 def list_all(
     ctx: typer.Context,
@@ -76,7 +76,7 @@ def list_all(
             expected_status=200,
             abort_message="Couldn't retrieve job scripts list from API",
             support=True,
-            response_model=ListResponseEnvelope,
+            response_model_cls=ListResponseEnvelope,
             params=params,
         ),
     )
@@ -141,8 +141,8 @@ def create(
         False,
         help="Use default answers (when available) instead of asking the user.",
     ),
-    submit: bool = typer.Option(
-        True,
+    submit: Optional[bool] = typer.Option(
+        None,
         help="Do not ask the user if they want to submit a job.",
     ),
 ):
@@ -179,8 +179,8 @@ def create(
             expected_status=201,
             abort_message="Couldn't create job script",
             support=True,
-            content=request_data.json(),
-            response_model=JobScriptResponse,
+            request_model=request_data,
+            response_model_cls=JobScriptResponse,
         ),
     )
     render_single_result(
@@ -190,8 +190,16 @@ def create(
         title="Created Job Script",
     )
 
-    if not fast:
-        submit = typer.confirm("Would you like to submit this job immediately?")
+    # `submit` will be `None` --submit/--no-submit flag was not set
+    if submit is None:
+
+        # If not running in "fast" mode, ask the user what to do.
+        if not fast:
+            submit = typer.confirm("Would you like to submit this job immediately?")
+
+        # Otherwise, assume that the job script should be submitted immediately
+        else:
+            submit = True
 
     if not submit:
         return
@@ -252,7 +260,7 @@ def update(
             abort_message="Couldn't update job script",
             support=True,
             json=dict(job_script_data_as_string=job_script),
-            response_model=JobScriptResponse,
+            response_model_cls=JobScriptResponse,
         ),
     )
     render_single_result(

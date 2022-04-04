@@ -211,7 +211,7 @@ def refresh_access_token(ctx: JobbergateContext, token_set: TokenSet):
             abort_message="The auth token could not be refreshed. Please try logging in again.",
             abort_subject="EXPIRED ACCESS TOKEN",
             support=True,
-            response_model=TokenSet,
+            response_model_cls=TokenSet,
             data=dict(
                 client_id=settings.AUTH0_CLIENT_ID,
                 audience=settings.AUTH0_AUDIENCE,
@@ -244,7 +244,7 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
             abort_message="There was a problem retrieving a device verification code from the auth provider",
             abort_subject="COULD NOT RETRIEVE TOKEN",
             support=True,
-            response_model=DeviceCodeData,
+            response_model_cls=DeviceCodeData,
             data=dict(
                 client_id=settings.AUTH0_CLIENT_ID,
                 audience=settings.AUTH0_AUDIENCE,
