@@ -6,9 +6,15 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+3.0.0 -- 2022-04-04
+-------------------
 - Removed owner_email from create schemas (this comes from token now)
 - Changed status codes for update routes to 200
 - Added ``migrate`` and ``upgrade`` commands to dev-tools
+- Added endpoints for agent to pull pending jobs and update active jobs
+- Moved dev-tools into their own separate sub-package (not included in builds)
+- Added github action for publishing images to ECR
 
 2.2.9 -- 2022-02-16
 -------------------
