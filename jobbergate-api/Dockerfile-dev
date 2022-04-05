@@ -24,3 +24,5 @@ RUN poetry install
 VOLUME /app/jobbergate_api
 VOLUME /app/dev_tools
 VOLUME /app/alembic
+
+ENTRYPOINT /app/entrypoint.sh

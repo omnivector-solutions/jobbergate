@@ -19,7 +19,11 @@ from jobbergate_api.storage import database, handle_fk_error
 
 subapp = FastAPI()
 subapp.add_middleware(
-    CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"],
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 if settings.SENTRY_DSN and settings.DEPLOY_ENV != DeployEnvEnum.TEST:
@@ -37,7 +41,9 @@ subapp.exception_handler(asyncpg.exceptions.ForeignKeyViolationError)(handle_fk_
 
 
 @subapp.get(
-    "/health", status_code=status.HTTP_204_NO_CONTENT, responses={204: {"description": "API is healthy"}},
+    "/health",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={204: {"description": "API is healthy"}},
 )
 async def health_check():
     """

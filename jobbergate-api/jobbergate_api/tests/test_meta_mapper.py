@@ -49,15 +49,31 @@ def test__call___remaps_fields_when_they_are_present_in_the_schema_being_mapped(
     Test that dictionary fields are remapped if they have entries in the mapper.
     """
     mapper = MetaMapper(
-        foo=MetaField(description="new foo description", example="new foo example",),
-        bar=MetaField(example="new bar example",),
-        baz=MetaField(description="new baz description",),
+        foo=MetaField(
+            description="new foo description",
+            example="new foo example",
+        ),
+        bar=MetaField(
+            example="new bar example",
+        ),
+        baz=MetaField(
+            description="new baz description",
+        ),
     )
     full_instance = dict(
         properties=dict(
-            foo=dict(description="foo description", example="foo example",),
-            bar=dict(description="bar description", example="bar example",),
-            baz=dict(description="baz description", example="baz example",),
+            foo=dict(
+                description="foo description",
+                example="foo example",
+            ),
+            bar=dict(
+                description="bar description",
+                example="bar example",
+            ),
+            baz=dict(
+                description="baz description",
+                example="baz example",
+            ),
         ),
     )
     mapper(full_instance)

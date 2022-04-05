@@ -114,13 +114,16 @@ async def job_submission_get(job_submission_id: int = Query(...)):
 async def job_submission_list(
     pagination: Pagination = Depends(),
     all: Optional[bool] = Query(
-        None, description="If supplied, do not limit job_submissions to only the current user",
+        None,
+        description="If supplied, do not limit job_submissions to only the current user",
     ),
     slurm_job_ids: Optional[str] = Query(
-        None, description="Comma-separated list of slurm-job-ids to match active job_submissions",
+        None,
+        description="Comma-separated list of slurm-job-ids to match active job_submissions",
     ),
     submit_status: Optional[JobSubmissionStatus] = Query(
-        None, description="Limit results to those with matching status",
+        None,
+        description="Limit results to those with matching status",
     ),
     search: Optional[str] = Query(None),
     sort_field: Optional[str] = Query(None),
@@ -256,8 +259,12 @@ async def job_submissions_agent_pending(
             ]
         )
         .select_from(job_submissions_table.join(job_scripts_table).join(applications_table))
-        .where(job_submissions_table.c.status == JobSubmissionStatus.CREATED,)
-        .where(job_submissions_table.c.cluster_id == identity_claims.cluster_id,)
+        .where(
+            job_submissions_table.c.status == JobSubmissionStatus.CREATED,
+        )
+        .where(
+            job_submissions_table.c.cluster_id == identity_claims.cluster_id,
+        )
     )
 
     rows = await database.fetch_all(query)
