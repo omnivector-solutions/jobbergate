@@ -3,7 +3,7 @@ authors = ["Omnivector Solutions <info@omnivector.solutions>"]
 name = "jobbergate-api"
 description = "Jobbergate API"
 license = "MIT"
-version = "2.2.7"
+version = "3.0.0"
 
 [tool.poetry.dependencies]
 python = "^3.8"
