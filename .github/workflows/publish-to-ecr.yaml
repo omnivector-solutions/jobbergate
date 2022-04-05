@@ -1,0 +1,74 @@
+name: Publish image to ECR
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Repository environment name
+        default: 'jobbergate-api-staging'
+        required: true
+        type: choice
+        options:
+          - jobbergate-api-staging
+          - jobbergate-api
+      region:
+        description: AWS region to which upload the package
+        required: true
+        default: 'us-west-2'
+
+jobs:
+  publish:
+    name: Publish to ECR
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Fail if ref is not a tag
+        if: github.ref_type != 'tag'
+        run: |
+          echo "Publish only supported from tag refs!"
+          echo "Got ref_type=${{ github.ref_type }} instead"
+          exit 1
+
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.8
+
+      - uses: Gr1N/setup-poetry@v7
+
+      - id: poetry-package-version
+        name: Get version of project from poetry
+        working-directory: jobbergate-api
+        run: |
+          echo "Poetry version is: $(poetry version --short)"
+          echo "::set-output name=version::$(poetry version --short)"
+
+      - name: Fail if poetry package version doesn't match tag
+        if: ${{ github.ref_name != steps.poetry-package-version.outputs.version }}
+        run: |
+          echo "Poetry package version doesn't match tag!"
+          echo "tag=${{ github.ref_name }}, version=${{ steps.poetry-package-version.outputs.version }}"
+          exit 1
+
+      - name: Setup AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id    : ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_ID }}
+          aws-region           : ${{ github.event.inputs.region }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ github.event.inputs.repository }}
+        run: |
+          IMAGE_TAG=${{ github.ref_name }}
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
