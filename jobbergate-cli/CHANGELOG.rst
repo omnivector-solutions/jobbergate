@@ -7,6 +7,10 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+3.0.1 -- 2022-04-05
+-------------------
+- Fixed publish github action
+
 3.0.0 -- 2022-04-04
 -------------------
 - Complete re-write of the Jobbergate CLI
