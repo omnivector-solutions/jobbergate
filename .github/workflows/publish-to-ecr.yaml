@@ -10,7 +10,7 @@ on:
         type: choice
         options:
           - jobbergate-api-staging
-          - jobbergate-api
+          - jobbergate-api-production
       region:
         description: AWS region to which upload the package
         required: true
