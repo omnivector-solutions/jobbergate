@@ -17,7 +17,10 @@ from jobbergate_api.storage import database, fetch_instance
 
 @pytest.mark.asyncio
 async def test_create_application(
-    fill_application_data, client, inject_security_header, time_frame,
+    fill_application_data,
+    client,
+    inject_security_header,
+    time_frame,
 ):
     """
     Test POST /applications/ correctly creates an application.
@@ -61,7 +64,9 @@ async def test_create_application(
 
 @pytest.mark.asyncio
 async def test_create_application_bad_permission(
-    application_data, client, inject_security_header,
+    application_data,
+    client,
+    inject_security_header,
 ):
     """
     Test that it is not possible to create application without proper permission.
@@ -84,7 +89,9 @@ async def test_create_application_bad_permission(
 
 @pytest.mark.asyncio
 async def test_create_without_application_name(
-    application_data, client, inject_security_header,
+    application_data,
+    client,
+    inject_security_header,
 ):
     """
     Test that is not possible to create an application without the required body fields.
@@ -106,7 +113,9 @@ async def test_create_without_application_name(
 
 @pytest.mark.asyncio
 async def test_delete_application_no_file_uploaded(
-    client, application_data, inject_security_header,
+    client,
+    application_data,
+    inject_security_header,
 ):
     """
     Test DELETE /applications/<id> correctly deletes an application.
@@ -115,7 +124,10 @@ async def test_delete_application_no_file_uploaded(
     /applications/<id> endpoint. We show this by asserting that the application no longer exists in the
     database after the delete request is made and the correct status code is returned.
     """
-    inserted_id = await database.execute(query=applications_table.insert(), values=application_data,)
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=application_data,
+    )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
@@ -131,7 +143,9 @@ async def test_delete_application_no_file_uploaded(
 
 @pytest.mark.asyncio
 async def test_delete_application_with_uploaded_file(
-    client, application_data, inject_security_header,
+    client,
+    application_data,
+    inject_security_header,
 ):
     """
     Test DELETE /applications/<id> correctly deletes an application and it's file.
@@ -141,7 +155,10 @@ async def test_delete_application_with_uploaded_file(
     database after the delete request is made, the correct status code is returned and the correct boto3
     method was called.
     """
-    inserted_id = await database.execute(query=applications_table.insert(), values=application_data,)
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=application_data,
+    )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
@@ -157,7 +174,9 @@ async def test_delete_application_with_uploaded_file(
 
 @pytest.mark.asyncio
 async def test_delete_application_by_identifier(
-    client, fill_application_data, inject_security_header,
+    client,
+    fill_application_data,
+    inject_security_header,
 ):
     """
     Test DELETE /applications?identifier=<identifier> correctly deletes an application and it's file.
@@ -170,7 +189,8 @@ async def test_delete_application_by_identifier(
     await database.execute(
         query=applications_table.insert(),
         values=fill_application_data(
-            application_owner_email="owner1@org.com", application_identifier="test-identifier",
+            application_owner_email="owner1@org.com",
+            application_identifier="test-identifier",
         ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -188,7 +208,9 @@ async def test_delete_application_by_identifier(
 
 @pytest.mark.asyncio
 async def test_delete_application_bad_permission(
-    client, application_data, inject_security_header,
+    client,
+    application_data,
+    inject_security_header,
 ):
     """
     Test that it is not possible to delete application without proper permission.
@@ -197,7 +219,10 @@ async def test_delete_application_bad_permission(
     endpoint. We show this by asserting that the application still exists in the database after the delete
     request is made and the correct status code is returned.
     """
-    inserted_id = await database.execute(query=applications_table.insert(), values=application_data,)
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=application_data,
+    )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
@@ -224,14 +249,19 @@ async def test_delete_application_not_found(client, inject_security_header):
 
 @pytest.mark.asyncio
 async def test_delete_application__fk_error(
-    client, application_data, inject_security_header,
+    client,
+    application_data,
+    inject_security_header,
 ):
     """
     Test DELETE /applications/<id> correctly returns a 409 when a foreign-key error occurs.
 
     Test that a helpful message when a delete is blocked by a foreign-key constraint.
     """
-    inserted_id = await database.execute(query=applications_table.insert(), values=application_data,)
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=application_data,
+    )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
@@ -256,7 +286,9 @@ async def test_delete_application__fk_error(
 
 @pytest.mark.asyncio
 async def test_get_application_by_id(
-    client, fill_application_data, inject_security_header,
+    client,
+    fill_application_data,
+    inject_security_header,
 ):
     """
     Test GET /applications/<id>.
@@ -267,10 +299,12 @@ async def test_get_application_by_id(
     for the given application id.
     """
     inserted_id = await database.execute(
-        query=applications_table.insert(), values=fill_application_data(application_identifier="app1"),
+        query=applications_table.insert(),
+        values=fill_application_data(application_identifier="app1"),
     )
     await database.execute(
-        query=applications_table.insert(), values=fill_application_data(application_identifier="app2"),
+        query=applications_table.insert(),
+        values=fill_application_data(application_identifier="app2"),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 2
@@ -300,7 +334,9 @@ async def test_get_application_by_id_invalid(client, inject_security_header):
 
 @pytest.mark.asyncio
 async def test_get_application_by_id_bad_permission(
-    client, application_data, inject_security_header,
+    client,
+    application_data,
+    inject_security_header,
 ):
     """
     Test that it is not possible to get application without proper permission.
@@ -309,7 +345,10 @@ async def test_get_application_by_id_bad_permission(
     user don't have the proper permission. We show this by asserting that the status code
     returned is what we would expect (403).
     """
-    inserted_id = await database.execute(query=applications_table.insert(), values=application_data,)
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=application_data,
+    )
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.get(f"/jobbergate/applications/{inserted_id}")
@@ -318,7 +357,9 @@ async def test_get_application_by_id_bad_permission(
 
 @pytest.mark.asyncio
 async def test_get_applications__no_params(
-    client, fill_all_application_data, inject_security_header,
+    client,
+    fill_all_application_data,
+    inject_security_header,
 ):
     """
     Test GET /applications returns only applications owned by the user making the request.
@@ -352,12 +393,18 @@ async def test_get_applications__no_params(
     ]
 
     pagination = data.get("pagination")
-    assert pagination == dict(total=3, start=None, limit=None,)
+    assert pagination == dict(
+        total=3,
+        start=None,
+        limit=None,
+    )
 
 
 @pytest.mark.asyncio
 async def test_get_application___bad_permission(
-    client, fill_all_application_data, inject_security_header,
+    client,
+    fill_all_application_data,
+    inject_security_header,
 ):
     """
     Test that it is not possible to list applications without proper permission.
@@ -384,7 +431,9 @@ async def test_get_application___bad_permission(
 
 @pytest.mark.asyncio
 async def test_get_applications__with_user_param(
-    client, fill_all_application_data, inject_security_header,
+    client,
+    fill_all_application_data,
+    inject_security_header,
 ):
     """
     Test applications list doesn't include applications owned by other users with `user` param.
@@ -397,9 +446,18 @@ async def test_get_applications__with_user_param(
     await database.execute_many(
         query=applications_table.insert(),
         values=fill_all_application_data(
-            dict(application_identifier="app1", application_owner_email="owner1@org.com",),
-            dict(application_identifier="app2", application_owner_email="owner1@org.com",),
-            dict(application_identifier="app3", application_owner_email="owner999@org.com",),
+            dict(
+                application_identifier="app1",
+                application_owner_email="owner1@org.com",
+            ),
+            dict(
+                application_identifier="app2",
+                application_owner_email="owner1@org.com",
+            ),
+            dict(
+                application_identifier="app3",
+                application_owner_email="owner999@org.com",
+            ),
         ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -414,7 +472,11 @@ async def test_get_applications__with_user_param(
     assert [d["application_identifier"] for d in results] == ["app1", "app2", "app3"]
 
     pagination = data.get("pagination")
-    assert pagination == dict(total=3, start=None, limit=None,)
+    assert pagination == dict(
+        total=3,
+        start=None,
+        limit=None,
+    )
 
     response = await client.get("/jobbergate/applications?user=true")
     assert response.status_code == status.HTTP_200_OK
@@ -424,12 +486,18 @@ async def test_get_applications__with_user_param(
     assert [d["application_identifier"] for d in results] == ["app1", "app2"]
 
     pagination = data.get("pagination")
-    assert pagination == dict(total=2, start=None, limit=None,)
+    assert pagination == dict(
+        total=2,
+        start=None,
+        limit=None,
+    )
 
 
 @pytest.mark.asyncio
 async def test_get_applications__with_all_param(
-    client, fill_all_application_data, inject_security_header,
+    client,
+    fill_all_application_data,
+    inject_security_header,
 ):
     """
     Test that listing applications, when all=True, contains applications without identifiers.
@@ -460,7 +528,11 @@ async def test_get_applications__with_all_param(
     assert [d["application_identifier"] for d in results] == ["app1", "app3"]
 
     pagination = data.get("pagination")
-    assert pagination == dict(total=2, start=None, limit=None,)
+    assert pagination == dict(
+        total=2,
+        start=None,
+        limit=None,
+    )
 
     response = await client.get("/jobbergate/applications/?all=True")
     assert response.status_code == status.HTTP_200_OK
@@ -468,12 +540,18 @@ async def test_get_applications__with_all_param(
     data = response.json()
     results = data.get("results")
     pagination = data.get("pagination")
-    assert pagination == dict(total=3, start=None, limit=None,)
+    assert pagination == dict(
+        total=3,
+        start=None,
+        limit=None,
+    )
 
 
 @pytest.mark.asyncio
 async def test_get_applications__with_search_param(
-    client, fill_all_application_data, inject_security_header,
+    client,
+    fill_all_application_data,
+    inject_security_header,
 ):
     """
     Test that listing applications, when search=<search terms>, returns matches.
@@ -536,7 +614,9 @@ async def test_get_applications__with_search_param(
 
 @pytest.mark.asyncio
 async def test_get_applications__with_sort_params(
-    client, fill_all_application_data, inject_security_header,
+    client,
+    fill_all_application_data,
+    inject_security_header,
 ):
     """
     Test that listing applications with sort params returns correctly ordered matches.
@@ -588,7 +668,9 @@ async def test_get_applications__with_sort_params(
 
 @pytest.mark.asyncio
 async def test_get_applications__with_pagination(
-    client, fill_all_application_data, inject_security_header,
+    client,
+    fill_all_application_data,
+    inject_security_header,
 ):
     """
     Test that listing applications works with pagination.
@@ -619,7 +701,11 @@ async def test_get_applications__with_pagination(
     assert [d["application_identifier"] for d in results] == ["app1"]
 
     pagination = data.get("pagination")
-    assert pagination == dict(total=5, start=0, limit=1,)
+    assert pagination == dict(
+        total=5,
+        start=0,
+        limit=1,
+    )
 
     response = await client.get("/jobbergate/applications/?start=1&limit=2&all=true")
     assert response.status_code == status.HTTP_200_OK
@@ -630,7 +716,11 @@ async def test_get_applications__with_pagination(
     assert [d["application_identifier"] for d in results] == ["app3", "app4"]
 
     pagination = data.get("pagination")
-    assert pagination == dict(total=5, start=1, limit=2,)
+    assert pagination == dict(
+        total=5,
+        start=1,
+        limit=2,
+    )
 
     response = await client.get("/jobbergate/applications/?start=2&limit=2&all=true")
     assert response.status_code == status.HTTP_200_OK
@@ -641,12 +731,19 @@ async def test_get_applications__with_pagination(
     assert [d["application_identifier"] for d in results] == ["app5"]
 
     pagination = data.get("pagination")
-    assert pagination == dict(total=5, start=2, limit=2,)
+    assert pagination == dict(
+        total=5,
+        start=2,
+        limit=2,
+    )
 
 
 @pytest.mark.asyncio
 async def test_update_application(
-    client, fill_application_data, inject_security_header, time_frame,
+    client,
+    fill_application_data,
+    inject_security_header,
+    time_frame,
 ):
     """
     Test that an application is updated via PUT.
@@ -697,7 +794,9 @@ async def test_update_application(
 
 @pytest.mark.asyncio
 async def test_update_application_bad_permission(
-    client, fill_application_data, inject_security_header,
+    client,
+    fill_application_data,
+    inject_security_header,
 ):
     """
     Test that it is not possible to update applications without proper permission.
@@ -740,7 +839,12 @@ async def test_update_application_bad_permission(
 
 @pytest.mark.asyncio
 async def test_upload_file__works_with_small_file(
-    client, inject_security_header, fill_application_data, tweak_settings, make_dummy_file, make_files_param,
+    client,
+    inject_security_header,
+    fill_application_data,
+    tweak_settings,
+    make_dummy_file,
+    make_files_param,
 ):
     """
     Test that a file is uploaded.
@@ -763,7 +867,8 @@ async def test_upload_file__works_with_small_file(
         with mock.patch.object(s3man, "s3_client") as mock_s3:
             with make_files_param(dummy_file) as files_param:
                 response = await client.post(
-                    f"/jobbergate/applications/{inserted_id}/upload", files=files_param,
+                    f"/jobbergate/applications/{inserted_id}/upload",
+                    files=files_param,
                 )
 
     assert response.status_code == status.HTTP_201_CREATED
@@ -775,7 +880,11 @@ async def test_upload_file__works_with_small_file(
 
 @pytest.mark.asyncio
 async def test_upload_file__fails_with_413_on_large_file(
-    client, inject_security_header, tweak_settings, make_dummy_file, make_files_param,
+    client,
+    inject_security_header,
+    tweak_settings,
+    make_dummy_file,
+    make_files_param,
 ):
     """
     Test that upload fails when the file is too large.
@@ -784,14 +893,19 @@ async def test_upload_file__fails_with_413_on_large_file(
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
         with make_files_param(dummy_file) as files_param:
-            response = await client.post("/jobbergate/applications/1/upload", files=files_param,)
+            response = await client.post(
+                "/jobbergate/applications/1/upload",
+                files=files_param,
+            )
 
     assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
 
 
 @pytest.mark.asyncio
 async def test_delete_file(
-    client, inject_security_header, fill_application_data,
+    client,
+    inject_security_header,
+    fill_application_data,
 ):
     """
     Test that a file is uploaded.

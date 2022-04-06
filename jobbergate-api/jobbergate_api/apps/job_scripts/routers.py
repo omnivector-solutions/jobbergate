@@ -202,13 +202,16 @@ async def job_script_get(job_script_id: int = Query(...)):
 
     if not job_script:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"JobScript with id={job_script_id} not found.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"JobScript with id={job_script_id} not found.",
         )
     return job_script
 
 
 @router.get(
-    "/job-scripts", description="Endpoint to list job_scripts", responses=ok_response(JobScriptResponse),
+    "/job-scripts",
+    description="Endpoint to list job_scripts",
+    responses=ok_response(JobScriptResponse),
 )
 async def job_script_list(
     pagination: Pagination = Depends(),
@@ -254,7 +257,8 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     raw_job_script = await database.fetch_one(get_query)
     if not raw_job_script:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"JobScript with id={job_script_id} not found.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"JobScript with id={job_script_id} not found.",
         )
 
     delete_query = job_scripts_table.delete().where(where_stmt)
@@ -285,7 +289,8 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
 
     if result is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"JobScript with id={job_script_id} not found.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"JobScript with id={job_script_id} not found.",
         )
 
     return result

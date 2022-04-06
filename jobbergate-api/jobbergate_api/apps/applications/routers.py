@@ -41,7 +41,8 @@ async def applications_create(
     """
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     create_dict = dict(
-        **application.dict(exclude_unset=True), application_owner_email=identity_claims.user_email,
+        **application.dict(exclude_unset=True),
+        application_owner_email=identity_claims.user_email,
     )
 
     try:
@@ -102,7 +103,8 @@ async def applications_delete_upload(
     raw_application = await database.fetch_one(select_query)
     if not raw_application:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Application {application_id=} not found.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application {application_id=} not found.",
         )
     application = ApplicationResponse.parse_obj(raw_application)
 
@@ -138,7 +140,8 @@ async def application_delete(
     raw_application = await database.fetch_one(get_query)
     if not raw_application:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Application {application_id=} not found.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application {application_id=} not found.",
         )
     delete_query = applications_table.delete().where(where_stmt)
     await database.execute(delete_query)
@@ -169,7 +172,8 @@ async def application_delete_by_identifier(
     raw_application = await database.fetch_one(get_query)
     if not raw_application:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Application {identifier=} not found.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application {identifier=} not found.",
         )
     id_ = raw_application["id"]
     delete_query = applications_table.delete().where(where_stmt)
@@ -185,7 +189,9 @@ async def application_delete_by_identifier(
 
 
 @router.get(
-    "/applications", description="Endpoint to list applications", responses=ok_response(ApplicationResponse),
+    "/applications",
+    description="Endpoint to list applications",
+    responses=ok_response(ApplicationResponse),
 )
 async def applications_list(
     user: bool = Query(False),
@@ -227,7 +233,8 @@ async def applications_get_by_id(application_id: int = Query(...)):
     application_data = await database.fetch_one(query)
     if not application_data:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=f"Application {application_id=} not found.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application {application_id=} not found.",
         )
     return application_data
 
@@ -240,7 +247,8 @@ async def applications_get_by_id(application_id: int = Query(...)):
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def application_update(
-    application_id: int, application: ApplicationUpdateRequest,
+    application_id: int,
+    application: ApplicationUpdateRequest,
 ):
     """
     Update an application given it's id.

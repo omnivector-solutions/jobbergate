@@ -31,7 +31,9 @@ class Pagination(BaseModel):
         """,
     )
     limit: int = Field(
-        10, gt=0, description="Limit of items to include per page. Must be greater than 0",
+        10,
+        gt=0,
+        description="Limit of items to include per page. Must be greater than 0",
     )
 
     def dict(self):
@@ -65,7 +67,9 @@ class Response(GenericModel, Generic[TResponseModel]):
     pagination: ResponsePagination
 
 
-def ok_response(_: Type[TResponseModel],) -> Dict[Union[int, str], Dict[str, Type[Response[TResponseModel]]]]:
+def ok_response(
+    _: Type[TResponseModel],
+) -> Dict[Union[int, str], Dict[str, Type[Response[TResponseModel]]]]:
     """
     Package up a response type compatible with FastAPI's ``responses`` argument.
 

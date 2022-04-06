@@ -84,7 +84,9 @@ async def inject_security_header(client, build_rs256_token):
     """
 
     def _helper(
-        owner_email: str, *permissions: typing.List[str], cluster_id: typing.Optional[str] = None,
+        owner_email: str,
+        *permissions: typing.List[str],
+        cluster_id: typing.Optional[str] = None,
     ):
         claim_overrides = {
             settings.IDENTITY_CLAIMS_KEY: {"user_email": owner_email, "cluster_id": cluster_id},

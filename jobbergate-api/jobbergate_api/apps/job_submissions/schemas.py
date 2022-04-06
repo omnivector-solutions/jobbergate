@@ -10,28 +10,37 @@ from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
 job_submission_meta_mapper = MetaMapper(
-    id=MetaField(description="The unique database identifier for the instance", example=101,),
+    id=MetaField(
+        description="The unique database identifier for the instance",
+        example=101,
+    ),
     created_at=MetaField(
-        description="The timestamp for when the instance was created", example="2021-12-28 23:13:00",
+        description="The timestamp for when the instance was created",
+        example="2021-12-28 23:13:00",
     ),
     updated_at=MetaField(
-        description="The timestamp for when the instance was last updated", example="2021-12-28 23:52:00",
+        description="The timestamp for when the instance was last updated",
+        example="2021-12-28 23:52:00",
     ),
     job_submission_name=MetaField(
-        description="The unique name of the job submission", example="test-job-submission-77",
+        description="The unique name of the job submission",
+        example="test-job-submission-77",
     ),
     job_submission_description=MetaField(
         description="A text field providing a human-friendly description of the job_submission",
         example="Submission for the Foo job on sample 99 using the bar variant",
     ),
     job_submission_owner_email=MetaField(
-        description="The email of the owner/creator of the instance", example="tucker@omnivector.solutions",
+        description="The email of the owner/creator of the instance",
+        example="tucker@omnivector.solutions",
     ),
     job_script_id=MetaField(
-        description="The foreign-key to the job_script from which this instance was created", example=71,
+        description="The foreign-key to the job_script from which this instance was created",
+        example=71,
     ),
     slurm_job_id=MetaField(
-        description="The id for the slurm job executing this job_submission", example="1883",
+        description="The id for the slurm job executing this job_submission",
+        example="1883",
     ),
     cluster_id=MetaField(
         description="The cluster_id of the cluster where this job submission should execute",

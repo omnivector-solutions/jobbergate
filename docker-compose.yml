@@ -4,7 +4,8 @@ services:
   server:
     build:
       context: ./jobbergate-api
-      dockerfile: Dockerfile-dev
+      # dockerfile: Dockerfile-dev
+      dockerfile: Dockerfile
       args:
         - PYPI_PASSWORD=${PYPI_PASSWORD}
     networks:
@@ -13,7 +14,6 @@ services:
       - ./jobbergate-api/jobbergate_api:/app/jobbergate_api
       - ./jobbergate-api/dev_tools:/app/dev_tools
       - ./jobbergate-api/alembic:/app/alembic
-    entrypoint: /app/entrypoint.sh
     environment:
       - DATABASE_HOST=${DATABASE_HOST:-db}
       - DATABASE_USER=${DATABASE_USER:-compose-db-user}
@@ -33,7 +33,8 @@ services:
       - ARMASEC_AUDIENCE=${AUTH0_AUDIENCE}
       - ARMASEC_DEBUG=${ARMASEC_DEBUG}
     ports:
-      - 8000:8000
+      # - 8000:8000
+      - 8000:80
 
   db:
     image: postgres

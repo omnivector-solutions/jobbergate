@@ -46,7 +46,9 @@ class S3Manager:
         """
         key = self._get_key(app_id)
         self.s3_client.put_object(
-            Body=upload_file.file, Bucket=self.bucket_name, Key=key,
+            Body=upload_file.file,
+            Bucket=self.bucket_name,
+            Key=key,
         )
         return key
 

@@ -9,14 +9,22 @@ from pydantic import BaseModel
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
 job_script_meta_mapper = MetaMapper(
-    id=MetaField(description="The unique database identifier for the instance", example=101,),
+    id=MetaField(
+        description="The unique database identifier for the instance",
+        example=101,
+    ),
     created_at=MetaField(
-        description="The timestamp for when the instance was created", example="2021-12-28 23:13:00",
+        description="The timestamp for when the instance was created",
+        example="2021-12-28 23:13:00",
     ),
     updated_at=MetaField(
-        description="The timestamp for when the instance was last updated", example="2021-12-28 23:52:00",
+        description="The timestamp for when the instance was last updated",
+        example="2021-12-28 23:52:00",
     ),
-    job_script_name=MetaField(description="The unique name of the instance", example="test-job-script-88",),
+    job_script_name=MetaField(
+        description="The unique name of the instance",
+        example="test-job-script-88",
+    ),
     job_script_description=MetaField(
         description="A text field providing a human-friendly description of the job_script",
         example="This job_scripts runs an Foo job using the bar variant",
@@ -33,13 +41,16 @@ job_script_meta_mapper = MetaMapper(
         ),
     ),
     job_script_owner_email=MetaField(
-        description="The email of the owner/creator of the instance", example="tucker@omnivector.solutions",
+        description="The email of the owner/creator of the instance",
+        example="tucker@omnivector.solutions",
     ),
     application_id=MetaField(
-        description="The foreign-key to the application from which this instance was created", example=71,
+        description="The foreign-key to the application from which this instance was created",
+        example=71,
     ),
     sbatch_params=MetaField(
-        description="SBATCH parameters to inject into the job_script", example=["alpha", "beta", "delta"],
+        description="SBATCH parameters to inject into the job_script",
+        example=["alpha", "beta", "delta"],
     ),
     param_dict=MetaField(
         description="Parameters to use when rendering the job_script jinja2 template",
