@@ -10,7 +10,10 @@ from jobbergate_cli.compat import add_legacy_compatible_commands
 def cleanup_deprecated():
     yield
     for module in list(sys.modules.keys()):
+        print("MODULE: ", module)
         if "appform" in module:
+            sys.modules.pop(module)
+        if "jobberappslib" in module:
             sys.modules.pop(module)
         if "jobbergate_cli.application_base" in module:
             sys.modules.pop(module)
@@ -55,6 +58,20 @@ def test_import_appform_from_jobbergate_cli_warns_and_gives_you_questions_instea
 def test_import_appform_from_jobbergate_cli_raises_an_ImportError_when_not_in_compatibility_mode(cleanup_deprecated):
     with pytest.raises(ImportError):
         from jobbergate_cli import appform  # noqa
+
+
+def test_import_jobberappslib__from_jobbergate_cli_with_direct_import_of_functions(tweak_settings, cleanup_deprecated):
+    with tweak_settings(JOBBERGATE_COMPATIBILITY_MODE=True):
+        with pytest.warns(DeprecationWarning, match="Importing jobberappslib from jobbergate_cli is deprecated"):
+            from jobbergate_cli.jobberappslib import get_running_jobs as dep_rj
+            from jobbergate_cli.subapps.applications.application_helpers import get_running_jobs as new_rj
+
+            assert dep_rj is new_rj
+
+
+def test_import_jobberappslib_from_jobbergate_cli_raises_ImportError_when_not_in_compatibility_mode(cleanup_deprecated):
+    with pytest.raises(ImportError):
+        from jobbergate_cli.jobberappslib import get_running_jobs  # noqa
 
 
 def test_import_application_base_from_jobbergate_cli_warns_and_imports_from_subapp_when_in_compatibility_mode(
