@@ -171,7 +171,7 @@ def fetch_application_data(
     # Make static type checkers happy
     assert jg_ctx.client is not None
 
-    stub = f"{id=}" if id is not None else f"{identifier=}"
+    stub = f"id={id}" if id is not None else f"identifier={identifier}"
     return cast(
         ApplicationResponse,
         make_request(

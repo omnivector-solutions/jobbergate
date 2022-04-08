@@ -2,10 +2,10 @@
 Provide main entry point for the Jobbergate CLI App.
 """
 
-from importlib.metadata import version as package_version
 from typing import Optional
 
 import httpx
+import importlib_metadata
 import jose
 import pyperclip
 import typer
@@ -52,7 +52,7 @@ def main(
     More information can be shown for each command listed below by running it with the --help option.
     """
     if version:
-        typer.echo(package_version("jobbergate-cli"))
+        typer.echo(importlib_metadata.version("jobbergate-cli"))
         raise typer.Exit()
 
     if ctx.invoked_subcommand is None:
