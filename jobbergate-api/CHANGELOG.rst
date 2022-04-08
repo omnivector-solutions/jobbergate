@@ -6,11 +6,11 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+3.0.1 -- 2022-04-08
+-------------------
 - Revised production dockerfile to not use gunicorn
 - Updated some dependencies
-
-3.0.1 -- 2022-04-05
--------------------
 - Fixed publish github action
 
 3.0.0 -- 2022-04-04
