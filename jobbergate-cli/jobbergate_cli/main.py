@@ -14,7 +14,7 @@ from jobbergate_cli.auth import clear_token_cache, fetch_auth_tokens, init_perso
 from jobbergate_cli.config import settings
 from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.logging import init_logs, init_sentry
-from jobbergate_cli.render import terminal_message, render_json
+from jobbergate_cli.render import render_json, terminal_message
 from jobbergate_cli.schemas import JobbergateContext, Persona, TokenSet
 from jobbergate_cli.text_tools import conjoin
 

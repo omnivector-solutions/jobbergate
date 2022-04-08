@@ -85,6 +85,7 @@ module = [
     "pyperclip",
     "inquirer.*",
     "jose.*",
+    "pep562",
 ]
 ignore_missing_imports = true
 
