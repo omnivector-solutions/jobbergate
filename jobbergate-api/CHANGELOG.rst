@@ -7,6 +7,10 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 
+3.0.2 -- 2022-04-08
+-------------------
+- Fixed compatiblity issues with python 3.6 in CLI
+
 3.0.1 -- 2022-04-08
 -------------------
 - Revised production dockerfile to not use gunicorn
