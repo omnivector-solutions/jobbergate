@@ -2,10 +2,10 @@
 Provide main entry point for the Jobbergate CLI App.
 """
 
-from importlib.metadata import version as package_version
 from typing import Optional
 
 import httpx
+import importlib_metadata
 import jose
 import pyperclip
 import typer
@@ -14,7 +14,7 @@ from jobbergate_cli.auth import clear_token_cache, fetch_auth_tokens, init_perso
 from jobbergate_cli.config import settings
 from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.logging import init_logs, init_sentry
-from jobbergate_cli.render import terminal_message, render_json
+from jobbergate_cli.render import render_json, terminal_message
 from jobbergate_cli.schemas import JobbergateContext, Persona, TokenSet
 from jobbergate_cli.text_tools import conjoin
 
@@ -52,7 +52,7 @@ def main(
     More information can be shown for each command listed below by running it with the --help option.
     """
     if version:
-        typer.echo(package_version("jobbergate-cli"))
+        typer.echo(importlib_metadata.version("jobbergate-cli"))
         raise typer.Exit()
 
     if ctx.invoked_subcommand is None:

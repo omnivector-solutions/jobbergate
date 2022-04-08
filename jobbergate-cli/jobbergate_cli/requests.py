@@ -113,7 +113,7 @@ def make_request(
     if request_model is not None:
         _deserialize_request_model(request_model, request_kwargs, abort_message, abort_subject)
 
-    logger.debug(f"Making request to {url_path=}")
+    logger.debug(f"Making request to url_path={url_path}")
     request = client.build_request(method, url_path, **request_kwargs)
 
     # Look for the request body in the request_kwargs

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jobbergate-cli"
-version = "3.0.1"
+version = "3.0.2"
 description = "Jobbergate CLI Client"
 authors = ["Omnivector Solutions <info@omnivector.solutions>"]
 license = "MIT"
@@ -25,6 +25,8 @@ py-buzz = "^3.1.0"
 rich = "^11.2.0"
 typer = "^0.4.0"
 pyperclip = "^1.8.2"
+importlib-metadata = "^4.2"
+pep562 = "^1.1"
 
 [tool.poetry.dev-dependencies]
 black = "^21.9b0"
@@ -83,6 +85,7 @@ module = [
     "pyperclip",
     "inquirer.*",
     "jose.*",
+    "pep562",
 ]
 ignore_missing_imports = true
 
