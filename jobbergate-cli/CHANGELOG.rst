@@ -7,6 +7,11 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+3.0.4 -- 2022-04-11
+-------------------
+- Made supplying param_dict optional in API job-scripts create.
+- Included some example scripts for working with API directly.
+
 3.0.3 -- 2022-04-08
 -------------------
 - Restored jobberappslib (with deprecation warnings as appropriate)

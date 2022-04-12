@@ -15,7 +15,7 @@ def application_data():
         "application_owner_email": "test@email.com",
         "application_name": "test_name",
         "application_file": "the\nfile",
-        "application_config": "the configuration is here",
+        "application_config": "{}",
     }
 
 

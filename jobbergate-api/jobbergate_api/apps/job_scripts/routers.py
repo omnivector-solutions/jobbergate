@@ -12,6 +12,7 @@ from botocore.exceptions import BotoCoreError
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from jinja2 import Template
 from loguru import logger
+from yaml import safe_load
 
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import ApplicationResponse
@@ -169,8 +170,15 @@ async def job_script_create(
         job_script_owner_email=identity_claims.user_email,
     )
 
+    # Use application_config from the application as a baseline of defaults
+    print("APP CONFIG: ", application.application_config)
+    param_dict = safe_load(application.application_config)
+
+    # User supplied param dict is optional and may override defaults
+    param_dict.update(**job_script.param_dict)
+
     logger.debug("Rendering job_script data as string")
-    job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, job_script.param_dict)
+    job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, param_dict)
 
     sbatch_params = create_dict.pop("sbatch_params", [])
     create_dict["job_script_data_as_string"] = inject_sbatch_params(job_script_data_as_string, sbatch_params)
