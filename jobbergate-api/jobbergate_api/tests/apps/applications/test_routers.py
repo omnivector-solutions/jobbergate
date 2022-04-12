@@ -692,7 +692,9 @@ async def test_get_applications__with_pagination(
     assert count[0][0] == 5
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
-    response = await client.get("/jobbergate/applications/?start=0&limit=1&all=true")
+    response = await client.get(
+        "/jobbergate/applications/?start=0&limit=1&all=true&sort_field=application_identifier"
+    )
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()

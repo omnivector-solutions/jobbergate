@@ -4,6 +4,6 @@
 #SBATCH -t 60
 
 print("I am a very, very dumb job script")
-print("foo='{{foo}}'")
-print("bar='{{bar}}'")
-print("baz='{{baz}}'")
+print("foo={{ data['foo'] }}")
+print("bar={{ data['bar'] }}")
+print("baz={{ data['baz'] }}")
