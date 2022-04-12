@@ -49,7 +49,7 @@ def clear_nextgen_db():
 
 
 @app.command()
-def migrate():
+def migrate(applications_only: bool = False):
     """
     Migrates data from the legacy database to the nextgen database.
     """
@@ -62,11 +62,12 @@ def migrate():
         legacy_applications = pull_applications(legacy_db)
         applications_map = migrate_applications(nextgen_db, legacy_applications, user_map)
 
-        legacy_job_scripts = pull_job_scripts(legacy_db)
-        job_scripts_map = migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, applications_map)
+        if not applications_only:
+            legacy_job_scripts = pull_job_scripts(legacy_db)
+            job_scripts_map = migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, applications_map)
 
-        legacy_job_submissions = pull_job_submissions(legacy_db)
-        migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map, job_scripts_map)
+            legacy_job_submissions = pull_job_submissions(legacy_db)
+            migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map, job_scripts_map)
 
         transferred_ids = transfer_s3(legacy_s3man, nextgen_s3man, applications_map)
 

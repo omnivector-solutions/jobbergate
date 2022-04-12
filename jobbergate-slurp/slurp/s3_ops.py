@@ -152,6 +152,7 @@ def transfer_s3(legacy_s3man, nextgen_s3man, applications_map):
         nextgen_s3man.put(nextgen_key, legacy_obj)
         transferred_ids.append(nextgen_application_id)
         successful_transfers += 1
+        logger.debug(f"Migrated application from {legacy_application_id} to {nextgen_application_id}")
     logger.debug(f"Skipped {bad_pattern_skips} objects due to unparsable key")
     logger.debug(f"Skipped {missing_id_skips} objects due to missing application_id")
     logger.debug(f"Finished transfering {successful_transfers} objects")

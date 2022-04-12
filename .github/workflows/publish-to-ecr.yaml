@@ -7,10 +7,6 @@ on:
         description: Repository environment name
         default: 'jobbergate-api-staging'
         required: true
-        type: choice
-        options:
-          - jobbergate-api-staging
-          - jobbergate-api-production
       region:
         description: AWS region to which upload the package
         required: true
