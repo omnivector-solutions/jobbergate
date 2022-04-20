@@ -2,6 +2,7 @@
 Provide a ``typer`` app that can interact with Job Submission data in a cruddy manner.
 """
 
+from pathlib import Path
 from typing import Any, Dict, Optional, cast
 
 import typer
@@ -43,6 +44,15 @@ def create(
         ...,
         help="The id of the job_script from which to create the job submission",
     ),
+    execution_directory: Optional[Path] = typer.Option(
+        None,
+        help="""
+            The path on the cluster where the job script should be executed.
+            If provided as a relative path, it will be converted as an absolute path from your current
+            working directory. If you use "~" to denote your home directory, the path will be expanded to an absolute
+            path for your home directory on *this* machine.
+        """,
+    ),
 ):
     """
     Create a new job script.
@@ -52,7 +62,13 @@ def create(
     # Make static type checkers happy
     assert jg_ctx.client is not None, "Client is uninitialized"
 
-    result = create_job_submission(jg_ctx, job_script_id, name, description=description)
+    result = create_job_submission(
+        jg_ctx,
+        job_script_id,
+        name,
+        description=description,
+        execution_directory=execution_directory,
+    )
     render_single_result(
         jg_ctx,
         result,

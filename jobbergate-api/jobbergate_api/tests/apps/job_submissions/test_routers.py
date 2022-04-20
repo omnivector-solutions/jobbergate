@@ -1,6 +1,8 @@
 """
 Tests for the /job-submissions/ endpoint.
 """
+import pathlib
+
 import pytest
 from fastapi import status
 
@@ -71,6 +73,7 @@ async def test_create_job_submission__with_cluster_id_in_token(
     assert job_submission.job_submission_owner_email == "owner1@org.com"
     assert job_submission.job_submission_description is None
     assert job_submission.job_script_id == inserted_job_script_id
+    assert job_submission.execution_directory is None
     assert job_submission.cluster_id == "dummy-cluster-client"
     assert job_submission.status == JobSubmissionStatus.CREATED
     assert job_submission.created_at in window
@@ -134,6 +137,72 @@ async def test_create_job_submission__with_cluster_id_in_request_body(
     assert job_submission.job_submission_description is None
     assert job_submission.job_script_id == inserted_job_script_id
     assert job_submission.cluster_id == "silly-cluster-client"
+    assert job_submission.status == JobSubmissionStatus.CREATED
+    assert job_submission.created_at in window
+    assert job_submission.updated_at in window
+
+
+@pytest.mark.asyncio
+async def test_create_job_submission__with_execution_directory(
+    fill_application_data,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    time_frame,
+):
+    """
+    Test POST /job-submissions/ correctly creates a job_submission with an execution directory.
+
+    This test proves that a job_submission is successfully created via a POST request to the /job-submissions/
+    endpoint with an attached execution directory. We show this by asserting that the job_submission is
+    created in the database after the post request is made, the correct status code (201) is returned.
+    We also show that the ``execution_directory`` is correctly set.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+
+    inject_security_header(
+        "owner1@org.com",
+        Permissions.JOB_SUBMISSIONS_EDIT,
+        cluster_id="dummy-cluster-client",
+    )
+    create_data = fill_job_submission_data(
+        job_script_id=inserted_job_script_id,
+        job_submission_name="sub1",
+        job_submission_owner_email="owner1@org.com",
+        execution_directory="/some/fake/path",
+    )
+
+    # Removed defaults to make sure these are correctly set by other mechanisms
+    create_data.pop("status", None)
+    create_data.pop("cluster_id", None)
+
+    with time_frame() as window:
+        response = await client.post("/jobbergate/job-submissions/", json=create_data)
+
+    assert response.status_code == status.HTTP_201_CREATED
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 1
+
+    id_rows = await database.fetch_all("SELECT id FROM job_submissions")
+    assert len(id_rows) == 1
+
+    job_submission = JobSubmissionResponse(**response.json())
+    assert job_submission.id == id_rows[0][0]
+    assert job_submission.job_submission_name == "sub1"
+    assert job_submission.job_submission_owner_email == "owner1@org.com"
+    assert job_submission.job_submission_description is None
+    assert job_submission.job_script_id == inserted_job_script_id
+    assert job_submission.execution_directory == pathlib.Path("/some/fake/path")
+    assert job_submission.cluster_id == "dummy-cluster-client"
     assert job_submission.status == JobSubmissionStatus.CREATED
     assert job_submission.created_at in window
     assert job_submission.updated_at in window
@@ -953,7 +1022,7 @@ async def test_get_job_submissions_with_invalid_slurm_job_ids_param(
 
 @pytest.mark.freeze_time
 @pytest.mark.asyncio
-async def test_update_job_submission(
+async def test_update_job_submission__basic(
     client,
     fill_application_data,
     fill_job_script_data,
@@ -1004,6 +1073,60 @@ async def test_update_job_submission(
     assert job_submission_data is not None
     assert job_submission_data["job_submission_name"] == "new name"
     assert job_submission_data["job_submission_description"] == "new description"
+    assert job_submission_data["updated_at"] in window
+
+
+@pytest.mark.freeze_time
+@pytest.mark.asyncio
+async def test_update_job_submission__with_execution_dir(
+    client,
+    fill_application_data,
+    fill_job_script_data,
+    fill_job_submission_data,
+    inject_security_header,
+    time_frame,
+):
+    """
+    Test update job_submission via PUT can set execution directory.
+
+    This test proves that the job_submission values are correctly updated following a PUT request to the
+    /job-submissions/<id> endpoint. We show this by assert the response status code to 201, the response data
+    corresponds to the updated data, and the execution_directory is correctly updated.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+    inserted_job_submission_id = await database.execute(
+        query=job_submissions_table.insert(),
+        values=fill_job_submission_data(
+            job_script_id=inserted_job_script_id,
+            job_submission_owner_email="owner1@org.com",
+        ),
+    )
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT)
+    with time_frame() as window:
+        response = await client.put(
+            f"/jobbergate/job-submissions/{inserted_job_submission_id}",
+            json=dict(execution_directory="/some/fake/path"),
+        )
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    assert data["id"] == inserted_job_submission_id
+    assert data["execution_directory"] == "/some/fake/path"
+
+    query = job_submissions_table.select(job_submissions_table.c.id == inserted_job_submission_id)
+    job_submission_data = await database.fetch_one(query)
+
+    assert job_submission_data is not None
+    assert job_submission_data["execution_directory"] == "/some/fake/path"
     assert job_submission_data["updated_at"] in window
 
 
@@ -1347,6 +1470,7 @@ async def test_job_submissions_agent_update__success(
     assert data["id"] == job_submission_id
     assert data["status"] == JobSubmissionStatus.SUBMITTED
     assert data["slurm_job_id"] == 111
+    assert data["execution_directory"] is None
 
 
 @pytest.mark.asyncio

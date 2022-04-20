@@ -7,6 +7,10 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+3.1.0 -- 2022-04-20
+-------------------
+- Added execution_directory to job submissions
+
 3.0.4 -- 2022-04-11
 -------------------
 - Made supplying param_dict optional in API job-scripts create.

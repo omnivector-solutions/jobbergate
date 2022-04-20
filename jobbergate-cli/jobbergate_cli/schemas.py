@@ -126,6 +126,7 @@ class JobSubmissionResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     id: int
     job_script_id: int
     slurm_job_id: Optional[int]
+    execution_directory: Optional[Path]
     job_submission_name: str
     job_submission_description: Optional[str] = None
     job_submission_owner_email: str
@@ -143,6 +144,17 @@ class JobScriptCreateRequestData(pydantic.BaseModel):
     job_script_name: str
     param_dict: Optional[JobbergateApplicationConfig] = None
     sbatch_params: Optional[List[Any]] = None
+
+
+class JobSubmissionCreateRequestData(pydantic.BaseModel):
+    """
+    Describes the data that will be sent to the ``create`` endpoint of the Jobbergate API for job submissions.
+    """
+
+    job_submission_name: str
+    job_submission_description: Optional[str] = None
+    job_script_id: int
+    execution_directory: Optional[Path] = None
 
 
 class Pagination(pydantic.BaseModel):
