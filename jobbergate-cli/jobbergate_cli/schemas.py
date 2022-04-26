@@ -154,6 +154,7 @@ class JobSubmissionCreateRequestData(pydantic.BaseModel):
     job_submission_name: str
     job_submission_description: Optional[str] = None
     job_script_id: int
+    cluster_id: Optional[str] = None
     execution_directory: Optional[Path] = None
 
 

@@ -299,6 +299,7 @@ async def job_submission_agent_update(
     """
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     if identity_claims.cluster_id is None:
+        logger.error("Access token  does not contain a cluster_id")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Access token does not contain a `cluster_id`. Cannot update job_submission",
@@ -348,6 +349,7 @@ async def job_submissions_agent_active(
     """
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     if identity_claims.cluster_id is None:
+        logger.error("Access token  does not contain a cluster_id")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Access token does not contain a `cluster_id`. Cannot fetch pending submissions",
