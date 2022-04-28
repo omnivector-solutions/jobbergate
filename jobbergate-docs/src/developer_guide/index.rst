@@ -14,6 +14,7 @@ Table of Contents
    jobergate.py <jobbergate_py>
    jobergate.yaml <jobbergate_yaml>
    Developer Tools <dev_tools>
+   Local Development <local_development>
    Quality Assurance Tools <qa_tools>
    Integration Testing <integration_testing>
    Continuous Integration <ci>
