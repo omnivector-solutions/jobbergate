@@ -76,8 +76,6 @@ def main(
     )
     context = JobbergateContext(persona=None, client=client)
 
-    # TODO: Figure out how to show help and exit if there are no inoked_subcommands
-
     if ctx.invoked_subcommand not in ("login", "logout"):
         persona = init_persona(context)
         context.client = httpx.Client(
