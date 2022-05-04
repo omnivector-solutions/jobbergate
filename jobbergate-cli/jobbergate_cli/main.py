@@ -7,7 +7,6 @@ from typing import Optional
 import httpx
 import importlib_metadata
 import jose
-import pyperclip
 import typer
 
 from jobbergate_cli.auth import clear_token_cache, fetch_auth_tokens, init_persona, load_tokens_from_cache
@@ -16,7 +15,7 @@ from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.logging import init_logs, init_sentry
 from jobbergate_cli.render import render_json, terminal_message
 from jobbergate_cli.schemas import JobbergateContext, Persona, TokenSet
-from jobbergate_cli.text_tools import conjoin
+from jobbergate_cli.text_tools import conjoin, copy_to_clipboard
 
 
 app = typer.Typer()
@@ -199,13 +198,13 @@ def show_token(
         prefix = "Bearer " if show_prefix else ""
         token_text = f"{prefix}{token}"
 
-    pyperclip.copy(token_text)
+    on_clipboard = copy_to_clipboard(token_text)
+
     if plain:
         print(token_text)
     else:
-        terminal_message(
-            token_text,
-            subject=subject,
-            footer="The output was copied to your clipboard",
-            indent=False,
-        )
+        kwargs = dict(subject=subject, indent=False)
+        if on_clipboard:
+            kwargs["footer"] = "The output was copied to your clipboard"
+
+        terminal_message(token_text, **kwargs)
