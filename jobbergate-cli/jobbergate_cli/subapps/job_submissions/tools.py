@@ -25,7 +25,7 @@ def create_job_submission(
     :param: job_script_id:       The ``id`` of the Job Script to submit to Slurm
     :param: name:                The name to attach to the Job Submission
     :param: description:         An optional description that may be added to the Job Submission
-    :param: execution_directory: An optional cluster_id for the cluster where the job should be executed,
+    :param: cluster_id:          An optional cluster_id for the cluster where the job should be executed,
                                  if left off, it will default to the current cluster.
     :param: execution_directory: An optional directory where the job should be executed. If provided as a relative path,
                                  it will be constructed as an absolute path relative to the current working directory.
