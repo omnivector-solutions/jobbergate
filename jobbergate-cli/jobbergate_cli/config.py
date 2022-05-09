@@ -103,7 +103,7 @@ def build_settings(*args, **kwargs):
             conjoin(
                 "A configuration error was detected.",
                 "",
-                f"[yellow]Please contact [bold]{OV_CONTACT}[/bold] for support and trouble-shooting",
+                f"[yellow]Please contact [bold]{OV_CONTACT}[/bold] for support and trouble-shooting[/yellow]",
             ),
             subject="Configuration Error",
         )
