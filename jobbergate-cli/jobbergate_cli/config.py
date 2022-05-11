@@ -2,12 +2,17 @@
 Configuration file, sets all the necessary environment variables.
 Can load configuration from a dotenv file if supplied.
 """
+
 from pathlib import Path
+from sys import exit
 from typing import Optional
 
-from pydantic import AnyHttpUrl, BaseSettings, Field, root_validator
+from pydantic import AnyHttpUrl, BaseSettings, Field, ValidationError, root_validator
 
 from jobbergate_cli import constants
+from jobbergate_cli.constants import OV_CONTACT
+from jobbergate_cli.render import terminal_message
+from jobbergate_cli.text_tools import conjoin
 
 
 class Settings(BaseSettings):
@@ -50,7 +55,7 @@ class Settings(BaseSettings):
 
     IDENTITY_CLAIMS_KEY: str = "https://omnivector.solutions"
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def compute_extra_settings(cls, values):
         """
         Compute settings values that are based on other settings values.
@@ -87,4 +92,22 @@ class Settings(BaseSettings):
             env_file = Path(".env")
 
 
-settings = Settings()
+def build_settings(*args, **kwargs):
+    """
+    Return a Setting object and handle ValidationError with a message to the user.
+    """
+    try:
+        return Settings(*args, **kwargs)
+    except ValidationError:
+        terminal_message(
+            conjoin(
+                "A configuration error was detected.",
+                "",
+                f"[yellow]Please contact [bold]{OV_CONTACT}[/bold] for support and trouble-shooting[/yellow]",
+            ),
+            subject="Configuration Error",
+        )
+        exit(1)
+
+
+settings = build_settings()
