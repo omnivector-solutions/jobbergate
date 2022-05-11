@@ -93,6 +93,50 @@ def test_create_job_submission__with_execution_dir(
     assert payload["execution_directory"] is None
 
 
+def test_create_job_submission__with_cluster_id(
+    respx_mock,
+    dummy_job_submission_data,
+    dummy_domain,
+    dummy_context,
+    attach_persona,
+):
+    job_submission_data = dummy_job_submission_data[0]
+    job_submission_name = job_submission_data["job_submission_name"]
+    job_submission_description = job_submission_data["job_submission_description"]
+
+    job_script_id = job_submission_data["job_script_id"]
+
+    create_job_submission_route = respx_mock.post(f"{dummy_domain}/job-submissions")
+    create_job_submission_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.CREATED,
+            json=job_submission_data,
+        ),
+    )
+
+    attach_persona("dummy@dummy.com")
+
+    create_job_submission(
+        dummy_context,
+        job_script_id,
+        job_submission_name,
+        job_submission_description,
+        cluster_id="dummy-cluster",
+    )
+    payload = json.loads(create_job_submission_route.calls.last.request.content)
+    assert payload["cluster_id"] == "dummy-cluster"
+
+    create_job_submission(
+        dummy_context,
+        job_script_id,
+        job_submission_name,
+        job_submission_description,
+        cluster_id=None,
+    )
+    payload = json.loads(create_job_submission_route.calls.last.request.content)
+    assert payload["cluster_id"] is None
+
+
 def test_fetch_job_submission_data__success__using_id(
     respx_mock,
     dummy_context,

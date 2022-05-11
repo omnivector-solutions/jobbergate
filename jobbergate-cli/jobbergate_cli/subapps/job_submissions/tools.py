@@ -14,6 +14,7 @@ def create_job_submission(
     job_script_id: int,
     name: str,
     description: Optional[str] = None,
+    cluster_id: Optional[str] = None,
     execution_directory: Optional[Path] = None,
 ) -> JobSubmissionResponse:
     """
@@ -24,6 +25,8 @@ def create_job_submission(
     :param: job_script_id:       The ``id`` of the Job Script to submit to Slurm
     :param: name:                The name to attach to the Job Submission
     :param: description:         An optional description that may be added to the Job Submission
+    :param: cluster_id:          An optional cluster_id for the cluster where the job should be executed,
+                                 if left off, it will default to the current cluster.
     :param: execution_directory: An optional directory where the job should be executed. If provided as a relative path,
                                  it will be constructed as an absolute path relative to the current working directory.
     :returns: The Job Submission data returned by the API after creating the new Job Submission
@@ -37,6 +40,7 @@ def create_job_submission(
         job_submission_name=name,
         job_submission_description=description,
         job_script_id=job_script_id,
+        cluster_id=cluster_id,
     )
 
     if execution_directory is not None:
