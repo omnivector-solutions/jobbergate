@@ -2,10 +2,11 @@
 Provide tool functions for working with Job Submission data
 """
 
+from pathlib import Path
 from typing import Optional, cast
 
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobbergateContext, JobSubmissionResponse
+from jobbergate_cli.schemas import JobbergateContext, JobSubmissionCreateRequestData, JobSubmissionResponse
 
 
 def create_job_submission(
@@ -13,15 +14,18 @@ def create_job_submission(
     job_script_id: int,
     name: str,
     description: Optional[str] = None,
+    execution_directory: Optional[Path] = None,
 ) -> JobSubmissionResponse:
     """
-    Creae a Job Submission from the given Job Script.
+    Create a Job Submission from the given Job Script.
 
-    :param: jg_ctx:        The JobbergateContext. Used to retrieve the client for requests
-                           and the email of the submitting user
-    :param: job_script_id: The ``id`` of the Job Script to submit to Slurm
-    :param: name:          The name to attach to the Job Submission
-    :param: description:   An optional description that may be added to the Job Submission
+    :param: jg_ctx:              The JobbergateContext. Used to retrieve the client for requests
+                                 and the email of the submitting user
+    :param: job_script_id:       The ``id`` of the Job Script to submit to Slurm
+    :param: name:                The name to attach to the Job Submission
+    :param: description:         An optional description that may be added to the Job Submission
+    :param: execution_directory: An optional directory where the job should be executed. If provided as a relative path,
+                                 it will be constructed as an absolute path relative to the current working directory.
     :returns: The Job Submission data returned by the API after creating the new Job Submission
     """
 
@@ -29,11 +33,17 @@ def create_job_submission(
     assert jg_ctx.client is not None, "jg_ctx.client is uninitialized"
     assert jg_ctx.persona is not None, "jg_ctx.persona is uninitialized"
 
-    job_submission_data = dict(
+    job_submission_data = JobSubmissionCreateRequestData(
         job_submission_name=name,
         job_submission_description=description,
         job_script_id=job_script_id,
     )
+
+    if execution_directory is not None:
+        if not execution_directory.is_absolute():
+            execution_directory = Path.cwd() / execution_directory
+        execution_directory.resolve()
+        job_submission_data.execution_directory = execution_directory
 
     result = cast(
         JobSubmissionResponse,
@@ -44,7 +54,7 @@ def create_job_submission(
             expected_status=201,
             abort_message="Couldn't create job submission",
             support=True,
-            json=job_submission_data,
+            request_model=job_submission_data,
             response_model_cls=JobSubmissionResponse,
         ),
     )

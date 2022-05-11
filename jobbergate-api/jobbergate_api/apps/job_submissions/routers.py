@@ -68,6 +68,10 @@ async def job_submission_create(
     if job_submission.cluster_id is None:
         create_dict.update(cluster_id=cluster_id)
 
+    exec_dir = create_dict.pop("execution_directory", None)
+    if exec_dir is not None:
+        create_dict.update(execution_directory=str(exec_dir))
+
     select_query = job_scripts_table.select().where(job_scripts_table.c.id == job_submission.job_script_id)
     raw_job_script = await database.fetch_one(select_query)
 
@@ -204,10 +208,15 @@ async def job_submission_update(job_submission_id: int, job_submission: JobSubmi
     """
     Update a job_submission given its id.
     """
+    update_dict = job_submission.dict(exclude_unset=True)
+    exec_dir = update_dict.pop("execution_directory", None)
+    if exec_dir is not None:
+        update_dict.update(execution_directory=str(exec_dir))
+
     update_query = (
         job_submissions_table.update()
         .where(job_submissions_table.c.id == job_submission_id)
-        .values(job_submission.dict(exclude_unset=True))
+        .values(update_dict)
         .returning(job_submissions_table)
     )
     async with database.transaction():

@@ -3,7 +3,7 @@ authors = ["Omnivector Solutions <info@omnivector.solutions>"]
 name = "jobbergate-api"
 description = "Jobbergate API"
 license = "MIT"
-version = "3.0.4"
+version = "3.1.0"
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -73,7 +73,7 @@ testpaths = ["jobbergate_api/tests"]
 env = [
     "DEPLOY_ENV = TEST",  # Enforces that test database env vars will be used
     "ARMASEC_DOMAIN = armasec.dev",  # Must align with the rs256_domain fixture in armasec's pytest extension
-    "ARMASEC_DEBUG = True",
+    "ARMASEC_DEBUG = False",  # Set this to True to debug armasec issues by seeing verbose logging
 ]
 
 [tool.coverage.report]

@@ -2,6 +2,7 @@
 JobSubmission resource schema.
 """
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 from pydantic import BaseModel, Extra, Field
@@ -38,6 +39,10 @@ job_submission_meta_mapper = MetaMapper(
         description="The foreign-key to the job_script from which this instance was created",
         example=71,
     ),
+    execution_duirectory=MetaField(
+        description="The directory on the cluster where the job should be executed",
+        example="/home/someuser/job-data/test-77",
+    ),
     slurm_job_id=MetaField(
         description="The id for the slurm job executing this job_submission",
         example="1883",
@@ -61,6 +66,7 @@ class JobSubmissionCreateRequest(BaseModel):
     job_submission_name: str
     job_submission_description: Optional[str]
     job_script_id: int
+    execution_directory: Optional[Path]
     cluster_id: Optional[str]
 
     class Config:
@@ -74,6 +80,7 @@ class JobSubmissionUpdateRequest(BaseModel):
 
     job_submission_name: Optional[str]
     job_submission_description: Optional[str]
+    execution_directory: Optional[Path]
     status: Optional[JobSubmissionStatus]
 
     class Config:
@@ -92,6 +99,7 @@ class JobSubmissionResponse(BaseModel):
     job_submission_description: Optional[str]
     job_submission_owner_email: str
     job_script_id: int
+    execution_directory: Optional[Path]
     slurm_job_id: Optional[int]
     cluster_id: Optional[str]
     status: JobSubmissionStatus
@@ -111,6 +119,7 @@ class PendingJobSubmission(BaseModel, extra=Extra.ignore):
     id: Optional[int] = Field(None)
     job_submission_name: str
     job_submission_owner_email: str
+    execution_directory: Optional[Path]
     job_script_name: str
     job_script_data_as_string: str
     application_name: str
