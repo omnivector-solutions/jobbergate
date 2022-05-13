@@ -33,7 +33,7 @@ def test_list_all__makes_request_and_renders_results(
     cli_runner,
     mocker,
 ):
-    respx_mock.get(f"{dummy_domain}/job-scripts?all=false").mock(
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts?all=false").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(
@@ -69,7 +69,7 @@ def test_get_one__success(
     cli_runner,
     mocker,
 ):
-    respx_mock.get(f"{dummy_domain}/job-scripts/1").mock(
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/1").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dummy_job_script_data[0],
@@ -108,7 +108,7 @@ def test_create__non_fast_mode_and_job_submission(
 
     job_submission_data = dummy_job_submission_data[0]
 
-    create_route = respx_mock.post(f"{dummy_domain}/job-scripts")
+    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-scripts")
     create_route.mock(
         return_value=httpx.Response(
             httpx.codes.CREATED,
@@ -226,7 +226,7 @@ def test_create__with_fast_mode_and_no_job_submission(
 
     job_script_data = dummy_job_script_data[0]
 
-    create_route = respx_mock.post(f"{dummy_domain}/job-scripts")
+    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-scripts")
     create_route.mock(
         return_value=httpx.Response(
             httpx.codes.CREATED,
@@ -324,7 +324,7 @@ def test_update__makes_request_and_renders_results(
         **job_script_data,
         "job_script_data_as_string": new_job_script_data_as_string,
     }
-    respx_mock.put(f"{dummy_domain}/job-scripts/{job_script_id}").mock(
+    respx_mock.put(f"{dummy_domain}/jobbergate/job-scripts/{job_script_id}").mock(
         return_value=httpx.Response(httpx.codes.OK, json=new_job_script_data),
     )
     test_app = make_test_app("update", update)
@@ -357,7 +357,7 @@ def test_delete__makes_request_and_sends_terminal_message(
 ):
     job_script_id = 13
 
-    delete_route = respx_mock.delete(f"{dummy_domain}/job-scripts/{job_script_id}").mock(
+    delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/job-scripts/{job_script_id}").mock(
         return_value=httpx.Response(httpx.codes.NO_CONTENT),
     )
     test_app = make_test_app("delete", delete)

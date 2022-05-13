@@ -21,16 +21,16 @@ class TokenSet(pydantic.BaseModel, extra=pydantic.Extra.ignore):
 
 class IdentityData(pydantic.BaseModel):
     """
-    A model representing the fields that should appear in our custom identity data claim.
+    A model representing the identifying data for a user from an auth token.
     """
 
-    user_email: str
-    org_name: Optional[str]
+    email: str
+    client_id: str
 
 
 class Persona(pydantic.BaseModel):
     """
-    A model representing a pairing of a TokenSet and Identity data.
+    A model representing a pairing of a TokenSet and user email.
     This is a convenience to combine all of the identifying data and credentials for a given user.
     """
 
@@ -40,7 +40,7 @@ class Persona(pydantic.BaseModel):
 
 class DeviceCodeData(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     """
-    A model representing the data that is returned from Auth0's device code endpoint.
+    A model representing the data that is returned from the OIDC provider's device code endpoint.
     """
 
     device_code: str
@@ -125,6 +125,7 @@ class JobSubmissionResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
 
     id: int
     job_script_id: int
+    client_id: Optional[str]
     slurm_job_id: Optional[int]
     execution_directory: Optional[Path]
     job_submission_name: str
@@ -154,7 +155,7 @@ class JobSubmissionCreateRequestData(pydantic.BaseModel):
     job_submission_name: str
     job_submission_description: Optional[str] = None
     job_script_id: int
-    cluster_id: Optional[str] = None
+    client_id: Optional[str] = None
     execution_directory: Optional[Path] = None
 
 
@@ -175,6 +176,15 @@ class ListResponseEnvelope(pydantic.BaseModel):
 
     results: List[Dict[str, Any]]
     pagination: Pagination
+
+
+class ClusterCacheData(pydantic.BaseModel):
+    """
+    Describes the format of data stored in the clusters cache file.
+    """
+
+    updated_at: datetime
+    cluster_names: List[str]
 
 
 class ForeignKeyError(pydantic.BaseModel):

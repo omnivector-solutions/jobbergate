@@ -70,7 +70,7 @@ def main(
     persona = None
 
     client = httpx.Client(
-        base_url=f"https://{settings.AUTH0_LOGIN_DOMAIN}",
+        base_url=f"https://{settings.OIDC_LOGIN_DOMAIN}",
         headers={"content-type": "application/x-www-form-urlencoded"},
     )
     context = JobbergateContext(persona=None, client=client)
@@ -78,7 +78,7 @@ def main(
     if ctx.invoked_subcommand not in ("login", "logout"):
         persona = init_persona(context)
         context.client = httpx.Client(
-            base_url=settings.JOBBERGATE_API_ENDPOINT,
+            base_url=settings.ARMADA_API_BASE,
             headers=dict(Authorization=f"Bearer {persona.token_set.access_token}"),
         )
         context.persona = persona
@@ -97,7 +97,7 @@ def login(ctx: typer.Context):
     token_set: TokenSet = fetch_auth_tokens(ctx.obj)
     persona: Persona = init_persona(ctx.obj, token_set)
     terminal_message(
-        f"User was logged in with email '{persona.identity_data.user_email}'",
+        f"User was logged in with email '{persona.identity_data.email}'",
         subject="Logged in!",
     )
 

@@ -44,7 +44,7 @@ def create(
         ...,
         help="The id of the job_script from which to create the job submission",
     ),
-    cluster_id: str = typer.Option(
+    client_id: str = typer.Option(
         None,
         "--cluster-name",
         help="The name of the cluster where the job should be submitted (i.g. 'nash-staging')",
@@ -73,7 +73,7 @@ def create(
         name,
         description=description,
         execution_directory=execution_directory,
-        cluster_id=cluster_id,
+        client_id=client_id,
     )
     render_single_result(
         jg_ctx,
@@ -113,7 +113,7 @@ def list_all(
         ListResponseEnvelope,
         make_request(
             jg_ctx.client,
-            "/job-submissions",
+            "/jobbergate/job-submissions",
             "GET",
             expected_status=200,
             abort_message="Couldn't retrieve job submissions list from API",
@@ -172,7 +172,7 @@ def delete(
 
     make_request(
         jg_ctx.client,
-        f"/job-submissions/{id}",
+        f"/jobbergate/job-submissions/{id}",
         "DELETE",
         expected_status=204,
         abort_message="Request to delete job submission was not accepted by the API",

@@ -23,15 +23,17 @@ class IdentityClaims(BaseModel):
     Provide a pydantic data model containing user data extracted from an access token.
     """
 
-    org_name: Optional[str]
-    user_email: Optional[EmailStr]
-    cluster_id: Optional[str]
+    email: Optional[EmailStr]
+    client_id: Optional[str]
 
     @classmethod
     def from_token_payload(cls, payload: TokenPayload) -> "IdentityClaims":
         """
         Create an instance from a Token payload.
 
-        Automatically validates that the user_email is an email address if it is provided.
+        Automatically validates that the email is an email address if it is provided.
         """
-        return cls(**getattr(payload, settings.IDENTITY_CLAIMS_KEY))
+        return cls(
+            email=getattr(payload, "email"),
+            client_id=payload.client_id,
+        )

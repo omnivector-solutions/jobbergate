@@ -38,7 +38,7 @@ def test_fetch_job_script_data__success(
     dummy_job_script_data,
     dummy_domain,
 ):
-    respx_mock.get(f"{dummy_domain}/job-scripts/1").mock(
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/1").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dummy_job_script_data[0],

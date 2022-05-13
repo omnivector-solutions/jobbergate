@@ -55,7 +55,7 @@ def test_list_all__makes_request_and_renders_results(
     cli_runner,
     mocker,
 ):
-    respx_mock.get(f"{dummy_domain}/job-submissions?all=false").mock(
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-submissions?all=false").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(
@@ -91,7 +91,7 @@ def test_get_one__success(
     cli_runner,
     mocker,
 ):
-    respx_mock.get(f"{dummy_domain}/job-submissions/1").mock(
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-submissions/1").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dummy_job_submission_data[0],
@@ -117,7 +117,7 @@ def test_delete__makes_request_and_sends_terminal_message(
 ):
     job_submission_id = 13
 
-    delete_route = respx_mock.delete(f"{dummy_domain}/job-submissions/{job_submission_id}").mock(
+    delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/job-submissions/{job_submission_id}").mock(
         return_value=httpx.Response(httpx.codes.NO_CONTENT),
     )
     test_app = make_test_app("delete", delete)

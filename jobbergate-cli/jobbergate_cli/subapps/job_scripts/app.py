@@ -71,7 +71,7 @@ def list_all(
         ListResponseEnvelope,
         make_request(
             jg_ctx.client,
-            "/job-scripts",
+            "/jobbergate/job-scripts",
             "GET",
             expected_status=200,
             abort_message="Couldn't retrieve job scripts list from API",
@@ -174,7 +174,7 @@ def create(
         JobScriptResponse,
         make_request(
             jg_ctx.client,
-            "/job-scripts",
+            "/jobbergate/job-scripts",
             "POST",
             expected_status=201,
             abort_message="Couldn't create job script",
@@ -254,7 +254,7 @@ def update(
         JobScriptResponse,
         make_request(
             jg_ctx.client,
-            f"/job-scripts/{id}",
+            f"/jobbergate/job-scripts/{id}",
             "PUT",
             expected_status=200,
             abort_message="Couldn't update job script",
@@ -290,7 +290,7 @@ def delete(
 
     make_request(
         jg_ctx.client,
-        f"/job-scripts/{id}",
+        f"/jobbergate/job-scripts/{id}",
         "DELETE",
         expected_status=204,
         abort_message="Request to delete job script was not accepted by the API",

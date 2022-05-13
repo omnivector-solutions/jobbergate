@@ -93,7 +93,7 @@ def job_submission_data():
     return {
         "job_submission_name": "test_name",
         "job_submission_owner_email": "owner1@org.com",
-        "cluster_id": "dummy-cluster-id",
+        "client_id": "dummy-client-id",
         "status": JobSubmissionStatus.CREATED,
     }
 

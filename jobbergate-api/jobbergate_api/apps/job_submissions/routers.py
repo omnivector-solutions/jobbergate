@@ -53,20 +53,20 @@ async def job_submission_create(
     Make a post request to this endpoint with the required values to create a new job submission.
     """
     identity_claims = IdentityClaims.from_token_payload(token_payload)
-    cluster_id = job_submission.cluster_id or identity_claims.cluster_id
-    if cluster_id is None:
+    client_id = job_submission.client_id or identity_claims.client_id
+    if client_id is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not find a cluster_id in the request body or auth token.",
+            detail="Could not find a client_id in the request body or auth token.",
         )
 
     create_dict = dict(
         **job_submission.dict(exclude_unset=True),
-        job_submission_owner_email=identity_claims.user_email,
+        job_submission_owner_email=identity_claims.email,
         status=JobSubmissionStatus.CREATED,
     )
-    if job_submission.cluster_id is None:
-        create_dict.update(cluster_id=cluster_id)
+    if job_submission.client_id is None:
+        create_dict.update(client_id=client_id)
 
     exec_dir = create_dict.pop("execution_directory", None)
     if exec_dir is not None:
@@ -147,7 +147,7 @@ async def job_submission_list(
         query = query.where(job_submissions_table.c.status == submit_status)
 
     if not all:
-        query = query.where(job_submissions_table.c.job_submission_owner_email == identity_claims.user_email)
+        query = query.where(job_submissions_table.c.job_submission_owner_email == identity_claims.email)
 
     if slurm_job_ids is not None and slurm_job_ids != "":
         try:
@@ -248,13 +248,13 @@ async def job_submissions_agent_pending(
     Get a list of pending job submissions for the cluster-agent.
     """
     identity_claims = IdentityClaims.from_token_payload(token_payload)
-    if identity_claims.cluster_id is None:
+    if identity_claims.client_id is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Access token does not contain a `cluster_id`. Cannot fetch pending submissions",
+            detail="Access token does not contain a `client_id`. Cannot fetch pending submissions",
         )
 
-    logger.info(f"Fetching newly created job_submissions for cluster_id: {identity_claims.cluster_id}")
+    logger.info(f"Fetching newly created job_submissions for client_id: {identity_claims.client_id}")
 
     query = (
         select(
@@ -272,7 +272,7 @@ async def job_submissions_agent_pending(
             job_submissions_table.c.status == JobSubmissionStatus.CREATED,
         )
         .where(
-            job_submissions_table.c.cluster_id == identity_claims.cluster_id,
+            job_submissions_table.c.client_id == identity_claims.client_id,
         )
     )
 
@@ -298,17 +298,17 @@ async def job_submission_agent_update(
     Make a put request to this endpoint with the new status to update a job_submission.
     """
     identity_claims = IdentityClaims.from_token_payload(token_payload)
-    if identity_claims.cluster_id is None:
-        logger.error("Access token does not contain a cluster_id")
+    if identity_claims.client_id is None:
+        logger.error("Access token does not contain a client_id")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Access token does not contain a `cluster_id`. Cannot update job_submission",
+            detail="Access token does not contain a `client_id`. Cannot update job_submission",
         )
 
     logger.info(
         f"Setting status to: {new_status} "
         f"for job_submission: {job_submission_id} "
-        f"on cluster_id: {identity_claims.cluster_id}"
+        f"on client_id: {identity_claims.client_id}"
     )
 
     update_values: Dict[str, Any] = dict(status=new_status)
@@ -318,7 +318,7 @@ async def job_submission_agent_update(
     update_query = (
         job_submissions_table.update()
         .where(job_submissions_table.c.id == job_submission_id)
-        .where(job_submissions_table.c.cluster_id == identity_claims.cluster_id)
+        .where(job_submissions_table.c.client_id == identity_claims.client_id)
         .values(**update_values)
         .returning(job_submissions_table)
     )
@@ -329,7 +329,7 @@ async def job_submission_agent_update(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=(
                 f"JobSubmission with id={job_submission_id} "
-                "and cluster_id={identity_claims.cluster_id} not found."
+                "and client_id={identity_claims.client_id} not found."
             ),
         )
 
@@ -348,19 +348,19 @@ async def job_submissions_agent_active(
     Get a list of active job submissions for the cluster-agent.
     """
     identity_claims = IdentityClaims.from_token_payload(token_payload)
-    if identity_claims.cluster_id is None:
-        logger.error("Access token does not contain a cluster_id")
+    if identity_claims.client_id is None:
+        logger.error("Access token does not contain a client_id")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Access token does not contain a `cluster_id`. Cannot fetch pending submissions",
+            detail="Access token does not contain a `client_id`. Cannot fetch pending submissions",
         )
 
-    logger.info(f"Fetching active job_submissions for cluster_id: {identity_claims.cluster_id}")
+    logger.info(f"Fetching active job_submissions for client_id: {identity_claims.client_id}")
 
     query = (
         job_submissions_table.select()
         .where(job_submissions_table.c.status == JobSubmissionStatus.SUBMITTED)
-        .where(job_submissions_table.c.cluster_id == identity_claims.cluster_id)
+        .where(job_submissions_table.c.client_id == identity_claims.client_id)
     )
 
     rows = await database.fetch_all(query)

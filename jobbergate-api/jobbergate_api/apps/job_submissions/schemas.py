@@ -47,8 +47,8 @@ job_submission_meta_mapper = MetaMapper(
         description="The id for the slurm job executing this job_submission",
         example="1883",
     ),
-    cluster_id=MetaField(
-        description="The cluster_id of the cluster where this job submission should execute",
+    client_id=MetaField(
+        description="The client_id of the cluster where this job submission should execute",
         example="mega-cluster-1",
     ),
     status=MetaField(
@@ -67,7 +67,7 @@ class JobSubmissionCreateRequest(BaseModel):
     job_submission_description: Optional[str]
     job_script_id: int
     execution_directory: Optional[Path]
-    cluster_id: Optional[str]
+    client_id: Optional[str]
 
     class Config:
         schema_extra = job_submission_meta_mapper
@@ -101,7 +101,7 @@ class JobSubmissionResponse(BaseModel):
     job_script_id: int
     execution_directory: Optional[Path]
     slurm_job_id: Optional[int]
-    cluster_id: Optional[str]
+    client_id: Optional[str]
     status: JobSubmissionStatus
 
     class Config:
