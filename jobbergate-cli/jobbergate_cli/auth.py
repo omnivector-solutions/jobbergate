@@ -24,13 +24,30 @@ def validate_token_and_extract_identity(token_set: TokenSet) -> IdentityData:
     Validate the access_token from a TokenSet and extract the identity data.
 
     Validations:
+        * Checks if access_token is not empty.
         * Checks timestamp on the access token.
-        * Checks for identity data
-        * Checks that all identity elements are present
+        * Checks for identity data.
+        * Checks that all identity elements are present.
 
-    Reports an error in the logs and to the user if there is an issue with the access_token
+    Reports an error in the logs and to the user if there is an issue with the access_token.
     """
     logger.debug("Validating access token")
+
+    token_is_empty = not token_set.access_token
+    if token_is_empty:
+        logger.debug("Access token exists but it is empty")
+        raise Abort(
+            """
+            Access token exists but it is empty.
+
+            Please try logging in again.
+            """,
+            subject="Empty access token",
+            support=True,
+            log_message="Empty access access token",
+            sentry_context=dict(access_token=dict(access_token=token_set.access_token)),
+        )
+
     try:
         token_data = jwt.decode(
             token_set.access_token,
