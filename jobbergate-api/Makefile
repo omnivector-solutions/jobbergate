@@ -40,7 +40,7 @@ publish:
 
 .PHONY: local
 local: install
-	poetry run jobbergate dev-server
+	poetry run dev-tools dev-server --port=8000
 
 .PHONY: update-precommit
 update-precommit:

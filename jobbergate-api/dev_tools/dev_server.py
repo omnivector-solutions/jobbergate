@@ -8,7 +8,7 @@ import uvicorn
 from loguru import logger
 from sqlalchemy import create_engine
 
-from jobbergate_api.config import settings
+from jobbergate_api.storage import build_db_url
 
 
 def _wait_for_db(wait_count, wait_interval):
@@ -19,12 +19,14 @@ def _wait_for_db(wait_count, wait_interval):
     connection resolves before the time is up, return normally. If the database fails to connect, raise a
     ``RuntimeError``.
     """
+    database_url = build_db_url()
+    logger.debug(f"database url is: {build_db_url()}")
     count = 0
     while count < wait_count:
-        logger.debug(f"Checking health of database at {settings.DATABASE_URL}: Attempt #{count}")
+        logger.debug(f"Checking health of database at {database_url}: Attempt #{count}")
         count += 1
         try:
-            engine = create_engine(settings.DATABASE_URL)
+            engine = create_engine(database_url)
             with engine.connect() as db:
                 db.execute("select version()")
             return
@@ -51,5 +53,9 @@ def dev_server(
         typer.Exit(1)
 
     uvicorn.run(
-        "jobbergate_api.main:app", host="0.0.0.0", port=port, reload=True, log_level=log_level.lower(),
+        "jobbergate_api.main:app",
+        host="0.0.0.0",
+        port=port,
+        reload=True,
+        log_level=log_level.lower(),
     )
