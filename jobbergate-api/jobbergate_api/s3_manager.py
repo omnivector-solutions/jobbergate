@@ -116,12 +116,12 @@ class S3Manager:
     client. Provide methods as thin wrappers around s3 calls but provide the mappings for buckets and keys.
     """
 
-    def __init__(self, client: BucketClientBase = None):
+    def __init__(self, directory_name: str = "applications", client: BucketClientBase = None):
         """
         Initialize the S3Manager class instance.
         """
 
-        self.key_template = "applications/{app_id}/jobbergate.tar.gz"
+        self.key_template = directory_name + "/{app_id}/jobbergate.tar.gz"
 
         if client is None:
             client = S3Client()
