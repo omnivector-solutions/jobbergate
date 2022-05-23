@@ -102,7 +102,7 @@ def test_validate_token_and_extract_identity__raises_abort_on_empty_token():
     raise an ``Abort`` when the access_token exists but is an empty string/file.
     """
     test_token_set = TokenSet(access_token="")
-    with pytest.raises(Abort, match="Access token exists but it is empty"):
+    with pytest.raises(Abort, match="Access token file exists but it is empty"):
         validate_token_and_extract_identity(test_token_set)
 
 

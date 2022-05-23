@@ -33,18 +33,18 @@ def validate_token_and_extract_identity(token_set: TokenSet) -> IdentityData:
     """
     logger.debug("Validating access token")
 
-    token_is_empty = not token_set.access_token
-    if token_is_empty:
-        logger.debug("Access token exists but it is empty")
+    token_file_is_empty = not token_set.access_token
+    if token_file_is_empty:
+        logger.debug("Access token file exists but it is empty")
         raise Abort(
             """
-            Access token exists but it is empty.
+            Access token file exists but it is empty.
 
             Please try logging in again.
             """,
-            subject="Empty access token",
+            subject="Empty access token file",
             support=True,
-            log_message="Empty access access token",
+            log_message="Empty access token file",
             sentry_context=dict(access_token=dict(access_token=token_set.access_token)),
         )
 
