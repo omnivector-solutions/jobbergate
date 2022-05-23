@@ -120,7 +120,7 @@ async def test_create_job_script(
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     with time_frame() as window:
-        with mock.patch.object(s3man, "s3_client") as s3man_client_mock:
+        with mock.patch.object(s3man.client, "s3_client") as s3man_client_mock:
             s3man_client_mock.get_object.return_value = s3_object
             response = await client.post(
                 "/jobbergate/job-scripts/",
@@ -236,7 +236,7 @@ async def test_create_job_script_file_not_found(
     )
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
-    with mock.patch.object(s3man, "s3_client") as s3man_client_mock:
+    with mock.patch.object(s3man.client, "s3_client") as s3man_client_mock:
         s3man_client_mock.get_object.side_effect = BotoCoreError()
         response = await client.post(
             "/jobbergate/job-scripts/",
@@ -254,7 +254,7 @@ async def test_create_job_script_file_not_found(
 
 
 @pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
+@mock.patch.object(s3man.client, "s3_client")
 @database.transaction(force_rollback=True)
 async def test_get_s3_object_as_tarfile(s3man_client_mock, s3_object):
     """
@@ -268,7 +268,7 @@ async def test_get_s3_object_as_tarfile(s3man_client_mock, s3_object):
     s3man_client_mock.get_object.assert_called_once()
 
 
-@mock.patch.object(s3man, "s3_client")
+@mock.patch.object(s3man.client, "s3_client")
 def test_get_s3_object_not_found(s3man_client_mock):
     """
     Test exception when file not exists in S3 for get_s3_object function.
