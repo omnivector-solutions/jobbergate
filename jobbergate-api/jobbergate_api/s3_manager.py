@@ -161,17 +161,16 @@ class S3Manager:
         """
         return self.client.get(key=self._get_key(app_id))
 
-
-def get_s3_object_as_tarfile(s3man: S3Manager, application_id):
-    """
-    Return the tarfile of a S3 object.
-    """
-    try:
-        s3_application_obj = s3man.get(app_id=application_id)
-    except BotoCoreError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application with id={application_id} not found in S3",
-        )
-    s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj["Body"].read()))
-    return s3_application_tar
+    def get_s3_object_as_tarfile(self, application_id):
+        """
+        Return the tarfile of a S3 object.
+        """
+        try:
+            s3_application_obj = self.get(app_id=application_id)
+        except BotoCoreError:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Application with id={application_id} not found in S3",
+            )
+        s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj["Body"].read()))
+        return s3_application_tar

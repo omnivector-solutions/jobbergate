@@ -23,7 +23,7 @@ from jobbergate_api.apps.job_scripts.schemas import (
 )
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import S3Manager, get_s3_object_as_tarfile
+from jobbergate_api.s3_manager import S3Manager
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause
 
@@ -145,7 +145,7 @@ async def job_script_create(
         )
     application = ApplicationResponse.parse_obj(raw_application)
     logger.debug("Fetching application tarfile")
-    s3_application_tar = get_s3_object_as_tarfile(s3man, application.id)
+    s3_application_tar = s3man.get_s3_object_as_tarfile(application.id)
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
 
