@@ -1,8 +1,6 @@
 """
 Convenience fixtures for the job scripts tests.
 """
-import tarfile
-from io import BytesIO
 
 from pytest import fixture
 
@@ -59,19 +57,3 @@ def template_files(template_files_application_content):
     Provide a fixture that creates test template files.
     """
     return {"application.sh": template_files_application_content}
-
-
-@fixture
-def s3_object():
-    """
-    Provide a fixture that creates a test s3 object.
-    """
-    return {"Body": open("jobbergate_api/tests/apps/job_scripts/test_files/jobbergate.tar.gz", "rb")}
-
-
-@fixture
-def s3_object_as_tar(s3_object):
-    """
-    Provide a fixture that returns a tarball created from an s3 object.
-    """
-    return tarfile.open(fileobj=BytesIO(s3_object["Body"].read()))

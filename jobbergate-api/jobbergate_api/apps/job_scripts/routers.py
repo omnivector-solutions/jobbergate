@@ -4,11 +4,10 @@ Router for the JobScript resource.
 import json
 import tarfile
 import tempfile
-from io import BytesIO, StringIO
+from io import StringIO
 from typing import List, Optional
 
 from armasec import TokenPayload
-from botocore.exceptions import BotoCoreError
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from jinja2 import Template
 from loguru import logger
@@ -24,7 +23,7 @@ from jobbergate_api.apps.job_scripts.schemas import (
 )
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import S3Manager
+from jobbergate_api.s3_manager import S3Manager, get_s3_object_as_tarfile
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause
 
@@ -53,21 +52,6 @@ def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str
         job_script_data_as_string[:line_end] + inner_string + job_script_data_as_string[line_end:]
     )
     return new_job_script_data_as_string
-
-
-def get_s3_object_as_tarfile(application_id):
-    """
-    Return the tarfile of a S3 object.
-    """
-    try:
-        s3_application_obj = s3man.get(app_id=application_id)
-    except BotoCoreError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application with id={application_id} not found in S3",
-        )
-    s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj["Body"].read()))
-    return s3_application_tar
 
 
 def render_template(template_files, param_dict_flat):
@@ -161,7 +145,7 @@ async def job_script_create(
         )
     application = ApplicationResponse.parse_obj(raw_application)
     logger.debug("Fetching application tarfile")
-    s3_application_tar = get_s3_object_as_tarfile(application.id)
+    s3_application_tar = get_s3_object_as_tarfile(s3man, application.id)
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
 
