@@ -7,7 +7,9 @@ import dataclasses
 import datetime
 import random
 import string
+import tarfile
 import typing
+from io import BytesIO
 
 import pytest
 import sqlalchemy
@@ -192,3 +194,19 @@ def make_files_param():
             yield dict(upload_file=(file_path.name, file_handle, "text/plain"))
 
     return _helper
+
+
+@pytest.fixture
+def s3_object():
+    """
+    Provide a fixture that creates a test s3 object.
+    """
+    return {"Body": open("jobbergate_api/tests/apps/job_scripts/test_files/jobbergate.tar.gz", "rb")}
+
+
+@pytest.fixture
+def s3_object_as_tar(s3_object):
+    """
+    Provide a fixture that returns a tarball created from an s3 object.
+    """
+    return tarfile.open(fileobj=BytesIO(s3_object["Body"].read()))

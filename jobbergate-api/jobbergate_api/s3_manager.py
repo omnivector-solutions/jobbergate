@@ -1,10 +1,13 @@
 """
 Provides a convenience class for managing calls to S3.
 """
-
-from abc import ABC, abstractmethod
+import tarfile
 import typing
+from abc import ABC, abstractmethod
+from io import BytesIO
+
 import boto3
+from botocore.exceptions import BotoCoreError
 from fastapi import HTTPException, UploadFile, status
 
 from jobbergate_api.config import settings
@@ -120,7 +123,6 @@ class S3Manager:
         """
         Initialize the S3Manager class instance.
         """
-
         self.key_template = directory_name + "/{app_id}/jobbergate.tar.gz"
 
         if client is None:
@@ -158,3 +160,18 @@ class S3Manager:
         Get a file from s3 associated to the given app_id.
         """
         return self.client.get(key=self._get_key(app_id))
+
+
+def get_s3_object_as_tarfile(s3man: S3Manager, application_id):
+    """
+    Return the tarfile of a S3 object.
+    """
+    try:
+        s3_application_obj = s3man.get(app_id=application_id)
+    except BotoCoreError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application with id={application_id} not found in S3",
+        )
+    s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj["Body"].read()))
+    return s3_application_tar
