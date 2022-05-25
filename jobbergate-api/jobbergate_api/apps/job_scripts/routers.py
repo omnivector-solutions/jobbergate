@@ -23,12 +23,11 @@ from jobbergate_api.apps.job_scripts.schemas import (
 )
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import S3Manager
+from jobbergate_api.s3_manager import s3man_applications, s3man_jobscripts
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause
 
 router = APIRouter()
-s3man = S3Manager()
 
 
 def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str]) -> str:
@@ -66,9 +65,9 @@ def render_template(template_files, param_dict_flat):
     return job_script_data_as_string
 
 
-def build_job_script_data_as_string(s3_application_tar, param_dict):
+def build_job_script_data_as_string(s3_application_tar, param_dict) -> str:
     """
-    Return the job_script_data_as string from the S3 application and the templates.
+    Return the job_script_data_as_string from the S3 application and the templates.
     """
     support_files_output = param_dict["jobbergate_config"].get("supporting_files_output_name")
     if support_files_output is None:
@@ -145,7 +144,7 @@ async def job_script_create(
         )
     application = ApplicationResponse.parse_obj(raw_application)
     logger.debug("Fetching application tarfile")
-    s3_application_tar = s3man.get_s3_object_as_tarfile(application.id)
+    s3_application_tar = s3man_applications.get_s3_object_as_tarfile(application.id)
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
 
@@ -175,6 +174,13 @@ async def job_script_create(
     except INTEGRITY_CHECK_EXCEPTIONS as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
+    else:
+
+        s3man_jobscripts.put(
+            inject_sbatch_params(job_script_data_as_string, sbatch_params),
+            job_script_data.id,
+        )
+
     logger.debug(f"Created job_script={job_script_data}")
     return job_script_data
 
@@ -197,7 +203,11 @@ async def job_script_get(job_script_id: int = Query(...)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"JobScript with id={job_script_id} not found.",
         )
-    return job_script
+
+    job_script_response = dict(job_script)
+    job_script_response["job_script_data_as_string"] = s3man_jobscripts.get_s3_object_as_string(job_script_id)
+
+    return job_script_response
 
 
 @router.get(
@@ -254,6 +264,8 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
         )
 
     delete_query = job_scripts_table.delete().where(where_stmt)
+    s3man_jobscripts.delete(job_script_id)
+
     await database.execute(delete_query)
 
 
@@ -278,6 +290,12 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
         result = await database.fetch_one(update_query)
     except INTEGRITY_CHECK_EXCEPTIONS as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    else:
+        if job_script.job_script_data_as_string:
+            s3man_jobscripts.put(
+                job_script.job_script_data_as_string,
+                job_script_id,
+            )
 
     if result is None:
         raise HTTPException(

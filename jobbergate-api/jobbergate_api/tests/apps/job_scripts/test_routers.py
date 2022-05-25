@@ -16,7 +16,7 @@ from jobbergate_api.apps.job_scripts.routers import (
     build_job_script_data_as_string,
     inject_sbatch_params,
     render_template,
-    s3man,
+    s3man_applications,
 )
 from jobbergate_api.apps.job_scripts.schemas import JobScriptResponse
 from jobbergate_api.apps.permissions import Permissions
@@ -118,7 +118,7 @@ async def test_create_job_script(
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     with time_frame() as window:
-        with mock.patch.object(s3man.client, "s3_client") as s3man_client_mock:
+        with mock.patch.object(s3man_applications.client, "s3_client") as s3man_client_mock:
             s3man_client_mock.get_object.return_value = s3_object
             response = await client.post(
                 "/jobbergate/job-scripts/",
@@ -234,7 +234,7 @@ async def test_create_job_script_file_not_found(
     )
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
-    with mock.patch.object(s3man.client, "s3_client") as s3man_client_mock:
+    with mock.patch.object(s3man_applications.client, "s3_client") as s3man_client_mock:
         s3man_client_mock.get_object.side_effect = BotoCoreError()
         response = await client.post(
             "/jobbergate/job-scripts/",

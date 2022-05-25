@@ -9,6 +9,7 @@ from io import BytesIO
 import boto3
 from botocore.exceptions import BotoCoreError
 from fastapi import HTTPException, UploadFile, status
+from loguru import logger
 
 from jobbergate_api.config import settings
 
@@ -119,11 +120,16 @@ class S3Manager:
     client. Provide methods as thin wrappers around s3 calls but provide the mappings for buckets and keys.
     """
 
-    def __init__(self, directory_name: str = "applications", client: BucketClientBase = None):
+    def __init__(
+        self,
+        directory_name: str = "applications",
+        filename="jobbergate.tar.gz",
+        client: BucketClientBase = None,
+    ):
         """
         Initialize the S3Manager class instance.
         """
-        self.key_template = directory_name + "/{app_id}/jobbergate.tar.gz"
+        self.key_template = directory_name + "/{app_id}/" + filename
 
         if client is None:
             client = S3Client()
@@ -146,31 +152,53 @@ class S3Manager:
         Upload a file to s3 for the given app_id and returns its key.
         """
         key = self._get_key(app_id)
-        self.client.put(upload_file.file, key)
+        logger.debug(f"Uploading to S3: {key})")
+        if isinstance(upload_file, str):
+            self.client.put(upload_file, key)
+        else:
+            self.client.put(upload_file.file, key)
         return key
 
     def delete(self, app_id: str = ""):
         """
         Delete a file from s3 associated to the given app_id.
         """
-        self.client.delete(key=self._get_key(app_id))
+        key = self._get_key(app_id)
+        logger.debug(f"Deleting from S3: {key})")
+        self.client.delete(key=key)
 
     def get(self, app_id: str = ""):
         """
         Get a file from s3 associated to the given app_id.
         """
-        return self.client.get(key=self._get_key(app_id))
+        key = self._get_key(app_id)
+        logger.debug(f"Getting from S3: {key})")
+        return self.client.get(key=key)
 
-    def get_s3_object_as_tarfile(self, application_id):
+    def get_s3_object_as_string(self, app_id) -> str:
+        s3_file_obj = self.get(app_id)
+        string = s3_file_obj.get("Body").read().decode("utf-8")
+        return string
+
+    def get_s3_object_as_tarfile(self, app_id):
         """
         Return the tarfile of a S3 object.
         """
         try:
-            s3_application_obj = self.get(app_id=application_id)
+            s3_application_obj = self.get(app_id=app_id)
         except BotoCoreError:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Application with id={application_id} not found in S3",
+                detail=f"Application with id={app_id} not found in S3",
             )
         s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj["Body"].read()))
         return s3_application_tar
+
+
+s3_client = S3Client()
+s3man_applications = S3Manager(client=s3_client)
+s3man_jobscripts = S3Manager(
+    directory_name="job-scripts",
+    filename="job-script.json",
+    client=s3_client,
+)
