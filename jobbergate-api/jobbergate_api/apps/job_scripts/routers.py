@@ -164,7 +164,7 @@ async def job_script_create(
     job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, param_dict)
 
     sbatch_params = create_dict.pop("sbatch_params", [])
-    create_dict["job_script_data_as_string"] = inject_sbatch_params(job_script_data_as_string, sbatch_params)
+    job_script_data_as_string = inject_sbatch_params(job_script_data_as_string, sbatch_params)
 
     logger.debug("Inserting job_script")
     try:
@@ -177,12 +177,16 @@ async def job_script_create(
     else:
 
         s3man_jobscripts.put(
-            inject_sbatch_params(job_script_data_as_string, sbatch_params),
+            job_script_data_as_string,
             job_script_data.id,
         )
 
     logger.debug(f"Created job_script={job_script_data}")
-    return job_script_data
+    job_script_response = dict(
+        **job_script_data,
+        job_script_data_as_string=job_script_data_as_string,
+    )
+    return job_script_response
 
 
 @router.get(
@@ -303,7 +307,10 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
             detail=f"JobScript with id={job_script_id} not found.",
         )
 
-    return result
+    job_script_response = dict(job_script)
+    job_script_response["job_script_data_as_string"] = s3man_jobscripts.get_s3_object_as_string(job_script_id)
+
+    return job_script_response
 
 
 def include_router(app):

@@ -19,6 +19,7 @@ from jobbergate_api.apps.job_scripts.routers import (
     s3man_applications,
 )
 from jobbergate_api.apps.job_scripts.schemas import JobScriptResponse
+from jobbergate_api.s3_manager import s3man_jobscripts
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.storage import database
 
@@ -297,7 +298,10 @@ async def test_get_job_script_by_id(
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
-    response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}")
+    with mock.patch.object(s3man_jobscripts.client, "s3_client") as mock_s3:
+        response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}")
+        mock_s3.delete_object.assert_called_once()
+
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
