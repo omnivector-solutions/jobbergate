@@ -1324,6 +1324,7 @@ async def test_job_submissions_agent_pending__success(
                 job_submission_owner_email="email1@dummy.com",
                 status=JobSubmissionStatus.CREATED,
                 cluster_id="dummy-client",
+                execution_directory="/sub1",
             ),
             dict(
                 job_script_id=inserted_job_script_id,
@@ -1331,6 +1332,7 @@ async def test_job_submissions_agent_pending__success(
                 job_submission_owner_email="email2@dummy.com",
                 status=JobSubmissionStatus.COMPLETED,
                 cluster_id="dummy-client",
+                execution_directory="/sub2",
             ),
             dict(
                 job_script_id=inserted_job_script_id,
@@ -1338,6 +1340,7 @@ async def test_job_submissions_agent_pending__success(
                 job_submission_owner_email="email3@dummy.com",
                 status=JobSubmissionStatus.CREATED,
                 cluster_id="silly-client",
+                execution_directory="/sub3",
             ),
             dict(
                 job_script_id=inserted_job_script_id,
@@ -1345,6 +1348,7 @@ async def test_job_submissions_agent_pending__success(
                 job_submission_owner_email="email4@dummy.com",
                 status=JobSubmissionStatus.CREATED,
                 cluster_id="dummy-client",
+                execution_directory="/sub4",
             ),
         ),
     )
@@ -1363,6 +1367,7 @@ async def test_job_submissions_agent_pending__success(
     data = response.json()
     assert sorted([d["job_submission_name"] for d in data]) == ["sub1", "sub4"]
     assert sorted([d["job_submission_owner_email"] for d in data]) == ["email1@dummy.com", "email4@dummy.com"]
+    assert sorted([d["execution_directory"] for d in data]) == ["/sub1", "/sub4"]
 
 
 @pytest.mark.asyncio

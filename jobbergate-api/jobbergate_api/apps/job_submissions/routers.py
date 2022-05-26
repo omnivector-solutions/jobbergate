@@ -262,6 +262,7 @@ async def job_submissions_agent_pending(
                 job_submissions_table.c.id,
                 job_submissions_table.c.job_submission_name,
                 job_submissions_table.c.job_submission_owner_email,
+                job_submissions_table.c.execution_directory,
                 job_scripts_table.c.job_script_name,
                 job_scripts_table.c.job_script_data_as_string,
                 applications_table.c.application_name,
