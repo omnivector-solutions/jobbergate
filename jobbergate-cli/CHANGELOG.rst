@@ -10,6 +10,7 @@ Unreleased
 3.1.0 -- 2022-04-20
 -------------------
 - Added execution_directory to job submissions
+- Added checks for empty cached token files
 
 3.0.4 -- 2022-04-11
 -------------------
