@@ -58,8 +58,6 @@ class Settings(BaseSettings):
     # S3 configuration
     S3_BUCKET_NAME: str = Field("jobbergate-staging-eu-north-1-resources")
     S3_ENDPOINT_URL: Optional[str]
-    AWS_ACCESS_KEY_ID: Optional[str]
-    AWS_SECRET_ACCESS_KEY: Optional[str]
 
     # Security Settings. For details, see https://github.com/omnivector-solutions/armsec
     ARMASEC_DOMAIN: str
