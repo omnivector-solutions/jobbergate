@@ -7,6 +7,10 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+3.1.1 -- 2022-06-01
+-------------------
+- Added warning and handling for empty access tokens in the cache.
+
 3.1.0 -- 2022-04-20
 -------------------
 - Added execution_directory to job submissions

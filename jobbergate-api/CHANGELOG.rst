@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+3.1.1 -- 2022-06-01
+-------------------
 - Removed AWS settings. Boto3 supports these env variables natively.
 
 3.1.0 -- 2022-04-20
