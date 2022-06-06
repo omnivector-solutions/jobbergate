@@ -28,6 +28,7 @@ class Settings(BaseSettings):
 
     SENTRY_DSN: Optional[str]
     SENTRY_TRACE_RATE: float = Field(1.0, gt=0.0, le=1.0)
+    SENTRY_ENV: str = "local"
 
     # Settings for log uploads
     JOBBERGATE_AWS_ACCESS_KEY_ID: Optional[str]
