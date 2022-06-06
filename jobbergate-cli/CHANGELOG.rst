@@ -7,6 +7,8 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+- Set ``environment`` variable for Sentry based on settings parameter.
+
 3.1.1 -- 2022-06-01
 -------------------
 - Added warning and handling for empty access tokens in the cache.
