@@ -18,7 +18,7 @@ from jobbergate_api.apps.job_scripts.routers import (
     render_template,
     s3man_applications,
 )
-from jobbergate_api.apps.job_scripts.schemas import JobScriptResponse
+from jobbergate_api.apps.job_scripts.schemas import JobScriptPartialResponse, JobScriptResponse
 from jobbergate_api.s3_manager import s3man_jobscripts
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.storage import database
@@ -142,7 +142,7 @@ async def test_create_job_script(
     assert job_script.job_script_owner_email == "owner1@org.com"
     assert job_script.job_script_description is None
     assert job_script.job_script_data_as_string
-    assert job_script.job_script_data_as_string != job_script_data["job_script_data_as_string"]
+    assert job_script.job_script_data_as_string.startswith('{"application.sh":')
     assert job_script.application_id == inserted_application_id
     assert job_script.created_at in window
     assert job_script.updated_at in window
@@ -298,16 +298,18 @@ async def test_get_job_script_by_id(
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
-    with mock.patch.object(s3man_jobscripts.client, "s3_client") as mock_s3:
-        response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}")
-        mock_s3.delete_object.assert_called_once()
+
+    job_script_data_as_string = "the job script"
+    s3man_jobscripts.put(job_script_data_as_string, inserted_job_script_id)
+
+    response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}")
 
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
     assert data["id"] == inserted_job_script_id
     assert data["job_script_name"] == job_script_data["job_script_name"]
-    assert data["job_script_data_as_string"] == job_script_data["job_script_data_as_string"]
+    assert data["job_script_data_as_string"] == job_script_data_as_string
     assert data["job_script_owner_email"] == "owner1@org.com"
     assert data["application_id"] == inserted_application_id
 
@@ -516,13 +518,13 @@ async def test_get_job_scripts__with_search_param(client, inject_security_header
     This test proves that the user making the request will be shown job scripts that match the search string.
     We show this by creating job scripts and using various search queries to match against them.
 
-    Assert that the response to GET /job_scripts?search=<search temrms> includes correct matches.
+    Assert that the response to GET /job_scripts?search=<search terms> includes correct matches.
     """
     inserted_application_id = await database.execute(
         query=applications_table.insert(),
         values=fill_application_data(application_owner_email="owner1@org.com"),
     )
-    common = dict(job_script_data_as_string="whatever", application_id=inserted_application_id)
+    common = dict(application_id=inserted_application_id)
     await database.execute_many(
         query=job_scripts_table.insert(),
         values=[
@@ -600,7 +602,6 @@ async def test_get_job_scripts__with_sort_params(
     )
     common = dict(
         job_script_owner_email="admin@org.com",
-        job_script_data_as_string="whatever",
         application_id=inserted_application_id,
     )
     await database.execute_many(
@@ -762,12 +763,11 @@ async def test_update_job_script(
     assert data["id"] == inserted_job_script_id
 
     query = job_scripts_table.select(job_scripts_table.c.id == inserted_job_script_id)
-    job_script = JobScriptResponse.parse_obj(await database.fetch_one(query))
+    job_script = JobScriptPartialResponse.parse_obj(await database.fetch_one(query))
 
     assert job_script is not None
     assert job_script.job_script_name == "new name"
     assert job_script.job_script_description == "new description"
-    assert job_script.job_script_data_as_string == "new value"
     assert job_script.updated_at in window
 
 
@@ -848,6 +848,8 @@ async def test_delete_job_script(
         query=job_scripts_table.insert(),
         values=fill_job_script_data(application_id=inserted_application_id),
     )
+
+    s3man_jobscripts.put("the job script", inserted_job_script_id)
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
@@ -931,6 +933,8 @@ async def test_delete_job_script__fk_error(
         query=job_scripts_table.insert(),
         values=fill_job_script_data(application_id=inserted_application_id),
     )
+
+    s3man_jobscripts.put("the job script", inserted_job_script_id)
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1

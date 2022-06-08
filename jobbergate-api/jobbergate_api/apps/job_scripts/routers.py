@@ -18,6 +18,7 @@ from jobbergate_api.apps.applications.schemas import ApplicationResponse
 from jobbergate_api.apps.job_scripts.models import job_scripts_table, searchable_fields, sortable_fields
 from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptCreateRequest,
+    JobScriptPartialResponse,
     JobScriptResponse,
     JobScriptUpdateRequest,
 )
@@ -217,7 +218,7 @@ async def job_script_get(job_script_id: int = Query(...)):
 @router.get(
     "/job-scripts",
     description="Endpoint to list job_scripts",
-    responses=ok_response(JobScriptResponse),
+    responses=ok_response(JobScriptPartialResponse),
 )
 async def job_script_list(
     pagination: Pagination = Depends(),
@@ -244,7 +245,7 @@ async def job_script_list(
         query = query.where(search_clause(search, searchable_fields))
     if sort_field is not None:
         query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
-    return await package_response(JobScriptResponse, query, pagination)
+    return await package_response(JobScriptPartialResponse, query, pagination)
 
 
 @router.delete(
@@ -287,7 +288,9 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
     update_query = (
         job_scripts_table.update()
         .where(job_scripts_table.c.id == job_script_id)
-        .values(job_script.dict(exclude_unset=True))
+        .values(
+            job_script.dict(exclude_unset=True, exclude={"job_script_data_as_string"}),
+        )
         .returning(job_scripts_table)
     )
     try:
@@ -307,7 +310,7 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
             detail=f"JobScript with id={job_script_id} not found.",
         )
 
-    job_script_response = dict(job_script)
+    job_script_response = dict(result)
     job_script_response["job_script_data_as_string"] = s3man_jobscripts.get_s3_object_as_string(job_script_id)
 
     return job_script_response
