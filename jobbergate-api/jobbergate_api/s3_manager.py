@@ -133,19 +133,15 @@ class S3Manager:
 
     def __init__(
         self,
-        directory_name: str = "applications",
+        client: BucketClientBase,
+        directory_name: str,
         filename="jobbergate.tar.gz",
-        client: BucketClientBase = None,
     ):
         """
         Initialize the S3Manager class instance.
         """
-        self.key_template = directory_name + "/{app_id}/" + filename
-
-        if client is None:
-            client = S3Client()
-
         self.client = client
+        self.key_template = directory_name + "/{app_id}/" + filename
 
     def _get_key(self, app_id: str) -> str:
         """
@@ -209,9 +205,5 @@ class S3Manager:
 
 
 s3_client = S3Client()
-s3man_applications = S3Manager(client=s3_client)
-s3man_jobscripts = S3Manager(
-    directory_name="job-scripts",
-    filename="job-script.json",
-    client=s3_client,
-)
+s3man_applications = S3Manager(s3_client, "applications")
+s3man_jobscripts = S3Manager(s3_client, "job-scripts")
