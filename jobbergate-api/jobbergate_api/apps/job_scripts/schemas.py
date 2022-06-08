@@ -89,9 +89,10 @@ class JobScriptUpdateRequest(BaseModel):
         schema_extra = job_script_meta_mapper
 
 
-class JobScriptResponse(BaseModel):
+class JobScriptPartialResponse(BaseModel):
     """
     Complete model to match database for the JobScript resource.
+    However, this model does not include job_script_data_as_string from S3.
     """
 
     id: Optional[int] = None
@@ -99,9 +100,21 @@ class JobScriptResponse(BaseModel):
     updated_at: Optional[datetime] = None
     job_script_name: str
     job_script_description: Optional[str] = None
-    job_script_data_as_string: str
     job_script_owner_email: str
     application_id: int
+
+    class Config:
+        orm_mode = True
+        schema_extra = job_script_meta_mapper
+
+
+class JobScriptResponse(JobScriptPartialResponse):
+    """
+    Complete model to match database in addition to the field
+    job_script_data_as_string from S3, for the JobScript resource.
+    """
+
+    job_script_data_as_string: str
 
     class Config:
         orm_mode = True

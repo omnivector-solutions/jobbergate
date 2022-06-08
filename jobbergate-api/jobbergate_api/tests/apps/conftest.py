@@ -53,7 +53,6 @@ def job_script_data():
     """
     return {
         "job_script_name": "test_name",
-        "job_script_data_as_string": "the\nfile",
         "job_script_owner_email": "owner1@org.com",
     }
 

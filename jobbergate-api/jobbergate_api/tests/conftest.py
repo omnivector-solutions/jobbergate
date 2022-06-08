@@ -22,6 +22,7 @@ from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.config import settings
 from jobbergate_api.main import app
 from jobbergate_api.metadata import metadata
+from jobbergate_api.s3_manager import DummyClient, s3man_jobscripts
 from jobbergate_api.storage import build_db_url, database
 
 # Charset for producing random strings
@@ -64,6 +65,19 @@ def enforce_mocked_oidc_provider(mock_openid_server):
     No actual calls to an OIDC provider will be made.
     """
     yield
+
+
+@pytest.fixture(autouse=True)
+def replace_s3client_with_dummy():
+    """
+    Replace the original S3 client in order to support the tests.
+    """
+    original_client = s3man_jobscripts.client
+    s3man_jobscripts.client = DummyClient()
+
+    yield
+
+    s3man_jobscripts.client = original_client
 
 
 @pytest.fixture

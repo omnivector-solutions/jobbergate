@@ -30,6 +30,7 @@ class BucketClientBase(ABC):
     def delete(self, key: str) -> None:
         """
         Delete a file from the client associated to the given key.
+        Raise KeyError if the file does not exist.
         """
         pass
 
@@ -37,11 +38,16 @@ class BucketClientBase(ABC):
     def get(self, key: str) -> typing.IO:
         """
         Get a file from the client associated to the given key.
+        Raise KeyError if the file does not exist.
         """
         pass
 
 
 class DummyClient(BucketClientBase):
+    """
+    Dummy client designed to support the tests.
+    """
+
     def __init__(self):
         """
         Initialize an dummy client.
@@ -74,6 +80,10 @@ class DummyClient(BucketClientBase):
 
 
 class S3Client(BucketClientBase):
+    """
+    S3 client.
+    """
+
     def __init__(self):
         """
         Initialize an s3 client.
@@ -109,6 +119,7 @@ class S3Client(BucketClientBase):
         """
         Get a file from the client associated to the given key.
         """
+        # TODO: handle client errors and raise KeyError when applicable
         return self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
 
 
@@ -177,6 +188,8 @@ class S3Manager:
 
     def get_s3_object_as_string(self, app_id) -> str:
         s3_file_obj = self.get(app_id)
+        if isinstance(s3_file_obj, str):
+            return s3_file_obj
         string = s3_file_obj.get("Body").read().decode("utf-8")
         return string
 
