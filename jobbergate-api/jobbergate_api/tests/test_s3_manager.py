@@ -4,7 +4,7 @@ import pytest
 from botocore.exceptions import BotoCoreError
 from fastapi.exceptions import HTTPException
 
-from jobbergate_api.s3_manager import DummyClient, S3Manager
+from jobbergate_api.s3_manager import DummyClient, S3Client, S3Manager
 from jobbergate_api.storage import database
 
 
@@ -16,11 +16,11 @@ from jobbergate_api.storage import database
     ],
 )
 def test_s3_manager__key_template(directory_name, desired_template):
-    s3man = S3Manager(directory_name=directory_name, client=DummyClient())
+    s3man = S3Manager(DummyClient(), directory_name)
     assert s3man.key_template == desired_template
 
 
-s3man = S3Manager()
+s3man = S3Manager(S3Client(), "applications")
 
 
 @pytest.mark.asyncio
