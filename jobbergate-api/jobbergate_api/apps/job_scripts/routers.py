@@ -24,7 +24,7 @@ from jobbergate_api.apps.job_scripts.schemas import (
 )
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import s3man_applications, s3man_jobscripts
+from jobbergate_api.s3_manager import get_s3_object_as_tarfile, s3man_applications, s3man_jobscripts
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause
 
@@ -145,7 +145,7 @@ async def job_script_create(
         )
     application = ApplicationResponse.parse_obj(raw_application)
     logger.debug("Fetching application tarfile")
-    s3_application_tar = s3man_applications.get_s3_object_as_tarfile(application.id)
+    s3_application_tar = get_s3_object_as_tarfile(s3man_applications, application.id)
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
 
@@ -177,10 +177,7 @@ async def job_script_create(
 
     else:
 
-        s3man_jobscripts.put(
-            job_script_data_as_string,
-            job_script_data.id,
-        )
+        s3man_jobscripts[job_script_data.id] = job_script_data_as_string
 
     logger.debug(f"Created job_script={job_script_data}")
     job_script_response = dict(
@@ -210,7 +207,7 @@ async def job_script_get(job_script_id: int = Query(...)):
         )
 
     job_script_response = dict(job_script)
-    job_script_response["job_script_data_as_string"] = s3man_jobscripts.get_s3_object_as_string(job_script_id)
+    job_script_response["job_script_data_as_string"] = s3man_jobscripts[job_script_id]
 
     return job_script_response
 
@@ -269,7 +266,7 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
         )
 
     delete_query = job_scripts_table.delete().where(where_stmt)
-    s3man_jobscripts.delete(job_script_id)
+    del s3man_jobscripts[job_script_id]
 
     await database.execute(delete_query)
 
@@ -299,10 +296,7 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     else:
         if job_script.job_script_data_as_string:
-            s3man_jobscripts.put(
-                job_script.job_script_data_as_string,
-                job_script_id,
-            )
+            s3man_jobscripts[job_script_id] = job_script.job_script_data_as_string
 
     if result is None:
         raise HTTPException(
@@ -311,7 +305,7 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
         )
 
     job_script_response = dict(result)
-    job_script_response["job_script_data_as_string"] = s3man_jobscripts.get_s3_object_as_string(job_script_id)
+    job_script_response["job_script_data_as_string"] = s3man_jobscripts[job_script_id]
 
     return job_script_response
 

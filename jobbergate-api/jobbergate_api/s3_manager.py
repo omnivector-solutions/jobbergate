@@ -3,147 +3,98 @@ Provides a convenience class for managing calls to S3.
 """
 import tarfile
 import typing
-from abc import ABC, abstractmethod
+from collections.abc import MutableMapping
 from io import BytesIO
 
 import boto3
 from botocore.exceptions import BotoCoreError
-from fastapi import HTTPException, UploadFile, status
+from fastapi import HTTPException, status
 from loguru import logger
 
 from jobbergate_api.config import settings
 
 
-class BucketClientBase(ABC):
+class S3Manager(MutableMapping):
     """
-    Base class used to describe how to interact with bucket clients.
-    """
+    Provide a class for managing the files from an S3 client.
 
-    @abstractmethod
-    def put(self, file: typing.IO, key: str) -> None:
-        """
-        Upload a file to the client for the given key.
-        """
-        pass
+    This class implements the MutableMapping protocol, so all interactions with
+    S3 can be done using a dict-like interface.
 
-    @abstractmethod
-    def delete(self, key: str) -> None:
-        """
-        Delete a file from the client associated to the given key.
-        Raise KeyError if the file does not exist.
-        """
-        pass
+    The files stored in the Bucket defined at settings and with a key template
+    computed internally in this class.
 
-    @abstractmethod
-    def get(self, key: str) -> typing.IO:
-        """
-        Get a file from the client associated to the given key.
-        Raise KeyError if the file does not exist.
-        """
-        pass
-
-
-class DummyClient(BucketClientBase):
-    """
-    Dummy client designed to support the tests.
+    Note: According to boto3's documentation, `list_objects` returns some or
+    all (up to 1,000) of the objects in a bucket. Something to pay attention
+    to in a production environment, since some functionality that depends on
+    this method may not see all the files there (like __iter__ and __len__).
     """
 
-    def __init__(self):
+    def __init__(self, s3_client, folder: str, filename: str):
         """
-        Initialize an dummy client.
+        Initialize an s3 manager. The interaction with S3 is done with the
+        provided client, folder and filename.
         """
-        self.client = {}
-
-    def put(self, file: typing.IO, key: str) -> None:
-        """
-        Upload a file to the client for the given key.
-        """
-        self.client[key] = file
-
-    def delete(self, key: str) -> None:
-        """
-        Delete a file from the client associated to the given key.
-        """
-        try:
-            del self.client[key]
-        except KeyError:
-            raise KeyError(f"No such key: {key}")
-
-    def get(self, key: str) -> typing.IO:
-        """
-        Get a file from the client associated to the given key.
-        """
-        try:
-            return self.client[key]
-        except KeyError:
-            raise KeyError(f"No such key: {key}")
-
-
-class S3Client(BucketClientBase):
-    """
-    S3 client.
-    """
-
-    def __init__(self):
-        """
-        Initialize an s3 client.
-        """
+        self.s3_client = s3_client
+        self.folder_name = folder
+        self.filename = filename
+        self.key_template = f"{self.folder_name}/{{app_id}}/{self.filename}"
         self.bucket_name = settings.S3_BUCKET_NAME
-        self.s3_client = boto3.client(
-            "s3",
-            endpoint_url=settings.S3_ENDPOINT_URL,
-        )
 
-    def put(self, file: typing.IO, key: str) -> None:
+    def __getitem__(self, app_id: typing.Union[int, str]) -> str:
         """
-        Upload a file to the client for the given key.
+        Get a file from the client associated to the given id.
         """
-        self.s3_client.put_object(
-            Body=file,
-            Bucket=self.bucket_name,
-            Key=key,
-        )
+        key = self._get_key_from_id(app_id)
+        logger.debug(f"Getting from S3: {key})")
 
-    def delete(self, key: str) -> None:
-        """
-        Delete a file from the client associated to the given key.
-        """
         try:
-            self.s3_client.delete_object(Bucket=self.bucket_name, Key=key)
-        except self.s3_client.exceptions.NoSuchBucket:
-            raise KeyError(f"No such bucket: {self.bucket_name}")
+            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
         except self.s3_client.exceptions.NoSuchKey:
             raise KeyError(f"No such key: {key}")
 
-    def get(self, key: str) -> typing.IO:
+        return response.get("Body").read().decode("utf-8")
+
+    def __setitem__(self, app_id: typing.Union[int, str], file: str) -> None:
         """
-        Get a file from the client associated to the given key.
+        Upload a file to the client for the given id.
         """
-        # TODO: handle client errors and raise KeyError when applicable
-        return self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
+        key = self._get_key_from_id(app_id)
+        logger.debug(f"Uploading to S3: {key})")
 
+        try:
+            self.s3_client.put_object(Body=file, Bucket=self.bucket_name, Key=key)
+        except self.s3_client.exceptions.NoSuchKey:
+            raise KeyError(f"No such key: {key}")
 
-class S3Manager:
-    """
-    Provide a class for managing connection to an S3 bucket.
-
-    Prepares the bucket_name and s3 key template from project settings. Also initialize an s3
-    client. Provide methods as thin wrappers around s3 calls but provide the mappings for buckets and keys.
-    """
-
-    def __init__(
-        self,
-        client: BucketClientBase,
-        directory_name: str,
-        filename="jobbergate.tar.gz",
-    ):
+    def __delitem__(self, app_id: typing.Union[int, str]) -> None:
         """
-        Initialize the S3Manager class instance.
+        Delete a file from the client associated to the given id.
         """
-        self.client = client
-        self.key_template = directory_name + "/{app_id}/" + filename
+        key = self._get_key_from_id(app_id)
+        logger.debug(f"Deleting from S3: {key})")
 
-    def _get_key(self, app_id: str) -> str:
+        try:
+            self.s3_client.delete_object(Bucket=self.bucket_name, Key=key)
+        except self.s3_client.exceptions.NoSuchKey:
+            raise KeyError(f"No such key: {key}")
+
+    def __iter__(self) -> typing.Iterable:
+        """
+        Yield all ids found in the work folder.
+        """
+        response = self._get_list_of_objects()
+        for key in response:
+            yield self._get_app_id_from_key(key.get("Key"))
+
+    def __len__(self) -> int:
+        """
+        Count the number of ids found in the work folder.
+        """
+        response = self._get_list_of_objects()
+        return len(response)
+
+    def _get_key_from_id(self, app_id: typing.Union[int, str]) -> str:
         """
         Get an s3 key based upon the app_id. If app_id is empty, throw an exception.
         """
@@ -154,56 +105,51 @@ class S3Manager:
             )
         return self.key_template.format(app_id=app_id)
 
-    def put(self, upload_file: UploadFile, app_id: str = "") -> str:
+    def _get_app_id_from_key(self, key: str) -> str:
         """
-        Upload a file to s3 for the given app_id and returns its key.
+        Get the app_id based upon an s3 key.
         """
-        key = self._get_key(app_id)
-        logger.debug(f"Uploading to S3: {key})")
-        if isinstance(upload_file, str):
-            self.client.put(upload_file, key)
-        else:
-            self.client.put(upload_file.file, key)
-        return key
+        return key.lstrip(f"{self.folder_name}/").rstrip(f"/{self.filename}")
 
-    def delete(self, app_id: str = ""):
+    def _get_list_of_objects(self) -> list:
         """
-        Delete a file from s3 associated to the given app_id.
-        """
-        key = self._get_key(app_id)
-        logger.debug(f"Deleting from S3: {key})")
-        self.client.delete(key=key)
-
-    def get(self, app_id: str = ""):
-        """
-        Get a file from s3 associated to the given app_id.
-        """
-        key = self._get_key(app_id)
-        logger.debug(f"Getting from S3: {key})")
-        return self.client.get(key=key)
-
-    def get_s3_object_as_string(self, app_id) -> str:
-        s3_file_obj = self.get(app_id)
-        if isinstance(s3_file_obj, str):
-            return s3_file_obj
-        string = s3_file_obj.get("Body").read().decode("utf-8")
-        return string
-
-    def get_s3_object_as_tarfile(self, app_id):
-        """
-        Return the tarfile of a S3 object.
+        Return the list of files found in the work folder.
+        Raise 404 when facing connection errors or if the response is not
+        in the expected format.
         """
         try:
-            s3_application_obj = self.get(app_id=app_id)
-        except BotoCoreError:
+            return self.s3_client.list_objects(
+                Bucket=self.bucket_name,
+                Prefix=self.folder_name,
+            ).get("Contents")
+        except (BotoCoreError, KeyError):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Application with id={app_id} not found in S3",
+                detail="Not possible to retrieve information from S3",
             )
-        s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj["Body"].read()))
-        return s3_application_tar
 
 
-s3_client = S3Client()
-s3man_applications = S3Manager(s3_client, "applications")
-s3man_jobscripts = S3Manager(s3_client, "job-scripts")
+def get_s3_object_as_tarfile(s3man: S3Manager, app_id: typing.Union[int, str]):
+    """
+    Return the tarfile of a S3 object.
+    """
+    try:
+        s3_application_obj = s3man[app_id]
+    except (BotoCoreError, KeyError):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Application with id={app_id} not found in S3",
+        )
+
+    s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj.get("Body").read()))
+    return s3_application_tar
+
+
+s3_client = boto3.client(
+    "s3",
+    endpoint_url=settings.S3_ENDPOINT_URL,
+    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+)
+s3man_applications = S3Manager(s3_client, "applications", "jobbergate.tar.gz")
+s3man_jobscripts = S3Manager(s3_client, "job-scripts", "jobbergate.tar.gz")
