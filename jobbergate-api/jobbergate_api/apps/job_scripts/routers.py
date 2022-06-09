@@ -266,9 +266,12 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
         )
 
     delete_query = job_scripts_table.delete().where(where_stmt)
-    del s3man_jobscripts[job_script_id]
-
     await database.execute(delete_query)
+
+    try:
+        del s3man_jobscripts[job_script_id]
+    except KeyError:
+        await logger.warning(f"Tried to delete job_script={job_script_id}, but it was not found")
 
 
 @router.put(
@@ -305,7 +308,13 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
         )
 
     job_script_response = dict(result)
-    job_script_response["job_script_data_as_string"] = s3man_jobscripts[job_script_id]
+    try:
+        job_script_response["job_script_data_as_string"] = s3man_jobscripts[job_script_id]
+    except KeyError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File for JobScript with id={job_script_id} not found in S3.",
+        )
 
     return job_script_response
 
