@@ -7,7 +7,6 @@ from unittest import mock
 
 import asyncpg
 import pytest
-from botocore.exceptions import BotoCoreError
 from fastapi import status
 
 from jobbergate_api.apps.applications.models import applications_table
@@ -16,7 +15,6 @@ from jobbergate_api.apps.job_scripts.routers import (
     build_job_script_data_as_string,
     inject_sbatch_params,
     render_template,
-    s3man_applications,
 )
 from jobbergate_api.apps.job_scripts.schemas import JobScriptPartialResponse, JobScriptResponse
 from jobbergate_api.apps.permissions import Permissions
@@ -143,7 +141,7 @@ async def test_create_job_script(
     assert job_script.job_script_owner_email == "owner1@org.com"
     assert job_script.job_script_description is None
     assert job_script.job_script_data_as_string
-    assert job_script.job_script_data_as_string.startswith('{"application.sh":')
+    assert isinstance(job_script.job_script_data_as_string, str)
     assert job_script.application_id == inserted_application_id
     assert job_script.created_at in window
     assert job_script.updated_at in window
