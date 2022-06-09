@@ -57,17 +57,18 @@ def test_get_running_jobs(mocker):
     assert get_running_jobs() == []
 
 
-def test_get_file_list(tmp_path, temp_cd):
+def test_get_file_list__basic(tmp_path, temp_cd):
     """
     Test that the ``get_file_list()`` method returns a list of files in a path matching some search term.
 
     Assert that the function works with no arguments, with only the target path, and with the search term.
+    Also assert that case is ignored.
     """
     file1 = tmp_path / "file1.py"
     file1.write_text("foo")
     os.utime(file1, (0, 2))
 
-    file2 = tmp_path / "file2.txt"
+    file2 = tmp_path / "FILE2.txt"
     file2.write_text("bar")
     os.utime(file2, (0, 3))
 
@@ -80,22 +81,25 @@ def test_get_file_list(tmp_path, temp_cd):
 
     with temp_cd(tmp_path):
         assert get_file_list() == [
-            "file2.txt",
+            "FILE2.txt",
             "file1.py",
         ]
 
     assert get_file_list(tmp_path) == [
-        "file2.txt",
+        "FILE2.txt",
         "file1.py",
     ]
 
-    assert get_file_list(tmp_path, search_term="**/*") == [
-        "file2.txt",
+    assert get_file_list(tmp_path, search_term="*") == [
+        "FILE2.txt",
         "file1.py",
-        "file3.py",
     ]
 
-    assert get_file_list(tmp_path, search_term="**/*.py") == [
+    assert get_file_list(tmp_path, search_term="*.py") == [
         "file1.py",
-        "file3.py",
+    ]
+
+    assert get_file_list(tmp_path, search_term="*FILE*") == [
+        "FILE2.txt",
+        "file1.py",
     ]
