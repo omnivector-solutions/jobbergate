@@ -1,10 +1,12 @@
 """
 Helper functions that may be used inside of Jobbergate applications.
 """
+import fnmatch
+import re
 import shlex
 import subprocess
 from getpass import getuser
-import os, re, fnmatch
+from pathlib import Path
 
 
 def get_running_jobs(user_only=True):
@@ -27,11 +29,18 @@ def get_running_jobs(user_only=True):
     return ID_alternatives
 
 
-def get_file_list(path=".", search_term="*.*"):
-    """Returns a list of input files in a directory ( default: pwd)."""
-    all_paths = os.listdir(path)
-    pattern = re.compile(fnmatch.translate(search_term), re.IGNORECASE)
+def get_file_list(path=None, search_term="*.*"):
+    """
+    Return a list of input files in a directory that match a search term.
 
-    file_paths = [p for p in all_paths if os.path.isfile(os.path.join(path, p)) and re.match(pattern, p)]
-    file_paths = sorted(file_paths, key=lambda p: os.stat(os.path.join(path, p)).st_mtime, reverse=True)
-    return file_paths
+    Ignore casing when comparing against the search term.
+
+    Default to searching for all files in the current directory.
+    """
+    if not path:
+        path = Path.cwd()
+
+    pattern = re.compile(fnmatch.translate(search_term), re.IGNORECASE)
+    file_paths = [p for p in path.iterdir() if p.is_file() and re.match(pattern, p.name)]
+    file_paths = sorted(file_paths, key=lambda p: p.stat().st_mtime, reverse=True)
+    return [p.name for p in file_paths]
