@@ -39,4 +39,5 @@ def init_sentry():
         sentry_sdk.init(
             dsn=settings.SENTRY_DSN,
             traces_sample_rate=settings.SENTRY_TRACE_RATE,
+            environment=settings.SENTRY_ENV,
         )
