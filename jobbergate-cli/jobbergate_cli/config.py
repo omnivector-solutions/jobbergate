@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     # enable http tracing
     JOBBERGATE_DEBUG: bool = Field(False)
 
+    # Setry's configuration
     SENTRY_DSN: Optional[str]
     SENTRY_TRACE_RATE: float = Field(1.0, gt=0.0, le=1.0)
     SENTRY_ENV: str = "local"
