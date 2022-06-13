@@ -79,7 +79,7 @@ class S3Manager(MutableMapping):
         except self.s3_client.exceptions.NoSuchKey:
             raise KeyError(f"No such key: {key}")
 
-    def __iter__(self) -> typing.Iterable:
+    def __iter__(self) -> typing.Iterable[str]:
         """
         Yield all ids found in the work folder.
         """
