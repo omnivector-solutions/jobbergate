@@ -271,7 +271,7 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     try:
         del s3man_jobscripts[job_script_id]
     except KeyError:
-        await logger.warning(f"Tried to delete job_script={job_script_id}, but it was not found")
+        logger.warning(f"Tried to delete job_script={job_script_id}, but it was not found")
 
 
 @router.put(

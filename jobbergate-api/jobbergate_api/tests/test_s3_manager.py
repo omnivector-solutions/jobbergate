@@ -16,6 +16,11 @@ def test_s3_manager__key_template(directory_name, desired_template):
     assert s3man.key_template == desired_template
 
 
+@pytest.fixture
+def s3manager():
+    return S3Manager(s3_client, "applications", "jobbergate.tar.gz")
+
+
 @pytest.mark.parametrize(
     "key, id",
     [
@@ -27,10 +32,6 @@ def test_s3_manager__key_template(directory_name, desired_template):
     ],
 )
 class TestS3ManagerKeyIdTwoWayMapping:
-    @pytest.fixture
-    def s3manager(self):
-        return S3Manager(s3_client, "applications", "jobbergate.tar.gz")
-
     @pytest.mark.parametrize("input_type", [int, str])
     def test_s3_manager__get_key_from_id_str(self, s3manager, key, id, input_type):
         assert s3manager._get_key_from_id(input_type(id)) == key
