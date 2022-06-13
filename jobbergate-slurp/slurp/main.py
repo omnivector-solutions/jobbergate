@@ -4,15 +4,15 @@ The main slurp application.
 Provides a Typer app and associated commands.
 """
 import subprocess
-from loguru import logger
 
 import typer
+from loguru import logger
 
-from slurp.connections import db, build_url
-from slurp.migrators.applications import migrate_applications, mark_uploaded
+from slurp.connections import build_url, db
+from slurp.migrators.applications import mark_uploaded, migrate_applications
 from slurp.migrators.job_scripts import migrate_job_scripts
 from slurp.migrators.job_submissions import migrate_job_submissions
-from slurp.pull_legacy import pull_users, pull_applications, pull_job_scripts, pull_job_submissions
+from slurp.pull_legacy import pull_applications, pull_job_scripts, pull_job_submissions, pull_users
 from slurp.s3_ops import S3Manager, transfer_s3
 
 app = typer.Typer()
@@ -49,7 +49,11 @@ def clear_nextgen_db():
 
 
 @app.command()
-def migrate():
+def migrate(
+    ignore_submissions: bool = typer.Option(
+        False, help="Ignore rows at the Submissions Table when migrating the database."
+    ),
+):
     """
     Migrates data from the legacy database to the nextgen database.
     """
@@ -65,8 +69,9 @@ def migrate():
         legacy_job_scripts = pull_job_scripts(legacy_db)
         job_scripts_map = migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, applications_map)
 
-        legacy_job_submissions = pull_job_submissions(legacy_db)
-        migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map, job_scripts_map)
+        if not ignore_submissions:
+            legacy_job_submissions = pull_job_submissions(legacy_db)
+            migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map, job_scripts_map)
 
         transferred_ids = transfer_s3(legacy_s3man, nextgen_s3man, applications_map)
 
