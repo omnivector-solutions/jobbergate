@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Job scripts were moved from a database column to files at S3.
 
 3.1.1 -- 2022-06-01
 -------------------
@@ -26,7 +27,7 @@ Unreleased
 
 3.0.2 -- 2022-04-08
 -------------------
-- Fixed compatiblity issues with python 3.6 in CLI
+- Fixed compatibility issues with python 3.6 in CLI
 
 3.0.1 -- 2022-04-08
 -------------------
@@ -74,7 +75,7 @@ Unreleased
 
 2.2.2 -- 2022-02-07
 -------------------
-- Fixed applicaiton creation
+- Fixed application creation
 
 2.2.1 -- 2022-02-03
 -------------------
