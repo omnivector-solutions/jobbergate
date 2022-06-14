@@ -31,21 +31,21 @@ def clear_nextgen_db():
     """
     Clears out the tables of the nextgen database.
     """
-    logger.debug("Clearing out nextgen database")
+    logger.info("Clearing out nextgen database")
     nextgen_s3man = S3Manager(is_legacy=False)
     with db(is_legacy=False) as nextgen_db:
-        logger.debug("Truncating job_submissions")
+        logger.info("Truncating job_submissions")
         nextgen_db.execute("truncate job_submissions cascade")
 
-        logger.debug("Truncating job_scripts")
+        logger.info("Truncating job_scripts")
         nextgen_db.execute("truncate job_scripts cascade")
 
-        logger.debug("Truncating applications")
+        logger.info("Truncating applications")
         nextgen_db.execute("truncate applications cascade")
 
-        logger.debug("Clearing S3 objects")
+        logger.info("Clearing S3 objects")
         nextgen_s3man.clear_bucket()
-    logger.debug("Finished clearing!")
+    logger.success("Finished clearing!")
 
 
 @app.command()
@@ -57,7 +57,7 @@ def migrate(
     """
     Migrates data from the legacy database to the nextgen database.
     """
-    logger.debug("Migrating jobbergate data from legacy to nextgen database")
+    logger.info("Migrating jobbergate data from legacy to nextgen database")
     legacy_s3man = S3Manager(is_legacy=True)
     nextgen_s3man = S3Manager(is_legacy=False)
     with db(is_legacy=True) as legacy_db, db(is_legacy=False) as nextgen_db:
@@ -77,4 +77,4 @@ def migrate(
 
         mark_uploaded(nextgen_db, transferred_ids)
 
-    logger.debug("Finished migration!")
+    logger.success("Finished migration!")

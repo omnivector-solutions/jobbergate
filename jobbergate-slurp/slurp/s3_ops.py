@@ -107,7 +107,7 @@ class S3Manager:
         """
         Clear all objects from the bucket.
         """
-        logger.debug(f"Clearing bucket {self.bucket_name} in {self.url}")
+        logger.info(f"Clearing bucket {self.bucket_name} in {self.url}")
         SlurpException.require_condition(
             not self.is_legacy,
             "Cannot clear legacy bucket",
@@ -115,11 +115,12 @@ class S3Manager:
         with SlurpException.handle_errors(
             self.s3_client.exceptions.NoSuchBucket,
             re_raise=False,
-            do_except=lambda *_: logger.debug(f"No such bucket {self.bucket_name}"),
+            do_except=lambda *_: logger.info(f"No such bucket {self.bucket_name}"),
         ):
             for key in self.list_keys():
+                logger.trace(f"Deleting {key=}")
                 self.s3_client.delete_object(Bucket=self.bucket_name, Key=key)
-        logger.debug("Finished clearing bucket")
+        logger.success("Finished clearing bucket")
 
 
 def transfer_s3(legacy_s3man, nextgen_s3man, applications_map):
@@ -131,7 +132,7 @@ def transfer_s3(legacy_s3man, nextgen_s3man, applications_map):
     the object. Otherwise put the object into the nextgen s3 bucket with the application
     id mapped to the appropriate nextgen application.
     """
-    logger.debug("Transfering S3 data from legacy to nextgen store")
+    logger.info("Transferring S3 data from legacy to nextgen store")
     nextgen_s3man.ensure_bucket()
     bad_pattern_skips = 0
     missing_id_skips = 0
@@ -141,19 +142,23 @@ def transfer_s3(legacy_s3man, nextgen_s3man, applications_map):
         match = re.search(r'applications/(\d+)', legacy_key)
         if not match:
             bad_pattern_skips += 1
+            logger.warning(f"Bad pattern: {legacy_key=}")
             continue
         legacy_application_id = match.group(1)
         nextgen_application_id = applications_map.get(int(legacy_application_id))
         if not nextgen_application_id:
             missing_id_skips += 1
+            logger.warning(f"Missing id: {legacy_key=}")
             continue
         legacy_obj = legacy_s3man.get(legacy_key)
         nextgen_key = nextgen_s3man.get_key(nextgen_application_id)
         nextgen_s3man.put(nextgen_key, legacy_obj)
         transferred_ids.append(nextgen_application_id)
         successful_transfers += 1
-    logger.debug(f"Skipped {bad_pattern_skips} objects due to unparsable key")
-    logger.debug(f"Skipped {missing_id_skips} objects due to missing application_id")
-    logger.debug(f"Finished transfering {successful_transfers} objects")
+        logger.trace(f"Successful transfer: {legacy_key=}")
+
+    logger.info(f"Skipped {bad_pattern_skips} objects due to unparsable key")
+    logger.info(f"Skipped {missing_id_skips} objects due to missing application_id")
+    logger.info(f"Finished transferring {successful_transfers} objects")
 
     return transferred_ids

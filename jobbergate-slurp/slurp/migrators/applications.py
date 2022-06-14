@@ -14,7 +14,7 @@ def migrate_applications(nextgen_db, legacy_applications, user_map):
     :returns: An dict mapping legacy application ids to nextgen application ids
     """
     application_map = {}
-    logger.debug("Inserting applications to nextgen database")
+    logger.info("Inserting applications to nextgen database")
     for application in legacy_applications:
         owner_email = user_map[application["application_owner_id"]]["email"]
 
@@ -53,10 +53,10 @@ def migrate_applications(nextgen_db, legacy_applications, user_map):
                 config=application["application_config"],
                 created=application["created_at"],
                 updated=application["updated_at"],
-            )
+            ),
         )
         application_map[application["id"]] = nextgen_db.fetchone()["id"]
-    logger.debug("Finished migrating applications")
+    logger.success("Finished migrating applications")
     return application_map
 
 
@@ -66,12 +66,12 @@ def mark_uploaded(nextgen_db, ids):
 
     Given a list of nextgen application_ids, mark each as uploaded.
     """
-    logger.debug("Marking uploaded applications in nextgen database")
+    logger.info("Marking uploaded applications in nextgen database")
 
     batch_size = 1000
     id_count = len(ids)
     batch_start = 0
-    while(batch_start < id_count):
+    while batch_start < id_count:
         batch_end = min(batch_start + batch_size, id_count)
         logger.debug(f"Marking application {batch_start} through {batch_end} of {id_count}")
         batch = ids[batch_start:batch_end]
@@ -86,4 +86,4 @@ def mark_uploaded(nextgen_db, ids):
 
         batch_start += batch_size
 
-    logger.debug("Finished marking uploaded applications")
+    logger.success("Finished marking uploaded applications")
