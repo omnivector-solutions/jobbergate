@@ -168,16 +168,20 @@ async def job_script_create(
     job_script_data_as_string = inject_sbatch_params(job_script_data_as_string, sbatch_params)
 
     logger.debug("Inserting job_script")
-    try:
-        insert_query = job_scripts_table.insert().returning(job_scripts_table)
-        job_script_data = await database.fetch_one(query=insert_query, values=create_dict)
 
-    except INTEGRITY_CHECK_EXCEPTIONS as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    async with database.transaction():
 
-    else:
+        try:
+            insert_query = job_scripts_table.insert().returning(job_scripts_table)
+            job_script_data = await database.fetch_one(query=insert_query, values=create_dict)
 
-        s3man_jobscripts[job_script_data.id] = job_script_data_as_string
+            s3man_jobscripts[job_script_data.id] = job_script_data_as_string
+
+        except INTEGRITY_CHECK_EXCEPTIONS as e:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+
+        except KeyError as e:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
     logger.debug(f"Created job_script={job_script_data}")
     job_script_response = dict(
