@@ -7,6 +7,7 @@ from unittest import mock
 
 import asyncpg
 import pytest
+from botocore.stub import Stubber
 from fastapi import status
 
 from jobbergate_api.apps.applications.models import applications_table
@@ -18,6 +19,7 @@ from jobbergate_api.apps.job_scripts.routers import (
 )
 from jobbergate_api.apps.job_scripts.schemas import JobScriptPartialResponse, JobScriptResponse
 from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.s3_manager import s3man_jobscripts
 from jobbergate_api.storage import database
 
 
@@ -247,6 +249,47 @@ async def test_create_job_script_file_not_found(
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0
+
+
+@database.transaction(force_rollback=True)
+@pytest.mark.asyncio
+async def test_create_job_script_unable_to_write_file_to_s3(
+    fill_application_data, fill_job_script_data, param_dict, client, inject_security_header, s3_object
+):
+    """
+    Test that a job script is not added to the database when S3 manager gets an error.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+
+    actual_id_rows = await database.fetch_all("SELECT id FROM job_scripts")
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
+
+    with Stubber(s3man_jobscripts.s3_client) as stubber:
+
+        stubber.add_client_error("put_object", "NoSuchKey")
+
+        with mock.patch(
+            "jobbergate_api.apps.job_scripts.routers.s3man_applications",
+            {inserted_application_id: s3_object},
+        ):
+
+            response = await client.post(
+                "/jobbergate/job-scripts/",
+                json=fill_job_script_data(
+                    application_id=inserted_application_id,
+                    param_dict=param_dict,
+                ),
+            )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    desired_id_rows = await database.fetch_all("SELECT id FROM job_scripts")
+
+    assert actual_id_rows == desired_id_rows
 
 
 def test_render_template(param_dict_flat, template_files, job_script_data_as_string):
