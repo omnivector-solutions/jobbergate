@@ -282,6 +282,7 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     try:
         del s3man_jobscripts[job_script_id]
     except KeyError:
+        # There is no need to raise an error if we try to delete a file that does not exist
         logger.warning(f"Tried to delete job_script={job_script_id}, but it was not found")
 
 
