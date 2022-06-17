@@ -359,6 +359,39 @@ async def test_get_job_script_by_id(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
+async def test_get_job_script_by_id_file_not_found_at_s3(
+    client,
+    fill_application_data,
+    fill_job_script_data,
+    inject_security_header,
+):
+    """
+    Test if 404 is returned when the jobscripts exists in the database but the
+    file was not found at S3.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
+
+    with Stubber(s3man_jobscripts.s3_client) as stubber:
+
+        stubber.add_client_error("get_object", "NoSuchKey")
+
+        response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}")
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert "JobScript file not found for id=" in response.text
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
 async def test_get_job_script_by_id_invalid(client, inject_security_header):
     """
     Test the correct response code is returned when a job_script does not exist.
