@@ -866,6 +866,48 @@ async def test_update_job_script_not_found(
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
+@database.transaction(force_rollback=True)
+@pytest.mark.asyncio
+async def test_update_job_script_unable_to_write_file_to_s3(
+    fill_application_data,
+    fill_job_script_data,
+    param_dict,
+    client,
+    inject_security_header,
+    s3_object,
+    time_frame,
+):
+    """
+    Test that a job script is not updated to the database when S3 manager gets an error.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
+
+    with Stubber(s3man_jobscripts.s3_client) as stubber:
+
+        stubber.add_client_error("put_object", "NoSuchKey")
+
+        with time_frame() as window:
+
+            response = await client.put(
+                f"/jobbergate/job-scripts/{inserted_job_script_id}",
+                json={
+                    "job_script_name": "new name",
+                    "job_script_description": "new description",
+                    "job_script_data_as_string": "new value",
+                },
+            )
+
+
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
 async def test_update_job_script_bad_permission(
