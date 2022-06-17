@@ -211,7 +211,14 @@ async def job_script_get(job_script_id: int = Query(...)):
         )
 
     job_script_response = dict(job_script)
-    job_script_response["job_script_data_as_string"] = s3man_jobscripts[job_script_id]
+
+    try:
+        job_script_response["job_script_data_as_string"] = s3man_jobscripts[job_script_id]
+    except KeyError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"JobScript file not found for id={job_script_id}.",
+        )
 
     return job_script_response
 
