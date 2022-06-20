@@ -871,10 +871,8 @@ async def test_update_job_script_not_found(
 async def test_update_job_script_unable_to_write_file_to_s3(
     fill_application_data,
     fill_job_script_data,
-    param_dict,
     client,
     inject_security_header,
-    s3_object,
     time_frame,
 ):
     """
@@ -890,22 +888,29 @@ async def test_update_job_script_unable_to_write_file_to_s3(
         values=fill_job_script_data(application_id=inserted_application_id),
     )
 
-    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
+    query = job_scripts_table.select(job_scripts_table.c.id == inserted_job_script_id)
+
+    desired_jobscript_data = JobScriptPartialResponse.parse_obj(await database.fetch_one(query))
 
     with Stubber(s3man_jobscripts.s3_client) as stubber:
-
         stubber.add_client_error("put_object", "NoSuchKey")
 
-        with time_frame() as window:
+        inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
+        response = await client.put(
+            f"/jobbergate/job-scripts/{inserted_job_script_id}",
+            json={
+                "job_script_name": "new name",
+                "job_script_description": "new description",
+                "job_script_data_as_string": "new value",
+            },
+        )
 
-            response = await client.put(
-                f"/jobbergate/job-scripts/{inserted_job_script_id}",
-                json={
-                    "job_script_name": "new name",
-                    "job_script_description": "new description",
-                    "job_script_data_as_string": "new value",
-                },
-            )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert "not found in S3" in response.text
+
+    actual_jobscript_data = JobScriptPartialResponse.parse_obj(await database.fetch_one(query))
+
+    assert desired_jobscript_data.json() == actual_jobscript_data.json()
 
 
 @pytest.mark.asyncio
