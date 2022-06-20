@@ -305,28 +305,33 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
         )
         .returning(job_scripts_table)
     )
-    try:
-        result = await database.fetch_one(update_query)
-    except INTEGRITY_CHECK_EXCEPTIONS as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-    else:
-        if job_script.job_script_data_as_string:
-            s3man_jobscripts[job_script_id] = job_script.job_script_data_as_string
 
-    if result is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"JobScript with id={job_script_id} not found.",
-        )
+    async with database.transaction():
 
-    job_script_response = dict(result)
-    try:
-        job_script_response["job_script_data_as_string"] = s3man_jobscripts[job_script_id]
-    except KeyError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"File for JobScript with id={job_script_id} not found in S3.",
-        )
+        try:
+            result = await database.fetch_one(update_query)
+        except INTEGRITY_CHECK_EXCEPTIONS as e:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+        if result is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"JobScript with id={job_script_id} not found.",
+            )
+
+        job_script_response = dict(result)
+
+        try:
+            if job_script.job_script_data_as_string:
+                s3man_jobscripts[job_script_id] = job_script.job_script_data_as_string
+                job_script_response["job_script_data_as_string"] = job_script.job_script_data_as_string
+            else:
+                job_script_response["job_script_data_as_string"] = s3man_jobscripts[job_script_id]
+        except KeyError:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"File for JobScript with id={job_script_id} not found in S3.",
+            )
 
     return job_script_response
 
