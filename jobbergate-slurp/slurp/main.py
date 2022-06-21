@@ -51,7 +51,7 @@ def clear_nextgen_db():
 @app.command()
 def migrate(
     ignore_submissions: bool = typer.Option(
-        False, help="Ignore rows at the Submissions Table when migrating the database."
+        False, help="Ignores the Submissions Table when copying data from the legacy database."
     ),
 ):
     """
