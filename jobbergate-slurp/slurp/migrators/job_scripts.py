@@ -15,7 +15,7 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_ma
     :returns: An dict mapping legacy job_script ids to nextgen job_script ids
     """
     job_scripts_map = {}
-    logger.debug("Migrating job_scripts to nextgen database")
+    logger.info("Migrating job_scripts to nextgen database")
     for job_script in legacy_job_scripts:
         owner_email = user_map[job_script["job_script_owner_id"]]["email"]
         nextgen_application_id = application_map[job_script["application_id"]]
@@ -50,8 +50,8 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_ma
                 application_id=nextgen_application_id,
                 created=job_script["created_at"],
                 updated=job_script["updated_at"],
-            )
+            ),
         )
         job_scripts_map[job_script["id"]] = result.fetchone()["id"]
-    logger.debug("Finished migrating job_scripts")
+    logger.success("Finished migrating job_scripts")
     return job_scripts_map

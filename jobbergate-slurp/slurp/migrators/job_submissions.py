@@ -11,7 +11,7 @@ def migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map, job_sc
     Given a list of legacy job_submissions, a user map, and a job_script map, create
     records in the nextgen database for each job_submission.
     """
-    logger.debug("Migrating job_submissions to nextgen database")
+    logger.info("Migrating job_submissions to nextgen database")
     for job_submission in legacy_job_submissions:
         owner_email = user_map[job_submission["job_submission_owner_id"]]["email"]
         nextgen_job_script_id = job_scripts_map[job_submission["job_script_id"]]
@@ -50,6 +50,6 @@ def migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map, job_sc
                 slurm_job_id=slurm_job_id,
                 created=job_submission["created_at"],
                 updated=job_submission["updated_at"],
-            )
+            ),
         )
-    logger.debug("Finished migrating job_submissions")
+    logger.success("Finished migrating job_submissions")
