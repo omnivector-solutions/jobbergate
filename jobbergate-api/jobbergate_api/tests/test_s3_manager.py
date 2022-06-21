@@ -32,11 +32,23 @@ def s3manager():
     ],
 )
 class TestS3ManagerKeyIdTwoWayMapping:
+    """
+    A class to organize the parameters that test the conversions from
+    id number to S3 key and vice versa, both performed by the S3 manager.
+    """
+
     @pytest.mark.parametrize("input_type", [int, str])
     def test_s3_manager__get_key_from_id_str(self, s3manager, key, id, input_type):
+        """
+        Test the conversions from id number to S3 key.
+        Notice both int and str are valid types for id and are tested.
+        """
         assert s3manager._get_key_from_id(input_type(id)) == key
 
     def test_s3_manager__get_app_id_from_key(self, s3manager, key, id):
+        """
+        Test the conversions from S3 key to id number.
+        """
         assert s3manager._get_app_id_from_key(key) == id
 
 
