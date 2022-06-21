@@ -24,6 +24,7 @@ def s3manager():
 @pytest.mark.parametrize(
     "key, id",
     [
+        ("applications/0/jobbergate.tar.gz", "0"),
         ("applications/1/jobbergate.tar.gz", "1"),
         ("applications/2/jobbergate.tar.gz", "2"),
         ("applications/10/jobbergate.tar.gz", "10"),
