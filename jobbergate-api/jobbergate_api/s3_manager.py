@@ -23,11 +23,6 @@ class S3Manager(MutableMapping):
 
     The files stored in the Bucket defined at settings and with a key template
     computed internally in this class.
-
-    Note: According to boto3's documentation, `list_objects` returns some or
-    all (up to 1,000) of the objects in a bucket. Something to pay attention
-    to in a production environment, since some functionality that depends on
-    this method may not see all the files there (like __iter__ and __len__).
     """
 
     def __init__(self, s3_client, folder: str, filename: str):
@@ -83,22 +78,20 @@ class S3Manager(MutableMapping):
         """
         Yield all ids found in the work folder.
         """
-        response = self._get_list_of_objects()
-        for key in response:
-            yield self._get_app_id_from_key(key.get("Key"))
+        for key in self._get_list_of_objects():
+            yield self._get_app_id_from_key(key)
 
     def __len__(self) -> int:
         """
         Count the number of ids found in the work folder.
         """
-        response = self._get_list_of_objects()
-        return len(response)
+        return sum(1 for _ in self._get_list_of_objects())
 
     def _get_key_from_id(self, app_id: typing.Union[int, str]) -> str:
         """
         Get an s3 key based upon the app_id. If app_id is empty, throw an exception.
         """
-        if not app_id:
+        if not str(app_id):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"You must supply a non-empty app_id: got ({app_id=})",
@@ -111,18 +104,20 @@ class S3Manager(MutableMapping):
         """
         return key.lstrip(f"{self.folder_name}/").rstrip(f"/{self.filename}")
 
-    def _get_list_of_objects(self) -> list:
+    def _get_list_of_objects(self) -> typing.Iterable[str]:
         """
-        Return the list of files found in the work folder.
-        Raise 404 when facing connection errors or if the response is not
-        in the expected format.
+        Yield the keys found in the work folder.
+        Raise 404 when facing connection errors.
         """
         try:
-            return self.s3_client.list_objects(
-                Bucket=self.bucket_name,
-                Prefix=self.folder_name,
-            ).get("Contents")
-        except (BotoCoreError, KeyError):
+            paginator = self.s3_client.get_paginator("list_objects_v2")
+            for page in paginator.paginate(Bucket=self.bucket_name, Prefix=self.folder_name):
+                contents = page.get("Contents", [])
+                if not contents:
+                    break
+                for obj in contents:
+                    yield obj["Key"]
+        except BotoCoreError:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Not possible to retrieve information from S3",
