@@ -25,7 +25,9 @@ class S3Manager(MutableMapping):
     computed internally in this class.
     """
 
-    def __init__(self, s3_client, folder: str, filename: str):
+    def __init__(
+        self, s3_client, folder: str, filename: str, *, bucket_name: str = None, read_only: bool = False
+    ):
         """
         Initialize an s3 manager. The interaction with S3 is done with the
         provided client, folder and filename.
@@ -34,7 +36,24 @@ class S3Manager(MutableMapping):
         self.folder_name = folder
         self.filename = filename
         self.key_template = f"{self.folder_name}/{{app_id}}/{self.filename}"
-        self.bucket_name = settings.S3_BUCKET_NAME
+        self.bucket_name = bucket_name if bucket_name else settings.S3_BUCKET_NAME
+        self.read_only = read_only
+
+    def read_only_protection(function):
+        """
+        A decorator used to warp key methods, aiming to protect the files from
+        been overwritten or deleted when the s3 manger is set as read-only.
+        Raise RuntimeError if any protected operation is tried.
+        """
+
+        def helper(self, *args, **kwargs):
+
+            if self.read_only:
+                message = "Illegal operation for a read-only S3 manager (folder={}, bucket={})."
+                raise RuntimeError(message.format(self.folder_name, self.bucket_name))
+            function(self, *args, **kwargs)
+
+        return helper
 
     def __getitem__(self, app_id: typing.Union[int, str]) -> str:
         """
@@ -50,6 +69,7 @@ class S3Manager(MutableMapping):
 
         return response.get("Body").read().decode("utf-8")
 
+    @read_only_protection
     def __setitem__(self, app_id: typing.Union[int, str], file: str) -> None:
         """
         Upload a file to the client for the given id.
@@ -62,6 +82,7 @@ class S3Manager(MutableMapping):
         except self.s3_client.exceptions.NoSuchKey:
             raise KeyError(f"No such key: {key}")
 
+    @read_only_protection
     def __delitem__(self, app_id: typing.Union[int, str]) -> None:
         """
         Delete a file from the client associated to the given id.
@@ -83,7 +104,7 @@ class S3Manager(MutableMapping):
 
     def __len__(self) -> int:
         """
-        Count the number of ids found in the work folder.
+        Count the number of keys found in the work folder.
         """
         return sum(1 for _ in self._get_list_of_objects())
 
@@ -123,6 +144,14 @@ class S3Manager(MutableMapping):
                 detail="Not possible to retrieve information from S3",
             )
 
+    @read_only_protection
+    def clear(self):
+        """
+        Clear all objects from work folder in this bucket.
+        """
+        logger.info(f"Clearing folder {self.folder_name} in the bucket {self.bucket_name}")
+        super().clear()
+
 
 def get_s3_object_as_tarfile(s3man: S3Manager, app_id: typing.Union[int, str]):
     """
@@ -143,8 +172,6 @@ def get_s3_object_as_tarfile(s3man: S3Manager, app_id: typing.Union[int, str]):
 s3_client = boto3.client(
     "s3",
     endpoint_url=settings.S3_ENDPOINT_URL,
-    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
 )
 s3man_applications = S3Manager(s3_client, "applications", "jobbergate.tar.gz")
 s3man_jobscripts = S3Manager(s3_client, "job-scripts", "jobbergate.tar.gz")
