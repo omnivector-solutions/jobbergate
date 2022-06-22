@@ -59,7 +59,7 @@ class S3ManagerRaw(MutableMapping):
         self._key_template = f"{self.folder_name}/{{app_id}}/{self.filename}"
         self._get_id_re = re.compile(r"/(?P<id>\d+)/{filename}$".format(filename=self.filename))
 
-    def __getitem__(self, app_id: typing.Union[int, str]) -> bytes:
+    def __getitem__(self, app_id: typing.Union[int, str]):
         """
         Get a file from the client associated to the given id.
         """
@@ -71,7 +71,7 @@ class S3ManagerRaw(MutableMapping):
         except self.s3_client.exceptions.NoSuchKey:
             raise KeyError(f"No such key: {key}")
 
-        return response.get("Body").read()
+        return response
 
     @read_only_protection
     def __setitem__(self, app_id: typing.Union[int, str], file: bytes) -> None:
@@ -178,7 +178,7 @@ class S3ManagerText(S3ManagerRaw):
         Get a file from the client associated to the given id.
         """
         response = super().__getitem__(app_id)
-        return response.decode(self.DECODE_SPEC)
+        return response.get("Body").read().decode(self.DECODE_SPEC)
 
     def __setitem__(self, app_id: typing.Union[int, str], file: str) -> None:
         """
@@ -199,7 +199,7 @@ def get_s3_object_as_tarfile(s3man: S3ManagerRaw, app_id: typing.Union[int, str]
             detail=f"Application with id={app_id} not found in S3",
         )
 
-    s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj))
+    s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj["Body"].read()))
     return s3_application_tar
 
 

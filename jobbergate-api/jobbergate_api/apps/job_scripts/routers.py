@@ -66,7 +66,7 @@ def render_template(template_files, param_dict_flat):
     return job_script_data_as_string
 
 
-def build_job_script_data_as_string(s3_application_tar, param_dict) -> str:
+def build_job_script_data_as_string(s3_application_tar, param_dict):
     """
     Return the job_script_data_as_string from the S3 application and the templates.
     """
@@ -175,7 +175,9 @@ async def job_script_create(
             insert_query = job_scripts_table.insert().returning(job_scripts_table)
             job_script_data = await database.fetch_one(query=insert_query, values=create_dict)
 
-            s3man_jobscripts[job_script_data.id] = job_script_data_as_string
+            assert job_script_data is not None
+
+            s3man_jobscripts[job_script_data["id"]] = job_script_data_as_string
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
