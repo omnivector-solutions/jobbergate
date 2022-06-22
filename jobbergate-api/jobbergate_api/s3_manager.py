@@ -64,7 +64,7 @@ class S3ManagerRaw(MutableMapping):
         Get a file from the client associated to the given id.
         """
         key = self._get_key_from_id(app_id)
-        logger.debug(f"Getting from S3: {key})")
+        logger.debug(f"Getting from S3: {key}")
 
         try:
             response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
