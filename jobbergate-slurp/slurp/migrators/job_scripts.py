@@ -33,7 +33,6 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_ma
             values (
                 %(name)s,
                 %(description)s,
-                %(data)s,
                 %(owner_email)s,
                 %(application_id)s,
                 %(created)s,
