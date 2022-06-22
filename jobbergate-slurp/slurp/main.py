@@ -44,7 +44,8 @@ def clear_nextgen_db():
         nextgen_db.execute("truncate applications cascade")
 
         logger.info("Clearing S3 objects")
-        s3man.nextgen.clear()
+        for s in s3man:
+            s.nextgen.clear()
     logger.success("Finished clearing!")
 
 
@@ -66,13 +67,15 @@ def migrate(
         applications_map = migrate_applications(nextgen_db, legacy_applications, user_map)
 
         legacy_job_scripts = pull_job_scripts(legacy_db)
-        job_scripts_map = migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, applications_map)
+        job_scripts_map = migrate_job_scripts(
+            nextgen_db, legacy_job_scripts, user_map, applications_map, s3man.jobscripts
+        )
 
         if not ignore_submissions:
             legacy_job_submissions = pull_job_submissions(legacy_db)
             migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map, job_scripts_map)
 
-        transferred_ids = transfer_s3(s3man, applications_map)
+        transferred_ids = transfer_s3(s3man.applications, applications_map)
 
         mark_uploaded(nextgen_db, transferred_ids)
 

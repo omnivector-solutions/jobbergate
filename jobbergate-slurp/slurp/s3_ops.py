@@ -150,7 +150,7 @@ class S3Manager(MutableMapping):
         """
         Clear all objects from work folder in this bucket.
         """
-        logger.info(f"Clearing folder {self.folder_name} in the bucket {self.bucket_name}")
+        logger.debug(f"Clearing folder {self.folder_name} in the bucket {self.bucket_name}")
         super().clear()
 
     @read_only_protection
@@ -171,6 +171,7 @@ class S3Manager(MutableMapping):
 def build_managers():
 
     db_gen = namedtuple("db_generation", "legacy nextgen")
+    s3_folder = namedtuple("Folder", "applications jobscripts")
 
     client = db_gen(
         legacy=boto3.client(
@@ -187,20 +188,32 @@ def build_managers():
         ),
     )
 
-    s3man = db_gen(
-        legacy=S3Manager(
-            client.legacy,
-            "jobbergate-resources",
-            "jobbergate.tar.gz",
-            bucket_name=settings.LEGACY_S3_BUCKET_NAME,
-            read_only=True,
+    s3man = s3_folder(
+        applications=db_gen(
+            legacy=S3Manager(
+                client.legacy,
+                "jobbergate-resources",
+                "jobbergate.tar.gz",
+                bucket_name=settings.LEGACY_S3_BUCKET_NAME,
+                read_only=True,
+            ),
+            nextgen=S3Manager(
+                client.nextgen,
+                "applications",
+                "jobbergate.tar.gz",
+                bucket_name=settings.NEXTGEN_S3_BUCKET_NAME,
+                read_only=False,
+            ),
         ),
-        nextgen=S3Manager(
-            client.nextgen,
-            "applications",
-            "jobbergate.tar.gz",
-            bucket_name=settings.NEXTGEN_S3_BUCKET_NAME,
-            read_only=False,
+        jobscripts=db_gen(
+            legacy=None,
+            nextgen=S3Manager(
+                client.nextgen,
+                "job-scripts",
+                "jobbergate.tar.gz",
+                bucket_name=settings.NEXTGEN_S3_BUCKET_NAME,
+                read_only=False,
+            ),
         ),
     )
 
