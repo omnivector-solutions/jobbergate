@@ -33,7 +33,6 @@ class S3Manager(MutableMapping):
         *,
         bucket_name: str = None,
         read_only: bool = True,
-        key_template: str = None,
     ):
         """
         Initialize an s3 manager. The interaction with S3 is done with the
@@ -42,9 +41,11 @@ class S3Manager(MutableMapping):
         self.s3_client = s3_client
         self.folder_name = folder
         self.filename = filename
-        self.key_template = key_template
         self.bucket_name = bucket_name
         self.read_only = read_only
+
+        self._key_template = f"{self.folder_name}/{{app_id}}/{self.filename}"
+        self._get_id_re = re.compile(r"/(?P<id>\d+)/{filename}$".format(filename=self.filename))
 
     def read_only_protection(function):
         """
@@ -117,13 +118,16 @@ class S3Manager(MutableMapping):
         """
         if not str(app_id):
             raise RuntimeError(f"You must supply a non-empty app_id: got ({app_id=})")
-        return self.key_template.format(app_id=app_id)
+        return self._key_template.format(app_id=app_id)
 
     def get_app_id_from_key(self, key: str) -> str:
         """
         Get the app_id based upon an s3 key.
         """
-        return key.lstrip(f"{self.folder_name}/").rstrip(f"/{self.filename}")
+        match = re.search(self._get_id_re, key)
+        if not match:
+            raise ValueError(f"Impossible to get id from {key=}")
+        return match.group("id")
 
     def get_list_of_objects(self) -> typing.Iterable[str]:
         """
@@ -189,7 +193,6 @@ def build_managers():
             "jobbergate-resources",
             "jobbergate.tar.gz",
             bucket_name=settings.LEGACY_S3_BUCKET_NAME,
-            key_template="jobbergate-resources/{owner_id}/applications/{app_id}/jobbergate.tar.gz",
             read_only=True,
         ),
         nextgen=S3Manager(
@@ -197,7 +200,6 @@ def build_managers():
             "applications",
             "jobbergate.tar.gz",
             bucket_name=settings.NEXTGEN_S3_BUCKET_NAME,
-            key_template="applications/{app_id}/jobbergate.tar.gz",
             read_only=False,
         ),
     )
@@ -221,12 +223,12 @@ def transfer_s3(s3man, applications_map):
     successful_transfers = 0
     transferred_ids = []
     for legacy_key in s3man.legacy.keys():
-        match = re.search(r"applications/(\d+)", legacy_key)
-        if not match:
+        try:
+            legacy_application_id = s3man.legacy.get_app_id_from_key(legacy_key)
+        except ValueError:
             bad_pattern_skips += 1
             logger.warning(f"Bad pattern: {legacy_key=}")
             continue
-        legacy_application_id = match.group(1)
         nextgen_application_id = applications_map.get(int(legacy_application_id))
         if not nextgen_application_id:
             missing_id_skips += 1
