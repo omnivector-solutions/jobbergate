@@ -210,7 +210,7 @@ def build_managers():
             nextgen=S3Manager(
                 client.nextgen,
                 "job-scripts",
-                "jobbergate.tar.gz",
+                "jobbergate.txt",
                 bucket_name=settings.NEXTGEN_S3_BUCKET_NAME,
                 read_only=False,
             ),
@@ -256,7 +256,9 @@ def transfer_s3(s3man, applications_map):
         logger.trace(f"Successful transfer: {legacy_key=}")
 
     logger.info(f"Skipped {bad_pattern_skips} objects due to unparsable key")
-    logger.info(f"Skipped {missing_id_skips} objects due to missing application_id")
+    logger.info(
+        f"Skipped {missing_id_skips} objects due to missing application_id (files on S3 but id not on nextgen database)"
+    )
     logger.info(f"Finished transferring {successful_transfers} objects")
 
     return transferred_ids
