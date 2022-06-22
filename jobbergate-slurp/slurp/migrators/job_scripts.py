@@ -25,7 +25,6 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_ma
             insert into job_scripts (
                 job_script_name,
                 job_script_description,
-                job_script_data_as_string,
                 job_script_owner_email,
                 application_id,
                 created_at,
@@ -45,7 +44,6 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_ma
             dict(
                 name=job_script["job_script_name"],
                 description=job_script["job_script_description"],
-                data=job_script["job_script_data_as_string"],
                 owner_email=owner_email,
                 application_id=nextgen_application_id,
                 created=job_script["created_at"],
