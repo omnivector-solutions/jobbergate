@@ -62,27 +62,25 @@ class S3Manager(MutableMapping):
 
         return helper
 
-    def __getitem__(self, app_id: typing.Union[int, str]) -> str:
+    def __getitem__(self, key: str) -> str:
         """
         Get a file from the client associated to the given id.
         """
-        key = self._get_key_from_id(app_id)
-        logger.debug(f"Getting from S3: {key})")
+        logger.trace(f"Getting from S3: {key})")
 
         try:
             response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
         except self.s3_client.exceptions.NoSuchKey:
             raise KeyError(f"No such key: {key}")
 
-        return response.get("Body").read().decode("utf-8")
+        return response.get("Body").read()
 
     @read_only_protection
-    def __setitem__(self, app_id: typing.Union[int, str], file: str) -> None:
+    def __setitem__(self, key: str, file: str) -> None:
         """
         Upload a file to the client for the given id.
         """
-        key = self._get_key_from_id(app_id)
-        logger.debug(f"Uploading to S3: {key})")
+        logger.trace(f"Uploading to S3: {key})")
 
         try:
             self.s3_client.put_object(Body=file, Bucket=self.bucket_name, Key=key)
@@ -90,12 +88,11 @@ class S3Manager(MutableMapping):
             raise KeyError(f"No such key: {key}")
 
     @read_only_protection
-    def __delitem__(self, app_id: typing.Union[int, str]) -> None:
+    def __delitem__(self, key: str) -> None:
         """
         Delete a file from the client associated to the given id.
         """
-        key = self._get_key_from_id(app_id)
-        logger.debug(f"Deleting from S3: {key})")
+        logger.trace(f"Deleting from S3: {key})")
 
         try:
             self.s3_client.delete_object(Bucket=self.bucket_name, Key=key)
@@ -106,16 +103,15 @@ class S3Manager(MutableMapping):
         """
         Yield all ids found in the work folder.
         """
-        for key in self._get_list_of_objects():
-            yield self._get_app_id_from_key(key)
+        yield from self.get_list_of_objects()
 
     def __len__(self) -> int:
         """
         Count the number of keys found in the work folder.
         """
-        return sum(1 for _ in self._get_list_of_objects())
+        return sum(1 for _ in self.get_list_of_objects())
 
-    def _get_key_from_id(self, app_id: typing.Union[int, str]) -> str:
+    def get_key_from_id(self, app_id: typing.Union[int, str]) -> str:
         """
         Get an s3 key based upon the app_id. If app_id is empty, throw an exception.
         """
@@ -123,13 +119,13 @@ class S3Manager(MutableMapping):
             raise RuntimeError(f"You must supply a non-empty app_id: got ({app_id=})")
         return self.key_template.format(app_id=app_id)
 
-    def _get_app_id_from_key(self, key: str) -> str:
+    def get_app_id_from_key(self, key: str) -> str:
         """
         Get the app_id based upon an s3 key.
         """
         return key.lstrip(f"{self.folder_name}/").rstrip(f"/{self.filename}")
 
-    def _get_list_of_objects(self) -> typing.Iterable[str]:
+    def get_list_of_objects(self) -> typing.Iterable[str]:
         """
         Yield the keys found in the work folder.
         Raise 404 when facing connection errors.
@@ -158,7 +154,7 @@ class S3Manager(MutableMapping):
         """
         Ensure that the bucket exists. Skip creation if it already exists.
         """
-        logger.debug(f"Ensuring bucket {self.bucket_name} exists at {self.url}")
+        logger.debug(f"Ensuring bucket {self.bucket_name} exists.")
         with SlurpException.handle_errors(
             self.s3_client.exceptions.BucketAlreadyExists,
             re_raise=False,
@@ -238,7 +234,8 @@ def transfer_s3(s3man, applications_map):
             continue
 
         legacy_obj = s3man.legacy.get(legacy_key)
-        s3man.nextgen[nextgen_application_id] = legacy_obj
+        nextgen_key = s3man.nextgen.get_key_from_id(nextgen_application_id)
+        s3man.nextgen[nextgen_key] = legacy_obj
         transferred_ids.append(nextgen_application_id)
         successful_transfers += 1
         logger.trace(f"Successful transfer: {legacy_key=}")
