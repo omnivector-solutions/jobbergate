@@ -68,7 +68,7 @@ def dummy_s3man(s3_object):
     """
     A dummy S3 manager used for tests containing only one key.
     """
-    return {1: s3_object.get("Body").read()}
+    return {1: s3_object}
 
 
 @pytest.mark.asyncio
