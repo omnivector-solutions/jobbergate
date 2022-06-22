@@ -1,7 +1,11 @@
+"""
+Test s3 manager.
+"""
+
 import pytest
 from fastapi.exceptions import HTTPException
 
-from jobbergate_api.s3_manager import S3Manager, get_s3_object_as_tarfile, s3_client
+from jobbergate_api.s3_manager import S3ManagerRaw, get_s3_object_as_tarfile, s3_client
 
 
 @pytest.mark.parametrize(
@@ -12,13 +16,19 @@ from jobbergate_api.s3_manager import S3Manager, get_s3_object_as_tarfile, s3_cl
     ],
 )
 def test_s3_manager__key_template(directory_name, desired_template):
-    s3man = S3Manager(s3_client, directory_name, "jobbergate.tar.gz")
-    assert s3man.key_template == desired_template
+    """
+    Test if the key template is computed correctly as a functions of the directory name.
+    """
+    s3man = S3ManagerRaw(s3_client, directory_name, "jobbergate.tar.gz")
+    assert s3man._key_template == desired_template
 
 
 @pytest.fixture
 def s3manager():
-    return S3Manager(s3_client, "applications", "jobbergate.tar.gz")
+    """
+    Fixture with a s3 manager, used to support tests.
+    """
+    return S3ManagerRaw(s3_client, "applications", "jobbergate.tar.gz")
 
 
 @pytest.mark.parametrize(
@@ -58,7 +68,7 @@ def dummy_s3man(s3_object):
     """
     A dummy S3 manager used for tests containing only one key.
     """
-    return {1: s3_object}
+    return {1: s3_object.get("Body").read()}
 
 
 @pytest.mark.asyncio
@@ -74,7 +84,7 @@ async def test_get_s3_object_as_tarfile(dummy_s3man):
 @pytest.mark.asyncio
 async def test_get_s3_object_not_found(dummy_s3man):
     """
-    Test exception when file not exists in S3 for get_s3_object function.
+    Test exception at get_s3_object function when file does not exist in S3.
     """
 
     s3_file = None

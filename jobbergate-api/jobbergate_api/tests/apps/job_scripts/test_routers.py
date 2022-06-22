@@ -120,7 +120,7 @@ async def test_create_job_script(
     with mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_jobscripts", {}):
         with mock.patch(
             "jobbergate_api.apps.job_scripts.routers.s3man_applications",
-            {inserted_application_id: s3_object},
+            {inserted_application_id: s3_object.get("Body").read()},
         ):
             with time_frame() as window:
                 response = await client.post(
@@ -274,7 +274,7 @@ async def test_create_job_script_unable_to_write_file_to_s3(
 
         with mock.patch(
             "jobbergate_api.apps.job_scripts.routers.s3man_applications",
-            {inserted_application_id: s3_object},
+            {inserted_application_id: s3_object.get("Body").read()},
         ):
 
             response = await client.post(
