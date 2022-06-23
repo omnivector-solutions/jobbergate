@@ -366,8 +366,7 @@ async def test_get_job_script_by_id_file_not_found_at_s3(
     inject_security_header,
 ):
     """
-    Test if 404 is returned when the jobscripts exists in the database but the
-    file was not found at S3.
+    Test if 404 is returned if a jobscript exists in the database but the file was not found in S3.
     """
     inserted_application_id = await database.execute(
         query=applications_table.insert(),
