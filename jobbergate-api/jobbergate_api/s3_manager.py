@@ -181,7 +181,7 @@ class S3ManagerText(S3ManagerRaw):
         Get a file from the client associated to the given id.
         """
         response = super().__getitem__(app_id)
-        return response.get("Body").read().decode(self.DECODE_SPEC)
+        return response["Body"].read().decode(self.DECODE_SPEC)
 
     def __setitem__(self, app_id: typing.Union[int, str], file: str) -> None:
         """
