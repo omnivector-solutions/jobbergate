@@ -74,7 +74,7 @@ class S3Manager(MutableMapping):
         except self.s3_client.exceptions.NoSuchKey:
             raise KeyError(f"No such key: {key}")
 
-        return response.get("Body").read()
+        return response["Body"].read()
 
     @read_only_protection
     def __setitem__(self, key: str, file: str) -> None:
