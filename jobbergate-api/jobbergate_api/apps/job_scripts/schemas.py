@@ -92,7 +92,8 @@ class JobScriptUpdateRequest(BaseModel):
 class JobScriptPartialResponse(BaseModel):
     """
     Complete model to match database for the JobScript resource.
-    However, this model does not include job_script_data_as_string from S3.
+
+    Notice this model does not include job_script_data_as_string from S3.
     """
 
     id: Optional[int] = None
@@ -110,8 +111,9 @@ class JobScriptPartialResponse(BaseModel):
 
 class JobScriptResponse(JobScriptPartialResponse):
     """
-    Complete model to match database in addition to the field
-    job_script_data_as_string from S3, for the JobScript resource.
+    Complete model to match database for the JobScript resource.
+
+    In addition to the field job_script_data_as_string from S3, for the JobScript resource.
     """
 
     job_script_data_as_string: str

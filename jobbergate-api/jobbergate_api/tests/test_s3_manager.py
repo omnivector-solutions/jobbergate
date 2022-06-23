@@ -44,14 +44,14 @@ def s3manager():
 )
 class TestS3ManagerKeyIdTwoWayMapping:
     """
-    A class to organize the parameters that test the conversions from
-    id number to S3 key and vice versa, both performed by the S3 manager.
+    Test the conversions from id number to S3 key and vice versa.
     """
 
     @pytest.mark.parametrize("input_type", [int, str])
     def test_s3_manager__get_key_from_id_str(self, s3manager, key, id, input_type):
         """
         Test the conversions from id number to S3 key.
+
         Notice both int and str are valid types for id and are tested.
         """
         assert s3manager._get_key_from_id(input_type(id)) == key
@@ -66,7 +66,7 @@ class TestS3ManagerKeyIdTwoWayMapping:
 @pytest.fixture
 def dummy_s3man(s3_object):
     """
-    A dummy S3 manager used for tests containing only one key.
+    Provide a dummy S3 manager used for tests containing only one key and object.
     """
     return {1: s3_object}
 
@@ -86,7 +86,6 @@ async def test_get_s3_object_not_found(dummy_s3man):
     """
     Test exception at get_s3_object function when file does not exist in S3.
     """
-
     s3_file = None
 
     with pytest.raises(HTTPException) as exc:

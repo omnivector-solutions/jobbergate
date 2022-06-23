@@ -1,5 +1,5 @@
 """
-Provides a convenience class for managing calls to S3.
+Provide a convenience class for managing calls to S3.
 """
 import re
 import tarfile
@@ -17,9 +17,10 @@ from jobbergate_api.config import settings
 
 def read_only_protection(function: typing.Callable) -> typing.Callable:
     """
-    A decorator used to warp key methods, aiming to protect the files from
-    been overwritten or deleted when the s3 manger is set as read-only.
-    Raise RuntimeError if any protected operation is tried.
+    Use this decorator to warp key methods at the s3 manager.
+
+    It aims to protect the files from been overwritten or deleted when the s3 manager
+    is set as read-only. Raise RuntimeError if any protected operation is tried.
     """
 
     def helper(s3man, *args, **kwargs):
@@ -48,6 +49,7 @@ class S3ManagerRaw(MutableMapping):
     ):
         """
         Initialize a s3 manager.
+
         The interaction with S3 is done with the provided client, folder and filename.
         """
         self.s3_client = s3_client
@@ -135,6 +137,7 @@ class S3ManagerRaw(MutableMapping):
     def _get_list_of_objects(self) -> typing.Iterable[str]:
         """
         Yield the keys found in the work folder.
+
         Raise 404 when facing connection errors.
         """
         try:
