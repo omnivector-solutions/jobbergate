@@ -97,6 +97,7 @@ def test_inject_sbatch_params(job_script_data_as_string, sbatch_params, new_job_
 async def test_create_job_script(
     fill_application_data,
     job_script_data,
+    job_script_data_as_string,
     fill_job_script_data,
     param_dict,
     client,
@@ -117,7 +118,7 @@ async def test_create_job_script(
     )
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
-    with mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_jobscripts", {}):
+    with mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_jobscripts", {}) as s3:
         with mock.patch(
             "jobbergate_api.apps.job_scripts.routers.s3man_applications",
             {inserted_application_id: s3_object},
@@ -143,10 +144,11 @@ async def test_create_job_script(
     assert job_script.job_script_owner_email == "owner1@org.com"
     assert job_script.job_script_description is None
     assert job_script.job_script_data_as_string
-    assert isinstance(job_script.job_script_data_as_string, str)
     assert job_script.application_id == inserted_application_id
     assert job_script.created_at in window
     assert job_script.updated_at in window
+    assert job_script.job_script_data_as_string == job_script_data_as_string
+    assert s3.get(job_script.id) == job_script_data_as_string
 
 
 @pytest.mark.asyncio
