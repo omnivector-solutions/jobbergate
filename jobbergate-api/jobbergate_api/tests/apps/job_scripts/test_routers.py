@@ -136,6 +136,7 @@ async def test_create_job_script(
 
     id_rows = await database.fetch_all("SELECT id FROM job_scripts")
     assert len(id_rows) == 1
+    assert len(s3) == 1
 
     job_script = JobScriptResponse(**response.json())
 
@@ -174,18 +175,20 @@ async def test_create_job_script_bad_permission(
     )
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
-    response = await client.post(
-        "/jobbergate/job-scripts/",
-        json=fill_job_script_data(
-            application_id=inserted_application_id,
-            param_dict=param_dict,
-        ),
-    )
+    with mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_jobscripts", {}) as s3:
+        response = await client.post(
+            "/jobbergate/job-scripts/",
+            json=fill_job_script_data(
+                application_id=inserted_application_id,
+                param_dict=param_dict,
+            ),
+        )
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0
+    assert len(s3) == 0
 
 
 @pytest.mark.asyncio
@@ -204,14 +207,16 @@ async def test_create_job_script_without_application(
     job_script still does not exists in the database and the correct status code (404) is returned.
     """
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
-    response = await client.post(
-        "/jobbergate/job-scripts/",
-        json=fill_job_script_data(application_id=9999, param_dict=param_dict),
-    )
+    with mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_jobscripts", {}) as s3:
+        response = await client.post(
+            "/jobbergate/job-scripts/",
+            json=fill_job_script_data(application_id=9999, param_dict=param_dict),
+        )
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0
+    assert len(s3) == 0
 
 
 @database.transaction(force_rollback=True)

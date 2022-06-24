@@ -175,7 +175,11 @@ async def job_script_create(
             insert_query = job_scripts_table.insert().returning(job_scripts_table)
             job_script_data = await database.fetch_one(query=insert_query, values=create_dict)
 
-            assert job_script_data is not None
+            if job_script_data is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="An error occurred when inserting the JobScript at the database.",
+                )
 
             s3man_jobscripts[job_script_data["id"]] = job_script_data_as_string
 
