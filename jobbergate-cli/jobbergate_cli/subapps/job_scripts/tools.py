@@ -58,7 +58,7 @@ def fetch_job_script_data(
         JobScriptResponse,
         make_request(
             jg_ctx.client,
-            f"/job-scripts/{id}",
+            f"/jobbergate/job-scripts/{id}",
             "GET",
             expected_status=200,
             abort_message=f"Couldn't retrieve job script ({id}) from API",

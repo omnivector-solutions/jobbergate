@@ -21,7 +21,8 @@ class Settings(BaseSettings):
     """
 
     JOBBERGATE_CACHE_DIR: Path = Field(Path.home() / ".local/share/jobbergate")
-    JOBBERGATE_API_ENDPOINT: AnyHttpUrl = Field("https://jobbergateapi2-staging.omnivector.solutions")
+
+    ARMADA_API_BASE: AnyHttpUrl = Field("https://armada-k8s.staging.omnivector.solutions")
 
     # enable http tracing
     JOBBERGATE_DEBUG: bool = Field(False)
@@ -30,6 +31,9 @@ class Settings(BaseSettings):
     SENTRY_DSN: Optional[str]
     SENTRY_TRACE_RATE: float = Field(1.0, gt=0.0, le=1.0)
     SENTRY_ENV: str = "local"
+
+    # How long it will use cached cluster lists before fetching them again
+    JOBBERGATE_CLUSTER_CACHE_LIFETIME: int = 60 * 5
 
     # Settings for log uploads
     JOBBERGATE_AWS_ACCESS_KEY_ID: Optional[str]
@@ -41,21 +45,21 @@ class Settings(BaseSettings):
     JOBBERGATE_APPLICATION_CONFIG_PATH: Optional[Path]
     JOBBERGATE_LOG_PATH: Optional[Path]
     JOBBERGATE_USER_TOKEN_DIR: Optional[Path]
-    JOBBERGATE_API_ACCESS_TOKEN_PATH: Optional[Path]
-    JOBBERGATE_API_REFRESH_TOKEN_PATH: Optional[Path]
+    JOBBERGATE_ACCESS_TOKEN_PATH: Optional[Path]
+    JOBBERGATE_REFRESH_TOKEN_PATH: Optional[Path]
+
+    JOBBERGATE_CLUSTER_LIST_PATH: Optional[Path]
 
     # Compatibility mode: If True, add commands as they appear in the legacy app
     JOBBERGATE_COMPATIBILITY_MODE: Optional[bool] = False
 
     # Auth0 config for machine-to-machine security
-    AUTH0_DOMAIN: str
-    AUTH0_LOGIN_DOMAIN: Optional[str]
-    AUTH0_AUDIENCE: str
-    AUTH0_CLIENT_ID: str
-    AUTH0_CLIENT_SECRET: str
-    AUTH0_MAX_POLL_TIME: int = 5 * 60  # 5 Minutes
-
-    IDENTITY_CLAIMS_KEY: str = "https://omnivector.solutions"
+    OIDC_DOMAIN: str
+    OIDC_LOGIN_DOMAIN: Optional[str]
+    OIDC_AUDIENCE: str
+    OIDC_CLIENT_ID: str
+    OIDC_CLIENT_SECRET: str
+    OIDC_MAX_POLL_TIME: int = 5 * 60  # 5 Minutes
 
     @root_validator(skip_on_failure=True)
     def compute_extra_settings(cls, values):
@@ -75,10 +79,12 @@ class Settings(BaseSettings):
         token_dir = cache_dir / "token"
         token_dir.mkdir(exist_ok=True, parents=True)
         values["JOBBERGATE_USER_TOKEN_DIR"] = token_dir
-        values["JOBBERGATE_API_ACCESS_TOKEN_PATH"] = token_dir / "access.token"
-        values["JOBBERGATE_API_REFRESH_TOKEN_PATH"] = token_dir / "refresh.token"
+        values["JOBBERGATE_ACCESS_TOKEN_PATH"] = token_dir / "access.token"
+        values["JOBBERGATE_REFRESH_TOKEN_PATH"] = token_dir / "refresh.token"
 
-        values.setdefault("AUTH0_LOGIN_DOMAIN", values["AUTH0_DOMAIN"])
+        values["JOBBERGATE_CLUSTER_LIST_PATH"] = cache_dir / "clusters.json"
+
+        values.setdefault("OIDC_LOGIN_DOMAIN", values["OIDC_DOMAIN"])
 
         return values
 

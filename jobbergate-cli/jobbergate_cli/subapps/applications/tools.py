@@ -146,7 +146,7 @@ def fetch_application_data(
     :param: identifier: If supplied, look for an application instance with the provided identifier
     :returns: An instance of ApplicationResponse containing the application data
     """
-    url = f"/applications/{id}"
+    url = f"/jobbergate/applications/{id}"
     params = dict()
     if id is None and identifier is None:
         raise Abort(
@@ -165,7 +165,7 @@ def fetch_application_data(
             warn_only=True,
         )
     elif identifier is not None:
-        url = "/applications"
+        url = "/jobbergate/applications"
         params["identifier"] = identifier
 
     # Make static type checkers happy
@@ -247,7 +247,7 @@ def upload_application(
             int,
             make_request(
                 jg_ctx.client,
-                f"/applications/{application_id}/upload",
+                f"/jobbergate/applications/{application_id}/upload",
                 "POST",
                 expect_response=False,
                 abort_message="Request to upload application files was not accepted by the API",

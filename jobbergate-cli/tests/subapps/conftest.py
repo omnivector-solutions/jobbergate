@@ -47,16 +47,24 @@ def dummy_context(dummy_domain):
 
 @pytest.fixture
 def attach_persona(dummy_context):
-    def _helper(user_email: str, org_name: str = "dumb-org", access_token: str = "foo"):
+    def _helper(email: str, client_id: str = "dummy-client", access_token: str = "foo"):
         dummy_context.persona = Persona(
             token_set=TokenSet(access_token=access_token),
             identity_data=IdentityData(
-                user_email=user_email,
-                org_name=org_name,
+                client_id=client_id,
+                email=email,
             ),
         )
 
     return _helper
+
+
+@pytest.fixture
+def seed_clusters(mocker):
+    def _helper(*client_ids):
+        mocker.patch("jobbergate_cli.subapps.clusters.tools.pull_client_ids_from_api", return_value=client_ids)
+
+    yield _helper
 
 
 @pytest.fixture

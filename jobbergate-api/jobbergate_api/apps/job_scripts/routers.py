@@ -167,7 +167,7 @@ async def job_script_create(
 
     create_dict = dict(
         **{k: v for (k, v) in job_script.dict(exclude_unset=True).items() if k != "param_dict"},
-        job_script_owner_email=identity_claims.user_email,
+        job_script_owner_email=identity_claims.email,
     )
 
     # Use application_config from the application as a baseline of defaults
@@ -241,7 +241,7 @@ async def job_script_list(
     query = job_scripts_table.select()
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     if not all:
-        query = query.where(job_scripts_table.c.job_script_owner_email == identity_claims.user_email)
+        query = query.where(job_scripts_table.c.job_script_owner_email == identity_claims.email)
     if search is not None:
         query = query.where(search_clause(search, searchable_fields))
     if sort_field is not None:

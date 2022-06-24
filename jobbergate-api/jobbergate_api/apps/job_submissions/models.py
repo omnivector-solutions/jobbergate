@@ -18,7 +18,7 @@ job_submissions_table = Table(
     Column("job_script_id", ForeignKey("job_scripts.id"), nullable=False),
     Column("execution_directory", String),
     Column("slurm_job_id", Integer, default=None),
-    Column("cluster_id", String, nullable=False, index=True),
+    Column("client_id", String, nullable=False, index=True),
     Column("status", Enum(JobSubmissionStatus), nullable=False, index=True),
     Column("created_at", DateTime, nullable=False, default=func.now()),
     Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=func.now()),
@@ -28,7 +28,7 @@ searchable_fields = [
     job_submissions_table.c.job_submission_name,
     job_submissions_table.c.job_submission_description,
     job_submissions_table.c.job_submission_owner_email,
-    job_submissions_table.c.cluster_id,
+    job_submissions_table.c.client_id,
 ]
 
 sortable_fields = [
@@ -37,7 +37,7 @@ sortable_fields = [
     job_submissions_table.c.job_submission_owner_email,
     job_submissions_table.c.job_script_id,
     job_submissions_table.c.slurm_job_id,
-    job_submissions_table.c.cluster_id,
+    job_submissions_table.c.client_id,
     job_submissions_table.c.created_at,
     job_submissions_table.c.updated_at,
 ]

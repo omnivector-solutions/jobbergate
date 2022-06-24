@@ -7,7 +7,10 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+3.2.0 -- 2022-06-24
+-------------------
 - Set ``environment`` variable for Sentry based on settings parameter.
+- Adjusted variables and data structures for keycloak migration
 
 3.1.1 -- 2022-06-01
 -------------------

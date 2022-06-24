@@ -42,7 +42,7 @@ async def applications_create(
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     create_dict = dict(
         **application.dict(exclude_unset=True),
-        application_owner_email=identity_claims.user_email,
+        application_owner_email=identity_claims.email,
     )
 
     try:
@@ -208,7 +208,7 @@ async def applications_list(
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     query = applications_table.select()
     if user:
-        query = query.where(applications_table.c.application_owner_email == identity_claims.user_email)
+        query = query.where(applications_table.c.application_owner_email == identity_claims.email)
     if not all:
         query = query.where(not_(applications_table.c.application_identifier.is_(None)))
     if search is not None:

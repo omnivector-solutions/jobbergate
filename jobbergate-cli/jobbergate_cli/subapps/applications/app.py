@@ -96,7 +96,7 @@ def list_all(
         ListResponseEnvelope,
         make_request(
             jg_ctx.client,
-            "/applications",
+            "/jobbergate/applications",
             "GET",
             expected_status=200,
             abort_message="Couldn't retrieve applications list from API",
@@ -160,7 +160,7 @@ def _upload_application(jg_ctx: JobbergateContext, application_path: pathlib.Pat
             int,
             make_request(
                 jg_ctx.client,
-                f"/applications/{application_id}/upload",
+                f"/jobbergate/applications/{application_id}/upload",
                 "POST",
                 expect_response=False,
                 abort_message="Request to upload application files was not accepted by the API",
@@ -217,7 +217,7 @@ def create(
         Dict[str, Any],
         make_request(
             jg_ctx.client,
-            "/applications",
+            "/jobbergate/applications",
             "POST",
             expected_status=201,
             abort_message="Request to create application was not accepted by the API",
@@ -298,7 +298,7 @@ def update(
         Dict[str, Any],
         make_request(
             jg_ctx.client,
-            f"/applications/{id}",
+            f"/jobbergate/applications/{id}",
             "PUT",
             expected_status=200,
             abort_message="Request to update application was not accepted by the API",
@@ -351,7 +351,7 @@ def delete(
     # Delete the upload. The API will also remove the application data files
     make_request(
         jg_ctx.client,
-        f"/applications/{id}",
+        f"/jobbergate/applications/{id}",
         "DELETE",
         expected_status=204,
         expect_response=False,

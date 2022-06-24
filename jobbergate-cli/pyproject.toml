@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jobbergate-cli"
-version = "3.1.1"
+version = "3.2.0"
 description = "Jobbergate CLI Client"
 authors = ["Omnivector Solutions <info@omnivector.solutions>"]
 license = "MIT"
@@ -56,13 +56,13 @@ addopts = [
     "--cov-fail-under=85",
 ]
 env = [
-    "JOBBERGATE_API_ENDPOINT = https://jobbergate-api-staging.omnivector.solutions",
+    "ARMADA_API_BASE = https://some-pretend-armada-url.com",
     "JOBBERGATE_DEBUG = false",
-    "AUTH0_DOMAIN = dummy_auth_domain.com",
-    "AUTH0_AUDIENCE = https://dummy_auth_audience.com",
-    "AUTH0_CLIENT_ID = dummy_client_id",
-    "AUTH0_CLIENT_SECRET = dummy_client_secret",
-    "IDENTITY_CLAIMS_KEY = https://test-domain.test",
+    "JOBBERGATE_CACHE_DIR = /tmp/jobbergate-cache",
+    "OIDC_DOMAIN = dummy_auth_domain.com",
+    "OIDC_AUDIENCE = https://dummy_auth_audience.com",
+    "OIDC_CLIENT_ID = dummy_client_id",
+    "OIDC_CLIENT_SECRET = dummy_client_secret",
 ]
 
 [tool.black]

@@ -18,10 +18,10 @@ def test_SENTRY_TRACE_RATE__requires_float_in_valid_range():
 
 def test_Validation_error__when_parameter_is_missing():
 
-    original_value = os.environ.get("AUTH0_DOMAIN")
+    original_value = os.environ.get("OIDC_DOMAIN")
     try:
-        if "AUTH0_DOMAIN" in os.environ:
-            del os.environ["AUTH0_DOMAIN"]
+        if "OIDC_DOMAIN" in os.environ:
+            del os.environ["OIDC_DOMAIN"]
 
         with pytest.raises(SystemExit) as e:
             build_settings(_env_file=None)
@@ -29,4 +29,4 @@ def test_Validation_error__when_parameter_is_missing():
         assert e.value.code == 1
     finally:
         if original_value is not None:
-            os.environ["AUTH0_DOMAIN"] = original_value
+            os.environ["OIDC_DOMAIN"] = original_value
