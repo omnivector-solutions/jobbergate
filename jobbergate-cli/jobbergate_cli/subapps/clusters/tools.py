@@ -15,7 +15,7 @@ from jobbergate_cli.schemas import ClusterCacheData, JobbergateContext
 from jobbergate_cli.text_tools import conjoin
 
 
-def pull_cluster_names_from_api(ctx: JobbergateContext) -> List[str]:
+def pull_client_ids_from_api(ctx: JobbergateContext) -> List[str]:
     assert ctx.client is not None
 
     response_data = cast(
@@ -36,7 +36,7 @@ def pull_cluster_names_from_api(ctx: JobbergateContext) -> List[str]:
     )
 
     try:
-        cluster_names = [e["clientId"] for e in response_data["data"]["cluster"]]
+        client_ids = [e["clientId"] for e in response_data["data"]["cluster"]]
     except Exception as err:
         raise Abort(
             "Couldn't unpack cluster names from Cluster API response",
@@ -45,17 +45,17 @@ def pull_cluster_names_from_api(ctx: JobbergateContext) -> List[str]:
             original_error=err,
             log_message=f"Failed to unpack data from cluster-api: {response_data}",
         )
-    return cluster_names
+    return client_ids
 
 
-def save_clusters_to_cache(cluster_names: List[str]):
+def save_clusters_to_cache(client_ids: List[str]):
 
     # Make static type checkers happy
     assert settings.JOBBERGATE_CLUSTER_LIST_PATH is not None
 
     cache_data = ClusterCacheData(
         updated_at=datetime.utcnow(),
-        cluster_names=cluster_names,
+        client_ids=client_ids,
     )
 
     logger.debug(f"Caching cluster info at {settings.JOBBERGATE_CLUSTER_LIST_PATH}")
@@ -77,32 +77,31 @@ def load_clusters_from_cache() -> Optional[List[str]]:
         logger.warning("Cached cluster data is expired")
         return None
 
-    return cache_data.cluster_names
+    return cache_data.client_ids
 
 
-def get_cluster_names(ctx: JobbergateContext) -> List[str]:
+def get_client_ids(ctx: JobbergateContext) -> List[str]:
     assert ctx.client is not None
 
-    cluster_names = load_clusters_from_cache()
-    if cluster_names is None:
-        cluster_names = pull_cluster_names_from_api(ctx)
-        save_clusters_to_cache(cluster_names)
-    print("CLUSTER NAMES: ", cluster_names)
+    client_ids = load_clusters_from_cache()
+    if client_ids is None:
+        client_ids = pull_client_ids_from_api(ctx)
+        save_clusters_to_cache(client_ids)
 
-    return cluster_names
+    return client_ids
 
 
-def validate_cluster_name(ctx: JobbergateContext, cluster_name: str):
-    cluster_names = get_cluster_names(ctx)
+def validate_client_id(ctx: JobbergateContext, client_id: str):
+    client_ids = get_client_ids(ctx)
     Abort.require_condition(
-        cluster_name in cluster_names,
+        client_id in client_ids,
         conjoin(
             """
             The supplied cluster name was not found in the list of available clusters.
 
             Please select one of:
             """,
-            *cluster_names,
+            *client_ids,
         ),
         raise_kwargs=dict(
             subject="Invalid cluster name",

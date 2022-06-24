@@ -184,7 +184,7 @@ class ClusterCacheData(pydantic.BaseModel):
     """
 
     updated_at: datetime
-    cluster_names: List[str]
+    client_ids: List[str]
 
 
 class ForeignKeyError(pydantic.BaseModel):

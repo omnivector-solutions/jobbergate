@@ -62,7 +62,7 @@ def attach_persona(dummy_context):
 @pytest.fixture
 def seed_clusters(mocker):
     def _helper(*client_ids):
-        mocker.patch("jobbergate_cli.subapps.clusters.tools.pull_cluster_names_from_api", return_value=client_ids)
+        mocker.patch("jobbergate_cli.subapps.clusters.tools.pull_client_ids_from_api", return_value=client_ids)
 
     yield _helper
 
