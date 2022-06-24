@@ -7,6 +7,10 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 
+3.2.0 -- 2022-06-24
+-------------------
+- Adjusted variables and data structures for keycloak migration
+
 3.1.1 -- 2022-06-01
 -------------------
 - Removed AWS settings. Boto3 supports these env variables natively.
