@@ -1,8 +1,8 @@
 """Moved job scripts to S3, removing string column
 
-Revision ID: 023f534b159d
-Revises: edfdea225579
-Create Date: 2022-05-25 17:13:27.014460
+Revision ID: 2ab7ccf2f8c8
+Revises: 98126f55efd5
+Create Date: 2022-06-27 10:31:25.585016
 
 """
 import sqlalchemy as sa
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "023f534b159d"
-down_revision = "edfdea225579"
+revision = "2ab7ccf2f8c8"
+down_revision = "98126f55efd5"
 branch_labels = None
 depends_on = None
 
