@@ -251,7 +251,7 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
         DeviceCodeData,
         make_request(
             ctx.client,
-            "/oauth/device/code",
+            "/auth/device",
             "POST",
             expected_status=200,
             abort_message="There was a problem retrieving a device verification code from the auth provider",
@@ -260,8 +260,8 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
             response_model_cls=DeviceCodeData,
             data=dict(
                 client_id=settings.OIDC_CLIENT_ID,
+                grant_type="client_credentials",
                 audience=settings.OIDC_AUDIENCE,
-                scope="offline_access",  # To get refresh token
             ),
         ),
     )
@@ -286,7 +286,7 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
             Dict,
             make_request(
                 ctx.client,
-                "/oauth/token",
+                "/token",
                 "POST",
                 abort_message="There was a problem retrieving a device verification code from the auth provider",
                 abort_subject="COULD NOT FETCH ACCESS TOKEN",
