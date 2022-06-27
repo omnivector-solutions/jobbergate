@@ -125,7 +125,7 @@ class ApplicationResponse(BaseModel):
     Complete model to match database for the Application resource.
     """
 
-    id: Optional[int]
+    id: int
     created_at: Optional[datetime] = datetime.utcnow()
     updated_at: Optional[datetime] = datetime.utcnow()
     application_name: str

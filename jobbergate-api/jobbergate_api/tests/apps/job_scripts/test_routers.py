@@ -7,21 +7,19 @@ from unittest import mock
 
 import asyncpg
 import pytest
-from botocore.exceptions import BotoCoreError
+from botocore.stub import Stubber
 from fastapi import status
-from fastapi.exceptions import HTTPException
 
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_scripts.routers import (
     build_job_script_data_as_string,
-    get_s3_object_as_tarfile,
     inject_sbatch_params,
     render_template,
-    s3man,
 )
-from jobbergate_api.apps.job_scripts.schemas import JobScriptResponse
+from jobbergate_api.apps.job_scripts.schemas import JobScriptPartialResponse, JobScriptResponse
 from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.s3_manager import s3man_jobscripts
 from jobbergate_api.storage import database
 
 
@@ -99,6 +97,7 @@ def test_inject_sbatch_params(job_script_data_as_string, sbatch_params, new_job_
 async def test_create_job_script(
     fill_application_data,
     job_script_data,
+    job_script_data_as_string,
     fill_job_script_data,
     param_dict,
     client,
@@ -119,22 +118,25 @@ async def test_create_job_script(
     )
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
-    with time_frame() as window:
-        with mock.patch.object(s3man, "s3_client") as s3man_client_mock:
-            s3man_client_mock.get_object.return_value = s3_object
-            response = await client.post(
-                "/jobbergate/job-scripts/",
-                json=fill_job_script_data(
-                    application_id=inserted_application_id,
-                    param_dict=param_dict,
-                ),
-            )
+    with mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_jobscripts", {}) as s3:
+        with mock.patch(
+            "jobbergate_api.apps.job_scripts.routers.s3man_applications",
+            {inserted_application_id: s3_object},
+        ):
+            with time_frame() as window:
+                response = await client.post(
+                    "/jobbergate/job-scripts/",
+                    json=fill_job_script_data(
+                        application_id=inserted_application_id,
+                        param_dict=param_dict,
+                    ),
+                )
 
     assert response.status_code == status.HTTP_201_CREATED
-    s3man_client_mock.get_object.assert_called_once()
 
     id_rows = await database.fetch_all("SELECT id FROM job_scripts")
     assert len(id_rows) == 1
+    assert len(s3) == 1
 
     job_script = JobScriptResponse(**response.json())
 
@@ -143,10 +145,11 @@ async def test_create_job_script(
     assert job_script.job_script_owner_email == "owner1@org.com"
     assert job_script.job_script_description is None
     assert job_script.job_script_data_as_string
-    assert job_script.job_script_data_as_string != job_script_data["job_script_data_as_string"]
     assert job_script.application_id == inserted_application_id
     assert job_script.created_at in window
     assert job_script.updated_at in window
+    assert job_script.job_script_data_as_string == job_script_data_as_string
+    assert s3.get(job_script.id) == job_script_data_as_string
 
 
 @pytest.mark.asyncio
@@ -172,18 +175,20 @@ async def test_create_job_script_bad_permission(
     )
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
-    response = await client.post(
-        "/jobbergate/job-scripts/",
-        json=fill_job_script_data(
-            application_id=inserted_application_id,
-            param_dict=param_dict,
-        ),
-    )
+    with mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_jobscripts", {}) as s3:
+        response = await client.post(
+            "/jobbergate/job-scripts/",
+            json=fill_job_script_data(
+                application_id=inserted_application_id,
+                param_dict=param_dict,
+            ),
+        )
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0
+    assert len(s3) == 0
 
 
 @pytest.mark.asyncio
@@ -202,18 +207,20 @@ async def test_create_job_script_without_application(
     job_script still does not exists in the database and the correct status code (404) is returned.
     """
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
-    response = await client.post(
-        "/jobbergate/job-scripts/",
-        json=fill_job_script_data(application_id=9999, param_dict=param_dict),
-    )
+    with mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_jobscripts", {}) as s3:
+        response = await client.post(
+            "/jobbergate/job-scripts/",
+            json=fill_job_script_data(application_id=9999, param_dict=param_dict),
+        )
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0
+    assert len(s3) == 0
 
 
-@pytest.mark.asyncio
 @database.transaction(force_rollback=True)
+@pytest.mark.asyncio
 async def test_create_job_script_file_not_found(
     fill_application_data,
     fill_job_script_data,
@@ -236,8 +243,7 @@ async def test_create_job_script_file_not_found(
     )
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
-    with mock.patch.object(s3man, "s3_client") as s3man_client_mock:
-        s3man_client_mock.get_object.side_effect = BotoCoreError()
+    with mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_applications", {}):
         response = await client.post(
             "/jobbergate/job-scripts/",
             json=fill_job_script_data(
@@ -247,42 +253,50 @@ async def test_create_job_script_file_not_found(
         )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    s3man_client_mock.get_object.assert_called_once()
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0
 
 
-@pytest.mark.asyncio
-@mock.patch.object(s3man, "s3_client")
 @database.transaction(force_rollback=True)
-async def test_get_s3_object_as_tarfile(s3man_client_mock, s3_object):
+@pytest.mark.asyncio
+async def test_create_job_script_unable_to_write_file_to_s3(
+    fill_application_data, fill_job_script_data, param_dict, client, inject_security_header, s3_object
+):
     """
-    Test getting a file from S3 with get_s3_object function.
+    Test that a job script is not added to the database when S3 manager gets an error.
     """
-    s3man_client_mock.get_object.return_value = s3_object
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
 
-    s3_file = get_s3_object_as_tarfile(1)
+    actual_id_rows = await database.fetch_all("SELECT id FROM job_scripts")
 
-    assert s3_file is not None
-    s3man_client_mock.get_object.assert_called_once()
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
 
+    with Stubber(s3man_jobscripts.s3_client) as stubber:
 
-@mock.patch.object(s3man, "s3_client")
-def test_get_s3_object_not_found(s3man_client_mock):
-    """
-    Test exception when file not exists in S3 for get_s3_object function.
-    """
-    s3man_client_mock.get_object.side_effect = BotoCoreError()
+        stubber.add_client_error("put_object", "NoSuchKey")
 
-    s3_file = None
-    with pytest.raises(HTTPException) as exc:
-        s3_file = get_s3_object_as_tarfile(1)
+        with mock.patch(
+            "jobbergate_api.apps.job_scripts.routers.s3man_applications",
+            {inserted_application_id: s3_object},
+        ):
 
-    assert "Application with id=1 not found" in str(exc)
+            response = await client.post(
+                "/jobbergate/job-scripts/",
+                json=fill_job_script_data(
+                    application_id=inserted_application_id,
+                    param_dict=param_dict,
+                ),
+            )
 
-    assert s3_file is None
-    s3man_client_mock.get_object.assert_called_once()
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    desired_id_rows = await database.fetch_all("SELECT id FROM job_scripts")
+
+    assert actual_id_rows == desired_id_rows
 
 
 def test_render_template(param_dict_flat, template_files, job_script_data_as_string):
@@ -331,15 +345,55 @@ async def test_get_job_script_by_id(
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
-    response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}")
+
+    job_script_data_as_string = "the job script"
+
+    with mock.patch(
+        "jobbergate_api.apps.job_scripts.routers.s3man_jobscripts",
+        {inserted_job_script_id: job_script_data_as_string},
+    ):
+        response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}")
+
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
     assert data["id"] == inserted_job_script_id
     assert data["job_script_name"] == job_script_data["job_script_name"]
-    assert data["job_script_data_as_string"] == job_script_data["job_script_data_as_string"]
+    assert data["job_script_data_as_string"] == job_script_data_as_string
     assert data["job_script_owner_email"] == "owner1@org.com"
     assert data["application_id"] == inserted_application_id
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_get_job_script_by_id_file_not_found_at_s3(
+    client,
+    fill_application_data,
+    fill_job_script_data,
+    inject_security_header,
+):
+    """
+    Test if 404 is returned if a jobscript exists in the database but the file was not found in S3.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
+
+    with Stubber(s3man_jobscripts.s3_client) as stubber:
+
+        stubber.add_client_error("get_object", "NoSuchKey")
+
+        response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}")
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert "JobScript file not found for id=" in response.text
 
 
 @pytest.mark.asyncio
@@ -546,13 +600,13 @@ async def test_get_job_scripts__with_search_param(client, inject_security_header
     This test proves that the user making the request will be shown job scripts that match the search string.
     We show this by creating job scripts and using various search queries to match against them.
 
-    Assert that the response to GET /job_scripts?search=<search temrms> includes correct matches.
+    Assert that the response to GET /job_scripts?search=<search terms> includes correct matches.
     """
     inserted_application_id = await database.execute(
         query=applications_table.insert(),
         values=fill_application_data(application_owner_email="owner1@org.com"),
     )
-    common = dict(job_script_data_as_string="whatever", application_id=inserted_application_id)
+    common = dict(application_id=inserted_application_id)
     await database.execute_many(
         query=job_scripts_table.insert(),
         values=[
@@ -630,7 +684,6 @@ async def test_get_job_scripts__with_sort_params(
     )
     common = dict(
         job_script_owner_email="admin@org.com",
-        job_script_data_as_string="whatever",
         application_id=inserted_application_id,
     )
     await database.execute_many(
@@ -774,14 +827,15 @@ async def test_update_job_script(
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     with time_frame() as window:
-        response = await client.put(
-            f"/jobbergate/job-scripts/{inserted_job_script_id}",
-            json={
-                "job_script_name": "new name",
-                "job_script_description": "new description",
-                "job_script_data_as_string": "new value",
-            },
-        )
+        with mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_jobscripts", {}):
+            response = await client.put(
+                f"/jobbergate/job-scripts/{inserted_job_script_id}",
+                json={
+                    "job_script_name": "new name",
+                    "job_script_description": "new description",
+                    "job_script_data_as_string": "new value",
+                },
+            )
 
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -792,12 +846,11 @@ async def test_update_job_script(
     assert data["id"] == inserted_job_script_id
 
     query = job_scripts_table.select(job_scripts_table.c.id == inserted_job_script_id)
-    job_script = JobScriptResponse.parse_obj(await database.fetch_one(query))
+    job_script = JobScriptPartialResponse.parse_obj(await database.fetch_one(query))
 
     assert job_script is not None
     assert job_script.job_script_name == "new name"
     assert job_script.job_script_description == "new description"
-    assert job_script.job_script_data_as_string == "new value"
     assert job_script.updated_at in window
 
 
@@ -817,6 +870,53 @@ async def test_update_job_script_not_found(
     response = await client.put("/jobbergate/job-scripts/123", json={"job_script_name": "new name"})
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@database.transaction(force_rollback=True)
+@pytest.mark.asyncio
+async def test_update_job_script_unable_to_write_file_to_s3(
+    fill_application_data,
+    fill_job_script_data,
+    client,
+    inject_security_header,
+    time_frame,
+):
+    """
+    Test that a job script is not updated to the database when S3 manager gets an error.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+
+    query = job_scripts_table.select(job_scripts_table.c.id == inserted_job_script_id)
+
+    desired_jobscript_data = JobScriptPartialResponse.parse_obj(await database.fetch_one(query))
+
+    with Stubber(s3man_jobscripts.s3_client) as stubber:
+        stubber.add_client_error("put_object", "NoSuchKey")
+
+        inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
+        response = await client.put(
+            f"/jobbergate/job-scripts/{inserted_job_script_id}",
+            json={
+                "job_script_name": "new name",
+                "job_script_description": "new description",
+                "job_script_data_as_string": "new value",
+            },
+        )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert "not found in S3" in response.text
+
+    actual_jobscript_data = JobScriptPartialResponse.parse_obj(await database.fetch_one(query))
+
+    assert desired_jobscript_data.json() == actual_jobscript_data.json()
 
 
 @pytest.mark.asyncio
@@ -882,8 +982,12 @@ async def test_delete_job_script(
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
 
-    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
-    response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
+    with mock.patch(
+        "jobbergate_api.apps.job_scripts.routers.s3man_jobscripts",
+        {inserted_job_script_id: "the job script"},
+    ):
+        inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
+        response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -976,7 +1080,11 @@ async def test_delete_job_script__fk_error(
             """
         ),
     ):
-        response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
+        with mock.patch(
+            "jobbergate_api.apps.job_scripts.routers.s3man_jobscripts",
+            {inserted_job_script_id: "the job script"},
+        ):
+            response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
     assert response.status_code == status.HTTP_409_CONFLICT
     error_data = json.loads(response.text)["detail"]
     assert error_data["message"] == "Delete failed due to foreign-key constraint"

@@ -18,12 +18,11 @@ from jobbergate_api.apps.applications.schemas import (
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import S3Manager
+from jobbergate_api.s3_manager import s3man_applications
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause
 
 router = APIRouter()
-s3man = S3Manager()
 
 
 @router.post(
@@ -77,7 +76,7 @@ async def applications_upload(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"Uploaded files cannot exceed {settings.MAX_UPLOAD_FILE_SIZE} bytes.",
         )
-    s3man.put(upload_file, app_id=str(application_id))
+    s3man_applications[application_id] = upload_file.file
 
     update_query = (
         applications_table.update()
@@ -111,7 +110,7 @@ async def applications_delete_upload(
     if not application.application_uploaded:
         return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
-    s3man.delete(app_id=str(application_id))
+    del s3man_applications[application_id]
 
     update_query = (
         applications_table.update()
@@ -146,7 +145,7 @@ async def application_delete(
     delete_query = applications_table.delete().where(where_stmt)
     await database.execute(delete_query)
     try:
-        s3man.delete(app_id=str(application_id))
+        del s3man_applications[application_id]
     except KeyError:
         # We should ignore KeyErrors from the S3 manager, because the data may have already been removed
         # outside of the API
@@ -179,7 +178,7 @@ async def application_delete_by_identifier(
     delete_query = applications_table.delete().where(where_stmt)
     await database.execute(delete_query)
     try:
-        s3man.delete(app_id=str(id_))
+        del s3man_applications[id_]
     except KeyError:
         # We should ignore KeyErrors from the S3 manager, because the data may have already been removed
         # outside of the API

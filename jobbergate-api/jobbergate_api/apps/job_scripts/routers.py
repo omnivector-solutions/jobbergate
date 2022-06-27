@@ -4,11 +4,10 @@ Router for the JobScript resource.
 import json
 import tarfile
 import tempfile
-from io import BytesIO, StringIO
+from io import StringIO
 from typing import List, Optional
 
 from armasec import TokenPayload
-from botocore.exceptions import BotoCoreError
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from jinja2 import Template
 from loguru import logger
@@ -19,17 +18,17 @@ from jobbergate_api.apps.applications.schemas import ApplicationResponse
 from jobbergate_api.apps.job_scripts.models import job_scripts_table, searchable_fields, sortable_fields
 from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptCreateRequest,
+    JobScriptPartialResponse,
     JobScriptResponse,
     JobScriptUpdateRequest,
 )
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import S3Manager
+from jobbergate_api.s3_manager import get_s3_object_as_tarfile, s3man_applications, s3man_jobscripts
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause
 
 router = APIRouter()
-s3man = S3Manager()
 
 
 def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str]) -> str:
@@ -55,21 +54,6 @@ def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str
     return new_job_script_data_as_string
 
 
-def get_s3_object_as_tarfile(application_id):
-    """
-    Return the tarfile of a S3 object.
-    """
-    try:
-        s3_application_obj = s3man.get(app_id=application_id)
-    except BotoCoreError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application with id={application_id} not found in S3",
-        )
-    s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj["Body"].read()))
-    return s3_application_tar
-
-
 def render_template(template_files, param_dict_flat):
     """
     Render the templates as strings using jinja2.
@@ -84,7 +68,7 @@ def render_template(template_files, param_dict_flat):
 
 def build_job_script_data_as_string(s3_application_tar, param_dict):
     """
-    Return the job_script_data_as string from the S3 application and the templates.
+    Return the job_script_data_as_string from the S3 application and the templates.
     """
     support_files_output = param_dict["jobbergate_config"].get("supporting_files_output_name")
     if support_files_output is None:
@@ -161,7 +145,7 @@ async def job_script_create(
         )
     application = ApplicationResponse.parse_obj(raw_application)
     logger.debug("Fetching application tarfile")
-    s3_application_tar = get_s3_object_as_tarfile(application.id)
+    s3_application_tar = get_s3_object_as_tarfile(s3man_applications, application.id)
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
 
@@ -181,18 +165,36 @@ async def job_script_create(
     job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, param_dict)
 
     sbatch_params = create_dict.pop("sbatch_params", [])
-    create_dict["job_script_data_as_string"] = inject_sbatch_params(job_script_data_as_string, sbatch_params)
+    job_script_data_as_string = inject_sbatch_params(job_script_data_as_string, sbatch_params)
 
     logger.debug("Inserting job_script")
-    try:
-        insert_query = job_scripts_table.insert().returning(job_scripts_table)
-        job_script_data = await database.fetch_one(query=insert_query, values=create_dict)
 
-    except INTEGRITY_CHECK_EXCEPTIONS as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+    async with database.transaction():
+
+        try:
+            insert_query = job_scripts_table.insert().returning(job_scripts_table)
+            job_script_data = await database.fetch_one(query=insert_query, values=create_dict)
+
+            if job_script_data is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="An error occurred when inserting the JobScript at the database.",
+                )
+
+            s3man_jobscripts[job_script_data["id"]] = job_script_data_as_string
+
+        except INTEGRITY_CHECK_EXCEPTIONS as e:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+
+        except KeyError as e:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
     logger.debug(f"Created job_script={job_script_data}")
-    return job_script_data
+    job_script_response = dict(
+        **job_script_data,
+        job_script_data_as_string=job_script_data_as_string,
+    )
+    return job_script_response
 
 
 @router.get(
@@ -213,13 +215,24 @@ async def job_script_get(job_script_id: int = Query(...)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"JobScript with id={job_script_id} not found.",
         )
-    return job_script
+
+    job_script_response = dict(job_script)
+
+    try:
+        job_script_response["job_script_data_as_string"] = s3man_jobscripts[job_script_id]
+    except KeyError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"JobScript file not found for id={job_script_id}.",
+        )
+
+    return job_script_response
 
 
 @router.get(
     "/job-scripts",
     description="Endpoint to list job_scripts",
-    responses=ok_response(JobScriptResponse),
+    responses=ok_response(JobScriptPartialResponse),
 )
 async def job_script_list(
     pagination: Pagination = Depends(),
@@ -246,7 +259,7 @@ async def job_script_list(
         query = query.where(search_clause(search, searchable_fields))
     if sort_field is not None:
         query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
-    return await package_response(JobScriptResponse, query, pagination)
+    return await package_response(JobScriptPartialResponse, query, pagination)
 
 
 @router.delete(
@@ -272,6 +285,12 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     delete_query = job_scripts_table.delete().where(where_stmt)
     await database.execute(delete_query)
 
+    try:
+        del s3man_jobscripts[job_script_id]
+    except KeyError:
+        # There is no need to raise an error if we try to delete a file that does not exist
+        logger.warning(f"Tried to delete job_script={job_script_id}, but it was not found")
+
 
 @router.put(
     "/job-scripts/{job_script_id}",
@@ -287,21 +306,40 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
     update_query = (
         job_scripts_table.update()
         .where(job_scripts_table.c.id == job_script_id)
-        .values(job_script.dict(exclude_unset=True))
+        .values(
+            job_script.dict(exclude_unset=True, exclude={"job_script_data_as_string"}),
+        )
         .returning(job_scripts_table)
     )
-    try:
-        result = await database.fetch_one(update_query)
-    except INTEGRITY_CHECK_EXCEPTIONS as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
-    if result is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"JobScript with id={job_script_id} not found.",
-        )
+    async with database.transaction():
 
-    return result
+        try:
+            result = await database.fetch_one(update_query)
+        except INTEGRITY_CHECK_EXCEPTIONS as e:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+        if result is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"JobScript with id={job_script_id} not found.",
+            )
+
+        job_script_response = dict(result)
+
+        try:
+            if job_script.job_script_data_as_string:
+                s3man_jobscripts[job_script_id] = job_script.job_script_data_as_string
+                job_script_response["job_script_data_as_string"] = job_script.job_script_data_as_string
+            else:
+                job_script_response["job_script_data_as_string"] = s3man_jobscripts[job_script_id]
+        except KeyError:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"File for JobScript with id={job_script_id} not found in S3.",
+            )
+
+    return job_script_response
 
 
 def include_router(app):

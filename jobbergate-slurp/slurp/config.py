@@ -4,13 +4,14 @@ Settings for the Jobbergate Slurp application.
 
 from typing import Optional
 
-from pydantic import BaseSettings, Field, HttpUrl
+from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
     """
     Settings model. Will load from environment and dotenv files.
     """
+
     LEGACY_DATABASE_USER: str
     LEGACY_DATABASE_PSWD: str
     LEGACY_DATABASE_HOST: str
@@ -33,15 +34,11 @@ class Settings(BaseSettings):
     NEXTGEN_AWS_ACCESS_KEY_ID: str
     NEXTGEN_AWS_SECRET_ACCESS_KEY: str
 
-    AUTH0_DOMAIN: str
-    AUTH0_AUDIENCE: str
-    AUTH0_CLIENT_ID: str
-    AUTH0_CLIENT_SECRET: str
-
     class Config:
         """
-        Special settings for Pydanitc BaseSettings.
+        Special settings for Pydantic BaseSettings.
         """
+
         env_file = ".env"
 
 

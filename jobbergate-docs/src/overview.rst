@@ -66,7 +66,7 @@ API that serves as the back-end for the system. It is interacted with via the CL
 can be dispatched to it from any other web application.
 
 There jobbergate-api offers `interactive documentation via swagger
-<https://jobbergateapi2-staging.omnivector.solutions/docs>`_
+<https://jobbergateapi2-staging.omnivector.solutions/docs>`_.
 
 Requests to the API must be accompanied by a JWT issued by a POST request to the ``/api-auth-token``
 endpoint.
