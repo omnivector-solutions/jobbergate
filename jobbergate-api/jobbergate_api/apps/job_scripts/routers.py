@@ -134,7 +134,8 @@ async def job_script_create(
 
     Make a post request to this endpoint with the required values to create a new job script.
     """
-    logger.debug(f"Creating job_script with: {job_script}")
+    logger.debug(f"Creating {job_script=}")
+
     select_query = applications_table.select().where(applications_table.c.id == job_script.application_id)
     raw_application = await database.fetch_one(select_query)
 
@@ -207,6 +208,8 @@ async def job_script_get(job_script_id: int = Query(...)):
     """
     Return the job_script given its id.
     """
+    logger.debug(f"Getting {job_script_id=}")
+
     query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
     job_script = await database.fetch_one(query)
 
@@ -225,6 +228,8 @@ async def job_script_get(job_script_id: int = Query(...)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"JobScript file not found for id={job_script_id}.",
         )
+
+    logger.debug(f"Job-script data: {job_script_response=}")
 
     return job_script_response
 
@@ -289,7 +294,7 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
         del s3man_jobscripts[job_script_id]
     except KeyError:
         # There is no need to raise an error if we try to delete a file that does not exist
-        logger.warning(f"Tried to delete job_script={job_script_id}, but it was not found")
+        logger.warning(f"Tried to delete {job_script_id=}, but it was not found on S3.")
 
 
 @router.put(

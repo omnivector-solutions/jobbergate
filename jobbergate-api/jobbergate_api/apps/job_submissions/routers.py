@@ -53,6 +53,8 @@ async def job_submission_create(
 
     Make a post request to this endpoint with the required values to create a new job submission.
     """
+    logger.debug(f"Creating {job_submission=}")
+
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     client_id = job_submission.client_id or identity_claims.client_id
     if client_id is None:
@@ -82,6 +84,8 @@ async def job_submission_create(
             detail=f"JobScript id={job_submission.job_script_id} not found.",
         )
 
+    logger.debug("Inserting job-submission")
+
     async with database.transaction():
         try:
             insert_query = job_submissions_table.insert().returning(job_submissions_table)
@@ -89,6 +93,8 @@ async def job_submission_create(
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+
+    logger.debug(f"Job-submission created: {job_submission_data=}")
 
     return job_submission_data
 
@@ -103,11 +109,19 @@ async def job_submission_get(job_submission_id: int = Query(...)):
     """
     Return the job_submission given it's id.
     """
+    logger.debug(f"Getting {job_submission_id=}")
+
     query = job_submissions_table.select().where(job_submissions_table.c.id == job_submission_id)
     job_submission_data = await database.fetch_one(query)
 
     if not job_submission_data:
-        raise HTTPException(status_code=404, detail=f"JobSubmission with id={job_submission_id} not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"JobSubmission with id={job_submission_id} not found.",
+        )
+
+    logger.debug(f"Job-submission data: {job_submission_data=}")
+
     return job_submission_data
 
 

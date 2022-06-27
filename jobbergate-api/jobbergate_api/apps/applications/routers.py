@@ -7,6 +7,7 @@ from armasec import TokenPayload
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
+from loguru import logger
 from sqlalchemy import not_
 
 from jobbergate_api.apps.applications.models import applications_table, searchable_fields, sortable_fields
@@ -38,11 +39,15 @@ async def applications_create(
     """
     Create new applications using an authenticated user token.
     """
+    logger.debug(f"Creating {application=}")
+
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     create_dict = dict(
         **application.dict(exclude_unset=True),
         application_owner_email=identity_claims.email,
     )
+
+    logger.debug("Inserting application")
 
     try:
         insert_query = applications_table.insert().returning(applications_table)
@@ -50,6 +55,8 @@ async def applications_create(
 
     except INTEGRITY_CHECK_EXCEPTIONS as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+    logger.debug(f"Applications created: {application_data=}")
 
     return application_data
 
@@ -71,6 +78,8 @@ async def applications_upload(
     """
     Upload application tarball using an authenticated user token.
     """
+    logger.debug(f"Preparing to upload tarball for {application_id=}")
+
     if content_length > settings.MAX_UPLOAD_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
@@ -147,9 +156,9 @@ async def application_delete(
     try:
         del s3man_applications[application_id]
     except KeyError:
-        # We should ignore KeyErrors from the S3 manager, because the data may have already been removed
-        # outside of the API
-        pass
+        # We should ignore KeyErrors from the S3 manager, because the data may
+        # have already been removed outside of the API
+        logger.warning(f"Tried to delete {application_id=}, but it was not found on S3.")
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -182,7 +191,7 @@ async def application_delete_by_identifier(
     except KeyError:
         # We should ignore KeyErrors from the S3 manager, because the data may have already been removed
         # outside of the API
-        pass
+        logger.warning(f"Tried to delete application_id={id_}, but it was not found on S3.")
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -228,6 +237,8 @@ async def applications_get_by_id(application_id: int = Query(...)):
     """
     Return the application given it's id.
     """
+    logger.debug(f"Getting {application_id=}")
+
     query = applications_table.select().where(applications_table.c.id == application_id)
     application_data = await database.fetch_one(query)
     if not application_data:
@@ -235,6 +246,9 @@ async def applications_get_by_id(application_id: int = Query(...)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Application {application_id=} not found.",
         )
+
+    logger.debug(f"Application data: {application_data=}")
+
     return application_data
 
 
