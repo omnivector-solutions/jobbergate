@@ -84,7 +84,7 @@ async def package_response(model: Type[TResponseModel], query, pagination: Pagin
     """
     Package the response in an envelope that includes the response and the metadata.
 
-    Return a JSONREsponse containing the packaged data.
+    Return a JSONResponse containing the packaged data.
 
     Structure of response is::
 
