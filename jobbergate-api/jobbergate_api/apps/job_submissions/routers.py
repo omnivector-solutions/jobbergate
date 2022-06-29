@@ -24,6 +24,7 @@ from jobbergate_api.apps.job_submissions.schemas import (
     PendingJobSubmission,
 )
 from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.email_notification import notify_submission_aborted
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
@@ -289,6 +290,7 @@ async def job_submission_agent_update(
     job_submission_id: int,
     new_status: str = Body(..., embed=True),
     slurm_job_id: Optional[int] = Body(None, embed=True),
+    report_message: Optional[str] = Body(None, embed=True),  # add new column to database
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT)),
 ):
     """
@@ -314,6 +316,9 @@ async def job_submission_agent_update(
     if slurm_job_id is not None:
         update_values.update(slurm_job_id=slurm_job_id)
 
+    if report_message:
+        update_values.update(report_message=report_message)
+
     update_query = (
         job_submissions_table.update()
         .where(job_submissions_table.c.id == job_submission_id)
@@ -331,6 +336,9 @@ async def job_submission_agent_update(
                 "and client_id={identity_claims.client_id} not found."
             ),
         )
+
+    if report_message and new_status == JobSubmissionStatus.ABORTED:
+        notify_submission_aborted(job_submission_id, report_message, result["job_submission_owner_email"])
 
     return result
 

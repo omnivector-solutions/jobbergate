@@ -14,6 +14,7 @@ class JobSubmissionStatus(str, Enum):
     CREATED = "CREATED"
     SUBMITTED = "SUBMITTED"
     COMPLETED = "COMPLETED"
+    ABORTED = "ABORTED"
     FAILED = "FAILED"
     UNKNOWN = "UNKNOWN"
 
