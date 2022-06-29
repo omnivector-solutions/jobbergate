@@ -18,7 +18,7 @@ from sqlalchemy.sql.expression import BooleanClauseList, UnaryExpression
 from starlette import status
 from yarl import URL
 
-from jobbergate_api.config import DeployEnvEnum, settings
+from jobbergate_api.config import settings
 
 INTEGRITY_CHECK_EXCEPTIONS = (UniqueViolationError,)
 
@@ -30,7 +30,7 @@ def build_db_url(force_test: bool = False) -> str:
     If the ``DEPLOY_ENV`` setting is "TEST" or if the ``force_test`` is passed, build from the test database
     settings.
     """
-    is_test = force_test or settings.DEPLOY_ENV == DeployEnvEnum.TEST
+    is_test = force_test or settings.DEPLOY_ENV.lower() == "test"
     prefix = "TEST_" if is_test else ""
 
     return str(
@@ -45,7 +45,7 @@ def build_db_url(force_test: bool = False) -> str:
     )
 
 
-database = databases.Database(build_db_url(), force_rollback=settings.DEPLOY_ENV == DeployEnvEnum.TEST)
+database = databases.Database(build_db_url(), force_rollback=settings.DEPLOY_ENV.lower() == "test")
 
 
 def render_sql(query) -> str:

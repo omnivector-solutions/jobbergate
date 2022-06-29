@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     # Setry's configuration
     SENTRY_DSN: Optional[str]
     SENTRY_TRACE_RATE: float = Field(1.0, gt=0.0, le=1.0)
-    SENTRY_ENV: str = "local"
+    SENTRY_ENV: str = "LOCAL"
 
     # How long it will use cached cluster lists before fetching them again
     JOBBERGATE_CLUSTER_CACHE_LIFETIME: int = 60 * 5
