@@ -7,6 +7,7 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 - Job scripts were moved from a database column to files at S3.
+- Add email notification to Jobbergate.
 
 3.2.0 -- 2022-06-24
 -------------------
