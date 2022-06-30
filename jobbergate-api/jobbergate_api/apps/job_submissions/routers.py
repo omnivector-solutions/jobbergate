@@ -290,7 +290,7 @@ async def job_submission_agent_update(
     job_submission_id: int,
     new_status: str = Body(..., embed=True),
     slurm_job_id: Optional[int] = Body(None, embed=True),
-    report_message: Optional[str] = Body(None, embed=True),  # add new column to database
+    report_message: Optional[str] = Body(None, embed=True),
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT)),
 ):
     """
