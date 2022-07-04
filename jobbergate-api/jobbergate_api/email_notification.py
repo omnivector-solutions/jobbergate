@@ -66,7 +66,7 @@ def notify_submission_aborted(
     try:
         email_manager.send_email(to_emails, subject, plain_text_content=report_message)
     except EmailNotificationError:
-        logger.debug("Email not sent!")
+        logger.warning(f"Couldn't sent email to {to_emails}")
 
 
 email_client = SendGridAPIClient(settings.SENDGRID_API_KEY)
