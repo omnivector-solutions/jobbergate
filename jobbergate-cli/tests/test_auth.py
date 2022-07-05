@@ -365,7 +365,7 @@ def test_init_persona__refreshes_access_token_if_it_is_expired(make_token, tmp_p
         expires="2022-02-17 22:30:00",
     )
 
-    respx_mock.post(f"{LOGIN_DOMAIN}/oauth/token").mock(
+    respx_mock.post(f"{LOGIN_DOMAIN}/token").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(access_token=refreshed_access_token),
@@ -403,7 +403,7 @@ def test_refresh_access_token__success(make_token, respx_mock, dummy_context):
         expires="2022-02-17 22:30:00",
     )
 
-    respx_mock.post(f"{LOGIN_DOMAIN}/oauth/token").mock(
+    respx_mock.post(f"{LOGIN_DOMAIN}/token").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(access_token=refreshed_access_token),
@@ -423,7 +423,7 @@ def test_refresh_access_token__raises_abort_on_non_200_response(respx_mock, dumm
     refresh_token = "dummy-refresh-token"
     token_set = TokenSet(access_token=access_token, refresh_token=refresh_token)
 
-    respx_mock.post(f"{LOGIN_DOMAIN}/oauth/token").mock(
+    respx_mock.post(f"{LOGIN_DOMAIN}/token").mock(
         return_value=httpx.Response(
             httpx.codes.BAD_REQUEST,
             json=dict(error_description="BOOM!"),
