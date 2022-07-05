@@ -60,7 +60,7 @@ def create(
     ),
 ):
     """
-    Create a new job script.
+    Create a new job submission.
     """
     jg_ctx: JobbergateContext = ctx.obj
 
