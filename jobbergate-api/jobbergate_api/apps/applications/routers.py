@@ -21,7 +21,13 @@ from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.s3_manager import s3man_applications
 from jobbergate_api.security import IdentityClaims, guard
-from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause
+from jobbergate_api.storage import (
+    INTEGRITY_CHECK_EXCEPTIONS,
+    database,
+    render_sql,
+    search_clause,
+    sort_clause,
+)
 
 router = APIRouter()
 
@@ -51,9 +57,11 @@ async def applications_create(
 
     try:
         insert_query = applications_table.insert().returning(applications_table)
+        logger.debug(f"insert_query = {render_sql(insert_query)}")
         application_data = await database.fetch_one(query=insert_query, values=create_dict)
 
     except INTEGRITY_CHECK_EXCEPTIONS as e:
+        logger.warning(f"INTEGRITY_CHECK_EXCEPTIONS: {str(e)}")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
     logger.debug(f"Applications created: {application_data=}")
@@ -81,9 +89,11 @@ async def applications_upload(
     logger.debug(f"Preparing to upload tarball for {application_id=}")
 
     if content_length > settings.MAX_UPLOAD_FILE_SIZE:
+        message = f"Uploaded files cannot exceed {settings.MAX_UPLOAD_FILE_SIZE} bytes."
+        logger.warning(message)
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"Uploaded files cannot exceed {settings.MAX_UPLOAD_FILE_SIZE} bytes.",
+            detail=message,
         )
     s3man_applications[application_id] = upload_file.file
 
@@ -92,6 +102,8 @@ async def applications_upload(
         .where(applications_table.c.id == application_id)
         .values(dict(application_uploaded=True))
     )
+
+    logger.debug(f"update_query = {render_sql(update_query)}")
     await database.execute(update_query)
 
 
@@ -107,16 +119,20 @@ async def applications_delete_upload(
     """
     Delete application tarball using an authenticated user token.
     """
+    logger.debug(f"Preparing to delete tarball for {application_id=}")
+
     select_query = applications_table.select().where(applications_table.c.id == application_id)
     raw_application = await database.fetch_one(select_query)
+
     if not raw_application:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application {application_id=} not found.",
-        )
+        message = f"Application {application_id=} not found."
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
     application = ApplicationResponse.parse_obj(raw_application)
 
     if not application.application_uploaded:
+        logger.warning(f"Trying to delete a applications that was not uploaded ({application_id=})")
         return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
     del s3man_applications[application_id]
@@ -126,6 +142,8 @@ async def applications_delete_upload(
         .where(applications_table.c.id == application_id)
         .values(dict(application_uploaded=False))
     )
+
+    logger.debug(f"update_query = {render_sql(update_query)}")
     await database.execute(update_query)
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
@@ -143,15 +161,24 @@ async def application_delete(
     """
     Delete application from the database and S3 given it's id.
     """
+    logger.debug(f"Preparing to delete {application_id=} from the database and S3")
+
     where_stmt = applications_table.c.id == application_id
     get_query = applications_table.select().where(where_stmt)
+    logger.debug(f"get_query = {render_sql(get_query)}")
+
     raw_application = await database.fetch_one(get_query)
     if not raw_application:
+        message = f"Application {application_id=} not found."
+        logger.warning(message)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application {application_id=} not found.",
+            detail=message,
         )
+
     delete_query = applications_table.delete().where(where_stmt)
+    logger.debug(f"delete_query = {render_sql(delete_query)}")
+
     await database.execute(delete_query)
     try:
         del s3man_applications[application_id]
@@ -175,17 +202,27 @@ async def application_delete_by_identifier(
     """
     Delete application from the database and S3 given it's identifier.
     """
+    logger.debug(f"Preparing to delete {identifier=} from the database and S3")
+
     where_stmt = applications_table.c.application_identifier == identifier
     get_query = applications_table.select().where(where_stmt)
+    logger.debug(f"get_query = {render_sql(get_query)}")
+
     raw_application = await database.fetch_one(get_query)
     if not raw_application:
+        message = f"Application {identifier=} not found."
+        logger.warning(message)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application {identifier=} not found.",
+            detail=message,
         )
+
     id_ = raw_application["id"]
     delete_query = applications_table.delete().where(where_stmt)
+    logger.debug(f"delete_query = {render_sql(delete_query)}")
+
     await database.execute(delete_query)
+
     try:
         del s3man_applications[id_]
     except KeyError:
@@ -213,6 +250,8 @@ async def applications_list(
     """
     List all applications.
     """
+    logger.debug("Preparing to list the Applications")
+
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     query = applications_table.select()
     if user:
@@ -224,6 +263,7 @@ async def applications_list(
     if sort_field is not None:
         query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
 
+    logger.debug(f"query = {render_sql(query)}")
     return await package_response(ApplicationResponse, query, pagination)
 
 
@@ -240,11 +280,15 @@ async def applications_get_by_id(application_id: int = Query(...)):
     logger.debug(f"Getting {application_id=}")
 
     query = applications_table.select().where(applications_table.c.id == application_id)
+    logger.debug(f"get_query = {render_sql(query)}")
+
     application_data = await database.fetch_one(query)
     if not application_data:
+        message = f"Application {application_id=} not found."
+        logger.warning(message)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application {application_id=} not found.",
+            detail=message,
         )
 
     logger.debug(f"Application data: {application_data=}")
@@ -266,18 +310,24 @@ async def application_update(
     """
     Update an application given it's id.
     """
+    logger.debug(f"Preparing to update {application_id=}")
+
     update_query = (
         applications_table.update()
         .where(applications_table.c.id == application_id)
         .values(application.dict(exclude_unset=True))
         .returning(applications_table)
     )
+    logger.debug(f"update_query = {render_sql(update_query)}")
+
     async with database.transaction():
         try:
             application_data = await database.fetch_one(update_query)
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+
+    logger.debug(f"Application data: {application_data=}")
 
     return application_data
 

@@ -91,6 +91,6 @@ async def test_get_s3_object_not_found(dummy_s3man):
     with pytest.raises(HTTPException) as exc:
         s3_file = get_s3_object_as_tarfile(dummy_s3man, 9999)
 
-    assert "Application with id=9999 not found" in str(exc)
+    assert "Application with app_id=9999 not found in S3" in str(exc)
 
     assert s3_file is None

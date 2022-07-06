@@ -7,6 +7,7 @@ from enum import Enum
 from typing import Optional
 
 from buzz import require_condition
+from loguru import logger
 from pydantic import BaseSettings, Field, HttpUrl, root_validator
 
 
@@ -87,11 +88,13 @@ class Settings(BaseSettings):
         """
         clean_values = dict()
         for (key, value) in values.items():
-            if not isinstance(value, str):
-                clean_values[key] = value
-            else:
-                if value.strip() != "":
+            if isinstance(value, str):
+                if value.strip():
                     clean_values[key] = value
+                else:
+                    logger.warning(f"The setting {key} is a blank string and was not considered.")
+            else:
+                clean_values[key] = value
 
         require_condition(
             check_none_or_all_keys_exist(

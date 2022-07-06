@@ -26,7 +26,13 @@ from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.s3_manager import get_s3_object_as_tarfile, s3man_applications, s3man_jobscripts
 from jobbergate_api.security import IdentityClaims, guard
-from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, database, search_clause, sort_clause
+from jobbergate_api.storage import (
+    INTEGRITY_CHECK_EXCEPTIONS,
+    database,
+    render_sql,
+    search_clause,
+    sort_clause,
+)
 
 router = APIRouter()
 
@@ -37,7 +43,10 @@ def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str
 
     Given the job script as job_script_data_as_string, inject the sbatch params in the correct location.
     """
-    if sbatch_params == []:
+    logger.debug("Preparing to inject sbatch params into job script")
+
+    if not sbatch_params:
+        logger.warning("Sbatch param list is empty")
         return job_script_data_as_string
 
     first_sbatch_index = job_script_data_as_string.find("#SBATCH")
@@ -51,6 +60,8 @@ def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str
     new_job_script_data_as_string = (
         job_script_data_as_string[:line_end] + inner_string + job_script_data_as_string[line_end:]
     )
+
+    logger.debug("Done injecting sbatch params into job script")
     return new_job_script_data_as_string
 
 
@@ -58,6 +69,7 @@ def render_template(template_files, param_dict_flat):
     """
     Render the templates as strings using jinja2.
     """
+    logger.debug("Rendering the templates as strings using jinja2")
     for key, value in template_files.items():
         template = Template(value)
         rendered_js = template.render(data=param_dict_flat)
@@ -70,6 +82,8 @@ def build_job_script_data_as_string(s3_application_tar, param_dict):
     """
     Return the job_script_data_as_string from the S3 application and the templates.
     """
+    logger.debug("Building the job script file from the S3 application and the templates")
+
     support_files_output = param_dict["jobbergate_config"].get("supporting_files_output_name")
     if support_files_output is None:
         support_files_output = dict()
@@ -116,6 +130,8 @@ def build_job_script_data_as_string(s3_application_tar, param_dict):
         f.seek(0)
 
     job_script_data_as_string = render_template(template_files, param_dict_flat)
+
+    logger.debug("Done building the job script file")
     return job_script_data_as_string
 
 
@@ -137,13 +153,15 @@ async def job_script_create(
     logger.debug(f"Creating {job_script=}")
 
     select_query = applications_table.select().where(applications_table.c.id == job_script.application_id)
+    logger.debug(f"select_query = {render_sql(select_query)}")
+
     raw_application = await database.fetch_one(select_query)
 
     if not raw_application:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application with id={job_script.application_id} not found.",
-        )
+        message = f"Application with id={job_script.application_id} not found."
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
     application = ApplicationResponse.parse_obj(raw_application)
     logger.debug("Fetching application tarfile")
     s3_application_tar = get_s3_object_as_tarfile(s3man_applications, application.id)
@@ -156,13 +174,12 @@ async def job_script_create(
     )
 
     # Use application_config from the application as a baseline of defaults
-    print("APP CONFIG: ", application.application_config)
+    logger.debug(f"APP CONFIG: {application.application_config}")
     param_dict = safe_load(application.application_config)
 
     # User supplied param dict is optional and may override defaults
     param_dict.update(**job_script.param_dict)
 
-    logger.debug("Rendering job_script data as string")
     job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, param_dict)
 
     sbatch_params = create_dict.pop("sbatch_params", [])
@@ -174,23 +191,28 @@ async def job_script_create(
 
         try:
             insert_query = job_scripts_table.insert().returning(job_scripts_table)
+            logger.debug(f"insert_query = {render_sql(insert_query)}")
             job_script_data = await database.fetch_one(query=insert_query, values=create_dict)
 
             if job_script_data is None:
+                message = "An error occurred when inserting the JobScript at the database."
+                logger.error(message)
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="An error occurred when inserting the JobScript at the database.",
+                    detail=message,
                 )
 
             s3man_jobscripts[job_script_data["id"]] = job_script_data_as_string
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
+            logger.error(f"Reverting database transaction: {str(e)}")
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
         except KeyError as e:
+            logger.error(f"Reverting database transaction: {str(e)}")
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
-    logger.debug(f"Created job_script={job_script_data}")
+    logger.debug(f"Job-script created: {job_script_data}")
     job_script_response = dict(
         **job_script_data,
         job_script_data_as_string=job_script_data_as_string,
@@ -211,12 +233,15 @@ async def job_script_get(job_script_id: int = Query(...)):
     logger.debug(f"Getting {job_script_id=}")
 
     query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
+    logger.debug(f"get_query = {render_sql(query)}")
     job_script = await database.fetch_one(query)
 
     if not job_script:
+        message = f"JobScript with id={job_script_id} not found."
+        logger.warning(message)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"JobScript with id={job_script_id} not found.",
+            detail=message,
         )
 
     job_script_response = dict(job_script)
@@ -224,9 +249,11 @@ async def job_script_get(job_script_id: int = Query(...)):
     try:
         job_script_response["job_script_data_as_string"] = s3man_jobscripts[job_script_id]
     except KeyError:
+        message = f"JobScript file not found for id={job_script_id}."
+        logger.warning(message)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"JobScript file not found for id={job_script_id}.",
+            detail=message,
         )
 
     logger.debug(f"Job-script data: {job_script_response=}")
@@ -256,6 +283,8 @@ async def job_script_list(
        is already happening in the ``package_response`` method. So, we uses ``responses`` so that FastAPI
        can generate the correct OpenAPI spec but not post-process the response.
     """
+    logger.debug("Preparing to list job-scripts")
+
     query = job_scripts_table.select()
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     if not all:
@@ -264,6 +293,8 @@ async def job_script_list(
         query = query.where(search_clause(search, searchable_fields))
     if sort_field is not None:
         query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
+
+    logger.debug(f"Query = {render_sql(query)}")
     return await package_response(JobScriptPartialResponse, query, pagination)
 
 
@@ -277,17 +308,24 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     """
     Delete job_script given its id.
     """
+    logger.debug(f"Preparing to delete {job_script_id=}")
     where_stmt = job_scripts_table.c.id == job_script_id
 
     get_query = job_scripts_table.select().where(where_stmt)
+    logger.debug(f"get_query = {render_sql(get_query)}")
+
     raw_job_script = await database.fetch_one(get_query)
     if not raw_job_script:
+
+        message = f"JobScript with id={job_script_id} not found."
+        logger.warning(message)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"JobScript with id={job_script_id} not found.",
+            detail=message,
         )
 
     delete_query = job_scripts_table.delete().where(where_stmt)
+    logger.debug(f"delete_query = {render_sql(delete_query)}")
     await database.execute(delete_query)
 
     try:
@@ -308,6 +346,8 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
     """
     Update a job_script given its id.
     """
+    logger.debug(f"Updating {job_script_id=}")
+
     update_query = (
         job_scripts_table.update()
         .where(job_scripts_table.c.id == job_script_id)
@@ -316,18 +356,22 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
         )
         .returning(job_scripts_table)
     )
+    logger.debug(f"update_query = {render_sql(update_query)}")
 
     async with database.transaction():
 
         try:
             result = await database.fetch_one(update_query)
         except INTEGRITY_CHECK_EXCEPTIONS as e:
+            logger.error(f"Reverting database transaction: {str(e)}")
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
         if result is None:
+            message = f"JobScript with id={job_script_id} not found."
+            logger.warning(message)
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"JobScript with id={job_script_id} not found.",
+                detail=message,
             )
 
         job_script_response = dict(result)
@@ -338,7 +382,8 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
                 job_script_response["job_script_data_as_string"] = job_script.job_script_data_as_string
             else:
                 job_script_response["job_script_data_as_string"] = s3man_jobscripts[job_script_id]
-        except KeyError:
+        except KeyError as e:
+            logger.error(f"Reverting database transaction: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"File for JobScript with id={job_script_id} not found in S3.",
