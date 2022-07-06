@@ -29,14 +29,21 @@ class EmailManager:
     email_client: SendGridAPIClient
     from_email: Optional[str] = ""
 
-    def send_email(self, to_emails: Union[str, List[str]], subject: str, **kwargs) -> None:
+    def send_email(
+        self, to_emails: Union[str, List[str]], subject: str, skip_on_failure: bool = False, **kwargs
+    ) -> None:
         """
         Send an email using this manager.
         """
         message = self._build_message(to_emails, subject, **kwargs)
 
-        with EmailNotificationError.handle_errors("Error while sending email"):
-            self.email_client.send(message)
+        with EmailNotificationError.handle_errors(
+            f"Error while sending email from_email={self.from_email}, {to_emails=}",
+            do_except=lambda params: logger.warning(params.final_message),
+            re_raise=not skip_on_failure,
+        ):
+            response = self.email_client.send(message)
+            response.raise_for_status()
 
     def _build_message(self, to_emails: Union[str, List[str]], subject: str, **kwargs) -> Mail:
         """
@@ -44,7 +51,10 @@ class EmailManager:
         """
         EmailNotificationError.require_condition(self.from_email, "The value from_email is empty.")
 
-        with EmailNotificationError.handle_errors("Error while creating the message"):
+        with EmailNotificationError.handle_errors(
+            "Error while creating the message",
+            do_except=lambda params: logger.error(params.final_message),
+        ):
             message = Mail(
                 from_email=self.from_email,
                 to_emails=to_emails,
@@ -63,10 +73,7 @@ def notify_submission_aborted(
     subject = f"Job Submission Aborted (id={job_submission_id})"
 
     logger.debug(f"Notifying {to_emails=} that {job_submission_id=} was aborted: {report_message=}")
-    try:
-        email_manager.send_email(to_emails, subject, plain_text_content=report_message)
-    except EmailNotificationError:
-        logger.warning(f"Couldn't sent email to {to_emails}")
+    email_manager.send_email(to_emails, subject, skip_on_failure=True, plain_text_content=report_message)
 
 
 email_client = SendGridAPIClient(settings.SENDGRID_API_KEY)

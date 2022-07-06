@@ -89,6 +89,18 @@ class TestEmailManager:
                 email_manager.send_email(**email_options)
         mocked.assert_called_once()
 
+    def test_send_email__skip_on_failure(self, email_manager, email_options):
+        """
+        Test if the email manager can skip on failure when it can not connect to the SendGrid API.
+        """
+        with mock.patch.object(
+            email_manager.email_client,
+            "send",
+            side_effect=HTTPException(status_code=401, detail="Unauthorized"),
+        ) as mocked:
+            email_manager.send_email(skip_on_failure=True, **email_options)
+        mocked.assert_called_once()
+
 
 def test_notify_submission_aborted():
     """
