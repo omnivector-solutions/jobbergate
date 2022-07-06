@@ -42,8 +42,7 @@ class EmailManager:
             do_except=lambda params: logger.warning(params.final_message),
             re_raise=not skip_on_failure,
         ):
-            response = self.email_client.send(message)
-            response.raise_for_status()
+            self.email_client.send(message)
 
     def _build_message(self, to_emails: Union[str, List[str]], subject: str, **kwargs) -> Mail:
         """
