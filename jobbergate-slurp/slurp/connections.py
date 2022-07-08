@@ -2,7 +2,7 @@
 Methods for creating connections to legacy and nextgen databases.
 """
 
-from psycopg import connect
+from psycopg import connect, ClientCursor
 from psycopg.rows import dict_row
 from contextlib import contextmanager
 
@@ -23,7 +23,7 @@ def build_url(is_legacy=False):
 
 
 @contextmanager
-def db(is_legacy=False):
+def db(is_legacy=False, client_cursor=False):
     """
     Creates a connections to the database.
 
@@ -33,7 +33,10 @@ def db(is_legacy=False):
     """
     database_url = build_url(is_legacy=is_legacy)
     logger.info(f"Starting a connection with {database_url}")
-    with connect(database_url, row_factory=dict_row) as connection:
+    cursor_kwargs = dict(row_factory=dict_row)
+    if client_cursor:
+        cursor_kwargs.update(cursor_factory=ClientCursor)
+    with connect(database_url, **cursor_kwargs) as connection:
         try:
             logger.info(f"Creating cursor for {database_url}")
             with connection.cursor() as cursor:

@@ -60,7 +60,7 @@ def migrate(
     logger.info("Migrating jobbergate data from legacy to nextgen database")
     legacy_s3man = S3Manager(is_legacy=True)
     nextgen_s3man = S3Manager(is_legacy=False)
-    with db(is_legacy=True) as legacy_db, db(is_legacy=False) as nextgen_db:
+    with db(is_legacy=True) as legacy_db, db(is_legacy=False, client_cursor=True) as nextgen_db:
         user_map = pull_users(legacy_db)
 
         legacy_applications = pull_applications(legacy_db)

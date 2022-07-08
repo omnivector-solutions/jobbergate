@@ -9,7 +9,6 @@ packages = [ { include = "slurp" } ]
 [tool.poetry.dependencies]
 python = "^3.8"
 python-dotenv = "^0.19.1"
-psycopg = "^3.0.3"
 pydantic = "^1.8.2"
 loguru = "^0.6.0"
 typer = "^0.4.0"
@@ -18,6 +17,9 @@ snick = "^1.0.0"
 httpx = "^0.20.0"
 py-buzz = "^2.1.3"
 boto3 = "^1.20.8"
+report-on-interval = "^0.1.0"
+psycopg-c = {path = "../../../others/psycopg/psycopg_c"}
+psycopg = {path = "../../../others/psycopg/psycopg"}
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"
