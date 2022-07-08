@@ -132,7 +132,7 @@ async def applications_delete_upload(
     application = ApplicationResponse.parse_obj(raw_application)
 
     if not application.application_uploaded:
-        logger.warning(f"Trying to delete a applications that was not uploaded ({application_id=})")
+        logger.debug(f"Trying to delete a applications that was not uploaded ({application_id=})")
         return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
     del s3man_applications[application_id]
@@ -185,7 +185,7 @@ async def application_delete(
     except KeyError:
         # We should ignore KeyErrors from the S3 manager, because the data may
         # have already been removed outside of the API
-        logger.warning(f"Tried to delete {application_id=}, but it was not found on S3.")
+        logger.debug(f"Tried to delete {application_id=}, but it was not found on S3.")
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
