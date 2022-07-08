@@ -61,7 +61,7 @@ async def applications_create(
         application_data = await database.fetch_one(query=insert_query, values=create_dict)
 
     except INTEGRITY_CHECK_EXCEPTIONS as e:
-        logger.warning(f"INTEGRITY_CHECK_EXCEPTIONS: {str(e)}")
+        logger.error(f"INTEGRITY_CHECK_EXCEPTIONS: {str(e)}")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
     logger.debug(f"Applications created: {application_data=}")
@@ -132,7 +132,7 @@ async def applications_delete_upload(
     application = ApplicationResponse.parse_obj(raw_application)
 
     if not application.application_uploaded:
-        logger.debug(f"Trying to delete a applications that was not uploaded ({application_id=})")
+        logger.debug(f"Trying to delete an applications that was not uploaded ({application_id=})")
         return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
     del s3man_applications[application_id]
