@@ -78,7 +78,7 @@ async def job_submission_create(
         create_dict.update(execution_directory=str(exec_dir))
 
     select_query = job_scripts_table.select().where(job_scripts_table.c.id == job_submission.job_script_id)
-    logger.debug(f"job_scripts select_query = {render_sql(select_query)}")
+    logger.trace(f"job_scripts select_query = {render_sql(select_query)}")
     raw_job_script = await database.fetch_one(select_query)
 
     if not raw_job_script:
@@ -94,7 +94,7 @@ async def job_submission_create(
     async with database.transaction():
         try:
             insert_query = job_submissions_table.insert().returning(job_submissions_table)
-            logger.debug(f"job_submissions insert_query = {render_sql(insert_query)}")
+            logger.trace(f"job_submissions insert_query = {render_sql(insert_query)}")
             job_submission_data = await database.fetch_one(query=insert_query, values=create_dict)
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
@@ -119,7 +119,7 @@ async def job_submission_get(job_submission_id: int = Query(...)):
     logger.debug(f"Getting {job_submission_id=}")
 
     query = job_submissions_table.select().where(job_submissions_table.c.id == job_submission_id)
-    logger.debug(f"query = {render_sql(query)}")
+    logger.trace(f"query = {render_sql(query)}")
     job_submission_data = await database.fetch_one(query)
 
     if not job_submission_data:
@@ -188,7 +188,7 @@ async def job_submission_list(
     if sort_field is not None:
         query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
 
-    logger.debug(f"Query built as: {render_sql(query)}")
+    logger.trace(f"Query built as: {render_sql(query)}")
 
     logger.debug("Awaiting query and response package")
     response = await package_response(JobSubmissionResponse, query, pagination)
@@ -212,7 +212,7 @@ async def job_submission_delete(
     where_stmt = job_submissions_table.c.id == job_submission_id
 
     get_query = job_submissions_table.select().where(where_stmt)
-    logger.debug(f"get_query = {render_sql(get_query)}")
+    logger.trace(f"get_query = {render_sql(get_query)}")
     raw_job_submission = await database.fetch_one(get_query)
     if not raw_job_submission:
         message = f"JobSubmission with id={job_submission_id} not found"
@@ -223,7 +223,7 @@ async def job_submission_delete(
         )
 
     delete_query = job_submissions_table.delete().where(where_stmt)
-    logger.debug(f"delete_query = {render_sql(delete_query)}")
+    logger.trace(f"delete_query = {render_sql(delete_query)}")
     await database.execute(delete_query)
 
 
@@ -251,7 +251,7 @@ async def job_submission_update(job_submission_id: int, job_submission: JobSubmi
         .values(update_dict)
         .returning(job_submissions_table)
     )
-    logger.debug(f"update_query = {render_sql(update_query)}")
+    logger.trace(f"update_query = {render_sql(update_query)}")
     async with database.transaction():
         try:
             job_submission_data = await database.fetch_one(update_query)
@@ -311,7 +311,7 @@ async def job_submissions_agent_pending(
             job_submissions_table.c.client_id == identity_claims.client_id,
         )
     )
-    logger.debug(f"query = {render_sql(query)}")
+    logger.trace(f"query = {render_sql(query)}")
     rows = await database.fetch_all(query)
     return rows
 
@@ -364,7 +364,7 @@ async def job_submission_agent_update(
         .values(**update_values)
         .returning(job_submissions_table)
     )
-    logger.debug(f"update_query = {render_sql(update_query)}")
+    logger.trace(f"update_query = {render_sql(update_query)}")
     result = await database.fetch_one(update_query)
 
     if result is None:
@@ -412,7 +412,7 @@ async def job_submissions_agent_active(
         .where(job_submissions_table.c.status == JobSubmissionStatus.SUBMITTED)
         .where(job_submissions_table.c.client_id == identity_claims.client_id)
     )
-    logger.debug(f"query = {render_sql(query)}")
+    logger.trace(f"query = {render_sql(query)}")
 
     rows = await database.fetch_all(query)
     return rows

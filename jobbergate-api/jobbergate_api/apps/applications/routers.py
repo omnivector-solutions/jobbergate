@@ -57,7 +57,7 @@ async def applications_create(
 
     try:
         insert_query = applications_table.insert().returning(applications_table)
-        logger.debug(f"insert_query = {render_sql(insert_query)}")
+        logger.trace(f"insert_query = {render_sql(insert_query)}")
         application_data = await database.fetch_one(query=insert_query, values=create_dict)
 
     except INTEGRITY_CHECK_EXCEPTIONS as e:
@@ -103,7 +103,7 @@ async def applications_upload(
         .values(dict(application_uploaded=True))
     )
 
-    logger.debug(f"update_query = {render_sql(update_query)}")
+    logger.trace(f"update_query = {render_sql(update_query)}")
     await database.execute(update_query)
 
 
@@ -143,7 +143,7 @@ async def applications_delete_upload(
         .values(dict(application_uploaded=False))
     )
 
-    logger.debug(f"update_query = {render_sql(update_query)}")
+    logger.trace(f"update_query = {render_sql(update_query)}")
     await database.execute(update_query)
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
@@ -165,7 +165,7 @@ async def application_delete(
 
     where_stmt = applications_table.c.id == application_id
     get_query = applications_table.select().where(where_stmt)
-    logger.debug(f"get_query = {render_sql(get_query)}")
+    logger.trace(f"get_query = {render_sql(get_query)}")
 
     raw_application = await database.fetch_one(get_query)
     if not raw_application:
@@ -177,7 +177,7 @@ async def application_delete(
         )
 
     delete_query = applications_table.delete().where(where_stmt)
-    logger.debug(f"delete_query = {render_sql(delete_query)}")
+    logger.trace(f"delete_query = {render_sql(delete_query)}")
 
     await database.execute(delete_query)
     try:
@@ -206,7 +206,7 @@ async def application_delete_by_identifier(
 
     where_stmt = applications_table.c.application_identifier == identifier
     get_query = applications_table.select().where(where_stmt)
-    logger.debug(f"get_query = {render_sql(get_query)}")
+    logger.trace(f"get_query = {render_sql(get_query)}")
 
     raw_application = await database.fetch_one(get_query)
     if not raw_application:
@@ -219,7 +219,7 @@ async def application_delete_by_identifier(
 
     id_ = raw_application["id"]
     delete_query = applications_table.delete().where(where_stmt)
-    logger.debug(f"delete_query = {render_sql(delete_query)}")
+    logger.trace(f"delete_query = {render_sql(delete_query)}")
 
     await database.execute(delete_query)
 
@@ -263,7 +263,7 @@ async def applications_list(
     if sort_field is not None:
         query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
 
-    logger.debug(f"query = {render_sql(query)}")
+    logger.trace(f"query = {render_sql(query)}")
     return await package_response(ApplicationResponse, query, pagination)
 
 
@@ -277,10 +277,10 @@ async def applications_get_by_id(application_id: int = Query(...)):
     """
     Return the application given it's id.
     """
-    logger.debug(f"Getting {application_id=}")
+    logger.trace(f"Getting {application_id=}")
 
     query = applications_table.select().where(applications_table.c.id == application_id)
-    logger.debug(f"get_query = {render_sql(query)}")
+    logger.trace(f"get_query = {render_sql(query)}")
 
     application_data = await database.fetch_one(query)
     if not application_data:
@@ -318,7 +318,7 @@ async def application_update(
         .values(application.dict(exclude_unset=True))
         .returning(applications_table)
     )
-    logger.debug(f"update_query = {render_sql(update_query)}")
+    logger.trace(f"update_query = {render_sql(update_query)}")
 
     async with database.transaction():
         try:

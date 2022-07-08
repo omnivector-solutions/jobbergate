@@ -153,7 +153,7 @@ async def job_script_create(
     logger.debug(f"Creating {job_script=}")
 
     select_query = applications_table.select().where(applications_table.c.id == job_script.application_id)
-    logger.debug(f"select_query = {render_sql(select_query)}")
+    logger.trace(f"select_query = {render_sql(select_query)}")
 
     raw_application = await database.fetch_one(select_query)
 
@@ -191,7 +191,7 @@ async def job_script_create(
 
         try:
             insert_query = job_scripts_table.insert().returning(job_scripts_table)
-            logger.debug(f"insert_query = {render_sql(insert_query)}")
+            logger.trace(f"insert_query = {render_sql(insert_query)}")
             job_script_data = await database.fetch_one(query=insert_query, values=create_dict)
 
             if job_script_data is None:
@@ -233,7 +233,7 @@ async def job_script_get(job_script_id: int = Query(...)):
     logger.debug(f"Getting {job_script_id=}")
 
     query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
-    logger.debug(f"get_query = {render_sql(query)}")
+    logger.trace(f"get_query = {render_sql(query)}")
     job_script = await database.fetch_one(query)
 
     if not job_script:
@@ -294,7 +294,7 @@ async def job_script_list(
     if sort_field is not None:
         query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
 
-    logger.debug(f"Query = {render_sql(query)}")
+    logger.trace(f"Query = {render_sql(query)}")
     return await package_response(JobScriptPartialResponse, query, pagination)
 
 
@@ -312,7 +312,7 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     where_stmt = job_scripts_table.c.id == job_script_id
 
     get_query = job_scripts_table.select().where(where_stmt)
-    logger.debug(f"get_query = {render_sql(get_query)}")
+    logger.trace(f"get_query = {render_sql(get_query)}")
 
     raw_job_script = await database.fetch_one(get_query)
     if not raw_job_script:
@@ -325,7 +325,7 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
         )
 
     delete_query = job_scripts_table.delete().where(where_stmt)
-    logger.debug(f"delete_query = {render_sql(delete_query)}")
+    logger.trace(f"delete_query = {render_sql(delete_query)}")
     await database.execute(delete_query)
 
     try:
@@ -356,7 +356,7 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
         )
         .returning(job_scripts_table)
     )
-    logger.debug(f"update_query = {render_sql(update_query)}")
+    logger.trace(f"update_query = {render_sql(update_query)}")
 
     async with database.transaction():
 
