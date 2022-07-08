@@ -63,15 +63,15 @@ class EmailManager:
         return message
 
 
-def notify_submission_aborted(
+def notify_submission_rejected(
     job_submission_id: Union[str, int], report_message: str, to_emails: Union[str, List[str]]
 ) -> None:
     """
-    Notify an email or a list of emails about a job submission that has been aborted.
+    Notify an email or a list of emails about a job submission that has been rejected.
     """
     subject = f"Job Submission Aborted (id={job_submission_id})"
 
-    logger.debug(f"Notifying {to_emails=} that {job_submission_id=} was aborted: {report_message=}")
+    logger.debug(f"Notifying {to_emails=} that {job_submission_id=} was rejected: {report_message=}")
     email_manager.send_email(to_emails, subject, skip_on_failure=True, plain_text_content=report_message)
 
 

@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from sendgrid import SendGridAPIClient  # type: ignore # no type hints or library stubs
 from sendgrid.helpers.mail import Mail  # type: ignore # no type hints or library stubs
 
-from jobbergate_api.email_notification import EmailManager, EmailNotificationError, notify_submission_aborted
+from jobbergate_api.email_notification import EmailManager, EmailNotificationError, notify_submission_rejected
 
 
 class TestEmailManager:
@@ -102,12 +102,12 @@ class TestEmailManager:
         mocked.assert_called_once()
 
 
-def test_notify_submission_aborted():
+def test_notify_submission_rejected():
     """
-    Test if an email is sent to inform that a job submission has been aborted.
+    Test if an email is sent to inform that a job submission has been rejected.
     """
     with mock.patch("jobbergate_api.email_notification.email_manager.email_client.send") as mocked:
-        notify_submission_aborted(
+        notify_submission_rejected(
             job_submission_id=0,
             report_message="something went wrong!",
             to_emails=["support@pytesting.com", "someone@pytesting.com"],

@@ -56,7 +56,7 @@ job_submission_meta_mapper = MetaMapper(
         example=JobSubmissionStatus.CREATED,
     ),
     report_message=MetaField(
-        description="The report message received from cluster-agent when a job submission is aborted",
+        description="The report message received from cluster-agent when a job submission is rejected",
         example="Unrecognized SBATCH arguments",
     ),
 )

@@ -24,7 +24,7 @@ from jobbergate_api.apps.job_submissions.schemas import (
     PendingJobSubmission,
 )
 from jobbergate_api.apps.permissions import Permissions
-from jobbergate_api.email_notification import notify_submission_aborted
+from jobbergate_api.email_notification import notify_submission_rejected
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
@@ -337,8 +337,8 @@ async def job_submission_agent_update(
             ),
         )
 
-    if report_message and new_status == JobSubmissionStatus.ABORTED:
-        notify_submission_aborted(job_submission_id, report_message, result["job_submission_owner_email"])
+    if report_message and new_status == JobSubmissionStatus.REJECTED:
+        notify_submission_rejected(job_submission_id, report_message, result["job_submission_owner_email"])
 
     return result
 
