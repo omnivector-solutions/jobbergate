@@ -6,6 +6,7 @@ Pull settings from environment variables or a .env file if available.
 from enum import Enum
 from typing import Optional
 
+from buzz import require_condition
 from pydantic import BaseSettings, Field, HttpUrl, root_validator
 
 
@@ -30,6 +31,15 @@ class DeployEnvEnum(str, Enum):
     STAGING = "STAGING"
     LOCAL = "LOCAL"
     TEST = "TEST"
+
+
+def check_none_or_all_keys_exist(input_dict: dict, target_keys: set) -> bool:
+    """
+    Verify if none or all of the target keys exist in the input dictionary.
+    """
+    all_exist = all(k in input_dict for k in target_keys)
+    none_exist = all(k not in input_dict for k in target_keys)
+    return all_exist or none_exist
 
 
 class Settings(BaseSettings):
@@ -74,6 +84,10 @@ class Settings(BaseSettings):
     # Maximum number of bytes allowed for file uploads
     MAX_UPLOAD_FILE_SIZE: int = 100 * 1024 * 1024  # 100 MB
 
+    # Sendgrid configuration for email notification
+    SENDGRID_FROM_EMAIL: Optional[str]
+    SENDGRID_API_KEY: Optional[str]
+
     @root_validator(pre=True)
     def remove_blank_env(cls, values):
         """
@@ -89,6 +103,16 @@ class Settings(BaseSettings):
             else:
                 if value.strip() != "":
                     clean_values[key] = value
+
+        require_condition(
+            check_none_or_all_keys_exist(
+                clean_values,
+                {"SENDGRID_FROM_EMAIL", "SENDGRID_API_KEY"},
+            ),
+            "Either none or all SendGrind parameters are expected.",
+            RuntimeError,
+        )
+
         return clean_values
 
     class Config:

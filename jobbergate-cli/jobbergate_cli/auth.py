@@ -203,7 +203,7 @@ def refresh_access_token(ctx: JobbergateContext, token_set: TokenSet):
 
     If refresh fails, notify the user that they need to log in again.
     """
-    url = f"https://{settings.OIDC_DOMAIN}/oauth/token"
+    url = f"https://{settings.OIDC_LOGIN_DOMAIN}/token"
     logger.debug(f"Requesting refreshed access token from {url}")
 
     JobbergateCliError.require_condition(
@@ -219,7 +219,7 @@ def refresh_access_token(ctx: JobbergateContext, token_set: TokenSet):
         make_request(
             # Can this even work? this client should be for the armada api...
             ctx.client,
-            "/oauth/token",
+            "/token",
             "POST",
             abort_message="The auth token could not be refreshed. Please try logging in again.",
             abort_subject="EXPIRED ACCESS TOKEN",

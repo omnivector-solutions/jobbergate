@@ -55,6 +55,10 @@ job_submission_meta_mapper = MetaMapper(
         description=f"The status of the job submission. Must be one of {JobSubmissionStatus.pretty_list()}",
         example=JobSubmissionStatus.CREATED,
     ),
+    report_message=MetaField(
+        description="The report message received from cluster-agent when a job submission is rejected",
+        example="Unrecognized SBATCH arguments",
+    ),
 )
 
 
@@ -103,6 +107,7 @@ class JobSubmissionResponse(BaseModel):
     slurm_job_id: Optional[int]
     client_id: Optional[str]
     status: JobSubmissionStatus
+    report_message: Optional[str]
 
     class Config:
         orm_mode = True

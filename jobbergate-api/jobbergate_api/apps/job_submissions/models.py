@@ -20,6 +20,7 @@ job_submissions_table = Table(
     Column("slurm_job_id", Integer, default=None),
     Column("client_id", String, nullable=False, index=True),
     Column("status", Enum(JobSubmissionStatus), nullable=False, index=True),
+    Column("report_message", String, nullable=True),
     Column("created_at", DateTime, nullable=False, default=func.now()),
     Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=func.now()),
 )
