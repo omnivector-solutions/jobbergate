@@ -22,17 +22,6 @@ class LogLevelEnum(str, Enum):
     CRITICAL = "CRITICAL"
 
 
-class DeployEnvEnum(str, Enum):
-    """
-    Describe the environment where the app is currently deployed.
-    """
-
-    PROD = "PROD"
-    STAGING = "STAGING"
-    LOCAL = "LOCAL"
-    TEST = "TEST"
-
-
 def check_none_or_all_keys_exist(input_dict: dict, target_keys: set) -> bool:
     """
     Verify if none or all of the target keys exist in the input dictionary.
@@ -47,7 +36,7 @@ class Settings(BaseSettings):
     Provide a pydantic ``BaseSettings`` model for the application settings.
     """
 
-    DEPLOY_ENV: DeployEnvEnum = DeployEnvEnum.LOCAL
+    DEPLOY_ENV: str = "LOCAL"
 
     LOG_LEVEL: LogLevelEnum = LogLevelEnum.INFO
 

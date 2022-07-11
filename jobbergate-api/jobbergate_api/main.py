@@ -14,7 +14,7 @@ from starlette.middleware.cors import CORSMiddleware
 from jobbergate_api.apps.applications.routers import router as applications_router
 from jobbergate_api.apps.job_scripts.routers import router as job_scripts_router
 from jobbergate_api.apps.job_submissions.routers import router as job_submissions_router
-from jobbergate_api.config import DeployEnvEnum, settings
+from jobbergate_api.config import settings
 from jobbergate_api.storage import database, handle_fk_error
 
 subapp = FastAPI()
@@ -26,7 +26,7 @@ subapp.add_middleware(
     allow_headers=["*"],
 )
 
-if settings.SENTRY_DSN and settings.DEPLOY_ENV != DeployEnvEnum.TEST:
+if settings.SENTRY_DSN and settings.DEPLOY_ENV.lower() != "test":
     sentry_sdk.init(
         dsn=settings.SENTRY_DSN,
         sample_rate=typing.cast(float, settings.SENTRY_SAMPLE_RATE),  # The cast silences mypy

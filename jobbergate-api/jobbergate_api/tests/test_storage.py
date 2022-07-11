@@ -2,7 +2,6 @@
 Test the storage module.
 """
 
-from jobbergate_api.config import DeployEnvEnum
 from jobbergate_api.storage import build_db_url
 
 
@@ -14,7 +13,7 @@ def test_build_db_url__creates_database_url_from_parts(tweak_settings):
     DATABASE_ settings when the DEPLOY_ENV is not TEST.
     """
     with tweak_settings(
-        DEPLOY_ENV=DeployEnvEnum.LOCAL,
+        DEPLOY_ENV="LOCAL",
         DATABASE_USER="built-base-user",
         DATABASE_PSWD="built-base-pswd",
         DATABASE_HOST="built-base-host",
@@ -39,7 +38,7 @@ def test_build_db_url__uses_TEST_prefixed_database_settings_if_passed_the_force_
     TEST_DATABASE_ settings when the DEPLOY_ENV is TEST.
     """
     with tweak_settings(
-        DEPLOY_ENV=DeployEnvEnum.TEST,
+        DEPLOY_ENV="TEST",
         DATABASE_USER="built-base-user",
         DATABASE_PSWD="built-base-pswd",
         DATABASE_HOST="built-base-host",
