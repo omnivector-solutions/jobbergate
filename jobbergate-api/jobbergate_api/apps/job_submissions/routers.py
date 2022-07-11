@@ -53,12 +53,16 @@ async def job_submission_create(
 
     Make a post request to this endpoint with the required values to create a new job submission.
     """
+    logger.debug(f"Creating {job_submission=}")
+
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     client_id = job_submission.client_id or identity_claims.client_id
     if client_id is None:
+        message = "Could not find a client_id in the request body or auth token."
+        logger.warning(message)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Could not find a client_id in the request body or auth token.",
+            detail=message,
         )
 
     create_dict = dict(
@@ -74,21 +78,30 @@ async def job_submission_create(
         create_dict.update(execution_directory=str(exec_dir))
 
     select_query = job_scripts_table.select().where(job_scripts_table.c.id == job_submission.job_script_id)
+    logger.trace(f"job_scripts select_query = {render_sql(select_query)}")
     raw_job_script = await database.fetch_one(select_query)
 
     if not raw_job_script:
+        message = f"JobScript id={job_submission.job_script_id} not found."
+        logger.warning(message)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"JobScript id={job_submission.job_script_id} not found.",
+            detail=message,
         )
+
+    logger.debug("Inserting job-submission")
 
     async with database.transaction():
         try:
             insert_query = job_submissions_table.insert().returning(job_submissions_table)
+            logger.trace(f"job_submissions insert_query = {render_sql(insert_query)}")
             job_submission_data = await database.fetch_one(query=insert_query, values=create_dict)
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
+            logger.error(f"Reverting database transaction: {str(e)}")
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+
+    logger.debug(f"Job-submission created: {job_submission_data=}")
 
     return job_submission_data
 
@@ -103,11 +116,22 @@ async def job_submission_get(job_submission_id: int = Query(...)):
     """
     Return the job_submission given it's id.
     """
+    logger.debug(f"Getting {job_submission_id=}")
+
     query = job_submissions_table.select().where(job_submissions_table.c.id == job_submission_id)
+    logger.trace(f"query = {render_sql(query)}")
     job_submission_data = await database.fetch_one(query)
 
     if not job_submission_data:
-        raise HTTPException(status_code=404, detail=f"JobSubmission with id={job_submission_id} not found.")
+        message = f"JobSubmission with id={job_submission_id} not found."
+        logger.warning(message)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=message,
+        )
+
+    logger.debug(f"Job-submission data: {job_submission_data=}")
+
     return job_submission_data
 
 
@@ -164,7 +188,7 @@ async def job_submission_list(
     if sort_field is not None:
         query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
 
-    logger.debug(f"Query built as: {render_sql(query)}")
+    logger.trace(f"Query built as: {render_sql(query)}")
 
     logger.debug("Awaiting query and response package")
     response = await package_response(JobSubmissionResponse, query, pagination)
@@ -184,17 +208,22 @@ async def job_submission_delete(
     """
     Delete job_submission given its id.
     """
+    logger.debug(f"Deleting {job_submission_id=}")
     where_stmt = job_submissions_table.c.id == job_submission_id
 
     get_query = job_submissions_table.select().where(where_stmt)
+    logger.trace(f"get_query = {render_sql(get_query)}")
     raw_job_submission = await database.fetch_one(get_query)
     if not raw_job_submission:
+        message = f"JobSubmission with id={job_submission_id} not found"
+        logger.warning(message)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"JobSubmission with id={job_submission_id} not found",
+            detail=message,
         )
 
     delete_query = job_submissions_table.delete().where(where_stmt)
+    logger.trace(f"delete_query = {render_sql(delete_query)}")
     await database.execute(delete_query)
 
 
@@ -209,6 +238,8 @@ async def job_submission_update(job_submission_id: int, job_submission: JobSubmi
     """
     Update a job_submission given its id.
     """
+    logger.debug(f"Updating {job_submission_id=}")
+
     update_dict = job_submission.dict(exclude_unset=True)
     exec_dir = update_dict.pop("execution_directory", None)
     if exec_dir is not None:
@@ -220,17 +251,21 @@ async def job_submission_update(job_submission_id: int, job_submission: JobSubmi
         .values(update_dict)
         .returning(job_submissions_table)
     )
+    logger.trace(f"update_query = {render_sql(update_query)}")
     async with database.transaction():
         try:
             job_submission_data = await database.fetch_one(update_query)
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
+            logger.error(f"Reverting database transaction: {str(e)}")
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
         if not job_submission_data:
+            message = f"JobSubmission with id={job_submission_id} not found."
+            logger.warning(message)
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"JobSubmission with id={job_submission_id} not found.",
+                detail=message,
             )
 
     return job_submission_data
@@ -248,12 +283,13 @@ async def job_submissions_agent_pending(
     """
     Get a list of pending job submissions for the cluster-agent.
     """
+    logger.debug("Agent is requesting a list of pending job submissions")
+
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     if identity_claims.client_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Access token does not contain a `client_id`. Cannot fetch pending submissions",
-        )
+        message = "Access token does not contain a `client_id`. Cannot fetch pending submissions"
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
 
     logger.info(f"Fetching newly created job_submissions for client_id: {identity_claims.client_id}")
 
@@ -275,7 +311,7 @@ async def job_submissions_agent_pending(
             job_submissions_table.c.client_id == identity_claims.client_id,
         )
     )
-
+    logger.trace(f"query = {render_sql(query)}")
     rows = await database.fetch_all(query)
     return rows
 
@@ -298,6 +334,8 @@ async def job_submission_agent_update(
 
     Make a put request to this endpoint with the new status to update a job_submission.
     """
+    logger.debug(f"Agent is requesting to update {job_submission_id=}")
+
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     if identity_claims.client_id is None:
         logger.error("Access token does not contain a client_id")
@@ -326,15 +364,18 @@ async def job_submission_agent_update(
         .values(**update_values)
         .returning(job_submissions_table)
     )
+    logger.trace(f"update_query = {render_sql(update_query)}")
     result = await database.fetch_one(update_query)
 
     if result is None:
+        message = (
+            f"JobSubmission with id={job_submission_id} "
+            f"and client_id={identity_claims.client_id} not found."
+        )
+        logger.warning(message)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=(
-                f"JobSubmission with id={job_submission_id} "
-                "and client_id={identity_claims.client_id} not found."
-            ),
+            detail=(message),
         )
 
     if report_message and new_status == JobSubmissionStatus.REJECTED:
@@ -354,6 +395,8 @@ async def job_submissions_agent_active(
     """
     Get a list of active job submissions for the cluster-agent.
     """
+    logger.debug("Agent is requesting a list of active job submissions")
+
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     if identity_claims.client_id is None:
         logger.error("Access token does not contain a client_id")
@@ -369,6 +412,7 @@ async def job_submissions_agent_active(
         .where(job_submissions_table.c.status == JobSubmissionStatus.SUBMITTED)
         .where(job_submissions_table.c.client_id == identity_claims.client_id)
     )
+    logger.trace(f"query = {render_sql(query)}")
 
     rows = await database.fetch_all(query)
     return rows

@@ -26,8 +26,11 @@ def read_only_protection(function: typing.Callable) -> typing.Callable:
     def helper(s3man, *args, **kwargs):
 
         if s3man.read_only:
-            message = "Illegal operation for a read-only S3 manager (folder={}, bucket={})."
-            raise RuntimeError(message.format(s3man.folder_name, s3man.bucket_name))
+            message = "Illegal operation for a read-only S3 manager (folder={}, bucket={}).".format(
+                s3man.folder_name, s3man.bucket_name
+            )
+            logger.error(message)
+            raise RuntimeError(message)
         function(s3man, *args, **kwargs)
 
     return helper
@@ -61,6 +64,10 @@ class S3ManagerRaw(MutableMapping):
         self._key_template = f"{self.folder_name}/{{app_id}}/{self.filename}"
         self._get_id_re = re.compile(r"/(?P<id>\d+)/{filename}$".format(filename=self.filename))
 
+        logger.info(
+            f"Initializing S3Manager at the bucket={self.bucket_name} for key_template={self._key_template}"
+        )
+
     def __getitem__(self, app_id: typing.Union[int, str]):
         """
         Get a file from the client associated to the given id.
@@ -71,6 +78,7 @@ class S3ManagerRaw(MutableMapping):
         try:
             response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
         except self.s3_client.exceptions.NoSuchKey:
+            logger.warning(f"No such key: {key}")
             raise KeyError(f"No such key: {key}")
 
         return response
@@ -86,6 +94,7 @@ class S3ManagerRaw(MutableMapping):
         try:
             self.s3_client.put_object(Body=file, Bucket=self.bucket_name, Key=key)
         except self.s3_client.exceptions.NoSuchKey:
+            logger.warning(f"No such key: {key}")
             raise KeyError(f"No such key: {key}")
 
     @read_only_protection
@@ -99,6 +108,7 @@ class S3ManagerRaw(MutableMapping):
         try:
             self.s3_client.delete_object(Bucket=self.bucket_name, Key=key)
         except self.s3_client.exceptions.NoSuchKey:
+            logger.warning(f"No such key: {key}")
             raise KeyError(f"No such key: {key}")
 
     def __iter__(self) -> typing.Iterator[str]:
@@ -119,9 +129,11 @@ class S3ManagerRaw(MutableMapping):
         Get an s3 key based upon the app_id. If app_id is empty, throw an exception.
         """
         if not str(app_id):
+            message = f"You must supply a non-empty app_id: got ({app_id=})"
+            logger.warning(message)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"You must supply a non-empty app_id: got ({app_id=})",
+                detail=message,
             )
         return self._key_template.format(app_id=app_id)
 
@@ -131,7 +143,9 @@ class S3ManagerRaw(MutableMapping):
         """
         match = re.search(self._get_id_re, key)
         if not match:
-            raise ValueError(f"Impossible to get id from {key=}")
+            message = f"Impossible to get id from {key=}"
+            logger.error(message)
+            raise ValueError(message)
         return match.group("id")
 
     def _get_list_of_objects(self) -> typing.Iterable[str]:
@@ -140,6 +154,9 @@ class S3ManagerRaw(MutableMapping):
 
         Raise 404 when facing connection errors.
         """
+        logger.debug(
+            f"Listing the objects at the bucket={self.bucket_name} for key_template={self._key_template}"
+        )
         try:
             paginator = self.s3_client.get_paginator("list_objects_v2")
             for page in paginator.paginate(Bucket=self.bucket_name, Prefix=self.folder_name):
@@ -149,9 +166,11 @@ class S3ManagerRaw(MutableMapping):
                 for obj in contents:
                     yield obj["Key"]
         except BotoCoreError:
+            message = "Not possible to retrieve information from S3"
+            logger.error(message)
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Not possible to retrieve information from S3",
+                detail=message,
             )
 
     @read_only_protection
@@ -159,7 +178,9 @@ class S3ManagerRaw(MutableMapping):
         """
         Clear all objects from work folder in this bucket.
         """
-        logger.info(f"Clearing folder {self.folder_name} in the bucket {self.bucket_name}")
+        logger.info(
+            f"Clearing the objects at the bucket={self.bucket_name} for key_template={self._key_template}"
+        )
         super().clear()
 
 
@@ -194,12 +215,15 @@ def get_s3_object_as_tarfile(s3man: S3ManagerRaw, app_id: typing.Union[int, str]
     """
     Return the tarfile of a S3 object.
     """
+    logger.debug(f"Getting s3 object as tarfile {app_id=}")
     try:
         s3_application_obj = s3man[app_id]
     except (BotoCoreError, KeyError):
+        message = f"Application with {app_id=} not found in S3"
+        logger.error(message)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Application with id={app_id} not found in S3",
+            detail=message,
         )
 
     s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj["Body"].read()))

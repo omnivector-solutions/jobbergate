@@ -27,12 +27,15 @@ subapp.add_middleware(
 )
 
 if settings.SENTRY_DSN and settings.DEPLOY_ENV.lower() != "test":
+    logger.info("Initializing Sentry")
     sentry_sdk.init(
         dsn=settings.SENTRY_DSN,
         sample_rate=typing.cast(float, settings.SENTRY_SAMPLE_RATE),  # The cast silences mypy
         environment=settings.DEPLOY_ENV,
     )
     subapp.add_middleware(SentryAsgiMiddleware)
+else:
+    logger.info("Skipping Sentry")
 
 subapp.include_router(applications_router)
 subapp.include_router(job_scripts_router)
