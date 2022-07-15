@@ -59,10 +59,14 @@ class Settings(BaseSettings):
     S3_BUCKET_NAME: str = Field("jobbergate-staging-eu-north-1-resources")
     S3_ENDPOINT_URL: Optional[str]
 
-    # Security Settings. For details, see https://github.com/omnivector-solutions/armsec
+    # Security Settings. For details, see https://github.com/omnivector-solutions/armasec
     ARMASEC_DOMAIN: str
     ARMASEC_AUDIENCE: Optional[HttpUrl]
     ARMASEC_DEBUG: bool = Field(False)
+    ARMASEC_ADMIN_DOMAIN: Optional[str]
+    ARMASEC_ADMIN_AUDIENCE: Optional[HttpUrl]
+    ARMASEC_ADMIN_MATCH_KEY: Optional[str]
+    ARMASEC_ADMIN_MATCH_VALUE: Optional[str]
 
     # Key to custom claims packaged with Auth0 tokens
     IDENTITY_CLAIMS_KEY: str = "https://omnivector.solutions"
