@@ -114,7 +114,10 @@ async def test_create_job_script(
     """
     inserted_application_id = await database.execute(
         query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+        values=fill_application_data(
+            application_owner_email="owner1@org.com",
+            application_uploaded=True,
+        ),
     )
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
@@ -150,6 +153,44 @@ async def test_create_job_script(
     assert job_script.updated_at in window
     assert job_script.job_script_data_as_string == job_script_data_as_string
     assert s3.get(job_script.id) == job_script_data_as_string
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_create_job_script_application_not_uploaded(
+    fill_application_data,
+    fill_job_script_data,
+    param_dict,
+    client,
+    inject_security_header,
+):
+    """
+    Test that it is not possible to create job_script when the application is marked as not uploaded.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(
+            application_owner_email="owner1@org.com",
+            application_uploaded=False,
+        ),
+    )
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
+    with mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_jobscripts", {}) as s3:
+        with mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_applications", {}):
+            response = await client.post(
+                "/jobbergate/job-scripts/",
+                json=fill_job_script_data(
+                    application_id=inserted_application_id,
+                    param_dict=param_dict,
+                ),
+            )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 0
+    assert len(s3) == 0
 
 
 @pytest.mark.asyncio
@@ -239,7 +280,10 @@ async def test_create_job_script_file_not_found(
     """
     inserted_application_id = await database.execute(
         query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+        values=fill_application_data(
+            application_owner_email="owner1@org.com",
+            application_uploaded=True,
+        ),
     )
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
