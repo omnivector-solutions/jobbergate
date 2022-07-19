@@ -1,0 +1,43 @@
+name: 'publish_on_tag'
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-alpha[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-beta[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-rc[0-9]+'
+
+jobs:
+  publish:
+    name: Publish to Pypi
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: { sub_project: ['jobbergate-api', 'jobbergate-cli']}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.8.10
+      - uses: Gr1N/setup-poetry@v7
+
+      - id: poetry-package-version
+        name: Get version of project from poetry
+        working-directory: ${{ matrix.sub_project }}
+        run: |
+          echo "Poetry version is: $(poetry version --short)"
+          echo "::set-output name=version::$(poetry version --short)"
+
+      - name: Fail if poetry package version doesn't match tag
+        if: ${{ github.ref_name != steps.poetry-package-version.outputs.version }}
+        run: |
+          echo "Poetry package version doesn't match tag!"
+          echo "tag=${{ github.ref_name }}, version=${{ steps.poetry-package-version.outputs.version }}"
+          exit 1
+
+      - name: login
+        run: poetry config http-basic.pypi __token__ ${{ secrets.OMNIVECTOR_PYPI_TOKEN }}
+      - name: build
+        run: poetry build
+      - name: publish
+        run: poetry publish
