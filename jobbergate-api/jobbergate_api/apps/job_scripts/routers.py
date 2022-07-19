@@ -163,6 +163,13 @@ async def job_script_create(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
     application = ApplicationResponse.parse_obj(raw_application)
+
+    if application.application_uploaded is False:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Application with id={job_script.application_id} was not uploaded.",
+        )
+
     logger.debug("Fetching application tarfile")
     s3_application_tar = get_s3_object_as_tarfile(s3man_applications, application.id)
 
