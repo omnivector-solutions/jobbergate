@@ -69,7 +69,7 @@ def notify_submission_rejected(
     """
     Notify an email or a list of emails about a job submission that has been rejected.
     """
-    subject = f"Job Submission Aborted (id={job_submission_id})"
+    subject = f"Job Submission Rejected (id={job_submission_id})"
 
     logger.debug(f"Notifying {to_emails=} that {job_submission_id=} was rejected: {report_message=}")
     email_manager.send_email(to_emails, subject, skip_on_failure=True, plain_text_content=report_message)
