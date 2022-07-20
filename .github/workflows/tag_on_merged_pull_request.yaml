@@ -1,0 +1,31 @@
+name: Create a new tag when a release PR is merged
+
+on:
+  pull_request:
+    branches: 
+      - main
+    types: [closed]
+
+jobs:
+  create-tag:
+    if: ${{ github.event.pull_request.merged }} && startsWith(${{ github.head_ref }}, "release/")
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.TOKEN }}
+
+      - uses: bluwy/substitute-string-action@v1
+        name: Get Tag
+        id: get-tag
+        with:
+          _input-text: ${{ github.head_ref }}
+          release/: ""
+
+      - name: Show tag name
+        run: echo ${{ steps.get-tag.outputs.result }}
+
+      - uses: rickstaa/action-create-tag@v1
+        name: Create and Push Tag
+        with:
+          tag: ${{ steps.get-tag.outputs.result }}

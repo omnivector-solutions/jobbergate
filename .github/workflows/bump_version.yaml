@@ -1,0 +1,59 @@
+name: Bump Jobbergate Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_rule:
+        description: Poetry bump rule (patch, minor, major, prepatch, preminor, premajor, prerelease)
+        default: 'patch'
+        required: true
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.8.10
+
+      - uses: Gr1N/setup-poetry@v7
+
+      - id: api-package
+        name: Bump version on the API
+        working-directory: jobbergate-api
+        run: |
+          ../release-scripts/prepare-release.sh ${{ github.event.inputs.bump_rule }}
+          echo "Poetry version is: $(poetry version --short)"
+          echo "::set-output name=version::$(poetry version --short)"
+
+      - id: cli-package
+        name: Bump version on the CLI
+        working-directory: jobbergate-cli
+        run: |
+          ../release-scripts/prepare-release.sh ${{ github.event.inputs.bump_rule }}
+          echo "Poetry version is: $(poetry version --short)"
+          echo "::set-output name=version::$(poetry version --short)"
+
+      - name: Fail if poetry packages version don't match
+        if: ${{ steps.api-package.outputs.version != steps.cli-package.outputs.version }}
+        run: echo "Poetry packages version don't match!"
+
+      - uses: peter-evans/create-pull-request@v4
+        name: Create Pull Request
+        id: cpr
+        with:
+          token: ${{ secrets.TOKEN }}
+          commit-message: "Prepared release ${{ steps.api-package.outputs.version }}"
+          branch: "release/${{ steps.api-package.outputs.version }}"
+          delete-branch: true
+          base: "main"
+          title: "Release ${{ steps.api-package.outputs.version }}"
+          draft: true
+
+      - name: Show Pull Request info
+        if: ${{ steps.cpr.outputs.pull-request-number }}
+        run: |
+          echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
+          echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"
