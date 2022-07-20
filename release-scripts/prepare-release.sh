@@ -32,19 +32,3 @@ replacement='Unreleased\n$1\n\n'
 replacement+="$version_line\n"
 replacement+="$(printf %${#version_line}s | tr ' ' '-')"
 perl -0777 -p -i -e "s/Unreleased\s*(-+)/$replacement/gs" CHANGELOG.rst
-
-
-echo "Creating release branch"
-release_branch="release/$SUBPROJECT-$version_target"
-git checkout -b $release_branch
-
-echo "Creating commit for release"
-git add pyproject.toml CHANGELOG.rst
-git commit --gpg-sign --message="Prepared release $SUBPROJECT $version_target"
-
-
-echo "Pushing release branch to origin"
-git push -u origin $release_branch
-
-echo "To finish preparing the release, create the pull request here:"
-echo "https://github.com/omnivector-solutions/jobbergate/pull/new/$release_branch?template=release"
