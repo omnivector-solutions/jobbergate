@@ -1,5 +1,10 @@
 name: Publish on tag
 
+# This action:
+#   - Is triggered when a new version is tagged;
+#   - Check if the version for each sub-project matches the tag;
+#   - Build and release the packages to PyPI.
+
 on:
   push:
     tags:
@@ -12,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix: { sub_project: ['jobbergate-api', 'jobbergate-cli']}
+      fail-fast: false
     steps:
       - uses: actions/checkout@v2
 

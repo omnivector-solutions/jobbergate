@@ -1,12 +1,13 @@
 name: Prepare for release
 
 # This action:
+#   - Is triggered manually in a workflow dispatch;
 #   - Inquire the kind of release in a dropdown menu;
-#   - Use Poetry to bump up the version;
+#   - Use Poetry to bump up the versions;
 #   - Create a new header for the new version at the changelogs;
-#   - Check if all sub-projects share the same new version number;
+#   - Check if all sub-projects share the same version number;
 #   - Create a new branch named release/<new_version>;
-#   - Open a draft PR, so all the changes above can be reviewed by the team.
+#   - Open a draft PR to the main branch, so all the changes above can be reviewed by the team before merging.
 
 on:
   workflow_dispatch:

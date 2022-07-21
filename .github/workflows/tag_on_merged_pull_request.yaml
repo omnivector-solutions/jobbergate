@@ -1,4 +1,10 @@
-name: Create a new tag when a release PR is merged
+name: Create tag when released is accepted
+
+# This action:
+#   - Is triggered when a release PR is accepted and merged into main;
+#   - Get the version number from the tag's name;
+#   - Create a new tag named according to the version number in the PR;
+#   - Push the new tag to GitHub.
 
 on:
   pull_request:
