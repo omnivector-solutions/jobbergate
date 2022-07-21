@@ -4,9 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       bump_rule:
-        description: Poetry bump rule (patch, minor, major, prepatch, preminor, premajor, prerelease)
-        default: 'patch'
-        required: true
+        type: choice
+        description: Bump version rule for Poetry
+        options:
+        - patch
+        - minor
+        - major
+        - prepatch
+        - preminor
+        - premajor
+        - prerelease
 
 jobs:
   bump-version:
