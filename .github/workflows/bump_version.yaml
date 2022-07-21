@@ -55,9 +55,9 @@ jobs:
           commit-message: "Prepared release ${{ steps.api-package.outputs.version }}"
           branch: "release/${{ steps.api-package.outputs.version }}"
           delete-branch: true
-          base: "main"
           title: "Release ${{ steps.api-package.outputs.version }}"
           draft: true
+          body: "Automated changes by [bump_version](https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/bump_version.yaml) GitHub action."
 
       - name: Show Pull Request info
         if: ${{ steps.cpr.outputs.pull-request-number }}
