@@ -1,4 +1,12 @@
-name: Bump Jobbergate Version
+name: Prepare for release
+
+# This action:
+#   - Inquire the kind of release in a dropdown menu;
+#   - Use Poetry to bump up the version;
+#   - Create a new header for the new version at the changelogs;
+#   - Check if all sub-projects share the same new version number;
+#   - Create a new branch named release/<new_version>;
+#   - Open a draft PR, so all the changes above can be reviewed by the team.
 
 on:
   workflow_dispatch:
@@ -54,10 +62,11 @@ jobs:
           token: ${{ secrets.TOKEN }}
           commit-message: "Prepared release ${{ steps.api-package.outputs.version }}"
           branch: "release/${{ steps.api-package.outputs.version }}"
-          delete-branch: true
           title: "Release ${{ steps.api-package.outputs.version }}"
+          base: "main"
           draft: true
-          body: "Automated changes by [bump_version](https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/bump_version.yaml) GitHub action."
+          delete-branch: true
+          body: "Automated changes by [prepare_release](https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/prepare_release.yaml) GitHub action."
 
       - name: Show Pull Request info
         if: ${{ steps.cpr.outputs.pull-request-number }}
