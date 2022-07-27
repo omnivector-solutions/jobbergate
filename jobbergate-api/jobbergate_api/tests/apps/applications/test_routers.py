@@ -132,7 +132,7 @@ async def test_delete_application_no_file_uploaded(
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    with mock.patch.object(s3man_applications, "s3_client") as mock_s3:
+    with mock.patch.object(s3man_applications.engine, "s3_client") as mock_s3:
         response = await client.delete(f"/jobbergate/applications/{inserted_id}")
         mock_s3.delete_object.assert_called_once()
 
@@ -163,7 +163,7 @@ async def test_delete_application_with_uploaded_file(
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    with mock.patch.object(s3man_applications, "s3_client") as mock_s3:
+    with mock.patch.object(s3man_applications.engine, "s3_client") as mock_s3:
         response = await client.delete(f"/jobbergate/applications/{inserted_id}")
         mock_s3.delete_object.assert_called_once()
 
@@ -197,7 +197,7 @@ async def test_delete_application_by_identifier(
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    with mock.patch.object(s3man_applications, "s3_client") as mock_s3:
+    with mock.patch.object(s3man_applications.engine, "s3_client") as mock_s3:
         response = await client.delete("/jobbergate/applications?identifier=test-identifier")
         mock_s3.delete_object.assert_called_once()
 
@@ -752,7 +752,7 @@ async def test_update_application(
 
     This test proves that an application's values are correctly updated following a PUT request to the
     /application/<id> endpoint. We show this by asserting that the values provided to update the
-    application are returned in the response made to the PUT /applciation/<id> endpoint.
+    application are returned in the response made to the PUT /application/<id> endpoint.
     """
     await database.execute(
         query=applications_table.insert(),
@@ -854,7 +854,7 @@ async def test_upload_file__works_with_small_file(
     This test proves that an application's file is uploaded by making sure that the
     boto3 put_object method is called once and a 201 status code is returned. It also
     checks to make sure that the application row in the database has
-    `application_uploded` set.
+    `application_uploaded` set.
     """
     inserted_id = await database.execute(
         query=applications_table.insert(),
@@ -866,7 +866,7 @@ async def test_upload_file__works_with_small_file(
     dummy_file = make_dummy_file("dummy.py", size=10_000 - 200)  # Need some buffer for file headers, etc
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
-        with mock.patch.object(s3man_applications, "s3_client") as mock_s3:
+        with mock.patch.object(s3man_applications.engine, "s3_client") as mock_s3:
             with make_files_param(dummy_file) as files_param:
                 response = await client.post(
                     f"/jobbergate/applications/{inserted_id}/upload",
@@ -925,7 +925,7 @@ async def test_delete_file(
     assert application.application_uploaded
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    with mock.patch.object(s3man_applications, "s3_client") as mock_s3:
+    with mock.patch.object(s3man_applications.engine, "s3_client") as mock_s3:
         response = await client.delete(f"/jobbergate/applications/{inserted_id}/upload")
     assert response.status_code == status.HTTP_204_NO_CONTENT
     mock_s3.delete_object.assert_called_once()

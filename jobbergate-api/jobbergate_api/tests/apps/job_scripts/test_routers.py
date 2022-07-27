@@ -319,7 +319,7 @@ async def test_create_job_script_unable_to_write_file_to_s3(
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
 
-    with Stubber(s3man_jobscripts.s3_client) as stubber:
+    with Stubber(s3man_jobscripts.engine.s3_client) as stubber:
 
         stubber.add_client_error("put_object", "NoSuchKey")
 
@@ -430,7 +430,7 @@ async def test_get_job_script_by_id_file_not_found_at_s3(
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
 
-    with Stubber(s3man_jobscripts.s3_client) as stubber:
+    with Stubber(s3man_jobscripts.engine.s3_client) as stubber:
 
         stubber.add_client_error("get_object", "NoSuchKey")
 
@@ -942,7 +942,7 @@ async def test_update_job_script_unable_to_write_file_to_s3(
 
     desired_jobscript_data = JobScriptPartialResponse.parse_obj(await database.fetch_one(query))
 
-    with Stubber(s3man_jobscripts.s3_client) as stubber:
+    with Stubber(s3man_jobscripts.engine.s3_client) as stubber:
         stubber.add_client_error("put_object", "NoSuchKey")
 
         inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
