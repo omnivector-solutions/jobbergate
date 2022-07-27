@@ -58,7 +58,6 @@ class Settings(BaseSettings):
     OIDC_LOGIN_DOMAIN: Optional[str]
     OIDC_AUDIENCE: str
     OIDC_CLIENT_ID: str
-    OIDC_CLIENT_SECRET: str
     OIDC_MAX_POLL_TIME: int = 5 * 60  # 5 Minutes
 
     @root_validator(skip_on_failure=True)
@@ -84,7 +83,8 @@ class Settings(BaseSettings):
 
         values["JOBBERGATE_CLUSTER_LIST_PATH"] = cache_dir / "clusters.json"
 
-        values.setdefault("OIDC_LOGIN_DOMAIN", values["OIDC_DOMAIN"])
+        if "OIDC_LOGIN_DOMAIN" not in values or not values.get("OIDC_LOGIN_DOMAIN", None):
+            values["OIDC_LOGIN_DOMAIN"] = values["OIDC_DOMAIN"]
 
         return values
 

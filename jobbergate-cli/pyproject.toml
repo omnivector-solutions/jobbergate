@@ -62,7 +62,6 @@ env = [
     "OIDC_DOMAIN = dummy_auth_domain.com",
     "OIDC_AUDIENCE = https://dummy_auth_audience.com",
     "OIDC_CLIENT_ID = dummy_client_id",
-    "OIDC_CLIENT_SECRET = dummy_client_secret",
 ]
 
 [tool.black]
