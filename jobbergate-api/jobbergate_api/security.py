@@ -61,7 +61,10 @@ class IdentityClaims(BaseModel):
 
         Automatically validates that the email is an email address if it is provided.
         """
-        return cls(
-            email=getattr(payload, "email"),
+        init_kwargs = dict(
             client_id=payload.client_id,
         )
+        email = getattr(payload, "email", None)
+        if email is not None:
+            init_kwargs.update(email=email)
+        return cls(**init_kwargs)

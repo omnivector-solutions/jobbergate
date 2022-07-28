@@ -1,7 +1,10 @@
 """
 Test the security module.
 """
+from datetime import datetime
 from unittest.mock import patch
+
+from armasec import TokenPayload
 
 from jobbergate_api import security
 
@@ -45,3 +48,14 @@ def test_get_domain_configs__loads_admin_settings_if_all_are_present():
     assert second_config.domain == "admin.io"
     assert second_config.audience == "https://admin.dev"
     assert second_config.match_keys == dict(foo="bar")
+
+
+def test_from_token_payload__omits_email_if_not_in_payload():
+    payload = TokenPayload(
+        sub="dummy",
+        permissions=[],
+        exp=datetime.now(),
+        azp="idiot",
+    )
+    identity = security.IdentityClaims.from_token_payload(payload)
+    assert identity.email is None
