@@ -7,10 +7,10 @@ from io import BytesIO
 
 from botocore.exceptions import BotoCoreError
 from fastapi import HTTPException, status
-from file_storehouse import FileManager, FileManagerReadOnly, client
-from file_storehouse.engine import EngineS3
-from file_storehouse.key_mapping import KeyMappingNumeratedFolder
-from file_storehouse.transformation import TransformationCodecs
+from file_storehouse import FileManager, FileManagerReadOnly, client  # type: ignore # no type hints or library stubs
+from file_storehouse.engine import EngineS3  # type: ignore # no type hints or library stubs
+from file_storehouse.key_mapping import KeyMappingNumeratedFolder  # type: ignore # no type hints or library stubs
+from file_storehouse.transformation import TransformationCodecs  # type: ignore # no type hints or library stubs
 from loguru import logger
 
 from jobbergate_api.config import settings
