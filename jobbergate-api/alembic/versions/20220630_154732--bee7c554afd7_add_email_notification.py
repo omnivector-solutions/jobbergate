@@ -20,7 +20,7 @@ new_status_list = old_status_list + ["REJECTED"]
 
 old_type = postgresql.ENUM(*old_status_list, name="jobsubmissionstatus")
 new_type = postgresql.ENUM(*new_status_list, name="jobsubmissionstatus")
-tmp_type = postgresql.ENUM(*new_status_list, name="status")
+tmp_type = postgresql.ENUM(*new_status_list, name="_status")
 
 
 def upgrade():
@@ -54,7 +54,7 @@ def downgrade():
     # Create and convert to the "old" status type
     old_type.create(op.get_bind(), checkfirst=False)
     op.execute(
-        "ALTER TABLE job_submissions ALTER COLUMN status TYPE status"
+        "ALTER TABLE job_submissions ALTER COLUMN status TYPE _status"
         " USING status::text::jobsubmissionstatus"
     )
     tmp_type.drop(op.get_bind(), checkfirst=False)
