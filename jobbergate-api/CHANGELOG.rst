@@ -7,6 +7,10 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 
+3.2.2 -- 2022-07-28
+-------------------
+- Fixed a bug with option email in the token payload.
+
 3.2.1 -- 2022-07-12
 -------------------
 - Job scripts were moved from a database column to files at S3.
