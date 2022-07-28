@@ -1,5 +1,5 @@
 """
-Validation methods for many file formats.
+Validation methods for uploaded files.
 """
 
 from ast import parse
@@ -8,8 +8,8 @@ from functools import wraps
 from pathlib import PurePath
 from typing import Callable, Dict, List, Union
 
-from buzz import Buzz, require_condition
-from fastapi import UploadFile
+from buzz import Buzz, require_condition, DoExceptParams
+from fastapi import HTTPException, UploadFile, status
 from jinja2 import Template, TemplateSyntaxError
 from loguru import logger
 from yaml import YAMLError, safe_load
@@ -18,27 +18,115 @@ from yaml import YAMLError, safe_load
 class UploadedFilesValidationError(Buzz):
     """Raise exception when faces any validation error on the uploaded files."""
 
-def check_uploaded_files_extensions(file_list: List[UploadFile]) -> bool:
-    """
-    Check the list of uploaded files to verify business rules.
 
-    For the application files, it means:
-    * One application source file (.py);
-    * One (optional) application config file (.yaml);
-    * One or more template files (.j2 and/or .jinja2).
+def log_error_and_raise_http_error(params: DoExceptParams):
+    """
+    Work with `UploadedFilesValidationError.handle_errors` when something goes wrong.
+
+    In case any error occurs in the context manager, the error is logged and
+    a HTTPException is raised.
+
+    :param DoExceptParams params: Params from handle_errors.
+    :raises HTTPException: Code 422, unprocessable entity.
+    """
+    logger.error(params.final_message)
+    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=params.final_message)
+
+
+def get_suffix(file: UploadFile) -> str:
+    """
+    Get the suffix (file extension) of an UploadFile.
+
+    :param UploadFile file: Target file.
+    :return str: File extension.
+    """
+    return PurePath(file.filename).suffix
+
+
+def check_uploaded_files(file_list: List[UploadFile]):
+    """
+    Loop though the check-list for uploaded files specifications.
 
     :param List[UploadFile] file_list: Upload file list.
-    :return bool: Result of the tests.
+    """
+    check_list = [
+        check_uploaded_files_extensions,
+        check_uploaded_files_content_type,
+        check_uploaded_files_code,
+    ]
+    for check in check_list:
+        check(file_list)
+
+
+def check_uploaded_files_extensions(file_list: List[UploadFile]):
+    """
+    Check the list of uploaded files to count the file extensions.
+
+    Raise UploadedFilesValidationError if the business roles are not met.
+
+    :param List[UploadFile] file_list: Upload file list.
     """
     logger.debug("Checking uploaded files extensions")
-    extension_counter = Counter(PurePath(f.filename).suffix for f in file_list)
-    try:
+    extension_counter = Counter(get_suffix(f) for f in file_list)
+    with UploadedFilesValidationError.handle_errors(
+        (
+            "Error while validating the extension of the uploaded files."
+            " For the application files, the specification is:"
+            " One application source file (.py);"
+            " One (optional) application config file (.yaml);"
+            " One or more template files (.j2 and/or .jinja2)."
+        ),
+        do_except=log_error_and_raise_http_error,
+        re_raise=False,
+    ):
         assert extension_counter.get(".py", 0) == 1
         assert extension_counter.get(".yaml", 0) in {0, 1}
         assert extension_counter.get(".j2", 0) + extension_counter.get(".jinja2", 0) >= 1
-    except AssertionError:
-        return False
-    return True
+
+
+def check_uploaded_files_content_type(file_list: List[UploadFile]) -> bool:
+    """
+    Check the list of uploaded files to confirm they are specified as plain text.
+
+    Raise UploadedFilesValidationError if the business roles are not met.
+
+    :param List[UploadFile] file_list: Upload file list.
+    """
+    logger.debug("Checking uploaded files content types")
+    expected = "text/plain"
+    with UploadedFilesValidationError.handle_errors(
+        (
+            "Error while validating the content type of the uploaded files."
+            f" The content of the files {', '.join(validation_dispatch.keys())}"
+            f" is expected to be {expected}."
+        ),
+        do_except=log_error_and_raise_http_error,
+        re_raise=False,
+    ):
+        assert all(f.content_type == expected for f in file_list if get_suffix(f) in validation_dispatch)
+
+
+def check_uploaded_files_code(file_list: List[UploadFile]) -> bool:
+    """
+    Check the list of uploaded files to verify their syntax.
+
+    Raise UploadedFilesValidationError if the business roles are not met.
+
+    :param List[UploadFile] file_list: Upload file list.
+    """
+    logger.debug("Checking uploaded files, validating source code")
+    list_of_problems = []
+    for f in file_list:
+        if not validation_dispatch.get(get_suffix(f), lambda _: True)(f.file):
+            list_of_problems.append(f.filename)
+    with UploadedFilesValidationError.handle_errors(
+        f"Invalid syntax on the uploaded file(s): {', '.join(list_of_problems)}",
+        do_except=log_error_and_raise_http_error,
+        re_raise=False,
+    ):
+        assert len(list_of_problems) == 0
+
+
 ValidationEquation = Callable[[Union[str, bytes]], bool]
 """Type alias describing the function signature used to validate the files."""
 
