@@ -1,6 +1,11 @@
 import pytest
 
-from jobbergate_api.file_validation import is_valid_jinja2_template, is_valid_python_file, is_valid_yaml_file
+from jobbergate_api.file_validation import (
+    is_valid_jinja2_template,
+    is_valid_python_file,
+    is_valid_yaml_file,
+    validation_dispatch,
+)
 
 DUMMY_TEMPLATE = """
 #!/bin/bash
@@ -99,3 +104,15 @@ def test_is_valid_jinja2_template(is_valid, template):
     Test if a given python source code is correctly checked as valid or not.
     """
     assert is_valid_jinja2_template(template) is is_valid
+
+
+class TestValidationDispatch:
+    """
+    Test if the validation_dispatch mapping and the register decorator worked.
+    """
+
+    def test_validation_dispatch__length(self):
+        """
+        Test if the number of keys is the expected.
+        """
+        assert len(validation_dispatch) == 4
