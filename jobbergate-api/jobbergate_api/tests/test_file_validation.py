@@ -1,5 +1,7 @@
 import pytest
 
+from jobbergate_api.file_validation import is_valid_jinja2_template, is_valid_python_file, is_valid_yaml_file
+
 DUMMY_TEMPLATE = """
 #!/bin/bash
 
@@ -59,6 +61,7 @@ jobbergate_config:
     [
         (False, "for i in range(10):\nprint(i)"),
         (True, "for i in range(10):\n    print(i)"),
+        (True, DUMMY_APPLICATION_SOURCE_FILE),
     ],
 )
 def test_is_valid_python_file(is_valid, source_code):
@@ -69,14 +72,30 @@ def test_is_valid_python_file(is_valid, source_code):
 
 
 @pytest.mark.parametrize(
-    "is_valid, source_code",
+    "is_valid, yaml_file",
     [
         (False, "unbalanced blackets: ]["),
         (True, "balanced blackets: []"),
+        (True, DUMMY_APPLICATION_CONFIG),
     ],
 )
-def test_is_valid_yaml_file(is_valid, source_code):
+def test_is_valid_yaml_file(is_valid, yaml_file):
     """
     Test if a given YAML file is correctly checked as valid or not.
     """
-    assert is_valid_yaml_file(source_code) is is_valid
+    assert is_valid_yaml_file(yaml_file) is is_valid
+
+
+@pytest.mark.parametrize(
+    "is_valid, template",
+    [
+        (False, "Hello {{ name }!"),
+        (True, "Hello {{ name }}!"),
+        (True, DUMMY_TEMPLATE),
+    ],
+)
+def test_is_valid_jinja2_template(is_valid, template):
+    """
+    Test if a given python source code is correctly checked as valid or not.
+    """
+    assert is_valid_jinja2_template(template) is is_valid
