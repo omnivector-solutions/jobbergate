@@ -18,6 +18,27 @@ from yaml import YAMLError, safe_load
 class UploadedFilesValidationError(Buzz):
     """Raise exception when faces any validation error on the uploaded files."""
 
+def check_uploaded_files_extensions(file_list: List[UploadFile]) -> bool:
+    """
+    Check the list of uploaded files to verify business rules.
+
+    For the application files, it means:
+    * One application source file (.py);
+    * One (optional) application config file (.yaml);
+    * One or more template files (.j2 and/or .jinja2).
+
+    :param List[UploadFile] file_list: Upload file list.
+    :return bool: Result of the tests.
+    """
+    logger.debug("Checking uploaded files extensions")
+    extension_counter = Counter(PurePath(f.filename).suffix for f in file_list)
+    try:
+        assert extension_counter.get(".py", 0) == 1
+        assert extension_counter.get(".yaml", 0) in {0, 1}
+        assert extension_counter.get(".j2", 0) + extension_counter.get(".jinja2", 0) >= 1
+    except AssertionError:
+        return False
+    return True
 ValidationEquation = Callable[[Union[str, bytes]], bool]
 """Type alias describing the function signature used to validate the files."""
 
