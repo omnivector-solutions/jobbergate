@@ -149,7 +149,10 @@ def check_uploaded_files_syntax(file_list: List[UploadFile]) -> None:
     logger.debug("Checking uploaded files, validating source code")
     list_of_problems = []
     for f in file_list:
-        if not syntax_validation_dispatch.get(get_suffix(f), lambda _: True)(f.file):
+        suffix = get_suffix(f)
+        if suffix not in syntax_validation_dispatch:
+            continue
+        if not syntax_validation_dispatch[suffix](f.file.read()):
             list_of_problems.append(f.filename)
     with UploadedFilesValidationError.handle_errors(
         f"Invalid syntax on the uploaded file(s): {', '.join(list_of_problems)}",
@@ -166,7 +169,7 @@ syntax_validation_dispatch: Dict[str, SyntaxValidationEquation] = {}
 """Dictionary mapping file extensions to the function used to validate their syntax."""
 
 
-def register_syntax_validator(*file_extensions: str) -> SyntaxValidationEquation:
+def register_syntax_validator(*file_extensions: str):
     """
     Use this decorator to register file syntax validation functions.
 
@@ -178,7 +181,7 @@ def register_syntax_validator(*file_extensions: str) -> SyntaxValidationEquation
     :return ValidationEquation: The decorated function.
     """
 
-    def decorator(validator: SyntaxValidationEquation) -> SyntaxValidationEquation:
+    def decorator(validator):
         for extension in file_extensions:
             require_condition(
                 extension.startswith("."),
@@ -188,7 +191,7 @@ def register_syntax_validator(*file_extensions: str) -> SyntaxValidationEquation
             syntax_validation_dispatch[extension] = validator
 
         @wraps(validator)
-        def wrapper(source_code: Union[str, bytes]) -> bool:
+        def wrapper(source_code):
             return validator(source_code)
 
         return wrapper
@@ -227,11 +230,11 @@ def is_valid_yaml_file(yaml_file: Union[str, bytes]) -> bool:
 
 
 @register_syntax_validator(".j2", ".jinja2")
-def is_valid_jinja2_template(template: Union[str, bytes]) -> bool:
+def is_valid_jinja2_template(template: str) -> bool:
     """
     Check if a given jinja2 template is valid by creating a Template object and trying to render it.
 
-    :param Union[str, bytes] template: Jinja2 template.
+    :param str template: Jinja2 template.
     :return bool: Boolean indicating if the template is valid or not.
     """
     try:

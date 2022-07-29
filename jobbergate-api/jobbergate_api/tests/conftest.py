@@ -8,6 +8,7 @@ import datetime
 import random
 import string
 import tarfile
+from textwrap import dedent
 import typing
 from io import BytesIO
 
@@ -156,6 +157,83 @@ def tweak_settings():
             setattr(settings, key, value)
 
     return _helper
+
+
+@pytest.fixture
+def dummy_application_source_file() -> str:
+    """
+    Fixture to return a dummy application source file.
+    """
+    return dedent(
+        """
+        from jobbergate_cli.application_base import JobbergateApplicationBase
+        from jobbergate_cli import appform
+
+        class JobbergateApplication(JobbergateApplicationBase):
+
+            def mainflow(self, data):
+                questions = []
+
+                questions.append(appform.List(
+                    variablename="partition",
+                    message="Choose slurm partition:",
+                    choices=self.application_config['partitions'],
+                ))
+
+                questions.append(appform.Text(
+                    variablename="job_name",
+                    message="Please enter a jobname",
+                    default=self.application_config['job_name']
+                ))
+                return questions
+        """
+    )
+
+
+@pytest.fixture
+def dummy_template() -> str:
+    """
+    Fixture to return a dummy template.
+    """
+    return dedent(
+        """
+        #!/bin/bash
+
+        #SBATCH --job-name={{data.job_name}}
+        #SBATCH --partition={{data.partition}}
+        #SBATCH --output=sample-%j.out
+
+
+        echo $SLURM_TASKS_PER_NODE
+        echo $SLURM_SUBMIT_DIR
+        """
+    )
+
+
+@pytest.fixture
+def dummy_application_config() -> str:
+    """
+    Fixture to return a dummy application config file.
+    """
+    return dedent(
+        """
+        application_config:
+        job_name: rats
+        partitions:
+        - debug
+        - partition1
+        jobbergate_config:
+        default_template: test_job_script.sh
+        output_directory: .
+        supporting_files:
+        - test_job_script.sh
+        supporting_files_output_name:
+            test_job_script.sh:
+            - support_file_b.py
+        template_files:
+        - templates/test_job_script.sh
+        """
+    )
 
 
 @pytest.fixture

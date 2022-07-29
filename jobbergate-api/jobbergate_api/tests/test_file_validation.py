@@ -1,64 +1,32 @@
+from fastapi import UploadFile
 import pytest
 
 from jobbergate_api.file_validation import (
+    check_uploaded_files_dispatch,
+    get_suffix,
     is_valid_jinja2_template,
     is_valid_python_file,
     is_valid_yaml_file,
-    validation_dispatch,
+    syntax_validation_dispatch,
 )
 
-DUMMY_TEMPLATE = """
-#!/bin/bash
 
-#SBATCH --job-name={{data.job_name}}
-#SBATCH --partition={{data.partition}}
-#SBATCH --output=sample-%j.out
-
-
-echo $SLURM_TASKS_PER_NODE
-echo $SLURM_SUBMIT_DIR
-"""
-
-DUMMY_APPLICATION_SOURCE_FILE = """
-from jobbergate_cli.application_base import JobbergateApplicationBase
-from jobbergate_cli import appform
-
-class JobbergateApplication(JobbergateApplicationBase):
-
-    def mainflow(self, data):
-        questions = []
-
-        questions.append(appform.List(
-            variablename="partition",
-            message="Choose slurm partition:",
-            choices=self.application_config['partitions'],
-        ))
-
-        questions.append(appform.Text(
-            variablename="job_name",
-            message="Please enter a jobname",
-            default=self.application_config['job_name']
-        ))
-        return questions
-"""
-
-DUMMY_APPLICATION_CONFIG = """
-application_config:
-  job_name: rats
-  partitions:
-  - debug
-  - partition1
-jobbergate_config:
-  default_template: test_job_script.sh
-  output_directory: .
-  supporting_files:
-  - test_job_script.sh
-  supporting_files_output_name:
-    test_job_script.sh:
-    - support_file_b.py
-  template_files:
-  - templates/test_job_script.sh
-"""
+@pytest.mark.parametrize(
+    "filename, suffix",
+    [
+        ("jobbergate.py", ".py"),
+        ("jobbergate.yaml", ".yaml"),
+        ("jobbergate.py.jinja2", ".jinja2"),
+        ("jobbergate.py.j2", ".j2"),
+    ],
+)
+def test_get_suffix(filename, suffix, make_dummy_file):
+    """
+    Test if the file suffix is correctly from an UploadFile.
+    """
+    dummy_file = make_dummy_file(filename)
+    dummy_upload = UploadFile(filename, file=dummy_file)
+    assert get_suffix(dummy_upload) == suffix
 
 
 @pytest.mark.parametrize(
@@ -66,7 +34,8 @@ jobbergate_config:
     [
         (False, "for i in range(10):\nprint(i)"),
         (True, "for i in range(10):\n    print(i)"),
-        (True, DUMMY_APPLICATION_SOURCE_FILE),
+        # Notice it does not catch counter as an unknown variable
+        (True, "for i in range(counter):\n    print(i)"),
     ],
 )
 def test_is_valid_python_file(is_valid, source_code):
@@ -81,7 +50,6 @@ def test_is_valid_python_file(is_valid, source_code):
     [
         (False, "unbalanced blackets: ]["),
         (True, "balanced blackets: []"),
-        (True, DUMMY_APPLICATION_CONFIG),
     ],
 )
 def test_is_valid_yaml_file(is_valid, yaml_file):
@@ -96,7 +64,6 @@ def test_is_valid_yaml_file(is_valid, yaml_file):
     [
         (False, "Hello {{ name }!"),
         (True, "Hello {{ name }}!"),
-        (True, DUMMY_TEMPLATE),
     ],
 )
 def test_is_valid_jinja2_template(is_valid, template):
@@ -106,13 +73,15 @@ def test_is_valid_jinja2_template(is_valid, template):
     assert is_valid_jinja2_template(template) is is_valid
 
 
-class TestValidationDispatch:
+def test_check_uploaded_files_dispatch__length():
     """
-    Test if the validation_dispatch mapping and the register decorator worked.
+    Test if the number of element is the expected.
     """
+    assert len(check_uploaded_files_dispatch) == 3
 
-    def test_validation_dispatch__length(self):
-        """
-        Test if the number of keys is the expected.
-        """
-        assert len(validation_dispatch) == 4
+
+def test_syntax_validation_dispatch__length():
+    """
+    Test if the number of elements is the expected.
+    """
+    assert len(syntax_validation_dispatch) == 4
