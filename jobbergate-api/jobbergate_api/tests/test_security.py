@@ -51,6 +51,7 @@ def test_get_domain_configs__loads_admin_settings_if_all_are_present():
 
 
 def test_from_token_payload__omits_email_if_not_in_payload():
+    """Check if omiting email causes a failure in from_token_payload()."""
     payload = TokenPayload(
         sub="dummy",
         permissions=[],
