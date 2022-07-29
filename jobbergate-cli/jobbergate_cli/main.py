@@ -70,7 +70,7 @@ def main(
     persona = None
 
     client = httpx.Client(
-        base_url=f"https://{settings.OIDC_LOGIN_DOMAIN}",
+        base_url=f"https://{settings.OIDC_DOMAIN}",
         headers={"content-type": "application/x-www-form-urlencoded"},
     )
     context = JobbergateContext(persona=None, client=client)
