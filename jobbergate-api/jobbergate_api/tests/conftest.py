@@ -164,13 +164,14 @@ def make_dummy_file(tmp_path):
     Provide a fixture that will generate a temporary file with ``size`` random bytes of text data.
     """
 
-    def _helper(filename, size=100):
+    def _helper(filename, size: int = 100, content: str = ""):
         """
-        Auxillery function that builds the temporary file.
+        Auxillary function that builds the temporary file.
         """
-        text = "".join(random.choice(CHARSET) for i in range(size))
+        if not content:
+            content = "".join(random.choice(CHARSET) for _ in range(size))
         dummy_path = tmp_path / filename
-        dummy_path.write_text(text)
+        dummy_path.write_text(content)
         return dummy_path
 
     return _helper
@@ -181,17 +182,23 @@ def make_files_param():
     """
     Provide a fixture to use as a context manager that builds the ``files`` parameter.
 
-    Open the supplied file and build a ``files`` param appropriate for using multi-part file uploads with the
+    Open the supplied file(s) and build a ``files`` param appropriate for using multi-part file uploads with the
     client.
     """
 
     @contextlib.contextmanager
-    def _helper(file_path):
+    def _helper(*file_paths):
         """
-        Context manager that opens the file and yields the ``files`` param from it.
+        Context manager that opens the file(s) and yields the ``files`` param from it.
         """
-        with open(file_path, "r") as file_handle:
-            yield dict(upload_file=(file_path.name, file_handle, "text/plain"))
+        with contextlib.ExitStack() as stack:
+            yield [
+                (
+                    "upload_files",
+                    (path.name, stack.enter_context(open(path)), "text/plain"),
+                )
+                for path in file_paths
+            ]
 
     return _helper
 
