@@ -844,9 +844,11 @@ async def test_upload_file__works_with_small_file(
     client,
     inject_security_header,
     fill_application_data,
-    tweak_settings,
     make_dummy_file,
     make_files_param,
+    dummy_application_source_file,
+    dummy_template,
+    dummy_application_config,
 ):
     """
     Test that a file is uploaded.
@@ -863,15 +865,17 @@ async def test_upload_file__works_with_small_file(
     application = await fetch_instance(inserted_id, applications_table, ApplicationResponse)
     assert not application.application_uploaded
 
-    dummy_file = make_dummy_file("dummy.py", size=10_000 - 200)  # Need some buffer for file headers, etc
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
-        with mock.patch.object(s3man_applications.engine, "s3_client") as mock_s3:
-            with make_files_param(dummy_file) as files_param:
-                response = await client.post(
-                    f"/jobbergate/applications/{inserted_id}/upload",
-                    files=files_param,
-                )
+    with mock.patch.object(s3man_applications.engine, "s3_client") as mock_s3:
+        with make_files_param(
+            make_dummy_file("jobbergate.py", content=dummy_application_source_file),
+            make_dummy_file("jobbergate.j2", content=dummy_template),
+            make_dummy_file("jobbergate.yaml", content=dummy_application_config),
+        ) as files_param:
+            response = await client.post(
+                f"/jobbergate/applications/{inserted_id}/upload",
+                files=files_param,
+            )
 
     assert response.status_code == status.HTTP_201_CREATED
     mock_s3.put_object.assert_called_once()

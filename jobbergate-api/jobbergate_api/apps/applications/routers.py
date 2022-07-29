@@ -1,7 +1,7 @@
 """
 Router for the Application resource.
 """
-from typing import Optional
+from typing import List, Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Query
@@ -18,6 +18,7 @@ from jobbergate_api.apps.applications.schemas import (
 )
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.config import settings
+from jobbergate_api.file_validation import perform_all_checks_on_uploaded_files
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.s3_manager import s3man_applications
 from jobbergate_api.security import IdentityClaims, guard
@@ -80,11 +81,13 @@ async def applications_create(
 )
 async def applications_upload(
     application_id: int = Query(..., description="id of the application for which to upload a file"),
-    upload_file: UploadFile = File(..., description="The gzipped application tar-file to be uploaded"),
+    upload_files: List[UploadFile] = File(
+        ..., media_type="text/plain", description="The gzipped application tar-file to be uploaded"
+    ),
     content_length: int = Header(...),
 ):
     """
-    Upload application tarball using an authenticated user token.
+    Upload application files using an authenticated user token.
     """
     logger.debug(f"Preparing to upload tarball for {application_id=}")
 
@@ -95,7 +98,10 @@ async def applications_upload(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=message,
         )
-    s3man_applications[application_id] = upload_file.file
+
+    perform_all_checks_on_uploaded_files(upload_files)
+
+    s3man_applications[application_id] = upload_files[0].file
 
     update_query = (
         applications_table.update()

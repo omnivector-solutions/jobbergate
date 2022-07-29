@@ -152,8 +152,9 @@ def check_uploaded_files_syntax(file_list: List[UploadFile]) -> None:
         suffix = get_suffix(f)
         if suffix not in syntax_validation_dispatch:
             continue
-        if not syntax_validation_dispatch[suffix](f.file.read()):
+        if not syntax_validation_dispatch[suffix](f.file.read().decode("utf-8")):
             list_of_problems.append(f.filename)
+        f.file.seek(0)
     with UploadedFilesValidationError.handle_errors(
         f"Invalid syntax on the uploaded file(s): {', '.join(list_of_problems)}",
         do_except=log_error_and_raise_http_error,
