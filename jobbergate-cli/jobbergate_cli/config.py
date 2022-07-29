@@ -55,7 +55,6 @@ class Settings(BaseSettings):
 
     # Auth0 config for machine-to-machine security
     OIDC_DOMAIN: str
-    OIDC_LOGIN_DOMAIN: Optional[str]
     OIDC_AUDIENCE: str
     OIDC_CLIENT_ID: str
     OIDC_MAX_POLL_TIME: int = 5 * 60  # 5 Minutes
@@ -82,9 +81,6 @@ class Settings(BaseSettings):
         values["JOBBERGATE_REFRESH_TOKEN_PATH"] = token_dir / "refresh.token"
 
         values["JOBBERGATE_CLUSTER_LIST_PATH"] = cache_dir / "clusters.json"
-
-        if "OIDC_LOGIN_DOMAIN" not in values or not values.get("OIDC_LOGIN_DOMAIN", None):
-            values["OIDC_LOGIN_DOMAIN"] = values["OIDC_DOMAIN"]
 
         return values
 
