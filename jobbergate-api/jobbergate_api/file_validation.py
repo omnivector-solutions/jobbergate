@@ -1,5 +1,5 @@
 """
-Validation methods for uploaded files.
+Validation methods for the uploaded files.
 """
 
 from ast import parse
@@ -16,12 +16,12 @@ from yaml import YAMLError, safe_load
 
 
 class UploadedFilesValidationError(Buzz):
-    """Raise exception when faces any validation error on the uploaded files."""
+    """Raise exception when facing any validation error on the uploaded files."""
 
 
 def log_error_and_raise_http_error(params: DoExceptParams):
     """
-    Work with `UploadedFilesValidationError.handle_errors` when something goes wrong.
+    Work with ``UploadedFilesValidationError.handle_errors`` when something goes wrong.
 
     In case any error occurs in the context manager, the error is logged and
     a HTTPException is raised.
@@ -43,22 +43,50 @@ def get_suffix(file: UploadFile) -> str:
     return PurePath(file.filename).suffix
 
 
-def check_uploaded_files(file_list: List[UploadFile]):
+CheckUploadedFilesEquation = Callable[[List[UploadFile]], None]
+"""
+Type alias describing the function signature used to check the uploaded files.
+
+The functions are expected to raise UploadedFilesValidationError if any error is detected.
+"""
+
+check_uploaded_files_dispatch: List[CheckUploadedFilesEquation] = []
+"""List the function used to check the uploaded files."""
+
+
+def perform_all_checks_on_uploaded_files(file_list: List[UploadFile]) -> None:
     """
     Loop though the check-list for uploaded files specifications.
 
+    Individual checks will raise UploadedFilesValidationError if the business
+    roles are not met.
+
     :param List[UploadFile] file_list: Upload file list.
     """
-    check_list = [
-        check_uploaded_files_extensions,
-        check_uploaded_files_content_type,
-        check_uploaded_files_code,
-    ]
-    for check in check_list:
+    logger.debug("Preparing to perform all checks on the uploaded files")
+    for check in check_uploaded_files_dispatch:
         check(file_list)
 
 
-def check_uploaded_files_extensions(file_list: List[UploadFile]):
+def register_check_uploaded_files(checker: CheckUploadedFilesEquation) -> CheckUploadedFilesEquation:
+    """
+    Use this decorator to register functions to check the uploaded files.
+
+    It creates a new entry on ``check_uploaded_files_dispatch``.
+
+    :return CheckUploadedFilesEquation: The decorated function.
+    """
+    check_uploaded_files_dispatch.append(checker)
+
+    @wraps(checker)
+    def decorator(file_list: List[UploadFile]) -> None:
+        return checker(file_list)
+
+    return decorator
+
+
+@register_check_uploaded_files
+def check_uploaded_files_extensions(file_list: List[UploadFile]) -> None:
     """
     Check the list of uploaded files to count the file extensions.
 
@@ -66,8 +94,8 @@ def check_uploaded_files_extensions(file_list: List[UploadFile]):
 
     :param List[UploadFile] file_list: Upload file list.
     """
-    logger.debug("Checking uploaded files extensions")
     extension_counter = Counter(get_suffix(f) for f in file_list)
+    logger.debug(f"Checking uploaded files extensions: {extension_counter=}")
     with UploadedFilesValidationError.handle_errors(
         (
             "Error while validating the extension of the uploaded files."
@@ -79,12 +107,13 @@ def check_uploaded_files_extensions(file_list: List[UploadFile]):
         do_except=log_error_and_raise_http_error,
         re_raise=False,
     ):
-        assert extension_counter.get(".py", 0) == 1
-        assert extension_counter.get(".yaml", 0) in {0, 1}
-        assert extension_counter.get(".j2", 0) + extension_counter.get(".jinja2", 0) >= 1
+        assert extension_counter[".py"] == 1
+        assert extension_counter[".yaml"] in {0, 1}
+        assert extension_counter[".j2"] + extension_counter[".jinja2"] >= 1
 
 
-def check_uploaded_files_content_type(file_list: List[UploadFile]) -> bool:
+@register_check_uploaded_files
+def check_uploaded_files_content_type(file_list: List[UploadFile]) -> None:
     """
     Check the list of uploaded files to confirm they are specified as plain text.
 
@@ -97,16 +126,19 @@ def check_uploaded_files_content_type(file_list: List[UploadFile]) -> bool:
     with UploadedFilesValidationError.handle_errors(
         (
             "Error while validating the content type of the uploaded files."
-            f" The content of the files {', '.join(validation_dispatch.keys())}"
+            f" The content of the files {', '.join(syntax_validation_dispatch.keys())}"
             f" is expected to be {expected}."
         ),
         do_except=log_error_and_raise_http_error,
         re_raise=False,
     ):
-        assert all(f.content_type == expected for f in file_list if get_suffix(f) in validation_dispatch)
+        assert all(
+            f.content_type == expected for f in file_list if get_suffix(f) in syntax_validation_dispatch
+        )
 
 
-def check_uploaded_files_code(file_list: List[UploadFile]) -> bool:
+@register_check_uploaded_files
+def check_uploaded_files_syntax(file_list: List[UploadFile]) -> None:
     """
     Check the list of uploaded files to verify their syntax.
 
@@ -117,7 +149,7 @@ def check_uploaded_files_code(file_list: List[UploadFile]) -> bool:
     logger.debug("Checking uploaded files, validating source code")
     list_of_problems = []
     for f in file_list:
-        if not validation_dispatch.get(get_suffix(f), lambda _: True)(f.file):
+        if not syntax_validation_dispatch.get(get_suffix(f), lambda _: True)(f.file):
             list_of_problems.append(f.filename)
     with UploadedFilesValidationError.handle_errors(
         f"Invalid syntax on the uploaded file(s): {', '.join(list_of_problems)}",
@@ -127,44 +159,44 @@ def check_uploaded_files_code(file_list: List[UploadFile]) -> bool:
         assert len(list_of_problems) == 0
 
 
-ValidationEquation = Callable[[Union[str, bytes]], bool]
-"""Type alias describing the function signature used to validate the files."""
+SyntaxValidationEquation = Callable[[Union[str, bytes]], bool]
+"""Type alias describing the function signature used to validate file syntax."""
 
-validation_dispatch: Dict[str, ValidationEquation] = {}
-"""Dictionary mapping file extensions to the function used to validate them."""
+syntax_validation_dispatch: Dict[str, SyntaxValidationEquation] = {}
+"""Dictionary mapping file extensions to the function used to validate their syntax."""
 
 
-def register(*file_extensions: str) -> ValidationEquation:
+def register_syntax_validator(*file_extensions: str) -> SyntaxValidationEquation:
     """
-    Use this decorator to register validation functions.
+    Use this decorator to register file syntax validation functions.
 
     It creates a new entry on ``validation_dispatch``, mapping the equation to
     the file extensions that are provided as arguments.
 
     Raise ValueError if the provided file extensions do not start with a dot.
 
-    :return ValidationEquation: The validation equation.
+    :return ValidationEquation: The decorated function.
     """
 
-    def decorator(validator: ValidationEquation) -> ValidationEquation:
+    def decorator(validator: SyntaxValidationEquation) -> SyntaxValidationEquation:
         for extension in file_extensions:
             require_condition(
                 extension.startswith("."),
-                "File extensions are expected to start with a dot.",
+                f"File extensions should start with a dot, got the value: {extension}",
                 raise_exc_class=ValueError,
             )
-            validation_dispatch[extension] = validator
+            syntax_validation_dispatch[extension] = validator
 
         @wraps(validator)
-        def wrapper(*args, **kwargs):
-            return validator(*args, **kwargs)
+        def wrapper(source_code: Union[str, bytes]) -> bool:
+            return validator(source_code)
 
         return wrapper
 
     return decorator
 
 
-@register(".py")
+@register_syntax_validator(".py")
 def is_valid_python_file(source_code: Union[str, bytes]) -> bool:
     """
     Check if a given Python source code is valid by parsing it into an AST node.
@@ -179,7 +211,7 @@ def is_valid_python_file(source_code: Union[str, bytes]) -> bool:
     return True
 
 
-@register(".yaml")
+@register_syntax_validator(".yaml")
 def is_valid_yaml_file(yaml_file: Union[str, bytes]) -> bool:
     """
     Check if a given YAML file is valid by parsing it with yaml.safe_load.
@@ -194,7 +226,7 @@ def is_valid_yaml_file(yaml_file: Union[str, bytes]) -> bool:
     return True
 
 
-@register(".j2", ".jinja2")
+@register_syntax_validator(".j2", ".jinja2")
 def is_valid_jinja2_template(template: Union[str, bytes]) -> bool:
     """
     Check if a given jinja2 template is valid by creating a Template object and trying to render it.
