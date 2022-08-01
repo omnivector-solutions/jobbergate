@@ -30,14 +30,6 @@ format: install
 	poetry run black ${PACKAGE_NAME}
 	poetry run isort ${PACKAGE_NAME}
 
-.PHONY: release-%
-release-%:
-	../release-scripts/prepare-release.sh $(subst release-,,$@)
-
-.PHONY: publish
-publish:
-	../release-scripts/publish-release.sh
-
 .PHONY: local
 local: install
 	poetry run dev-tools dev-server --port=8000

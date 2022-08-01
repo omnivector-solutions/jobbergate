@@ -30,14 +30,6 @@ format: install
 	poetry run black ${PACKAGE_NAME} tests
 	poetry run isort ${PACKAGE_NAME} tests
 
-.PHONY: release-%
-release-%:
-	../release-scripts/prepare-release.sh $(subst release-,,$@)
-
-.PHONY: publish
-publish:
-	../release-scripts/publish-release.sh
-
 .PHONY: clean
 clean:
 	@find . -iname '*.pyc' -delete

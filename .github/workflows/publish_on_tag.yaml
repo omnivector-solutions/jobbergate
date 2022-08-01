@@ -1,0 +1,57 @@
+name: Publish on Tag
+
+# This action:
+#   - Is triggered when a new version is tagged;
+#   - Check if the version for each sub-project matches the tag;
+#   - Build and release the packages to PyPI.
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
+
+jobs:
+  build-publish:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: { sub_project: ['jobbergate-api', 'jobbergate-cli']}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.8.10
+  
+      - uses: Gr1N/setup-poetry@v7
+
+      - id: poetry-package-version
+        name: Get project's version
+        working-directory: ${{ matrix.sub_project }}
+        run: |
+          echo "Poetry version is: $(poetry version --short)"
+          echo "::set-output name=version::$(poetry version --short)"
+
+      - name: Fail if package version doesn't match the tag
+        if: ${{ github.ref_name != steps.poetry-package-version.outputs.version }}
+        run: |
+          echo "Poetry package version doesn't match tag!"
+          echo "tag=${{ github.ref_name }}, version=${{ steps.poetry-package-version.outputs.version }}"
+          exit 1
+
+      # - name: Build and publish on test-PyPI
+      #   working-directory: ${{ matrix.sub_project }}
+      #   run: |
+      #     poetry config repositories.test-pypi https://test.pypi.org/legacy/
+      #     poetry config pypi-token.test-pypi ${{ secrets.TEST_PYPI_TOKEN }}
+      #     poetry build
+      #     poetry publish -r test-pypi
+
+      - name: Build and publish on PyPI
+        working-directory: ${{ matrix.sub_project }}
+        run: |
+          poetry config pypi-token.pypi ${{ secrets.OMNIVECTOR_PYPI_TOKEN }}
+          poetry build
+          poetry publish
