@@ -840,7 +840,7 @@ async def test_update_application_bad_permission(
 
 
 @pytest.mark.asyncio
-async def test_upload_file__works_with_small_file(
+async def test_upload_file__works_correct_file_content(
     client,
     inject_security_header,
     fill_application_data,
@@ -851,9 +851,9 @@ async def test_upload_file__works_with_small_file(
     dummy_application_config,
 ):
     """
-    Test that a file is uploaded.
+    Test that the files are uploaded.
 
-    This test proves that an application's file is uploaded by making sure that the
+    This test proves that an application's files are uploaded by making sure that the
     boto3 put_object method is called once and a 201 status code is returned. It also
     checks to make sure that the application row in the database has
     `application_uploaded` set.
@@ -885,6 +885,31 @@ async def test_upload_file__works_with_small_file(
 
 
 @pytest.mark.asyncio
+async def test_upload_file__works_with_small_file(
+    client,
+    inject_security_header,
+    tweak_settings,
+    make_dummy_file,
+    make_files_param,
+):
+    """
+    Test that a file is uploaded.
+    This test proves that the application's files are uploaded when they are smaller than the threshold.
+    Assert status code 422 because the test files in this case are not valid.
+    """
+    dummy_file = make_dummy_file("dummy.py", size=10_000 - 200)  # Need some buffer for file headers, etc
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
+    with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
+        with make_files_param(dummy_file) as files_param:
+            response = await client.post(
+                "/jobbergate/applications/{inserted_id}/upload",
+                files=files_param,
+            )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.asyncio
 async def test_upload_file__fails_with_413_on_large_file(
     client,
     inject_security_header,
@@ -893,7 +918,7 @@ async def test_upload_file__fails_with_413_on_large_file(
     make_files_param,
 ):
     """
-    Test that upload fails when the file is too large.
+    Test that upload fails when the files are too large.
     """
     dummy_file = make_dummy_file("dummy.py", size=10_000 + 200)
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
