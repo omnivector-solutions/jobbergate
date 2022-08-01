@@ -203,7 +203,7 @@ def refresh_access_token(ctx: JobbergateContext, token_set: TokenSet):
 
     If refresh fails, notify the user that they need to log in again.
     """
-    url = f"https://{settings.OIDC_LOGIN_DOMAIN}/token"
+    url = f"https://{settings.OIDC_DOMAIN}/token"
     logger.debug(f"Requesting refreshed access token from {url}")
 
     JobbergateCliError.require_condition(
