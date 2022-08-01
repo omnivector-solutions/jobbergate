@@ -1,4 +1,4 @@
-name: Publish on tag
+name: Publish on Tag
 
 # This action:
 #   - Is triggered when a new version is tagged;
@@ -41,10 +41,17 @@ jobs:
           echo "tag=${{ github.ref_name }}, version=${{ steps.poetry-package-version.outputs.version }}"
           exit 1
 
+      # - name: Build and publish on test-PyPI
+      #   working-directory: ${{ matrix.sub_project }}
+      #   run: |
+      #     poetry config repositories.test-pypi https://test.pypi.org/legacy/
+      #     poetry config pypi-token.test-pypi ${{ secrets.TEST_PYPI_TOKEN }}
+      #     poetry build
+      #     poetry publish -r test-pypi
+
       - name: Build and publish on PyPI
         working-directory: ${{ matrix.sub_project }}
         run: |
-          poetry config repositories.test-pypi https://test.pypi.org/legacy/
-          poetry config pypi-token.test-pypi ${{ secrets.OMNIVECTOR_PYPI_TOKEN }}
+          poetry config pypi-token.pypi ${{ secrets.OMNIVECTOR_PYPI_TOKEN }}
           poetry build
-          poetry publish -r test-pypi
+          poetry publish
