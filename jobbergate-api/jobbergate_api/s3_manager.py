@@ -7,10 +7,10 @@ from io import BytesIO
 
 from botocore.exceptions import BotoCoreError
 from fastapi import HTTPException, status
-from file_storehouse import FileManager, FileManagerReadOnly, client  # type: ignore # no type hints or library stubs
-from file_storehouse.engine import EngineS3  # type: ignore # no type hints or library stubs
-from file_storehouse.key_mapping import KeyMappingNumeratedFolder  # type: ignore # no type hints or library stubs
-from file_storehouse.transformation import TransformationCodecs  # type: ignore # no type hints or library stubs
+from file_storehouse import FileManager, FileManagerReadOnly, client  # type: ignore
+from file_storehouse.engine import EngineS3  # type: ignore
+from file_storehouse.key_mapping import KeyMappingNumeratedFolder, KeyMappingRaw  # type: ignore
+from file_storehouse.transformation import TransformationCodecs  # type: ignore
 from loguru import logger
 
 from jobbergate_api.config import settings
@@ -35,6 +35,27 @@ def get_s3_object_as_tarfile(s3man: FileManagerReadOnly, app_id: typing.Union[in
     return s3_application_tar
 
 
+def application_manager_factory(
+    application_id: typing.Union[int, str], is_read_only: bool = True
+) -> typing.Union[FileManager, FileManagerReadOnly]:
+    """
+    Build a manager object for application templates.
+
+    :param typing.Union[int, str] application_id: Application's id
+    :param bool is_read_only: If the manager is read only or not, defaults to True
+    :return typing.Union[FileManager, FileManagerReadOnly]: File manager for templates
+    """
+    Manager = FileManagerReadOnly if is_read_only else FileManager
+    return Manager(
+        engine=EngineS3(
+            s3_client,
+            settings.S3_BUCKET_NAME,
+            f"applications/{application_id}/",
+        ),
+        key_mapping=KeyMappingRaw(),
+    )
+
+
 s3_client = client(
     "s3",
     endpoint_url=settings.S3_ENDPOINT_URL,
@@ -42,7 +63,8 @@ s3_client = client(
 
 s3man_applications = FileManager(
     engine=EngineS3(s3_client, settings.S3_BUCKET_NAME, "applications"),
-    key_mapping=KeyMappingNumeratedFolder("jobbergate.tar.gz"),
+    transformation_list=[TransformationCodecs("utf-8")],
+    key_mapping=KeyMappingNumeratedFolder("jobbergate.py"),
 )
 
 s3man_jobscripts = FileManager(

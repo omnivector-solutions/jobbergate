@@ -9,7 +9,6 @@ import pytest
 from fastapi import status
 
 from jobbergate_api.apps.applications.models import applications_table
-from jobbergate_api.apps.applications.routers import s3man_applications
 from jobbergate_api.apps.applications.schemas import ApplicationResponse
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.storage import database, fetch_instance
@@ -113,9 +112,7 @@ async def test_create_without_application_name(
 
 @pytest.mark.asyncio
 async def test_delete_application_no_file_uploaded(
-    client,
-    application_data,
-    inject_security_header,
+    client, application_data, inject_security_header, mocked_application_manager_empty
 ):
     """
     Test DELETE /applications/<id> correctly deletes an application.
@@ -131,14 +128,18 @@ async def test_delete_application_no_file_uploaded(
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
+    # The path for this applications is empty at S3 (application not uploaded)
+    assert len(mocked_application_manager_empty) == 0
+
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    with mock.patch.object(s3man_applications.engine, "s3_client") as mock_s3:
-        response = await client.delete(f"/jobbergate/applications/{inserted_id}")
-        mock_s3.delete_object.assert_called_once()
+    response = await client.delete(f"/jobbergate/applications/{inserted_id}")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
+
+    # The path for this applications is empty at S3
+    assert len(mocked_application_manager_empty) == 0
 
 
 @pytest.mark.asyncio
@@ -146,6 +147,7 @@ async def test_delete_application_with_uploaded_file(
     client,
     application_data,
     inject_security_header,
+    mocked_application_manager_filled,
 ):
     """
     Test DELETE /applications/<id> correctly deletes an application and it's file.
@@ -162,14 +164,18 @@ async def test_delete_application_with_uploaded_file(
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
+    # The path for this applications is not empty at S3
+    assert len(mocked_application_manager_filled) >= 1
+
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    with mock.patch.object(s3man_applications.engine, "s3_client") as mock_s3:
-        response = await client.delete(f"/jobbergate/applications/{inserted_id}")
-        mock_s3.delete_object.assert_called_once()
+    response = await client.delete(f"/jobbergate/applications/{inserted_id}")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
+
+    # The path for this applications is empty at S3
+    assert len(mocked_application_manager_filled) == 0
 
 
 @pytest.mark.asyncio
@@ -177,6 +183,7 @@ async def test_delete_application_by_identifier(
     client,
     fill_application_data,
     inject_security_header,
+    mocked_application_manager_filled,
 ):
     """
     Test DELETE /applications?identifier=<identifier> correctly deletes an application and it's file.
@@ -196,14 +203,18 @@ async def test_delete_application_by_identifier(
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
+    # The path for this applications is not empty at S3
+    assert len(mocked_application_manager_filled) >= 1
+
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    with mock.patch.object(s3man_applications.engine, "s3_client") as mock_s3:
-        response = await client.delete("/jobbergate/applications?identifier=test-identifier")
-        mock_s3.delete_object.assert_called_once()
+    response = await client.delete("/jobbergate/applications?identifier=test-identifier")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
+
+    # The path for this applications is empty at S3
+    assert len(mocked_application_manager_filled) == 0
 
 
 @pytest.mark.asyncio
@@ -236,7 +247,7 @@ async def test_delete_application_bad_permission(
 @pytest.mark.asyncio
 async def test_delete_application_not_found(client, inject_security_header):
     """
-    Test DELETE /applications/<id> the correct respnse code when the application doesn't exist.
+    Test DELETE /applications/<id> the correct response code when the application doesn't exist.
 
     This test proves that DELETE /applications/<id> returns the correct response code (404)
     when the application id does not exist in the database. We show this by asserting that a 404 response
@@ -849,6 +860,7 @@ async def test_upload_file__works_correct_file_content(
     dummy_application_source_file,
     dummy_template,
     dummy_application_config,
+    mocked_application_manager_empty,
 ):
     """
     Test that the files are uploaded.
@@ -866,19 +878,18 @@ async def test_upload_file__works_correct_file_content(
     assert not application.application_uploaded
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    with mock.patch.object(s3man_applications.engine, "s3_client") as mock_s3:
-        with make_files_param(
-            make_dummy_file("jobbergate.py", content=dummy_application_source_file),
-            make_dummy_file("jobbergate.j2", content=dummy_template),
-            make_dummy_file("jobbergate.yaml", content=dummy_application_config),
-        ) as files_param:
-            response = await client.post(
-                f"/jobbergate/applications/{inserted_id}/upload",
-                files=files_param,
-            )
+    with make_files_param(
+        make_dummy_file("jobbergate.py", content=dummy_application_source_file),
+        make_dummy_file("jobbergate.j2", content=dummy_template),
+        make_dummy_file("jobbergate.yaml", content=dummy_application_config),
+    ) as files_param:
+        response = await client.post(
+            f"/jobbergate/applications/{inserted_id}/upload",
+            files=files_param,
+        )
 
     assert response.status_code == status.HTTP_201_CREATED
-    mock_s3.put_object.assert_called_once()
+    assert len(mocked_application_manager_empty) == 3
 
     application = await fetch_instance(inserted_id, applications_table, ApplicationResponse)
     assert application.application_uploaded
@@ -894,6 +905,7 @@ async def test_upload_file__works_with_small_file(
 ):
     """
     Test that a file is uploaded.
+
     This test proves that the application's files are uploaded when they are smaller than the threshold.
     Assert status code 422 because the test files in this case are not valid.
     """
@@ -934,14 +946,12 @@ async def test_upload_file__fails_with_413_on_large_file(
 
 @pytest.mark.asyncio
 async def test_delete_file(
-    client,
-    inject_security_header,
-    fill_application_data,
+    client, inject_security_header, fill_application_data, mocked_application_manager_filled
 ):
     """
-    Test that a file is uploaded.
+    Test that a file is deleted.
 
-    This test proves that an application's file is uploaded by making sure that the boto3 put_object method
+    This test proves that an application's file is deleted by making sure that the boto3 put_object method
     is called once and a 201 status code is returned.
     """
     inserted_id = await database.execute(
@@ -952,12 +962,13 @@ async def test_delete_file(
         inserted_id, applications_table, ApplicationResponse
     )
     assert application.application_uploaded
+    assert len(mocked_application_manager_filled) >= 1
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    with mock.patch.object(s3man_applications.engine, "s3_client") as mock_s3:
-        response = await client.delete(f"/jobbergate/applications/{inserted_id}/upload")
+    response = await client.delete(f"/jobbergate/applications/{inserted_id}/upload")
+
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    mock_s3.delete_object.assert_called_once()
+    assert len(mocked_application_manager_filled) == 0
 
     application = await fetch_instance(inserted_id, applications_table, ApplicationResponse)
     assert not application.application_uploaded

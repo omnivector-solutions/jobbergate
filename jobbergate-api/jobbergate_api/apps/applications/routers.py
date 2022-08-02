@@ -20,7 +20,7 @@ from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.config import settings
 from jobbergate_api.file_validation import perform_all_checks_on_uploaded_files
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import s3man_applications
+from jobbergate_api.s3_manager import application_manager_factory
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,
@@ -101,7 +101,14 @@ async def applications_upload(
 
     perform_all_checks_on_uploaded_files(upload_files)
 
-    s3man_applications[application_id] = upload_files[0].file
+    s3man_application = application_manager_factory(application_id, False)
+
+    # remove previous files
+    s3man_application.clear()
+
+    # add new files
+    for file in upload_files:
+        s3man_application[file.filename] = file.file
 
     update_query = (
         applications_table.update()
@@ -123,9 +130,9 @@ async def applications_delete_upload(
     application_id: int = Query(..., description="id of the application for which to delete the file"),
 ):
     """
-    Delete application tarball using an authenticated user token.
+    Delete application files using an authenticated user token.
     """
-    logger.debug(f"Preparing to delete tarball for {application_id=}")
+    logger.debug(f"Preparing to delete files for {application_id=}")
 
     select_query = applications_table.select().where(applications_table.c.id == application_id)
     raw_application = await database.fetch_one(select_query)
@@ -141,7 +148,8 @@ async def applications_delete_upload(
         logger.debug(f"Trying to delete an applications that was not uploaded ({application_id=})")
         return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
-    del s3man_applications[application_id]
+    s3man_application = application_manager_factory(application_id, False)
+    s3man_application.clear()
 
     update_query = (
         applications_table.update()
@@ -186,12 +194,9 @@ async def application_delete(
     logger.trace(f"delete_query = {render_sql(delete_query)}")
 
     await database.execute(delete_query)
-    try:
-        del s3man_applications[application_id]
-    except KeyError:
-        # We should ignore KeyErrors from the S3 manager, because the data may
-        # have already been removed outside of the API
-        logger.debug(f"Tried to delete {application_id=}, but it was not found on S3.")
+
+    s3man_application = application_manager_factory(application_id, False)
+    s3man_application.clear()
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -229,12 +234,8 @@ async def application_delete_by_identifier(
 
     await database.execute(delete_query)
 
-    try:
-        del s3man_applications[id_]
-    except KeyError:
-        # We should ignore KeyErrors from the S3 manager, because the data may have already been removed
-        # outside of the API
-        logger.warning(f"Tried to delete application_id={id_}, but it was not found on S3.")
+    s3man_application = application_manager_factory(id_, False)
+    s3man_application.clear()
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 

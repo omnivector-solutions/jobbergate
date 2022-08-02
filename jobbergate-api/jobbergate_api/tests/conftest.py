@@ -11,6 +11,7 @@ import tarfile
 from textwrap import dedent
 import typing
 from io import BytesIO
+from unittest import mock
 
 import pytest
 import sqlalchemy
@@ -279,6 +280,38 @@ def make_files_param():
             ]
 
     return _helper
+
+
+@pytest.fixture(scope="function")
+def mocked_application_manager_empty():
+    """
+    Mock the application manager factory in order to make it return an empty dictionary.
+
+    :yield dict: The dictionary representing the application manager.
+    """
+    mock_result_as_dict = {}
+    with mock.patch(
+        "jobbergate_api.apps.applications.routers.application_manager_factory",
+        wraps=lambda *args, **kwargs: mock_result_as_dict,
+    ):
+        yield mock_result_as_dict
+
+
+@pytest.fixture(scope="function")
+def mocked_application_manager_filled(
+    mocked_application_manager_empty, dummy_application_source_file, dummy_template
+):
+    """
+    Mock the application manager factory in order to make it return a filled dictionary.
+
+    :yield dict: The dictionary representing the application manager.
+    """
+    mocked_application_manager_empty["jobbergate.py"] = dummy_application_source_file
+    mocked_application_manager_empty["templates/testing.j2"] = dummy_template
+
+    yield mocked_application_manager_empty
+
+    mocked_application_manager_empty.clear()
 
 
 @pytest.fixture
