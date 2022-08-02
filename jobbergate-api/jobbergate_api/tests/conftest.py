@@ -261,8 +261,8 @@ def make_files_param():
     """
     Provide a fixture to use as a context manager that builds the ``files`` parameter.
 
-    Open the supplied file(s) and build a ``files`` param appropriate for using multi-part file uploads with the
-    client.
+    Open the supplied file(s) and build a ``files`` param appropriate for using
+    multi-part file uploads with the client.
     """
 
     @contextlib.contextmanager

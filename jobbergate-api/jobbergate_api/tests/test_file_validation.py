@@ -1,3 +1,7 @@
+"""
+Test the components used to validate the uploaded files.
+"""
+
 import pytest
 from fastapi import UploadFile
 
