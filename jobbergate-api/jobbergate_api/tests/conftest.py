@@ -8,9 +8,9 @@ import datetime
 import random
 import string
 import tarfile
-from textwrap import dedent
 import typing
 from io import BytesIO
+from textwrap import dedent
 from unittest import mock
 
 import pytest

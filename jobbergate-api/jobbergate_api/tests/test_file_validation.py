@@ -1,5 +1,5 @@
-from fastapi import UploadFile
 import pytest
+from fastapi import UploadFile
 
 from jobbergate_api.file_validation import (
     check_uploaded_files_dispatch,

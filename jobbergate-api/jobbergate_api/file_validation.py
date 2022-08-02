@@ -8,7 +8,7 @@ from functools import wraps
 from pathlib import PurePath
 from typing import Callable, Dict, List, Union
 
-from buzz import Buzz, require_condition, DoExceptParams
+from buzz import Buzz, DoExceptParams, require_condition
 from fastapi import HTTPException, UploadFile, status
 from jinja2 import Template, TemplateSyntaxError
 from loguru import logger
