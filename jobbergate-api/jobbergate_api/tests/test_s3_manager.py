@@ -5,39 +5,42 @@ Test s3 manager.
 import pytest
 from fastapi.exceptions import HTTPException
 
-from jobbergate_api.s3_manager import get_s3_object_as_tarfile, s3man_jobscripts
+from jobbergate_api.s3_manager import (
+    get_s3_object_as_tarfile,
+    s3man_applications_source_files,
+    s3man_jobscripts,
+)
 
 
 @pytest.mark.parametrize(
-    "key, id",
+    "s3_manager, template",
     [
-        ("job-scripts/0/jobbergate.txt", 0),
-        ("job-scripts/1/jobbergate.txt", 1),
-        ("job-scripts/2/jobbergate.txt", 2),
-        ("job-scripts/10/jobbergate.txt", 10),
-        ("job-scripts/100/jobbergate.txt", 100),
-        ("job-scripts/9999/jobbergate.txt", 9999),
+        (s3man_applications_source_files, "applications/{}/jobbergate.py"),
+        (s3man_jobscripts, "job-scripts/{}/jobbergate.txt"),
     ],
 )
+@pytest.mark.parametrize("id", [0, 1, 2, 10, 100, 9999])
 class TestS3ManagerKeyIdTwoWayMapping:
     """
     Test the conversions from id number to S3 key and vice versa.
     """
 
     @pytest.mark.parametrize("input_type", [int, str])
-    def test_s3_manager__get_key_from_id_str(self, key, id, input_type):
+    def test_s3_manager__get_key_from_id_str(self, s3_manager, template, id, input_type):
         """
         Test the conversions from id number to S3 key.
 
         Notice both int and str are valid types for id and are tested.
         """
-        assert s3man_jobscripts._get_engine_key(input_type(id)) == key
+        key = template.format(id)
+        assert s3_manager._get_engine_key(input_type(id)) == key
 
-    def test_s3_manager__get_app_id_from_key(self, key, id):
+    def test_s3_manager__get_app_id_from_key(self, s3_manager, template, id):
         """
         Test the conversions from S3 key to id number.
         """
-        assert s3man_jobscripts._get_dict_key(key) == id
+        key = template.format(id)
+        assert s3_manager._get_dict_key(key) == id
 
 
 @pytest.fixture
