@@ -3,6 +3,7 @@ Provide a convenience class for managing calls to S3.
 """
 import tarfile
 import typing
+from functools import lru_cache
 from io import BytesIO
 
 from botocore.exceptions import BotoCoreError
@@ -35,15 +36,16 @@ def get_s3_object_as_tarfile(s3man: FileManagerReadOnly, app_id: typing.Union[in
     return s3_application_tar
 
 
+@lru_cache
 def application_manager_factory(
     application_id: typing.Union[int, str], is_read_only: bool = True
 ) -> typing.Union[FileManager, FileManagerReadOnly]:
     """
-    Build a manager object for application templates.
+    Build a manager object for application files.
 
     :param typing.Union[int, str] application_id: Application's id
     :param bool is_read_only: If the manager is read only or not, defaults to True
-    :return typing.Union[FileManager, FileManagerReadOnly]: File manager for templates
+    :return typing.Union[FileManager, FileManagerReadOnly]: File manager
     """
     Manager = FileManagerReadOnly if is_read_only else FileManager
     return Manager(
