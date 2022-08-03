@@ -38,8 +38,6 @@ async def test_create_application(
             json=fill_application_data(
                 application_name="test-name",
                 application_identifier="test-identifier",
-                application_config="""{"test": "config"}""",
-                application_file="test\nfile",
             ),
         )
 
@@ -54,8 +52,6 @@ async def test_create_application(
     assert application.application_name == "test-name"
     assert application.application_identifier == "test-identifier"
     assert application.application_owner_email == "owner1@org.com"
-    assert application.application_config == """{"test": "config"}"""
-    assert application.application_file == "test\nfile"
     assert application.application_description is None
     assert application.created_at in window
     assert application.updated_at in window

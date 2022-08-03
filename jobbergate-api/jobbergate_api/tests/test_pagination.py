@@ -56,7 +56,6 @@ async def test_package_response__without_pagination():
             dict(
                 application_owner_email=f"owner{i}@org.com",
                 application_name=f"app{i}",
-                application_file="the\nfile",
                 application_config="the configuration is here",
             )
             for i in range(1, 6)
@@ -98,7 +97,6 @@ async def test_package_response__with_pagination(start, limit, total):
                 id=i,
                 application_owner_email=f"owner{i}@org.com",
                 application_name=f"app{i}",
-                application_file="the\nfile",
                 application_config="the configuration is here",
             )
             for i in range(1, total + 1)

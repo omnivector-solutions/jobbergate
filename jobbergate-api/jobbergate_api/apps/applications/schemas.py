@@ -98,8 +98,6 @@ class ApplicationCreateRequest(BaseModel):
     application_name: str
     application_identifier: Optional[str]
     application_description: Optional[str] = None
-    application_file: str
-    application_config: str
 
     class Config:
         schema_extra = application_meta_mapper
@@ -113,7 +111,6 @@ class ApplicationUpdateRequest(BaseModel):
     application_name: Optional[str]
     application_identifier: Optional[str]
     application_description: Optional[str]
-    application_file: Optional[str]
     application_config: Optional[str]
 
     class Config:
@@ -132,8 +129,6 @@ class ApplicationResponse(BaseModel):
     application_identifier: Optional[str]
     application_description: Optional[str]
     application_owner_email: str
-    application_file: str
-    application_config: str
     application_uploaded: bool
 
     class Config:
