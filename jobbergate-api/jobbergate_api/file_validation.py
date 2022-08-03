@@ -152,7 +152,7 @@ def check_uploaded_files_syntax(file_list: List[UploadFile]) -> None:
         suffix = get_suffix(f)
         if suffix not in syntax_validation_dispatch:
             continue
-        if not syntax_validation_dispatch[suffix](f.file.read().decode("utf-8")):
+        if not syntax_validation_dispatch[suffix](f.file.read()):
             list_of_problems.append(f.filename)
         f.file.seek(0)
     with UploadedFilesValidationError.handle_errors(
@@ -231,15 +231,19 @@ def is_valid_yaml_file(yaml_file: Union[str, bytes]) -> bool:
 
 
 @register_syntax_validator(".j2", ".jinja2")
-def is_valid_jinja2_template(template: str) -> bool:
+def is_valid_jinja2_template(template: Union[str, bytes]) -> bool:
     """
     Check if a given jinja2 template is valid by creating a Template object and trying to render it.
 
     :param str template: Jinja2 template.
     :return bool: Boolean indicating if the template is valid or not.
     """
+    if isinstance(template, bytes):
+        _template = template.decode("utf-8")
+    else:
+        _template = template
     try:
-        Template(template).render(data={})
+        Template(_template).render(data={})
     except TemplateSyntaxError:
         return False
     return True
