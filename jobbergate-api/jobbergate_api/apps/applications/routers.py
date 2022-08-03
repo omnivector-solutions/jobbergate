@@ -18,9 +18,8 @@ from jobbergate_api.apps.applications.schemas import (
 )
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.config import settings
-from jobbergate_api.file_validation import perform_all_checks_on_uploaded_files
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import application_manager_factory
+from jobbergate_api.s3_manager import delete_application_files_from_s3, write_application_files_to_s3
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,
@@ -99,16 +98,7 @@ async def applications_upload(
             detail=message,
         )
 
-    perform_all_checks_on_uploaded_files(upload_files)
-
-    s3man_application = application_manager_factory(application_id, False)
-
-    # remove previous files
-    s3man_application.clear()
-
-    # add new files
-    for file in upload_files:
-        s3man_application[file.filename] = file.file
+    write_application_files_to_s3(application_id, upload_files, remove_previous_files=True)
 
     update_query = (
         applications_table.update()
@@ -148,8 +138,7 @@ async def applications_delete_upload(
         logger.debug(f"Trying to delete an applications that was not uploaded ({application_id=})")
         return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
-    s3man_application = application_manager_factory(application_id, False)
-    s3man_application.clear()
+    delete_application_files_from_s3(application_id)
 
     update_query = (
         applications_table.update()
@@ -195,8 +184,7 @@ async def application_delete(
 
     await database.execute(delete_query)
 
-    s3man_application = application_manager_factory(application_id, False)
-    s3man_application.clear()
+    delete_application_files_from_s3(application_id)
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -234,8 +222,7 @@ async def application_delete_by_identifier(
 
     await database.execute(delete_query)
 
-    s3man_application = application_manager_factory(id_, False)
-    s3man_application.clear()
+    delete_application_files_from_s3(id_)
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 

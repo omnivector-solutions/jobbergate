@@ -111,8 +111,9 @@ async def test_create_without_application_name(
 
 
 @pytest.mark.asyncio
+@mock.patch("jobbergate_api.apps.applications.routers.delete_application_files_from_s3")
 async def test_delete_application_no_file_uploaded(
-    client, application_data, inject_security_header, mocked_application_manager_empty
+    mocked_application_deleter, client, application_data, inject_security_header
 ):
     """
     Test DELETE /applications/<id> correctly deletes an application.
@@ -128,9 +129,6 @@ async def test_delete_application_no_file_uploaded(
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
-    # The path for this applications is empty at S3 (application not uploaded)
-    assert len(mocked_application_manager_empty) == 0
-
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     response = await client.delete(f"/jobbergate/applications/{inserted_id}")
 
@@ -138,16 +136,13 @@ async def test_delete_application_no_file_uploaded(
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
 
-    # The path for this applications is empty at S3
-    assert len(mocked_application_manager_empty) == 0
+    mocked_application_deleter.assert_called_once_with(inserted_id)
 
 
 @pytest.mark.asyncio
+@mock.patch("jobbergate_api.apps.applications.routers.delete_application_files_from_s3")
 async def test_delete_application_with_uploaded_file(
-    client,
-    application_data,
-    inject_security_header,
-    mocked_application_manager_filled,
+    mocked_application_deleter, client, application_data, inject_security_header
 ):
     """
     Test DELETE /applications/<id> correctly deletes an application and it's file.
@@ -164,9 +159,6 @@ async def test_delete_application_with_uploaded_file(
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
-    # The path for this applications is not empty at S3
-    assert len(mocked_application_manager_filled) >= 1
-
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     response = await client.delete(f"/jobbergate/applications/{inserted_id}")
 
@@ -174,16 +166,13 @@ async def test_delete_application_with_uploaded_file(
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
 
-    # The path for this applications is empty at S3
-    assert len(mocked_application_manager_filled) == 0
+    mocked_application_deleter.assert_called_once_with(inserted_id)
 
 
 @pytest.mark.asyncio
+@mock.patch("jobbergate_api.apps.applications.routers.delete_application_files_from_s3")
 async def test_delete_application_by_identifier(
-    client,
-    fill_application_data,
-    inject_security_header,
-    mocked_application_manager_filled,
+    mocked_application_deleter, client, fill_application_data, inject_security_header
 ):
     """
     Test DELETE /applications?identifier=<identifier> correctly deletes an application and it's file.
@@ -193,7 +182,7 @@ async def test_delete_application_by_identifier(
     exists in the database after the delete request is made, the correct status code is returned and the
     correct boto3 method was called.
     """
-    await database.execute(
+    inserted_id = await database.execute(
         query=applications_table.insert(),
         values=fill_application_data(
             application_owner_email="owner1@org.com",
@@ -203,9 +192,6 @@ async def test_delete_application_by_identifier(
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
-    # The path for this applications is not empty at S3
-    assert len(mocked_application_manager_filled) >= 1
-
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     response = await client.delete("/jobbergate/applications?identifier=test-identifier")
 
@@ -213,8 +199,7 @@ async def test_delete_application_by_identifier(
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 0
 
-    # The path for this applications is empty at S3
-    assert len(mocked_application_manager_filled) == 0
+    mocked_application_deleter.assert_called_once_with(inserted_id)
 
 
 @pytest.mark.asyncio
@@ -851,21 +836,25 @@ async def test_update_application_bad_permission(
 
 
 @pytest.mark.asyncio
-async def test_upload_file__works_correct_file_content(
+@mock.patch("jobbergate_api.apps.applications.routers.write_application_files_to_s3")
+async def test_upload_file__works_with_small_file(
+    mocked_application_writer,
     client,
     inject_security_header,
     fill_application_data,
+    tweak_settings,
     make_dummy_file,
     make_files_param,
-    dummy_application_source_file,
-    dummy_template,
-    dummy_application_config,
-    mocked_application_manager_empty,
 ):
     """
-    Test that the files are uploaded.
+    Test that a file is uploaded.
 
-    This test proves that an application's files are uploaded by making sure that the
+    This test proves that the application's files are uploaded when they are smaller than the threshold.
+    Assert status code 422 because the test files in this case are not valid.
+    """
+    """
+    Test that a file is uploaded.
+    This test proves that an application's file is uploaded by making sure that the
     boto3 put_object method is called once and a 201 status code is returned. It also
     checks to make sure that the application row in the database has
     `application_uploaded` set.
@@ -877,52 +866,26 @@ async def test_upload_file__works_correct_file_content(
     application = await fetch_instance(inserted_id, applications_table, ApplicationResponse)
     assert not application.application_uploaded
 
+    dummy_file = make_dummy_file("dummy.py", size=10_000 - 200)  # Need some buffer for file headers, etc
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    with make_files_param(
-        make_dummy_file("jobbergate.py", content=dummy_application_source_file),
-        make_dummy_file("jobbergate.j2", content=dummy_template),
-        make_dummy_file("jobbergate.yaml", content=dummy_application_config),
-    ) as files_param:
-        response = await client.post(
-            f"/jobbergate/applications/{inserted_id}/upload",
-            files=files_param,
-        )
+    with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
+        with make_files_param(dummy_file) as files_param:
+            response = await client.post(
+                f"/jobbergate/applications/{inserted_id}/upload",
+                files=files_param,
+            )
 
     assert response.status_code == status.HTTP_201_CREATED
-    assert len(mocked_application_manager_empty) == 3
+    mocked_application_writer.assert_called_once()
 
     application = await fetch_instance(inserted_id, applications_table, ApplicationResponse)
     assert application.application_uploaded
 
 
 @pytest.mark.asyncio
-async def test_upload_file__works_with_small_file(
-    client,
-    inject_security_header,
-    tweak_settings,
-    make_dummy_file,
-    make_files_param,
-):
-    """
-    Test that a file is uploaded.
-
-    This test proves that the application's files are uploaded when they are smaller than the threshold.
-    Assert status code 422 because the test files in this case are not valid.
-    """
-    dummy_file = make_dummy_file("dummy.py", size=10_000 - 200)  # Need some buffer for file headers, etc
-    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
-        with make_files_param(dummy_file) as files_param:
-            response = await client.post(
-                "/jobbergate/applications/{inserted_id}/upload",
-                files=files_param,
-            )
-
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-
-@pytest.mark.asyncio
+@mock.patch("jobbergate_api.apps.applications.routers.write_application_files_to_s3")
 async def test_upload_file__fails_with_413_on_large_file(
+    mocked_application_writer,
     client,
     inject_security_header,
     tweak_settings,
@@ -943,11 +906,12 @@ async def test_upload_file__fails_with_413_on_large_file(
 
     assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
 
+    mocked_application_writer.assert_not_called()
+
 
 @pytest.mark.asyncio
-async def test_delete_file(
-    client, inject_security_header, fill_application_data, mocked_application_manager_filled
-):
+@mock.patch("jobbergate_api.apps.applications.routers.delete_application_files_from_s3")
+async def test_delete_file(mocked_application_deleter, client, inject_security_header, fill_application_data):
     """
     Test that a file is deleted.
 
@@ -962,13 +926,12 @@ async def test_delete_file(
         inserted_id, applications_table, ApplicationResponse
     )
     assert application.application_uploaded
-    assert len(mocked_application_manager_filled) >= 1
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     response = await client.delete(f"/jobbergate/applications/{inserted_id}/upload")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    assert len(mocked_application_manager_filled) == 0
+    mocked_application_deleter.assert_called_once_with(inserted_id)
 
     application = await fetch_instance(inserted_id, applications_table, ApplicationResponse)
     assert not application.application_uploaded
