@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Fix API was not sending job-script files to the agent.
 
 3.2.3 -- 2022-08-01
 -------------------
