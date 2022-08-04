@@ -2,6 +2,7 @@
 Tests for the /job-submissions/ endpoint.
 """
 import pathlib
+from unittest import mock
 
 import pytest
 from fastapi import status
@@ -1305,7 +1306,8 @@ async def test_job_submissions_agent_pending__success(
     This test proves that GET /job-submissions/agent/pending returns the correct job_submissions for the agent
     making the request. We show this by asserting that the job_submissions returned in the response are
     only job_submissions with a ``client_id`` that matches the ``client_id`` found in the request's
-    token payload.
+    token payload. We also make sure that the response includes job_script_data_as_string,
+    it is fundamental for the integration with the agent.
     """
     inserted_application_id = await database.execute(
         query=applications_table.insert(),
@@ -1315,6 +1317,8 @@ async def test_job_submissions_agent_pending__success(
         query=job_scripts_table.insert(),
         values=fill_job_script_data(application_id=inserted_application_id),
     )
+    DUMMY_JOB_SCRIPT = "print(__name__)"
+
     await database.execute_many(
         query=job_submissions_table.insert(),
         values=fill_all_job_submission_data(
@@ -1357,12 +1361,18 @@ async def test_job_submissions_agent_pending__success(
         Permissions.JOB_SUBMISSIONS_VIEW,
         client_id="dummy-client",
     )
-    response = await client.get("/jobbergate/job-submissions/agent/pending")
+    with mock.patch(
+        "jobbergate_api.apps.job_submissions.routers.s3man_jobscripts",
+        {inserted_job_script_id: DUMMY_JOB_SCRIPT},
+    ):
+        response = await client.get("/jobbergate/job-submissions/agent/pending")
+
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
     assert sorted(d["job_submission_name"] for d in data) == ["sub1", "sub4"]
     assert sorted(d["job_submission_owner_email"] for d in data) == ["email1@dummy.com", "email4@dummy.com"]
+    assert [d["job_script_data_as_string"] for d in data] == [DUMMY_JOB_SCRIPT] * 2
 
 
 @pytest.mark.asyncio

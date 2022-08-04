@@ -26,6 +26,7 @@ from jobbergate_api.apps.job_submissions.schemas import (
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.email_notification import notify_submission_rejected
 from jobbergate_api.pagination import Pagination, ok_response, package_response
+from jobbergate_api.s3_manager import s3man_jobscripts
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,
@@ -299,6 +300,7 @@ async def job_submissions_agent_pending(
                 job_submissions_table.c.id,
                 job_submissions_table.c.job_submission_name,
                 job_submissions_table.c.job_submission_owner_email,
+                job_submissions_table.c.job_script_id,
                 job_scripts_table.c.job_script_name,
                 applications_table.c.application_name,
             ]
@@ -313,7 +315,15 @@ async def job_submissions_agent_pending(
     )
     logger.trace(f"query = {render_sql(query)}")
     rows = await database.fetch_all(query)
-    return rows
+
+    response = [
+        PendingJobSubmission(
+            **row,
+            job_script_data_as_string=s3man_jobscripts[row.job_script_id],
+        )
+        for row in rows
+    ]
+    return response
 
 
 @router.put(
