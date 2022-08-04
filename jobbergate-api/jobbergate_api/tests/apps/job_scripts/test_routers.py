@@ -123,7 +123,7 @@ async def test_create_job_script(
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     with mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_jobscripts", {}) as s3:
         with mock.patch(
-            "jobbergate_api.apps.job_scripts.routers.s3man_applications",
+            "jobbergate_api.apps.job_scripts.routers.s3man_applications_source_files",
             {inserted_application_id: s3_object},
         ):
             with time_frame() as window:
