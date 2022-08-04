@@ -316,13 +316,22 @@ async def job_submissions_agent_pending(
     logger.trace(f"query = {render_sql(query)}")
     rows = await database.fetch_all(query)
 
-    response = [
-        PendingJobSubmission(
-            **row,
-            job_script_data_as_string=s3man_jobscripts[row.job_script_id],
+    try:
+        response = [
+            PendingJobSubmission(
+                **row,
+                job_script_data_as_string=s3man_jobscripts[str(row.get("job_script_id"))],
+            )
+            for row in rows
+        ]
+    except KeyError:
+        message = "JobScript file not found."
+        logger.warning(message)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=message,
         )
-        for row in rows
-    ]
+
     return response
 
 
