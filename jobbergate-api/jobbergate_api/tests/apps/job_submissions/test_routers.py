@@ -1363,7 +1363,7 @@ async def test_job_submissions_agent_pending__success(
     )
     with mock.patch(
         "jobbergate_api.apps.job_submissions.routers.s3man_jobscripts",
-        {inserted_job_script_id: DUMMY_JOB_SCRIPT},
+        {str(inserted_job_script_id): DUMMY_JOB_SCRIPT},
     ):
         response = await client.get("/jobbergate/job-submissions/agent/pending")
 
