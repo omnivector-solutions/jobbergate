@@ -1364,15 +1364,93 @@ async def test_job_submissions_agent_pending__success(
     with mock.patch(
         "jobbergate_api.apps.job_submissions.routers.s3man_jobscripts",
         {str(inserted_job_script_id): DUMMY_JOB_SCRIPT},
-    ):
+    ) as mocked_s3:
         response = await client.get("/jobbergate/job-submissions/agent/pending")
 
     assert response.status_code == status.HTTP_200_OK
+    assert str(inserted_job_script_id) in mocked_s3
 
     data = response.json()
     assert sorted(d["job_submission_name"] for d in data) == ["sub1", "sub4"]
     assert sorted(d["job_submission_owner_email"] for d in data) == ["email1@dummy.com", "email4@dummy.com"]
     assert [d["job_script_data_as_string"] for d in data] == [DUMMY_JOB_SCRIPT] * 2
+
+
+@pytest.mark.asyncio
+async def test_job_submissions_agent_pending__missing_job_script_file(
+    client,
+    fill_application_data,
+    fill_job_script_data,
+    fill_all_job_submission_data,
+    inject_security_header,
+):
+    """
+    Test GET /job-submissions/agent/pending returns a 404.
+
+    This test proves that GET /job-submissions/agent/pending returns a 404 status
+    if any of the job-script files is not found. It also makes sure that the missing
+    id(s) are included in the response to support debugging.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+
+    await database.execute_many(
+        query=job_submissions_table.insert(),
+        values=fill_all_job_submission_data(
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub1",
+                job_submission_owner_email="email1@dummy.com",
+                status=JobSubmissionStatus.CREATED,
+                client_id="dummy-client",
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub2",
+                job_submission_owner_email="email2@dummy.com",
+                status=JobSubmissionStatus.COMPLETED,
+                client_id="dummy-client",
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub3",
+                job_submission_owner_email="email3@dummy.com",
+                status=JobSubmissionStatus.CREATED,
+                client_id="silly-client",
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub4",
+                job_submission_owner_email="email4@dummy.com",
+                status=JobSubmissionStatus.CREATED,
+                client_id="dummy-client",
+            ),
+        ),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 4
+
+    inject_security_header(
+        "who@cares.com",
+        Permissions.JOB_SUBMISSIONS_VIEW,
+        client_id="dummy-client",
+    )
+    with mock.patch(
+        "jobbergate_api.apps.job_submissions.routers.s3man_jobscripts",
+        {},
+    ) as mocked_s3:
+        response = await client.get("/jobbergate/job-submissions/agent/pending")
+
+    assert str(inserted_job_script_id) not in mocked_s3
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert f"JobScript file(s) not found, the missing ids are: {inserted_job_script_id}" in response.text
 
 
 @pytest.mark.asyncio

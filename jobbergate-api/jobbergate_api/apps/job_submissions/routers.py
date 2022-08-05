@@ -325,8 +325,10 @@ async def job_submissions_agent_pending(
             for row in rows
         ]
     except KeyError:
-        message = "JobScript file not found."
-        logger.warning(message)
+        list_ids = (str(row.get("job_script_id")) for row in rows)
+        missing_ids = {id for id in list_ids if id not in s3man_jobscripts}
+        message = f"JobScript file(s) not found, the missing ids are: {', '.join(missing_ids)}"
+        logger.error(message)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=message,
