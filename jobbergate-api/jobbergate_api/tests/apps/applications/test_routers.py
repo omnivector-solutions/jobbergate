@@ -469,7 +469,7 @@ async def test_get_applications__with_user_param(
 
     data = response.json()
     results = data.get("results")
-    assert [d["application_identifier"] for d in results] == ["app1", "app2", "app3"]
+    assert sorted(d["application_identifier"] for d in results) == ["app1", "app2", "app3"]
 
     pagination = data.get("pagination")
     assert pagination == dict(
@@ -483,7 +483,7 @@ async def test_get_applications__with_user_param(
 
     data = response.json()
     results = data.get("results")
-    assert [d["application_identifier"] for d in results] == ["app1", "app2"]
+    assert sorted(d["application_identifier"] for d in results) == ["app1", "app2"]
 
     pagination = data.get("pagination")
     assert pagination == dict(

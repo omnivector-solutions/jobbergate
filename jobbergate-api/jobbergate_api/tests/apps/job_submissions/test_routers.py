@@ -1361,8 +1361,8 @@ async def test_job_submissions_agent_pending__success(
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
-    assert sorted([d["job_submission_name"] for d in data]) == ["sub1", "sub4"]
-    assert sorted([d["job_submission_owner_email"] for d in data]) == ["email1@dummy.com", "email4@dummy.com"]
+    assert sorted(d["job_submission_name"] for d in data) == ["sub1", "sub4"]
+    assert sorted(d["job_submission_owner_email"] for d in data) == ["email1@dummy.com", "email4@dummy.com"]
 
 
 @pytest.mark.asyncio
