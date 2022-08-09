@@ -1307,7 +1307,7 @@ async def test_job_submissions_agent_pending__success(
     making the request. We show this by asserting that the job_submissions returned in the response are
     only job_submissions with a ``client_id`` that matches the ``client_id`` found in the request's
     token payload. We also make sure that the response includes job_script_data_as_string,
-    it is fundamental for the integration with the agent.
+    as it is fundamental for the integration with the agent.
     """
     inserted_application_id = await database.execute(
         query=applications_table.insert(),
