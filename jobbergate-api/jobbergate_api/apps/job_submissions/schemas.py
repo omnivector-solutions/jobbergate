@@ -126,6 +126,7 @@ class PendingJobSubmission(BaseModel, extra=Extra.ignore):
     job_submission_owner_email: str
     execution_directory: Optional[Path]
     job_script_name: str
+    job_script_data_as_string: str
     application_name: str
 
 
