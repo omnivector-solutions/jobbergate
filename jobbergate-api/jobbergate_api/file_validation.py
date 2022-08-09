@@ -64,8 +64,13 @@ def perform_all_checks_on_uploaded_files(file_list: List[UploadFile]) -> None:
     :param List[UploadFile] file_list: Upload file list.
     """
     logger.debug("Preparing to perform all checks on the uploaded files")
-    for check in check_uploaded_files_dispatch:
-        check(file_list)
+    with UploadedFilesValidationError.handle_errors(
+        "The uploaded files are invalid",
+        do_except=log_error_and_raise_http_error,
+        re_raise=False,
+    ):
+        for check in check_uploaded_files_dispatch:
+            check(file_list)
 
 
 def register_check_uploaded_files(checker: CheckUploadedFilesEquation) -> CheckUploadedFilesEquation:
@@ -96,20 +101,13 @@ def check_uploaded_files_extensions(file_list: List[UploadFile]) -> None:
     """
     extension_counter = Counter(get_suffix(f) for f in file_list)
     logger.debug(f"Checking uploaded files extensions: {extension_counter=}")
-    with UploadedFilesValidationError.handle_errors(
-        (
-            "Error while validating the extension of the uploaded files."
-            " For the application files, the specification is:"
-            " One application source file (.py);"
-            " One (optional) application config file (.yaml);"
-            " One or more template files (.j2 and/or .jinja2)."
-        ),
-        do_except=log_error_and_raise_http_error,
-        re_raise=False,
-    ):
-        assert extension_counter[".py"] == 1
-        assert extension_counter[".yaml"] in {0, 1}
-        assert extension_counter[".j2"] + extension_counter[".jinja2"] >= 1
+    with UploadedFilesValidationError.check_expressions("Invalid file extensions") as check:
+        check(extension_counter[".py"] == 1, "one application source file (.py)")
+        check(extension_counter[".yaml"] in {0, 1}, "one (optional) application config file (.yaml)")
+        check(
+            extension_counter[".j2"] + extension_counter[".jinja2"] >= 1,
+            "one or more template files (.j2 and/or .jinja2)",
+        )
 
 
 @register_check_uploaded_files
@@ -123,18 +121,10 @@ def check_uploaded_files_content_type(file_list: List[UploadFile]) -> None:
     """
     logger.debug("Checking uploaded files content types")
     expected = "text/plain"
-    with UploadedFilesValidationError.handle_errors(
-        (
-            "Error while validating the content type of the uploaded files."
-            f" The content of the files {', '.join(syntax_validation_dispatch.keys())}"
-            f" is expected to be {expected}."
-        ),
-        do_except=log_error_and_raise_http_error,
-        re_raise=False,
-    ):
-        assert all(
-            f.content_type == expected for f in file_list if get_suffix(f) in syntax_validation_dispatch
-        )
+    UploadedFilesValidationError.require_condition(
+        all(f.content_type == expected for f in file_list if get_suffix(f) in syntax_validation_dispatch),
+        f"The content of the files {', '.join(syntax_validation_dispatch.keys())} is expected to be {expected}",
+    )
 
 
 @register_check_uploaded_files
@@ -155,12 +145,11 @@ def check_uploaded_files_syntax(file_list: List[UploadFile]) -> None:
         if not syntax_validation_dispatch[suffix](f.file.read()):
             list_of_problems.append(f.filename)
         f.file.seek(0)
-    with UploadedFilesValidationError.handle_errors(
+
+    UploadedFilesValidationError.require_condition(
+        len(list_of_problems) == 0,
         f"Invalid syntax on the uploaded file(s): {', '.join(list_of_problems)}",
-        do_except=log_error_and_raise_http_error,
-        re_raise=False,
-    ):
-        assert len(list_of_problems) == 0
+    )
 
 
 SyntaxValidationEquation = Callable[[Union[str, bytes]], bool]
