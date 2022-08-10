@@ -1,7 +1,7 @@
 """
 Router for the Application resource.
 """
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Query
@@ -100,7 +100,7 @@ async def applications_upload(
 
     write_application_files_to_s3(application_id, upload_files, remove_previous_files=True)
 
-    update_dict = dict(application_uploaded=True)
+    update_dict: Dict[str, Any] = dict(application_uploaded=True)
 
     for file in upload_files:
         if file.filename.endswith(".yaml"):
