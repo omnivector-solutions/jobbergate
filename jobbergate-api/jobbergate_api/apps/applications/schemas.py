@@ -99,7 +99,11 @@ class JobbergateConfig(BaseModel):
     supporting_files: Optional[List[str]]
     supporting_files_output_name: Optional[Dict[str, List[str]]]
     template_files: Optional[List[str]]
+    job_script_name: Optional[str]
     output_directory: str = "."
+
+    class Config:
+        extra = "allow"
 
 
 class ApplicationConfig(BaseModel):
@@ -107,7 +111,7 @@ class ApplicationConfig(BaseModel):
     Model for application configuration, used to parse the yaml file.
     """
 
-    application_config: Optional[Dict[Any, Any]]
+    application_config: Dict[str, Any]
     jobbergate_config: JobbergateConfig
 
 
@@ -150,6 +154,7 @@ class ApplicationResponse(BaseModel):
     application_identifier: Optional[str]
     application_description: Optional[str]
     application_owner_email: str
+    application_config: Optional[str]
     application_uploaded: bool
 
     class Config:

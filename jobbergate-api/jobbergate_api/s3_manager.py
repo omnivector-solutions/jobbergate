@@ -3,8 +3,10 @@ Provide a convenience class for managing calls to S3.
 """
 import tarfile
 import typing
+from dataclasses import dataclass
 from functools import lru_cache
 from io import BytesIO
+from pathlib import PurePath
 
 from botocore.exceptions import BotoCoreError
 from fastapi import HTTPException, UploadFile, status
@@ -86,11 +88,34 @@ def write_application_files_to_s3(
         if file.filename.endswith(".py"):
             s3man_applications_source_files[application_id] = file.file
         elif file.filename.endswith((".j2", ".jinja2")):
-            templates_manager[file.filename] = file.file
+            filename = PurePath(file.filename).name
+            templates_manager[filename] = file.file
 
 
-def get_application_files_from_s3(application_id: typing.Union[int, str]) -> None:
-    pass
+@dataclass
+class ApplicationFiles:
+    """
+    Dataclass containing application files.
+    """
+
+    templates: typing.Dict[str, str]
+    source_file: str
+
+
+def get_application_files_from_s3(application_id: typing.Union[int, str]) -> ApplicationFiles:
+    """
+    Read the application files from S3.
+
+    :param typing.Union[int, str] application_id: Application identification number
+    :return ApplicationFiles: Application files
+    """
+    logger.debug(f"Getting application files from S3: {application_id=}")
+
+    templates_manager = application_template_manager_factory(application_id, True)
+
+    return ApplicationFiles(
+        templates=dict(templates_manager), source_file=s3man_applications_source_files.get(application_id, "")
+    )
 
 
 def delete_application_files_from_s3(application_id: typing.Union[int, str]) -> None:

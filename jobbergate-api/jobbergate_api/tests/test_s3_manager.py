@@ -4,15 +4,16 @@ Test s3 manager.
 
 import contextlib
 from unittest.mock import patch
-from fastapi import UploadFile
-from file_storehouse import FileManager, FileManagerReadOnly
+
 import pytest
-from fastapi.exceptions import HTTPException
+from fastapi import UploadFile
+from file_storehouse import FileManager, FileManagerReadOnly  # type: ignore
 
 from jobbergate_api.s3_manager import (
+    ApplicationFiles,
     application_template_manager_factory,
     delete_application_files_from_s3,
-    get_s3_object_as_tarfile,
+    get_application_files_from_s3,
     s3man_applications_source_files,
     s3man_jobscripts,
     write_application_files_to_s3,
@@ -147,6 +148,32 @@ def test_write_application_files_to_s3(
     assert mocked_applications_source_file_manager.keys() == expected_source_files
 
 
+def test_get_application_files_from_s3(
+    mocked_application_template_manager,
+    mocked_applications_source_file_manager,
+    dummy_application_source_file,
+    dummy_template,
+):
+    """
+    Test if the application files are loaded from S3 as expected.
+
+    To do so, dummy test files are added to the file managers and than loaded.
+    """
+    application_id = 1
+
+    mocked_applications_source_file_manager[application_id] = dummy_application_source_file
+    mocked_application_template_manager["template-1.j2"] = dummy_template
+    mocked_application_template_manager["template-2.jinja2"] = dummy_template
+
+    application_files = get_application_files_from_s3(application_id)
+
+    assert isinstance(application_files, ApplicationFiles)
+
+    assert application_files.source_file == dummy_application_source_file
+
+    assert application_files.templates == mocked_application_template_manager
+
+
 def test_delete_application_files_from_s3(
     mocked_application_template_manager,
     mocked_applications_source_file_manager,
@@ -167,36 +194,3 @@ def test_delete_application_files_from_s3(
 
     assert mocked_applications_source_file_manager.keys() == {0, 2}
     assert len(mocked_application_template_manager) == 0
-
-
-@pytest.fixture
-def dummy_s3man(s3_object):
-    """
-    Provide a dummy S3 manager used for tests containing only one key and object.
-    """
-    return {1: s3_object}
-
-
-@pytest.mark.asyncio
-async def test_get_s3_object_as_tarfile(dummy_s3man):
-    """
-    Test getting a file from S3 with get_s3_object function.
-    """
-    s3_file = get_s3_object_as_tarfile(dummy_s3man, 1)
-
-    assert s3_file is not None
-
-
-@pytest.mark.asyncio
-async def test_get_s3_object_not_found(dummy_s3man):
-    """
-    Test exception at get_s3_object function when file does not exist in S3.
-    """
-    s3_file = None
-
-    with pytest.raises(HTTPException) as exc:
-        s3_file = get_s3_object_as_tarfile(dummy_s3man, 9999)
-
-    assert "Application with app_id=9999 not found in S3" in str(exc)
-
-    assert s3_file is None

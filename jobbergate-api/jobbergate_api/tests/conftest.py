@@ -187,7 +187,7 @@ def dummy_application_source_file() -> str:
                 ))
                 return questions
         """
-    )
+    ).strip()
 
 
 @pytest.fixture
@@ -207,7 +207,7 @@ def dummy_template() -> str:
         echo $SLURM_TASKS_PER_NODE
         echo $SLURM_SUBMIT_DIR
         """
-    )
+    ).strip()
 
 
 @pytest.fixture
@@ -233,7 +233,7 @@ def dummy_application_config() -> str:
             template_files:
                 - templates/test_job_script.sh
         """
-    )
+    ).strip()
 
 
 @pytest.fixture
