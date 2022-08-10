@@ -3,7 +3,7 @@ Defines the schema for the resource Application.
 """
 from datetime import datetime
 from textwrap import dedent
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -88,6 +88,27 @@ application_meta_mapper = MetaMapper(
         example=True,
     ),
 )
+
+
+class JobbergateConfig(BaseModel):
+    """
+    Model for Jobbergate configuration (subsection at the yaml file).
+    """
+
+    default_template: str
+    supporting_files: Optional[List[str]]
+    supporting_files_output_name: Optional[Dict[str, List[str]]]
+    template_files: Optional[List[str]]
+    output_directory: str = "."
+
+
+class ApplicationConfig(BaseModel):
+    """
+    Model for application configuration, used to parse the yaml file.
+    """
+
+    application_config: Optional[Dict[Any, Any]]
+    jobbergate_config: JobbergateConfig
 
 
 class ApplicationCreateRequest(BaseModel):

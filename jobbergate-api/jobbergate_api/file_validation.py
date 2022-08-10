@@ -14,6 +14,8 @@ from jinja2 import Template, TemplateSyntaxError
 from loguru import logger
 from yaml import YAMLError, safe_load
 
+from jobbergate_api.apps.applications.schemas import ApplicationConfig
+
 
 class UploadedFilesValidationError(Buzz):
     """Raise exception when facing any validation error on the uploaded files."""
@@ -102,8 +104,14 @@ def check_uploaded_files_extensions(file_list: List[UploadFile]) -> None:
     extension_counter = Counter(get_suffix(f) for f in file_list)
     logger.debug(f"Checking uploaded files extensions: {extension_counter=}")
     with UploadedFilesValidationError.check_expressions("Invalid file extensions") as check:
-        check(extension_counter[".py"] == 1, "one application source file (.py)")
-        check(extension_counter[".yaml"] in {0, 1}, "one (optional) application config file (.yaml)")
+        check(
+            extension_counter[".py"] == 1,
+            "one application source file (.py)",
+        )
+        check(
+            extension_counter[".yaml"] in {0, 1},
+            "one (optional) application config file (.yaml)",
+        )
         check(
             extension_counter[".j2"] + extension_counter[".jinja2"] >= 1,
             "one or more template files (.j2 and/or .jinja2)",
@@ -121,9 +129,10 @@ def check_uploaded_files_content_type(file_list: List[UploadFile]) -> None:
     """
     logger.debug("Checking uploaded files content types")
     expected = "text/plain"
+    extension_list = ", ".join(syntax_validation_dispatch.keys())
     UploadedFilesValidationError.require_condition(
         all(f.content_type == expected for f in file_list if get_suffix(f) in syntax_validation_dispatch),
-        f"The content of the files {', '.join(syntax_validation_dispatch.keys())} is expected to be {expected}",
+        f"The content of the files {extension_list} is expected to be {expected}",
     )
 
 
@@ -150,6 +159,29 @@ def check_uploaded_files_syntax(file_list: List[UploadFile]) -> None:
         len(list_of_problems) == 0,
         f"Invalid syntax on the uploaded file(s): {', '.join(list_of_problems)}",
     )
+
+
+@register_check_uploaded_files
+def check_uploaded_files_yaml_is_parsable(file_list: List[UploadFile]) -> None:
+    """
+    Check the list of uploaded files to verify if the yaml file agrees with the expected schema.
+
+    Raise UploadedFilesValidationError if the business roles are not met.
+
+    :param List[UploadFile] file_list: Upload file list.
+    """
+    logger.debug("Checking uploaded files, parsing yaml file")
+    with UploadedFilesValidationError.handle_errors(
+        (
+            "Not possible to get the configuration from the yaml file."
+            " Please, verify is all the required fields were provided."
+        )
+    ):
+        for file in file_list:
+            if file.filename.endswith(".yaml"):
+                config = safe_load(file.file.read())
+                file.file.seek(0)
+                ApplicationConfig(**config)
 
 
 SyntaxValidationEquation = Callable[[Union[str, bytes]], bool]
