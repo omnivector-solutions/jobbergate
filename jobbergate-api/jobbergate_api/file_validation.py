@@ -146,19 +146,14 @@ def check_uploaded_files_syntax(file_list: List[UploadFile]) -> None:
     :param List[UploadFile] file_list: Upload file list.
     """
     logger.debug("Checking uploaded files, validating source code")
-    list_of_problems = []
-    for f in file_list:
-        suffix = get_suffix(f)
-        if suffix not in syntax_validation_dispatch:
-            continue
-        if not syntax_validation_dispatch[suffix](f.file.read()):
-            list_of_problems.append(f.filename)
-        f.file.seek(0)
 
-    UploadedFilesValidationError.require_condition(
-        len(list_of_problems) == 0,
-        f"Invalid syntax on the uploaded file(s): {', '.join(list_of_problems)}",
-    )
+    with UploadedFilesValidationError.check_expressions("Invalid syntax on uploaded file(s)") as check:
+        for f in file_list:
+            suffix = get_suffix(f)
+            if suffix not in syntax_validation_dispatch:
+                continue
+            check(syntax_validation_dispatch[suffix](f.file.read()), f.filename)
+            f.file.seek(0)
 
 
 @register_check_uploaded_files
