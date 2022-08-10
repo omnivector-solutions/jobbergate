@@ -11,7 +11,6 @@ import tarfile
 import typing
 from io import BytesIO
 from textwrap import dedent
-from unittest import mock
 
 import pytest
 import sqlalchemy
@@ -219,20 +218,20 @@ def dummy_application_config() -> str:
     return dedent(
         """
         application_config:
-        job_name: rats
-        partitions:
-        - debug
-        - partition1
+            job_name: rats
+            partitions:
+                - debug
+                - partition1
         jobbergate_config:
-        default_template: test_job_script.sh
-        output_directory: .
-        supporting_files:
-        - test_job_script.sh
-        supporting_files_output_name:
-            test_job_script.sh:
-            - support_file_b.py
-        template_files:
-        - templates/test_job_script.sh
+            default_template: test_job_script.sh
+            output_directory: .
+            supporting_files:
+                - test_job_script.sh
+            supporting_files_output_name:
+                test_job_script.sh:
+                    - support_file_b.py
+            template_files:
+                - templates/test_job_script.sh
         """
     )
 

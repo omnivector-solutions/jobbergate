@@ -100,10 +100,16 @@ async def applications_upload(
 
     write_application_files_to_s3(application_id, upload_files, remove_previous_files=True)
 
+    update_dict = dict(application_uploaded=True)
+
+    for file in upload_files:
+        if file.filename.endswith(".yaml"):
+            update_dict["application_config"] = str(file.file.read())
+            file.file.seek(0)
+            break
+
     update_query = (
-        applications_table.update()
-        .where(applications_table.c.id == application_id)
-        .values(dict(application_uploaded=True))
+        applications_table.update().where(applications_table.c.id == application_id).values(update_dict)
     )
 
     logger.trace(f"update_query = {render_sql(update_query)}")
@@ -143,7 +149,7 @@ async def applications_delete_upload(
     update_query = (
         applications_table.update()
         .where(applications_table.c.id == application_id)
-        .values(dict(application_uploaded=False))
+        .values(dict(application_uploaded=False, application_config=None))
     )
 
     logger.trace(f"update_query = {render_sql(update_query)}")

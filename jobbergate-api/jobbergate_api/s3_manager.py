@@ -85,9 +85,7 @@ def write_application_files_to_s3(
     for file in upload_files:
         if file.filename.endswith(".py"):
             s3man_applications_source_files[application_id] = file.file
-        elif file.filename.endswith(".yaml"):
-            pass
-        else:
+        elif file.filename.endswith((".j2", ".jinja2")):
             templates_manager[file.filename] = file.file
 
 

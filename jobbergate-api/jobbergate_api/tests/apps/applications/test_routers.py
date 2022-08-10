@@ -840,6 +840,7 @@ async def test_upload_file__works_with_small_file(
     fill_application_data,
     tweak_settings,
     make_dummy_file,
+    dummy_application_config,
     make_files_param,
 ):
     """
@@ -862,9 +863,9 @@ async def test_upload_file__works_with_small_file(
     application = await fetch_instance(inserted_id, applications_table, ApplicationResponse)
     assert not application.application_uploaded
 
-    dummy_file = make_dummy_file("dummy.py", size=10_000 - 200)  # Need some buffer for file headers, etc
+    dummy_file = make_dummy_file("jobbergate.yaml", content=dummy_application_config)
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
+    with tweak_settings(MAX_UPLOAD_FILE_SIZE=600):
         with make_files_param(dummy_file) as files_param:
             response = await client.post(
                 f"/jobbergate/applications/{inserted_id}/upload",
@@ -891,9 +892,9 @@ async def test_upload_file__fails_with_413_on_large_file(
     """
     Test that upload fails when the files are too large.
     """
-    dummy_file = make_dummy_file("dummy.py", size=10_000 + 200)
+    dummy_file = make_dummy_file("dummy.py", size=600 + 200)
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    with tweak_settings(MAX_UPLOAD_FILE_SIZE=10_000):
+    with tweak_settings(MAX_UPLOAD_FILE_SIZE=600):
         with make_files_param(dummy_file) as files_param:
             response = await client.post(
                 "/jobbergate/applications/1/upload",

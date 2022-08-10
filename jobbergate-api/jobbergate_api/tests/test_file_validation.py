@@ -81,7 +81,7 @@ def test_check_uploaded_files_dispatch__length():
     """
     Test if the number of element is the expected.
     """
-    assert len(check_uploaded_files_dispatch) == 3
+    assert len(check_uploaded_files_dispatch) == 4
 
 
 def test_syntax_validation_dispatch__length():
