@@ -72,23 +72,20 @@ async def applications_create(
 @router.post(
     "/applications/{application_id}/upload",
     status_code=status.HTTP_201_CREATED,
-    description=(
-        "Endpoint for uploading application files. "
-        "The file should be a gzipped tar-file (e.g. `jobbergate.tar.gz`)."
-    ),
+    description="Endpoint for uploading application files.",
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def applications_upload(
     application_id: int = Query(..., description="id of the application for which to upload a file"),
     upload_files: List[UploadFile] = File(
-        ..., media_type="text/plain", description="The gzipped application tar-file to be uploaded"
+        ..., media_type="text/plain", description="The application files to be uploaded"
     ),
     content_length: int = Header(...),
 ):
     """
     Upload application files using an authenticated user token.
     """
-    logger.debug(f"Preparing to upload tarball for {application_id=}")
+    logger.debug(f"Preparing to receive upload files for {application_id=}")
 
     if content_length > settings.MAX_UPLOAD_FILE_SIZE:
         message = f"Uploaded files cannot exceed {settings.MAX_UPLOAD_FILE_SIZE} bytes."
@@ -119,7 +116,7 @@ async def applications_upload(
 @router.delete(
     "/applications/{application_id}/upload",
     status_code=status.HTTP_204_NO_CONTENT,
-    description="Endpoint for deleting application tarballs",
+    description="Endpoint for deleting application files",
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def applications_delete_upload(

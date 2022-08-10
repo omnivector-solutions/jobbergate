@@ -1,15 +1,12 @@
 """
 Provide a convenience class for managing calls to S3.
 """
-import tarfile
 import typing
 from dataclasses import dataclass
 from functools import lru_cache
-from io import BytesIO
 from pathlib import PurePath
 
-from botocore.exceptions import BotoCoreError
-from fastapi import HTTPException, UploadFile, status
+from fastapi import UploadFile
 from file_storehouse import FileManager, FileManagerReadOnly, client  # type: ignore
 from file_storehouse.engine import EngineS3  # type: ignore
 from file_storehouse.key_mapping import KeyMappingNumeratedFolder, KeyMappingRaw  # type: ignore
@@ -18,25 +15,6 @@ from loguru import logger
 
 from jobbergate_api.config import settings
 from jobbergate_api.file_validation import perform_all_checks_on_uploaded_files
-
-
-def get_s3_object_as_tarfile(s3man: FileManagerReadOnly, app_id: typing.Union[int, str]):
-    """
-    Return the tarfile of a S3 object.
-    """
-    logger.debug(f"Getting s3 object as tarfile {app_id=}")
-    try:
-        s3_application_obj = s3man[app_id]
-    except (BotoCoreError, KeyError):
-        message = f"Application with {app_id=} not found in S3"
-        logger.error(message)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
-        )
-
-    s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj["Body"].read()))
-    return s3_application_tar
 
 
 @lru_cache
