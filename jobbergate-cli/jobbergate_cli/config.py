@@ -7,6 +7,7 @@ from pathlib import Path
 from sys import exit
 from typing import Optional
 
+from loguru import logger
 from pydantic import AnyHttpUrl, BaseSettings, Field, ValidationError, root_validator
 
 from jobbergate_cli import constants
@@ -102,7 +103,8 @@ def build_settings(*args, **kwargs):
     """
     try:
         return Settings(*args, **kwargs)
-    except ValidationError:
+    except ValidationError as error:
+        logger.error(f"Configuration error\n{error}")
         terminal_message(
             conjoin(
                 "A configuration error was detected.",

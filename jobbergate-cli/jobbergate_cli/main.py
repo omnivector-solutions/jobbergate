@@ -9,12 +9,16 @@ import importlib_metadata
 import jose
 import typer
 
-from jobbergate_cli.auth import clear_token_cache, fetch_auth_tokens, init_persona, load_tokens_from_cache
+from armada_sdk.core.schemas import ArmadaContext, Persona
+from armada_sdk.core.exceptions import ArmadaSdkError
+from armada_sdk.auth.schemas import TokenSet
+from armada_sdk.auth.tools import clear_token_cache
+from armada_sdk.auth.cli import init_persona, fetch_auth_tokens, load_tokens_from_cache
+
 from jobbergate_cli.config import settings
 from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.logging import init_logs, init_sentry
 from jobbergate_cli.render import render_json, terminal_message
-from jobbergate_cli.schemas import JobbergateContext, Persona, TokenSet
 from jobbergate_cli.text_tools import conjoin, copy_to_clipboard
 
 
@@ -73,10 +77,10 @@ def main(
         base_url=f"https://{settings.OIDC_DOMAIN}",
         headers={"content-type": "application/x-www-form-urlencoded"},
     )
-    context = JobbergateContext(persona=None, client=client)
+    context = ArmadaContext(client=client)
 
     if ctx.invoked_subcommand not in ("login", "logout"):
-        persona = init_persona(context)
+        persona = ArmadaSdkError.enforce_defined(init_persona(context))
         context.client = httpx.Client(
             base_url=settings.ARMADA_API_BASE,
             headers=dict(Authorization=f"Bearer {persona.token_set.access_token}"),
@@ -94,8 +98,8 @@ def login(ctx: typer.Context):
     """
     Log in to the jobbergate-cli by storing the supplied token argument in the cache.
     """
-    token_set: TokenSet = fetch_auth_tokens(ctx.obj)
-    persona: Persona = init_persona(ctx.obj, token_set)
+    token_set: TokenSet = fetch_auth_tokens(ctx.obj, printer=terminal_message)
+    persona: Persona = ArmadaSdkError.enforce_defined(init_persona(ctx.obj, token_set))
     terminal_message(
         f"User was logged in with email '{persona.identity_data.email}'",
         subject="Logged in!",
