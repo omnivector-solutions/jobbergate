@@ -6,12 +6,10 @@ import pytest
 from fastapi import UploadFile
 
 from jobbergate_api.file_validation import (
-    check_uploaded_files_dispatch,
     get_suffix,
     is_valid_jinja2_template,
     is_valid_python_file,
     is_valid_yaml_file,
-    syntax_validation_dispatch,
 )
 
 
@@ -75,17 +73,3 @@ def test_is_valid_jinja2_template(is_valid, template):
     Test if a given python source code is correctly checked as valid or not.
     """
     assert is_valid_jinja2_template(template) is is_valid
-
-
-def test_check_uploaded_files_dispatch__length():
-    """
-    Test if the number of element is the expected.
-    """
-    assert len(check_uploaded_files_dispatch) == 4
-
-
-def test_syntax_validation_dispatch__length():
-    """
-    Test if the number of elements is the expected.
-    """
-    assert len(syntax_validation_dispatch) == 4

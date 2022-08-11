@@ -3,7 +3,7 @@ Router for the JobScript resource.
 """
 import json
 from pathlib import PurePath
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -77,9 +77,7 @@ def render_template(template_files, param_dict_flat):
     return job_script_data_as_string
 
 
-def build_job_script_data_as_string(
-    application_id: Union[int, str], application_config: ApplicationConfig
-) -> str:
+def build_job_script_data_as_string(application_id: int, application_config: ApplicationConfig) -> str:
     """
     Return the job_script_data_as_string from the S3 application and the templates.
     """
@@ -90,7 +88,7 @@ def build_job_script_data_as_string(
     default_template_path = PurePath(application_config.jobbergate_config.default_template)
     default_template_name = default_template_path.name
 
-    with UploadedFilesValidationError.check_expressions("Application files not found") as check:
+    with UploadedFilesValidationError.check_expressions("One or more application files are missing") as check:
         check(
             application_files.source_file,
             f"Application file was not found for {application_id=}",

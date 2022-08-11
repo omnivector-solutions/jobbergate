@@ -2,17 +2,19 @@
 Validation methods for the uploaded files.
 """
 
-from ast import parse
+from ast import parse as ast_parse
 from collections import Counter
 from functools import wraps
 from pathlib import PurePath
+from textwrap import dedent
+from traceback import format_tb
 from typing import Callable, Dict, List, Union
 
 from buzz import Buzz, DoExceptParams, require_condition
 from fastapi import HTTPException, UploadFile, status
-from jinja2 import Template, TemplateSyntaxError
+from jinja2 import Template
 from loguru import logger
-from yaml import YAMLError, safe_load
+from yaml import safe_load as yaml_safe_load
 
 from jobbergate_api.apps.applications.schemas import ApplicationConfig
 
@@ -31,7 +33,26 @@ def log_error_and_raise_http_error(params: DoExceptParams):
     :param DoExceptParams params: Params from handle_errors.
     :raises HTTPException: Code 422, unprocessable entity.
     """
-    logger.error(params.final_message)
+    message_template = dedent(
+        """
+        {final_message}
+        Error:
+        ______
+        {err}
+        Traceback:
+        ----------
+        {trace}
+        """
+    )
+
+    message = message_template.format(
+        final_message=params.final_message,
+        err=str(params.err),
+        trace="\n".join(format_tb(params.trace)),
+    )
+
+    logger.error(message)
+
     raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=params.final_message)
 
 
@@ -56,7 +77,7 @@ check_uploaded_files_dispatch: List[CheckUploadedFilesEquation] = []
 """List the function used to check the uploaded files."""
 
 
-def perform_all_checks_on_uploaded_files(file_list: List[UploadFile]) -> None:
+def perform_all_checks_on_uploaded_files(file_list: List[UploadFile]):
     """
     Loop though the check-list for uploaded files specifications.
 
@@ -86,14 +107,14 @@ def register_check_uploaded_files(checker: CheckUploadedFilesEquation) -> CheckU
     check_uploaded_files_dispatch.append(checker)
 
     @wraps(checker)
-    def decorator(file_list: List[UploadFile]) -> None:
+    def decorator(file_list: List[UploadFile]):
         return checker(file_list)
 
     return decorator
 
 
 @register_check_uploaded_files
-def check_uploaded_files_extensions(file_list: List[UploadFile]) -> None:
+def check_uploaded_files_extensions(file_list: List[UploadFile]):
     """
     Check the list of uploaded files to count the file extensions.
 
@@ -106,20 +127,20 @@ def check_uploaded_files_extensions(file_list: List[UploadFile]) -> None:
     with UploadedFilesValidationError.check_expressions("Invalid file extensions") as check:
         check(
             extension_counter[".py"] == 1,
-            "one application source file (.py)",
+            "missing one application source file (.py)",
         )
         check(
             0 <= extension_counter[".yaml"] <= 1,
-            "one (optional) application config file (.yaml)",
+            "missing one (optional) application config file (.yaml)",
         )
         check(
             extension_counter[".j2"] + extension_counter[".jinja2"] >= 1,
-            "one or more template files (.j2 and/or .jinja2)",
+            "missing one or more template files (.j2 and/or .jinja2)",
         )
 
 
 @register_check_uploaded_files
-def check_uploaded_files_content_type(file_list: List[UploadFile]) -> None:
+def check_uploaded_files_content_type(file_list: List[UploadFile]):
     """
     Check the list of uploaded files to confirm they are specified as plain text.
 
@@ -137,7 +158,7 @@ def check_uploaded_files_content_type(file_list: List[UploadFile]) -> None:
 
 
 @register_check_uploaded_files
-def check_uploaded_files_syntax(file_list: List[UploadFile]) -> None:
+def check_uploaded_files_syntax(file_list: List[UploadFile]):
     """
     Check the list of uploaded files to verify their syntax.
 
@@ -157,7 +178,7 @@ def check_uploaded_files_syntax(file_list: List[UploadFile]) -> None:
 
 
 @register_check_uploaded_files
-def check_uploaded_files_yaml_is_parsable(file_list: List[UploadFile]) -> None:
+def check_uploaded_files_yaml_is_parsable(file_list: List[UploadFile]):
     """
     Check the list of uploaded files to verify if the yaml file agrees with the expected schema.
 
@@ -167,15 +188,13 @@ def check_uploaded_files_yaml_is_parsable(file_list: List[UploadFile]) -> None:
     """
     logger.debug("Checking uploaded files, parsing yaml file")
     with UploadedFilesValidationError.handle_errors(
-        (
-            "Not possible to get the configuration from the yaml file."
-            " Please, verify is all the required fields were provided."
-        )
+        "Not possible to get the configuration from the yaml file. "
+        "Please, verify is all the required fields were provided."
     ):
-        for file in file_list:
-            if file.filename.endswith(".yaml"):
-                config = safe_load(file.file.read())
-                file.file.seek(0)
+        for f in file_list:
+            if f.filename.endswith(".yaml"):
+                config = yaml_safe_load(f.file.read())
+                f.file.seek(0)
                 ApplicationConfig(**config)
 
 
@@ -225,8 +244,8 @@ def is_valid_python_file(source_code: Union[str, bytes]) -> bool:
     :return bool: Boolean indicating if the source code is valid or not.
     """
     try:
-        parse(source_code)
-    except SyntaxError:
+        ast_parse(source_code)
+    except Exception:
         return False
     return True
 
@@ -240,8 +259,8 @@ def is_valid_yaml_file(yaml_file: Union[str, bytes]) -> bool:
     :return bool: Boolean indicating if the file is valid or not.
     """
     try:
-        safe_load(yaml_file)
-    except YAMLError:
+        yaml_safe_load(yaml_file)
+    except Exception:
         return False
     return True
 
@@ -258,8 +277,9 @@ def is_valid_jinja2_template(template: Union[str, bytes]) -> bool:
         _template = template.decode("utf-8")
     else:
         _template = template
+
     try:
         Template(_template).render(data={})
-    except TemplateSyntaxError:
+    except Exception:
         return False
     return True

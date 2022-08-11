@@ -19,12 +19,12 @@ from jobbergate_api.file_validation import perform_all_checks_on_uploaded_files
 
 @lru_cache
 def application_template_manager_factory(
-    application_id: typing.Union[int, str], is_read_only: bool = True
+    application_id: int, is_read_only: bool = True
 ) -> typing.Union[FileManager, FileManagerReadOnly]:
     """
     Build a manager object for application template files.
 
-    :param typing.Union[int, str] application_id: Application's id
+    :param int application_id: Application's id
     :param bool is_read_only: If the manager is read only or not, defaults to True
     :return typing.Union[FileManager, FileManagerReadOnly]: File manager
     """
@@ -41,15 +41,15 @@ def application_template_manager_factory(
 
 
 def write_application_files_to_s3(
-    application_id: typing.Union[int, str],
+    application_id: int,
     upload_files: typing.List[UploadFile],
     *,
-    remove_previous_files: bool,
-) -> None:
+    remove_previous_files: bool = False,
+):
     """
     Write the list of uploaded application files to S3, fist checking them for consistency.
 
-    :param typing.Union[int, str] application_id: Application identification number
+    :param int application_id: Application identification number
     :param typing.List[UploadFile] upload_files: Uploaded files
     :param bool remove_previous_files: Delete old files before writing the new ones
     """
@@ -62,12 +62,12 @@ def write_application_files_to_s3(
 
     templates_manager = application_template_manager_factory(application_id, False)
 
-    for file in upload_files:
-        if file.filename.endswith(".py"):
-            s3man_applications_source_files[application_id] = file.file
-        elif file.filename.endswith((".j2", ".jinja2")):
-            filename = PurePath(file.filename).name
-            templates_manager[filename] = file.file
+    for upload in upload_files:
+        if upload.filename.endswith(".py"):
+            s3man_applications_source_files[application_id] = upload.file
+        elif upload.filename.endswith((".j2", ".jinja2")):
+            filename = PurePath(upload.filename).name
+            templates_manager[filename] = upload.file
 
 
 @dataclass
@@ -80,11 +80,11 @@ class ApplicationFiles:
     source_file: str
 
 
-def get_application_files_from_s3(application_id: typing.Union[int, str]) -> ApplicationFiles:
+def get_application_files_from_s3(application_id: int) -> ApplicationFiles:
     """
     Read the application files from S3.
 
-    :param typing.Union[int, str] application_id: Application identification number
+    :param int application_id: Application identification number
     :return ApplicationFiles: Application files
     """
     logger.debug(f"Getting application files from S3: {application_id=}")
@@ -96,11 +96,11 @@ def get_application_files_from_s3(application_id: typing.Union[int, str]) -> App
     )
 
 
-def delete_application_files_from_s3(application_id: typing.Union[int, str]) -> None:
+def delete_application_files_from_s3(application_id: int):
     """
     Delete the files associated to a given id from S3.
 
-    :param typing.Union[int, str] application_id: Application identification number
+    :param int application_id: Application identification number
     """
     logger.debug(f"Deleting from S3 the files associated to {application_id=}")
 

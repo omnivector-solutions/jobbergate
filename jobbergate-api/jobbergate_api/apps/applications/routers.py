@@ -104,10 +104,10 @@ async def applications_upload(
 
     update_dict: Dict[str, Any] = dict(application_uploaded=True)
 
-    for file in upload_files:
-        if file.filename.endswith(".yaml"):
-            update_dict["application_config"] = str(file.file.read())
-            file.file.seek(0)
+    for upload in upload_files:
+        if upload.filename.endswith(".yaml"):
+            update_dict["application_config"] = str(upload.file.read())
+            upload.file.seek(0)
             break
 
     update_query = (
