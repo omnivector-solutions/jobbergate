@@ -109,7 +109,7 @@ def check_uploaded_files_extensions(file_list: List[UploadFile]) -> None:
             "one application source file (.py)",
         )
         check(
-            extension_counter[".yaml"] in {0, 1},
+            0 <= extension_counter[".yaml"] <= 1,
             "one (optional) application config file (.yaml)",
         )
         check(

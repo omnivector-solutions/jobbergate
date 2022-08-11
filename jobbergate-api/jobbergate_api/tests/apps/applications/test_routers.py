@@ -904,11 +904,6 @@ async def test_upload_file__works_with_small_file(
     """
     Test that a file is uploaded.
 
-    This test proves that the application's files are uploaded when they are smaller than the threshold.
-    Assert status code 422 because the test files in this case are not valid.
-    """
-    """
-    Test that a file is uploaded.
     This test proves that an application's file is uploaded by making sure that the
     boto3 put_object method is called once and a 201 status code is returned. It also
     checks to make sure that the application row in the database has

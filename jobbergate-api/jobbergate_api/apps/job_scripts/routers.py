@@ -115,7 +115,6 @@ def build_job_script_data_as_string(
                 param_dict_flat[nest_key] = nest_value
         else:
             param_dict_flat[key] = value
-        print(key)
 
     job_script_data_as_string = render_template(application_files.templates, param_dict_flat)
 
