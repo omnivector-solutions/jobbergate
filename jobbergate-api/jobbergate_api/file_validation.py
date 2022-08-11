@@ -61,7 +61,7 @@ def perform_all_checks_on_uploaded_files(file_list: List[UploadFile]) -> None:
     Loop though the check-list for uploaded files specifications.
 
     Individual checks will raise UploadedFilesValidationError if the business
-    roles are not met.
+    rules are not met.
 
     :param List[UploadFile] file_list: Upload file list.
     """
@@ -97,7 +97,7 @@ def check_uploaded_files_extensions(file_list: List[UploadFile]) -> None:
     """
     Check the list of uploaded files to count the file extensions.
 
-    Raise UploadedFilesValidationError if the business roles are not met.
+    Raise UploadedFilesValidationError if the business rules are not met.
 
     :param List[UploadFile] file_list: Upload file list.
     """
@@ -123,7 +123,7 @@ def check_uploaded_files_content_type(file_list: List[UploadFile]) -> None:
     """
     Check the list of uploaded files to confirm they are specified as plain text.
 
-    Raise UploadedFilesValidationError if the business roles are not met.
+    Raise UploadedFilesValidationError if the business rules are not met.
 
     :param List[UploadFile] file_list: Upload file list.
     """
@@ -141,7 +141,7 @@ def check_uploaded_files_syntax(file_list: List[UploadFile]) -> None:
     """
     Check the list of uploaded files to verify their syntax.
 
-    Raise UploadedFilesValidationError if the business roles are not met.
+    Raise UploadedFilesValidationError if the business rules are not met.
 
     :param List[UploadFile] file_list: Upload file list.
     """
@@ -161,7 +161,7 @@ def check_uploaded_files_yaml_is_parsable(file_list: List[UploadFile]) -> None:
     """
     Check the list of uploaded files to verify if the yaml file agrees with the expected schema.
 
-    Raise UploadedFilesValidationError if the business roles are not met.
+    Raise UploadedFilesValidationError if the business rules are not met.
 
     :param List[UploadFile] file_list: Upload file list.
     """
