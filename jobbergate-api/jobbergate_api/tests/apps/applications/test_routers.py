@@ -9,8 +9,9 @@ import pytest
 from fastapi import status
 
 from jobbergate_api.apps.applications.models import applications_table
-from jobbergate_api.apps.applications.schemas import ApplicationResponse
+from jobbergate_api.apps.applications.schemas import ApplicationPartialResponse
 from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.s3_manager import ApplicationFiles
 from jobbergate_api.storage import database, fetch_instance
 
 
@@ -46,7 +47,7 @@ async def test_create_application(
     id_rows = await database.fetch_all("SELECT id FROM applications")
     assert len(id_rows) == 1
 
-    application = ApplicationResponse(**response.json())
+    application = ApplicationPartialResponse(**response.json())
 
     assert application.id == id_rows[0][0]
     assert application.application_name == "test-name"
@@ -277,13 +278,13 @@ async def test_delete_application__fk_error(
 
 
 @pytest.mark.asyncio
-async def test_get_application_by_id(
+async def test_get_application_by_id__files_not_uploaded(
     client,
     fill_application_data,
     inject_security_header,
 ):
     """
-    Test GET /applications/<id>.
+    Test GET /applications/<id> when the application files were not uploaded.
 
     This test proves that GET /applications/<id> returns the correct application, owned by
     the user making the request. We show this by asserting that the application data
@@ -308,6 +309,63 @@ async def test_get_application_by_id(
     data = response.json()
     assert data["id"] == inserted_id
     assert data["application_identifier"] == "app1"
+    assert data["application_uploaded"] is False
+    assert data["application_config"] is None
+    assert data["application_source_file"] is None
+    assert data["application_templates"] is None
+
+
+@pytest.mark.asyncio
+@mock.patch("jobbergate_api.apps.applications.routers.get_application_files_from_s3")
+async def test_get_application_by_id__files_uploaded(
+    mocked_get_application_files_from_s3,
+    client,
+    fill_application_data,
+    inject_security_header,
+    dummy_application_config,
+    dummy_application_source_file,
+    dummy_template,
+):
+    """
+    Test GET /applications/<id> when the application files were uploaded.
+
+    This test proves that GET /applications/<id> returns the correct application, owned by
+    the user making the request. We show this by asserting that the application data
+    returned in the response is equal to the application data that exists in the database
+    for the given application id, and the application files are recovered from S3.
+    """
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(
+            application_identifier="app1",
+            application_uploaded=True,
+            application_config=dummy_application_config,
+        ),
+    )
+    await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_identifier="app2"),
+    )
+
+    mocked_get_application_files_from_s3.return_value = ApplicationFiles(
+        templates={"test_job_script.sh": dummy_template},
+        source_file=dummy_application_source_file,
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 2
+
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
+    response = await client.get(f"/jobbergate/applications/{inserted_id}")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert data["id"] == inserted_id
+    assert data["application_identifier"] == "app1"
+    assert data["application_uploaded"] is True
+    assert data["application_config"] == dummy_application_config
+    assert data["application_source_file"] == dummy_application_source_file
+    assert data["application_templates"] == {"test_job_script.sh": dummy_template}
 
 
 @pytest.mark.asyncio
@@ -860,7 +918,7 @@ async def test_upload_file__works_with_small_file(
         query=applications_table.insert(),
         values=fill_application_data(application_owner_email="owner1@org.com"),
     )
-    application = await fetch_instance(inserted_id, applications_table, ApplicationResponse)
+    application = await fetch_instance(inserted_id, applications_table, ApplicationPartialResponse)
     assert not application.application_uploaded
 
     dummy_file = make_dummy_file("jobbergate.yaml", content=dummy_application_config)
@@ -875,7 +933,7 @@ async def test_upload_file__works_with_small_file(
     assert response.status_code == status.HTTP_201_CREATED
     mocked_application_writer.assert_called_once()
 
-    application = await fetch_instance(inserted_id, applications_table, ApplicationResponse)
+    application = await fetch_instance(inserted_id, applications_table, ApplicationPartialResponse)
     assert application.application_uploaded
 
 
@@ -919,8 +977,8 @@ async def test_delete_file(mocked_application_deleter, client, inject_security_h
         query=applications_table.insert(),
         values=fill_application_data(application_owner_email="owner1@org.com", application_uploaded=True),
     )
-    application: ApplicationResponse = await fetch_instance(
-        inserted_id, applications_table, ApplicationResponse
+    application: ApplicationPartialResponse = await fetch_instance(
+        inserted_id, applications_table, ApplicationPartialResponse
     )
     assert application.application_uploaded
 
@@ -930,5 +988,5 @@ async def test_delete_file(mocked_application_deleter, client, inject_security_h
     assert response.status_code == status.HTTP_204_NO_CONTENT
     mocked_application_deleter.assert_called_once_with(inserted_id)
 
-    application = await fetch_instance(inserted_id, applications_table, ApplicationResponse)
+    application = await fetch_instance(inserted_id, applications_table, ApplicationPartialResponse)
     assert not application.application_uploaded

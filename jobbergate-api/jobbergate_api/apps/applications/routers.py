@@ -13,13 +13,18 @@ from sqlalchemy import not_
 from jobbergate_api.apps.applications.models import applications_table, searchable_fields, sortable_fields
 from jobbergate_api.apps.applications.schemas import (
     ApplicationCreateRequest,
+    ApplicationPartialResponse,
     ApplicationResponse,
     ApplicationUpdateRequest,
 )
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import delete_application_files_from_s3, write_application_files_to_s3
+from jobbergate_api.s3_manager import (
+    delete_application_files_from_s3,
+    get_application_files_from_s3,
+    write_application_files_to_s3,
+)
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,
@@ -35,7 +40,7 @@ router = APIRouter()
 @router.post(
     "/applications",
     status_code=status.HTTP_201_CREATED,
-    response_model=ApplicationResponse,
+    response_model=ApplicationPartialResponse,
     description="Endpoint for application creation",
 )
 async def applications_create(
@@ -135,7 +140,7 @@ async def applications_delete_upload(
         logger.warning(message)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
-    application = ApplicationResponse.parse_obj(raw_application)
+    application = ApplicationPartialResponse.parse_obj(raw_application)
 
     if not application.application_uploaded:
         logger.debug(f"Trying to delete an applications that was not uploaded ({application_id=})")
@@ -233,7 +238,7 @@ async def application_delete_by_identifier(
 @router.get(
     "/applications",
     description="Endpoint to list applications",
-    responses=ok_response(ApplicationResponse),
+    responses=ok_response(ApplicationPartialResponse),
 )
 async def applications_list(
     user: bool = Query(False),
@@ -261,7 +266,7 @@ async def applications_list(
         query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
 
     logger.trace(f"query = {render_sql(query)}")
-    return await package_response(ApplicationResponse, query, pagination)
+    return await package_response(ApplicationPartialResponse, query, pagination)
 
 
 @router.get(
@@ -290,14 +295,21 @@ async def applications_get_by_id(application_id: int = Query(...)):
 
     logger.debug(f"Application data: {application_data=}")
 
-    return application_data
+    response = ApplicationResponse(**application_data)
+
+    if response.application_uploaded:
+        application_files = get_application_files_from_s3(response.id)
+        response.application_source_file = application_files.source_file
+        response.application_templates = application_files.templates
+
+    return response
 
 
 @router.put(
     "/applications/{application_id}",
     status_code=status.HTTP_200_OK,
     description="Endpoint to update an application given the id",
-    response_model=ApplicationResponse,
+    response_model=ApplicationPartialResponse,
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def application_update(

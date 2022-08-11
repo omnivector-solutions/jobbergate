@@ -142,7 +142,7 @@ class ApplicationUpdateRequest(BaseModel):
         schema_extra = application_meta_mapper
 
 
-class ApplicationResponse(BaseModel):
+class ApplicationPartialResponse(BaseModel):
     """
     Complete model to match database for the Application resource.
     """
@@ -154,8 +154,21 @@ class ApplicationResponse(BaseModel):
     application_identifier: Optional[str]
     application_description: Optional[str]
     application_owner_email: str
-    application_config: Optional[str]
     application_uploaded: bool
+
+    class Config:
+        orm_mode = True
+        schema_extra = application_meta_mapper
+
+
+class ApplicationResponse(ApplicationPartialResponse):
+    """
+    Complete model to match database for the Application resource.
+    """
+
+    application_config: Optional[str]
+    application_source_file: Optional[str]
+    application_templates: Optional[Dict[str, str]]
 
     class Config:
         orm_mode = True
