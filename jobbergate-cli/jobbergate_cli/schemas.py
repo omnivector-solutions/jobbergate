@@ -61,7 +61,7 @@ class JobbergateContext(pydantic.BaseModel, arbitrary_types_allowed=True):
 
 class JobbergateConfig(pydantic.BaseModel):
     """
-    A data object desribing the config values needed in the "jobbergate_config" section of the
+    A data object describing the config values needed in the "jobbergate_config" section of the
     JobbergateApplicationConfig model.
     """
 
@@ -79,7 +79,7 @@ class JobbergateConfig(pydantic.BaseModel):
 
 class JobbergateApplicationConfig(pydantic.BaseModel):
     """
-    A data object describing the config data needed to instantiate a JobbergateAppliation class.
+    A data object describing the config data needed to instantiate a JobbergateApplication class.
     """
 
     jobbergate_config: JobbergateConfig
