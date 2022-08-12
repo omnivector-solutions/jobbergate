@@ -3,7 +3,7 @@ Defines the schema for the resource Application.
 """
 from datetime import datetime
 from textwrap import dedent
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -90,6 +90,31 @@ application_meta_mapper = MetaMapper(
 )
 
 
+class JobbergateConfig(BaseModel):
+    """
+    Model for Jobbergate configuration (subsection at the yaml file).
+    """
+
+    default_template: str
+    supporting_files: Optional[List[str]]
+    supporting_files_output_name: Optional[Dict[str, List[str]]]
+    template_files: Optional[List[str]]
+    job_script_name: Optional[str]
+    output_directory: str = "."
+
+    class Config:
+        extra = "allow"
+
+
+class ApplicationConfig(BaseModel):
+    """
+    Model for application configuration, used to parse the yaml file.
+    """
+
+    application_config: Dict[str, Any]
+    jobbergate_config: JobbergateConfig
+
+
 class ApplicationCreateRequest(BaseModel):
     """
     Request model for creating Application instances.
@@ -98,8 +123,6 @@ class ApplicationCreateRequest(BaseModel):
     application_name: str
     application_identifier: Optional[str]
     application_description: Optional[str] = None
-    application_file: str
-    application_config: str
 
     class Config:
         schema_extra = application_meta_mapper
@@ -113,14 +136,13 @@ class ApplicationUpdateRequest(BaseModel):
     application_name: Optional[str]
     application_identifier: Optional[str]
     application_description: Optional[str]
-    application_file: Optional[str]
     application_config: Optional[str]
 
     class Config:
         schema_extra = application_meta_mapper
 
 
-class ApplicationResponse(BaseModel):
+class ApplicationPartialResponse(BaseModel):
     """
     Complete model to match database for the Application resource.
     """
@@ -132,9 +154,21 @@ class ApplicationResponse(BaseModel):
     application_identifier: Optional[str]
     application_description: Optional[str]
     application_owner_email: str
-    application_file: str
-    application_config: str
     application_uploaded: bool
+
+    class Config:
+        orm_mode = True
+        schema_extra = application_meta_mapper
+
+
+class ApplicationResponse(ApplicationPartialResponse):
+    """
+    Complete model to match database for the Application resource.
+    """
+
+    application_config: Optional[str]
+    application_source_file: Optional[str]
+    application_templates: Optional[Dict[str, str]]
 
     class Config:
         orm_mode = True

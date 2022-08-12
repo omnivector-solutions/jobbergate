@@ -7,9 +7,8 @@ import dataclasses
 import datetime
 import random
 import string
-import tarfile
 import typing
-from io import BytesIO
+from textwrap import dedent
 
 import pytest
 import sqlalchemy
@@ -159,18 +158,96 @@ def tweak_settings():
 
 
 @pytest.fixture
+def dummy_application_source_file() -> str:
+    """
+    Fixture to return a dummy application source file.
+    """
+    return dedent(
+        """
+        from jobbergate_cli.application_base import JobbergateApplicationBase
+        from jobbergate_cli import appform
+
+        class JobbergateApplication(JobbergateApplicationBase):
+
+            def mainflow(self, data):
+                questions = []
+
+                questions.append(appform.List(
+                    variablename="partition",
+                    message="Choose slurm partition:",
+                    choices=self.application_config['partitions'],
+                ))
+
+                questions.append(appform.Text(
+                    variablename="job_name",
+                    message="Please enter a jobname",
+                    default=self.application_config['job_name']
+                ))
+                return questions
+        """
+    ).strip()
+
+
+@pytest.fixture
+def dummy_template() -> str:
+    """
+    Fixture to return a dummy template.
+    """
+    return dedent(
+        """
+        #!/bin/bash
+
+        #SBATCH --job-name={{data.job_name}}
+        #SBATCH --partition={{data.partition}}
+        #SBATCH --output=sample-%j.out
+
+
+        echo $SLURM_TASKS_PER_NODE
+        echo $SLURM_SUBMIT_DIR
+        """
+    ).strip()
+
+
+@pytest.fixture
+def dummy_application_config() -> str:
+    """
+    Fixture to return a dummy application config file.
+    """
+    return dedent(
+        """
+        application_config:
+            job_name: rats
+            partitions:
+                - debug
+                - partition1
+        jobbergate_config:
+            default_template: test_job_script.sh
+            output_directory: .
+            supporting_files:
+                - test_job_script.sh
+            supporting_files_output_name:
+                test_job_script.sh:
+                    - support_file_b.py
+            template_files:
+                - templates/test_job_script.sh
+        """
+    ).strip()
+
+
+@pytest.fixture
 def make_dummy_file(tmp_path):
     """
     Provide a fixture that will generate a temporary file with ``size`` random bytes of text data.
     """
 
-    def _helper(filename, size=100):
+    def _helper(filename, size: int = 100, content: str = ""):
         """
-        Auxillery function that builds the temporary file.
+        Auxillary function that builds the temporary file.
         """
-        text = "".join(random.choice(CHARSET) for i in range(size))
+        if not content:
+            content = "".join(random.choice(CHARSET) for _ in range(size))
         dummy_path = tmp_path / filename
-        dummy_path.write_text(text)
+        dummy_path.write_text(content)
         return dummy_path
 
     return _helper
@@ -181,32 +258,22 @@ def make_files_param():
     """
     Provide a fixture to use as a context manager that builds the ``files`` parameter.
 
-    Open the supplied file and build a ``files`` param appropriate for using multi-part file uploads with the
-    client.
+    Open the supplied file(s) and build a ``files`` param appropriate for using
+    multi-part file uploads with the client.
     """
 
     @contextlib.contextmanager
-    def _helper(file_path):
+    def _helper(*file_paths):
         """
-        Context manager that opens the file and yields the ``files`` param from it.
+        Context manager that opens the file(s) and yields the ``files`` param from it.
         """
-        with open(file_path, "r") as file_handle:
-            yield dict(upload_file=(file_path.name, file_handle, "text/plain"))
+        with contextlib.ExitStack() as stack:
+            yield [
+                (
+                    "upload_files",
+                    (path.name, stack.enter_context(open(path)), "text/plain"),
+                )
+                for path in file_paths
+            ]
 
     return _helper
-
-
-@pytest.fixture
-def s3_object():
-    """
-    Provide a fixture that creates a test s3 object.
-    """
-    return {"Body": open("jobbergate_api/tests/apps/job_scripts/test_files/jobbergate.tar.gz", "rb")}
-
-
-@pytest.fixture
-def s3_object_as_tar(s3_object):
-    """
-    Provide a fixture that returns a tarball created from an s3 object.
-    """
-    return tarfile.open(fileobj=BytesIO(s3_object["Body"].read()))

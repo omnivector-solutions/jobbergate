@@ -1,7 +1,7 @@
 """
 Router for the Application resource.
 """
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Query
@@ -13,13 +13,18 @@ from sqlalchemy import not_
 from jobbergate_api.apps.applications.models import applications_table, searchable_fields, sortable_fields
 from jobbergate_api.apps.applications.schemas import (
     ApplicationCreateRequest,
+    ApplicationPartialResponse,
     ApplicationResponse,
     ApplicationUpdateRequest,
 )
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import s3man_applications
+from jobbergate_api.s3_manager import (
+    delete_application_files_from_s3,
+    get_application_files_from_s3,
+    write_application_files_to_s3,
+)
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,
@@ -35,7 +40,7 @@ router = APIRouter()
 @router.post(
     "/applications",
     status_code=status.HTTP_201_CREATED,
-    response_model=ApplicationResponse,
+    response_model=ApplicationPartialResponse,
     description="Endpoint for application creation",
 )
 async def applications_create(
@@ -72,21 +77,20 @@ async def applications_create(
 @router.post(
     "/applications/{application_id}/upload",
     status_code=status.HTTP_201_CREATED,
-    description=(
-        "Endpoint for uploading application files. "
-        "The file should be a gzipped tar-file (e.g. `jobbergate.tar.gz`)."
-    ),
+    description="Endpoint for uploading application files.",
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def applications_upload(
     application_id: int = Query(..., description="id of the application for which to upload a file"),
-    upload_file: UploadFile = File(..., description="The gzipped application tar-file to be uploaded"),
+    upload_files: List[UploadFile] = File(
+        ..., media_type="text/plain", description="The application files to be uploaded"
+    ),
     content_length: int = Header(...),
 ):
     """
-    Upload application tarball using an authenticated user token.
+    Upload application files using an authenticated user token.
     """
-    logger.debug(f"Preparing to upload tarball for {application_id=}")
+    logger.debug(f"Preparing to receive upload files for {application_id=}")
 
     if content_length > settings.MAX_UPLOAD_FILE_SIZE:
         message = f"Uploaded files cannot exceed {settings.MAX_UPLOAD_FILE_SIZE} bytes."
@@ -95,12 +99,19 @@ async def applications_upload(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=message,
         )
-    s3man_applications[application_id] = upload_file.file
+
+    write_application_files_to_s3(application_id, upload_files, remove_previous_files=True)
+
+    update_dict: Dict[str, Any] = dict(application_uploaded=True)
+
+    for upload in upload_files:
+        if upload.filename.endswith(".yaml"):
+            update_dict["application_config"] = str(upload.file.read())
+            upload.file.seek(0)
+            break
 
     update_query = (
-        applications_table.update()
-        .where(applications_table.c.id == application_id)
-        .values(dict(application_uploaded=True))
+        applications_table.update().where(applications_table.c.id == application_id).values(update_dict)
     )
 
     logger.trace(f"update_query = {render_sql(update_query)}")
@@ -110,16 +121,16 @@ async def applications_upload(
 @router.delete(
     "/applications/{application_id}/upload",
     status_code=status.HTTP_204_NO_CONTENT,
-    description="Endpoint for deleting application tarballs",
+    description="Endpoint for deleting application files",
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def applications_delete_upload(
     application_id: int = Query(..., description="id of the application for which to delete the file"),
 ):
     """
-    Delete application tarball using an authenticated user token.
+    Delete application files using an authenticated user token.
     """
-    logger.debug(f"Preparing to delete tarball for {application_id=}")
+    logger.debug(f"Preparing to delete files for {application_id=}")
 
     select_query = applications_table.select().where(applications_table.c.id == application_id)
     raw_application = await database.fetch_one(select_query)
@@ -129,18 +140,18 @@ async def applications_delete_upload(
         logger.warning(message)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
-    application = ApplicationResponse.parse_obj(raw_application)
+    application = ApplicationPartialResponse.parse_obj(raw_application)
 
     if not application.application_uploaded:
         logger.debug(f"Trying to delete an applications that was not uploaded ({application_id=})")
         return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
-    del s3man_applications[application_id]
+    delete_application_files_from_s3(application_id)
 
     update_query = (
         applications_table.update()
         .where(applications_table.c.id == application_id)
-        .values(dict(application_uploaded=False))
+        .values(dict(application_uploaded=False, application_config=None))
     )
 
     logger.trace(f"update_query = {render_sql(update_query)}")
@@ -180,12 +191,8 @@ async def application_delete(
     logger.trace(f"delete_query = {render_sql(delete_query)}")
 
     await database.execute(delete_query)
-    try:
-        del s3man_applications[application_id]
-    except KeyError:
-        # We should ignore KeyErrors from the S3 manager, because the data may
-        # have already been removed outside of the API
-        logger.debug(f"Tried to delete {application_id=}, but it was not found on S3.")
+
+    delete_application_files_from_s3(application_id)
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -223,12 +230,7 @@ async def application_delete_by_identifier(
 
     await database.execute(delete_query)
 
-    try:
-        del s3man_applications[id_]
-    except KeyError:
-        # We should ignore KeyErrors from the S3 manager, because the data may have already been removed
-        # outside of the API
-        logger.warning(f"Tried to delete application_id={id_}, but it was not found on S3.")
+    delete_application_files_from_s3(id_)
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -236,7 +238,7 @@ async def application_delete_by_identifier(
 @router.get(
     "/applications",
     description="Endpoint to list applications",
-    responses=ok_response(ApplicationResponse),
+    responses=ok_response(ApplicationPartialResponse),
 )
 async def applications_list(
     user: bool = Query(False),
@@ -264,7 +266,7 @@ async def applications_list(
         query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
 
     logger.trace(f"query = {render_sql(query)}")
-    return await package_response(ApplicationResponse, query, pagination)
+    return await package_response(ApplicationPartialResponse, query, pagination)
 
 
 @router.get(
@@ -293,14 +295,21 @@ async def applications_get_by_id(application_id: int = Query(...)):
 
     logger.debug(f"Application data: {application_data=}")
 
-    return application_data
+    response = ApplicationResponse(**application_data)
+
+    if response.application_uploaded:
+        application_files = get_application_files_from_s3(response.id)
+        response.application_source_file = application_files.source_file
+        response.application_templates = application_files.templates
+
+    return response
 
 
 @router.put(
     "/applications/{application_id}",
     status_code=status.HTTP_200_OK,
     description="Endpoint to update an application given the id",
-    response_model=ApplicationResponse,
+    response_model=ApplicationPartialResponse,
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def application_update(

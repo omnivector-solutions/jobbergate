@@ -1,238 +1,138 @@
 """
 Provide a convenience class for managing calls to S3.
 """
-import re
-import tarfile
 import typing
-from collections.abc import MutableMapping
-from io import BytesIO
+from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import PurePath
 
-import boto3
-from botocore.exceptions import BotoCoreError
-from fastapi import HTTPException, status
+from fastapi import UploadFile
+from file_storehouse import FileManager, FileManagerReadOnly, client
+from file_storehouse.engine import EngineS3
+from file_storehouse.key_mapping import KeyMappingNumeratedFolder, KeyMappingRaw
+from file_storehouse.transformation import TransformationCodecs
 from loguru import logger
 
 from jobbergate_api.config import settings
+from jobbergate_api.file_validation import perform_all_checks_on_uploaded_files
 
 
-def read_only_protection(function: typing.Callable) -> typing.Callable:
+@lru_cache
+def application_template_manager_factory(
+    application_id: int, is_read_only: bool = True
+) -> typing.Union[FileManager, FileManagerReadOnly]:
     """
-    Use this decorator to warp key methods at the s3 manager.
+    Build a manager object for application template files.
 
-    It aims to protect the files from been overwritten or deleted when the s3 manager
-    is set as read-only. Raise RuntimeError if any protected operation is tried.
+    :param int application_id: Application's id
+    :param bool is_read_only: If the manager is read only or not, defaults to True
+    :return typing.Union[FileManager, FileManagerReadOnly]: File manager
     """
-
-    def helper(s3man, *args, **kwargs):
-
-        if s3man.read_only:
-            message = "Illegal operation for a read-only S3 manager (folder={}, bucket={}).".format(
-                s3man.folder_name, s3man.bucket_name
-            )
-            logger.error(message)
-            raise RuntimeError(message)
-        function(s3man, *args, **kwargs)
-
-    return helper
+    Manager = FileManagerReadOnly if is_read_only else FileManager
+    return Manager(
+        engine=EngineS3(
+            s3_client,
+            settings.S3_BUCKET_NAME,
+            f"applications/{application_id}/templates/",
+        ),
+        transformation_list=[TransformationCodecs("utf-8")],
+        key_mapping=KeyMappingRaw(),
+    )
 
 
-class S3ManagerRaw(MutableMapping):
+def write_application_files_to_s3(
+    application_id: int,
+    upload_files: typing.List[UploadFile],
+    *,
+    remove_previous_files: bool = False,
+):
     """
-    Provide a class for managing the binary files from an S3 client.
+    Write the list of uploaded application files to S3, fist checking them for consistency.
 
-    This class implements the MutableMapping protocol, so all interactions with
-    S3 can be done using a dict-like interface.
-
-    The files stored in the Bucket defined at settings and with a key template
-    computed internally in this class.
+    :param int application_id: Application identification number
+    :param typing.List[UploadFile] upload_files: Uploaded files
+    :param bool remove_previous_files: Delete old files before writing the new ones
     """
+    logger.debug(f"Writing the list of uploaded files to S3: {application_id=}")
 
-    def __init__(
-        self, s3_client, folder: str, filename: str, *, bucket_name: str = None, read_only: bool = False
-    ):
-        """
-        Initialize a s3 manager.
+    perform_all_checks_on_uploaded_files(upload_files)
 
-        The interaction with S3 is done with the provided client, folder and filename.
-        """
-        self.s3_client = s3_client
-        self.folder_name = folder
-        self.filename = filename
-        self.bucket_name = bucket_name if bucket_name else settings.S3_BUCKET_NAME
-        self.read_only = read_only
+    if remove_previous_files:
+        delete_application_files_from_s3(application_id)
 
-        self._key_template = f"{self.folder_name}/{{app_id}}/{self.filename}"
-        self._get_id_re = re.compile(r"/(?P<id>\d+)/{filename}$".format(filename=self.filename))
+    templates_manager = typing.cast(
+        FileManager,
+        application_template_manager_factory(application_id, is_read_only=False),
+    )
 
-        logger.info(
-            f"Initializing S3Manager at the bucket={self.bucket_name} for key_template={self._key_template}"
-        )
-
-    def __getitem__(self, app_id: typing.Union[int, str]):
-        """
-        Get a file from the client associated to the given id.
-        """
-        key = self._get_key_from_id(app_id)
-        logger.debug(f"Getting from S3: {key}")
-
-        try:
-            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
-        except self.s3_client.exceptions.NoSuchKey:
-            logger.warning(f"No such key: {key}")
-            raise KeyError(f"No such key: {key}")
-
-        return response
-
-    @read_only_protection
-    def __setitem__(self, app_id: typing.Union[int, str], file: bytes) -> None:
-        """
-        Upload a file to the client for the given id.
-        """
-        key = self._get_key_from_id(app_id)
-        logger.debug(f"Uploading to S3: {key})")
-
-        try:
-            self.s3_client.put_object(Body=file, Bucket=self.bucket_name, Key=key)
-        except self.s3_client.exceptions.NoSuchKey:
-            logger.warning(f"No such key: {key}")
-            raise KeyError(f"No such key: {key}")
-
-    @read_only_protection
-    def __delitem__(self, app_id: typing.Union[int, str]) -> None:
-        """
-        Delete a file from the client associated to the given id.
-        """
-        key = self._get_key_from_id(app_id)
-        logger.debug(f"Deleting from S3: {key})")
-
-        try:
-            self.s3_client.delete_object(Bucket=self.bucket_name, Key=key)
-        except self.s3_client.exceptions.NoSuchKey:
-            logger.warning(f"No such key: {key}")
-            raise KeyError(f"No such key: {key}")
-
-    def __iter__(self) -> typing.Iterator[str]:
-        """
-        Yield all ids found in the work folder.
-        """
-        for key in self._get_list_of_objects():
-            yield self._get_app_id_from_key(key)
-
-    def __len__(self) -> int:
-        """
-        Count the number of keys found in the work folder.
-        """
-        return sum(1 for _ in self._get_list_of_objects())
-
-    def _get_key_from_id(self, app_id: typing.Union[int, str]) -> str:
-        """
-        Get an s3 key based upon the app_id. If app_id is empty, throw an exception.
-        """
-        if not str(app_id):
-            message = f"You must supply a non-empty app_id: got ({app_id=})"
-            logger.warning(message)
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=message,
-            )
-        return self._key_template.format(app_id=app_id)
-
-    def _get_app_id_from_key(self, key: str) -> str:
-        """
-        Get the app_id based upon an s3 key.
-        """
-        match = re.search(self._get_id_re, key)
-        if not match:
-            message = f"Impossible to get id from {key=}"
-            logger.error(message)
-            raise ValueError(message)
-        return match.group("id")
-
-    def _get_list_of_objects(self) -> typing.Iterable[str]:
-        """
-        Yield the keys found in the work folder.
-
-        Raise 404 when facing connection errors.
-        """
-        logger.debug(
-            f"Listing the objects at the bucket={self.bucket_name} for key_template={self._key_template}"
-        )
-        try:
-            paginator = self.s3_client.get_paginator("list_objects_v2")
-            for page in paginator.paginate(Bucket=self.bucket_name, Prefix=self.folder_name):
-                contents = page.get("Contents", [])
-                if not contents:
-                    break
-                for obj in contents:
-                    yield obj["Key"]
-        except BotoCoreError:
-            message = "Not possible to retrieve information from S3"
-            logger.error(message)
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=message,
-            )
-
-    @read_only_protection
-    def clear(self):
-        """
-        Clear all objects from work folder in this bucket.
-        """
-        logger.info(
-            f"Clearing the objects at the bucket={self.bucket_name} for key_template={self._key_template}"
-        )
-        super().clear()
+    for upload in upload_files:
+        if upload.filename.endswith(".py"):
+            s3man_applications_source_files[application_id] = upload.file
+        elif upload.filename.endswith((".j2", ".jinja2")):
+            filename = PurePath(upload.filename).name
+            templates_manager[filename] = upload.file
 
 
-class S3ManagerText(S3ManagerRaw):
+@dataclass
+class ApplicationFiles:
     """
-    Provide a class for managing the text files from an S3 client.
-
-    This class implements the MutableMapping protocol, so all interactions with
-    S3 can be done using a dict-like interface.
-
-    The files stored in the Bucket defined at settings and with a key template
-    computed internally in this class.
+    Dataclass containing application files.
     """
 
-    DECODE_SPEC = "utf-8"
-
-    def __getitem__(self, app_id: typing.Union[int, str]) -> str:
-        """
-        Get a file from the client associated to the given id.
-        """
-        response = super().__getitem__(app_id)
-        return response["Body"].read().decode(self.DECODE_SPEC)
-
-    def __setitem__(self, app_id: typing.Union[int, str], file: str) -> None:
-        """
-        Upload a file to the client for the given id.
-        """
-        super().__setitem__(app_id, file.encode(self.DECODE_SPEC))
+    templates: typing.Dict[str, str]
+    source_file: str
 
 
-def get_s3_object_as_tarfile(s3man: S3ManagerRaw, app_id: typing.Union[int, str]):
+def get_application_files_from_s3(application_id: int) -> ApplicationFiles:
     """
-    Return the tarfile of a S3 object.
+    Read the application files from S3.
+
+    :param int application_id: Application identification number
+    :return ApplicationFiles: Application files
     """
-    logger.debug(f"Getting s3 object as tarfile {app_id=}")
+    logger.debug(f"Getting application files from S3: {application_id=}")
+
+    templates_manager = application_template_manager_factory(application_id, True)
+
+    return ApplicationFiles(
+        templates=dict(templates_manager), source_file=s3man_applications_source_files.get(application_id, "")
+    )
+
+
+def delete_application_files_from_s3(application_id: int):
+    """
+    Delete the files associated to a given id from S3.
+
+    :param int application_id: Application identification number
+    """
+    logger.debug(f"Deleting from S3 the files associated to {application_id=}")
+
+    templates_manager = typing.cast(
+        FileManager, application_template_manager_factory(application_id, is_read_only=False)
+    )
+
+    templates_manager.clear()
     try:
-        s3_application_obj = s3man[app_id]
-    except (BotoCoreError, KeyError):
-        message = f"Application with {app_id=} not found in S3"
-        logger.error(message)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
+        del s3man_applications_source_files[application_id]
+    except KeyError:
+        logger.warning(
+            f"Tried to delete the source code for {application_id=}, but it was not found on S3",
         )
 
-    s3_application_tar = tarfile.open(fileobj=BytesIO(s3_application_obj["Body"].read()))
-    return s3_application_tar
 
-
-s3_client = boto3.client(
+s3_client = client(
     "s3",
     endpoint_url=settings.S3_ENDPOINT_URL,
 )
-s3man_applications = S3ManagerRaw(s3_client, "applications", "jobbergate.tar.gz")
-s3man_jobscripts = S3ManagerText(s3_client, "job-scripts", "jobbergate.txt")
+
+s3man_applications_source_files = FileManager(
+    engine=EngineS3(s3_client, settings.S3_BUCKET_NAME, "applications"),
+    transformation_list=[TransformationCodecs("utf-8")],
+    key_mapping=KeyMappingNumeratedFolder("jobbergate.py"),
+)
+
+s3man_jobscripts = FileManager(
+    engine=EngineS3(s3_client, settings.S3_BUCKET_NAME, "job-scripts"),
+    transformation_list=[TransformationCodecs("utf-8")],
+    key_mapping=KeyMappingNumeratedFolder("jobbergate.txt"),
+)

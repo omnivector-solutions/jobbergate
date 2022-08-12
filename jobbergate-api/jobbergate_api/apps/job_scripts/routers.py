@@ -2,9 +2,7 @@
 Router for the JobScript resource.
 """
 import json
-import tarfile
-import tempfile
-from io import StringIO
+from pathlib import PurePath
 from typing import List, Optional
 
 from armasec import TokenPayload
@@ -14,7 +12,7 @@ from loguru import logger
 from yaml import safe_load
 
 from jobbergate_api.apps.applications.models import applications_table
-from jobbergate_api.apps.applications.schemas import ApplicationResponse
+from jobbergate_api.apps.applications.schemas import ApplicationConfig, ApplicationResponse
 from jobbergate_api.apps.job_scripts.models import job_scripts_table, searchable_fields, sortable_fields
 from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptCreateRequest,
@@ -23,8 +21,9 @@ from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptUpdateRequest,
 )
 from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.file_validation import UploadedFilesValidationError
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import get_s3_object_as_tarfile, s3man_applications, s3man_jobscripts
+from jobbergate_api.s3_manager import get_application_files_from_s3, s3man_jobscripts
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,
@@ -78,58 +77,44 @@ def render_template(template_files, param_dict_flat):
     return job_script_data_as_string
 
 
-def build_job_script_data_as_string(s3_application_tar, param_dict):
+def build_job_script_data_as_string(application_id: int, application_config: ApplicationConfig) -> str:
     """
     Return the job_script_data_as_string from the S3 application and the templates.
     """
     logger.debug("Building the job script file from the S3 application and the templates")
 
-    support_files_output = param_dict["jobbergate_config"].get("supporting_files_output_name")
-    if support_files_output is None:
-        support_files_output = dict()
+    application_files = get_application_files_from_s3(application_id)
 
-    supporting_files = param_dict["jobbergate_config"].get("supporting_files")
-    if supporting_files is None:
-        supporting_files = list()
+    default_template_path = PurePath(application_config.jobbergate_config.default_template)
+    default_template_name = default_template_path.name
 
-    default_template = [
-        default_template := param_dict["jobbergate_config"].get("default_template"),
-        "templates/" + default_template,
-    ]
+    with UploadedFilesValidationError.check_expressions("One or more application files are missing") as check:
+        check(
+            application_files.source_file,
+            f"Application file was not found for {application_id=}",
+        )
+        check(
+            application_files.templates,
+            f"No template was found for {application_id=}",
+        )
+        check(
+            default_template_name in application_files.templates,
+            f"{default_template_name=} was found for {application_id=}",
+        )
 
-    template_files = {}
-    for member in s3_application_tar.getmembers():
-        if member.name in default_template:
-            contentfobj = s3_application_tar.extractfile(member)
-            template_files["application.sh"] = contentfobj.read().decode("utf-8")
-        if member.name in supporting_files:
-            match = [x for x in support_files_output if member.name in x]
-            contentfobj = s3_application_tar.extractfile(member)
-            filename = support_files_output[match[0]][0]
-            template_files[filename] = contentfobj.read().decode("utf-8")
+    # rename default template
+    default_template_file = application_files.templates.pop(default_template_name)
+    application_files.templates["application.sh"] = default_template_file
 
-    # Use tempfile to generate .tar in memory - NOT write to disk
     param_dict_flat = {}
-    for (key, value) in param_dict.items():
+    for (key, value) in application_config.dict().items():
         if isinstance(value, dict):
             for nest_key, nest_value in value.items():
                 param_dict_flat[nest_key] = nest_value
         else:
             param_dict_flat[key] = value
-    with tempfile.NamedTemporaryFile("wb", suffix=".tar.gz", delete=False) as f:
-        with tarfile.open(fileobj=f, mode="w:gz") as rendered_tar:
-            for member in s3_application_tar.getmembers():
-                if member.name in supporting_files:
-                    contentfobj = s3_application_tar.extractfile(member)
-                    supporting_file = contentfobj.read().decode("utf-8")
-                    template = Template(supporting_file)
-                    rendered_str = template.render(data=param_dict_flat)
-                    tarinfo = tarfile.TarInfo(member.name)
-                    rendered_tar.addfile(tarinfo, StringIO(rendered_str))
-        f.flush()
-        f.seek(0)
 
-    job_script_data_as_string = render_template(template_files, param_dict_flat)
+    job_script_data_as_string = render_template(application_files.templates, param_dict_flat)
 
     logger.debug("Done building the job script file")
     return job_script_data_as_string
@@ -170,9 +155,6 @@ async def job_script_create(
             detail=f"Application with id={job_script.application_id} was not uploaded.",
         )
 
-    logger.debug("Fetching application tarfile")
-    s3_application_tar = get_s3_object_as_tarfile(s3man_applications, application.id)
-
     identity_claims = IdentityClaims.from_token_payload(token_payload)
 
     create_dict = dict(
@@ -187,7 +169,14 @@ async def job_script_create(
     # User supplied param dict is optional and may override defaults
     param_dict.update(**job_script.param_dict)
 
-    job_script_data_as_string = build_job_script_data_as_string(s3_application_tar, param_dict)
+    application_config = ApplicationConfig(**param_dict)
+
+    try:
+        job_script_data_as_string = build_job_script_data_as_string(application.id, application_config)
+    except UploadedFilesValidationError as e:
+        message = str(e)
+        logger.error(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
     sbatch_params = create_dict.pop("sbatch_params", [])
     job_script_data_as_string = inject_sbatch_params(job_script_data_as_string, sbatch_params)

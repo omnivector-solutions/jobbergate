@@ -42,18 +42,8 @@ def param_dict_flat():
 
 
 @fixture
-def template_files_application_content():
-    """
-    Provide a fixture that creates test application files.
-    """
-    with open("jobbergate_api/tests/apps/job_scripts/test_files/application.sh") as application_file:
-        application_file_content = application_file.read()
-    return application_file_content
-
-
-@fixture
-def template_files(template_files_application_content):
+def template_files(dummy_template):
     """
     Provide a fixture that creates test template files.
     """
-    return {"application.sh": template_files_application_content}
+    return {"application.sh": dummy_template}

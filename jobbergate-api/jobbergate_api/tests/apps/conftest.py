@@ -14,8 +14,6 @@ def application_data():
     return {
         "application_owner_email": "test@email.com",
         "application_name": "test_name",
-        "application_file": "the\nfile",
-        "application_config": "{}",
     }
 
 
