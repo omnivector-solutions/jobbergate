@@ -27,7 +27,7 @@ typer = "^0.4.0"
 databases = {extras = ["postgresql"], version = "^0.5.5"}
 PyYAML = "^6.0"
 sendgrid = "^6.9.7"
-file-storehouse = "^0.3.3"
+file-storehouse = "0.3.4"
 
 [tool.poetry.dev-dependencies]
 black = "^22"
@@ -93,6 +93,7 @@ module = [
     "uvicorn",
     "asyncpg.*",
     "yaml",
+    "sendgrid.*",
 ]
 ignore_missing_imports = true
 

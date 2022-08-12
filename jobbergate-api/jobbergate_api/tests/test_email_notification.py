@@ -5,8 +5,8 @@ from unittest import mock
 
 import pytest
 from fastapi import HTTPException
-from sendgrid import SendGridAPIClient  # type: ignore # no type hints or library stubs
-from sendgrid.helpers.mail import Mail  # type: ignore # no type hints or library stubs
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 from jobbergate_api.email_notification import EmailManager, EmailNotificationError, notify_submission_rejected
 

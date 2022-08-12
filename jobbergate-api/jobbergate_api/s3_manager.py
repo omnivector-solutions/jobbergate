@@ -7,10 +7,10 @@ from functools import lru_cache
 from pathlib import PurePath
 
 from fastapi import UploadFile
-from file_storehouse import FileManager, FileManagerReadOnly, client  # type: ignore
-from file_storehouse.engine import EngineS3  # type: ignore
-from file_storehouse.key_mapping import KeyMappingNumeratedFolder, KeyMappingRaw  # type: ignore
-from file_storehouse.transformation import TransformationCodecs  # type: ignore
+from file_storehouse import FileManager, FileManagerReadOnly, client
+from file_storehouse.engine import EngineS3
+from file_storehouse.key_mapping import KeyMappingNumeratedFolder, KeyMappingRaw
+from file_storehouse.transformation import TransformationCodecs
 from loguru import logger
 
 from jobbergate_api.config import settings
@@ -60,7 +60,10 @@ def write_application_files_to_s3(
     if remove_previous_files:
         delete_application_files_from_s3(application_id)
 
-    templates_manager = application_template_manager_factory(application_id, False)
+    templates_manager = typing.cast(
+        FileManager,
+        application_template_manager_factory(application_id, is_read_only=False),
+    )
 
     for upload in upload_files:
         if upload.filename.endswith(".py"):
@@ -104,7 +107,10 @@ def delete_application_files_from_s3(application_id: int):
     """
     logger.debug(f"Deleting from S3 the files associated to {application_id=}")
 
-    templates_manager = application_template_manager_factory(application_id, False)
+    templates_manager = typing.cast(
+        FileManager, application_template_manager_factory(application_id, is_read_only=False)
+    )
+
     templates_manager.clear()
     try:
         del s3man_applications_source_files[application_id]

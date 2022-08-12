@@ -6,8 +6,8 @@ from typing import List, Optional, Union
 
 from buzz import Buzz
 from loguru import logger
-from sendgrid import SendGridAPIClient  # type: ignore # no type hints or library stubs
-from sendgrid.helpers.mail import Mail  # type: ignore # no type hints or library stubs
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 from jobbergate_api.config import settings
 
