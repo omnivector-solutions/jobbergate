@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+3.2.4-alpha.0 -- 2022-08-12
+---------------------------
+
 3.2.3 -- 2022-08-01
 -------------------
 - Patch cli authentication configurations.
