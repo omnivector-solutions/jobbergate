@@ -108,7 +108,7 @@ async def test_create_without_application_name(
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergate_api.apps.applications.routers.delete_application_files_from_s3")
+@mock.patch("jobbergate_api.apps.applications.routers.s3man_applications.delete_from_s3")
 async def test_delete_application_no_file_uploaded(
     mocked_application_deleter, client, application_data, inject_security_header
 ):
@@ -137,7 +137,7 @@ async def test_delete_application_no_file_uploaded(
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergate_api.apps.applications.routers.delete_application_files_from_s3")
+@mock.patch("jobbergate_api.apps.applications.routers.s3man_applications.delete_from_s3")
 async def test_delete_application_with_uploaded_file(
     mocked_application_deleter, client, application_data, inject_security_header
 ):
@@ -167,7 +167,7 @@ async def test_delete_application_with_uploaded_file(
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergate_api.apps.applications.routers.delete_application_files_from_s3")
+@mock.patch("jobbergate_api.apps.applications.routers.s3man_applications.delete_from_s3")
 async def test_delete_application_by_identifier(
     mocked_application_deleter, client, fill_application_data, inject_security_header
 ):
@@ -316,7 +316,7 @@ async def test_get_application_by_id__files_not_uploaded(
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergate_api.apps.applications.routers.get_application_files_from_s3")
+@mock.patch("jobbergate_api.apps.applications.routers.s3man_applications.get_from_s3")
 async def test_get_application_by_id__files_uploaded(
     mocked_get_application_files_from_s3,
     client,
@@ -890,7 +890,7 @@ async def test_update_application_bad_permission(
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergate_api.apps.applications.routers.write_application_files_to_s3")
+@mock.patch("jobbergate_api.apps.applications.routers.s3man_applications.write_to_s3")
 async def test_upload_file__works_with_small_file(
     mocked_application_writer,
     client,
@@ -933,7 +933,7 @@ async def test_upload_file__works_with_small_file(
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergate_api.apps.applications.routers.write_application_files_to_s3")
+@mock.patch("jobbergate_api.apps.applications.routers.s3man_applications.write_to_s3")
 async def test_upload_file__fails_with_413_on_large_file(
     mocked_application_writer,
     client,
@@ -960,7 +960,7 @@ async def test_upload_file__fails_with_413_on_large_file(
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergate_api.apps.applications.routers.delete_application_files_from_s3")
+@mock.patch("jobbergate_api.apps.applications.routers.s3man_applications.delete_from_s3")
 async def test_delete_file(mocked_application_deleter, client, inject_security_header, fill_application_data):
     """
     Test that a file is deleted.

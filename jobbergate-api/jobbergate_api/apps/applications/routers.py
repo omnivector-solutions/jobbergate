@@ -20,11 +20,7 @@ from jobbergate_api.apps.applications.schemas import (
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import (
-    delete_application_files_from_s3,
-    get_application_files_from_s3,
-    write_application_files_to_s3,
-)
+from jobbergate_api.s3_manager import s3man_applications
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,
@@ -100,7 +96,7 @@ async def applications_upload(
             detail=message,
         )
 
-    write_application_files_to_s3(application_id, upload_files, remove_previous_files=True)
+    s3man_applications.write_to_s3(application_id, upload_files, remove_previous_files=True)
 
     update_dict: Dict[str, Any] = dict(application_uploaded=True)
 
@@ -146,7 +142,7 @@ async def applications_delete_upload(
         logger.debug(f"Trying to delete an applications that was not uploaded ({application_id=})")
         return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
-    delete_application_files_from_s3(application_id)
+    s3man_applications.delete_from_s3(application_id)
 
     update_query = (
         applications_table.update()
@@ -192,7 +188,7 @@ async def application_delete(
 
     await database.execute(delete_query)
 
-    delete_application_files_from_s3(application_id)
+    s3man_applications.delete_from_s3(application_id)
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -230,7 +226,7 @@ async def application_delete_by_identifier(
 
     await database.execute(delete_query)
 
-    delete_application_files_from_s3(id_)
+    s3man_applications.delete_from_s3(id_)
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -298,7 +294,7 @@ async def applications_get_by_id(application_id: int = Query(...)):
     response = ApplicationResponse(**application_data)
 
     if response.application_uploaded:
-        application_files = get_application_files_from_s3(response.id)
+        application_files = s3man_applications.get_from_s3(response.id)
         response.application_source_file = application_files.source_file
         response.application_templates = application_files.templates
 
