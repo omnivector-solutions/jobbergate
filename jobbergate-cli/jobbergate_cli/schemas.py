@@ -96,11 +96,12 @@ class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     application_identifier: Optional[str] = None
     application_description: Optional[str] = None
     application_owner_email: str
-    application_file: str
-    application_config: str
     application_uploaded: bool
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    application_config: Optional[str] = None
+    application_source_file: Optional[str] = None
+    application_templates: Optional[Dict[str, str]] = None
 
 
 class JobScriptResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):

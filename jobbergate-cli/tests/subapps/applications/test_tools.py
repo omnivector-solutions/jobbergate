@@ -272,7 +272,7 @@ def test_load_application_data__success(dummy_module_source, dummy_config_source
         application_name="dummy",
         application_owner_email="dummy@dummy.org",
         application_uploaded=True,
-        application_file=dummy_module_source,
+        application_source_file=dummy_module_source,
         application_config=dummy_config_source,
     )
     (app_config, app_module) = load_application_data(app_data)
@@ -286,7 +286,7 @@ def test_load_application_data__fails_if_application_module_cannot_be_loaded_fro
         application_name="dummy",
         application_owner_email="dummy@dummy.org",
         application_uploaded=True,
-        application_file="Not python at all",
+        application_source_file="Not python at all",
         application_config=dummy_config_source,
     )
 
@@ -300,7 +300,7 @@ def test_load_application_data__fails_if_application_config_is_not_valid_YAML(du
         application_name="dummy",
         application_owner_email="dummy@dummy.org",
         application_uploaded=True,
-        application_file=dummy_module_source,
+        application_source_file=dummy_module_source,
         application_config=":",
     )
 

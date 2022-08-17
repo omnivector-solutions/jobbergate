@@ -28,7 +28,8 @@ from jobbergate_cli.subapps.applications.tools import (
 # TODO: move hidden field logic to the API
 HIDDEN_FIELDS = [
     "application_config",
-    "application_file",
+    "application_source_file",
+    "application_templates",
     "created_at",
     "updated_at",
 ]

@@ -114,7 +114,7 @@ def build_application_tarball(application_path: pathlib.Path, build_dir: pathlib
     Build a gzipped tarball from the files found at the target application path.
 
     :param: application_path: The directory where the application files may be found
-    :param: build_dir:        The directory where the applicaiton files should be staged and zipped
+    :param: build_dir:        The directory where the application files should be staged and zipped
     """
     tar_path = build_dir / TAR_NAME
     with tarfile.open(str(tar_path), "w|gz") as archive:
@@ -209,7 +209,7 @@ def load_application_data(
         )
 
     try:
-        app_module = load_application_from_source(app_data.application_file, app_config)
+        app_module = load_application_from_source(app_data.application_source_file, app_config)
     except Exception as err:
         raise Abort(
             "The application source fetched from the API is not valid",
