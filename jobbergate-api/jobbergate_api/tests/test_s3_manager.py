@@ -138,6 +138,7 @@ def test_write_application_files_to_s3(
 
     expected_source_files = {application_id}
     assert mocked_applications_source_file_manager.keys() == expected_source_files
+    assert all(isinstance(v, (bytes, str)) for v in mocked_applications_source_file_manager.values())
 
 
 def test_get_application_files_from_s3(
