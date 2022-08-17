@@ -91,7 +91,9 @@ def transfer_s3(s3man, applications_map):
     id mapped to the appropriate nextgen application.
     """
     logger.info(
-        f"Transferring S3 data from legacy to nextgen store, {len(applications_map)} applications are expected"
+        "Transferring S3 data from legacy to nextgen store, "
+        f"{len(applications_map)} applications are expected, "
+        f"{len(s3man.legacy)} objects were found at the legacy bucket."
     )
 
     s3man.nextgen.source_files.engine.ensure_bucket()
