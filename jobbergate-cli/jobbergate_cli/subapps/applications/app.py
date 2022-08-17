@@ -16,12 +16,9 @@ from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 from jobbergate_cli.subapps.applications.tools import (
     build_application_tarball,
-    dump_full_config,
     fetch_application_data,
     load_default_config,
-    read_application_module,
     upload_application,
-    validate_application_files,
 )
 
 
@@ -204,11 +201,6 @@ def create(
     if application_desc:
         req_data["application_description"] = application_desc
 
-    validate_application_files(application_path)
-
-    req_data["application_config"] = dump_full_config(application_path)
-    req_data["application_file"] = read_application_module(application_path)
-
     jg_ctx: JobbergateContext = ctx.obj
 
     # Make static type checkers happy
@@ -284,11 +276,6 @@ def update(
 
     if application_desc:
         req_data["application_description"] = application_desc
-
-    if application_path is not None:
-        validate_application_files(application_path)
-        req_data["application_config"] = dump_full_config(application_path)
-        req_data["application_file"] = read_application_module(application_path)
 
     jg_ctx: JobbergateContext = ctx.obj
 

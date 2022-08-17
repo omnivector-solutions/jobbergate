@@ -9,8 +9,6 @@ from pathlib import Path
 JOBBERGATE_APPLICATION_CONFIG = {
     "application_name": "",
     "application_description": "",
-    "application_source_file": "",
-    "application_config": "",
 }
 
 JOBBERGATE_JOB_SCRIPT_CONFIG = {
