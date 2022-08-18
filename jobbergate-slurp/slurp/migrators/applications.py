@@ -73,7 +73,7 @@ def mark_uploaded(nextgen_db, ids):
         logger.debug(f"Marking application {batch_start} through {batch_end} of {id_count}")
         batch = ids[batch_start:batch_end]
         nextgen_db.execute(
-            f"""
+            """
             update applications
             set application_uploaded = true
             where id = any(%s)
