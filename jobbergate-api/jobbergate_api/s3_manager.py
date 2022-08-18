@@ -102,11 +102,11 @@ class ApplicationFileManager:
 
         for upload in upload_files:
             if upload.filename.endswith(".py"):
-                self.source_files[application_id] = upload.file.read()
+                self.source_files[application_id] = upload.file.read().decode("utf-8")
                 upload.file.seek(0)
             elif upload.filename.endswith((".j2", ".jinja2")):
                 filename = PurePath(upload.filename).name
-                templates_manager[filename] = upload.file.read()
+                templates_manager[filename] = upload.file.read().decode("utf-8")
                 upload.file.seek(0)
 
     def get_from_s3(self, application_id: int) -> ApplicationFiles:
