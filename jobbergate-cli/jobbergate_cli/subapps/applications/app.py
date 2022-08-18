@@ -3,11 +3,9 @@ Provide a ``typer`` app that can interact with Application data in a cruddy mann
 """
 
 import pathlib
-import tempfile
 from typing import Any, Dict, Optional, cast
 
 import typer
-from loguru import logger
 
 from jobbergate_cli.constants import OV_CONTACT, SortOrder
 from jobbergate_cli.exceptions import handle_abort
@@ -15,7 +13,6 @@ from jobbergate_cli.render import StyleMapper, render_list_results, render_singl
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 from jobbergate_cli.subapps.applications.tools import (
-    build_application_tarball,
     fetch_application_data,
     load_default_config,
     upload_application,
@@ -138,37 +135,6 @@ def get_one(
     )
 
 
-def _upload_application(jg_ctx: JobbergateContext, application_path: pathlib.Path, application_id: int) -> bool:
-    """
-    Utility function that uploads an application from a given path to the Jobbergate API.
-
-    :param: jg_ctx:           The JobbergateContext. Needed to access the Httpx client to use for requests
-    :param: application_path: The directory on the system where the application files are found
-    :param: application_id:   The ``id`` of the Application to be uploaded
-    """
-
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
-
-    with tempfile.TemporaryDirectory() as temp_dir_str:
-        build_path = pathlib.Path(temp_dir_str)
-        logger.debug("Building application tar file at {build_path}")
-        tar_path = build_application_tarball(application_path, build_path)
-        response_code = cast(
-            int,
-            make_request(
-                jg_ctx.client,
-                f"/jobbergate/applications/{application_id}/upload",
-                "POST",
-                expect_response=False,
-                abort_message="Request to upload application files was not accepted by the API",
-                support=True,
-                files=dict(upload_file=open(tar_path, "rb")),
-            ),
-        )
-        return response_code == 201
-
-
 @app.command()
 @handle_abort
 def create(
@@ -224,7 +190,7 @@ def create(
     if not successful_upload:
         terminal_message(
             f"""
-            The zipped application files could not be uploaded.
+            The application files could not be uploaded.
 
             Try running the `update` command including the application path to re-upload.
 
@@ -296,11 +262,11 @@ def update(
     )
 
     if application_path is not None:
-        successful_upload = _upload_application(jg_ctx, application_path, id)
+        successful_upload = upload_application(jg_ctx, application_path, id)
         if not successful_upload:
             terminal_message(
                 f"""
-                The zipped application files could not be uploaded.
+                The application files could not be uploaded.
 
                 [yellow]If the problem persists, please contact [bold]{OV_CONTACT}[/bold]
                 for support and trouble-shooting[/yellow]

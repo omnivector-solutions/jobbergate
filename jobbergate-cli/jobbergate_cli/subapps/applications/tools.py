@@ -3,10 +3,10 @@ Provide tool functions for working with Application data.
 """
 
 import ast
+import contextlib
 import copy
 import pathlib
 import tarfile
-import tempfile
 from typing import Any, Dict, Optional, Tuple, cast
 
 import yaml
@@ -222,6 +222,26 @@ def load_application_data(
     return (app_config, app_module)
 
 
+@contextlib.contextmanager
+def get_upload_files(application_path: pathlib.Path):
+    """
+    Context manager to build the ``files`` parameter.
+
+    Open the supplied file(s) and build a ``files`` param appropriate for using
+    multi-part file uploads with the client.
+    """
+    supported_files = {".py", ".yaml", ".j2", ".jinja2"}
+    with contextlib.ExitStack() as stack:
+        yield [
+            (
+                "upload_files",
+                (path.name, stack.enter_context(open(path)), "text/plain"),
+            )
+            for path in application_path.rglob("*")
+            if path.is_file() and path.suffix in supported_files
+        ]
+
+
 def upload_application(
     jg_ctx: JobbergateContext,
     application_path: pathlib.Path,
@@ -239,10 +259,10 @@ def upload_application(
     # Make static type checkers happy
     assert jg_ctx.client is not None
 
-    with tempfile.TemporaryDirectory() as temp_dir_str:
-        build_path = pathlib.Path(temp_dir_str)
-        logger.debug("Building application tar file at {build_path}")
-        tar_path = build_application_tarball(application_path, build_path)
+    with get_upload_files(pathlib.Path(application_path)) as upload_files:
+        logger.debug(
+            f"Preparing to upload {len(upload_files)} application files from {application_path}",
+        )
         response_code = cast(
             int,
             make_request(
@@ -252,7 +272,7 @@ def upload_application(
                 expect_response=False,
                 abort_message="Request to upload application files was not accepted by the API",
                 support=True,
-                files=dict(upload_file=open(tar_path, "rb")),
+                files=upload_files,
             ),
         )
         return response_code == 201
