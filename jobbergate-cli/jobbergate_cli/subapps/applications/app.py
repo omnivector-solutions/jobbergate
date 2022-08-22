@@ -12,11 +12,7 @@ from jobbergate_cli.exceptions import handle_abort
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
-from jobbergate_cli.subapps.applications.tools import (
-    fetch_application_data,
-    load_default_config,
-    upload_application,
-)
+from jobbergate_cli.subapps.applications.tools import fetch_application_data, load_default_config, upload_application
 
 
 # TODO: move hidden field logic to the API
