@@ -15,6 +15,7 @@ from jobbergate_cli.constants import (
     JOBBERGATE_APPLICATION_CONFIG,
     JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
     JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
+    JOBBERGATE_APPLICATION_SUPPORTED_FILES,
     TAR_NAME,
 )
 from jobbergate_cli.exceptions import Abort
@@ -190,7 +191,6 @@ def get_upload_files(application_path: pathlib.Path):
     """
     Abort.require_condition(application_path.is_dir(), f"Application directory {application_path} does not exist")
 
-    SUPPORTED_FILES = {".py", ".yaml", ".j2", ".jinja2"}
     with contextlib.ExitStack() as stack:
         yield [
             (
@@ -198,7 +198,7 @@ def get_upload_files(application_path: pathlib.Path):
                 (path.name, stack.enter_context(open(path)), "text/plain"),
             )
             for path in application_path.rglob("*")
-            if path.is_file() and path.suffix in SUPPORTED_FILES
+            if path.is_file() and path.suffix in JOBBERGATE_APPLICATION_SUPPORTED_FILES
         ]
 
 
