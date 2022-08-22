@@ -1,6 +1,5 @@
 import importlib
 import pathlib
-import re
 import tarfile
 
 import httpx
@@ -20,106 +19,24 @@ from jobbergate_cli.subapps.applications.tools import (
     dump_full_config,
     execute_application,
     fetch_application_data,
+    get_upload_files,
     load_application_data,
     load_application_from_source,
     load_default_config,
     read_application_module,
-    validate_application_files,
 )
 from jobbergate_cli.text_tools import dedent
 
 
-def test_validate_application_files__success(tmp_path):
-    application_path = tmp_path / "dummy"
-    application_path.mkdir()
-    application_module = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-    application_module.write_text(
-        dedent(
-            """
-            import sys
-
-            print(f"Got some args, yo: {sys.argv}")
-            """
-        )
-    )
-    application_config = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-    application_config.write_text(
-        dedent(
-            """
-            foo:
-              bar: baz
-            """
-        )
-    )
-    validate_application_files(application_path)
-
-
-def test_validate_application_files__fails_if_application_directory_does_not_exist(tmp_path):
+def test_get_upload_files__fails_if_application_directory_does_not_exist(tmp_path):
     application_path = tmp_path / "dummy"
 
-    match_pattern = re.compile(
-        f"application files in {application_path} were invalid.*directory {application_path} does not exist",
-        flags=re.DOTALL,
-    )
-
-    with pytest.raises(Abort, match=match_pattern):
-        validate_application_files(application_path)
-
-
-def test_validate_application_files__fails_if_application_module_does_not_exist(tmp_path):
-    application_path = tmp_path / "dummy"
-    application_path.mkdir()
-
-    match_pattern = re.compile(
-        f"application files in {application_path} were invalid.*does not contain required application module",
-        flags=re.DOTALL,
-    )
-
-    with pytest.raises(Abort, match=match_pattern):
-        validate_application_files(application_path)
-
-
-def test_validate_application_files__fails_if_application_module_is_not_valid_python(tmp_path):
-    application_path = tmp_path / "dummy"
-    application_path.mkdir()
-    application_module = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-    application_module.write_text("[")
-
-    match_pattern = re.compile(
-        f"application files in {application_path} were invalid.*not valid python",
-        flags=re.DOTALL,
-    )
-
-    with pytest.raises(Abort, match=match_pattern):
-        validate_application_files(application_path)
-
-
-def test_validate_application_files__fails_if_application_config_does_not_exist(tmp_path):
-    application_path = tmp_path / "dummy"
-    application_path.mkdir()
-
-    match_pattern = re.compile(
-        f"application files in {application_path} were invalid.*does not contain required configuration file",
-        flags=re.DOTALL,
-    )
-
-    with pytest.raises(Abort, match=match_pattern):
-        validate_application_files(application_path)
-
-
-def test_validate_application_files__fails_if_application_config_is_not_valid_yaml(tmp_path):
-    application_path = tmp_path / "dummy"
-    application_path.mkdir()
-    application_config = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-    application_config.write_text(":")
-
-    match_pattern = re.compile(
-        f"application files in {application_path} were invalid.*not valid YAML",
-        flags=re.DOTALL,
-    )
-
-    with pytest.raises(Abort, match=match_pattern):
-        validate_application_files(application_path)
+    with pytest.raises(
+        Abort,
+        match=f"Application directory {application_path} does not exist",
+    ):
+        with get_upload_files(application_path):
+            pass
 
 
 def test_dump_full_config(tmp_path):

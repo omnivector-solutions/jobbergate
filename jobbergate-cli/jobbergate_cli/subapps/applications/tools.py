@@ -2,7 +2,6 @@
 Provide tool functions for working with Application data.
 """
 
-import ast
 import contextlib
 import copy
 import pathlib
@@ -23,63 +22,6 @@ from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig, JobbergateContext
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.questions import gather_param_values
-from jobbergate_cli.text_tools import unwrap
-
-
-def validate_application_files(application_path: pathlib.Path):
-    """
-    Validate application files at a given directory.
-
-    Confirms:
-        application_path exists
-        application_path contains an application python module
-        application_path contains an application configuration file
-    """
-    with Abort.check_expressions(
-        f"The application files in {application_path} were invalid",
-        raise_kwargs=dict(
-            subject="Invalid application files",
-            log_message=f"Application files located at {application_path} failed validation",
-        ),
-    ) as checker:
-        checker(
-            application_path.exists(),
-            f"Application directory {application_path} does not exist",
-        )
-
-        application_module = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-        checker(
-            application_module.exists(),
-            unwrap(
-                f"""
-                Application directory does not contain required application module
-                {JOBBERGATE_APPLICATION_MODULE_FILE_NAME}
-                """
-            ),
-        )
-        try:
-            ast.parse(application_module.read_text())
-            is_valid_python = True
-        except Exception:
-            is_valid_python = False
-        checker(is_valid_python, f"The application module at {application_module} is not valid python code")
-
-        application_config = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-        checker(
-            application_config.exists(),
-            unwrap(
-                f"""
-                Application directory does not contain required configuration file
-                {JOBBERGATE_APPLICATION_MODULE_FILE_NAME}
-                """
-            ),
-        )
-        try:
-            yaml.safe_load(application_config.read_text())
-            is_valid_yaml = True
-        except Exception:
-            is_valid_yaml = False
-        checker(is_valid_yaml, f"The application config at {application_config} is not valid YAML")
 
 
 def load_default_config() -> Dict[str, Any]:
@@ -246,7 +188,9 @@ def get_upload_files(application_path: pathlib.Path):
     Open the supplied file(s) and build a ``files`` param appropriate for using
     multi-part file uploads with the client.
     """
-    supported_files = {".py", ".yaml", ".j2", ".jinja2"}
+    Abort.require_condition(application_path.is_dir(), f"Application directory {application_path} does not exist")
+
+    SUPPORTED_FILES = {".py", ".yaml", ".j2", ".jinja2"}
     with contextlib.ExitStack() as stack:
         yield [
             (
@@ -254,7 +198,7 @@ def get_upload_files(application_path: pathlib.Path):
                 (path.name, stack.enter_context(open(path)), "text/plain"),
             )
             for path in application_path.rglob("*")
-            if path.is_file() and path.suffix in supported_files
+            if path.is_file() and path.suffix in SUPPORTED_FILES
         ]
 
 
