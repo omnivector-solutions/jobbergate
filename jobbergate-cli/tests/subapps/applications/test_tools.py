@@ -1,14 +1,11 @@
 import importlib
 import pathlib
-import tarfile
 
 import httpx
 import pytest
 
 from jobbergate_cli.constants import (
     JOBBERGATE_APPLICATION_CONFIG,
-    JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
-    JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
 )
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig
