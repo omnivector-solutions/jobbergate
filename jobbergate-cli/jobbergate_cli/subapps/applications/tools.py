@@ -196,6 +196,14 @@ def load_application_data(
     :param: app_data: A dictionary containing the application data
     :returns: A tuple containing the application config and the application module
     """
+    if not app_data.application_config:
+
+        raise Abort(
+            f"Fail to retrieve the application config file for id={app_data.id}",
+            subject="Application config is missing",
+            log_message="Application config is missing",
+        )
+
     try:
         app_config = load_application_config_from_source(app_data.application_config)
     except Exception as err:
@@ -208,12 +216,20 @@ def load_application_data(
             original_error=err,
         )
 
+    if not app_data.application_source_file:
+
+        raise Abort(
+            f"Fail to retrieve the application source file for id={app_data.id}",
+            subject="Application source file is missing",
+            log_message="Application source file is missing",
+        )
+
     try:
         app_module = load_application_from_source(app_data.application_source_file, app_config)
     except Exception as err:
         raise Abort(
             "The application source fetched from the API is not valid",
-            subject="Invalid application config",
+            subject="Invalid application module",
             support=True,
             log_message="Invalid application module",
             original_error=err,
@@ -294,7 +310,7 @@ def load_application_from_source(app_source: str, app_config: JobbergateApplicat
     """
     Load the JobbergateApplication class from a text string containing the source file.
 
-    Creates the module in a temporary file and importins it with importlib.
+    Creates the module in a temporary file and imports it with importlib.
 
     Adapted from: https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
 
