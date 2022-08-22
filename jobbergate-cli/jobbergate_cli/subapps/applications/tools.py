@@ -32,14 +32,6 @@ def load_default_config() -> Dict[str, Any]:
     return copy.deepcopy(JOBBERGATE_APPLICATION_CONFIG)
 
 
-def read_application_module(application_path: pathlib.Path) -> str:
-    """
-    Read the text from the application module found in the supplied application path.
-    """
-    module_path = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-    return module_path.read_text()
-
-
 def build_application_tarball(application_path: pathlib.Path, build_dir: pathlib.Path) -> pathlib.Path:
     """
     Build a gzipped tarball from the files found at the target application path.

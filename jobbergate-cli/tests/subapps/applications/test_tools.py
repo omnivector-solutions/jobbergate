@@ -21,7 +21,6 @@ from jobbergate_cli.subapps.applications.tools import (
     load_application_data,
     load_application_from_source,
     load_default_config,
-    read_application_module,
 )
 from jobbergate_cli.text_tools import dedent
 
@@ -42,16 +41,6 @@ def test_load_default_config():
     assert default_config == JOBBERGATE_APPLICATION_CONFIG
     default_config["foo"] = "bar"
     assert default_config != JOBBERGATE_APPLICATION_CONFIG
-
-
-def test_read_application_module(tmp_path):
-    application_path = tmp_path / "dummy"
-    application_path.mkdir()
-
-    module_path = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-    module_path.write_text("print('foo')")
-
-    assert read_application_module(application_path) == "print('foo')"
 
 
 def test_build_application_tarball(
