@@ -5,7 +5,6 @@ Provide tool functions for working with Application data.
 import contextlib
 import copy
 import pathlib
-import tarfile
 from typing import Any, Dict, Optional, Tuple, cast
 
 import yaml
@@ -13,10 +12,7 @@ from loguru import logger
 
 from jobbergate_cli.constants import (
     JOBBERGATE_APPLICATION_CONFIG,
-    JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
-    JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
     JOBBERGATE_APPLICATION_SUPPORTED_FILES,
-    TAR_NAME,
 )
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
@@ -30,30 +26,6 @@ def load_default_config() -> Dict[str, Any]:
     Load the default config for an application.
     """
     return copy.deepcopy(JOBBERGATE_APPLICATION_CONFIG)
-
-
-def build_application_tarball(application_path: pathlib.Path, build_dir: pathlib.Path) -> pathlib.Path:
-    """
-    Build a gzipped tarball from the files found at the target application path.
-
-    :param: application_path: The directory where the application files may be found
-    :param: build_dir:        The directory where the application files should be staged and zipped
-    """
-    tar_path = build_dir / TAR_NAME
-    with tarfile.open(str(tar_path), "w|gz") as archive:
-        module_path = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-        archive.add(module_path, arcname=f"/{module_path.name}")
-
-        config_path = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-        archive.add(config_path, arcname=f"/{config_path.name}")
-
-        template_root_path = application_path / "templates"
-        if template_root_path.exists():
-            for template_path in template_root_path.iterdir():
-                if template_path.is_file:
-                    rel_path = template_path.relative_to(application_path)
-                    archive.add(template_path, arcname=f"/{rel_path}")
-    return tar_path
 
 
 def fetch_application_data(

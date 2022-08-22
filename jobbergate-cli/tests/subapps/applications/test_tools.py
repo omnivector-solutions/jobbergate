@@ -14,7 +14,6 @@ from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.tools import (
-    build_application_tarball,
     execute_application,
     fetch_application_data,
     get_upload_files,
@@ -41,44 +40,6 @@ def test_load_default_config():
     assert default_config == JOBBERGATE_APPLICATION_CONFIG
     default_config["foo"] = "bar"
     assert default_config != JOBBERGATE_APPLICATION_CONFIG
-
-
-def test_build_application_tarball(
-    tmp_path,
-    dummy_application_dir,
-    dummy_config_source,
-    dummy_module_source,
-    dummy_template_source,
-):
-    build_path = tmp_path / "build"
-    build_path.mkdir()
-    tar_path = build_application_tarball(dummy_application_dir, build_path)
-
-    assert tar_path.exists()
-    assert tarfile.is_tarfile(tar_path)
-
-    extract_path = tmp_path / "extract"
-    extract_path.mkdir()
-    with tarfile.open(tar_path) as tar_file:
-        tar_file.extractall(extract_path)
-
-    module_path = extract_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-    assert module_path.exists()
-    assert module_path.read_text() == dummy_module_source
-
-    config_path = extract_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-    assert config_path.exists()
-    assert config_path.read_text() == dummy_config_source
-
-    template_root_path = extract_path / "templates"
-    assert template_root_path.exists()
-
-    template_path = template_root_path / "job-script-template.py.j2"
-    assert template_path.exists()
-    assert template_path.read_text() == dummy_template_source
-
-    ignored_path = extract_path / "ignored"
-    assert not ignored_path.exists()
 
 
 def test_fetch_application_data__success__using_id(
