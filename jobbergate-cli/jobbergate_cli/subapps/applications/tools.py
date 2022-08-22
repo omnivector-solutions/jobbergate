@@ -32,18 +32,6 @@ def load_default_config() -> Dict[str, Any]:
     return copy.deepcopy(JOBBERGATE_APPLICATION_CONFIG)
 
 
-def dump_full_config(application_path: pathlib.Path) -> str:
-    """
-    Dump the application config as text. Add existing template file paths into the config.
-    """
-    config_path = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-    config = yaml.safe_load(config_path.read_text())
-    config["jobbergate_config"]["template_files"] = sorted(
-        str(t) for t in JobbergateApplicationBase.find_templates(application_path)
-    )
-    return yaml.dump(config)
-
-
 def read_application_module(application_path: pathlib.Path) -> str:
     """
     Read the text from the application module found in the supplied application path.

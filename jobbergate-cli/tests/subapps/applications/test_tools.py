@@ -4,7 +4,6 @@ import tarfile
 
 import httpx
 import pytest
-import yaml
 
 from jobbergate_cli.constants import (
     JOBBERGATE_APPLICATION_CONFIG,
@@ -16,7 +15,6 @@ from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationCon
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.tools import (
     build_application_tarball,
-    dump_full_config,
     execute_application,
     fetch_application_data,
     get_upload_files,
@@ -37,43 +35,6 @@ def test_get_upload_files__fails_if_application_directory_does_not_exist(tmp_pat
     ):
         with get_upload_files(application_path):
             pass
-
-
-def test_dump_full_config(tmp_path):
-    application_path = tmp_path / "dummy"
-    application_path.mkdir()
-    template_root_path = application_path / "templates"
-    template_root_path.mkdir()
-    file1 = template_root_path / "file1"
-    file1.write_text("foo")
-    file2 = template_root_path / "file2"
-    file2.write_text("bar")
-    config_path = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-    config_path.write_text(
-        dedent(
-            """
-            jobbergate_config:
-              default_template: test-job-script.py.j2
-              output_directory: .
-            application_config:
-              partition: debug
-            """
-        )
-    )
-
-    assert yaml.safe_load(dump_full_config(application_path)) == dict(
-        jobbergate_config=dict(
-            default_template="test-job-script.py.j2",
-            output_directory=".",
-            template_files=[
-                "templates/file1",
-                "templates/file2",
-            ],
-        ),
-        application_config=dict(
-            partition="debug",
-        ),
-    )
 
 
 def test_load_default_config():
