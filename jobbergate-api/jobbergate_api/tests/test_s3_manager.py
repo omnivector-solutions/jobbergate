@@ -73,7 +73,8 @@ def make_uploaded_files():
         """
         with contextlib.ExitStack() as stack:
             yield [
-                UploadFile(path.name, stack.enter_context(open(path)), "text/plain") for path in file_paths
+                UploadFile(path.name, stack.enter_context(open(path, "rb")), "text/plain")
+                for path in file_paths
             ]
 
     return _helper
