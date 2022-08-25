@@ -65,7 +65,7 @@ class JobbergateConfig(pydantic.BaseModel):
     JobbergateApplicationConfig model.
     """
 
-    template_files: List[Path]
+    template_files: Optional[List[str]]
     default_template: Optional[str] = None
     output_directory: Optional[Path] = None
     supporting_files_output_name: Optional[Dict[str, Any]] = None

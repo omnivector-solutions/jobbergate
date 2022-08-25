@@ -102,7 +102,7 @@ async def applications_upload(
 
     for upload in upload_files:
         if upload.filename.endswith(".yaml"):
-            update_dict["application_config"] = str(upload.file.read())
+            update_dict["application_config"] = upload.file.read().decode("utf-8")
             upload.file.seek(0)
             break
 
