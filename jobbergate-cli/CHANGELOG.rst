@@ -9,10 +9,13 @@ Unreleased
 
 3.2.4-alpha.1 -- 2022-08-25
 ---------------------------
+- Refactor the logic to upload files to the API.
+- Remove file validation from the CLI.
+- Remove compression of the upload files into tarballs.
 
 3.2.4-alpha.0 -- 2022-08-12
 ---------------------------
-Keep versions synced between the agent and the API
+- Keep versions synced between the agent and the API
 
 3.2.3 -- 2022-08-01
 -------------------
