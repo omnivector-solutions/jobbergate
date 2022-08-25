@@ -121,7 +121,7 @@ class ApplicationFileManager:
         templates_manager = self.template_manager_factory(application_id, True)
 
         return ApplicationFiles(
-            templates={str(key): str(value) for key, value in templates_manager.items()},
+            templates={str(key): value for key, value in templates_manager.items()},
             source_file=self.source_files.get(application_id, ""),
         )
 

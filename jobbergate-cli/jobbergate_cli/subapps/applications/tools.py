@@ -10,10 +10,7 @@ from typing import Any, Dict, Optional, Tuple, cast
 import yaml
 from loguru import logger
 
-from jobbergate_cli.constants import (
-    JOBBERGATE_APPLICATION_CONFIG,
-    JOBBERGATE_APPLICATION_SUPPORTED_FILES,
-)
+from jobbergate_cli.constants import JOBBERGATE_APPLICATION_CONFIG, JOBBERGATE_APPLICATION_SUPPORTED_FILES
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig, JobbergateContext

@@ -2,6 +2,7 @@
 Defines the schema for the resource Application.
 """
 from datetime import datetime
+from pathlib import Path
 from textwrap import dedent
 from typing import Any, Dict, List, Optional
 
@@ -96,11 +97,11 @@ class JobbergateConfig(BaseModel):
     """
 
     default_template: str
-    supporting_files: Optional[List[str]]
-    supporting_files_output_name: Optional[Dict[str, List[str]]]
-    template_files: Optional[List[str]]
+    supporting_files: Optional[List[Path]]
+    supporting_files_output_name: Optional[Dict[str, List[Any]]]
+    template_files: Optional[List[Path]]
     job_script_name: Optional[str]
-    output_directory: str = "."
+    output_directory: Path = Path(".")
 
     class Config:
         extra = "allow"

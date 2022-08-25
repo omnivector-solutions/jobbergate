@@ -4,9 +4,7 @@ import pathlib
 import httpx
 import pytest
 
-from jobbergate_cli.constants import (
-    JOBBERGATE_APPLICATION_CONFIG,
-)
+from jobbergate_cli.constants import JOBBERGATE_APPLICATION_CONFIG
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
