@@ -1,7 +1,7 @@
 """
 Provide a convenience class for managing calls to S3.
 """
-import typing
+from typing import Dict, Optional, List, Union, Callable, cast
 from dataclasses import dataclass, field
 from pathlib import PurePath
 
@@ -11,11 +11,12 @@ from file_storehouse.engine.s3 import BaseClient, EngineS3
 from file_storehouse.key_mapping import KeyMappingNumeratedFolder, KeyMappingRaw
 from file_storehouse.transformation import TransformationABC, TransformationCodecs
 from loguru import logger
+from pydantic import BaseModel
 
 from jobbergate_api.config import settings
 from jobbergate_api.file_validation import perform_all_checks_on_uploaded_files
 
-LIST_OF_TRANSFORMATIONS: typing.List[TransformationABC] = [TransformationCodecs("utf-8")]
+LIST_OF_TRANSFORMATIONS: List[TransformationABC] = [TransformationCodecs("utf-8")]
 """
 List the transformations to be performed when writing/reading S3 objects.
 
@@ -29,8 +30,8 @@ class ApplicationFiles:
     Dataclass containing application files.
     """
 
-    templates: typing.Dict[str, str]
-    source_file: str
+    templates: Optional[Dict[str, str]]
+    source_file: Optional[str]
 
 
 @dataclass
@@ -55,13 +56,13 @@ class ApplicationFileManager:
 
     def template_manager_factory(
         self, application_id: int, is_read_only: bool = True
-    ) -> typing.Union[FileManager, FileManagerReadOnly]:
+    ) -> Union[FileManager, FileManagerReadOnly]:
         """
         Build a manager object for application template files.
 
         :param int application_id: Application's id
         :param bool is_read_only: If the manager is read only or not, defaults to True
-        :return typing.Union[FileManager, FileManagerReadOnly]: File manager
+        :return Union[FileManager, FileManagerReadOnly]: File manager
         """
         Manager = FileManagerReadOnly if is_read_only else FileManager
         return Manager(
@@ -77,7 +78,7 @@ class ApplicationFileManager:
     def write_to_s3(
         self,
         application_id: int,
-        upload_files: typing.List[UploadFile],
+        upload_files: List[UploadFile],
         *,
         remove_previous_files: bool = False,
     ):
@@ -85,7 +86,7 @@ class ApplicationFileManager:
         Write the list of uploaded application files to S3, fist checking them for consistency.
 
         :param int application_id: Application identification number
-        :param typing.List[UploadFile] upload_files: Uploaded files
+        :param List[UploadFile] upload_files: Uploaded files
         :param bool remove_previous_files: Delete old files before writing the new ones
         """
         logger.debug(f"Writing the list of uploaded files to S3: {application_id=}")
@@ -95,7 +96,7 @@ class ApplicationFileManager:
         if remove_previous_files:
             self.delete_from_s3(application_id)
 
-        templates_manager = typing.cast(
+        templates_manager = cast(
             FileManager,
             self.template_manager_factory(application_id, is_read_only=False),
         )
@@ -133,7 +134,7 @@ class ApplicationFileManager:
         """
         logger.debug(f"Deleting from S3 the files associated to {application_id=}")
 
-        templates_manager = typing.cast(
+        templates_manager = cast(
             FileManager, self.template_manager_factory(application_id, is_read_only=False)
         )
 
