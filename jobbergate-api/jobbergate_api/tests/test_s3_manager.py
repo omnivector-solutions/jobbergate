@@ -7,59 +7,57 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from boto3 import client
 from fastapi import UploadFile
-from file_storehouse import FileManager, FileManagerReadOnly
 from file_storehouse.engine import EngineLocal
 
-from jobbergate_api.s3_manager import ApplicationFiles, s3man_applications, s3man_jobscripts
-
-
-@pytest.mark.parametrize(
-    "s3_manager, template",
-    [
-        (s3man_applications.source_files, "applications/{}/jobbergate.py"),
-        (s3man_jobscripts, "job-scripts/{}/jobbergate.txt"),
-    ],
+from jobbergate_api.s3_manager import (
+    APPLICATION_SOURCE_FILE_NAME,
+    APPLICATION_TEMPLATE_FOLDER,
+    APPLICATIONS_WORK_DIR,
+    ApplicationFiles,
+    engine_factory,
+    s3man_applications,
 )
-@pytest.mark.parametrize("id", [0, 1, 2, 10, 100, 9999])
-class TestS3ManagerKeyIdTwoWayMapping:
+
+
+class TestEngineFactory:
+    @pytest.fixture(scope="class")
+    def client(self):
+        return client("s3")
+
+    @pytest.fixture(scope="class")
+    def s3_engine(self, client):
+        return engine_factory(
+            s3_client=client,
+            bucket_name="test-bucket",
+            work_directory=Path("test-dir"),
+        )
+
+    def test_client(self, s3_engine, client):
+        assert s3_engine.s3_client == client
+
+    def test_bucket_name(self, s3_engine):
+        assert s3_engine.bucket_name == "test-bucket"
+
+    def test_prefix(self, s3_engine):
+        assert s3_engine.prefix == "test-dir"
+
+
+@pytest.fixture(scope="function")
+def mocked_file_manager_factory(tmp_path):
     """
-    Test the conversions from id number to S3 key and vice versa.
+    Fixture to replace the default file engine (EngineS3) by a local one.
+
+    In this way, all objects are stored in a temporary directory ``tmp_path``,
+    that is yield for reference.
     """
 
-    @pytest.mark.parametrize("input_type", [int, str])
-    def test_s3_manager__get_key_from_id_str(self, s3_manager, template, id, input_type):
-        """
-        Test the conversions from id number to S3 key.
+    def local_engine_factory(*, work_directory: Path, **kwargs):
+        return EngineLocal(base_path=tmp_path / work_directory)
 
-        Notice both int and str are valid types for id and are tested.
-        """
-        key = template.format(id)
-        assert s3_manager._get_engine_key(input_type(id)) == key
-
-    def test_s3_manager__get_app_id_from_key(self, s3_manager, template, id):
-        """
-        Test the conversions from S3 key to id number.
-        """
-        key = template.format(id)
-        assert s3_manager._get_dict_key(key) == id
-
-
-@pytest.mark.parametrize(
-    "ManagerClass, is_read_only",
-    [
-        (FileManager, False),
-        (FileManagerReadOnly, True),
-    ],
-)
-def test_application_template_manager_factory_returning_type(ManagerClass, is_read_only):
-    """
-    Test if the object returned by application_template_manager_factory is the expected.
-    """
-    template_manager = s3man_applications.template_manager_factory(
-        application_id=0, is_read_only=is_read_only
-    )
-    assert isinstance(template_manager, ManagerClass)
+    with patch("jobbergate_api.s3_manager.engine_factory", wraps=local_engine_factory):
+        yield tmp_path
 
 
 @pytest.fixture
@@ -82,52 +80,13 @@ def make_uploaded_files():
     return _helper
 
 
-@pytest.fixture(scope="function")
-def mocked_application_template_manager():
-    """
-    Mock the template manager factory in order to make it return an empty dictionary.
-
-    :yield dict: The dictionary representing the file manager.
-    """
-    mock_result_as_dict = {}
-    with patch(
-        "jobbergate_api.s3_manager.s3man_applications.template_manager_factory",
-        wraps=lambda *args, **kwargs: mock_result_as_dict,
-    ):
-        yield mock_result_as_dict
-    mock_result_as_dict.clear()
-
-
-@pytest.fixture(scope="function")
-def mocked_applications_source_file_manager():
-    """
-    Mock the application source file manager in order to make it return an empty dictionary.
-
-    :yield dict: The dictionary representing the file manager.
-    """
-    mock_result_as_dict = {}
-    with patch("jobbergate_api.s3_manager.s3man_applications.source_files", mock_result_as_dict):
-        yield mock_result_as_dict
-    mock_result_as_dict.clear()
-
-
-@pytest.fixture(scope="function")
-def mocked_file_manager_factory(tmp_path):
-    def local_engine_factory(*, work_directory: Path, **kwargs):
-        return EngineLocal(base_path=tmp_path / work_directory)
-
-    with patch("jobbergate_api.s3_manager.engine_factory", wraps=local_engine_factory):
-        yield tmp_path
-
-
 def test_write_application_files_to_s3(
-    mocked_application_template_manager,
-    mocked_applications_source_file_manager,
     make_dummy_file,
     make_uploaded_files,
     dummy_application_source_file,
     dummy_template,
     dummy_application_config,
+    mocked_file_manager_factory,
 ):
     """
     Test if the applications files are written to S3 as expected.
@@ -145,19 +104,28 @@ def test_write_application_files_to_s3(
     ) as uploaded_files:
         s3man_applications.write_to_s3(application_id, uploaded_files, remove_previous_files=True)
 
-    expected_templates = {"template-1.j2", "template-2.jinja2"}
-    assert mocked_application_template_manager.keys() == expected_templates
+    work_dir = mocked_file_manager_factory / APPLICATIONS_WORK_DIR / str(application_id)
+    templates_dir = work_dir / APPLICATION_TEMPLATE_FOLDER
 
-    expected_source_files = {application_id}
-    assert mocked_applications_source_file_manager.keys() == expected_source_files
-    assert all(isinstance(v, (bytes, str)) for v in mocked_applications_source_file_manager.values())
+    application_path = work_dir / APPLICATION_SOURCE_FILE_NAME
+    assert application_path.is_file()
+    assert application_path.read_text() == dummy_application_source_file
+
+    assert templates_dir.is_dir()
+
+    template_path_1 = templates_dir / "template-1.j2"
+    assert template_path_1.is_file()
+    assert template_path_1.read_text() == dummy_template
+
+    template_path_2 = templates_dir / "template-2.jinja2"
+    assert template_path_2.is_file()
+    assert template_path_2.read_text() == dummy_template
 
 
 def test_get_application_files_from_s3(
-    mocked_application_template_manager,
-    mocked_applications_source_file_manager,
     dummy_application_source_file,
     dummy_template,
+    mocked_file_manager_factory,
 ):
     """
     Test if the application files are loaded from S3 as expected.
@@ -165,10 +133,18 @@ def test_get_application_files_from_s3(
     To do so, dummy test files are added to the file managers and than loaded.
     """
     application_id = 1
+    work_dir = mocked_file_manager_factory / APPLICATIONS_WORK_DIR / str(application_id)
+    templates_dir = work_dir / APPLICATION_TEMPLATE_FOLDER
+    templates_dir.mkdir(parents=True, exist_ok=True)
 
-    mocked_applications_source_file_manager[application_id] = dummy_application_source_file
-    mocked_application_template_manager["template-1.j2"] = dummy_template
-    mocked_application_template_manager["template-2.jinja2"] = dummy_template
+    application_path = work_dir / APPLICATION_SOURCE_FILE_NAME
+    application_path.write_text(dummy_application_source_file)
+
+    template_path_1 = templates_dir / "template-1.j2"
+    template_path_1.write_text(dummy_template)
+
+    template_path_2 = templates_dir / "template-2.jinja2"
+    template_path_2.write_text(dummy_template)
 
     application_files = s3man_applications.get_from_s3(application_id)
 
@@ -176,12 +152,16 @@ def test_get_application_files_from_s3(
 
     assert application_files.source_file == dummy_application_source_file
 
-    assert application_files.templates == mocked_application_template_manager
+    assert application_files.templates == {
+        "template-1.j2": dummy_template,
+        "template-2.jinja2": dummy_template,
+    }
 
 
 def test_delete_application_files_from_s3(
-    mocked_application_template_manager,
-    mocked_applications_source_file_manager,
+    dummy_application_source_file,
+    dummy_template,
+    mocked_file_manager_factory,
 ):
     """
     Test if the applications files are deleted from S3 as expected.
@@ -190,12 +170,23 @@ def test_delete_application_files_from_s3(
     is deleted, all templated files related to it are deleted as well as its source
     file. Source files from any other id are expected to be preserved.
     """
-    FILES_CONTENT = "test-file"
+    application_id = 1
 
-    mocked_applications_source_file_manager.update((i, FILES_CONTENT) for i in range(3))
-    mocked_application_template_manager.update((f"{i}.j2", FILES_CONTENT) for i in range(3))
+    work_dir = mocked_file_manager_factory / APPLICATIONS_WORK_DIR / str(application_id)
+    templates_dir = work_dir / APPLICATION_TEMPLATE_FOLDER
+    templates_dir.mkdir(parents=True, exist_ok=True)
 
-    s3man_applications.delete_from_s3(application_id=1)
+    application_path = work_dir / APPLICATION_SOURCE_FILE_NAME
+    application_path.write_text(dummy_application_source_file)
 
-    assert mocked_applications_source_file_manager.keys() == {0, 2}
-    assert len(mocked_application_template_manager) == 0
+    template_path_1 = templates_dir / "template-1.j2"
+    template_path_1.write_text(dummy_template)
+
+    template_path_2 = templates_dir / "template-2.jinja2"
+    template_path_2.write_text(dummy_template)
+
+    s3man_applications.delete_from_s3(application_id)
+
+    assert not application_path.is_file()
+    assert not template_path_1.is_file()
+    assert not template_path_2.is_file()

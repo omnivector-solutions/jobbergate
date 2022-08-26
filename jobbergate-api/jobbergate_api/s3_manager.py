@@ -17,6 +17,10 @@ from pydantic import BaseModel, Field
 from jobbergate_api.config import settings
 from jobbergate_api.file_validation import perform_all_checks_on_uploaded_files
 
+APPLICATIONS_WORK_DIR = "applications"
+APPLICATION_SOURCE_FILE_NAME: str = "jobbergate.py"
+APPLICATION_TEMPLATE_FOLDER: str = "templates"
+
 LIST_OF_TRANSFORMATIONS: Tuple[TransformationABC] = (TransformationCodecs("utf-8"),)
 """
 List the transformations to be performed when writing/reading S3 objects.
@@ -26,6 +30,9 @@ This constant can be shared between file managers.
 
 
 def engine_factory(*, s3_client: BaseClient, bucket_name: str, work_directory: Path) -> EngineS3:
+    """
+    Build an engine to manipulate objects from an s3 bucket.
+    """
     return EngineS3(s3_client=s3_client, bucket_name=bucket_name, prefix=str(work_directory))
 
 
@@ -49,16 +56,13 @@ def file_manager_factory(
     )
 
 
-s3_client = client(
-    "s3",
-    endpoint_url=settings.S3_ENDPOINT_URL,
-)
+s3_client = client("s3", endpoint_url=settings.S3_ENDPOINT_URL)
 
 s3man_applications_factory: Callable[[int], FileManager] = partial(
     file_manager_factory,
     s3_client=s3_client,
     bucket_name=settings.S3_BUCKET_NAME,
-    work_directory=Path("applications"),
+    work_directory=Path(APPLICATIONS_WORK_DIR),
     manager_cls=FileManager,
     transformations=LIST_OF_TRANSFORMATIONS,
 )
@@ -71,10 +75,6 @@ s3man_jobscripts_factory: Callable[[int], FileManager] = partial(
     manager_cls=FileManager,
     transformations=LIST_OF_TRANSFORMATIONS,
 )
-
-
-APPLICATION_SOURCE_FILE_NAME: str = "jobbergate.py"
-APPLICATION_TEMPLATE_FOLDER: str = "templates"
 
 
 class ApplicationFiles(BaseModel):
@@ -95,7 +95,7 @@ class ApplicationFiles(BaseModel):
         )
 
         for path in file_manager.keys():
-            if path.parent == APPLICATION_TEMPLATE_FOLDER:
+            if str(path.parent) == APPLICATION_TEMPLATE_FOLDER:
                 filename = path.name
                 application_files.templates[filename] = file_manager[path]
 
