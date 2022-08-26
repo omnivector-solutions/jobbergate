@@ -2,14 +2,13 @@
 Provide a convenience class for managing calls to S3.
 """
 from typing import Dict, Optional, List, Tuple, Union, Callable
-from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path, PurePath
 
 from fastapi import UploadFile
 from file_storehouse import FileManager, FileManagerReadOnly, client
 from file_storehouse.engine.s3 import BaseClient, EngineS3
-from file_storehouse.key_mapping import KeyMappingNumeratedFolder, KeyMappingRaw
+from file_storehouse.key_mapping import KeyMappingNumeratedFolder
 from file_storehouse.transformation import TransformationABC, TransformationCodecs
 from loguru import logger
 from pydantic import BaseModel, Field
@@ -142,88 +141,6 @@ class ApplicationFiles(BaseModel):
 
         return application_files
 
-
-@dataclass
-class ApplicationFileManager:
-    """
-    Manager for application files, designed to handle application source code and templates on S3.
-    """
-
-    bucket_name: str
-    s3_client: BaseClient
-    source_files: FileManager = field(init=False, repr=False)
-
-    def __post_init__(self):
-        """
-        Post-init method to compute additional fields in the class.
-        """
-        self.source_files = FileManager(
-            engine=EngineS3(self.s3_client, self.bucket_name, "applications"),
-            transformation_list=LIST_OF_TRANSFORMATIONS,
-            key_mapping=KeyMappingNumeratedFolder("jobbergate.py"),
-        )
-
-    def template_manager_factory(
-        self, application_id: int, is_read_only: bool = True
-    ) -> Union[FileManager, FileManagerReadOnly]:
-        """
-        Build a manager object for application template files.
-
-        :param int application_id: Application's id
-        :param bool is_read_only: If the manager is read only or not, defaults to True
-        :return Union[FileManager, FileManagerReadOnly]: File manager
-        """
-        Manager = FileManagerReadOnly if is_read_only else FileManager
-        return Manager(
-            engine=EngineS3(
-                self.s3_client,
-                self.bucket_name,
-                f"applications/{application_id}/templates/",
-            ),
-            transformation_list=LIST_OF_TRANSFORMATIONS,
-            key_mapping=KeyMappingRaw(),
-        )
-
-    def write_to_s3(
-        self,
-        application_id: int,
-        upload_files: List[UploadFile],
-        *,
-        remove_previous_files: bool = False,
-    ):
-        """
-        Write the list of uploaded application files to S3, fist checking them for consistency.
-
-        :param int application_id: Application identification number
-        :param List[UploadFile] upload_files: Uploaded files
-        :param bool remove_previous_files: Delete old files before writing the new ones
-        """
-        ApplicationFiles.get_from_upload_files(upload_files).write_to_s3(
-            application_id,
-            remove_previous_files=remove_previous_files,
-        )
-
-    def get_from_s3(self, application_id: int) -> ApplicationFiles:
-        """
-        Read the application files from S3.
-
-        :param int application_id: Application identification number
-        :return ApplicationFiles: Application files
-        """
-        logger.debug(f"Getting application files from S3: {application_id=}")
-
-        return ApplicationFiles.get_from_s3(application_id)
-
-    def delete_from_s3(self, application_id: int):
-        """
-        Delete the files associated to a given id from S3.
-
-        :param int application_id: Application identification number
-        """
-        ApplicationFiles.delete_from_s3(application_id)
-
-
-s3man_applications = ApplicationFileManager(bucket_name=settings.S3_BUCKET_NAME, s3_client=s3_client)
 
 s3man_jobscripts = FileManager(
     engine=EngineS3(s3_client, settings.S3_BUCKET_NAME, "job-scripts"),

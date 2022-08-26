@@ -17,7 +17,6 @@ from jobbergate_api.s3_manager import (
     APPLICATIONS_WORK_DIR,
     ApplicationFiles,
     engine_factory,
-    s3man_applications,
 )
 
 
@@ -102,7 +101,7 @@ def test_write_application_files_to_s3(
         make_dummy_file("template-2.jinja2", content=dummy_template),
         make_dummy_file("jobbergate.yaml", content=dummy_application_config),
     ) as uploaded_files:
-        s3man_applications.write_to_s3(application_id, uploaded_files, remove_previous_files=True)
+        ApplicationFiles.get_from_upload_files(uploaded_files).write_to_s3(application_id)
 
     work_dir = mocked_file_manager_factory / APPLICATIONS_WORK_DIR / str(application_id)
     templates_dir = work_dir / APPLICATION_TEMPLATE_FOLDER
@@ -146,7 +145,7 @@ def test_get_application_files_from_s3(
     template_path_2 = templates_dir / "template-2.jinja2"
     template_path_2.write_text(dummy_template)
 
-    application_files = s3man_applications.get_from_s3(application_id)
+    application_files = ApplicationFiles.get_from_s3(application_id)
 
     assert isinstance(application_files, ApplicationFiles)
 
@@ -185,7 +184,7 @@ def test_delete_application_files_from_s3(
     template_path_2 = templates_dir / "template-2.jinja2"
     template_path_2.write_text(dummy_template)
 
-    s3man_applications.delete_from_s3(application_id)
+    ApplicationFiles.delete_from_s3(application_id)
 
     assert not application_path.is_file()
     assert not template_path_1.is_file()

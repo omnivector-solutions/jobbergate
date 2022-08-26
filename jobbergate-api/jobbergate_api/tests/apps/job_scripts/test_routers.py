@@ -95,7 +95,7 @@ def test_inject_sbatch_params(job_script_data_as_string, sbatch_params, new_job_
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-@mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_applications.get_from_s3")
+@mock.patch("jobbergate_api.apps.job_scripts.routers.ApplicationFiles.get_from_s3")
 async def test_create_job_script(
     mocked_get_application_files_from_s3,
     fill_application_data,
@@ -269,7 +269,7 @@ async def test_create_job_script_without_application(
 
 @database.transaction(force_rollback=True)
 @pytest.mark.asyncio
-@mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_applications.get_from_s3")
+@mock.patch("jobbergate_api.apps.job_scripts.routers.ApplicationFiles.get_from_s3")
 async def test_create_job_script_file_not_found(
     mocked_get_application_files_from_s3,
     fill_application_data,
@@ -319,7 +319,7 @@ async def test_create_job_script_file_not_found(
 
 @database.transaction(force_rollback=True)
 @pytest.mark.asyncio
-@mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_applications.get_from_s3")
+@mock.patch("jobbergate_api.apps.job_scripts.routers.ApplicationFiles.get_from_s3")
 async def test_create_job_script_unable_to_write_file_to_s3(
     mocked_get_application_files_from_s3,
     fill_application_data,
@@ -378,7 +378,7 @@ def test_render_template(param_dict_flat, template_files, job_script_data_as_str
     assert json.loads(job_script_rendered) == json.loads(job_script_data_as_string)
 
 
-@mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_applications.get_from_s3")
+@mock.patch("jobbergate_api.apps.job_scripts.routers.ApplicationFiles.get_from_s3")
 def test_build_job_script_data_as_string(
     mocked_get_application_files_from_s3,
     param_dict,

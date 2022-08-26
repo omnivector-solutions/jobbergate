@@ -23,7 +23,7 @@ from jobbergate_api.apps.job_scripts.schemas import (
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.file_validation import UploadedFilesValidationError
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import s3man_applications, s3man_jobscripts
+from jobbergate_api.s3_manager import ApplicationFiles, s3man_jobscripts
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,
@@ -83,7 +83,7 @@ def build_job_script_data_as_string(application_id: int, application_config: App
     """
     logger.debug("Building the job script file from the S3 application and the templates")
 
-    application_files = s3man_applications.get_from_s3(application_id)
+    application_files = ApplicationFiles.get_from_s3(application_id)
 
     default_template_path = PurePath(application_config.jobbergate_config.default_template)
     default_template_name = default_template_path.name
