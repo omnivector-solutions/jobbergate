@@ -12,6 +12,7 @@ from fastapi import UploadFile
 from file_storehouse.engine import EngineLocal
 
 from jobbergate_api.s3_manager import (
+    APPLICATION_CONFIG_FILE_NAME,
     APPLICATION_SOURCE_FILE_NAME,
     APPLICATION_TEMPLATE_FOLDER,
     APPLICATIONS_WORK_DIR,
@@ -106,9 +107,13 @@ def test_write_application_files_to_s3(
     work_dir = mocked_file_manager_factory / APPLICATIONS_WORK_DIR / str(application_id)
     templates_dir = work_dir / APPLICATION_TEMPLATE_FOLDER
 
-    application_path = work_dir / APPLICATION_SOURCE_FILE_NAME
-    assert application_path.is_file()
-    assert application_path.read_text() == dummy_application_source_file
+    application_source_path = work_dir / APPLICATION_SOURCE_FILE_NAME
+    assert application_source_path.is_file()
+    assert application_source_path.read_text() == dummy_application_source_file
+
+    application_config_path = work_dir / APPLICATION_CONFIG_FILE_NAME
+    assert application_config_path.is_file()
+    assert application_config_path.read_text() == dummy_application_config
 
     assert templates_dir.is_dir()
 

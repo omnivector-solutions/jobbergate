@@ -11,7 +11,6 @@ from botocore.stub import Stubber
 from fastapi import status
 
 from jobbergate_api.apps.applications.models import applications_table
-from jobbergate_api.apps.applications.schemas import ApplicationConfig
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_scripts.routers import (
     build_job_script_data_as_string,
@@ -121,7 +120,6 @@ async def test_create_job_script(
         query=applications_table.insert(),
         values=fill_application_data(
             application_owner_email="owner1@org.com",
-            application_config=dummy_application_config,
             application_uploaded=True,
         ),
     )
@@ -129,6 +127,7 @@ async def test_create_job_script(
     mocked_get_application_files_from_s3.return_value = ApplicationFiles(
         templates={"test_job_script.sh": dummy_template},
         source_file=dummy_application_source_file,
+        config_file=dummy_application_config,
     )
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
@@ -277,7 +276,6 @@ async def test_create_job_script_file_not_found(
     param_dict,
     client,
     inject_security_header,
-    dummy_application_config,
 ):
     """
     Test that is not possible to create a job_script if the application is in the database but not in S3.
@@ -292,15 +290,11 @@ async def test_create_job_script_file_not_found(
         query=applications_table.insert(),
         values=fill_application_data(
             application_owner_email="owner1@org.com",
-            application_config=dummy_application_config,
             application_uploaded=True,
         ),
     )
 
-    mocked_get_application_files_from_s3.return_value = ApplicationFiles(
-        templates={},
-        source_file="",
-    )
+    mocked_get_application_files_from_s3.return_value = ApplicationFiles()
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     response = await client.post(
@@ -338,7 +332,6 @@ async def test_create_job_script_unable_to_write_file_to_s3(
         query=applications_table.insert(),
         values=fill_application_data(
             application_owner_email="owner1@org.com",
-            application_config=dummy_application_config,
             application_uploaded=True,
         ),
     )
@@ -346,6 +339,7 @@ async def test_create_job_script_unable_to_write_file_to_s3(
     mocked_get_application_files_from_s3.return_value = ApplicationFiles(
         templates={"test_job_script.sh": dummy_template},
         source_file=dummy_application_source_file,
+        config_file=dummy_application_config,
     )
 
     actual_id_rows = await database.fetch_all("SELECT id FROM job_scripts")
@@ -384,6 +378,7 @@ def test_build_job_script_data_as_string(
     param_dict,
     job_script_data_as_string,
     dummy_application_source_file,
+    dummy_application_config,
     dummy_template,
 ):
     """
@@ -392,11 +387,10 @@ def test_build_job_script_data_as_string(
     mocked_get_application_files_from_s3.return_value = ApplicationFiles(
         templates={"test_job_script.sh": dummy_template},
         source_file=dummy_application_source_file,
+        config_file=dummy_application_config,
     )
 
-    application_config = ApplicationConfig(**param_dict)
-
-    data_as_string = build_job_script_data_as_string(1, application_config)
+    data_as_string = build_job_script_data_as_string(1, param_dict)
     assert json.loads(data_as_string) == json.loads(job_script_data_as_string)
 
 

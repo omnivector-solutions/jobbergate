@@ -1,7 +1,7 @@
 """
 Router for the Application resource.
 """
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Query
@@ -98,16 +98,10 @@ async def applications_upload(
 
     ApplicationFiles.get_from_upload_files(upload_files).write_to_s3(application_id)
 
-    update_dict: Dict[str, Any] = dict(application_uploaded=True)
-
-    for upload in upload_files:
-        if upload.filename.endswith(".yaml"):
-            update_dict["application_config"] = upload.file.read().decode("utf-8")
-            upload.file.seek(0)
-            break
-
     update_query = (
-        applications_table.update().where(applications_table.c.id == application_id).values(update_dict)
+        applications_table.update()
+        .where(applications_table.c.id == application_id)
+        .values(dict(application_uploaded=True))
     )
 
     logger.trace(f"update_query = {render_sql(update_query)}")
@@ -147,7 +141,7 @@ async def applications_delete_upload(
     update_query = (
         applications_table.update()
         .where(applications_table.c.id == application_id)
-        .values(dict(application_uploaded=False, application_config=None))
+        .values(dict(application_uploaded=False))
     )
 
     logger.trace(f"update_query = {render_sql(update_query)}")

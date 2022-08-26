@@ -17,6 +17,7 @@ from jobbergate_api.config import settings
 from jobbergate_api.file_validation import perform_all_checks_on_uploaded_files
 
 APPLICATIONS_WORK_DIR = "applications"
+APPLICATION_CONFIG_FILE_NAME: str = "jobbergate.yaml"
 APPLICATION_SOURCE_FILE_NAME: str = "jobbergate.py"
 APPLICATION_TEMPLATE_FOLDER: str = "templates"
 
@@ -81,6 +82,7 @@ class ApplicationFiles(BaseModel):
     Model containing application files.
     """
 
+    config_file: Optional[str] = None
     source_file: Optional[str] = None
     templates: Optional[Dict[str, str]] = Field(default_factory=dict)
 
@@ -90,6 +92,7 @@ class ApplicationFiles(BaseModel):
         file_manager = s3man_applications_factory(application_id)
 
         application_files = cls(
+            config_file=file_manager.get(APPLICATION_CONFIG_FILE_NAME),
             source_file=file_manager.get(APPLICATION_SOURCE_FILE_NAME),
         )
 
@@ -114,6 +117,10 @@ class ApplicationFiles(BaseModel):
 
         file_manager = s3man_applications_factory(application_id)
 
+        if self.config_file:
+            path = Path(APPLICATION_CONFIG_FILE_NAME)
+            file_manager[path] = self.config_file
+
         if self.source_file:
             path = Path(APPLICATION_SOURCE_FILE_NAME)
             file_manager[path] = self.source_file
@@ -133,6 +140,9 @@ class ApplicationFiles(BaseModel):
         for upload in upload_files:
             if upload.filename.endswith(".py"):
                 application_files.source_file = upload.file.read().decode("utf-8")
+                upload.file.seek(0)
+            elif upload.filename.endswith(".yaml"):
+                application_files.config_file = upload.file.read().decode("utf-8")
                 upload.file.seek(0)
             elif upload.filename.endswith((".j2", ".jinja2")):
                 filename = PurePath(upload.filename).name

@@ -3,7 +3,7 @@ Router for the JobScript resource.
 """
 import json
 from pathlib import PurePath
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -77,7 +77,10 @@ def render_template(template_files, param_dict_flat):
     return job_script_data_as_string
 
 
-def build_job_script_data_as_string(application_id: int, application_config: ApplicationConfig) -> str:
+def build_job_script_data_as_string(
+    application_id: int,
+    job_script_param_dict: Dict,
+) -> str:
     """
     Return the job_script_data_as_string from the S3 application and the templates.
     """
@@ -85,18 +88,30 @@ def build_job_script_data_as_string(application_id: int, application_config: App
 
     application_files = ApplicationFiles.get_from_s3(application_id)
 
-    default_template_path = PurePath(application_config.jobbergate_config.default_template)
-    default_template_name = default_template_path.name
-
     with UploadedFilesValidationError.check_expressions("One or more application files are missing") as check:
         check(
+            application_files.config_file,
+            f"Application config file was not found for {application_id=}",
+        )
+        check(
             application_files.source_file,
-            f"Application file was not found for {application_id=}",
+            f"Application source file was not found for {application_id=}",
         )
         check(
             application_files.templates,
             f"No template was found for {application_id=}",
         )
+        # Use application_config from the application as a baseline of defaults
+        logger.debug(f"APP CONFIG: {application_files.config_file}")
+        param_dict = safe_load(application_files.config_file)
+        # User supplied param dict is optional and may override defaults
+        param_dict.update(**job_script_param_dict)
+
+        application_config = ApplicationConfig(**param_dict)
+
+        default_template_path = PurePath(application_config.jobbergate_config.default_template)
+        default_template_name = default_template_path.name
+
         check(
             default_template_name in application_files.templates,
             f"{default_template_name=} was found for {application_id=}",
@@ -162,17 +177,8 @@ async def job_script_create(
         job_script_owner_email=identity_claims.email,
     )
 
-    # Use application_config from the application as a baseline of defaults
-    logger.debug(f"APP CONFIG: {application.application_config}")
-    param_dict = safe_load(application.application_config)
-
-    # User supplied param dict is optional and may override defaults
-    param_dict.update(**job_script.param_dict)
-
-    application_config = ApplicationConfig(**param_dict)
-
     try:
-        job_script_data_as_string = build_job_script_data_as_string(application.id, application_config)
+        job_script_data_as_string = build_job_script_data_as_string(application.id, job_script.param_dict)
     except UploadedFilesValidationError as e:
         message = str(e)
         logger.error(message)

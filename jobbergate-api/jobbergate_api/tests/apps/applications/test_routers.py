@@ -310,7 +310,6 @@ async def test_get_application_by_id__files_not_uploaded(
     assert data["id"] == inserted_id
     assert data["application_identifier"] == "app1"
     assert data["application_uploaded"] is False
-    assert data["application_config"] is None
     assert data["application_source_file"] is None
     assert data["application_templates"] is None
 
@@ -339,7 +338,6 @@ async def test_get_application_by_id__files_uploaded(
         values=fill_application_data(
             application_identifier="app1",
             application_uploaded=True,
-            application_config=dummy_application_config,
         ),
     )
     await database.execute(
@@ -350,6 +348,7 @@ async def test_get_application_by_id__files_uploaded(
     mocked_get_application_files_from_s3.return_value = ApplicationFiles(
         templates={"test_job_script.sh": dummy_template},
         source_file=dummy_application_source_file,
+        application_config=dummy_application_config,
     )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
