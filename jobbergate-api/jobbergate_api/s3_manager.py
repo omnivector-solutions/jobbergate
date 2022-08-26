@@ -24,10 +24,9 @@ This constant can be shared between file managers.
 """
 
 
-@dataclass
-class ApplicationFiles:
+class ApplicationFiles(BaseModel):
     """
-    Dataclass containing application files.
+    Model containing application files.
     """
 
     templates: Optional[Dict[str, str]]
