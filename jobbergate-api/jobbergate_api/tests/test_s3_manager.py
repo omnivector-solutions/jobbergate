@@ -3,11 +3,13 @@ Test s3 manager.
 """
 
 import contextlib
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from fastapi import UploadFile
 from file_storehouse import FileManager, FileManagerReadOnly
+from file_storehouse.engine import EngineLocal
 
 from jobbergate_api.s3_manager import ApplicationFiles, s3man_applications, s3man_jobscripts
 
@@ -107,6 +109,15 @@ def mocked_applications_source_file_manager():
     with patch("jobbergate_api.s3_manager.s3man_applications.source_files", mock_result_as_dict):
         yield mock_result_as_dict
     mock_result_as_dict.clear()
+
+
+@pytest.fixture(scope="function")
+def mocked_file_manager_factory(tmp_path):
+    def local_engine_factory(*, work_directory: Path, **kwargs):
+        return EngineLocal(base_path=tmp_path / work_directory)
+
+    with patch("jobbergate_api.s3_manager.engine_factory", wraps=local_engine_factory):
+        yield tmp_path
 
 
 def test_write_application_files_to_s3(

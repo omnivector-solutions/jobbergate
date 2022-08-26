@@ -1,9 +1,10 @@
 """
 Provide a convenience class for managing calls to S3.
 """
-from typing import Dict, Optional, List, Union, Callable, cast
+from typing import Dict, Optional, List, Tuple, Union, Callable
 from dataclasses import dataclass, field
-from pathlib import PurePath
+from functools import partial
+from pathlib import Path, PurePath
 
 from fastapi import UploadFile
 from file_storehouse import FileManager, FileManagerReadOnly, client
@@ -11,12 +12,12 @@ from file_storehouse.engine.s3 import BaseClient, EngineS3
 from file_storehouse.key_mapping import KeyMappingNumeratedFolder, KeyMappingRaw
 from file_storehouse.transformation import TransformationABC, TransformationCodecs
 from loguru import logger
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from jobbergate_api.config import settings
 from jobbergate_api.file_validation import perform_all_checks_on_uploaded_files
 
-LIST_OF_TRANSFORMATIONS: List[TransformationABC] = [TransformationCodecs("utf-8")]
+LIST_OF_TRANSFORMATIONS: Tuple[TransformationABC] = (TransformationCodecs("utf-8"),)
 """
 List the transformations to be performed when writing/reading S3 objects.
 
@@ -24,13 +25,122 @@ This constant can be shared between file managers.
 """
 
 
+def engine_factory(*, s3_client: BaseClient, bucket_name: str, work_directory: Path) -> EngineS3:
+    return EngineS3(s3_client=s3_client, bucket_name=bucket_name, prefix=str(work_directory))
+
+
+def file_manager_factory(
+    id: int,
+    *,
+    s3_client: BaseClient,
+    bucket_name: str,
+    work_directory: Path,
+    manager_cls: Union[FileManager, FileManagerReadOnly],
+    transformations: Tuple[TransformationABC],
+) -> Union[FileManager, FileManagerReadOnly]:
+
+    return manager_cls(
+        engine=engine_factory(
+            s3_client=s3_client,
+            bucket_name=bucket_name,
+            work_directory=work_directory / str(id),
+        ),
+        transformation_list=transformations,
+    )
+
+
+s3_client = client(
+    "s3",
+    endpoint_url=settings.S3_ENDPOINT_URL,
+)
+
+s3man_applications_factory: Callable[[int], FileManager] = partial(
+    file_manager_factory,
+    s3_client=s3_client,
+    bucket_name=settings.S3_BUCKET_NAME,
+    work_directory=Path("applications"),
+    manager_cls=FileManager,
+    transformations=LIST_OF_TRANSFORMATIONS,
+)
+
+s3man_jobscripts_factory: Callable[[int], FileManager] = partial(
+    file_manager_factory,
+    s3_client=s3_client,
+    bucket_name=settings.S3_BUCKET_NAME,
+    work_directory=Path("job-scripts"),
+    manager_cls=FileManager,
+    transformations=LIST_OF_TRANSFORMATIONS,
+)
+
+
+APPLICATION_SOURCE_FILE_NAME: str = "jobbergate.py"
+APPLICATION_TEMPLATE_FOLDER: str = "templates"
+
+
 class ApplicationFiles(BaseModel):
     """
     Model containing application files.
     """
 
-    templates: Optional[Dict[str, str]]
-    source_file: Optional[str]
+    source_file: Optional[str] = None
+    templates: Optional[Dict[str, str]] = Field(default_factory=dict)
+
+    @classmethod
+    def get_from_s3(cls, application_id: int):
+        logger.debug(f"Getting application files from S3: {application_id=}")
+        file_manager = s3man_applications_factory(application_id)
+
+        application_files = cls(
+            source_file=file_manager.get(APPLICATION_SOURCE_FILE_NAME),
+        )
+
+        for path in file_manager.keys():
+            if path.parent == APPLICATION_TEMPLATE_FOLDER:
+                filename = path.name
+                application_files.templates[filename] = file_manager[path]
+
+        return application_files
+
+    @classmethod
+    def delete_from_s3(cls, application_id: int):
+        logger.debug(f"Deleting from S3 the files associated to {application_id=}")
+        file_manager = s3man_applications_factory(application_id)
+        file_manager.clear()
+
+    def write_to_s3(self, application_id: int, *, remove_previous_files: bool = True):
+        logger.debug(f"Writing the application files to S3: {application_id=}")
+
+        if remove_previous_files:
+            self.delete_from_s3(application_id)
+
+        file_manager = s3man_applications_factory(application_id)
+
+        if self.source_file:
+            path = Path(APPLICATION_SOURCE_FILE_NAME)
+            file_manager[path] = self.source_file
+
+        for name, content in self.templates.items():
+            path = Path(APPLICATION_TEMPLATE_FOLDER, name)
+            file_manager[path] = content
+
+    @classmethod
+    def get_from_upload_files(cls, upload_files: List[UploadFile]):
+        logger.debug("Getting application files from the uploaded files")
+
+        perform_all_checks_on_uploaded_files(upload_files)
+
+        application_files = cls()
+
+        for upload in upload_files:
+            if upload.filename.endswith(".py"):
+                application_files.source_file = upload.file.read().decode("utf-8")
+                upload.file.seek(0)
+            elif upload.filename.endswith((".j2", ".jinja2")):
+                filename = PurePath(upload.filename).name
+                application_files.templates[filename] = upload.file.read().decode("utf-8")
+                upload.file.seek(0)
+
+        return application_files
 
 
 @dataclass
@@ -88,26 +198,10 @@ class ApplicationFileManager:
         :param List[UploadFile] upload_files: Uploaded files
         :param bool remove_previous_files: Delete old files before writing the new ones
         """
-        logger.debug(f"Writing the list of uploaded files to S3: {application_id=}")
-
-        perform_all_checks_on_uploaded_files(upload_files)
-
-        if remove_previous_files:
-            self.delete_from_s3(application_id)
-
-        templates_manager = cast(
-            FileManager,
-            self.template_manager_factory(application_id, is_read_only=False),
+        ApplicationFiles.get_from_upload_files(upload_files).write_to_s3(
+            application_id,
+            remove_previous_files=remove_previous_files,
         )
-
-        for upload in upload_files:
-            if upload.filename.endswith(".py"):
-                self.source_files[application_id] = upload.file.read().decode("utf-8")
-                upload.file.seek(0)
-            elif upload.filename.endswith((".j2", ".jinja2")):
-                filename = PurePath(upload.filename).name
-                templates_manager[filename] = upload.file.read().decode("utf-8")
-                upload.file.seek(0)
 
     def get_from_s3(self, application_id: int) -> ApplicationFiles:
         """
@@ -118,12 +212,7 @@ class ApplicationFileManager:
         """
         logger.debug(f"Getting application files from S3: {application_id=}")
 
-        templates_manager = self.template_manager_factory(application_id, True)
-
-        return ApplicationFiles(
-            templates={str(key): value for key, value in templates_manager.items()},
-            source_file=self.source_files.get(application_id, ""),
-        )
+        return ApplicationFiles.get_from_s3(application_id)
 
     def delete_from_s3(self, application_id: int):
         """
@@ -131,25 +220,8 @@ class ApplicationFileManager:
 
         :param int application_id: Application identification number
         """
-        logger.debug(f"Deleting from S3 the files associated to {application_id=}")
+        ApplicationFiles.delete_from_s3(application_id)
 
-        templates_manager = cast(
-            FileManager, self.template_manager_factory(application_id, is_read_only=False)
-        )
-
-        templates_manager.clear()
-        try:
-            del self.source_files[application_id]
-        except KeyError:
-            logger.warning(
-                f"Tried to delete the source code for {application_id=}, but it was not found on S3",
-            )
-
-
-s3_client = client(
-    "s3",
-    endpoint_url=settings.S3_ENDPOINT_URL,
-)
 
 s3man_applications = ApplicationFileManager(bucket_name=settings.S3_BUCKET_NAME, s3_client=s3_client)
 
