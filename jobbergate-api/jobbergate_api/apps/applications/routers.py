@@ -285,12 +285,13 @@ async def applications_get_by_id(application_id: int = Query(...)):
 
     logger.debug(f"Application data: {application_data=}")
 
-    response = ApplicationResponse(**application_data)
-
-    if response.application_uploaded:
-        application_files = ApplicationFiles.get_from_s3(response.id)
-        response.application_source_file = application_files.source_file
-        response.application_templates = application_files.templates
+    if application_data.application_uploaded:
+        response = ApplicationResponse(
+            **application_data,
+            **ApplicationFiles.get_from_s3(application_data.id),
+        )
+    else:
+        response = ApplicationResponse(**application_data)
 
     return response
 

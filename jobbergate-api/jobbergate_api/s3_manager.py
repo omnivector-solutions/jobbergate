@@ -99,7 +99,7 @@ class ApplicationFiles(BaseModel):
         for path in file_manager.keys():
             if str(path.parent) == APPLICATION_TEMPLATE_FOLDER:
                 filename = path.name
-                application_files.templates[filename] = file_manager[path]
+                application_files.templates[filename] = file_manager.get(path)
 
         return application_files
 
