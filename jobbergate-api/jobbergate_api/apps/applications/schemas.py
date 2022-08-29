@@ -6,7 +6,7 @@ from pathlib import Path
 from textwrap import dedent
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
 
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
@@ -96,12 +96,30 @@ class JobbergateConfig(BaseModel):
     Model for Jobbergate configuration (subsection at the yaml file).
     """
 
-    default_template: str
-    supporting_files: Optional[List[Path]]
-    supporting_files_output_name: Optional[Dict[str, List[Any]]]
-    template_files: Optional[List[Path]]
+    default_template: str = None
+    supporting_files: Optional[List[str]]
+    supporting_files_output_name: Optional[Dict[str, List[str]]]
+    template_files: Optional[List[str]]
     job_script_name: Optional[str]
-    output_directory: Path = Path(".")
+    output_directory: str = "."
+
+    @root_validator(pre=True)
+    def compute_extra_settings(cls, values):
+        """
+        Compute missing values and extra operations to enhance the user experience.
+        """
+
+        # Transform string to list of strings for a better user experience
+        if values.get("supporting_files_output_name"):
+            for k, v in values["supporting_files_output_name"].items():
+                if isinstance(v, str):
+                    values["supporting_files_output_name"][k] = [v]
+
+        # Get the list of supporting files automatically
+        if values.get("supporting_files_output_name") and not values.get("supporting_files"):
+            values["supporting_files"] = list(values.get("supporting_files_output_name"))
+
+        return values
 
     class Config:
         extra = "allow"
