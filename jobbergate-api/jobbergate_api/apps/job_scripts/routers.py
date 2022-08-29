@@ -88,34 +88,28 @@ def build_job_script_data_as_string(
 
     application_files = ApplicationFiles.get_from_s3(application_id)
 
-    with UploadedFilesValidationError.check_expressions("One or more application files are missing") as check:
-        check(
-            application_files.config_file,
-            f"Application config file was not found for {application_id=}",
-        )
-        check(
-            application_files.source_file,
-            f"Application source file was not found for {application_id=}",
-        )
-        check(
-            application_files.templates,
-            f"No template was found for {application_id=}",
-        )
-        # Use application_config from the application as a baseline of defaults
-        logger.debug(f"APP CONFIG: {application_files.config_file}")
-        param_dict = safe_load(application_files.config_file)
-        # User supplied param dict is optional and may override defaults
-        param_dict.update(**job_script_param_dict)
+    with UploadedFilesValidationError.check_expressions(
+        main_message=f"One or more application files are missing for {application_id=}",
+    ) as check:
+        check(application_files.config_file, "Application config file was not found")
+        check(application_files.source_file, "Application source file was not found")
+        check(application_files.templates, "No template file was found")
 
-        application_config = ApplicationConfig(**param_dict)
+    # Use application_config from the application as a baseline of defaults
+    logger.debug(f"APP CONFIG: {application_files.config_file}")
+    param_dict = safe_load(application_files.config_file)
+    # User supplied param dict is optional and may override defaults
+    param_dict.update(**job_script_param_dict)
 
-        default_template_path = PurePath(application_config.jobbergate_config.default_template)
-        default_template_name = default_template_path.name
+    application_config = ApplicationConfig(**param_dict)
 
-        check(
-            default_template_name in application_files.templates,
-            f"{default_template_name=} was found for {application_id=}",
-        )
+    default_template_path = PurePath(application_config.jobbergate_config.default_template)
+    default_template_name = default_template_path.name
+
+    UploadedFilesValidationError.require_condition(
+        default_template_name in application_files.templates,
+        f"{default_template_name=} was found for {application_id=}",
+    )
 
     # rename default template
     default_template_file = application_files.templates.pop(default_template_name)
