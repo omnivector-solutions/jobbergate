@@ -128,6 +128,7 @@ def test_write_application_files_to_s3(
 
 def test_get_application_files_from_s3(
     dummy_application_source_file,
+    dummy_application_config,
     dummy_template,
     mocked_file_manager_factory,
 ):
@@ -144,6 +145,9 @@ def test_get_application_files_from_s3(
     application_path = work_dir / APPLICATION_SOURCE_FILE_NAME
     application_path.write_text(dummy_application_source_file)
 
+    config_path = work_dir / APPLICATION_CONFIG_FILE_NAME
+    config_path.write_text(dummy_application_config)
+
     template_path_1 = templates_dir / "template-1.j2"
     template_path_1.write_text(dummy_template)
 
@@ -155,6 +159,8 @@ def test_get_application_files_from_s3(
     assert isinstance(application_files, ApplicationFiles)
 
     assert application_files.source_file == dummy_application_source_file
+
+    assert application_files.config_file == dummy_application_config
 
     assert application_files.templates == {
         "template-1.j2": dummy_template,

@@ -82,9 +82,12 @@ class ApplicationFiles(BaseModel):
     Model containing application files.
     """
 
-    config_file: Optional[str] = None
-    source_file: Optional[str] = None
-    templates: Optional[Dict[str, str]] = Field(default_factory=dict)
+    config_file: Optional[str] = Field(None, alias="application_config")
+    source_file: Optional[str] = Field(None, alias="application_source_file")
+    templates: Optional[Dict[str, str]] = Field(default_factory=dict, alias="application_templates")
+
+    class Config:
+        allow_population_by_field_name = True
 
     @classmethod
     def get_from_s3(cls, application_id: int):
@@ -92,8 +95,8 @@ class ApplicationFiles(BaseModel):
         file_manager = s3man_applications_factory(application_id)
 
         application_files = cls(
-            config_file=file_manager.get(APPLICATION_CONFIG_FILE_NAME),
-            source_file=file_manager.get(APPLICATION_SOURCE_FILE_NAME),
+            config_file=file_manager.get(APPLICATION_CONFIG_FILE_NAME, ""),
+            source_file=file_manager.get(APPLICATION_SOURCE_FILE_NAME, ""),
         )
 
         for path in file_manager.keys():

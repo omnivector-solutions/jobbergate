@@ -348,7 +348,7 @@ async def test_get_application_by_id__files_uploaded(
     mocked_get_application_files_from_s3.return_value = ApplicationFiles(
         templates={"test_job_script.sh": dummy_template},
         source_file=dummy_application_source_file,
-        application_config=dummy_application_config,
+        config_file=dummy_application_config,
     )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")

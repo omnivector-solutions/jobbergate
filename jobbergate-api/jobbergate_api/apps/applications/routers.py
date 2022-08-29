@@ -288,7 +288,10 @@ async def applications_get_by_id(application_id: int = Query(...)):
     if application_data.application_uploaded:
         response = ApplicationResponse(
             **application_data,
-            **ApplicationFiles.get_from_s3(application_data.id),
+            **ApplicationFiles.get_from_s3(application_data.id).dict(
+                by_alias=True,
+                exclude_defaults=True,
+            ),
         )
     else:
         response = ApplicationResponse(**application_data)
