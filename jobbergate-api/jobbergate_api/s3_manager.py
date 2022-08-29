@@ -91,12 +91,15 @@ class ApplicationFiles(BaseModel):
 
     @classmethod
     def get_from_s3(cls, application_id: int):
+        """
+        Alternative method to initialize the model getting the objects from S3.
+        """
         logger.debug(f"Getting application files from S3: {application_id=}")
         file_manager = s3man_applications_factory(application_id)
 
         application_files = cls(
-            config_file=file_manager.get(APPLICATION_CONFIG_FILE_NAME, ""),
-            source_file=file_manager.get(APPLICATION_SOURCE_FILE_NAME, ""),
+            config_file=file_manager.get(APPLICATION_CONFIG_FILE_NAME),
+            source_file=file_manager.get(APPLICATION_SOURCE_FILE_NAME),
         )
 
         for path in file_manager.keys():
@@ -104,15 +107,24 @@ class ApplicationFiles(BaseModel):
                 filename = path.name
                 application_files.templates[filename] = file_manager.get(path)
 
+        logger.debug("Success getting application files from S3")
+
         return application_files
 
     @classmethod
     def delete_from_s3(cls, application_id: int):
+        """
+        Deleted the files associated with the given id.
+        """
         logger.debug(f"Deleting from S3 the files associated to {application_id=}")
         file_manager = s3man_applications_factory(application_id)
         file_manager.clear()
+        logger.debug(f"Files were deleted for {application_id=}")
 
     def write_to_s3(self, application_id: int, *, remove_previous_files: bool = True):
+        """
+        Write to s3 the files associated with a given id.
+        """
         logger.debug(f"Writing the application files to S3: {application_id=}")
 
         if remove_previous_files:
@@ -132,8 +144,13 @@ class ApplicationFiles(BaseModel):
             path = Path(APPLICATION_TEMPLATE_FOLDER, name)
             file_manager[path] = content
 
+        logger.debug(f"Files were written for {application_id=}")
+
     @classmethod
     def get_from_upload_files(cls, upload_files: List[UploadFile]):
+        """
+        Initialize the model getting the objects from a list of uploaded files.
+        """
         logger.debug("Getting application files from the uploaded files")
 
         perform_all_checks_on_uploaded_files(upload_files)
@@ -151,6 +168,8 @@ class ApplicationFiles(BaseModel):
                 filename = PurePath(upload.filename).name
                 application_files.templates[filename] = upload.file.read().decode("utf-8")
                 upload.file.seek(0)
+
+        logger.debug("Success getting application files from the uploaded files")
 
         return application_files
 

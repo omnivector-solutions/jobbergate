@@ -291,6 +291,7 @@ async def applications_get_by_id(application_id: int = Query(...)):
             **ApplicationFiles.get_from_s3(application_data.id).dict(
                 by_alias=True,
                 exclude_defaults=True,
+                exclude_unset=True,
             ),
         )
     else:
