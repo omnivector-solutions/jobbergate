@@ -1,15 +1,21 @@
 """
 Provide a convenience class for managing calls to S3.
 """
-from typing import Dict, Optional, List, Tuple, Union, Callable
 from functools import partial
 from pathlib import Path, PurePath
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
+from boto3 import client
+from botocore.client import BaseClient
 from fastapi import UploadFile
-from file_storehouse import FileManager, FileManagerReadOnly, client
-from file_storehouse.engine.s3 import BaseClient, EngineS3
-from file_storehouse.key_mapping import KeyMappingNumeratedFolder
-from file_storehouse.transformation import TransformationABC, TransformationCodecs
+from file_storehouse import (
+    EngineS3,
+    FileManager,
+    FileManagerReadOnly,
+    KeyMappingNumeratedFolder,
+    TransformationABC,
+    TransformationCodecs,
+)
 from loguru import logger
 from pydantic import BaseModel, Field
 
@@ -17,13 +23,15 @@ from jobbergate_api.config import settings
 from jobbergate_api.file_validation import perform_all_checks_on_uploaded_files
 
 APPLICATIONS_WORK_DIR = "applications"
-APPLICATION_CONFIG_FILE_NAME: str = "jobbergate.yaml"
-APPLICATION_SOURCE_FILE_NAME: str = "jobbergate.py"
-APPLICATION_TEMPLATE_FOLDER: str = "templates"
+APPLICATION_CONFIG_FILE_NAME = "jobbergate.yaml"
+APPLICATION_SOURCE_FILE_NAME = "jobbergate.py"
+APPLICATION_TEMPLATE_FOLDER = "templates"
 
-LIST_OF_TRANSFORMATIONS: Tuple[TransformationABC] = (TransformationCodecs("utf-8"),)
+IO_TRANSFORMATIONS = (TransformationCodecs("utf-8"),)
 """
-List the transformations to be performed when writing/reading S3 objects.
+Transformations to be performed when writing/reading S3 objects.
+
+With this, all files are encoded/decoded with utf-8.
 
 This constant can be shared between file managers.
 """
@@ -32,6 +40,11 @@ This constant can be shared between file managers.
 def engine_factory(*, s3_client: BaseClient, bucket_name: str, work_directory: Path) -> EngineS3:
     """
     Build an engine to manipulate objects from an s3 bucket.
+
+    :param BaseClient s3_client: S3 client from boto3
+    :param str bucket_name: The name of the s3 bucket
+    :param Path work_directory: Work directory (referred as prefix at boto3 documentation)
+    :return EngineS3: And engine to manipulate files from s3
     """
     return EngineS3(s3_client=s3_client, bucket_name=bucket_name, prefix=str(work_directory))
 
@@ -45,14 +58,24 @@ def file_manager_factory(
     manager_cls: Union[FileManager, FileManagerReadOnly],
     transformations: Tuple[TransformationABC],
 ) -> Union[FileManager, FileManagerReadOnly]:
+    """
+    Build a file managers on demand.
 
+    :param int id: identification number
+    :param BaseClient s3_client: S3 client from boto3
+    :param str bucket_name: The name of the s3 bucket
+    :param Path work_directory: Work directory (referred as prefix at boto3 documentation)
+    :param Union[FileManager, FileManagerReadOnly] manager_cls: Manager class (i/o access or just read only)
+    :param Tuple[TransformationABC] transformations: I/o transformations
+    :return Union[FileManager, FileManagerReadOnly]: Manager object
+    """
     return manager_cls(
         engine=engine_factory(
             s3_client=s3_client,
             bucket_name=bucket_name,
             work_directory=work_directory / str(id),
         ),
-        transformation_list=transformations,
+        io_transformations=transformations,
     )
 
 
@@ -64,7 +87,7 @@ s3man_applications_factory: Callable[[int], FileManager] = partial(
     bucket_name=settings.S3_BUCKET_NAME,
     work_directory=Path(APPLICATIONS_WORK_DIR),
     manager_cls=FileManager,
-    transformations=LIST_OF_TRANSFORMATIONS,
+    transformations=IO_TRANSFORMATIONS,
 )
 
 s3man_jobscripts_factory: Callable[[int], FileManager] = partial(
@@ -73,7 +96,7 @@ s3man_jobscripts_factory: Callable[[int], FileManager] = partial(
     bucket_name=settings.S3_BUCKET_NAME,
     work_directory=Path("job-scripts"),
     manager_cls=FileManager,
-    transformations=LIST_OF_TRANSFORMATIONS,
+    transformations=IO_TRANSFORMATIONS,
 )
 
 
@@ -176,6 +199,6 @@ class ApplicationFiles(BaseModel):
 
 s3man_jobscripts = FileManager(
     engine=EngineS3(s3_client, settings.S3_BUCKET_NAME, "job-scripts"),
-    transformation_list=LIST_OF_TRANSFORMATIONS,
+    io_transformations=IO_TRANSFORMATIONS,
     key_mapping=KeyMappingNumeratedFolder("jobbergate.txt"),
 )

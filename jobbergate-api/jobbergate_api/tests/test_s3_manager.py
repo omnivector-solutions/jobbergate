@@ -80,7 +80,7 @@ def make_uploaded_files():
     return _helper
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def make_uploaded_files_filled(
     make_dummy_file,
     make_uploaded_files,
