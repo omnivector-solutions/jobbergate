@@ -2,9 +2,12 @@
 Test job-script files.
 """
 
+import json
 from pathlib import Path
+from textwrap import dedent
 
 import pytest
+from jobbergate_api.apps.applications.application_files import ApplicationFiles
 
 from jobbergate_api.apps.job_scripts.job_script_files import (
     JOBSCRIPTS_MAIN_FILE_FOLDER,
@@ -12,6 +15,63 @@ from jobbergate_api.apps.job_scripts.job_script_files import (
     JOBSCRIPTS_WORK_DIR,
     JobScriptFiles,
 )
+
+
+@pytest.fixture
+def job_script_data_as_string():
+    """
+    Provide a fixture that returns an example of a default application script.
+    """
+    content = dedent(
+        """
+        #!/bin/bash
+
+        #SBATCH --job-name=rats
+        #SBATCH --partition=debug
+        #SBATCH --output=sample-%j.out
+
+
+        echo $SLURM_TASKS_PER_NODE
+        echo $SLURM_SUBMIT_DIR
+        """
+    ).strip()
+    return content
+
+
+@pytest.fixture
+def new_job_script_data_as_string():
+    """
+    Provide a fixture that returns an application script after the injection of the sbatch params.
+    """
+    content = json.dumps(
+        {
+            "application.sh": dedent(
+                """
+                #!/bin/bash
+
+                #SBATCH --comment=some_comment
+                #SBATCH --nice=-1
+                #SBATCH -N 10
+                #SBATCH --job-name=rats
+                #SBATCH --partition=debug
+                #SBATCH --output=sample-%j.out
+
+
+                echo $SLURM_TASKS_PER_NODE
+                echo $SLURM_SUBMIT_DIR
+                """
+            ).strip(),
+        }
+    )
+    return content
+
+
+@pytest.fixture
+def sbatch_params():
+    """
+    Provide a fixture that returns string content of the argument --sbatch-params.
+    """
+    return ["--comment=some_comment", "--nice=-1", "-N 10"]
 
 
 class TestJobScriptFiles:
@@ -156,3 +216,32 @@ class TestJobScriptFiles:
             match="One main file is expected for a job-script, found 0",
         ):
             JobScriptFiles.get_from_s3(job_script_id)
+
+    def test_render_from_application__sucess(
+        self,
+        param_dict,
+        job_script_data_as_string,
+        dummy_application_source_file,
+        dummy_application_config,
+        dummy_template,
+    ):
+        application_files = ApplicationFiles(
+            templates={"test_job_script.sh": dummy_template},
+            source_file=dummy_application_source_file,
+            config_file=dummy_application_config,
+        )
+
+        desired_job_script_files = JobScriptFiles(
+            main_file_path="test_job_script.sh",
+            files={
+                "test_job_script.sh": job_script_data_as_string,
+                "support_file_b.py": job_script_data_as_string,
+            },
+        )
+
+        actual_job_script_files = JobScriptFiles.render_from_application(
+            application_files,
+            param_dict,
+        )
+
+        assert actual_job_script_files == desired_job_script_files
