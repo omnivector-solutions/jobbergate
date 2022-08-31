@@ -1,6 +1,7 @@
 """
 Provide a convenience class for managing calls to S3.
 """
+from functools import lru_cache
 from pathlib import Path
 from typing import Tuple, Union
 
@@ -39,6 +40,7 @@ def engine_factory(*, s3_client: BaseClient, bucket_name: str, work_directory: P
     return EngineS3(s3_client=s3_client, bucket_name=bucket_name, prefix=str(work_directory))
 
 
+@lru_cache(maxsize=128)
 def file_manager_factory(
     id: int,
     *,
@@ -46,7 +48,7 @@ def file_manager_factory(
     bucket_name: str,
     work_directory: Path,
     manager_cls: Union[FileManager, FileManagerReadOnly],
-    transformations: Tuple[TransformationABC],
+    transformations: Tuple[TransformationABC, ...],
 ) -> Union[FileManager, FileManagerReadOnly]:
     """
     Build a file managers on demand.
