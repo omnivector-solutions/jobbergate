@@ -409,3 +409,11 @@ class TestJobScriptFiles:
         desired_jobscript_files = JobScriptFiles.get_from_s3(job_script_id)
 
         assert desired_jobscript_files == actual_jobscript_files
+
+        JobScriptFiles.delete_from_s3(job_script_id)
+
+        with pytest.raises(
+            ValueError,
+            match="One main file is expected for a job-script, found 0",
+        ):
+            JobScriptFiles.get_from_s3(job_script_id)
