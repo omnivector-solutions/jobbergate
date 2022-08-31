@@ -96,7 +96,7 @@ class JobbergateConfig(BaseModel):
     Model for Jobbergate configuration (subsection at the yaml file).
     """
 
-    default_template: str = None
+    default_template: Optional[str]
     supporting_files: Optional[List[str]]
     supporting_files_output_name: Optional[Dict[str, List[str]]]
     template_files: Optional[List[str]]
