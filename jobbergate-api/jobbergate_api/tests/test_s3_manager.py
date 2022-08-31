@@ -9,13 +9,13 @@ import pytest
 from boto3 import client
 from file_storehouse.engine import EngineLocal
 
-from jobbergate_api.s3_manager import (
+from jobbergate_api.apps.job_scripts.job_script_files import (
     JOBSCRIPTS_MAIN_FILE_FOLDER,
     JOBSCRIPTS_SUPPORTING_FILES_FOLDER,
     JOBSCRIPTS_WORK_DIR,
     JobScriptFiles,
-    engine_factory,
 )
+from jobbergate_api.s3_manager import engine_factory
 
 
 class TestEngineFactory:
