@@ -3,12 +3,9 @@ Test application files.
 """
 
 import contextlib
-from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from fastapi import UploadFile
-from file_storehouse.engine import EngineLocal
 
 from jobbergate_api.apps.applications.application_files import (
     APPLICATION_CONFIG_FILE_NAME,
@@ -17,23 +14,6 @@ from jobbergate_api.apps.applications.application_files import (
     APPLICATIONS_WORK_DIR,
     ApplicationFiles,
 )
-
-
-@pytest.fixture(scope="function")
-def mocked_file_manager_factory(tmp_path):
-    """
-    Fixture to replace the default file engine (EngineS3) by a local one.
-
-    In this way, all objects are stored in a temporary directory ``tmp_path``,
-    that is yield for reference. Files and directories can than be managed
-    normally with pathlib.Path.
-    """
-
-    def local_engine_factory(*, work_directory: Path, **kwargs):
-        return EngineLocal(base_path=tmp_path / work_directory)
-
-    with patch("jobbergate_api.s3_manager.engine_factory", wraps=local_engine_factory):
-        yield tmp_path
 
 
 @pytest.fixture
