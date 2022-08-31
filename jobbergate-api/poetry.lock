@@ -414,7 +414,7 @@ test = ["pytest (>=6.2.4,<7.0.0)", "pytest-cov (>=2.12.0,<4.0.0)", "pytest-async
 
 [[package]]
 name = "file-storehouse"
-version = "0.4.0"
+version = "0.5.0"
 description = "Manage files in bulk quantity using a friendly dict-like interface"
 category = "main"
 optional = false
@@ -1657,7 +1657,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "a42de919aee410f275eb1ae880802cb5b4a776e4581fc2736fb6bec7583d1778"
+content-hash = "058dbfe428a434f5022454cf6b15e388beed9c823958ca56627f376f2208ea85"
 
 [metadata.files]
 alembic = [
@@ -1926,8 +1926,8 @@ fastapi = [
     {file = "fastapi-0.68.2.tar.gz", hash = "sha256:38526fc46bda73f7ec92033952677323c16061e70a91d15c95f18b11895da494"},
 ]
 file-storehouse = [
-    {file = "file-storehouse-0.4.0.tar.gz", hash = "sha256:80855ab80ad90616c7ff533d71dc801c2b2191bb52f87a55cbc688c166b45168"},
-    {file = "file_storehouse-0.4.0-py3-none-any.whl", hash = "sha256:f46e65dce69667959874f86ae429b6288061917443f095a66dc5dd36f9c4151b"},
+    {file = "file-storehouse-0.5.0.tar.gz", hash = "sha256:78e535862d8b852412e94d5014a31a18289bbcd1f34b570a3a53307b70d69ac8"},
+    {file = "file_storehouse-0.5.0-py3-none-any.whl", hash = "sha256:e5e395aefa4553f29bed4d30dcc7051bf92faa742005bb6320340874b3526083"},
 ]
 filelock = [
     {file = "filelock-3.6.0-py3-none-any.whl", hash = "sha256:f8314284bfffbdcfa0ff3d7992b023d4c628ced6feb957351d4c48d059f56bc0"},
