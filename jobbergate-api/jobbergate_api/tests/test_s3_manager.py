@@ -11,15 +11,17 @@ from boto3 import client
 from fastapi import UploadFile
 from file_storehouse.engine import EngineLocal
 
-from jobbergate_api.s3_manager import (
+from jobbergate_api.apps.applications.application_files import (
     APPLICATION_CONFIG_FILE_NAME,
     APPLICATION_SOURCE_FILE_NAME,
     APPLICATION_TEMPLATE_FOLDER,
     APPLICATIONS_WORK_DIR,
+    ApplicationFiles,
+)
+from jobbergate_api.s3_manager import (
     JOBSCRIPTS_MAIN_FILE_FOLDER,
     JOBSCRIPTS_SUPPORTING_FILES_FOLDER,
     JOBSCRIPTS_WORK_DIR,
-    ApplicationFiles,
     JobScriptFiles,
     engine_factory,
 )

@@ -10,6 +10,7 @@ from fastapi import UploadFile, status
 from loguru import logger
 from sqlalchemy import not_
 
+from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table, searchable_fields, sortable_fields
 from jobbergate_api.apps.applications.schemas import (
     ApplicationCreateRequest,
@@ -20,7 +21,6 @@ from jobbergate_api.apps.applications.schemas import (
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import ApplicationFiles
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,

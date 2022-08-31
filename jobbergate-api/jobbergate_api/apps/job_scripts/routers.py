@@ -11,6 +11,7 @@ from jinja2 import Template
 from loguru import logger
 from yaml import safe_load
 
+from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import ApplicationConfig, ApplicationResponse
 from jobbergate_api.apps.job_scripts.models import job_scripts_table, searchable_fields, sortable_fields
@@ -23,7 +24,7 @@ from jobbergate_api.apps.job_scripts.schemas import (
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.file_validation import UploadedFilesValidationError
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import ApplicationFiles, s3man_jobscripts
+from jobbergate_api.s3_manager import s3man_jobscripts
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,

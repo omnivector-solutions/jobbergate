@@ -8,10 +8,10 @@ import asyncpg
 import pytest
 from fastapi import status
 
+from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import ApplicationPartialResponse
 from jobbergate_api.apps.permissions import Permissions
-from jobbergate_api.s3_manager import ApplicationFiles
 from jobbergate_api.storage import database, fetch_instance
 
 
