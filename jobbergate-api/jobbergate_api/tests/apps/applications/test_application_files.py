@@ -14,6 +14,52 @@ from jobbergate_api.apps.applications.application_files import (
     APPLICATIONS_WORK_DIR,
     ApplicationFiles,
 )
+from jobbergate_api.apps.applications.schemas import ApplicationConfig, JobbergateConfig
+
+
+class TestApplicationConfig:
+    def test_get_from_yaml_file_without_extra_params__success(self, dummy_application_config):
+
+        desired_application_config = ApplicationConfig(
+            application_config={"job_name": "rats", "partitions": ["debug", "partition1"]},
+            jobbergate_config=JobbergateConfig(
+                default_template="test_job_script.sh",
+                supporting_files=["test_job_script.sh"],
+                supporting_files_output_name={"test_job_script.sh": ["support_file_b.py"]},
+                template_files=["templates/test_job_script.sh"],
+                job_script_name=None,
+                output_directory=".",
+            ),
+        )
+
+        actual_application_config = ApplicationConfig.get_from_yaml_file(dummy_application_config)
+
+        assert actual_application_config == desired_application_config
+
+    def test_get_from_yaml_file_including_extra_params__success(self, dummy_application_config):
+
+        user_supplied_parameters = dict(
+            application_config=dict(job_name="testing"),
+            jobbergate_config=dict(default_template="another_test_job_script.sh"),
+        )
+
+        desired_application_config = ApplicationConfig(
+            application_config={"job_name": "testing"},
+            jobbergate_config=JobbergateConfig(
+                default_template="another_test_job_script.sh",
+            ),
+        )
+
+        actual_application_config = ApplicationConfig.get_from_yaml_file(
+            dummy_application_config, user_supplied_parameters
+        )
+
+        assert actual_application_config == desired_application_config
+
+    def test_get_from_yaml_file_validation_error(self):
+
+        with pytest.raises(ValueError):
+            ApplicationConfig.get_from_yaml_file("key: value")
 
 
 @pytest.fixture

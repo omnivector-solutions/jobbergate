@@ -9,7 +9,6 @@ from armasec import TokenPayload
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from jinja2 import Template
 from loguru import logger
-from yaml import safe_load
 
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
@@ -96,13 +95,13 @@ def build_job_script_data_as_string(
         check(application_files.source_file, "Application source file was not found")
         check(application_files.templates, "No template file was found")
 
-    # Use application_config from the application as a baseline of defaults
-    logger.debug(f"APP CONFIG: {application_files.config_file}")
-    param_dict = safe_load(application_files.config_file)
-    # User supplied param dict is optional and may override defaults
-    param_dict.update(**job_script_param_dict)
-
-    application_config = ApplicationConfig(**param_dict)
+    with UploadedFilesValidationError.handle_errors(
+        "Error while parsing the config file and job-script params",
+    ):
+        application_config = ApplicationConfig.get_from_yaml_file(
+            application_files.config_file,
+            job_script_param_dict,
+        )
 
     default_template_path = PurePath(application_config.jobbergate_config.default_template)
     default_template_name = default_template_path.name

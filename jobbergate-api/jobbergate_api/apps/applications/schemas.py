@@ -2,7 +2,7 @@
 Defines the schema for the resource Application.
 """
 from datetime import datetime
-from pathlib import Path
+from yaml import safe_load
 from textwrap import dedent
 from typing import Any, Dict, List, Optional
 
@@ -132,6 +132,18 @@ class ApplicationConfig(BaseModel):
 
     application_config: Dict[str, Any]
     jobbergate_config: JobbergateConfig
+
+    @classmethod
+    def get_from_yaml_file(cls, yaml_file: str, user_supplied_parameters: Dict[str, Any] = None):
+        """
+        Construct this model from the application config file (jobbergate.yaml).
+
+        User supplied parameters can be supplied to override the defaults at the file.
+        """
+        param_dict = safe_load(yaml_file)
+        if user_supplied_parameters:
+            param_dict.update(**user_supplied_parameters)
+        return cls(**param_dict)
 
 
 class ApplicationCreateRequest(BaseModel):
