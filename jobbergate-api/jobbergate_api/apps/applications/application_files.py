@@ -62,6 +62,13 @@ class ApplicationFiles(BaseModel):
 
         logger.debug("Success getting application files from S3")
 
+        if not application_files.config_file:
+            logger.warning("Application config file was not found")
+        if not application_files.source_file:
+            logger.warning("Application source file was not found")
+        if not application_files.templates:
+            logger.warning("No template file was found")
+
         return application_files
 
     @classmethod
