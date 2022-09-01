@@ -269,7 +269,7 @@ async def applications_get_by_id(application_id: int = Query(...)):
     """
     Return the application given it's id.
     """
-    logger.trace(f"Getting {application_id=}")
+    logger.debug(f"Getting {application_id=}")
 
     query = applications_table.select().where(applications_table.c.id == application_id)
     logger.trace(f"get_query = {render_sql(query)}")
@@ -283,7 +283,7 @@ async def applications_get_by_id(application_id: int = Query(...)):
             detail=message,
         )
 
-    logger.debug(f"Application data: {application_data=}")
+    logger.trace(f"Application data: {dict(application_data)}")
 
     if application_data.application_uploaded:
         response = ApplicationResponse(
@@ -331,7 +331,7 @@ async def application_update(
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
-    logger.debug(f"Application data: {application_data=}")
+    logger.debug(f"Application data: {dict(application_data)}")
 
     return application_data
 
