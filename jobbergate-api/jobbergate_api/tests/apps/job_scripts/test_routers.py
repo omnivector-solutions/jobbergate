@@ -306,7 +306,7 @@ async def test_create_job_script_file_not_found(
         ),
     )
 
-    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0

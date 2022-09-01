@@ -4,7 +4,7 @@ Provide a convenience class for managing job-script files.
 
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, List
 
 from buzz import Buzz, require_condition
 from file_storehouse import FileManager
@@ -46,6 +46,34 @@ def flatten_param_dict(param_dict: Dict[str, Any]) -> Dict[str, Any]:
     return param_dict_flat
 
 
+def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str]) -> str:
+    """
+    Inject sbatch params into job script.
+
+    Given the job script as job_script_data_as_string, inject the sbatch params in the correct location.
+    """
+    logger.debug("Preparing to inject sbatch params into job script")
+
+    if not sbatch_params:
+        logger.warning("Sbatch param list is empty")
+        return job_script_data_as_string
+
+    first_sbatch_index = job_script_data_as_string.find("#SBATCH")
+    string_slice = job_script_data_as_string[first_sbatch_index:]
+    line_end = string_slice.find("\n") + first_sbatch_index + 1
+
+    inner_string = ""
+    for parameter in sbatch_params:
+        inner_string += "#SBATCH " + parameter + "\\n"
+
+    new_job_script_data_as_string = (
+        job_script_data_as_string[:line_end] + inner_string + job_script_data_as_string[line_end:]
+    )
+
+    logger.debug("Done injecting sbatch params into job script")
+    return new_job_script_data_as_string
+
+
 class JobScriptFiles(BaseModel):
     """
     Model containing job-script files.
@@ -59,6 +87,10 @@ class JobScriptFiles(BaseModel):
         if values["main_file_path"] not in values["files"].keys():
             raise ValueError("main_file_path is not a valid key on the dict files")
         return values
+
+    @property
+    def main_file(self):
+        return self.files.get(self.main_file_path)
 
     @classmethod
     def get_from_s3(cls, job_script_id: int):
@@ -88,7 +120,11 @@ class JobScriptFiles(BaseModel):
             ValueError,
         )
 
-        return cls(main_file_path=main_file_path, files=files)
+        jobscript_files = cls(main_file_path=main_file_path, files=files)
+
+        logger.debug(f"Done getting job-script files from S3: {job_script_id=}")
+
+        return jobscript_files
 
     @classmethod
     def delete_from_s3(cls, job_script_id: int):
@@ -112,13 +148,14 @@ class JobScriptFiles(BaseModel):
                 s3_path = JOBSCRIPTS_SUPPORTING_FILES_FOLDER / dict_path
             file_manager[s3_path] = content
 
-        logger.debug("Done writing job-script files to S3")
+        logger.debug(f"Done writing job-script files to S3 for {job_script_id=}")
 
     @classmethod
     def render_from_application(
         cls,
         application_files: ApplicationFiles,
-        job_script_param_dict: Dict[str, Any],
+        user_supplied_parameters: Dict[str, Any] = None,
+        sbatch_params: List[str] = None,
     ):
         logger.debug("Rendering job-script files from an application")
 
@@ -133,7 +170,7 @@ class JobScriptFiles(BaseModel):
             "Error while parsing the config-file and/or job-script params",
         ):
             app_config = ApplicationConfig.get_from_yaml_file(
-                application_files.config_file, job_script_param_dict
+                application_files.config_file, user_supplied_parameters
             )
 
         with JobScriptCreationError.check_expressions(
@@ -152,40 +189,46 @@ class JobScriptFiles(BaseModel):
                 for supporting_file in app_config.jobbergate_config.supporting_files_output_name.keys():
                     check(supporting_file in application_files.templates, f"{supporting_file=} was not found")
 
-        param_dict_flat = flatten_param_dict(app_config.dict())
+        with JobScriptCreationError.handle_errors("Error rendering the main file"):
 
-        main_file_path = Path(
-            app_config.jobbergate_config.output_directory,
-            default_template_name.rstrip(".j2").rstrip(".jinja2"),
-        )
+            param_dict_flat = flatten_param_dict(app_config.dict())
 
-        jobscript_files = cls(
-            main_file_path=main_file_path,
-            files={
-                main_file_path: render_template(
-                    application_files.templates[default_template_name],
-                    param_dict_flat,
-                ),
-            },
-        )
+            main_file_path = Path(
+                app_config.jobbergate_config.output_directory,
+                default_template_name.rstrip(".j2").rstrip(".jinja2"),
+            )
 
-        if app_config.jobbergate_config.supporting_files_output_name:
+            main_file_content = render_template(
+                application_files.templates[default_template_name],
+                param_dict_flat,
+            )
+
+        with JobScriptCreationError.handle_errors("Error while injecting the sbatch params"):
+            main_file_content = inject_sbatch_params(main_file_content, sbatch_params)
+
+        with JobScriptCreationError.handle_errors("Error while creating JobScriptFiles object"):
+            jobscript_files = cls(
+                main_file_path=main_file_path,
+                files={main_file_path: main_file_content},
+            )
+
+        with JobScriptCreationError.handle_errors("Error while rendering the supporting files"):
             output_name_mapping = app_config.jobbergate_config.supporting_files_output_name
-        else:
-            output_name_mapping = {}
+            if output_name_mapping:
+                for template_name, supporting_filename_list in output_name_mapping.items():
 
-        for template_name, supporting_filename_list in output_name_mapping.items():
+                    for supporting_filename in supporting_filename_list:
+                        path = Path(
+                            app_config.jobbergate_config.output_directory,
+                            supporting_filename,
+                        )
 
-            for supporting_filename in supporting_filename_list:
-                path = Path(
-                    app_config.jobbergate_config.output_directory,
-                    supporting_filename,
-                )
+                        jobscript_files.files[path] = render_template(
+                            application_files.templates[template_name],
+                            param_dict_flat,
+                        )
 
-                jobscript_files.files[path] = render_template(
-                    application_files.templates[template_name],
-                    param_dict_flat,
-                )
+        logger.debug("Done rendering job-script files from an application")
 
         return jobscript_files
 

@@ -13,6 +13,7 @@ from loguru import logger
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import ApplicationConfig, ApplicationResponse
+from jobbergate_api.apps.job_scripts.job_script_files import JobScriptCreationError, JobScriptFiles
 from jobbergate_api.apps.job_scripts.models import job_scripts_table, searchable_fields, sortable_fields
 from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptCreateRequest,
@@ -172,14 +173,15 @@ async def job_script_create(
     )
 
     try:
-        job_script_data_as_string = build_job_script_data_as_string(application.id, job_script.param_dict)
-    except UploadedFilesValidationError as e:
+        jobscript_files = JobScriptFiles.render_from_application(
+            application_files=ApplicationFiles.get_from_s3(application.id),
+            user_supplied_parameters=job_script.param_dict,
+            sbatch_params=create_dict.pop("sbatch_params", []),
+        )
+    except JobScriptCreationError as e:
         message = str(e)
         logger.error(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
-
-    sbatch_params = create_dict.pop("sbatch_params", [])
-    job_script_data_as_string = inject_sbatch_params(job_script_data_as_string, sbatch_params)
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=message)
 
     logger.debug("Inserting job_script")
 
@@ -198,7 +200,7 @@ async def job_script_create(
                     detail=message,
                 )
 
-            s3man_jobscripts[job_script_data["id"]] = job_script_data_as_string
+            jobscript_files.write_to_s3(job_script_data["id"])
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             logger.error(f"Reverting database transaction: {str(e)}")
@@ -208,10 +210,10 @@ async def job_script_create(
             logger.error(f"Reverting database transaction: {str(e)}")
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
-    logger.debug(f"Job-script created: {job_script_data}")
+    logger.debug(f"Job-script created: {dict(job_script_data)}")
     job_script_response = dict(
         **job_script_data,
-        job_script_data_as_string=job_script_data_as_string,
+        job_script_data_as_string=jobscript_files.main_file,
     )
     return job_script_response
 
