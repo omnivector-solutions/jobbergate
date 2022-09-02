@@ -2,18 +2,18 @@
 Test job-script files.
 """
 
-import json
 from pathlib import Path
 from textwrap import dedent
 
 import pytest
-from jobbergate_api.apps.applications.application_files import ApplicationFiles
 
+from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.job_scripts.job_script_files import (
     JOBSCRIPTS_MAIN_FILE_FOLDER,
     JOBSCRIPTS_SUPPORTING_FILES_FOLDER,
     JOBSCRIPTS_WORK_DIR,
     JobScriptFiles,
+    inject_sbatch_params,
 )
 
 
@@ -43,26 +43,22 @@ def new_job_script_data_as_string():
     """
     Provide a fixture that returns an application script after the injection of the sbatch params.
     """
-    content = json.dumps(
-        {
-            "application.sh": dedent(
-                """
-                #!/bin/bash
+    content = dedent(
+        """
+        #!/bin/bash
 
-                #SBATCH --comment=some_comment
-                #SBATCH --nice=-1
-                #SBATCH -N 10
-                #SBATCH --job-name=rats
-                #SBATCH --partition=debug
-                #SBATCH --output=sample-%j.out
+        #SBATCH --comment=some_comment
+        #SBATCH --nice=-1
+        #SBATCH -N 10
+        #SBATCH --job-name=rats
+        #SBATCH --partition=debug
+        #SBATCH --output=sample-%j.out
 
 
-                echo $SLURM_TASKS_PER_NODE
-                echo $SLURM_SUBMIT_DIR
-                """
-            ).strip(),
-        }
-    )
+        echo $SLURM_TASKS_PER_NODE
+        echo $SLURM_SUBMIT_DIR
+        """
+    ).strip()
     return content
 
 
@@ -72,6 +68,14 @@ def sbatch_params():
     Provide a fixture that returns string content of the argument --sbatch-params.
     """
     return ["--comment=some_comment", "--nice=-1", "-N 10"]
+
+
+def test_inject_sbatch_params(job_script_data_as_string, sbatch_params, new_job_script_data_as_string):
+    """
+    Test the injection of sbatch params in a default application script.
+    """
+    injected_string = inject_sbatch_params(job_script_data_as_string, sbatch_params)
+    assert injected_string == new_job_script_data_as_string
 
 
 class TestJobScriptFiles:

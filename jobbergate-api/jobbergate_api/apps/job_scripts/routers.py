@@ -1,18 +1,15 @@
 """
 Router for the JobScript resource.
 """
-import json
-from pathlib import PurePath
-from typing import Dict, List, Optional
+from typing import Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from jinja2 import Template
 from loguru import logger
 
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
-from jobbergate_api.apps.applications.schemas import ApplicationConfig, ApplicationResponse
+from jobbergate_api.apps.applications.schemas import ApplicationResponse
 from jobbergate_api.apps.job_scripts.job_script_files import JobScriptCreationError, JobScriptFiles
 from jobbergate_api.apps.job_scripts.models import job_scripts_table, searchable_fields, sortable_fields
 from jobbergate_api.apps.job_scripts.schemas import (
@@ -22,7 +19,6 @@ from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptUpdateRequest,
 )
 from jobbergate_api.apps.permissions import Permissions
-from jobbergate_api.file_validation import UploadedFilesValidationError
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.s3_manager import s3man_jobscripts
 from jobbergate_api.security import IdentityClaims, guard
@@ -35,99 +31,6 @@ from jobbergate_api.storage import (
 )
 
 router = APIRouter()
-
-
-def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str]) -> str:
-    """
-    Inject sbatch params into job script.
-
-    Given the job script as job_script_data_as_string, inject the sbatch params in the correct location.
-    """
-    logger.debug("Preparing to inject sbatch params into job script")
-
-    if not sbatch_params:
-        logger.warning("Sbatch param list is empty")
-        return job_script_data_as_string
-
-    first_sbatch_index = job_script_data_as_string.find("#SBATCH")
-    string_slice = job_script_data_as_string[first_sbatch_index:]
-    line_end = string_slice.find("\n") + first_sbatch_index + 1
-
-    inner_string = ""
-    for parameter in sbatch_params:
-        inner_string += "#SBATCH " + parameter + "\\n"
-
-    new_job_script_data_as_string = (
-        job_script_data_as_string[:line_end] + inner_string + job_script_data_as_string[line_end:]
-    )
-
-    logger.debug("Done injecting sbatch params into job script")
-    return new_job_script_data_as_string
-
-
-def render_template(template_files, param_dict_flat):
-    """
-    Render the templates as strings using jinja2.
-    """
-    logger.debug("Rendering the templates as strings using jinja2")
-    for key, value in template_files.items():
-        template = Template(value)
-        rendered_js = template.render(data=param_dict_flat)
-        template_files[key] = rendered_js
-    job_script_data_as_string = json.dumps(template_files)
-    return job_script_data_as_string
-
-
-def build_job_script_data_as_string(
-    application_id: int,
-    job_script_param_dict: Dict,
-) -> str:
-    """
-    Return the job_script_data_as_string from the S3 application and the templates.
-    """
-    logger.debug("Building the job script file from the S3 application and the templates")
-
-    application_files = ApplicationFiles.get_from_s3(application_id)
-
-    with UploadedFilesValidationError.check_expressions(
-        main_message=f"One or more application files are missing for {application_id=}",
-    ) as check:
-        check(application_files.config_file, "Application config file was not found")
-        check(application_files.source_file, "Application source file was not found")
-        check(application_files.templates, "No template file was found")
-
-    with UploadedFilesValidationError.handle_errors(
-        "Error while parsing the config file and job-script params",
-    ):
-        application_config = ApplicationConfig.get_from_yaml_file(
-            application_files.config_file,
-            job_script_param_dict,
-        )
-
-    default_template_path = PurePath(application_config.jobbergate_config.default_template)
-    default_template_name = default_template_path.name
-
-    UploadedFilesValidationError.require_condition(
-        default_template_name in application_files.templates,
-        f"{default_template_name=} was found for {application_id=}",
-    )
-
-    # rename default template
-    default_template_file = application_files.templates.pop(default_template_name)
-    application_files.templates["application.sh"] = default_template_file
-
-    param_dict_flat = {}
-    for (key, value) in application_config.dict().items():
-        if isinstance(value, dict):
-            for nest_key, nest_value in value.items():
-                param_dict_flat[nest_key] = nest_value
-        else:
-            param_dict_flat[key] = value
-
-    job_script_data_as_string = render_template(application_files.templates, param_dict_flat)
-
-    logger.debug("Done building the job script file")
-    return job_script_data_as_string
 
 
 @router.post(

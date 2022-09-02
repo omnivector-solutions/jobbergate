@@ -13,11 +13,6 @@ from fastapi import status
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
-from jobbergate_api.apps.job_scripts.routers import (
-    build_job_script_data_as_string,
-    inject_sbatch_params,
-    render_template,
-)
 from jobbergate_api.apps.job_scripts.schemas import JobScriptPartialResponse, JobScriptResponse
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.s3_manager import s3man_jobscripts
@@ -83,14 +78,6 @@ def sbatch_params():
     Provide a fixture that returns string content of the argument --sbatch-params.
     """
     return ["--comment=some_comment", "--nice=-1", "-N 10"]
-
-
-def test_inject_sbatch_params(job_script_data_as_string, sbatch_params, new_job_script_data_as_string):
-    """
-    Test the injection of sbatch params in a default application script.
-    """
-    injected_string = inject_sbatch_params(job_script_data_as_string, sbatch_params)
-    assert injected_string == new_job_script_data_as_string
 
 
 @pytest.mark.asyncio
@@ -364,36 +351,6 @@ async def test_create_job_script_unable_to_write_file_to_s3(
     desired_id_rows = await database.fetch_all("SELECT id FROM job_scripts")
 
     assert actual_id_rows == desired_id_rows
-
-
-def test_render_template(param_dict_flat, template_files, job_script_data_as_string):
-    """
-    Test correctly rendered template for job_script template.
-    """
-    job_script_rendered = render_template(template_files, param_dict_flat)
-    assert json.loads(job_script_rendered) == json.loads(job_script_data_as_string)
-
-
-@mock.patch("jobbergate_api.apps.applications.application_files.ApplicationFiles.get_from_s3")
-def test_build_job_script_data_as_string(
-    mocked_get_application_files_from_s3,
-    param_dict,
-    job_script_data_as_string,
-    dummy_application_source_file,
-    dummy_application_config,
-    dummy_template,
-):
-    """
-    Test build_job_script_data_as_string function correct output.
-    """
-    mocked_get_application_files_from_s3.return_value = ApplicationFiles(
-        templates={"test_job_script.sh": dummy_template},
-        source_file=dummy_application_source_file,
-        config_file=dummy_application_config,
-    )
-
-    data_as_string = build_job_script_data_as_string(1, param_dict)
-    assert json.loads(data_as_string) == json.loads(job_script_data_as_string)
 
 
 @pytest.mark.asyncio
