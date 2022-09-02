@@ -96,11 +96,12 @@ def test_inject_sbatch_params(job_script_data_as_string, sbatch_params, new_job_
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
 @mock.patch("jobbergate_api.apps.applications.application_files.ApplicationFiles.get_from_s3")
+@mock.patch("jobbergate_api.apps.job_scripts.job_script_files.JobScriptFiles.write_to_s3")
 async def test_create_job_script(
+    mocked_write_job_script_files_to_s3,
     mocked_get_application_files_from_s3,
     fill_application_data,
     job_script_data,
-    job_script_data_as_string,
     fill_job_script_data,
     param_dict,
     client,
@@ -130,26 +131,27 @@ async def test_create_job_script(
         source_file=dummy_application_source_file,
         config_file=dummy_application_config,
     )
+    mocked_write_job_script_files_to_s3.return_value = 10
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
-    with mock.patch("jobbergate_api.apps.job_scripts.routers.s3man_jobscripts", {}) as s3:
-        with time_frame() as window:
-            response = await client.post(
-                "/jobbergate/job-scripts/",
-                json=fill_job_script_data(
-                    application_id=inserted_application_id,
-                    param_dict=param_dict,
-                ),
-            )
+    with time_frame() as window:
+        response = await client.post(
+            "/jobbergate/job-scripts/",
+            json=fill_job_script_data(
+                application_id=inserted_application_id,
+                param_dict=param_dict,
+            ),
+        )
 
     assert response.status_code == status.HTTP_201_CREATED
-    mocked_get_application_files_from_s3.assert_called_once_with(inserted_application_id)
 
     id_rows = await database.fetch_all("SELECT id FROM job_scripts")
     assert len(id_rows) == 1
-    assert len(s3) == 1
 
     job_script = JobScriptResponse(**response.json())
+
+    mocked_get_application_files_from_s3.assert_called_once_with(inserted_application_id)
+    mocked_write_job_script_files_to_s3.assert_called_once_with(job_script.id)
 
     assert job_script.id == id_rows[0][0]
     assert job_script.job_script_name == job_script_data["job_script_name"]
@@ -159,8 +161,7 @@ async def test_create_job_script(
     assert job_script.application_id == inserted_application_id
     assert job_script.created_at in window
     assert job_script.updated_at in window
-    assert job_script.job_script_data_as_string == job_script_data_as_string
-    assert s3.get(job_script.id) == job_script_data_as_string
+    # assert job_script.job_script_data_as_string == job_script_data_as_string
 
 
 @pytest.mark.asyncio
