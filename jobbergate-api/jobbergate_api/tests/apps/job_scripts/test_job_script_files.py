@@ -47,10 +47,10 @@ def new_job_script_data_as_string():
         """
         #!/bin/bash
 
+        #SBATCH --job-name=rats
         #SBATCH --comment=some_comment
         #SBATCH --nice=-1
         #SBATCH -N 10
-        #SBATCH --job-name=rats
         #SBATCH --partition=debug
         #SBATCH --output=sample-%j.out
 
