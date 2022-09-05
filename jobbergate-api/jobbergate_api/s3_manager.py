@@ -3,7 +3,7 @@ Provide a convenience class for managing calls to S3.
 """
 from functools import lru_cache
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Tuple, Type, Union
 
 from boto3 import client
 from botocore.client import BaseClient
@@ -11,7 +11,6 @@ from file_storehouse import (
     EngineS3,
     FileManager,
     FileManagerReadOnly,
-    KeyMappingNumeratedFolder,
     TransformationABC,
     TransformationCodecs,
 )
@@ -47,9 +46,9 @@ def file_manager_factory(
     s3_client: BaseClient,
     bucket_name: str,
     work_directory: Path,
-    manager_cls: Union[FileManager, FileManagerReadOnly],
+    manager_cls: Union[Type[FileManagerReadOnly], Type[FileManager]],
     transformations: Tuple[TransformationABC, ...],
-) -> Union[FileManager, FileManagerReadOnly]:
+) -> Union[FileManagerReadOnly, FileManager]:
     """
     Build a file managers on demand.
 
@@ -72,10 +71,3 @@ def file_manager_factory(
 
 
 s3_client = client("s3", endpoint_url=settings.S3_ENDPOINT_URL)
-
-
-s3man_jobscripts = FileManager(
-    engine=EngineS3(s3_client, settings.S3_BUCKET_NAME, "job-scripts"),
-    io_transformations=IO_TRANSFORMATIONS,
-    key_mapping=KeyMappingNumeratedFolder("jobbergate.txt"),
-)

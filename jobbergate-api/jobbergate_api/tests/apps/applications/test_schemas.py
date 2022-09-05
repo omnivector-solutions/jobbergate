@@ -12,8 +12,7 @@ class TestJobbergateConfig:
 
     def test_get_supporting_files_from_supporting_files_output_name__success(self):
         """
-        Test that supporting_files is obtained from the keys of supporting_files_output_name
-        when it is missing.
+        Test that supporting_files is obtained from the keys of supporting_files_output_name.
         """
         config = JobbergateConfig(supporting_files_output_name=dict(foo="string", bar="string"))
 
@@ -31,8 +30,7 @@ class TestJobbergateConfig:
 
     def test_get_supporting_files_from_supporting_files_output_name__missing_value(self):
         """
-        Test that supporting_files is still None if supporting_files_output_name
-        is not provided.
+        Test that supporting_files is still None if supporting_files_output_name is not provided.
         """
         config = JobbergateConfig()
 
@@ -40,8 +38,7 @@ class TestJobbergateConfig:
 
     def test_supporting_files_output_name_provided_as_string(self):
         """
-        Test that string values at supporting_files_output_name are converted to lists
-        of strings.
+        Test that string values at supporting_files_output_name are converted to lists of strings.
         """
         config = JobbergateConfig(supporting_files_output_name=dict(foo="bar", baz=["qux"]))
 

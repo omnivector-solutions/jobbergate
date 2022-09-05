@@ -79,7 +79,14 @@ def test_inject_sbatch_params(job_script_data_as_string, sbatch_params, new_job_
 
 
 class TestJobScriptFiles:
+    """
+    Test JobScriptFiles.
+    """
+
     def test_check_main_file_path_is_in_files_keys__success(self):
+        """
+        Test a case were JobScriptFiles is created with success.
+        """
         jobscript_files = JobScriptFiles(
             main_file_path="jobbergate.sh", files={"jobbergate.sh": "dummy-file-content"}
         )
@@ -87,6 +94,9 @@ class TestJobScriptFiles:
         assert isinstance(jobscript_files, JobScriptFiles)
 
     def test_check_main_file_path_is_in_files_keys__error_main_file_path(self):
+        """
+        Test that ValueError is raised when the main file is not included in the files.
+        """
         with pytest.raises(ValueError):
             JobScriptFiles(
                 main_file_path="wrong-filename",
@@ -94,7 +104,9 @@ class TestJobScriptFiles:
             )
 
     def test_get_from_s3(self, mocked_file_manager_factory):
-
+        """
+        Test that JobScriptFiles can be obtained from the file manager.
+        """
         job_script_id = 1
 
         work_dir = mocked_file_manager_factory / JOBSCRIPTS_WORK_DIR / str(job_script_id)
@@ -125,6 +137,9 @@ class TestJobScriptFiles:
         assert desired_jobscript_files == actual_jobscript_files
 
     def test_get_from_s3__no_main_file(self, mocked_file_manager_factory):
+        """
+        Test that ValueError is raised when no main file is found.
+        """
         job_script_id = 1
         with pytest.raises(
             ValueError,
@@ -133,7 +148,9 @@ class TestJobScriptFiles:
             JobScriptFiles.get_from_s3(job_script_id)
 
     def test_delete_from_s3(self, mocked_file_manager_factory):
-
+        """
+        Test that JobScriptFiles are deleted as expected.
+        """
         job_script_id = 1
 
         work_dir = mocked_file_manager_factory / JOBSCRIPTS_WORK_DIR / str(job_script_id)
@@ -160,7 +177,9 @@ class TestJobScriptFiles:
         assert not supporting_file_path.is_file()
 
     def test_write_to_s3(self, mocked_file_manager_factory):
-
+        """
+        Test that JobScriptFiles are written as expected.
+        """
         job_script_id = 1
 
         work_dir = mocked_file_manager_factory / JOBSCRIPTS_WORK_DIR / str(job_script_id)
@@ -189,7 +208,9 @@ class TestJobScriptFiles:
         assert supporting_file_path.read_text() == supporting_file_content
 
     def test_io_integration_with_s3(self, mocked_file_manager_factory):
-
+        """
+        End-to-end test where the JobScriptFiles are written and read from s3.
+        """
         job_script_id = 1
         output_dir = Path("test-output-dir")
 
@@ -229,6 +250,9 @@ class TestJobScriptFiles:
         dummy_application_config,
         dummy_template,
     ):
+        """
+        Test that JobScriptFiles can be obtained when rendering ApplicationFiles.
+        """
         application_files = ApplicationFiles(
             templates={"test_job_script.sh": dummy_template},
             source_file=dummy_application_source_file,

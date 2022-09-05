@@ -20,7 +20,6 @@ from jobbergate_api.apps.job_scripts.schemas import (
 )
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import s3man_jobscripts
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,
@@ -114,11 +113,12 @@ async def job_script_create(
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
     logger.debug(f"Job-script created: {dict(job_script_data)}")
-    job_script_response = dict(
+
+    response = JobScriptResponse(
         **job_script_data,
-        job_script_data_as_string=jobscript_files.main_file,
+        job_script_files=jobscript_files,
     )
-    return job_script_response
+    return response
 
 
 @router.get(
@@ -145,11 +145,12 @@ async def job_script_get(job_script_id: int = Query(...)):
             detail=message,
         )
 
-    job_script_response = dict(job_script)
-
     try:
-        job_script_response["job_script_data_as_string"] = s3man_jobscripts[job_script_id]
-    except KeyError:
+        response = JobScriptResponse(
+            **job_script,
+            job_script_files=JobScriptFiles.get_from_s3(job_script_id),
+        )
+    except (KeyError, ValueError):
         message = f"JobScript file not found for id={job_script_id}."
         logger.warning(message)
         raise HTTPException(
@@ -157,9 +158,9 @@ async def job_script_get(job_script_id: int = Query(...)):
             detail=message,
         )
 
-    logger.debug(f"Job-script data: {job_script_response=}")
+    logger.debug(f"Job-script data: {response}")
 
-    return job_script_response
+    return response
 
 
 @router.get(
@@ -230,7 +231,7 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     await database.execute(delete_query)
 
     try:
-        del s3man_jobscripts[job_script_id]
+        JobScriptFiles.delete_from_s3(job_script_id)
     except KeyError:
         # There is no need to raise an error if we try to delete a file that does not exist
         logger.warning(f"Tried to delete {job_script_id=}, but it was not found on S3.")
@@ -253,7 +254,7 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
         job_scripts_table.update()
         .where(job_scripts_table.c.id == job_script_id)
         .values(
-            job_script.dict(exclude_unset=True, exclude={"job_script_data_as_string"}),
+            job_script.dict(exclude_unset=True, exclude={"job_script_files"}),
         )
         .returning(job_scripts_table)
     )
@@ -278,12 +279,12 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
         job_script_response = dict(result)
 
         try:
-            if job_script.job_script_data_as_string:
-                s3man_jobscripts[job_script_id] = job_script.job_script_data_as_string
-                job_script_response["job_script_data_as_string"] = job_script.job_script_data_as_string
+            if job_script.job_script_files:
+                job_script.job_script_files.write_to_s3(job_script_id)
+                job_script_response["job_script_files"] = job_script.job_script_files
             else:
-                job_script_response["job_script_data_as_string"] = s3man_jobscripts[job_script_id]
-        except KeyError as e:
+                job_script_response["job_script_files"] = JobScriptFiles.get_from_s3(job_script_id)
+        except (KeyError, ValueError) as e:
             logger.error(f"Reverting database transaction: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

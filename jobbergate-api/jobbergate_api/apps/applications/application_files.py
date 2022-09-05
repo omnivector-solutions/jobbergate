@@ -2,9 +2,8 @@
 Provide a convenience class for managing application files.
 """
 
-from functools import partial
 from pathlib import Path, PurePath
-from typing import Callable, Dict, List, Optional
+from typing import Dict, List, Optional, cast
 
 from fastapi import UploadFile
 from file_storehouse import FileManager
@@ -20,15 +19,6 @@ APPLICATION_CONFIG_FILE_NAME = "jobbergate.yaml"
 APPLICATION_SOURCE_FILE_NAME = "jobbergate.py"
 APPLICATION_TEMPLATE_FOLDER = "templates"
 
-s3man_applications_factory: Callable[[int], FileManager] = partial(
-    file_manager_factory,
-    s3_client=s3_client,
-    bucket_name=settings.S3_BUCKET_NAME,
-    work_directory=Path(APPLICATIONS_WORK_DIR),
-    manager_cls=FileManager,
-    transformations=IO_TRANSFORMATIONS,
-)
-
 
 class ApplicationFiles(BaseModel):
     """
@@ -37,7 +27,7 @@ class ApplicationFiles(BaseModel):
 
     config_file: Optional[str] = Field(None, alias="application_config")
     source_file: Optional[str] = Field(None, alias="application_source_file")
-    templates: Optional[Dict[str, str]] = Field(default_factory=dict, alias="application_templates")
+    templates: Dict[str, str] = Field(default_factory=dict, alias="application_templates")
 
     class Config:
         allow_population_by_field_name = True
@@ -48,7 +38,7 @@ class ApplicationFiles(BaseModel):
         Alternative method to initialize the model getting the objects from S3.
         """
         logger.debug(f"Getting application files from S3: {application_id=}")
-        file_manager = s3man_applications_factory(application_id)
+        file_manager = cls.file_manager_factory(application_id)
 
         application_files = cls(
             config_file=file_manager.get(APPLICATION_CONFIG_FILE_NAME),
@@ -58,7 +48,7 @@ class ApplicationFiles(BaseModel):
         for path in file_manager.keys():
             if str(path.parent) == APPLICATION_TEMPLATE_FOLDER:
                 filename = path.name
-                application_files.templates[filename] = file_manager.get(path)
+                application_files.templates[filename] = file_manager[path]
 
         logger.debug("Success getting application files from S3")
 
@@ -74,10 +64,10 @@ class ApplicationFiles(BaseModel):
     @classmethod
     def delete_from_s3(cls, application_id: int):
         """
-        Deleted the files associated with the given id.
+        Delete the files associated with the given id.
         """
         logger.debug(f"Deleting from S3 the files associated to {application_id=}")
-        file_manager = s3man_applications_factory(application_id)
+        file_manager = cls.file_manager_factory(application_id)
         file_manager.clear()
         logger.debug(f"Files were deleted for {application_id=}")
 
@@ -90,7 +80,7 @@ class ApplicationFiles(BaseModel):
         if remove_previous_files:
             self.delete_from_s3(application_id)
 
-        file_manager = s3man_applications_factory(application_id)
+        file_manager = self.file_manager_factory(application_id)
 
         if self.config_file:
             path = Path(APPLICATION_CONFIG_FILE_NAME)
@@ -132,3 +122,20 @@ class ApplicationFiles(BaseModel):
         logger.debug("Success getting application files from the uploaded files")
 
         return application_files
+
+    @classmethod
+    def file_manager_factory(self, application_id: int) -> FileManager:
+        """
+        Build an application file manager.
+        """
+        return cast(
+            FileManager,
+            file_manager_factory(
+                id=application_id,
+                s3_client=s3_client,
+                bucket_name=settings.S3_BUCKET_NAME,
+                work_directory=Path(APPLICATIONS_WORK_DIR),
+                manager_cls=FileManager,
+                transformations=IO_TRANSFORMATIONS,
+            ),
+        )

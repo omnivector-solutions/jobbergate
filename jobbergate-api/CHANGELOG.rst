@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Add support for supporting files on job-scripts.
 
 3.2.4-alpha.1 -- 2022-08-25
 ---------------------------

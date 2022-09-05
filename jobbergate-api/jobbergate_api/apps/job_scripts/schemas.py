@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
+from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
 job_script_meta_mapper = MetaMapper(
@@ -81,7 +82,7 @@ class JobScriptUpdateRequest(BaseModel):
 
     job_script_name: Optional[str]
     job_script_description: Optional[str]
-    job_script_data_as_string: Optional[str]
+    job_script_files: Optional[JobScriptFiles]
     sbatch_params: Optional[List[str]]
     param_dict: Optional[str]
 
@@ -93,7 +94,7 @@ class JobScriptPartialResponse(BaseModel):
     """
     Complete model to match database for the JobScript resource.
 
-    Notice this model does not include job_script_data_as_string from S3.
+    Notice this model does not include job_script_files from S3.
     """
 
     id: Optional[int] = None
@@ -113,10 +114,10 @@ class JobScriptResponse(JobScriptPartialResponse):
     """
     Complete model to match database for the JobScript resource.
 
-    In addition to the field job_script_data_as_string from S3, for the JobScript resource.
+    In addition to the field job_script_files from S3, for the JobScript resource.
     """
 
-    job_script_data_as_string: str
+    job_script_files: JobScriptFiles
 
     class Config:
         orm_mode = True

@@ -285,10 +285,10 @@ async def applications_get_by_id(application_id: int = Query(...)):
 
     logger.trace(f"Application data: {dict(application_data)}")
 
-    if application_data.application_uploaded:
+    if application_data["application_uploaded"]:
         response = ApplicationResponse(
             **application_data,
-            **ApplicationFiles.get_from_s3(application_data.id).dict(
+            **ApplicationFiles.get_from_s3(application_data["id"]).dict(
                 by_alias=True,
                 exclude_defaults=True,
                 exclude_unset=True,
@@ -330,8 +330,6 @@ async def application_update(
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-
-    logger.debug(f"Application data: {dict(application_data)}")
 
     return application_data
 

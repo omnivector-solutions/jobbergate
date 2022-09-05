@@ -9,6 +9,7 @@ from loguru import logger
 from sqlalchemy import select
 
 from jobbergate_api.apps.applications.models import applications_table
+from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.job_submissions.models import (
@@ -26,7 +27,6 @@ from jobbergate_api.apps.job_submissions.schemas import (
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.email_notification import notify_submission_rejected
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import s3man_jobscripts
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,
@@ -316,18 +316,21 @@ async def job_submissions_agent_pending(
     logger.trace(f"query = {render_sql(query)}")
     rows = await database.fetch_all(query)
 
-    try:
-        response = [
-            PendingJobSubmission(
-                **row,
-                job_script_data_as_string=s3man_jobscripts[str(row.get("job_script_id"))],
-            )
-            for row in rows
-        ]
-    except KeyError:
-        list_ids = (str(row.get("job_script_id")) for row in rows)
-        missing_ids = {id for id in list_ids if id not in s3man_jobscripts}
-        message = f"JobScript file(s) not found, the missing ids are: {', '.join(missing_ids)}"
+    response = []
+    missing_ids = set()
+
+    for row in rows:
+        try:
+            jobscript_id = int(row["job_script_id"])
+            job_script_files = JobScriptFiles.get_from_s3(jobscript_id)
+        except (KeyError, ValueError) as e:
+            logger.error(f"Error getting files for {jobscript_id=}: {str(e)}")
+            missing_ids.add(jobscript_id)
+        else:
+            response.append(PendingJobSubmission(**row, job_script_files=job_script_files))
+
+    if missing_ids:
+        message = f"JobScript file(s) not found, the missing ids are: {', '.join(map(str, missing_ids))}"
         logger.error(message)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

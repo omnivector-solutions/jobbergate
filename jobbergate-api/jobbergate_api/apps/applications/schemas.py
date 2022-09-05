@@ -2,11 +2,11 @@
 Defines the schema for the resource Application.
 """
 from datetime import datetime
-from yaml import safe_load
 from textwrap import dedent
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, root_validator
+from yaml import safe_load
 
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
@@ -108,7 +108,6 @@ class JobbergateConfig(BaseModel):
         """
         Compute missing values and extra operations to enhance the user experience.
         """
-
         # Transform string to list of strings for a better user experience
         if values.get("supporting_files_output_name"):
             for k, v in values["supporting_files_output_name"].items():
@@ -134,7 +133,9 @@ class ApplicationConfig(BaseModel):
     jobbergate_config: JobbergateConfig
 
     @classmethod
-    def get_from_yaml_file(cls, yaml_file: str, user_supplied_parameters: Dict[str, Any] = None):
+    def get_from_yaml_file(
+        cls, yaml_file: Union[bytes, str], user_supplied_parameters: Dict[str, Any] = None
+    ):
         """
         Construct this model from the application config file (jobbergate.yaml).
 

@@ -2,9 +2,8 @@
 Provide a convenience class for managing job-script files.
 """
 
-from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List, cast
 
 from buzz import Buzz, require_condition
 from file_storehouse import FileManager
@@ -21,21 +20,15 @@ JOBSCRIPTS_WORK_DIR = "job-scripts"
 JOBSCRIPTS_MAIN_FILE_FOLDER = "main-file"
 JOBSCRIPTS_SUPPORTING_FILES_FOLDER = "supporting-files"
 
-s3man_jobscripts_factory: Callable[[int], FileManager] = partial(
-    file_manager_factory,
-    s3_client=s3_client,
-    bucket_name=settings.S3_BUCKET_NAME,
-    work_directory=Path(JOBSCRIPTS_WORK_DIR),
-    manager_cls=FileManager,
-    transformations=IO_TRANSFORMATIONS,
-)
-
 
 class JobScriptCreationError(Buzz):
     """Raise exception when facing any error creating a job-script from application files."""
 
 
 def flatten_param_dict(param_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Flatten an input dictionary to support the rendering process.
+    """
     param_dict_flat = {}
     for (key, value) in param_dict.items():
         if isinstance(value, dict):
@@ -84,12 +77,20 @@ class JobScriptFiles(BaseModel):
 
     @root_validator(pre=False, skip_on_failure=True)
     def check_main_file_path_is_in_files_keys(cls, values):
+        """
+        Validate the model.
+
+        main_file_path should be found among the files.
+        """
         if values["main_file_path"] not in values["files"].keys():
             raise ValueError("main_file_path is not a valid key on the dict files")
         return values
 
     @property
     def main_file(self):
+        """
+        Obtain the main file with this helper property.
+        """
         return self.files.get(self.main_file_path)
 
     @classmethod
@@ -98,7 +99,7 @@ class JobScriptFiles(BaseModel):
         Alternative method to initialize the model getting the objects from S3.
         """
         logger.debug(f"Getting job-script files from S3: {job_script_id=}")
-        file_manager = s3man_jobscripts_factory(job_script_id)
+        file_manager = cls.file_manager_factory(job_script_id)
 
         files = {}
         main_file_path = None
@@ -129,17 +130,23 @@ class JobScriptFiles(BaseModel):
     @classmethod
     def delete_from_s3(cls, job_script_id: int):
         """
-        Deleted the files associated with the given id.
+        Delete the files associated with the given id.
         """
         logger.debug(f"Deleting from S3 the files associated to {job_script_id=}")
-        file_manager = s3man_jobscripts_factory(job_script_id)
+        file_manager = cls.file_manager_factory(job_script_id)
         file_manager.clear()
         logger.debug(f"Files were deleted for {job_script_id=}")
 
-    def write_to_s3(self, job_script_id: int):
+    def write_to_s3(self, job_script_id: int, *, remove_previous_files: bool = True):
+        """
+        Write to s3 the files associated with a given id.
+        """
         logger.debug(f"Writing job-script files to S3: {job_script_id=}")
 
-        file_manager = s3man_jobscripts_factory(job_script_id)
+        if remove_previous_files:
+            self.delete_from_s3(job_script_id)
+
+        file_manager = self.file_manager_factory(job_script_id)
 
         for dict_path, content in self.files.items():
             if dict_path == self.main_file_path:
@@ -157,6 +164,9 @@ class JobScriptFiles(BaseModel):
         user_supplied_parameters: Dict[str, Any] = None,
         sbatch_params: List[str] = None,
     ):
+        """
+        Render JobScriptFiles from ApplicationFiles.
+        """
         logger.debug("Rendering job-script files from an application")
 
         with JobScriptCreationError.check_expressions(
@@ -170,7 +180,7 @@ class JobScriptFiles(BaseModel):
             "Error while parsing the config-file and/or job-script params",
         ):
             app_config = ApplicationConfig.get_from_yaml_file(
-                application_files.config_file, user_supplied_parameters
+                application_files.config_file, user_supplied_parameters  # type: ignore
             )
 
         with JobScriptCreationError.check_expressions(
@@ -204,7 +214,8 @@ class JobScriptFiles(BaseModel):
             )
 
         with JobScriptCreationError.handle_errors("Error while injecting the sbatch params"):
-            main_file_content = inject_sbatch_params(main_file_content, sbatch_params)
+            if sbatch_params:
+                main_file_content = inject_sbatch_params(main_file_content, sbatch_params)
 
         with JobScriptCreationError.handle_errors("Error while creating JobScriptFiles object"):
             jobscript_files = cls(
@@ -232,7 +243,27 @@ class JobScriptFiles(BaseModel):
 
         return jobscript_files
 
+    @classmethod
+    def file_manager_factory(self, job_script_id: int) -> FileManager:
+        """
+        Build an application file manager.
+        """
+        return cast(
+            FileManager,
+            file_manager_factory(
+                id=job_script_id,
+                s3_client=s3_client,
+                bucket_name=settings.S3_BUCKET_NAME,
+                work_directory=Path(JOBSCRIPTS_WORK_DIR),
+                manager_cls=FileManager,
+                transformations=IO_TRANSFORMATIONS,
+            ),
+        )
+
 
 def render_template(template_file, params):
+    """
+    Render a jinja2 template.
+    """
     template = Template(template_file)
     return template.render(data=params)

@@ -18,8 +18,14 @@ from jobbergate_api.apps.applications.schemas import ApplicationConfig, Jobberga
 
 
 class TestApplicationConfig:
-    def test_get_from_yaml_file_without_extra_params__success(self, dummy_application_config):
+    """
+    Test the application config base model.
+    """
 
+    def test_get_from_yaml_file_without_extra_params__success(self, dummy_application_config):
+        """
+        Test the model can be loaded from a yaml file without extra params.
+        """
         desired_application_config = ApplicationConfig(
             application_config={"job_name": "rats", "partitions": ["debug", "partition1"]},
             jobbergate_config=JobbergateConfig(
@@ -37,7 +43,9 @@ class TestApplicationConfig:
         assert actual_application_config == desired_application_config
 
     def test_get_from_yaml_file_including_extra_params__success(self, dummy_application_config):
-
+        """
+        Test the model can be loaded from a yaml file with extra params.
+        """
         user_supplied_parameters = dict(
             application_config=dict(job_name="testing"),
             jobbergate_config=dict(default_template="another_test_job_script.sh"),
@@ -57,7 +65,9 @@ class TestApplicationConfig:
         assert actual_application_config == desired_application_config
 
     def test_get_from_yaml_file_validation_error(self):
-
+        """
+        Test that ValueError is raised when the file does not have the necessary schema.
+        """
         with pytest.raises(ValueError):
             ApplicationConfig.get_from_yaml_file("key: value")
 
@@ -90,6 +100,9 @@ def make_uploaded_files_filled(
     dummy_template,
     dummy_application_config,
 ):
+    """
+    Fixture to make a list of uploaded files.
+    """
     with make_uploaded_files(
         make_dummy_file("jobbergate.py", content=dummy_application_source_file),
         make_dummy_file("template-1.j2", content=dummy_template),
@@ -100,6 +113,10 @@ def make_uploaded_files_filled(
 
 
 class TestApplicationFiles:
+    """
+    Test application files.
+    """
+
     def test_get_application_files_from_upload_files(
         self,
         make_uploaded_files_filled,
@@ -107,7 +124,9 @@ class TestApplicationFiles:
         dummy_template,
         dummy_application_config,
     ):
-
+        """
+        Test that ApplicationFiles can be obtained from a list of uploaded files.
+        """
         application_files = ApplicationFiles.get_from_upload_files(make_uploaded_files_filled)
 
         assert isinstance(application_files, ApplicationFiles)
@@ -238,9 +257,12 @@ class TestApplicationFiles:
 
     def test_delete_just_act_on_one_id(
         self,
-        mocked_file_manager_factory,
         make_uploaded_files_filled,
+        mocked_file_manager_factory,
     ):
+        """
+        Test that delete does not delete any file from any other application.
+        """
         remaining_application_id = 1
         another_application_id = 2
 
@@ -260,6 +282,9 @@ class TestApplicationFiles:
         assert desired_application_files == actual_application_files
 
     def test_complete_workflow(self, mocked_file_manager_factory, make_uploaded_files_filled):
+        """
+        End-to-end test, getting application files from uploaded files, than write/read them.
+        """
         application_id = 1
 
         desired_application_files = ApplicationFiles.get_from_upload_files(
