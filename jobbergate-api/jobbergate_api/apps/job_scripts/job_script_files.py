@@ -104,7 +104,7 @@ class JobScriptFiles(BaseModel):
     In this way, the ``output_directory`` and file names for the main file
     and supporting files are application specific.
 
-    To differentiate the files, they are stored in two folders, ``main-files`` and
+    To differentiate the files, they are stored in two folders, ``main-file`` and
     ``supporting-files`` and the paths used in this model are relative the those
     folders. See the example:
 
@@ -170,7 +170,7 @@ class JobScriptFiles(BaseModel):
 
         require_condition(
             main_file_counter == 1,
-            f"One main file is expected for a job-script, found {main_file_counter}",
+            f"One and only one main file is expected for a job-script, found {main_file_counter}",
             ValueError,
         )
 

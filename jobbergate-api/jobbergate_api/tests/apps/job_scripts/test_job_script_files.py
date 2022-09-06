@@ -143,7 +143,7 @@ class TestJobScriptFiles:
         job_script_id = 1
         with pytest.raises(
             ValueError,
-            match="One main file is expected for a job-script, found 0",
+            match="One and only one main file is expected for a job-script, found 0",
         ):
             JobScriptFiles.get_from_s3(job_script_id)
 
@@ -238,7 +238,7 @@ class TestJobScriptFiles:
 
         with pytest.raises(
             ValueError,
-            match="One main file is expected for a job-script, found 0",
+            match="One and only one main file is expected for a job-script, found 0",
         ):
             JobScriptFiles.get_from_s3(job_script_id)
 
