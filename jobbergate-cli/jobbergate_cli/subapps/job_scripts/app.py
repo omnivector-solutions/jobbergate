@@ -124,6 +124,10 @@ def create(
         None,
         help="The identifier of the application from which to create the job script.",
     ),
+    description: Optional[str] = typer.Option(
+        None,
+        help="Optional text describing the job script.",
+    ),
     sbatch_params: Optional[List[str]] = typer.Option(
         None,
         help="Optional parameter to submit raw sbatch parameters.",
@@ -162,6 +166,7 @@ def create(
         job_script_name=name,
         sbatch_params=sbatch_params,
         param_dict=app_config,
+        job_script_description=description,
     )
 
     supplied_params = validate_parameter_file(param_file) if param_file else dict()
@@ -231,15 +236,13 @@ def update(
         ...,
         help="The id of the job script to update",
     ),
-    job_script: str = typer.Option(
+    name: str = typer.Option(
         ...,
-        help="""
-            The data with which to update job script.
-
-            Format: string form of dictionary with main script as entry "application.sh"
-
-            Example: '{"application.sh":"#!/bin/bash \\n hostname"}'
-        """,
+        help="New name of the job script to create.",
+    ),
+    description: Optional[str] = typer.Option(
+        None,
+        help="Optional new text describing the job script.",
     ),
 ):
     """
@@ -259,7 +262,10 @@ def update(
             expected_status=200,
             abort_message="Couldn't update job script",
             support=True,
-            json=dict(job_script_data_as_string=job_script),
+            json=dict(
+                job_script_name=name,
+                job_script_description=description,
+            ),
             response_model_cls=JobScriptResponse,
         ),
     )
