@@ -261,10 +261,9 @@ class JobScriptFiles(BaseModel):
                 default_template_name.rstrip(".j2").rstrip(".jinja2"),
             )
 
-            main_file_content = render_template(
+            main_file_content = Template(
                 application_files.templates[default_template_name],
-                param_dict_flat,
-            )
+            ).render(data=param_dict_flat)
 
         with JobScriptCreationError.handle_errors("Error while injecting the sbatch params"):
             if sbatch_params:
@@ -287,10 +286,9 @@ class JobScriptFiles(BaseModel):
                             supporting_filename,
                         )
 
-                        jobscript_files.files[path] = render_template(
+                        jobscript_files.files[path] = Template(
                             application_files.templates[template_name],
-                            param_dict_flat,
-                        )
+                        ).render(data=param_dict_flat)
 
         logger.debug("Done rendering job-script files from an application")
 
@@ -312,11 +310,3 @@ class JobScriptFiles(BaseModel):
                 transformations=IO_TRANSFORMATIONS,
             ),
         )
-
-
-def render_template(template_file, params):
-    """
-    Render a jinja2 template.
-    """
-    template = Template(template_file)
-    return template.render(data=params)
