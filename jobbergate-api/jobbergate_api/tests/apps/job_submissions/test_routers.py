@@ -2,12 +2,12 @@
 Tests for the /job-submissions/ endpoint.
 """
 import pathlib
-from unittest import mock
 
 import pytest
 from fastapi import status
 
 from jobbergate_api.apps.applications.models import applications_table
+from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.job_submissions.models import job_submissions_table
@@ -1299,6 +1299,7 @@ async def test_job_submissions_agent_pending__success(
     fill_job_script_data,
     fill_all_job_submission_data,
     inject_security_header,
+    mocked_file_manager_factory,
 ):
     """
     Test GET /job-submissions/agent/pending returns only job_submissions owned by the requesting agent.
@@ -1317,7 +1318,12 @@ async def test_job_submissions_agent_pending__success(
         query=job_scripts_table.insert(),
         values=fill_job_script_data(application_id=inserted_application_id),
     )
-    DUMMY_JOB_SCRIPT = "print(__name__)"
+
+    main_file_path = pathlib.Path("jobbergate.py")
+    dummy_job_script_files = JobScriptFiles(
+        main_file_path=main_file_path, files={main_file_path: "print(__name__)"}
+    )
+    dummy_job_script_files.write_to_s3(inserted_job_script_id)
 
     await database.execute_many(
         query=job_submissions_table.insert(),
@@ -1361,19 +1367,14 @@ async def test_job_submissions_agent_pending__success(
         Permissions.JOB_SUBMISSIONS_VIEW,
         client_id="dummy-client",
     )
-    with mock.patch(
-        "jobbergate_api.apps.job_submissions.routers.s3man_jobscripts",
-        {str(inserted_job_script_id): DUMMY_JOB_SCRIPT},
-    ) as mocked_s3:
-        response = await client.get("/jobbergate/job-submissions/agent/pending")
+    response = await client.get("/jobbergate/job-submissions/agent/pending")
 
     assert response.status_code == status.HTTP_200_OK
-    assert str(inserted_job_script_id) in mocked_s3
 
     data = response.json()
     assert sorted(d["job_submission_name"] for d in data) == ["sub1", "sub4"]
     assert sorted(d["job_submission_owner_email"] for d in data) == ["email1@dummy.com", "email4@dummy.com"]
-    assert [d["job_script_data_as_string"] for d in data] == [DUMMY_JOB_SCRIPT] * 2
+    assert [JobScriptFiles(**d["job_script_files"]) for d in data] == [dummy_job_script_files] * 2
 
 
 @pytest.mark.asyncio
@@ -1383,6 +1384,7 @@ async def test_job_submissions_agent_pending__missing_job_script_file(
     fill_job_script_data,
     fill_all_job_submission_data,
     inject_security_header,
+    mocked_file_manager_factory,
 ):
     """
     Test GET /job-submissions/agent/pending returns a 404.
@@ -1442,13 +1444,8 @@ async def test_job_submissions_agent_pending__missing_job_script_file(
         Permissions.JOB_SUBMISSIONS_VIEW,
         client_id="dummy-client",
     )
-    with mock.patch(
-        "jobbergate_api.apps.job_submissions.routers.s3man_jobscripts",
-        {},
-    ) as mocked_s3:
-        response = await client.get("/jobbergate/job-submissions/agent/pending")
+    response = await client.get("/jobbergate/job-submissions/agent/pending")
 
-    assert str(inserted_job_script_id) not in mocked_s3
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert f"JobScript file(s) not found, the missing ids are: {inserted_job_script_id}" in response.text
 

@@ -8,11 +8,14 @@ import datetime
 import random
 import string
 import typing
+from pathlib import Path
 from textwrap import dedent
+from unittest.mock import patch
 
 import pytest
 import sqlalchemy
 from asgi_lifespan import LifespanManager
+from file_storehouse.engine import EngineLocal
 from httpx import AsyncClient
 
 from jobbergate_api.apps.applications.models import applications_table
@@ -21,6 +24,7 @@ from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.config import settings
 from jobbergate_api.main import app
 from jobbergate_api.metadata import metadata
+from jobbergate_api.s3_manager import file_manager_factory
 from jobbergate_api.storage import build_db_url, database
 
 # Charset for producing random strings
@@ -277,3 +281,26 @@ def make_files_param():
             ]
 
     return _helper
+
+
+@pytest.fixture(scope="function")
+def mocked_file_manager_factory(tmp_path):
+    """
+    Fixture to replace the default file engine (EngineS3) by a local one.
+
+    In this way, all objects are stored in a temporary directory ``tmp_path``,
+    that is yield for reference. Files and directories can than be managed
+    normally with pathlib.Path.
+
+    It also clears the cache from file_manager_factory.
+    """
+
+    def local_engine_factory(*, work_directory: Path, **kwargs):
+        return EngineLocal(base_path=tmp_path / work_directory)
+
+    file_manager_factory.cache_clear()
+
+    with patch("jobbergate_api.s3_manager.engine_factory", wraps=local_engine_factory):
+        yield tmp_path
+
+    file_manager_factory.cache_clear()

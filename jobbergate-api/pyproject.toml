@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jobbergate-api"
-version = "3.2.4-alpha.0"
+version = "3.2.4-alpha.3"
 description = "Jobbergate API"
 authors = ["Omnivector Solutions <info@omnivector.solutions>"]
 license = "MIT"
@@ -13,7 +13,7 @@ fastapi = "^0.68.0"
 email_validator = "^1.1.0"
 passlib = "^1.7.2"
 python-multipart = "^0.0.5"
-python-dotenv = "^0.16.0"
+python-dotenv = "^0.20.0"
 boto3 = "^1.17.51"
 Jinja2 = "^3.0.3"
 asyncpg = "^0.22.0"
@@ -27,7 +27,7 @@ typer = "^0.4.0"
 databases = {extras = ["postgresql"], version = "^0.5.5"}
 PyYAML = "^6.0"
 sendgrid = "^6.9.7"
-file-storehouse = "0.3.4"
+file-storehouse = "0.5.0"
 
 [tool.poetry.dev-dependencies]
 black = "^22"

@@ -214,7 +214,7 @@ def test_create__warns_but_does_not_abort_if_upload_fails(
     assert result.exit_code == 0, f"create failed: {result.stdout}"
     assert create_route.called
     assert upload_route.called
-    assert "zipped application files could not be uploaded" in result.stdout
+    assert "application files could not be uploaded" in result.stdout
 
     mocked_render.assert_called_once_with(
         dummy_context,
@@ -372,7 +372,7 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
     assert result.exit_code == 0, f"update failed: {result.stdout}"
     assert update_route.called
     assert upload_route.called
-    assert "zipped application files could not be uploaded" in result.stdout
+    assert "application files could not be uploaded" in result.stdout
 
     mocked_render.assert_called_once_with(
         dummy_context,

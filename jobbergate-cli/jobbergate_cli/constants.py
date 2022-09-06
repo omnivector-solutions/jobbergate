@@ -9,8 +9,6 @@ from pathlib import Path
 JOBBERGATE_APPLICATION_CONFIG = {
     "application_name": "",
     "application_description": "",
-    "application_file": "",
-    "application_config": "",
 }
 
 JOBBERGATE_JOB_SCRIPT_CONFIG = {
@@ -28,6 +26,7 @@ JOBBERGATE_JOB_SUBMISSION_CONFIG = {
 }
 
 JOBBERGATE_DEFAULT_DOTENV_PATH = Path("/etc/default/jobbergate-cli")
+JOBBERGATE_APPLICATION_SUPPORTED_FILES = {".py", ".yaml", ".j2", ".jinja2"}
 JOBBERGATE_APPLICATION_MODULE_FILE_NAME = "jobbergate.py"
 JOBBERGATE_APPLICATION_CONFIG_FILE_NAME = "jobbergate.yaml"
 TAR_NAME = "jobbergate.tar.gz"

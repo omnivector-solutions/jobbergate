@@ -1,18 +1,16 @@
 """
 Router for the JobScript resource.
 """
-import json
-from pathlib import PurePath
-from typing import List, Optional
+from typing import Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from jinja2 import Template
 from loguru import logger
-from yaml import safe_load
 
+from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
-from jobbergate_api.apps.applications.schemas import ApplicationConfig, ApplicationResponse
+from jobbergate_api.apps.applications.schemas import ApplicationResponse
+from jobbergate_api.apps.job_scripts.job_script_files import JobScriptCreationError, JobScriptFiles
 from jobbergate_api.apps.job_scripts.models import job_scripts_table, searchable_fields, sortable_fields
 from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptCreateRequest,
@@ -21,9 +19,7 @@ from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptUpdateRequest,
 )
 from jobbergate_api.apps.permissions import Permissions
-from jobbergate_api.file_validation import UploadedFilesValidationError
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import get_application_files_from_s3, s3man_jobscripts
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,
@@ -34,90 +30,6 @@ from jobbergate_api.storage import (
 )
 
 router = APIRouter()
-
-
-def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str]) -> str:
-    """
-    Inject sbatch params into job script.
-
-    Given the job script as job_script_data_as_string, inject the sbatch params in the correct location.
-    """
-    logger.debug("Preparing to inject sbatch params into job script")
-
-    if not sbatch_params:
-        logger.warning("Sbatch param list is empty")
-        return job_script_data_as_string
-
-    first_sbatch_index = job_script_data_as_string.find("#SBATCH")
-    string_slice = job_script_data_as_string[first_sbatch_index:]
-    line_end = string_slice.find("\n") + first_sbatch_index + 1
-
-    inner_string = ""
-    for parameter in sbatch_params:
-        inner_string += "#SBATCH " + parameter + "\\n"
-
-    new_job_script_data_as_string = (
-        job_script_data_as_string[:line_end] + inner_string + job_script_data_as_string[line_end:]
-    )
-
-    logger.debug("Done injecting sbatch params into job script")
-    return new_job_script_data_as_string
-
-
-def render_template(template_files, param_dict_flat):
-    """
-    Render the templates as strings using jinja2.
-    """
-    logger.debug("Rendering the templates as strings using jinja2")
-    for key, value in template_files.items():
-        template = Template(value)
-        rendered_js = template.render(data=param_dict_flat)
-        template_files[key] = rendered_js
-    job_script_data_as_string = json.dumps(template_files)
-    return job_script_data_as_string
-
-
-def build_job_script_data_as_string(application_id: int, application_config: ApplicationConfig) -> str:
-    """
-    Return the job_script_data_as_string from the S3 application and the templates.
-    """
-    logger.debug("Building the job script file from the S3 application and the templates")
-
-    application_files = get_application_files_from_s3(application_id)
-
-    default_template_path = PurePath(application_config.jobbergate_config.default_template)
-    default_template_name = default_template_path.name
-
-    with UploadedFilesValidationError.check_expressions("One or more application files are missing") as check:
-        check(
-            application_files.source_file,
-            f"Application file was not found for {application_id=}",
-        )
-        check(
-            application_files.templates,
-            f"No template was found for {application_id=}",
-        )
-        check(
-            default_template_name in application_files.templates,
-            f"{default_template_name=} was found for {application_id=}",
-        )
-
-    # rename default template
-    default_template_file = application_files.templates.pop(default_template_name)
-    application_files.templates["application.sh"] = default_template_file
-
-    param_dict_flat = {}
-    for (key, value) in application_config.dict().items():
-        if isinstance(value, dict):
-            for nest_key, nest_value in value.items():
-                param_dict_flat[nest_key] = nest_value
-        else:
-            param_dict_flat[key] = value
-
-    job_script_data_as_string = render_template(application_files.templates, param_dict_flat)
-
-    logger.debug("Done building the job script file")
-    return job_script_data_as_string
 
 
 @router.post(
@@ -162,24 +74,16 @@ async def job_script_create(
         job_script_owner_email=identity_claims.email,
     )
 
-    # Use application_config from the application as a baseline of defaults
-    logger.debug(f"APP CONFIG: {application.application_config}")
-    param_dict = safe_load(application.application_config)
-
-    # User supplied param dict is optional and may override defaults
-    param_dict.update(**job_script.param_dict)
-
-    application_config = ApplicationConfig(**param_dict)
-
     try:
-        job_script_data_as_string = build_job_script_data_as_string(application.id, application_config)
-    except UploadedFilesValidationError as e:
+        jobscript_files = JobScriptFiles.render_from_application(
+            application_files=ApplicationFiles.get_from_s3(application.id),
+            user_supplied_parameters=job_script.param_dict,
+            sbatch_params=create_dict.pop("sbatch_params", []),
+        )
+    except JobScriptCreationError as e:
         message = str(e)
         logger.error(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
-
-    sbatch_params = create_dict.pop("sbatch_params", [])
-    job_script_data_as_string = inject_sbatch_params(job_script_data_as_string, sbatch_params)
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=message)
 
     logger.debug("Inserting job_script")
 
@@ -198,7 +102,7 @@ async def job_script_create(
                     detail=message,
                 )
 
-            s3man_jobscripts[job_script_data["id"]] = job_script_data_as_string
+            jobscript_files.write_to_s3(job_script_data["id"])
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             logger.error(f"Reverting database transaction: {str(e)}")
@@ -208,12 +112,13 @@ async def job_script_create(
             logger.error(f"Reverting database transaction: {str(e)}")
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
-    logger.debug(f"Job-script created: {job_script_data}")
-    job_script_response = dict(
+    logger.debug(f"Job-script created: {dict(job_script_data)}")
+
+    response = JobScriptResponse(
         **job_script_data,
-        job_script_data_as_string=job_script_data_as_string,
+        job_script_files=jobscript_files,
     )
-    return job_script_response
+    return response
 
 
 @router.get(
@@ -240,11 +145,12 @@ async def job_script_get(job_script_id: int = Query(...)):
             detail=message,
         )
 
-    job_script_response = dict(job_script)
-
     try:
-        job_script_response["job_script_data_as_string"] = s3man_jobscripts[job_script_id]
-    except KeyError:
+        response = JobScriptResponse(
+            **job_script,
+            job_script_files=JobScriptFiles.get_from_s3(job_script_id),
+        )
+    except (KeyError, ValueError):
         message = f"JobScript file not found for id={job_script_id}."
         logger.warning(message)
         raise HTTPException(
@@ -252,9 +158,9 @@ async def job_script_get(job_script_id: int = Query(...)):
             detail=message,
         )
 
-    logger.debug(f"Job-script data: {job_script_response=}")
+    logger.debug(f"Job-script data: {response}")
 
-    return job_script_response
+    return response
 
 
 @router.get(
@@ -325,7 +231,7 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     await database.execute(delete_query)
 
     try:
-        del s3man_jobscripts[job_script_id]
+        JobScriptFiles.delete_from_s3(job_script_id)
     except KeyError:
         # There is no need to raise an error if we try to delete a file that does not exist
         logger.warning(f"Tried to delete {job_script_id=}, but it was not found on S3.")
@@ -348,7 +254,7 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
         job_scripts_table.update()
         .where(job_scripts_table.c.id == job_script_id)
         .values(
-            job_script.dict(exclude_unset=True, exclude={"job_script_data_as_string"}),
+            job_script.dict(exclude_unset=True, exclude={"job_script_files"}),
         )
         .returning(job_scripts_table)
     )
@@ -373,12 +279,12 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
         job_script_response = dict(result)
 
         try:
-            if job_script.job_script_data_as_string:
-                s3man_jobscripts[job_script_id] = job_script.job_script_data_as_string
-                job_script_response["job_script_data_as_string"] = job_script.job_script_data_as_string
+            if job_script.job_script_files:
+                job_script.job_script_files.write_to_s3(job_script_id)
+                job_script_response["job_script_files"] = job_script.job_script_files
             else:
-                job_script_response["job_script_data_as_string"] = s3man_jobscripts[job_script_id]
-        except KeyError as e:
+                job_script_response["job_script_files"] = JobScriptFiles.get_from_s3(job_script_id)
+        except (KeyError, ValueError) as e:
             logger.error(f"Reverting database transaction: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

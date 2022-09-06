@@ -61,11 +61,11 @@ class JobbergateContext(pydantic.BaseModel, arbitrary_types_allowed=True):
 
 class JobbergateConfig(pydantic.BaseModel):
     """
-    A data object desribing the config values needed in the "jobbergate_config" section of the
+    A data object describing the config values needed in the "jobbergate_config" section of the
     JobbergateApplicationConfig model.
     """
 
-    template_files: List[Path]
+    template_files: Optional[List[Path]]
     default_template: Optional[str] = None
     output_directory: Optional[Path] = None
     supporting_files_output_name: Optional[Dict[str, Any]] = None
@@ -79,7 +79,7 @@ class JobbergateConfig(pydantic.BaseModel):
 
 class JobbergateApplicationConfig(pydantic.BaseModel):
     """
-    A data object describing the config data needed to instantiate a JobbergateAppliation class.
+    A data object describing the config data needed to instantiate a JobbergateApplication class.
     """
 
     jobbergate_config: JobbergateConfig
@@ -96,11 +96,21 @@ class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     application_identifier: Optional[str] = None
     application_description: Optional[str] = None
     application_owner_email: str
-    application_file: str
-    application_config: str
     application_uploaded: bool
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    application_config: Optional[str] = None
+    application_source_file: Optional[str] = None
+    application_templates: Optional[Dict[str, str]] = None
+
+
+class JobScriptFiles(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+    """
+    Model containing job-script files.
+    """
+
+    main_file_path: Path
+    files: Dict[Path, str]
 
 
 class JobScriptResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
@@ -112,7 +122,7 @@ class JobScriptResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     application_id: int
     job_script_name: str
     job_script_description: Optional[str] = None
-    job_script_data_as_string: str
+    job_script_files: JobScriptFiles
     job_script_owner_email: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -143,6 +153,7 @@ class JobScriptCreateRequestData(pydantic.BaseModel):
 
     application_id: int
     job_script_name: str
+    job_script_description: Optional[str]
     param_dict: Optional[JobbergateApplicationConfig] = None
     sbatch_params: Optional[List[Any]] = None
 

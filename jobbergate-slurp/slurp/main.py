@@ -32,7 +32,6 @@ def clear_nextgen_db():
     Clears out the tables of the nextgen database.
     """
     logger.info("Clearing out nextgen database")
-    s3man = build_managers()
     with db(is_legacy=False) as nextgen_db:
         logger.info("Truncating job_submissions")
         nextgen_db.execute("truncate job_submissions cascade")
@@ -43,9 +42,7 @@ def clear_nextgen_db():
         logger.info("Truncating applications")
         nextgen_db.execute("truncate applications cascade")
 
-        logger.info("Clearing S3 objects")
-        for s in s3man:
-            s.nextgen.clear()
+        logger.info("Remember to clean S3 objects manually, if necessary")
     logger.success("Finished clearing!")
 
 

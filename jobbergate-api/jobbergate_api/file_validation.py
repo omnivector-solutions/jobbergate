@@ -193,9 +193,8 @@ def check_uploaded_files_yaml_is_parsable(file_list: List[UploadFile]):
     ):
         for f in file_list:
             if f.filename.endswith(".yaml"):
-                config = yaml_safe_load(f.file.read())
+                ApplicationConfig.get_from_yaml_file(f.file.read())
                 f.file.seek(0)
-                ApplicationConfig(**config)
 
 
 SyntaxValidationEquation = Callable[[Union[str, bytes]], bool]

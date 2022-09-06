@@ -6,6 +6,12 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Add support for supporting files on job-scripts.
+
+3.2.4-alpha.1 -- 2022-08-25
+---------------------------
+- Refactor application file management in a class, making it modular and reusable.
+- Fix a bug when writing application files to S3 and add tests to cover the issue.
 
 3.2.4-alpha.0 -- 2022-08-12
 ---------------------------

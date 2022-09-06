@@ -2,84 +2,20 @@
 Provide tool functions for working with Application data.
 """
 
-import ast
+import contextlib
 import copy
 import pathlib
-import tarfile
-import tempfile
 from typing import Any, Dict, Optional, Tuple, cast
 
 import yaml
 from loguru import logger
 
-from jobbergate_cli.constants import (
-    JOBBERGATE_APPLICATION_CONFIG,
-    JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
-    JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
-    TAR_NAME,
-)
+from jobbergate_cli.constants import JOBBERGATE_APPLICATION_CONFIG, JOBBERGATE_APPLICATION_SUPPORTED_FILES
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig, JobbergateContext
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.questions import gather_param_values
-from jobbergate_cli.text_tools import unwrap
-
-
-def validate_application_files(application_path: pathlib.Path):
-    """
-    Validate application files at a given directory.
-
-    Confirms:
-        application_path exists
-        application_path contains an application python module
-        application_path contains an application configuration file
-    """
-    with Abort.check_expressions(
-        f"The application files in {application_path} were invalid",
-        raise_kwargs=dict(
-            subject="Invalid application files",
-            log_message=f"Application files located at {application_path} failed validation",
-        ),
-    ) as checker:
-        checker(
-            application_path.exists(),
-            f"Application directory {application_path} does not exist",
-        )
-
-        application_module = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-        checker(
-            application_module.exists(),
-            unwrap(
-                f"""
-                Application directory does not contain required application module
-                {JOBBERGATE_APPLICATION_MODULE_FILE_NAME}
-                """
-            ),
-        )
-        try:
-            ast.parse(application_module.read_text())
-            is_valid_python = True
-        except Exception:
-            is_valid_python = False
-        checker(is_valid_python, f"The application module at {application_module} is not valid python code")
-
-        application_config = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-        checker(
-            application_config.exists(),
-            unwrap(
-                f"""
-                Application directory does not contain required configuration file
-                {JOBBERGATE_APPLICATION_MODULE_FILE_NAME}
-                """
-            ),
-        )
-        try:
-            yaml.safe_load(application_config.read_text())
-            is_valid_yaml = True
-        except Exception:
-            is_valid_yaml = False
-        checker(is_valid_yaml, f"The application config at {application_config} is not valid YAML")
 
 
 def load_default_config() -> Dict[str, Any]:
@@ -87,50 +23,6 @@ def load_default_config() -> Dict[str, Any]:
     Load the default config for an application.
     """
     return copy.deepcopy(JOBBERGATE_APPLICATION_CONFIG)
-
-
-def dump_full_config(application_path: pathlib.Path) -> str:
-    """
-    Dump the application config as text. Add existing template file paths into the config.
-    """
-    config_path = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-    config = yaml.safe_load(config_path.read_text())
-    config["jobbergate_config"]["template_files"] = sorted(
-        str(t) for t in JobbergateApplicationBase.find_templates(application_path)
-    )
-    return yaml.dump(config)
-
-
-def read_application_module(application_path: pathlib.Path) -> str:
-    """
-    Read the text from the application module found in the supplied application path.
-    """
-    module_path = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-    return module_path.read_text()
-
-
-def build_application_tarball(application_path: pathlib.Path, build_dir: pathlib.Path) -> pathlib.Path:
-    """
-    Build a gzipped tarball from the files found at the target application path.
-
-    :param: application_path: The directory where the application files may be found
-    :param: build_dir:        The directory where the applicaiton files should be staged and zipped
-    """
-    tar_path = build_dir / TAR_NAME
-    with tarfile.open(str(tar_path), "w|gz") as archive:
-        module_path = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-        archive.add(module_path, arcname=f"/{module_path.name}")
-
-        config_path = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-        archive.add(config_path, arcname=f"/{config_path.name}")
-
-        template_root_path = application_path / "templates"
-        if template_root_path.exists():
-            for template_path in template_root_path.iterdir():
-                if template_path.is_file:
-                    rel_path = template_path.relative_to(application_path)
-                    archive.add(template_path, arcname=f"/{rel_path}")
-    return tar_path
 
 
 def fetch_application_data(
@@ -196,6 +88,14 @@ def load_application_data(
     :param: app_data: A dictionary containing the application data
     :returns: A tuple containing the application config and the application module
     """
+    if not app_data.application_config:
+
+        raise Abort(
+            f"Fail to retrieve the application config file for id={app_data.id}",
+            subject="Application config is missing",
+            log_message="Application config is missing",
+        )
+
     try:
         app_config = load_application_config_from_source(app_data.application_config)
     except Exception as err:
@@ -208,18 +108,47 @@ def load_application_data(
             original_error=err,
         )
 
+    if not app_data.application_source_file:
+
+        raise Abort(
+            f"Fail to retrieve the application source file for id={app_data.id}",
+            subject="Application source file is missing",
+            log_message="Application source file is missing",
+        )
+
     try:
-        app_module = load_application_from_source(app_data.application_file, app_config)
+        app_module = load_application_from_source(app_data.application_source_file, app_config)
     except Exception as err:
         raise Abort(
             "The application source fetched from the API is not valid",
-            subject="Invalid application config",
+            subject="Invalid application module",
             support=True,
             log_message="Invalid application module",
             original_error=err,
         )
 
     return (app_config, app_module)
+
+
+@contextlib.contextmanager
+def get_upload_files(application_path: pathlib.Path):
+    """
+    Context manager to build the ``files`` parameter.
+
+    Open the supplied file(s) and build a ``files`` param appropriate for using
+    multi-part file uploads with the client.
+    """
+    Abort.require_condition(application_path.is_dir(), f"Application directory {application_path} does not exist")
+
+    with contextlib.ExitStack() as stack:
+        yield [
+            (
+                "upload_files",
+                (path.name, stack.enter_context(open(path)), "text/plain"),
+            )
+            for path in application_path.rglob("*")
+            if path.is_file() and path.suffix in JOBBERGATE_APPLICATION_SUPPORTED_FILES
+        ]
 
 
 def upload_application(
@@ -239,10 +168,10 @@ def upload_application(
     # Make static type checkers happy
     assert jg_ctx.client is not None
 
-    with tempfile.TemporaryDirectory() as temp_dir_str:
-        build_path = pathlib.Path(temp_dir_str)
-        logger.debug("Building application tar file at {build_path}")
-        tar_path = build_application_tarball(application_path, build_path)
+    with get_upload_files(pathlib.Path(application_path)) as upload_files:
+        logger.debug(
+            f"Preparing to upload {len(upload_files)} application files from {application_path}",
+        )
         response_code = cast(
             int,
             make_request(
@@ -252,7 +181,7 @@ def upload_application(
                 expect_response=False,
                 abort_message="Request to upload application files was not accepted by the API",
                 support=True,
-                files=dict(upload_file=open(tar_path, "rb")),
+                files=upload_files,
             ),
         )
         return response_code == 201
@@ -274,7 +203,7 @@ def load_application_from_source(app_source: str, app_config: JobbergateApplicat
     """
     Load the JobbergateApplication class from a text string containing the source file.
 
-    Creates the module in a temporary file and importins it with importlib.
+    Creates the module in a temporary file and imports it with importlib.
 
     Adapted from: https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
 

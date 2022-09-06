@@ -189,6 +189,7 @@ def test_create__non_fast_mode_and_job_submission(
         ),
         application_id=application_response.id,
         job_script_name="dummy-name",
+        job_script_description=None,
         sbatch_params=["1", "2", "3"],
     )
 
@@ -295,6 +296,7 @@ def test_create__with_fast_mode_and_no_job_submission(
             ),
         ),
         application_id=application_response.id,
+        job_script_description=None,
         job_script_name="dummy-name",
         sbatch_params=["1", "2", "3"],
     )
@@ -319,10 +321,10 @@ def test_update__makes_request_and_renders_results(
     job_script_data = dummy_job_script_data[0]
     job_script_id = job_script_data["id"]
 
-    new_job_script_data_as_string = json.dumps({"application.sh": "#!bin/bash \\n echo so dumb"})
     new_job_script_data = {
         **job_script_data,
-        "job_script_data_as_string": new_job_script_data_as_string,
+        "name": "new-test-name",
+        "description": "new-test-description",
     }
     respx_mock.put(f"{dummy_domain}/jobbergate/job-scripts/{job_script_id}").mock(
         return_value=httpx.Response(httpx.codes.OK, json=new_job_script_data),
@@ -335,7 +337,8 @@ def test_update__makes_request_and_renders_results(
             unwrap(
                 f"""
                 update --id={job_script_id}
-                       --job-script='{new_job_script_data_as_string}'
+                       --name='new-test-name'
+                       --description='new-test-description'
                 """
             )
         ),

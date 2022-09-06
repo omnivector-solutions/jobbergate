@@ -3,9 +3,10 @@ Defines the schema for the resource Application.
 """
 from datetime import datetime
 from textwrap import dedent
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
+from yaml import safe_load
 
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
@@ -95,12 +96,29 @@ class JobbergateConfig(BaseModel):
     Model for Jobbergate configuration (subsection at the yaml file).
     """
 
-    default_template: str
+    default_template: Optional[str]
     supporting_files: Optional[List[str]]
     supporting_files_output_name: Optional[Dict[str, List[str]]]
     template_files: Optional[List[str]]
     job_script_name: Optional[str]
     output_directory: str = "."
+
+    @root_validator(pre=True)
+    def compute_extra_settings(cls, values):
+        """
+        Compute missing values and extra operations to enhance the user experience.
+        """
+        # Transform string to list of strings for a better user experience
+        if values.get("supporting_files_output_name"):
+            for k, v in values["supporting_files_output_name"].items():
+                if isinstance(v, str):
+                    values["supporting_files_output_name"][k] = [v]
+
+        # Get the list of supporting files automatically
+        if values.get("supporting_files_output_name") and not values.get("supporting_files"):
+            values["supporting_files"] = list(values.get("supporting_files_output_name"))
+
+        return values
 
     class Config:
         extra = "allow"
@@ -113,6 +131,20 @@ class ApplicationConfig(BaseModel):
 
     application_config: Dict[str, Any]
     jobbergate_config: JobbergateConfig
+
+    @classmethod
+    def get_from_yaml_file(
+        cls, yaml_file: Union[bytes, str], user_supplied_parameters: Dict[str, Any] = None
+    ):
+        """
+        Construct this model from the application config file (jobbergate.yaml).
+
+        User supplied parameters can be supplied to override the defaults at the file.
+        """
+        param_dict = safe_load(yaml_file)
+        if user_supplied_parameters:
+            param_dict.update(**user_supplied_parameters)
+        return cls(**param_dict)
 
 
 class ApplicationCreateRequest(BaseModel):

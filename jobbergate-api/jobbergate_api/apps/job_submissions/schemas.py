@@ -7,6 +7,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Extra, Field
 
+from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
@@ -126,8 +127,8 @@ class PendingJobSubmission(BaseModel, extra=Extra.ignore):
     job_submission_owner_email: str
     execution_directory: Optional[Path]
     job_script_name: str
-    job_script_data_as_string: str
     application_name: str
+    job_script_files: JobScriptFiles
 
 
 class ActiveJobSubmission(BaseModel, extra=Extra.ignore):

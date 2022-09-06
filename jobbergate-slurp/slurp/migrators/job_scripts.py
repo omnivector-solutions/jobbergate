@@ -17,7 +17,7 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_ma
     job_scripts_map = {}
     logger.info("Migrating job_scripts to nextgen database")
 
-    s3man.nextgen.ensure_bucket()
+    s3man.nextgen.engine.ensure_bucket()
 
     for job_script in legacy_job_scripts:
         owner_email = user_map[job_script["job_script_owner_id"]]["email"]
@@ -56,8 +56,7 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_ma
         nextgen_jobscript_id = result.fetchone()["id"]
         job_scripts_map[job_script["id"]] = nextgen_jobscript_id
 
-        nextgen_jobscript_key = s3man.nextgen.get_key_from_id(nextgen_jobscript_id)
-        s3man.nextgen[nextgen_jobscript_key] = job_script["job_script_data_as_string"]
+        s3man.nextgen[nextgen_jobscript_id] = job_script["job_script_data_as_string"]
 
     logger.success("Finished migrating job_scripts")
     return job_scripts_map

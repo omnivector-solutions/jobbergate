@@ -1,7 +1,7 @@
 """
 Router for the Application resource.
 """
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Query
@@ -10,6 +10,7 @@ from fastapi import UploadFile, status
 from loguru import logger
 from sqlalchemy import not_
 
+from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table, searchable_fields, sortable_fields
 from jobbergate_api.apps.applications.schemas import (
     ApplicationCreateRequest,
@@ -20,11 +21,6 @@ from jobbergate_api.apps.applications.schemas import (
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.s3_manager import (
-    delete_application_files_from_s3,
-    get_application_files_from_s3,
-    write_application_files_to_s3,
-)
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,
@@ -100,18 +96,12 @@ async def applications_upload(
             detail=message,
         )
 
-    write_application_files_to_s3(application_id, upload_files, remove_previous_files=True)
-
-    update_dict: Dict[str, Any] = dict(application_uploaded=True)
-
-    for upload in upload_files:
-        if upload.filename.endswith(".yaml"):
-            update_dict["application_config"] = str(upload.file.read())
-            upload.file.seek(0)
-            break
+    ApplicationFiles.get_from_upload_files(upload_files).write_to_s3(application_id)
 
     update_query = (
-        applications_table.update().where(applications_table.c.id == application_id).values(update_dict)
+        applications_table.update()
+        .where(applications_table.c.id == application_id)
+        .values(dict(application_uploaded=True))
     )
 
     logger.trace(f"update_query = {render_sql(update_query)}")
@@ -146,12 +136,12 @@ async def applications_delete_upload(
         logger.debug(f"Trying to delete an applications that was not uploaded ({application_id=})")
         return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
-    delete_application_files_from_s3(application_id)
+    ApplicationFiles.delete_from_s3(application_id)
 
     update_query = (
         applications_table.update()
         .where(applications_table.c.id == application_id)
-        .values(dict(application_uploaded=False, application_config=None))
+        .values(dict(application_uploaded=False))
     )
 
     logger.trace(f"update_query = {render_sql(update_query)}")
@@ -192,7 +182,7 @@ async def application_delete(
 
     await database.execute(delete_query)
 
-    delete_application_files_from_s3(application_id)
+    ApplicationFiles.delete_from_s3(application_id)
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -230,7 +220,7 @@ async def application_delete_by_identifier(
 
     await database.execute(delete_query)
 
-    delete_application_files_from_s3(id_)
+    ApplicationFiles.delete_from_s3(id_)
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -279,7 +269,7 @@ async def applications_get_by_id(application_id: int = Query(...)):
     """
     Return the application given it's id.
     """
-    logger.trace(f"Getting {application_id=}")
+    logger.debug(f"Getting {application_id=}")
 
     query = applications_table.select().where(applications_table.c.id == application_id)
     logger.trace(f"get_query = {render_sql(query)}")
@@ -293,14 +283,19 @@ async def applications_get_by_id(application_id: int = Query(...)):
             detail=message,
         )
 
-    logger.debug(f"Application data: {application_data=}")
+    logger.trace(f"Application data: {dict(application_data)}")
 
-    response = ApplicationResponse(**application_data)
-
-    if response.application_uploaded:
-        application_files = get_application_files_from_s3(response.id)
-        response.application_source_file = application_files.source_file
-        response.application_templates = application_files.templates
+    if application_data["application_uploaded"]:
+        response = ApplicationResponse(
+            **application_data,
+            **ApplicationFiles.get_from_s3(application_data["id"]).dict(
+                by_alias=True,
+                exclude_defaults=True,
+                exclude_unset=True,
+            ),
+        )
+    else:
+        response = ApplicationResponse(**application_data)
 
     return response
 
@@ -335,8 +330,6 @@ async def application_update(
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-
-    logger.debug(f"Application data: {application_data=}")
 
     return application_data
 
