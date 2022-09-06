@@ -28,6 +28,35 @@ class JobScriptCreationError(Buzz):
 def flatten_param_dict(param_dict: Dict[str, Any]) -> Dict[str, Any]:
     """
     Flatten an input dictionary to support the rendering process.
+
+    See the example:
+
+    >>> param_dict = {
+    ...     "application_config": {"job_name": "rats", "partitions": [...]},
+    ...     "jobbergate_config": {
+    ...         "default_template": "test_job_script.sh",
+    ...         "supporting_files": [...],
+    ...         "supporting_files_output_name": {...},
+    ...         "template_files": [...],
+    ...         "job_script_name": None,
+    ...         "output_directory": ".",
+    ...         "partition": "debug",
+    ...         "job_name": "rats",
+    ...     },
+    ... }
+    >>> flat_param_dict = flatten_param_dict(param_dict)
+    >>> print(flat_param_dict)
+    {
+        "job_name": "rats",
+        "partitions": ["debug", "partition1"],
+        "default_template": "test_job_script.sh",
+        "supporting_files": ["test_job_script.sh"],
+        "supporting_files_output_name": {"test_job_script.sh": [...]},
+        "template_files": ["templates/test_job_script.sh"],
+        "job_script_name": None,
+        "output_directory": ".",
+        "partition": "debug",
+    }
     """
     param_dict_flat = {}
     for (key, value) in param_dict.items():
