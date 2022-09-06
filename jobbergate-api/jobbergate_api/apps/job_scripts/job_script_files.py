@@ -99,6 +99,30 @@ def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str
 class JobScriptFiles(BaseModel):
     """
     Model containing job-script files.
+
+    The folder structure aims to mimic the one specified by the application code.
+    In this way, the ``output_directory`` and file names for the main file
+    and supporting files are application specific.
+
+    To differentiate the files, they are stored in two folders, ``main-files`` and
+    ``supporting-files`` and the paths used in this model are relative the those
+    folders. See the example:
+
+        job-scripts
+        └───<id>
+            └───main-file
+            │   └───<output-directory>
+            │       └───<main-file-name>
+            │
+            └───supporting-files
+                └───<output-directory>
+                    │   <supporting-file-name-1>
+                    │   <supporting-file-name-2>
+                    │   <supporting-file-name-3>
+                    └───...
+
+    In this way, services that consume this information can maintain the
+    structure as well (like the user interface and the agents).
     """
 
     main_file_path: Path
