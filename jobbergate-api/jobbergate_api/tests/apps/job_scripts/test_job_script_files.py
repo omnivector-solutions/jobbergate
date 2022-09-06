@@ -78,6 +78,22 @@ def test_inject_sbatch_params(job_script_data_as_string, sbatch_params, new_job_
     assert injected_string == new_job_script_data_as_string
 
 
+@pytest.fixture
+def dummy_application_files(
+    dummy_application_source_file,
+    dummy_application_config,
+    dummy_template,
+):
+    """
+    Test fixture with dummy application files.
+    """
+    return ApplicationFiles(
+        templates={"test_job_script.sh": dummy_template},
+        source_file=dummy_application_source_file,
+        config_file=dummy_application_config,
+    )
+
+
 class TestJobScriptFiles:
     """
     Test JobScriptFiles.
@@ -242,23 +258,15 @@ class TestJobScriptFiles:
         ):
             JobScriptFiles.get_from_s3(job_script_id)
 
-    def test_render_from_application__sucess(
+    def test_render_from_application__success(
         self,
         param_dict,
         job_script_data_as_string,
-        dummy_application_source_file,
-        dummy_application_config,
-        dummy_template,
+        dummy_application_files,
     ):
         """
         Test that JobScriptFiles can be obtained when rendering ApplicationFiles.
         """
-        application_files = ApplicationFiles(
-            templates={"test_job_script.sh": dummy_template},
-            source_file=dummy_application_source_file,
-            config_file=dummy_application_config,
-        )
-
         desired_job_script_files = JobScriptFiles(
             main_file_path="test_job_script.sh",
             files={
@@ -268,7 +276,7 @@ class TestJobScriptFiles:
         )
 
         actual_job_script_files = JobScriptFiles.render_from_application(
-            application_files,
+            dummy_application_files,
             param_dict,
         )
 
