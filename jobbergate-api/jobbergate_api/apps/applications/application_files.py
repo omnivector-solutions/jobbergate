@@ -20,6 +20,15 @@ APPLICATION_SOURCE_FILE_NAME = "jobbergate.py"
 APPLICATION_TEMPLATE_FOLDER = "templates"
 
 
+def _get_template_files(file_manager: FileManager) -> Dict[str, str]:
+    """
+    Filter the template files out of the file manager.
+    """
+    template_paths = filter(lambda path: str(path.parent) == APPLICATION_TEMPLATE_FOLDER, file_manager.keys())
+
+    return {path.name: file_manager[path] for path in template_paths}
+
+
 class ApplicationFiles(BaseModel):
     """
     Model containing application files.
@@ -40,17 +49,16 @@ class ApplicationFiles(BaseModel):
         logger.debug(f"Getting application files from S3: {application_id=}")
         file_manager = cls.file_manager_factory(application_id)
 
+        logger.debug(
+            f"The number of files available for {application_id=} is {len(file_manager)}. "
+            f"They are: {', '.join(map(str, file_manager.keys()))}"
+        )
+
         application_files = cls(
             config_file=file_manager.get(APPLICATION_CONFIG_FILE_NAME),
             source_file=file_manager.get(APPLICATION_SOURCE_FILE_NAME),
+            templates=_get_template_files(file_manager),
         )
-
-        for path in file_manager.keys():
-            if str(path.parent) == APPLICATION_TEMPLATE_FOLDER:
-                filename = path.name
-                application_files.templates[filename] = file_manager[path]
-
-        logger.debug("Success getting application files from S3")
 
         if not application_files.config_file:
             logger.warning(f"Application config file was not found for {application_id=}")
@@ -58,6 +66,8 @@ class ApplicationFiles(BaseModel):
             logger.warning(f"Application source file was not found for {application_id=}")
         if not application_files.templates:
             logger.warning(f"No template file was found for {application_id=}")
+
+        logger.debug("Success getting application files from S3")
 
         return application_files
 
