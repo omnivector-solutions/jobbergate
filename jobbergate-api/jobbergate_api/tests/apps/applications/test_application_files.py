@@ -276,7 +276,7 @@ class TestApplicationFiles:
         ApplicationFiles.delete_from_s3(another_application_id)
 
         deleted_application_files = ApplicationFiles.get_from_s3(another_application_id)
-        assert deleted_application_files.dict(exclude_unset=True, exclude_defaults=True) == {}
+        assert deleted_application_files.dict(exclude_unset=True, exclude_defaults=True) == {"templates": {}}
 
         actual_application_files = ApplicationFiles.get_from_s3(remaining_application_id)
         assert desired_application_files == actual_application_files
