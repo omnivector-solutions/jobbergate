@@ -76,8 +76,11 @@ class ApplicationFiles(BaseModel):
         """
         Delete the files associated with the given id.
         """
-        logger.debug(f"Deleting from S3 the files associated to {application_id=}")
         file_manager = cls.file_manager_factory(application_id)
+        logger.debug(
+            f"Deleting from S3 the files associated to {application_id=}."
+            f"Files to be deleted: {', '.join(map(str, file_manager.keys()))}"
+        )
         file_manager.clear()
         logger.debug(f"Files were deleted for {application_id=}")
 
