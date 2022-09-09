@@ -6,7 +6,8 @@ import typing
 
 import asyncpg
 import sentry_sdk
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, HTTPException, Request, Response, status
+from fastapi.exceptions import RequestValidationError
 from loguru import logger
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from starlette.middleware.cors import CORSMiddleware
@@ -52,6 +53,7 @@ async def health_check():
     """
     Provide a health-check endpoint for the app.
     """
+    logger.debug("CHECKING HEALTH")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -85,3 +87,14 @@ async def disconnect_database():
     """
     logger.debug("Disconnecting database")
     await database.disconnect()
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, err: RequestValidationError):
+    """
+    Handle exceptions from pydantic validators.
+    """
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail=f"Validation error for request to {request.url} with data: {request.json()}: {err}",
+    )

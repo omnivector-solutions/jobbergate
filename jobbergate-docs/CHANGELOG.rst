@@ -1,36 +1,10 @@
-.. figure:: /src/_images/logo.png?raw=true
-   :alt: Logo
-   :align: center
-   :width: 80px
+============
+ Change Log
+============
 
-   An Omnivector Solutions initiative
+This file keeps track of all notable changes to jobbergate-docs
 
-==========================
- Jobbergate Documentation
-==========================
-
-This repository contains the source for the Jobbergate documentation.
-
-It uses [sphinx](https://www.sphinx-doc.org/en/master/) to render html pages from
-the sourc ReStructuredText documents.
-
-
-Build
-=====
-
-To build the documentation website, run the following command::
-
-    $ make docs
-
-
-Other Commands
-==============
-
-To lint the python files in the ``src`` directory, run::
-
-    $ make lint
-
-
-To clean up build artifacts, run::
-
-    $ make clean
+Unreleased
+----------
+- Massive update of the Jobbergate documentation
+- Inclusion of Motorbike example and walk-through

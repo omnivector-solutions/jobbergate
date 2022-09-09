@@ -237,8 +237,8 @@ def update(
         help="The id of the job script to update",
     ),
     name: str = typer.Option(
-        ...,
-        help="New name of the job script to create.",
+        None,
+        help="Optional new name of the job script.",
     ),
     description: Optional[str] = typer.Option(
         None,
@@ -253,6 +253,12 @@ def update(
     # Make static type checkers happy
     assert jg_ctx.client is not None
 
+    update_params: Dict[str, Any] = dict()
+    if name is not None:
+        update_params.update(job_script_name=name)
+    if description is not None:
+        update_params.update(job_script_description=description)
+
     job_script_result = cast(
         JobScriptResponse,
         make_request(
@@ -262,10 +268,7 @@ def update(
             expected_status=200,
             abort_message="Couldn't update job script",
             support=True,
-            json=dict(
-                job_script_name=name,
-                job_script_description=description,
-            ),
+            json=update_params,
             response_model_cls=JobScriptResponse,
         ),
     )

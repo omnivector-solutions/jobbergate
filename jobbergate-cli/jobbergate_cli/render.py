@@ -3,7 +3,7 @@ Provide helpers to render output for users.
 """
 
 import json
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 import pydantic
 from rich import print_json
@@ -116,13 +116,17 @@ def render_list_results(
     :param: hidden_fields: Columns that should (if not using ``full`` mode) be hidden in the ``Table`` output
     :param: title:         The title header to include above the ``Table`` output
     """
-    if envelope.pagination.total == 0:
-        terminal_message("There are no results to display", subject="Nothing here...")
-        return
-
     if ctx.raw_output:
-        render_json(envelope.results)
+        # THIS IS SO DUMB....need to dump to string to make sure paths are converted,
+        # then convert back to dict so we can strip out the "results" element, then
+        # dump back to string
+        serialized = envelope.json()
+        deserialized = json.loads(serialized)
+        render_json(deserialized["results"])
     else:
+        if envelope.pagination.total == 0:
+            terminal_message("There are no results to display", subject="Nothing here...")
+            return
         if ctx.full_output or hidden_fields is None:
             filtered_results = envelope.results
         else:
@@ -188,7 +192,10 @@ def render_single_result(
     :param: title:         The title header to include above the ``Tale`` output
     """
     if isinstance(result, pydantic.BaseModel):
-        result = result.dict()
+        result_model = cast(pydantic.BaseModel, result)
+        result_dict = json.loads(result_model.json())
+        result = cast(Dict[str, Any], result_dict)
+
     if ctx.raw_output:
         print_json(json.dumps(result))
     else:

@@ -57,6 +57,7 @@ class Settings(BaseSettings):
     OIDC_DOMAIN: str
     OIDC_AUDIENCE: str
     OIDC_CLIENT_ID: str
+    OIDC_USE_HTTPS: bool = True
     OIDC_MAX_POLL_TIME: int = 5 * 60  # 5 Minutes
 
     @root_validator(skip_on_failure=True)

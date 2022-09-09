@@ -47,6 +47,7 @@ def dev_server(
     Start a development server locally.
     """
     try:
+        logger.info("Waiting for the database")
         _wait_for_db(db_wait_count, db_wait_interval)
     except Exception:
         logger.error("Database is not available")

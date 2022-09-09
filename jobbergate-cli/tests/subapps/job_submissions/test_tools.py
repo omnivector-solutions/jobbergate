@@ -2,9 +2,7 @@ import json
 import pathlib
 
 import httpx
-import pytest
 
-from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import JobSubmissionResponse
 from jobbergate_cli.subapps.job_submissions.tools import create_job_submission, fetch_job_submission_data
 
@@ -76,41 +74,6 @@ def test_create_job_submission__with_explicit_cluster_id(
         client_id="other-cluster",
     )
     assert new_job_submission == JobSubmissionResponse(**job_submission_data)
-
-
-def test_create_job_submission__fails_with_invalid_client_id(
-    respx_mock,
-    dummy_job_submission_data,
-    dummy_domain,
-    dummy_context,
-    attach_persona,
-    seed_clusters,
-):
-    job_submission_data = dummy_job_submission_data[0]
-    job_submission_name = job_submission_data["job_submission_name"]
-    job_submission_description = job_submission_data["job_submission_description"]
-
-    job_script_id = job_submission_data["job_script_id"]
-
-    create_job_submission_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions")
-    create_job_submission_route.mock(
-        return_value=httpx.Response(
-            httpx.codes.CREATED,
-            json=job_submission_data,
-        ),
-    )
-
-    attach_persona("dummy@dummy.com")
-    seed_clusters("other-cluster")
-
-    with pytest.raises(Abort, match="supplied cluster name was not found in the list of available clusters"):
-        create_job_submission(
-            dummy_context,
-            job_script_id,
-            job_submission_name,
-            description=job_submission_description,
-            client_id="dummy-cluster",
-        )
 
 
 def test_create_job_submission__with_execution_dir(

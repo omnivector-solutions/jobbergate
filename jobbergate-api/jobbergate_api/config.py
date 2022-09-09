@@ -39,7 +39,7 @@ class Settings(BaseSettings):
 
     DEPLOY_ENV: str = "LOCAL"
 
-    LOG_LEVEL: LogLevelEnum = LogLevelEnum.INFO
+    LOG_LEVEL: LogLevelEnum = LogLevelEnum.DEBUG
 
     # Database settings  # Default to values from docker-compose.yml
     DATABASE_HOST: str = "localhost"
@@ -61,6 +61,7 @@ class Settings(BaseSettings):
 
     # Security Settings. For details, see https://github.com/omnivector-solutions/armasec
     ARMASEC_DOMAIN: str
+    ARMASEC_USE_HTTPS: bool = Field(True)
     ARMASEC_AUDIENCE: Optional[HttpUrl]
     ARMASEC_DEBUG: bool = Field(False)
     ARMASEC_ADMIN_DOMAIN: Optional[str]

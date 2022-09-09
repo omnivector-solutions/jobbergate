@@ -1,6 +1,7 @@
 """
 Provide command for showing the current environment.
 """
+import json
 
 import typer
 
@@ -10,11 +11,11 @@ app = typer.Typer()
 
 
 @app.command()
-def show_env(json: bool = typer.Option(False, help="Dump as JSON")):
+def show_env(use_json: bool = typer.Option(False, "--json", help="Dump as JSON")):
     """
     Print out the current environment settings.
     """
-    if json:
+    if use_json:
         output = json.dumps(settings.dict())
     else:
         output = "\n  ".join(

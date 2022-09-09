@@ -19,7 +19,7 @@ To run this example::
 Note: Before running this demo, you will need::
 
 - An Auth token in the same directory named "access.token". You may use the ``cli-login.py`` for this.
-- An application created from the "application-example" directory. It may already exist.
+- An application created from the "simple-application" example directory. It may already exist.
 """
 
 import pathlib
@@ -30,10 +30,10 @@ import httpx
 def get_application_id(
     base_api_url="https://armada-k8s.staging.omnivector.solutions/jobbergate",
     access_token_file=pathlib.Path("./access.token"),
-    application_identifier="application-example",
+    application_identifier="simple-application",
 ):
     """
-    Get an application id for the application with the identifier "application-example".
+    Get an application id for the application with the identifier "simple-application".
     """
     token = access_token_file.read_text()
     response = httpx.get(
@@ -57,7 +57,7 @@ def create_job_script(
     job_script_name="demo-job-script",
 ):
     """
-    Create a job-script from the "application-example".
+    Create a job-script from the "simple-application".
 
     Application config params and sbatch params are hard-coded but may be easily modified as desired.
     """
