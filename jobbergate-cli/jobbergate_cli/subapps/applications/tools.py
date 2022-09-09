@@ -38,7 +38,7 @@ def fetch_application_data(
     :param: identifier: If supplied, look for an application instance with the provided identifier
     :returns: An instance of ApplicationResponse containing the application data
     """
-    identification = id
+    identification: Any = id
     if id is None and identifier is None:
         raise Abort(
             """
