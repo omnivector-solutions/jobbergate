@@ -1,7 +1,7 @@
 """
 Router for the Application resource.
 """
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Query
@@ -260,23 +260,36 @@ async def applications_list(
 
 
 @router.get(
-    "/applications/{application_id}",
+    "/applications/{application_identification}",
     description="Endpoint to return an application given the id",
     response_model=ApplicationResponse,
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW))],
 )
-async def applications_get_by_id(application_id: int = Query(...)):
+async def applications_get_by_id(
+    application_identification: Union[int, str] = Query(None),
+):
     """
-    Return the application given it's id.
+    Return the application given it's id (when int) or identifier (when str).
     """
-    logger.debug(f"Getting {application_id=}")
+    logger.debug(f"Getting {application_identification=}")
 
-    query = applications_table.select().where(applications_table.c.id == application_id)
+    if isinstance(application_identification, int):
+        query = applications_table.select().where(applications_table.c.id == application_identification)
+    elif isinstance(application_identification, str):
+        query = applications_table.select().where(
+            applications_table.c.application_identifier == application_identification
+        )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="application_identification must be provided as int or str",
+        )
+
     logger.trace(f"get_query = {render_sql(query)}")
 
     application_data = await database.fetch_one(query)
     if not application_data:
-        message = f"Application {application_id=} not found."
+        message = f"Application {application_identification=} not found."
         logger.warning(message)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -288,7 +301,7 @@ async def applications_get_by_id(application_id: int = Query(...)):
     if application_data["application_uploaded"]:
         response = ApplicationResponse(
             **application_data,
-            **ApplicationFiles.get_from_s3(application_id).dict(
+            **ApplicationFiles.get_from_s3(application_data["id"]).dict(
                 by_alias=True,
                 exclude_defaults=True,
                 exclude_unset=True,
