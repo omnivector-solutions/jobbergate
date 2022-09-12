@@ -35,13 +35,12 @@ class EmailManager:
         """
         Send an email using this manager.
         """
-        message = self._build_message(to_emails, subject, **kwargs)
-
         with EmailNotificationError.handle_errors(
             f"Error while sending email from_email={self.from_email}, {to_emails=}",
             do_except=lambda params: logger.warning(params.final_message),
             re_raise=not skip_on_failure,
         ):
+            message = self._build_message(to_emails, subject, **kwargs)
             self.email_client.send(message)
 
     def _build_message(self, to_emails: Union[str, List[str]], subject: str, **kwargs) -> Mail:

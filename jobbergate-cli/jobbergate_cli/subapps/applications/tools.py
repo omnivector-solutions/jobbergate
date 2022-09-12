@@ -38,8 +38,7 @@ def fetch_application_data(
     :param: identifier: If supplied, look for an application instance with the provided identifier
     :returns: An instance of ApplicationResponse containing the application data
     """
-    url = f"/jobbergate/applications/{id}"
-    params = dict()
+    identification: Any = id
     if id is None and identifier is None:
         raise Abort(
             """
@@ -57,8 +56,7 @@ def fetch_application_data(
             warn_only=True,
         )
     elif identifier is not None:
-        url = "/jobbergate/applications"
-        params["identifier"] = identifier
+        identification = identifier
 
     # Make static type checkers happy
     assert jg_ctx.client is not None
@@ -68,13 +66,12 @@ def fetch_application_data(
         ApplicationResponse,
         make_request(
             jg_ctx.client,
-            url,
+            f"/jobbergate/applications/{identification}",
             "GET",
             expected_status=200,
             abort_message=f"Couldn't retrieve application {stub} from API",
             response_model_cls=ApplicationResponse,
             support=True,
-            params=params,
         ),
     )
 

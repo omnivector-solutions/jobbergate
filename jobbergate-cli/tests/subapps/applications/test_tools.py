@@ -66,7 +66,7 @@ def test_fetch_application_data__success__using_identifier(
 ):
     app_data = dummy_application_data[0]
     app_identifier = app_data["application_identifier"]
-    fetch_route = respx_mock.get(f"{dummy_domain}/jobbergate/applications?identifier={app_identifier}")
+    fetch_route = respx_mock.get(f"{dummy_domain}/jobbergate/applications/{app_identifier}")
     fetch_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,

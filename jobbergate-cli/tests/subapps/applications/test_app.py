@@ -87,7 +87,7 @@ def test_get_one__success__using_identifier(
     cli_runner,
     mocker,
 ):
-    respx_mock.get(f"{dummy_domain}/jobbergate/applications?identifier=dummy").mock(
+    respx_mock.get(f"{dummy_domain}/jobbergate/applications/dummy").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dummy_application_data[0],
