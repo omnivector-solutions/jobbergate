@@ -25,7 +25,6 @@ def migrate_applications(nextgen_db, legacy_applications, user_map):
                 application_identifier,
                 application_description,
                 application_owner_email,
-                application_config,
                 application_uploaded,
                 created_at,
                 updated_at
@@ -35,7 +34,6 @@ def migrate_applications(nextgen_db, legacy_applications, user_map):
                 %(identifier)s,
                 %(description)s,
                 %(owner_email)s,
-                %(config)s,
                 false,
                 %(created)s,
                 %(updated)s
@@ -47,7 +45,6 @@ def migrate_applications(nextgen_db, legacy_applications, user_map):
                 identifier=application["application_identifier"],
                 description=application["application_description"],
                 owner_email=owner_email,
-                config=application["application_config"],
                 created=application["created_at"],
                 updated=application["updated_at"],
             ),

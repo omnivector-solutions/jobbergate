@@ -2,17 +2,22 @@
 Provides a convenience class for managing calls to S3.
 """
 import contextlib
+import json
 import tarfile
 import tempfile
 from collections import namedtuple
 from io import BytesIO
 from pathlib import Path
+from typing import cast
 
+from boto3 import client
 from fastapi import UploadFile
-from file_storehouse import FileManager, FileManagerReadOnly, client
+from file_storehouse import FileManager, FileManagerReadOnly
 from file_storehouse.engine.s3 import EngineS3
 from file_storehouse.key_mapping import KeyMappingNumeratedFolder
-from jobbergate_api.s3_manager import LIST_OF_TRANSFORMATIONS, ApplicationFileManager
+from jobbergate_api.apps.applications.application_files import APPLICATIONS_WORK_DIR, ApplicationFiles
+from jobbergate_api.apps.job_scripts.job_script_files import JOBSCRIPTS_WORK_DIR, JobScriptFiles
+from jobbergate_api.s3_manager import IO_TRANSFORMATIONS, file_manager_factory
 from loguru import logger
 
 from slurp.config import settings
@@ -38,6 +43,61 @@ def build_managers():
         ),
     )
 
+    class NextGenApplicationFiles(ApplicationFiles):
+        @classmethod
+        def file_manager_factory(self, application_id: int) -> FileManager:
+            """
+            Build an application file manager.
+            """
+            return cast(
+                FileManager,
+                file_manager_factory(
+                    id=application_id,
+                    s3_client=s3_client.nextgen,
+                    bucket_name=settings.NEXTGEN_S3_BUCKET_NAME,
+                    work_directory=Path(APPLICATIONS_WORK_DIR),
+                    manager_cls=FileManager,
+                    transformations=IO_TRANSFORMATIONS,
+                ),
+            )
+
+    class NextGenJobScriptFiles(JobScriptFiles):
+        @classmethod
+        def file_manager_factory(self, job_script_id: int) -> FileManager:
+            """
+            Build an application file manager.
+            """
+            return cast(
+                FileManager,
+                file_manager_factory(
+                    id=job_script_id,
+                    s3_client=s3_client.nextgen,
+                    bucket_name=settings.NEXTGEN_S3_BUCKET_NAME,
+                    work_directory=Path(JOBSCRIPTS_WORK_DIR),
+                    manager_cls=FileManager,
+                    transformations=IO_TRANSFORMATIONS,
+                ),
+            )
+
+        @classmethod
+        def get_from_json(cls, input_json: dict):
+            """
+            Get job script files from the legacy json file ``job_script_data_as_string``.
+            """
+            main_filename = "application.sh"
+            main_file_path = Path(main_filename)
+
+            try:
+                unpacked_data = json.loads(input_json)
+                job_script = unpacked_data.get(main_filename, None)
+            except json.JSONDecodeError:
+                job_script = None
+
+            return cls(
+                main_file_path=main_file_path,
+                files={main_file_path: job_script},
+            )
+
     s3man = s3_folder(
         applications=db_gen(
             legacy=FileManagerReadOnly(
@@ -47,18 +107,11 @@ def build_managers():
                     "jobbergate-resources",
                 ),
             ),
-            nextgen=ApplicationFileManager(
-                bucket_name=settings.NEXTGEN_S3_BUCKET_NAME,
-                s3_client=s3_client.nextgen,
-            ),
+            nextgen=NextGenApplicationFiles,
         ),
         jobscripts=db_gen(
             legacy=None,
-            nextgen=FileManager(
-                engine=EngineS3(s3_client.nextgen, settings.NEXTGEN_S3_BUCKET_NAME, "job-scripts"),
-                transformation_list=LIST_OF_TRANSFORMATIONS,
-                key_mapping=KeyMappingNumeratedFolder("jobbergate.txt"),
-            ),
+            nextgen=NextGenJobScriptFiles,
         ),
     )
 
@@ -68,6 +121,8 @@ def build_managers():
 @contextlib.contextmanager
 def get_upload_files_from_tar(s3_obj):
 
+    supported_extensions = {".py", ".yaml", ".j2", ".jinja2"}
+
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir)
         with tarfile.open(fileobj=BytesIO(s3_obj), mode="r:gz") as tar:
@@ -75,9 +130,9 @@ def get_upload_files_from_tar(s3_obj):
 
         with contextlib.ExitStack() as stack:
             yield [
-                UploadFile(path.name, stack.enter_context(open(path)), "text/plain")
+                UploadFile(path.name, stack.enter_context(open(path, "rb")), "text/plain")
                 for path in tmp_path.rglob("*")
-                if path.is_file()
+                if path.is_file() and path.suffix in supported_extensions
             ]
 
 
@@ -95,8 +150,6 @@ def transfer_s3(s3man, applications_map):
         f"{len(applications_map)} applications are expected, "
         f"{len(s3man.legacy)} objects were found at the legacy bucket."
     )
-
-    s3man.nextgen.source_files.engine.ensure_bucket()
 
     legacy_key_mapping = KeyMappingNumeratedFolder("jobbergate.tar.gz")
 
@@ -121,11 +174,12 @@ def transfer_s3(s3man, applications_map):
         legacy_obj = s3man.legacy[legacy_key]
         try:
             with get_upload_files_from_tar(legacy_obj) as upload_files:
-                s3man.nextgen.write_to_s3(nextgen_application_id, upload_files, remove_previous_files=True)
-        except Exception:
+                application_files = s3man.nextgen.get_from_upload_files(upload_files)
+        except Exception as e:
             error_when_uploading += 1
-            logger.warning(f"Error when uploading the files: {legacy_application_id=}")
+            logger.warning(f"Error when uploading the files for {legacy_application_id=}: {str(e)}")
         else:
+            application_files.write_to_s3(nextgen_application_id, remove_previous_files=True)
             transferred_ids.append(nextgen_application_id)
             successful_transfers += 1
             logger.trace(f"Successful transfer: {legacy_application_id=}")

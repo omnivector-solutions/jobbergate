@@ -335,7 +335,7 @@ test = ["pytest (>=6.2.4,<7.0.0)", "pytest-cov (>=2.12.0,<4.0.0)", "pytest-async
 
 [[package]]
 name = "file-storehouse"
-version = "0.3.4"
+version = "0.5.0"
 description = "Manage files in bulk quantity using a friendly dict-like interface"
 category = "main"
 optional = false
@@ -485,7 +485,7 @@ python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
 name = "jobbergate-api"
-version = "3.2.3"
+version = "3.2.4"
 description = "Jobbergate API"
 category = "main"
 optional = false
@@ -500,7 +500,7 @@ boto3 = "^1.17.51"
 databases = {version = "^0.5.5", extras = ["postgresql"]}
 email_validator = "^1.1.0"
 fastapi = "^0.68.0"
-file-storehouse = "0.3.4"
+file-storehouse = "0.5.0"
 Jinja2 = "^3.0.3"
 loguru = "^0.6.0"
 passlib = "^1.7.2"
@@ -1243,7 +1243,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "23b294333a456159ab814ef934ff080df6f9ba4be13a286c9ce90b86fe79b213"
+content-hash = "05d64edbb386f5bfa5a135c5deb5d8a3da3f2e82dac212ebcf9e70981df6cd63"
 
 [metadata.files]
 alembic = [
@@ -1375,8 +1375,8 @@ fastapi = [
     {file = "fastapi-0.68.2.tar.gz", hash = "sha256:38526fc46bda73f7ec92033952677323c16061e70a91d15c95f18b11895da494"},
 ]
 file-storehouse = [
-    {file = "file-storehouse-0.3.4.tar.gz", hash = "sha256:94a9b843b5334392da8d9a9ad312a9e1218afce962b84880413cecccb3e17fb9"},
-    {file = "file_storehouse-0.3.4-py3-none-any.whl", hash = "sha256:6436c2c132d4f93dfe85900ffb0d437650d8835f2d5d11ca866ea0c5c4f6503a"},
+    {file = "file-storehouse-0.5.0.tar.gz", hash = "sha256:78e535862d8b852412e94d5014a31a18289bbcd1f34b570a3a53307b70d69ac8"},
+    {file = "file_storehouse-0.5.0-py3-none-any.whl", hash = "sha256:e5e395aefa4553f29bed4d30dcc7051bf92faa742005bb6320340874b3526083"},
 ]
 flake8 = [
     {file = "flake8-4.0.1-py2.py3-none-any.whl", hash = "sha256:479b1304f72536a55948cb40a32dce8bb0ffe3501e26eaf292c7e60eb5e0428d"},
