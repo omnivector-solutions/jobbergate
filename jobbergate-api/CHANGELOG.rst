@@ -9,15 +9,9 @@ Unreleased
 
 3.2.4 -- 2022-09-12
 -------------------
-- Add support for supporting files on job-scripts.
-
-3.2.4-alpha.1 -- 2022-08-25
----------------------------
+- Patch the supporting files on job-scripts.
 - Refactor application file management in a class, making it modular and reusable.
 - Fix a bug when writing application files to S3 and add tests to cover the issue.
-
-3.2.4-alpha.0 -- 2022-08-12
----------------------------
 - Fix API was not sending job-script files to the agent.
 - Refactor Jobbergate application file management.
 
