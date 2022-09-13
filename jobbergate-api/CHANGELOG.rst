@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Added job_submissions.status as a sortable field
 
 3.2.4 -- 2022-09-12
 -------------------
