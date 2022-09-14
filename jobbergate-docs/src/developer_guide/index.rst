@@ -16,4 +16,5 @@ Table of Contents
    Developer Tools <dev_tools>
    Quality Assurance Tools <qa_tools>
    Integration Testing <integration_testing>
+   Continuous Integration <ci>
    S3 File Storage <s3_file_storage>

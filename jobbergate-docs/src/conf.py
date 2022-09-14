@@ -31,6 +31,7 @@ pygments_style = "rainbow_dash"
 exclude_patterns = []
 extensions = [
     "sphinx.ext.githubpages",
+    "sphinx.ext.autosectionlabel",
     "sphinxcontrib.httpdomain",
 ]
 
