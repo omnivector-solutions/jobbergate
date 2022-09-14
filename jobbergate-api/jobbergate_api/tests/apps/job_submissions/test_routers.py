@@ -753,16 +753,19 @@ async def test_get_job_submissions_with_sort_params(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="Z",
                 job_submission_owner_email="admin@org.com",
+                status=JobSubmissionStatus.REJECTED,
             ),
             dict(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="Y",
                 job_submission_owner_email="admin@org.com",
+                status=JobSubmissionStatus.COMPLETED,
             ),
             dict(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="X",
                 job_submission_owner_email="admin@org.com",
+                status=JobSubmissionStatus.FAILED,
             ),
         ),
     )
@@ -788,6 +791,12 @@ async def test_get_job_submissions_with_sort_params(
     data = response.json()
     results = data.get("results")
     assert [d["job_submission_name"] for d in results] == ["X", "Y", "Z"]
+
+    response = await client.get("/jobbergate/job-submissions?sort_field=status")
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    results = data.get("results")
+    assert [d["job_submission_name"] for d in results] == ["Y", "X", "Z"]
 
     response = await client.get("/jobbergate/job-submissions?all=true&sort_field=job_submission_description")
     assert response.status_code == status.HTTP_400_BAD_REQUEST

@@ -41,4 +41,5 @@ sortable_fields = [
     job_submissions_table.c.client_id,
     job_submissions_table.c.created_at,
     job_submissions_table.c.updated_at,
+    job_submissions_table.c.status,
 ]
