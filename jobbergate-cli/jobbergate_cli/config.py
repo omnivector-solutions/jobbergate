@@ -102,12 +102,16 @@ def build_settings(*args, **kwargs):
     """
     try:
         return Settings(*args, **kwargs)
-    except ValidationError:
+    except ValidationError as err:
         terminal_message(
             conjoin(
                 "A configuration error was detected.",
                 "",
                 f"[yellow]Please contact [bold]{OV_CONTACT}[/bold] for support and trouble-shooting[/yellow]",
+                "",
+                "Details:",
+                "",
+                f"[red]{err}[/red]",
             ),
             subject="Configuration Error",
         )
