@@ -89,9 +89,9 @@ def build_managers():
 
             try:
                 unpacked_data = json.loads(input_json)
-                job_script = unpacked_data.get(main_filename, None)
+                job_script = unpacked_data.get(main_filename, "")
             except json.JSONDecodeError:
-                job_script = None
+                job_script = ""
 
             return cls(
                 main_file_path=main_file_path,
