@@ -7,6 +7,10 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+3.2.5-alpha.0 -- 2022-09-15
+---------------------------
+- Keep version in sync with the API.
+
 3.2.4 -- 2022-09-12
 -------------------
 - Refactor the logic to upload application files to the API.
