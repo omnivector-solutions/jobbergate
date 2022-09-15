@@ -3,6 +3,7 @@ The main slurp application.
 
 Provides a Typer app and associated commands.
 """
+from datetime import datetime
 import subprocess
 
 import typer
@@ -55,6 +56,7 @@ def migrate(
     """
     Migrates data from the legacy database to the nextgen database.
     """
+    logger.add(f"file_{datetime.now().replace(microsecond=0).isoformat()}.log")
     logger.info("Migrating jobbergate data from legacy to nextgen database")
     s3man = build_managers()
     with db(is_legacy=True) as legacy_db, db(is_legacy=False) as nextgen_db:
