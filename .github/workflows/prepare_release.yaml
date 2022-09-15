@@ -35,6 +35,8 @@ jobs:
           python-version: 3.8.10
 
       - uses: Gr1N/setup-poetry@v7
+        with:
+          poetry-version: 1.1.14
 
       - id: api-package
         name: Bump version on the API
