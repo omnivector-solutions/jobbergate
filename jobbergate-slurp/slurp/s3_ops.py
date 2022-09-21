@@ -128,6 +128,10 @@ def get_upload_files_from_tar(s3_obj):
         with tarfile.open(fileobj=BytesIO(s3_obj), mode="r:gz") as tar:
             tar.extractall(tmp_path)
 
+        logger.debug(
+            f"Extracted tarball to {tmp_path}, including the files: {[path.name for path in tmp_path.rglob('*')]}"
+        )
+
         with contextlib.ExitStack() as stack:
             yield [
                 UploadFile(path.name, stack.enter_context(open(path, "rb")), "text/plain")
@@ -158,6 +162,7 @@ def transfer_s3(s3man, applications_map):
     error_when_uploading = 0
     successful_transfers = 0
     transferred_ids = []
+    missing_files = set(applications_map.values())
     for legacy_key in s3man.legacy.keys():
         try:
             legacy_application_id = legacy_key_mapping.get_dict_key_from_engine(legacy_key)
@@ -173,22 +178,33 @@ def transfer_s3(s3man, applications_map):
 
         legacy_obj = s3man.legacy[legacy_key]
         try:
+            logger.debug(
+                f"Started processing uploaded files {legacy_application_id=} "
+                f"to {nextgen_application_id=} from the legacy bucket key '{str(legacy_key)}'"
+            )
             with get_upload_files_from_tar(legacy_obj) as upload_files:
                 application_files = s3man.nextgen.get_from_upload_files(upload_files)
-        except Exception as e:
+        except Exception:
             error_when_uploading += 1
-            logger.warning(f"Error when uploading the files for {legacy_application_id=}: {str(e)}")
+            logger.error(f"Error processing the files {legacy_application_id=} to {nextgen_application_id=}")
         else:
             application_files.write_to_s3(nextgen_application_id, remove_previous_files=True)
             transferred_ids.append(nextgen_application_id)
             successful_transfers += 1
-            logger.trace(f"Successful transfer: {legacy_application_id=}")
+            missing_files.remove(nextgen_application_id)
+            logger.debug(f"Successful transferred: {legacy_application_id=} to {nextgen_application_id=}")
 
-    logger.info(f"Skipped {bad_pattern_skips} objects due to unparsable key")
+    logger.info(
+        f"Finished transferring {successful_transfers} objects from s3. "
+        f"{len(applications_map)} applications were expected, "
+        f"{len(s3man.legacy)} objects were found at the legacy bucket."
+    )
+
+    logger.info(f"Skipped {bad_pattern_skips} objects due to unparsable key on legacy bucket.")
     logger.info(
         f"Skipped {missing_id_skips} objects due to missing application_id (files on S3 but id not on nextgen database)"
     )
     logger.info(f"Skipped {error_when_uploading} unprocessable objects")
-    logger.info(f"Finished transferring {successful_transfers} objects")
+    logger.info(f"No application files were found for application ids: {missing_files}")
 
     return transferred_ids

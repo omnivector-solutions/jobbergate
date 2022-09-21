@@ -51,6 +51,8 @@ def migrate_applications(nextgen_db, legacy_applications, user_map):
         )
         application_map[application["id"]] = nextgen_db.fetchone()["id"]
     logger.success("Finished migrating applications")
+    logger.debug(f"Application map: {application_map}")
+
     return application_map
 
 

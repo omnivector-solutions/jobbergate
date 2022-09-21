@@ -63,7 +63,13 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_ma
                 f"Error getting job script content {nextgen_jobscript_id=}: {job_script['job_script_data_as_string']}"
             )
         else:
+            if not job_script_files.main_file:
+                logger.warning(
+                    f"Empty job script content ({nextgen_jobscript_id=}; legacy_jobscript_id={job_script['id']})"
+                )
             job_script_files.write_to_s3(nextgen_jobscript_id)
 
     logger.success("Finished migrating job_scripts")
+    logger.debug(f"Job_script map: {job_scripts_map}")
+
     return job_scripts_map
