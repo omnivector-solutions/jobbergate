@@ -91,10 +91,10 @@ class ApplicationFiles(BaseModel):
         """
         logger.debug(f"Writing the application files to S3: {application_id=}")
 
-        if remove_previous_files:
-            self.delete_from_s3(application_id)
-
         file_manager = self.file_manager_factory(application_id)
+
+        if remove_previous_files and file_manager:
+            self.delete_from_s3(application_id)
 
         if self.config_file:
             path = Path(APPLICATION_CONFIG_FILE_NAME)

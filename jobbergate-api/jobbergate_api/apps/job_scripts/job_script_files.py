@@ -199,10 +199,10 @@ class JobScriptFiles(BaseModel):
         """
         logger.debug(f"Writing job-script files to S3: {job_script_id=}")
 
-        if remove_previous_files:
-            self.delete_from_s3(job_script_id)
-
         file_manager = self.file_manager_factory(job_script_id)
+
+        if remove_previous_files and file_manager:
+            self.delete_from_s3(job_script_id)
 
         for dict_path, content in self.files.items():
             if dict_path == self.main_file_path:
