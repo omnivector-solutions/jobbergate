@@ -6,6 +6,11 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Add support for supporting files on job-scripts.
+- Changed dev-tools to use alembic functions instead of subprocess calls
+- Changed default log level to DEBUG instead of INFO
+- Added ARMASEC_USE_HTTPS setting to allow non-https OIDC providers
+- Added better logging and reporting for for pydantic validation errors
 
 3.2.5-alpha.0 -- 2022-09-15
 ---------------------------
