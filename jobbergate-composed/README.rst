@@ -7,9 +7,16 @@ _Jobbergate, Slurm, and Keycloak deployed to docker-compose._
 By making a simple, local deployment of Jobbergate, this project provides:
 
 * A test-bed for Jobbergate with minimal dependencies
-* An example against whih guides and tutorials can operate
+* An example against which guides, tutorials, and other examples can operate
 * A demonstration of how Jobbergate interacts with other components
 * A reference for the environment variables and settings Jobbergate relies upon
+
+
+.. warning::
+
+   The images and configuration found in this sub-project should _not_ be used in
+   production environments. They are very specifically tailored for example use-
+   cases where debuggging and access need to be simplified.
 
 
 Requirements
