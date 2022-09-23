@@ -4,7 +4,7 @@
 #SBATCH -t 60
 
 print("Executing dummy job script")
-with open("/nfs/dummy-ouput.txt", mode="w") as dump_file:
+with open("/nfs/dummy-output.txt", mode="w") as dump_file:
     print("I am a very, very dumb job script", file=dump_file)
     print("foo={{ data['foo'] }}", file=dump_file)
     print("bar={{ data['bar'] }}", file=dump_file)

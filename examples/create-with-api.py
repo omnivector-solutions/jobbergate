@@ -1,5 +1,5 @@
 """
-Demonstrate creation of a job-script from an application and subsequent submission through API calls.
+Demonstrate creation of Jobbergate resources using API calls.
 
 To run this example::
 
@@ -13,13 +13,13 @@ To run this example::
   $ pip install httpx
 
 - Run the demo
-  $ python create-submit-job.py
+  $ python create-with-api.py
 
 
 Note: Before running this demo, you will need::
 
-- An Auth token in the same directory named "access.token". You may use the ``cli-login.py`` for this.
-- An application created from the "simple-application" example directory. It may already exist.
+- Jobbergate components running in docker-compose. See the jobbergate-composed README.
+- An Auth token in the same directory named "access.token". You may use the ``login-with-api.py`` for this.
 """
 
 import json
@@ -128,6 +128,7 @@ def create_job_submission(
             job_submission_name=job_submission_name,
             client_id="local-slurm",
             job_script_description="A demonstration of job-submission creation through the API",
+            execution_directory="/slurm-work-dir",
         ),
     )
     response.raise_for_status()  # Raise an exception if status is not in 200s
@@ -146,7 +147,7 @@ def watch_job_submission(
     last_data = None
     status = None
     print(f"Watching job-submission {job_submission_id} for changes")
-    while status not in ("REJECTED", "COMPLETE", "FAILED"):
+    while status not in ("REJECTED", "COMPLETED", "FAILED"):
 
         response = httpx.get(
             f"{base_api_url}/jobbergate/job-submissions/{job_submission_id}",

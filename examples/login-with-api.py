@@ -13,9 +13,13 @@ To run this example::
   $ pip install httpx python-jose
 
 - Run the demo
-  $ python cli-login.py
+  $ python login-with-api.py
 
-Note that after logging in the first time, running this demo again will use the token saved in the same directory as
+Note: Before running this demo, you will need::
+
+- Jobbergate components running in docker-compose. See the jobbergate-composed README.
+
+Note: After logging in the first time, running this demo again will use the token saved in the same directory as
 "demo.token" until that token expires.
 """
 

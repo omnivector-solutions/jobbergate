@@ -169,9 +169,9 @@ services:
     hostname: slurmctld
     volumes:
       - etc_munge:/etc/munge
-      - slurm_jobdir:/data
       - var_log_slurm:/var/log/slurm
       - ./slurm-fake-nfs:/nfs
+      - ./slurm-work-dir:/slurm-work-dir
     expose:
       - "6817"
 
@@ -189,6 +189,7 @@ services:
       - etc_munge:/etc/munge
       - var_log_slurm:/var/log/slurm
       - ./slurm-fake-nfs:/nfs
+      - ./slurm-work-dir:/slurm-work-dir
     expose:
       - "6819"
     depends_on:
@@ -208,9 +209,9 @@ services:
     container_name: c1
     volumes:
       - etc_munge:/etc/munge
-      - slurm_jobdir:/data
       - var_log_slurm:/var/log/slurm
       - ./slurm-fake-nfs:/nfs
+      - ./slurm-work-dir:/slurm-work-dir
     environment:
       LD_LIBRARY_PATH: "/lib:/lib64:/usr/local/lib"
     expose:
@@ -231,9 +232,9 @@ services:
     container_name: c2
     volumes:
       - etc_munge:/etc/munge
-      - slurm_jobdir:/data
       - var_log_slurm:/var/log/slurm
       - ./slurm-fake-nfs:/nfs
+      - ./slurm-work-dir:/slurm-work-dir
     environment:
       LD_LIBRARY_PATH: "/lib:/lib64:/usr/local/lib"
     expose:
@@ -253,9 +254,9 @@ services:
     hostname: slurmrestd
     volumes:
       - etc_munge:/etc/munge
-      - slurm_jobdir:/data
       - var_log_slurm:/var/log/slurm
       - ./slurm-fake-nfs:/nfs
+      - ./slurm-work-dir:/slurm-work-dir
     expose:
       - "6820"
     ports:
@@ -268,7 +269,6 @@ volumes:
   minio_data:
   kc-realm-files:
   etc_munge:
-  slurm_jobdir:
   var_lib_mysql:
   var_log_slurm:
   cluster-agent-cache:
