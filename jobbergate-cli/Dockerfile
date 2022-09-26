@@ -1,20 +1,15 @@
 FROM python:3.8-slim-buster
 
+WORKDIR /app
+
 RUN apt update && apt install -y curl libpq-dev gcc
 
-RUN curl -sSL https://install.python-poetry.org | \
+RUN curl -sSL  https://install.python-poetry.org | \
     POETRY_HOME=/opt/poetry POETRY_VERSION=1.1.13 python && \
     cd /usr/local/bin && \
     ln -s /opt/poetry/bin/poetry && \
     poetry config virtualenvs.create false
 
 COPY ./pyproject.toml ./poetry.lock* ./README* ./LICENSE* /app/
-WORKDIR /app
-RUN poetry install --no-root
-
-VOLUME /app/jobbergate_api
-VOLUME /app/dev_tools
-VOLUME /app/alembic
-
-ENTRYPOINT /app/dev_tools/entrypoint.sh
-#CMD ["uvicorn", "jobbergate_api.main:app", "--host", "0.0.0.0", "--port", "80"]
+COPY ./jobbergate_cli /app/jobbergate_cli
+RUN poetry install --no-dev

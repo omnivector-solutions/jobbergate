@@ -7,6 +7,8 @@ import subprocess
 
 import docker_gadgets
 import typer
+from alembic.config import Config
+from alembic.command import upgrade as sqla_upgrade, revision as sqla_migrate
 from loguru import logger
 
 from jobbergate_api.config import settings
@@ -75,16 +77,8 @@ def migrate(
     Create alembic migrations for a local database.
     """
     logger.debug(f"Creating migration with message: {message}")
-    commands = [
-        "alembic",
-        "--config=alembic/alembic.ini",
-        "revision",
-        f"--message={message}",
-    ]
-    if not blank:
-        commands.append("--autogenerate")
-
-    subprocess.run(commands)
+    config = Config(file_="alembic/alembic.ini")
+    sqla_migrate(config, message=message, autogenerate=not blank)
 
 
 @app.command()
@@ -93,11 +87,6 @@ def upgrade(target: str = typer.Option("head", help="The migration to which the 
     Apply alembic migrations to a local database.
     """
     logger.debug("Upgrading database...")
-    commands = [
-        "alembic",
-        "--config=alembic/alembic.ini",
-        "upgrade",
-        target,
-    ]
 
-    subprocess.run(commands)
+    config = Config(file_="alembic/alembic.ini")
+    sqla_upgrade(config, target)

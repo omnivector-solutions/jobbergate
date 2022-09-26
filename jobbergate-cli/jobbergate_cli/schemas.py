@@ -110,7 +110,7 @@ class JobScriptFiles(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     """
 
     main_file_path: Path
-    files: Dict[Path, str]
+    files: Dict[str, str]
 
 
 class JobScriptResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):

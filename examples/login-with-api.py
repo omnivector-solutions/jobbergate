@@ -12,24 +12,31 @@ To run this example::
 - Install our two dependencies
   $ pip install httpx python-jose
 
-- Set the environment variables for the auth client (request these from Omnivector)
-  $ export AUTH_CLIENT_ID=<insert-client-id-here>
-  $ export AUTH_CLIENT_SECRET=<insert-client-secret-here>
-
 - Run the demo
-  $ python cli-login.py
+  $ python login-with-api.py
 
-Note that after logging in the first time, running this demo again will use the token saved in the same directory as
+Note: Before running this demo, you will need::
+
+- Jobbergate components running in docker-compose. See the jobbergate-composed README.
+
+Note: After logging in the first time, running this demo again will use the token saved in the same directory as
 "demo.token" until that token expires.
 """
 
-import os
 import pathlib
 import time
 
 import httpx
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError
+
+domain="keycloak.local:8080/realms/jobbergate-local"
+client_id="cli"
+audience="https://local.omnivector.solutions"
+
+base_api_url = "http://localhost:8000"
+access_token_file = pathlib.Path("./access.token")
+refresh_token_file = pathlib.Path("./refresh.token")
 
 
 def is_token_expired(token):
@@ -46,18 +53,18 @@ def is_token_expired(token):
         return True
 
 
-def login(domain, audience, client_id):
+def login():
     """
     Get a new access token and refresh_token by logging into the web auth portal.
 
     Returns a 2-tuple of (access-token, refresh-token)
     """
     response = httpx.post(
-        f"https://{domain}/oauth/device/code",
+        f"http://{domain}/protocol/openid-connect/auth/device",
         data=dict(
             client_id=client_id,
+            grant_type="client_credentials",
             audience=audience,
-            scope="offline_access",  # To get refresh token
         ),
     )
     device_code_data = response.json()
@@ -69,7 +76,7 @@ def login(domain, audience, client_id):
     while True:
         time.sleep(wait_interval)
         response = httpx.post(
-            f"https://{domain}/oauth/token",
+            f"http://{domain}/protocol/openid-connect/token",
             data=dict(
                 grant_type="urn:ietf:params:oauth:grant-type:device_code",
                 device_code=device_code,
@@ -87,16 +94,16 @@ def login(domain, audience, client_id):
             pass
 
 
-def refresh(domain, client_id, client_secret, refresh_token):
+def refresh(refresh_token):
     """
     Refresh an access token using a refresh token.
     """
     response = httpx.post(
-        f"https://{domain}/oauth/token",
+        f"http://{domain}/protocol/openid-connect/token",
         data=dict(
-            grant_type="refresh_token",
             client_id=client_id,
-            client_secret=client_secret,
+            audience=audience,
+            grant_type="refresh_token",
             refresh_token=refresh_token,
         ),
     )
@@ -112,21 +119,14 @@ def get_saved_token(token_file, check_expiration=False):
     if not token_file.exists():
         return None
 
-    token = token_file.read_text()
+    token = token_file.read_text().strip()
     if check_expiration and is_token_expired(token):
         return None
 
     return token
 
 
-def acquire_token(
-    domain="login.omnivector.solutions",
-    client_id=os.environ["AUTH_CLIENT_ID"],
-    client_secret=os.environ["AUTH_CLIENT_SECRET"],
-    audience="https://armada.omnivector.solutions",
-    access_token_file=pathlib.Path("./access.token"),
-    refresh_token_file=pathlib.Path("./refresh.token"),
-):
+def acquire_token():
     """
     Acquire an access token by attempting, in order::
 
@@ -139,10 +139,10 @@ def acquire_token(
         refresh_token = get_saved_token(refresh_token_file)
 
         if refresh_token is None:
-            (access_token, refresh_token) = login(domain, audience, client_id)
+            (access_token, refresh_token) = login()
             refresh_token_file.write_text(refresh_token)
         else:
-            access_token = refresh(domain, client_id, client_secret, refresh_token)
+            access_token = refresh(refresh_token)
         access_token_file.write_text(access_token)
     return access_token
 
@@ -150,7 +150,7 @@ if __name__ == '__main__':
     token = acquire_token()
 
     response = httpx.get(
-        "https://armada-k8s.staging.omnivector.solutions/jobbergate/job-submissions",
+        f"{base_api_url}/jobbergate/job-submissions",
         headers=dict(Authorization=f"Bearer {token}"),
     )
     try:

@@ -21,7 +21,7 @@ def get_domain_configs() -> List[DomainConfig]:
         DomainConfig(
             domain=settings.ARMASEC_DOMAIN,
             audience=settings.ARMASEC_AUDIENCE,
-            debug_logger=logger.debug if settings.ARMASEC_DEBUG else None,
+            use_https=settings.ARMASEC_USE_HTTPS,
         )
     ]
     if all(
@@ -36,14 +36,17 @@ def get_domain_configs() -> List[DomainConfig]:
             DomainConfig(
                 domain=settings.ARMASEC_ADMIN_DOMAIN,
                 audience=settings.ARMASEC_ADMIN_AUDIENCE,
+                use_https=settings.ARMASEC_USE_HTTPS,
                 match_keys={settings.ARMASEC_ADMIN_MATCH_KEY: settings.ARMASEC_ADMIN_MATCH_VALUE},
-                debug_logger=logger.debug if settings.ARMASEC_DEBUG else None,
             )
         )
     return domain_configs
 
 
-guard = Armasec(domain_configs=get_domain_configs())
+guard = Armasec(
+    domain_configs=get_domain_configs(),
+    debug_logger=logger.debug if settings.ARMASEC_DEBUG else None,
+)
 
 
 class IdentityClaims(BaseModel):

@@ -7,7 +7,6 @@ from typing import Optional, cast
 
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobSubmissionCreateRequestData, JobSubmissionResponse
-from jobbergate_cli.subapps.clusters.tools import validate_client_id
 
 
 def create_job_submission(
@@ -43,7 +42,6 @@ def create_job_submission(
 
     if client_id is None:
         client_id = jg_ctx.persona.identity_data.client_id
-    validate_client_id(jg_ctx, client_id)
 
     job_submission_data = JobSubmissionCreateRequestData(
         job_submission_name=name,

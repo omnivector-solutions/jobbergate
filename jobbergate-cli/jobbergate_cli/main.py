@@ -69,8 +69,10 @@ def main(
     init_sentry()
     persona = None
 
+    protocol = "https" if settings.OIDC_USE_HTTPS else "http"
+    domain = settings.OIDC_DOMAIN
     client = httpx.Client(
-        base_url=f"https://{settings.OIDC_DOMAIN}",
+        base_url=f"{protocol}://{domain}",
         headers={"content-type": "application/x-www-form-urlencoded"},
     )
     context = JobbergateContext(persona=None, client=client)
