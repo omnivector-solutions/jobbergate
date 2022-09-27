@@ -136,7 +136,7 @@ def create(
         None,
         help=dedent(
             """
-            Supply a yaml file that contains the parameters for populating templates.
+            Supply a json file that contains the parameters for populating templates.
             If this is not supplied, the question asking in the application is triggered.
             """
         ),
