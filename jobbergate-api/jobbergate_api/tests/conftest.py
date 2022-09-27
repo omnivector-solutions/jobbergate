@@ -32,12 +32,20 @@ CHARSET = string.ascii_letters + string.digits + string.punctuation
 
 
 @pytest.fixture(autouse=True, scope="session")
-async def enforce_empty_database():
+async def database_engine():
+    """
+    Provide a fixture to get access to the database engine with a fixture.
+    """
+    engine = sqlalchemy.create_engine(build_db_url())
+    yield engine
+
+
+@pytest.fixture(autouse=True, scope="session")
+async def enforce_empty_database(database_engine):
     """
     Make sure our database is empty at the end of each test.
     """
-    engine = sqlalchemy.create_engine(build_db_url())
-    metadata.create_all(engine)
+    metadata.create_all(database_engine)
     yield
 
     await database.connect()
@@ -46,7 +54,7 @@ async def enforce_empty_database():
         assert count == 0
     await database.disconnect()
 
-    metadata.drop_all(engine)
+    metadata.drop_all(database_engine)
 
 
 @pytest.fixture(autouse=True)

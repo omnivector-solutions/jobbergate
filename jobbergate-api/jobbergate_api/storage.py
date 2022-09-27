@@ -14,7 +14,7 @@ from asyncpg.exceptions import UniqueViolationError
 from fastapi.exceptions import HTTPException
 from loguru import logger
 from sqlalchemy import Column, or_
-from sqlalchemy.sql.expression import BooleanClauseList, UnaryExpression
+from sqlalchemy.sql.expression import BooleanClauseList, UnaryExpression, Case
 from starlette import status
 from yarl import URL
 
@@ -69,7 +69,7 @@ def sort_clause(
     sort_field: str,
     sortable_fields: typing.List[Column],
     sort_ascending: bool,
-) -> typing.Union[Column, UnaryExpression]:
+) -> typing.Union[Column, UnaryExpression, Case]:
     """
     Create a sort clause given a sort field, the list of sortable fields, and a sort_ascending flag.
     """
@@ -81,9 +81,26 @@ def sort_clause(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid sorting column requested: {sort_field}. Must be one of {sort_field_names}",
         )
-    sort_column: typing.Union[Column, UnaryExpression] = sortable_fields[index]
-    if not sort_ascending:
-        sort_column = sort_column.desc()
+    sort_column: typing.Union[Column, UnaryExpression, Case] = sortable_fields[index]
+    if isinstance(sort_column.type, sqlalchemy.Enum):
+        # SQLAlchemy will not sort enums alphabetically be default, but rather by creation order.
+        # Thus, we have to force alphabetical sorting using a CASE clause.
+        # The logic here is pretty insane. Basically, we have to provide a lookup and then a string
+        # Sort value. If sort order is ascending, each enum value's sort value is itself. Otherwise,
+        # the sort value is it's opposite in the list.
+        # To begin, See: https://stackoverflow.com/a/23618085/642511
+        sorted_values = sorted(sort_column.type.enums)
+        if sort_ascending:
+            sort_tuple = zip(sorted_values, sorted_values)
+        else:
+            sort_tuple = zip(sorted_values, reversed(sorted_values))
+        sort_column = sqlalchemy.case(
+            {key: sort_value for (key, sort_value) in sort_tuple},
+            value=sort_column,
+        )
+    else:
+        if not sort_ascending:
+            sort_column = sort_column.desc()
     return sort_column
 
 
