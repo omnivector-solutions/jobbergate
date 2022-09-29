@@ -197,7 +197,7 @@ def render_single_result(
         result = cast(Dict[str, Any], result_dict)
 
     if ctx.raw_output:
-        print_json(json.dumps(result))
+            print_json(json.dumps(result))
     else:
         if ctx.full_output or hidden_fields is None:
             hidden_fields = []

@@ -22,6 +22,7 @@ from jobbergate_cli.subapps.job_scripts.tools import fetch_job_script_data, vali
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
 from jobbergate_cli.subapps.job_submissions.tools import create_job_submission
 from jobbergate_cli.text_tools import dedent
+from jobbergate_cli.render import render_json, terminal_message
 
 
 # move hidden field logic to the API
@@ -29,6 +30,7 @@ HIDDEN_FIELDS = [
     "created_at",
     "updated_at",
     "job_script_data_as_string",
+    "job_script_files",
 ]
 
 
@@ -309,3 +311,34 @@ def delete(
         "The job script was successfully deleted.",
         subject="Job script delete succeeded",
     )
+
+
+@app.command()
+@handle_abort
+def show_files(
+    ctx: typer.Context,
+    id: int = typer.Option(int, help="The specific id of the job script."),
+    plain: bool = typer.Option(False, help="Show the files in plain text."),
+):
+    """
+    Show the files for a single job script by id.
+    """
+    jg_ctx: JobbergateContext = ctx.obj
+    result = fetch_job_script_data(jg_ctx, id)
+
+    if jg_ctx.raw_output:
+        render_json(result.job_script_files)
+        return
+
+    main_file_path = str(result.job_script_files.main_file_path)
+
+    for (file_path, file_contents) in result.job_script_files.files.items():
+        if plain:
+            print()
+            print(f"# {file_path}")
+            if file_path == main_file_path:
+                print("# This is the main job script file")
+            print(file_contents)
+        else:
+            footer = "This is the main job script file" if main_file_path == file_path else None
+            terminal_message(file_contents, subject=file_path, footer=footer)

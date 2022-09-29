@@ -18,6 +18,7 @@ from jobbergate_cli.subapps.job_scripts.app import (
     delete,
     get_one,
     list_all,
+    show_files,
     style_mapper,
     update,
 )
@@ -368,3 +369,30 @@ def test_delete__makes_request_and_sends_terminal_message(
     assert result.exit_code == 0, f"delete failed: {result.stdout}"
     assert delete_route.called
     assert "JOB SCRIPT DELETE SUCCEEDED"
+
+
+def test_show_files__success(
+    respx_mock,
+    make_test_app,
+    dummy_job_script_data,
+    dummy_job_script_files,
+    dummy_domain,
+    cli_runner,
+    mocker,
+):
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/1").mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=dummy_job_script_data[0],
+        ),
+    )
+    test_app = make_test_app("show-files", show_files)
+    mocked_terminal_message = mocker.patch("jobbergate_cli.subapps.job_scripts.app.terminal_message")
+
+    result = cli_runner.invoke(test_app, shlex.split("show-files --id=1"))
+    assert result.exit_code == 0, f"get-one failed: {result.stdout}"
+    mocked_terminal_message.assert_called_once_with(
+        dummy_job_script_files["files"]["application.sh"],
+        subject="application.sh",
+        footer="This is the main job script file",
+    )

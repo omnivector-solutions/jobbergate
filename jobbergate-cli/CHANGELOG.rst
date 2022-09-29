@@ -9,6 +9,7 @@ Unreleased
 - Added error details to configuration error report
 - Added ``OIDC_USE_HTTPS`` setting to allow non-https OIDC hosts
 - Removed cluster validation from job-submission due to reliance on external cluster registry
+- Added a `show-files` subcommand to `job-scripts` to show job script files
 
 3.2.5-alpha.0 -- 2022-09-15
 ---------------------------
