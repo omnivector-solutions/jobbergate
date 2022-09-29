@@ -442,8 +442,7 @@ def test_fetch_auth_tokens__success(respx_mock, dummy_context):
 
     access_token = "dummy-access-token"
     refresh_token = "dummy-refresh-token"
-
-    respx_mock.post(f"{LOGIN_DOMAIN}/auth/device").mock(
+    respx_mock.post(f"{LOGIN_DOMAIN}/protocol/openid-connect/auth/device").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(
@@ -453,7 +452,7 @@ def test_fetch_auth_tokens__success(respx_mock, dummy_context):
             ),
         ),
     )
-    respx_mock.post(f"{LOGIN_DOMAIN}/token").mock(
+    respx_mock.post(f"{LOGIN_DOMAIN}/protocol/openid-connect/token").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(
@@ -472,7 +471,7 @@ def test_fetch_auth_tokens__raises_Abort_when_it_times_out_waiting_for_the_user(
     Validate that the ``fetch_auth_tokens()`` function will raise an Abort if the time runs out before a user
     completes the login process.
     """
-    respx_mock.post(f"{LOGIN_DOMAIN}/auth/device").mock(
+    respx_mock.post(f"{LOGIN_DOMAIN}/protocol/openid-connect/auth/device").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(
@@ -482,7 +481,7 @@ def test_fetch_auth_tokens__raises_Abort_when_it_times_out_waiting_for_the_user(
             ),
         ),
     )
-    respx_mock.post(f"{LOGIN_DOMAIN}/token").mock(
+    respx_mock.post(f"{LOGIN_DOMAIN}/protocol/openid-connect/token").mock(
         return_value=httpx.Response(httpx.codes.BAD_REQUEST, json=dict(error="authorization_pending")),
     )
     one_tick = Tick(counter=1, elapsed=pendulum.Duration(seconds=1), total_elapsed=pendulum.Duration(seconds=1))
