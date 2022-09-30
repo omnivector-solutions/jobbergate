@@ -33,7 +33,7 @@ Setup
 First, start up the Jobbergate system in docker-compose. Navigate to the
 ``jobbergate-composed`` subproject and run the following command:
 
-   .. code-block:: console
+.. code-block:: console
 
    docker-compose up --build
 
@@ -41,7 +41,7 @@ Once all the services are started, jump into the prepared ``jobbergate-cli`` con
 to execute CLI commands. To do so, open a new terminal in the ``jobbergate-composed``
 subproject and run the following command:
 
-   .. code-block:: console
+.. code-block:: console
 
    docker-compose run jobbergate-cli bash
 
@@ -52,7 +52,7 @@ can you may use to help identify resource that you create during the process. Yo
 set the value based on the current date so that the associated resources are easy to
 identify. Run the following command to set it:
 
-   .. code-block:: console
+.. code-block:: console
 
    export NAME="test--$(whoami)--$(date -I)"
 
@@ -66,7 +66,7 @@ The first work-flow you will test covers the auth mechanics of both the CLI and 
 
 Run the following command in the CLI:
 
-   .. code-block:: console
+.. code-block:: console
 
    jobbergate login
 
@@ -79,7 +79,7 @@ At this point, verify that the token that has been retrieved for the user is cor
 
 Run the following command in the CLI:
 
-   .. code-block:: console
+.. code-block:: console
 
    jobbergate show-token --plain
 
@@ -107,7 +107,7 @@ rendered Job Script simply prints the values of those variables.
 
 Run the following command in the CLI:
 
-   .. code-block:: console
+.. code-block:: console
 
    jobbergate applications create --name=$NAME --identifier=$NAME --application-path=/example
 
@@ -138,7 +138,7 @@ the config, and the timestamps.
 
 First, fetch the Application by ``id`` using the following command in the CLI:
 
-   .. code-block:: console
+.. code-block:: console
 
    jobbergate --full applications get-one --id=1
 
@@ -188,7 +188,7 @@ that was created.
 Next, fetch the same application by ``identifier`` and verify that it is the same
 Application:
 
-   .. code-block:: console
+.. code-block:: console
 
    jobbergate --full applications get-one --identifier=test--tbeck--2022-09-02
 
@@ -200,7 +200,7 @@ Next, verify that you can update the application through the CLI.
 
 Run this command to verify that we can change the name:
 
-   .. code-block:: console
+.. code-block:: console
 
    jobbergate applications update --id=1 --application-desc="Here is a test description"
 
@@ -229,7 +229,7 @@ gathers the values for template variables from the user.
 
 To start the renderin process, execute:
 
-   .. code-block:: console
+.. code-block:: console
 
    jobbergate job-scripts create --name=$NAME --application-id=1
 
@@ -275,7 +275,7 @@ with a param using the ``--param-file`` parameter.
 
 First, create a file to hold the params (hit ``ctrl-d`` to finish and write the file):
 
-   .. code-block:: console
+.. code-block:: console
 
    cat > params.yaml
    foo: FOO
@@ -283,9 +283,9 @@ First, create a file to hold the params (hit ``ctrl-d`` to finish and write the 
 
 Now, render the Application using this file. Include the ``--no-submit`` flag because
 the Job Script shouldn't be submitted immediately. Verify only the rendering process for
-the new Job Script::
+the new Job Script:
 
-   .. code-block:: console
+.. code-block:: console
 
    jobbergate job-scripts create --name=$NAME --application-id=1 --fast --param-file=params.json --no-submit
 
@@ -323,7 +323,7 @@ will insert these additional paramters into the rendered ``job_script_files``.
 Run the following command to check for this. Note that multiple sbatch params must each
 be passed to a separate argument:
 
-   .. code-block:: console
+.. code-block:: console
 
    jobbergate job-scripts create --name=$NAME --application-id=1 --fast --param-file=params.json --no-submit --sbatch-params="--cluster=fake" --sbatch-params="--partition=dummy"
 
@@ -362,7 +362,7 @@ Next, verify that an existing Job Script can be updated.
 
 Run this command to verify that you can change the description:
 
-   .. code-block:: console
+.. code-block:: console
 
    jobbergate job-scripts update --id=1 --description="Here is a test description"
 
@@ -391,7 +391,7 @@ Submit the job through the CLI
 
 Submit the Job Script using the CLI by running the following command:
 
-   .. code-block:: console
+.. code-block:: console
 
    jobbergate job-submissions create --name=$NAME --job-script-id=1 --cluster-name=local-slurm --execution-directory=/slurm-exec-dir
 

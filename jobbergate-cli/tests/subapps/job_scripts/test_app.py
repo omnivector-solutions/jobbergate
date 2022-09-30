@@ -380,6 +380,9 @@ def test_show_files__success(
     cli_runner,
     mocker,
 ):
+    """
+    Verify that the ``show-files`` subcommand works as expected.
+    """
     respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/1").mock(
         return_value=httpx.Response(
             httpx.codes.OK,

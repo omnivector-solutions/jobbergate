@@ -26,11 +26,3 @@ Table of Contents
    Tutorial <tutorial>
    Developer Guide <developer_guide/index>
    Attribution <attribution>
-
-
-TODO
-----
-
-* Write tutorial using docker-compose
-* Write a CI doc
-* Write "Setting up keycloak" guide

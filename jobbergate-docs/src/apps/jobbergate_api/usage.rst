@@ -5,7 +5,7 @@
 The Jobbergate API is intended to be consumed by automated processes or other applications. These include
 the Jobbergate CLI and Jobbergate Agent, but it may serve any number of other applications.
 
-The Jobbergate API is a standard RESTful API that uses HTTP for commuinication.
+The Jobbergate API is a standard RESTful API that uses HTTP for communication.
 
 
 Getting an Auth Token

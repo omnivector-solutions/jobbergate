@@ -15,7 +15,7 @@ the main command:
 
 .. code-block:: console
 
-   jobberggate job-script --help
+   jobbergate job-scripts --help
 
 
 There is also help and parameter guides for each of the subcommands that can be accessed
@@ -23,7 +23,7 @@ by passing them the ``--help`` flag:
 
 .. code-block:: console
 
-   jobberggate job-script list --help
+   jobbergate job-scripts list --help
 
 
 License
