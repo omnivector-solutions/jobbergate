@@ -6,15 +6,14 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+3.3.0 -- 2022-09-30
+-------------------
 - Added logic for supporting files on job-scripts.
 - Changed dev-tools to use alembic functions instead of subprocess calls
 - Changed default log level to DEBUG instead of INFO
 - Added ARMASEC_USE_HTTPS setting to allow non-https OIDC providers
 - Added better logging and reporting for pydantic validation errors
-- Fixed sorting in job_submissiosn.status
-
-3.2.5-alpha.0 -- 2022-09-15
----------------------------
 - Added job_submissions.status as a sortable field
 
 3.2.4 -- 2022-09-12
