@@ -83,7 +83,7 @@ def sort_clause(
         )
     sort_column: typing.Union[Column, UnaryExpression, Case] = sortable_fields[index]
     if isinstance(sort_column.type, sqlalchemy.Enum):
-        # SQLAlchemy will not sort enums alphabetically be default, but rather by creation order.
+        # SQLAlchemy will not sort enums alphabetically by default, but rather by creation order.
         # Thus, we have to force alphabetical sorting using a CASE clause.
         # The logic here is pretty insane. Basically, we have to provide a lookup and then a string
         # Sort value. If sort order is ascending, each enum value's sort value is itself. Otherwise,
@@ -94,10 +94,7 @@ def sort_clause(
             sort_tuple = zip(sorted_values, sorted_values)
         else:
             sort_tuple = zip(sorted_values, reversed(sorted_values))
-        sort_column = sqlalchemy.case(
-            {key: sort_value for (key, sort_value) in sort_tuple},
-            value=sort_column,
-        )
+        sort_column = sqlalchemy.case(dict(sort_tuple), value=sort_column)
     else:
         if not sort_ascending:
             sort_column = sort_column.desc()
