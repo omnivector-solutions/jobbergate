@@ -49,7 +49,7 @@ services:
       - jobbergate-cli-cache:/cache/
     environment:
       - ARMADA_API_BASE=http://jobbergate-api:80
-      - OIDC_DOMAIN=keycloak.local:8080/realms/jobbergate-local/protocol/openid-connect
+      - OIDC_DOMAIN=keycloak.local:8080/realms/jobbergate-local
       - OIDC_AUDIENCE=https://local.omnivector.solutions
       - OIDC_CLIENT_ID=cli
       - OIDC_USE_HTTPS=false

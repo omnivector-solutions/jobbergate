@@ -251,7 +251,7 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
         DeviceCodeData,
         make_request(
             ctx.client,
-            "/auth/device",
+            "/protocol/openid-connect/auth/device",
             "POST",
             expected_status=200,
             abort_message="There was a problem retrieving a device verification code from the auth provider",
@@ -286,7 +286,7 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
             Dict,
             make_request(
                 ctx.client,
-                "/token",
+                "/protocol/openid-connect/token",
                 "POST",
                 abort_message="There was a problem retrieving a device verification code from the auth provider",
                 abort_subject="COULD NOT FETCH ACCESS TOKEN",

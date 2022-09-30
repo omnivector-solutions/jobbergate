@@ -1,7 +1,6 @@
 import datetime
 import pathlib
 import re
-import shutil
 
 import toml
 

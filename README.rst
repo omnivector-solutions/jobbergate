@@ -1,85 +1,46 @@
+.. raw:: html
+
+   <p align="center">
+     <img
+       src="https://img.shields.io/github/workflow/status/omnivector-solutions/jobbergate/Test/main?label=main-build&logo=github&style=plastic"
+       alt="main build"
+     />
+     <img
+       src="https://img.shields.io/github/issues/omnivector-solutions/jobbergate?label=issues&logo=github&style=plastic"
+       alt="github issues"
+     />
+     <img
+       src="https://img.shields.io/github/issues-pr/omnivector-solutions/jobbergate?label=pull-requests&logo=github&style=plastic"
+       alt="pull requests"
+     />
+     <img
+       src="https://img.shields.io/github/contributors/omnivector-solutions/jobbergate?logo=github&style=plastic"
+       alt="github contributors"
+     />
+   </p>
+
+   <p align="center">
+     <img
+       src="https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-docs/src/images/logo.png?raw=true"
+       alt="Logo" width="80" height="80"
+     />
+   </p>
+   <p align="center"><i>An Omnivector Solutions initiative</i></p>
+
+
 ============
  Jobbergate
 ============
 
-Jobbergate is a system used to manage reusable applications that can generate specific scripts that
-may be sumbitted via Slurm for execution on a cluster.
+Jobbergate is a job templating and submission system that integrates with Slurm to
+enable the re-use and remote submission of job scripts to a Slurm cluster.
 
-There are two core apps that comprise Jobbergate. These are
+There are 2 main components of Jobbergate that are hosted as sub-projects of this
+repository:
 
-* ``jobbergate-cli``
-* ``jobbergate-api``
+* `jobbergate-api <https://github.com/omnivector-solutions/jobbergate/jobbergate-api>`_
+* `jobbergate-cli <https://github.com/omnivector-solutions/jobbergate/jobbergate-cli>`_
 
-There are 3 main resources that both apps interact with. These are:
-
-* ``Application``
-* ``JobScript``
-* ``JobSubmission``
-
-
-Resources
-=========
-
-The resources are represented in the app code and stored in the database with which they
-interact.
-
-
-Application
------------
-
-This is the base for the ``JobScript`` and ``JobSubmission`` resources. ``Applications`` provide
-re-usable templates that maybe be rendered into ``JobScript`` instances. An ``Application`` consists
-of an application folder that contains:
-
-* jobbergate.py:   the application source code (for describing how to gather configuration options)
-* jobbergate.yaml: the application config and jobbergate config
-* templates:       a set of template files that will be rendered with the supplied config
-
-
-JobScript
----------
-
-This is the main resource. It describes the actual job that will run in the clusters.
-The base to create a ``JobScript`` is the ``Application``. A single application to generate many
-``JobScripts`` that vary by the parameters passed at creation time.
-
-
-JobSubmission
--------------
-
-This is a result of a submitting a ``JobScript`` to the system. It is linked to it by its ID and also
-has the ``slurm job id`` for the running job.
-
-
-Apps
-====
-
-Both Jobbergate apps are Python applications, though one is a command-line-interface (CLI) and one
-is a RESTful API.
-
-
-jobbergate-api
---------------
-
-The `jobbergate-api <jobbergate-api/>`_ is a RESTful API that serves as the back-end for the system.
-It is interacted with via the CLI, though requests can be dispatched to it from any other web
-application.
-
-.. todo::
-
-   Fix the link below after project migration is complete
-
-The jobbergate-api offers `interactive documentation via swagger
-<https://jobbergateapi2-staging.omnivector.solutions/docs>`_ for the available API
-endpoints.
-
-Requests to the API must be accompanied by a JWT issued by a Auth0.
-
-
-jobbergate-cli
---------------
-
-The `jobbergate-cli <https://github.com/omnivector-solutions/jobbergate-cli>`_ provides interactive
-access to Jobbergate resources via a CLI. Its commands provide access to the CRUD operations for
-the reosurces ``Application``, ``JobScript`` and ``JobSubmission``. It communicates directly with
-``jobbergate-api`` using HTTP requests and is secured by a long-lived Auth0 access token.
+The complete documentation for Jobbergate can be viewed at the
+`Jobbergate Documentation <https://docs.omnivector.solutions/jobbergate/index.html>`_
+site.
