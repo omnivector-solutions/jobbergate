@@ -105,7 +105,7 @@ def sort_clause(
         )
     sort_column: typing.Union[Column, UnaryExpression, Case] = sortable_fields[index]
     if isinstance(sort_column, Column) and isinstance(sort_column.type, sqlalchemy.Enum):
-        sort_column = _build_enum_sort_clause(typing.cast(Column, sort_column), sort_ascending)
+        sort_column = _build_enum_sort_clause(sort_column, sort_ascending)
     elif not sort_ascending:
         sort_column = sort_column.desc()
     return sort_column
