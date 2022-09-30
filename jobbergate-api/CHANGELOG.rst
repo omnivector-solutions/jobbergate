@@ -11,6 +11,7 @@ Unreleased
 - Changed default log level to DEBUG instead of INFO
 - Added ARMASEC_USE_HTTPS setting to allow non-https OIDC providers
 - Added better logging and reporting for pydantic validation errors
+- Fixed sorting in job_submissiosn.status
 
 3.2.5-alpha.0 -- 2022-09-15
 ---------------------------
