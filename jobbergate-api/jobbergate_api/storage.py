@@ -13,7 +13,7 @@ import sqlalchemy
 from asyncpg.exceptions import UniqueViolationError
 from fastapi.exceptions import HTTPException
 from loguru import logger
-from sqlalchemy import Column, or_
+from sqlalchemy import Column, Enum, or_
 from sqlalchemy.sql.expression import BooleanClauseList, Case, UnaryExpression
 from starlette import status
 from yarl import URL
@@ -81,6 +81,7 @@ def _build_enum_sort_clause(sort_column: Column, sort_ascending: bool) -> Case:
 
     To understand this more fully, start with this SO question: https://stackoverflow.com/a/23618085/642511
     """
+    assert isinstance(sort_column.type, Enum)
     sorted_values = sorted(sort_column.type.enums)
     sort_tuple = zip(sorted_values, sorted_values if sort_ascending else reversed(sorted_values))
     return sqlalchemy.case(dict(sort_tuple), value=sort_column)
