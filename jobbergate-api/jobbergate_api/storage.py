@@ -14,7 +14,7 @@ from asyncpg.exceptions import UniqueViolationError
 from fastapi.exceptions import HTTPException
 from loguru import logger
 from sqlalchemy import Column, or_
-from sqlalchemy.sql.expression import BooleanClauseList, UnaryExpression, Case
+from sqlalchemy.sql.expression import BooleanClauseList, Case, UnaryExpression
 from starlette import status
 from yarl import URL
 

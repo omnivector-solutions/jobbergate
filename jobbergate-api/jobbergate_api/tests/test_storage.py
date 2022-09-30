@@ -5,10 +5,10 @@ Test the storage module.
 import enum
 
 import pytest
-from sqlalchemy import Table, Integer, Enum, Column
+from sqlalchemy import Column, Enum, Integer, Table
 
 from jobbergate_api.metadata import metadata
-from jobbergate_api.storage import build_db_url, sort_clause, database, render_sql
+from jobbergate_api.storage import build_db_url, database, sort_clause
 
 
 def test_build_db_url__creates_database_url_from_parts(tweak_settings):
@@ -60,8 +60,14 @@ def test_build_db_url__uses_TEST_prefixed_database_settings_if_passed_the_force_
             "postgresql://built-test-user:built-test-pswd@built-test-host:9999/built-test-name"
         )
 
+
 @pytest.mark.asyncio
 async def test_sort_clause__auto_sort_enum_column(database_engine):
+    """
+    Provide a test case for the ``sort_clause()`` function.
+
+    Test that the sort_clause() function will correctly sort enum columns.
+    """
 
     class DummyStatusEnum(str, enum.Enum):
         CREATED = "CREATED"
@@ -71,18 +77,13 @@ async def test_sort_clause__auto_sort_enum_column(database_engine):
         UNKNOWN = "UNKNOWN"
         REJECTED = "REJECTED"
 
-
-
     dummy_table = Table(
-        'dummies',
+        "dummies",
         metadata,
         Column("id", Integer, primary_key=True),
         Column("status", Enum(DummyStatusEnum, sort_key_function=lambda v: str(v.value)), nullable=False),
     )
-    dummy_sortables = [
-        dummy_table.c.id,
-        dummy_table.c.status
-    ]
+    dummy_sortables = [dummy_table.c.id, dummy_table.c.status]
 
     # Note: do not worry about dropping the table. The pytest fixtures will clean it up for us
     dummy_table.create(database_engine)
