@@ -6,6 +6,18 @@ authors = ["Omnivector Solutions <info@omnivector.solutions>"]
 license = "MIT"
 readme = "README.rst"
 repository = "https://github.com/omnivector-solutions/jobbergate"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: FastAPI",
+    "Topic :: Scientific/Engineering",
+]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/omnivector-solutions/jobbergate/issues"
+"Changelog" = "https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-api/CHANGELOG.rst"
 
 [tool.poetry.dependencies]
 python = "^3.8"
