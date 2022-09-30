@@ -25,7 +25,7 @@ JOBBERGATE_JOB_SUBMISSION_CONFIG = {
     "job_script_id": "",
 }
 
-JOBBERGATE_DEFAULT_DOTENV_PATH = Path("/etc/default/jobbergate-cli")
+JOBBERGATE_DEFAULT_DOTENV_PATH = Path("/etc/default/jobbergate3-cli")
 JOBBERGATE_APPLICATION_SUPPORTED_FILES = {".py", ".yaml", ".j2", ".jinja2"}
 JOBBERGATE_APPLICATION_MODULE_FILE_NAME = "jobbergate.py"
 JOBBERGATE_APPLICATION_CONFIG_FILE_NAME = "jobbergate.yaml"

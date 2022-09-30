@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     Provide a ``pydantic`` settings model to hold configuration values loaded from the environment.
     """
 
-    JOBBERGATE_CACHE_DIR: Path = Field(Path.home() / ".local/share/jobbergate")
+    JOBBERGATE_CACHE_DIR: Path = Field(Path.home() / ".local/share/jobbergate3")
 
     ARMADA_API_BASE: AnyHttpUrl = Field("https://armada-k8s.staging.omnivector.solutions")
 
