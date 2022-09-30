@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-cli
 
 Unreleased
 ----------
+
+3.3.0-alpha.0 -- 2022-09-30
+---------------------------
 - Added error details to configuration error report
 - Added ``OIDC_USE_HTTPS`` setting to allow non-https OIDC hosts
 - Removed cluster validation from job-submission due to reliance on external cluster registry

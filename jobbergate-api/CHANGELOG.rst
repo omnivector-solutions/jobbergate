@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+3.3.0-alpha.0 -- 2022-09-30
+---------------------------
 - Added logic for supporting files on job-scripts.
 - Changed dev-tools to use alembic functions instead of subprocess calls
 - Changed default log level to DEBUG instead of INFO
