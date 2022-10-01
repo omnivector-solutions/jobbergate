@@ -17,3 +17,4 @@ Table of Contents
    Quality Assurance Tools <qa_tools>
    Integration Testing <integration_testing>
    S3 File Storage <s3_file_storage>
+   Setting up Keycloak <keycloak_setup>
