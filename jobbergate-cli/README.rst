@@ -1,3 +1,39 @@
+.. raw:: html
+
+   <p align="center">
+     <img
+       src="https://img.shields.io/github/workflow/status/omnivector-solutions/jobbergate/Test/main?label=main-build&logo=github&style=plastic"
+       alt="main build"
+     />
+     <img
+       src="https://img.shields.io/github/contributors/omnivector-solutions/jobbergate?logo=github&style=plastic"
+       alt="github contributors"
+     />
+   </p>
+   <p align="center">
+     <img
+       src="https://img.shields.io/pypi/pyversions/jobbergate-cli?label=python-versions&logo=python&style=plastic"
+       alt="python versions"
+     />
+     <img
+       src="https://img.shields.io/pypi/v/jobbergate-cli?label=pypi-version&logo=python&style=plastic"
+       alt="pypi version"
+     />
+     <img
+       src="https://img.shields.io/pypi/l/jobbergate-cli?style=plastic"
+       alt="license"
+     />
+   </p>
+
+   <p align="center">
+     <img
+       src="https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-docs/src/images/logo.png?raw=true"
+       alt="Logo" width="80" height="80"
+     />
+   </p>
+   <p align="center"><i>An Omnivector Solutions initiative</i></p>
+
+
 ================
  Jobbergate CLI
 ================
@@ -25,6 +61,9 @@ by passing them the ``--help`` flag:
 
    jobbergate job-scripts list --help
 
+See also:
+
+* `jobbergate-api <https://github.com/omnivector-solutions/jobbergate/jobbergate-api>`_
 
 License
 -------
