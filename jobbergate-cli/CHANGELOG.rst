@@ -13,6 +13,7 @@ Unreleased
 - Added ``OIDC_USE_HTTPS`` setting to allow non-https OIDC hosts
 - Removed cluster validation from job-submission due to reliance on external cluster registry
 - Added a `show-files` subcommand to `job-scripts` to show job script files
+- Modified cache dir and dotenv path in order to avoid conflicts when installed alongside legacy jobbergate
 
 3.2.4 -- 2022-09-12
 -------------------
