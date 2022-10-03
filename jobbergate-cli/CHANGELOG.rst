@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+3.3.0-alpha.1 -- 2022-10-03
+---------------------------
+
 3.3.0 -- 2022-09-30
 -------------------
 - Added error details to configuration error report
