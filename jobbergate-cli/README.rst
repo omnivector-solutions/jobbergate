@@ -6,14 +6,6 @@
        alt="main build"
      />
      <img
-       src="https://img.shields.io/github/issues/omnivector-solutions/jobbergate?label=issues&logo=github&style=plastic"
-       alt="github issues"
-     />
-     <img
-       src="https://img.shields.io/github/issues-pr/omnivector-solutions/jobbergate?label=pull-requests&logo=github&style=plastic"
-       alt="pull requests"
-     />
-     <img
        src="https://img.shields.io/github/contributors/omnivector-solutions/jobbergate?logo=github&style=plastic"
        alt="github contributors"
      />
