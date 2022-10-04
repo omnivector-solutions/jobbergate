@@ -9,13 +9,6 @@ Unreleased
 
 3.3.0 -- 2022-10-04
 -------------------
-
-3.3.0-alpha.1 -- 2022-10-03
----------------------------
-- Keep version in sync with the CLI.
-
-3.3.0 -- 2022-09-30
--------------------
 - Added logic for supporting files on job-scripts.
 - Changed dev-tools to use alembic functions instead of subprocess calls
 - Changed default log level to DEBUG instead of INFO
