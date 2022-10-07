@@ -365,7 +365,7 @@ def test_init_persona__refreshes_access_token_if_it_is_expired(make_token, tmp_p
         expires="2022-02-17 22:30:00",
     )
 
-    respx_mock.post(f"{LOGIN_DOMAIN}/token").mock(
+    respx_mock.post(f"{LOGIN_DOMAIN}/protocol/openid-connect/token").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(access_token=refreshed_access_token),
@@ -391,7 +391,8 @@ def test_init_persona__refreshes_access_token_if_it_is_expired(make_token, tmp_p
 def test_refresh_access_token__success(make_token, respx_mock, dummy_context):
     """
     Validate that the ``refreshed_access_token()`` function uses a refresh token to retrieve a new access
-    token from the ``oauth/token`` endpoint of the ``settings.OIDC_DOMAIN``.
+    token from the ``oauth/protocol/openid-connect/token``
+    endpoint of the ``settings.OIDC_DOMAIN``.
     """
     access_token = "expired-access-token"
     refresh_token = "dummy-refresh-token"
@@ -403,7 +404,7 @@ def test_refresh_access_token__success(make_token, respx_mock, dummy_context):
         expires="2022-02-17 22:30:00",
     )
 
-    respx_mock.post(f"{LOGIN_DOMAIN}/token").mock(
+    respx_mock.post(f"{LOGIN_DOMAIN}/protocol/openid-connect/token").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(access_token=refreshed_access_token),
@@ -417,13 +418,14 @@ def test_refresh_access_token__success(make_token, respx_mock, dummy_context):
 def test_refresh_access_token__raises_abort_on_non_200_response(respx_mock, dummy_context):
     """
     Validate that the ``refreshed_access_token()`` function raises an abort if the response from the
-    ``oauth/token`` endpoint of the ``settings.OIDC_DOMAIN`` is not a 200.
+    ``oauth//protocol/openid-connect/token`` endpoint of the
+    ``settings.OIDC_DOMAIN`` is not a 200.
     """
     access_token = "expired-access-token"
     refresh_token = "dummy-refresh-token"
     token_set = TokenSet(access_token=access_token, refresh_token=refresh_token)
 
-    respx_mock.post(f"{LOGIN_DOMAIN}/token").mock(
+    respx_mock.post(f"{LOGIN_DOMAIN}/protocol/openid-connect/token").mock(
         return_value=httpx.Response(
             httpx.codes.BAD_REQUEST,
             json=dict(error_description="BOOM!"),
