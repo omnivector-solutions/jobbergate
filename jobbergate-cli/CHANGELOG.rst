@@ -6,7 +6,11 @@ This file keeps track of all notable changes to jobbergate-cli
 
 Unreleased
 ----------
-- Fixed refresh token
+
+3.3.1 -- 2022-10-10
+-------------------
+- Fixed refresh (invalid paths for refresh endpoints)
+- Added DEFAULT_CLUSTER_NAME (fast-mode broken due to invalid cluster)
 
 3.3.0 -- 2022-10-04
 -------------------
