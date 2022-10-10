@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 
+3.3.2 -- 2022-10-10
+-------------------
+
 3.3.1 -- 2022-10-10
 -------------------
 - Keep synchronized with jobbergate-cli

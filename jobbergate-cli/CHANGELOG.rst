@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+3.3.2 -- 2022-10-10
+-------------------
+
 3.3.1 -- 2022-10-10
 -------------------
 - Fixed refresh (invalid paths for refresh endpoints)
