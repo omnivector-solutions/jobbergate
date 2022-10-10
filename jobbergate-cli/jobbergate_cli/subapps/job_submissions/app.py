@@ -44,9 +44,8 @@ def create(
         ...,
         help="The id of the job_script from which to create the job submission",
     ),
-    client_id: str = typer.Option(
+    cluster_name: str = typer.Option(
         None,
-        "--cluster-name",
         help="The name of the cluster where the job should be submitted (i.g. 'nash-staging')",
     ),
     execution_directory: Optional[Path] = typer.Option(
@@ -73,7 +72,7 @@ def create(
         name,
         description=description,
         execution_directory=execution_directory,
-        client_id=client_id,
+        cluster_name=cluster_name,
     )
     render_single_result(
         jg_ctx,

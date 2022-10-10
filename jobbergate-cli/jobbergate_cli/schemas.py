@@ -135,7 +135,7 @@ class JobSubmissionResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
 
     id: int
     job_script_id: int
-    client_id: Optional[str]
+    cluster_name: Optional[str] = pydantic.Field(alias="client_id")
     slurm_job_id: Optional[int]
     execution_directory: Optional[Path]
     job_submission_name: str
@@ -166,7 +166,7 @@ class JobSubmissionCreateRequestData(pydantic.BaseModel):
     job_submission_name: str
     job_submission_description: Optional[str] = None
     job_script_id: int
-    client_id: Optional[str] = None
+    client_id: Optional[str] = pydantic.Field(None, alias="cluster_name")
     execution_directory: Optional[Path] = None
 
 
