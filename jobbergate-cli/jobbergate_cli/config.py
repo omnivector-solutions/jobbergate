@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     SENTRY_TRACE_RATE: float = Field(1.0, gt=0.0, le=1.0)
     SENTRY_ENV: str = "LOCAL"
 
+    # Default job submission cluster
+    DEFAULT_CLUSTER_NAME: Optional[str]
+
     # How long it will use cached cluster lists before fetching them again
     JOBBERGATE_CLUSTER_CACHE_LIFETIME: int = 60 * 5
 
