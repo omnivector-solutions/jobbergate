@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-cli
 
 Unreleased
 ----------
+- Fixed refresh token
 
 3.3.0 -- 2022-10-04
 -------------------
