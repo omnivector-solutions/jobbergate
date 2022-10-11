@@ -3,28 +3,28 @@
 #SBATCH --nodes={{ data.nodes }}
 #SBATCH --ntasks={{ data.ntasks }}
 #SBATCH -J motorbike
-#SBATCH --output=/nfs/R-%x.%j.out
-#SBATCH --error=/nfs/R-%x.%j.err
+#SBATCH --output={{ data.workdir }}/R-%x.%j.out
+#SBATCH --error={{ data.workdir }}/R-%x.%j.err
 #SBATCH -t 1:00:00
 
 # clone OpenFOAM-10 if it is not available yet
-OPENFOAM_DIR=/nfs/OpenFOAM-10
+OPENFOAM_DIR={{ data.workdir }}/OpenFOAM-10
 if [[ ! -d $OPENFOAM_DIR ]]
 then
     echo "Cloning OpenFOAM-10"
-    cd /nfs
+    cd {{ data.workdir }}
     git clone https://github.com/OpenFOAM/OpenFOAM-10.git
 else
     echo "Skipping clone process...we already have the OpenFOAM-10 source code"
 fi
 
 # create a working folder inside the shared directory
-WORK_DIR=/nfs/$SLURM_JOB_NAME-Job-$SLURM_JOB_ID
+WORK_DIR={{ data.workdir }}/$SLURM_JOB_NAME-Job-$SLURM_JOB_ID
 mkdir -p $WORK_DIR
 cd $WORK_DIR
 
 # path to the openfoam singularity image
-export SINGULARITY_IMAGE=/nfs/openfoam10.sif
+export SINGULARITY_IMAGE={{ data.workdir }}/openfoam10.sif
 
 # download the openfoam v10 singularity image if it is not available yet
 if [[ ! -f $SINGULARITY_IMAGE ]]

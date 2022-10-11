@@ -5,3 +5,4 @@ application_config:
   partition: compute
   nodes: 2
   ntasks: 1
+  workdir: /nfs

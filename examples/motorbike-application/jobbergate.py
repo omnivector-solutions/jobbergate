@@ -1,5 +1,5 @@
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
-from jobbergate_cli.subapps.applications.questions import Text, Integer
+from jobbergate_cli.subapps.applications.questions import Text, Integer, Directory
 
 
 class JobbergateApplication(JobbergateApplicationBase):
@@ -22,5 +22,10 @@ class JobbergateApplication(JobbergateApplicationBase):
             message="Choose number of tasks per node for job",
             default=6,
             minval=1,
+        ))
+        questions.append(Text(
+            "workdir",
+            message="Choose working directory (will hold results as well)",
+            default="/nfs",
         ))
         return questions

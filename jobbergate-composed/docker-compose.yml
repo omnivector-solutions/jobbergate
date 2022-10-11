@@ -54,6 +54,7 @@ services:
       - OIDC_CLIENT_ID=cli
       - OIDC_USE_HTTPS=false
       - JOBBERGATE_CACHE_DIR=/cache
+      - DEFAULT_CLUSTER_NAME=local-slurm
 
   # When the jobbegate-agent is completed, it will be included here and not rely on a
   # relative path outside of the jobbergate git repo
