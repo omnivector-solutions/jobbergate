@@ -16,6 +16,10 @@ from jinja2 import Environment
 from loguru import logger
 from yaml import safe_load as yaml_safe_load
 
+from jobbergate_api.apps.applications.constants import (
+    APPLICATION_CONFIG_FILE_NAME,
+    APPLICATION_SOURCE_FILE_NAME,
+)
 from jobbergate_api.apps.applications.schemas import ApplicationConfig
 
 
@@ -114,24 +118,25 @@ def register_check_uploaded_files(checker: CheckUploadedFilesEquation) -> CheckU
 
 
 @register_check_uploaded_files
-def check_uploaded_files_extensions(file_list: List[UploadFile]):
+def check_uploaded_files_restrictions(upload_files: List[UploadFile]):
     """
-    Check the list of uploaded files to count the file extensions.
+    Check the list of uploaded files for filename restrictions.
+
+    Jobbergate expects one source file, one (optional) config file and one
+    or more template files.
 
     Raise UploadedFilesValidationError if the business rules are not met.
 
     :param List[UploadFile] file_list: Upload file list.
     """
-    extension_counter = Counter(get_suffix(f) for f in file_list)
+    extension_counter = Counter(get_suffix(f) for f in upload_files)
+    filenames = {upload.filename for upload in upload_files}
+
     logger.debug(f"Checking uploaded files extensions: {extension_counter=}")
     with UploadedFilesValidationError.check_expressions("Invalid file extensions") as check:
         check(
-            extension_counter[".py"] == 1,
-            "missing one application source file (.py)",
-        )
-        check(
-            0 <= extension_counter[".yaml"] <= 1,
-            "missing one (optional) application config file (.yaml)",
+            APPLICATION_SOURCE_FILE_NAME in filenames,
+            f"The application source file is missing ({APPLICATION_SOURCE_FILE_NAME})",
         )
         check(
             extension_counter[".j2"] + extension_counter[".jinja2"] >= 1,
@@ -192,7 +197,7 @@ def check_uploaded_files_yaml_is_parsable(file_list: List[UploadFile]):
         "Please, verify is all the required fields were provided."
     ):
         for f in file_list:
-            if f.filename.endswith(".yaml"):
+            if f.filename == APPLICATION_CONFIG_FILE_NAME:
                 ApplicationConfig.get_from_yaml_file(f.file.read())
                 f.file.seek(0)
 

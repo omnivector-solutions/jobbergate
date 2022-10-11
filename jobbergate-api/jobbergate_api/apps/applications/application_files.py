@@ -124,9 +124,9 @@ class ApplicationFiles(BaseModel):
         for upload in upload_files:
             file_data = upload.file.read().decode("utf-8")
             upload.file.seek(0)
-            if upload.filename.endswith(".py"):
+            if upload.filename == APPLICATION_SOURCE_FILE_NAME:
                 application_files.source_file = file_data
-            elif upload.filename.endswith(".yaml"):
+            elif upload.filename == APPLICATION_CONFIG_FILE_NAME:
                 application_files.config_file = file_data
             elif upload.filename.endswith((".j2", ".jinja2")):
                 filename = PurePath(upload.filename).name
