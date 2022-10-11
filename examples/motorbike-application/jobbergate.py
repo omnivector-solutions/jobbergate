@@ -23,4 +23,9 @@ class JobbergateApplication(JobbergateApplicationBase):
             default=6,
             minval=1,
         ))
+        questions.append(Text(
+            "workdir",
+            message="Choose working directory (will hold results as well)",
+            default="/nfs",
+        ))
         return questions
