@@ -8,9 +8,15 @@ class JobbergateApplication(JobbergateApplicationBase):
         if data is None:
             data=dict()
         data["nextworkflow"] = "subflow"
-        return [Text("foo", message="gimme the foo!"), Text("bar", message="gimme the bar!")]
+        return [
+            Text("foo", message="gimme the foo!"),
+            Text("bar", message="gimme the bar!"),
+        ]
 
     def subflow(self, data=None):
         if data is None:
             data=dict()
-        return [Text("baz", message="gimme the baz!", default="zab")]
+        return [
+            Text("baz", message="gimme the baz!", default="zab"),
+            Text("workdir", message="gimme the workdir!", default="/nfs"),
+        ]

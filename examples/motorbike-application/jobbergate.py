@@ -1,5 +1,5 @@
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
-from jobbergate_cli.subapps.applications.questions import Text, Integer, Directory
+from jobbergate_cli.subapps.applications.questions import Text, Integer
 
 
 class JobbergateApplication(JobbergateApplicationBase):
