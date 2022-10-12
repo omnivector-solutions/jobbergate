@@ -4,6 +4,7 @@ Provide tool functions for working with Application data.
 
 import contextlib
 import copy
+import io
 import pathlib
 from typing import Any, Dict, Optional, Tuple, cast
 
@@ -141,7 +142,7 @@ def get_upload_files(application_path: pathlib.Path):
         yield [
             (
                 "upload_files",
-                (path.name, stack.enter_context(open(path)), "text/plain"),
+                (path.name, stack.enter_context(io.open(path, mode="r", newline="")), "text/plain"),
             )
             for path in application_path.rglob("*")
             if path.is_file() and path.suffix in JOBBERGATE_APPLICATION_SUPPORTED_FILES
