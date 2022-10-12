@@ -12,7 +12,7 @@ from typing import Callable, Dict, List, Union
 
 from buzz import Buzz, DoExceptParams, require_condition
 from fastapi import HTTPException, UploadFile, status
-from jinja2 import Template
+from jinja2 import Environment
 from loguru import logger
 from yaml import safe_load as yaml_safe_load
 
@@ -278,7 +278,7 @@ def is_valid_jinja2_template(template: Union[str, bytes]) -> bool:
         _template = template
 
     try:
-        Template(_template).render(data={})
+        Environment().parse(_template)
     except Exception:
         return False
     return True
