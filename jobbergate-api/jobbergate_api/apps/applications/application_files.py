@@ -10,14 +10,15 @@ from file_storehouse import FileManager
 from loguru import logger
 from pydantic import BaseModel, Field
 
+from jobbergate_api.apps.applications.constants import (
+    APPLICATION_CONFIG_FILE_NAME,
+    APPLICATION_SOURCE_FILE_NAME,
+    APPLICATION_TEMPLATE_FOLDER,
+    APPLICATIONS_WORK_DIR,
+)
+from jobbergate_api.apps.applications.file_validation import perform_all_checks_on_uploaded_files
 from jobbergate_api.config import settings
-from jobbergate_api.file_validation import perform_all_checks_on_uploaded_files
 from jobbergate_api.s3_manager import IO_TRANSFORMATIONS, file_manager_factory, s3_client
-
-APPLICATIONS_WORK_DIR = "applications"
-APPLICATION_CONFIG_FILE_NAME = "jobbergate.yaml"
-APPLICATION_SOURCE_FILE_NAME = "jobbergate.py"
-APPLICATION_TEMPLATE_FOLDER = "templates"
 
 
 def _get_template_files(file_manager: FileManager) -> Dict[str, str]:
@@ -123,9 +124,9 @@ class ApplicationFiles(BaseModel):
         for upload in upload_files:
             file_data = upload.file.read().decode("utf-8")
             upload.file.seek(0)
-            if upload.filename.endswith(".py"):
+            if upload.filename == APPLICATION_SOURCE_FILE_NAME:
                 application_files.source_file = file_data
-            elif upload.filename.endswith(".yaml"):
+            elif upload.filename == APPLICATION_CONFIG_FILE_NAME:
                 application_files.config_file = file_data
             elif upload.filename.endswith((".j2", ".jinja2")):
                 filename = PurePath(upload.filename).name

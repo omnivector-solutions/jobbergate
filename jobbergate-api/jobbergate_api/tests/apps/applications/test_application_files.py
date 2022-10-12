@@ -7,12 +7,12 @@ import contextlib
 import pytest
 from fastapi import UploadFile
 
-from jobbergate_api.apps.applications.application_files import (
+from jobbergate_api.apps.applications.application_files import ApplicationFiles
+from jobbergate_api.apps.applications.constants import (
     APPLICATION_CONFIG_FILE_NAME,
     APPLICATION_SOURCE_FILE_NAME,
     APPLICATION_TEMPLATE_FOLDER,
     APPLICATIONS_WORK_DIR,
-    ApplicationFiles,
 )
 from jobbergate_api.apps.applications.schemas import ApplicationConfig, JobbergateConfig
 

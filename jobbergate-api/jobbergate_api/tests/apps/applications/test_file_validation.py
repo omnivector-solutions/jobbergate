@@ -5,7 +5,7 @@ Test the components used to validate the uploaded files.
 import pytest
 from fastapi import UploadFile
 
-from jobbergate_api.file_validation import (
+from jobbergate_api.apps.applications.file_validation import (
     get_suffix,
     is_valid_jinja2_template,
     is_valid_python_file,
