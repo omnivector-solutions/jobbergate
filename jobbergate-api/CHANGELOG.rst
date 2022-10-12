@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+3.3.2-alpha.0 -- 2022-10-12
+---------------------------
 - Changed the jinja2 syntax validation in order to make it more flexible with regard to the data expected in the template
 
 3.3.1 -- 2022-10-10
