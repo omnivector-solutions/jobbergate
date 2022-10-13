@@ -27,16 +27,16 @@ This constant can be shared between file managers.
 """
 
 
-def engine_factory(*, s3_client: BaseClient, bucket_name: str, work_directory: Path) -> EngineS3:
+def engine_factory(*, s3_client: BaseClient, bucket_name: str, prefix: str) -> EngineS3:
     """
     Build an engine to manipulate objects from an s3 bucket.
 
     :param BaseClient s3_client: S3 client from boto3
     :param str bucket_name: The name of the s3 bucket
-    :param Path work_directory: Work directory (referred as prefix at boto3 documentation)
+    :param str prefix: Prefix for object search at s3 (Work directory)
     :return EngineS3: And engine to manipulate files from s3
     """
-    return EngineS3(s3_client=s3_client, bucket_name=bucket_name, prefix=str(work_directory))
+    return EngineS3(s3_client=s3_client, bucket_name=bucket_name, prefix=prefix)
 
 
 @lru_cache(maxsize=128)
@@ -64,7 +64,7 @@ def file_manager_factory(
         engine=engine_factory(
             s3_client=s3_client,
             bucket_name=bucket_name,
-            work_directory=work_directory / str(id),
+            prefix=f"{work_directory}/{id}/",
         ),
         io_transformations=transformations,
     )
