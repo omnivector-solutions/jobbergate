@@ -2,6 +2,7 @@
 Provides a convenience class for managing calls to S3.
 """
 import contextlib
+import io
 import json
 import tarfile
 import tempfile
@@ -134,7 +135,11 @@ def get_upload_files_from_tar(s3_obj):
 
         with contextlib.ExitStack() as stack:
             yield [
-                UploadFile(path.name, stack.enter_context(open(path, "rb")), "text/plain")
+                UploadFile(
+                    path.name,
+                    stack.enter_context(io.open(path, mode="r", newline="")),
+                    "text/plain",
+                )
                 for path in tmp_path.rglob("*")
                 if path.is_file() and path.suffix in supported_extensions
             ]
