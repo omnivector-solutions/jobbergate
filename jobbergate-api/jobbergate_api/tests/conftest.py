@@ -8,7 +8,6 @@ import datetime
 import random
 import string
 import typing
-from pathlib import Path
 from textwrap import dedent
 from unittest.mock import patch
 
@@ -303,8 +302,8 @@ def mocked_file_manager_factory(tmp_path):
     It also clears the cache from file_manager_factory.
     """
 
-    def local_engine_factory(*, work_directory: Path, **kwargs):
-        return EngineLocal(base_path=tmp_path / work_directory)
+    def local_engine_factory(*, prefix: str, **kwargs):
+        return EngineLocal(base_path=tmp_path / prefix)
 
     file_manager_factory.cache_clear()
 

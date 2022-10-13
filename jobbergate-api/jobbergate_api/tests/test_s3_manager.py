@@ -2,8 +2,6 @@
 Test s3 manager.
 """
 
-from pathlib import Path
-
 import pytest
 from boto3 import client
 
@@ -30,7 +28,7 @@ class TestEngineFactory:
         return engine_factory(
             s3_client=client,
             bucket_name="test-bucket",
-            work_directory=Path("test-dir"),
+            prefix="test-dir",
         )
 
     def test_client(self, s3_engine, client):
