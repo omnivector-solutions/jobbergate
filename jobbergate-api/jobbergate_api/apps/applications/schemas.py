@@ -101,7 +101,7 @@ class JobbergateConfig(BaseModel):
     supporting_files_output_name: Optional[Dict[str, List[str]]]
     template_files: Optional[List[str]]
     job_script_name: Optional[str]
-    output_directory: str = "."
+    output_directory: Optional[str] = "."
 
     @root_validator(pre=True)
     def compute_extra_settings(cls, values):
