@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+3.3.2-alpha.0 -- 2022-10-13
+---------------------------
+
 3.3.2-alpha.0 -- 2022-10-12
 ---------------------------
 - Fixed issues with `CRLF` end of lines when uploading application files
