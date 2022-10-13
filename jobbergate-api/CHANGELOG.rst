@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 
+3.3.2 -- 2022-10-13
+-------------------
+
 3.3.2-alpha.1 -- 2022-10-13
 ---------------------------
 - Fixed a bug at the file manager where the search for objects at s3 was not restricted to a single folder
