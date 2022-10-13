@@ -17,6 +17,8 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_ma
     job_scripts_map = {}
     logger.info("Migrating job_scripts to nextgen database")
 
+    legacy_id_empty_jobscript = set()
+
     for job_script in legacy_job_scripts:
         owner_email = user_map[job_script["job_script_owner_id"]]["email"]
         nextgen_application_id = application_map[job_script["application_id"]]
@@ -67,9 +69,11 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_ma
                 logger.warning(
                     f"Empty job script content ({nextgen_jobscript_id=}; legacy_jobscript_id={job_script['id']})"
                 )
+                legacy_id_empty_jobscript.add(job_script["id"])
             job_script_files.write_to_s3(nextgen_jobscript_id)
 
     logger.success("Finished migrating job_scripts")
+    logger.warning(f"The following legacy ids are empty job-scripts: {legacy_id_empty_jobscript}")
     logger.debug(f"Job_script map: {job_scripts_map}")
 
     return job_scripts_map

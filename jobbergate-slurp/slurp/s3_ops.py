@@ -168,12 +168,12 @@ def transfer_s3(s3man, applications_map):
             legacy_application_id = legacy_key_mapping.get_dict_key_from_engine(legacy_key)
         except (ValueError, TypeError):
             bad_pattern_skips += 1
-            logger.warning(f"Bad pattern: {legacy_application_id=}")
+            logger.warning(f"Bad pattern at {legacy_application_id=}")
             continue
         nextgen_application_id = applications_map.get(int(legacy_application_id))
         if not nextgen_application_id:
             missing_id_skips += 1
-            logger.warning(f"Missing id: {legacy_application_id=}")
+            logger.warning(f"Missing id at {legacy_application_id=}")
             continue
 
         legacy_obj = s3man.legacy[legacy_key]
