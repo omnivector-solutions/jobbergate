@@ -2,7 +2,6 @@
 Provides a convenience class for managing calls to S3.
 """
 import contextlib
-import io
 import json
 import tarfile
 import tempfile
@@ -137,7 +136,7 @@ def get_upload_files_from_tar(s3_obj):
             yield [
                 UploadFile(
                     path.name,
-                    stack.enter_context(io.open(path, mode="r", newline="")),
+                    stack.enter_context(open(path, "rb")),
                     "text/plain",
                 )
                 for path in tmp_path.rglob("*")
@@ -173,12 +172,12 @@ def transfer_s3(s3man, applications_map):
             legacy_application_id = legacy_key_mapping.get_dict_key_from_engine(legacy_key)
         except (ValueError, TypeError):
             bad_pattern_skips += 1
-            logger.warning(f"Bad pattern at {legacy_application_id=}")
+            logger.warning(f"Bad pattern at legacy object {legacy_key.as_posix()}")
             continue
         nextgen_application_id = applications_map.get(int(legacy_application_id))
         if not nextgen_application_id:
             missing_id_skips += 1
-            logger.warning(f"Missing id at {legacy_application_id=}")
+            logger.warning(f"Missing id at legacy object {legacy_key.as_posix()}")
             continue
 
         legacy_obj = s3man.legacy[legacy_key]
@@ -189,9 +188,11 @@ def transfer_s3(s3man, applications_map):
             )
             with get_upload_files_from_tar(legacy_obj) as upload_files:
                 application_files = s3man.nextgen.get_from_upload_files(upload_files)
-        except Exception:
+        except Exception as e:
             error_when_uploading += 1
-            logger.error(f"Error processing the files {legacy_application_id=} to {nextgen_application_id=}")
+            logger.error(
+                f"Error processing the files {legacy_application_id=} to {nextgen_application_id=}: {e}"
+            )
         else:
             application_files.write_to_s3(nextgen_application_id, remove_previous_files=True)
             transferred_ids.append(nextgen_application_id)
