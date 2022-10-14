@@ -108,8 +108,7 @@ class TestJobbergateConfig:
 
 def test_application_config(reference_application_config, dummy_application_config):
     """
-    Test that the dummy application config file is equivalent to the reference
-    application config file.
+    Test that the business logic to fill missing values in the application config is working.
     """
     desired_config = ApplicationConfig.get_from_yaml_file(reference_application_config)
     actual_config = ApplicationConfig.get_from_yaml_file(dummy_application_config)
