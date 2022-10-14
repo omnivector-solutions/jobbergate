@@ -239,19 +239,25 @@ class JobScriptFiles(BaseModel):
                 application_files.config_file, user_supplied_parameters  # type: ignore
             )
 
-        with JobScriptCreationError.check_expressions(
-            main_message=(
-                "One or more template files are missing "
-                "the available options are: "
-                ", ".join(application_files.templates.keys()),
+        default_template_name: str = JobScriptCreationError.enforce_defined(
+            app_config.jobbergate_config.default_template,
+        )
+
+        if default_template_name.startswith("templates/"):
+            (_, default_template_name) = default_template_name.split("/", maxsplit=1)
+
+        JobScriptCreationError.require_condition(
+            default_template_name in application_files.templates,
+            "Selected template {selected} not found in available templates: {templates}".format(
+                selected=default_template_name,
+                templates=", ".join(application_files.templates.keys()),
             ),
-        ) as check:
-            default_template_name = app_config.jobbergate_config.default_template
-            check(
-                default_template_name in application_files.templates,
-                f"{default_template_name=} was not found",
-            )
-            if app_config.jobbergate_config.supporting_files_output_name:
+        )
+
+        if app_config.jobbergate_config.supporting_files_output_name:
+            with JobScriptCreationError.check_expressions(
+                main_message="One or more supporting files are missing"
+            ) as check:
                 for supporting_file in app_config.jobbergate_config.supporting_files_output_name.keys():
                     check(supporting_file in application_files.templates, f"{supporting_file=} was not found")
 
