@@ -2,7 +2,68 @@
 Test schemas for Jobbergate applications.
 """
 
-from jobbergate_api.apps.applications.schemas import JobbergateConfig
+from textwrap import dedent
+
+import pytest
+
+from jobbergate_api.apps.applications.schemas import ApplicationConfig, JobbergateConfig
+
+
+@pytest.fixture
+def reference_application_config() -> str:
+    """
+    Fixture to return a complete application config file.
+    """
+    return dedent(
+        """
+        application_config:
+            job_name: rats
+            partitions:
+                - debug
+                - partition1
+        jobbergate_config:
+            default_template: test_job_script.sh
+            output_directory: .
+            supporting_files:
+                - test_job_script.sh
+                - test_another_job_script.sh
+            supporting_files_output_name:
+                test_job_script.sh:
+                    - support_file_b.py
+                test_another_job_script.sh:
+                    - support_file_c.py
+            template_files:
+                - templates/test_job_script.sh
+        """
+    ).strip()
+
+
+@pytest.fixture
+def dummy_application_config() -> str:
+    """
+    Fixture to return a dummy application config file.
+
+    Due to the business logic, this file should be parsed to an object
+    to the config file above (reference_application_config).
+    """
+    return dedent(
+        """
+        application_config:
+            job_name: rats
+            partitions:
+                - debug
+                - partition1
+        jobbergate_config:
+            default_template: test_job_script.sh
+            output_directory: .
+            supporting_files_output_name:
+                test_job_script.sh:
+                    - support_file_b.py
+                test_another_job_script.sh: support_file_c.py
+            template_files:
+                - templates/test_job_script.sh
+        """
+    ).strip()
 
 
 class TestJobbergateConfig:
@@ -43,3 +104,13 @@ class TestJobbergateConfig:
         config = JobbergateConfig(supporting_files_output_name=dict(foo="bar", baz=["qux"]))
 
         assert config.supporting_files_output_name == dict(foo=["bar"], baz=["qux"])
+
+
+def test_application_config(reference_application_config, dummy_application_config):
+    """
+    Test that the business logic to fill missing values in the application config is working.
+    """
+    desired_config = ApplicationConfig.get_from_yaml_file(reference_application_config)
+    actual_config = ApplicationConfig.get_from_yaml_file(dummy_application_config)
+
+    assert actual_config == desired_config
