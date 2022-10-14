@@ -239,7 +239,7 @@ class JobScriptFiles(BaseModel):
                 application_files.config_file, user_supplied_parameters  # type: ignore
             )
 
-        default_template_name = JobScriptCreationError.enforce_defined(
+        default_template_name: str = JobScriptCreationError.enforce_defined(
             app_config.jobbergate_config.default_template,
         )
 
