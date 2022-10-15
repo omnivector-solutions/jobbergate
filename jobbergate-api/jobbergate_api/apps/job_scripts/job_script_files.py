@@ -3,7 +3,7 @@ Provide a convenience class for managing job-script files.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, Optional, cast
 
 from buzz import Buzz, require_condition
 from file_storehouse import FileManager
@@ -265,8 +265,14 @@ class JobScriptFiles(BaseModel):
 
             param_dict_flat = flatten_param_dict(app_config.dict())
 
+            output_directory: Optional[str] = app_config.jobbergate_config.output_directory
+
+            # The output_directory can be None here if the Application *explicitly* sets it to None.
+            if not output_directory:
+                output_directory = "."
+
             main_file_path = Path(
-                app_config.jobbergate_config.output_directory,
+                output_directory,
                 default_template_name.rstrip(".j2").rstrip(".jinja2"),
             )
 
@@ -290,10 +296,7 @@ class JobScriptFiles(BaseModel):
                 for template_name, supporting_filename_list in output_name_mapping.items():
 
                     for supporting_filename in supporting_filename_list:
-                        path = Path(
-                            app_config.jobbergate_config.output_directory,
-                            supporting_filename,
-                        )
+                        path = Path(output_directory, supporting_filename)
 
                         jobscript_files.files[path] = Template(
                             application_files.templates[template_name],
