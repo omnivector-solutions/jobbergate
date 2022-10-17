@@ -7,20 +7,13 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
-3.3.3-alpha.1 -- 2022-10-15
----------------------------
-
-3.3.3-alpha.0 -- 2022-10-14
----------------------------
+3.3.3 -- 2022-10-17
+-------------------
+- Fixed issue with optional output directory
 
 3.3.2 -- 2022-10-13
 -------------------
-
-3.3.2-alpha.1 -- 2022-10-13
----------------------------
-
-3.3.2-alpha.0 -- 2022-10-12
----------------------------
+- Fixed `output_directory` on JobbergateConfig making it optional, as it is at the API level
 - Fixed issues with `CRLF` end of lines when uploading application files
 
 3.3.1 -- 2022-10-10
