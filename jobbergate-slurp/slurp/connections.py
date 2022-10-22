@@ -2,7 +2,7 @@
 Methods for creating connections to legacy and nextgen databases.
 """
 
-from psycopg import connect
+from psycopg import connect, ClientCursor
 from psycopg.rows import dict_row
 from contextlib import contextmanager
 
@@ -33,7 +33,7 @@ def db(is_legacy=False):
     """
     database_url = build_url(is_legacy=is_legacy)
     logger.info(f"Starting a connection with {database_url}")
-    with connect(database_url, row_factory=dict_row) as connection:
+    with connect(database_url, cursor_factory=ClientCursor, row_factory=dict_row) as connection:
         try:
             logger.info(f"Creating cursor for {database_url}")
             with connection.cursor() as cursor:
@@ -50,3 +50,18 @@ def db(is_legacy=False):
             logger.error(f"Hit an error in transaction for {database_url}: {err}")
             connection.rollback()
             raise
+
+def reset_id_seq(db, table_name, column="id", reset_buffer=100):
+    logger.debug(f"Resetting sequence for {table_name}.{column}")
+
+    sequence_name = db.execute(
+        f"select pg_get_serial_sequence('{table_name}', '{column}') as sequence_name"
+    ).fetchone()["sequence_name"]
+    logger.debug(f"Found sequence named '{sequence_name}'")
+
+    max_id = db.execute(f"select max(id) as max_id from {table_name}").fetchone()["max_id"]
+    logger.debug(f"Max of column '{column}' is {max_id}")
+
+    reset_value = max_id + reset_buffer
+    db.execute(f"alter sequence {sequence_name} restart with {reset_value}")
+    logger.debug(f"Sequence reset")
