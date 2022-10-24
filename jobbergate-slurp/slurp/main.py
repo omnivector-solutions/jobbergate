@@ -64,17 +64,16 @@ def migrate(
 
         legacy_applications = pull_applications(legacy_db)
         migrate_applications(nextgen_db, legacy_applications, user_map)
+        reset_id_seq(nextgen_db, "applications")
 
         legacy_job_scripts = pull_job_scripts(legacy_db)
         migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map)
+        reset_id_seq(nextgen_db, "job_scripts")
 
         if not ignore_submissions:
             legacy_job_submissions = pull_job_submissions(legacy_db)
             migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map)
-
-        reset_id_seq(nextgen_db, "applications")
-        reset_id_seq(nextgen_db, "job_scripts")
-        reset_id_seq(nextgen_db, "job_submissions")
+            reset_id_seq(nextgen_db, "job_submissions")
 
     transferred_ids = asyncio.run(transfer_application_files(legacy_applications))
     with db(is_legacy=False) as nextgen_db:
