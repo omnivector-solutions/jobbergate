@@ -3,6 +3,7 @@ The main slurp application.
 
 Provides a Typer app and associated commands.
 """
+import asyncio
 from datetime import datetime
 import subprocess
 
@@ -11,7 +12,7 @@ from loguru import logger
 
 from slurp.connections import build_url, db, reset_id_seq
 from slurp.migrators.applications import mark_uploaded, migrate_applications
-from slurp.migrators.job_scripts import migrate_job_scripts
+from slurp.migrators.job_scripts import migrate_job_scripts, transfer_job_script_files
 from slurp.migrators.job_submissions import migrate_job_submissions
 from slurp.pull_legacy import pull_applications, pull_job_scripts, pull_job_submissions, pull_users
 from slurp.s3_ops import build_managers, transfer_s3
@@ -66,6 +67,7 @@ def migrate(
 
         legacy_job_scripts = pull_job_scripts(legacy_db)
         migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map)
+        asyncio.run(transfer_job_script_files(legacy_job_scripts))
 
         if not ignore_submissions:
             legacy_job_submissions = pull_job_submissions(legacy_db)
