@@ -84,10 +84,7 @@ async def transfer_job_script_files(legacy_job_scripts):
             unpacked_data = json.loads(job_script_data_as_string)
             job_script_content = unpacked_data.get(main_filename, "")
         except json.JSONDecodeError:
-            logger.error(
-                "Error loading job-script from json: ",
-                job_script_data_as_string,
-            )
+            logger.error(f"Error loading job-script from json: {job_script_data_as_string}")
             job_script_content = ""
 
         if not job_script_content:

@@ -3,6 +3,7 @@ Provides a convenience class for managing calls to S3.
 """
 import asyncio
 import contextlib
+import itertools
 import tarfile
 import tempfile
 from io import BytesIO
@@ -55,7 +56,7 @@ def extract_tarball(legacy_object):
 
 def get_id_from_legacy_s3_key(key: str) -> int:
 
-    with handle_errors(f"Error extraction application id and user id from: {key}"):
+    with handle_errors(f"Error extracting application id and user id from: {key}"):
         splitted = key.split("/")
         user = int(splitted[1])
         id = int(splitted[3])
@@ -64,13 +65,15 @@ def get_id_from_legacy_s3_key(key: str) -> int:
 
 
 def check_application_files(work_dir: Path):
-    with check_expressions("Check application files") as check:
+    with check_expressions(
+        f"Check on application files failed, the available files are: {[f.as_posix() for f in work_dir.rglob('*')]}"
+    ) as check:
         for file in [APPLICATION_CONFIG_FILE_NAME, APPLICATION_SOURCE_FILE_NAME]:
             check((work_dir / file).is_file(), f"File {file} was not found")
-        check(
-            len(list((work_dir / APPLICATION_TEMPLATE_FOLDER).glob("*"))) >= 1,
-            "No template file was found",
-        )
+
+        template_files = itertools.chain(work_dir.rglob("*.j2"), work_dir.rglob("*.jinja2"))
+
+        check(len(list(template_files)) >= 1, "No template file was found")
 
 
 async def transfer_application_files(legacy_applications) -> Set[int]:
@@ -103,8 +106,10 @@ async def transfer_application_files(legacy_applications) -> Set[int]:
                 for file in [APPLICATION_CONFIG_FILE_NAME, APPLICATION_SOURCE_FILE_NAME]:
                     await nextgen_bucket.upload_file(work_dir / file, key + file)
 
-                template_folder = work_dir / APPLICATION_TEMPLATE_FOLDER
-                for template in template_folder.rglob("*"):
+                for template in itertools.chain(
+                    work_dir.rglob("*.j2"),
+                    work_dir.rglob("*.jinja2"),
+                ):
                     await nextgen_bucket.upload_file(
                         template,
                         f"{key}{APPLICATION_TEMPLATE_FOLDER}/{template.name}",
