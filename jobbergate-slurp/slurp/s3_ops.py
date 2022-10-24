@@ -1,216 +1,135 @@
 """
 Provides a convenience class for managing calls to S3.
 """
+import asyncio
 import contextlib
-import json
 import tarfile
 import tempfile
-from collections import namedtuple
 from io import BytesIO
 from pathlib import Path
-from typing import cast
+from typing import Set
 
-from boto3 import client
+import aioboto3
+from buzz import check_expressions, handle_errors, require_condition
 from loguru import logger
-# from fastapi import UploadFile
-# from file_storehouse import FileManager, FileManagerReadOnly
-# from file_storehouse.engine.s3 import EngineS3
-# from file_storehouse.key_mapping import KeyMappingNumeratedFolder
-# from jobbergate_api.apps.applications.application_files import APPLICATIONS_WORK_DIR, ApplicationFiles
-# from jobbergate_api.apps.job_scripts.job_script_files import JOBSCRIPTS_WORK_DIR, JobScriptFiles
-# from jobbergate_api.s3_manager import IO_TRANSFORMATIONS, file_manager_factory
 
 from slurp.config import settings
 
+APPLICATIONS_WORK_DIR = "applications"
+APPLICATION_CONFIG_FILE_NAME = "jobbergate.yaml"
+APPLICATION_SOURCE_FILE_NAME = "jobbergate.py"
+APPLICATION_TEMPLATE_FOLDER = "templates"
 
-def build_managers():
-    pass
 
-#     db_gen = namedtuple("db_generation", "legacy nextgen")
-#     s3_folder = namedtuple("Folder", "applications jobscripts")
-#
-#     s3_client = db_gen(
-#         legacy=client(
-#             "s3",
-#             endpoint_url=settings.LEGACY_S3_ENDPOINT_URL,
-#             aws_access_key_id=settings.LEGACY_AWS_ACCESS_KEY_ID,
-#             aws_secret_access_key=settings.LEGACY_AWS_SECRET_ACCESS_KEY,
-#         ),
-#         nextgen=client(
-#             "s3",
-#             endpoint_url=settings.NEXTGEN_S3_ENDPOINT_URL,
-#             aws_access_key_id=settings.NEXTGEN_AWS_ACCESS_KEY_ID,
-#             aws_secret_access_key=settings.NEXTGEN_AWS_SECRET_ACCESS_KEY,
-#         ),
-#     )
-#
-#     class NextGenApplicationFiles(ApplicationFiles):
-#         @classmethod
-#         def file_manager_factory(self, application_id: int) -> FileManager:
-#             """
-#             Build an application file manager.
-#             """
-#             return cast(
-#                 FileManager,
-#                 file_manager_factory(
-#                     id=application_id,
-#                     s3_client=s3_client.nextgen,
-#                     bucket_name=settings.NEXTGEN_S3_BUCKET_NAME,
-#                     work_directory=Path(APPLICATIONS_WORK_DIR),
-#                     manager_cls=FileManager,
-#                     transformations=IO_TRANSFORMATIONS,
-#                 ),
-#             )
-#
-#     class NextGenJobScriptFiles(JobScriptFiles):
-#         @classmethod
-#         def file_manager_factory(self, job_script_id: int) -> FileManager:
-#             """
-#             Build an application file manager.
-#             """
-#             return cast(
-#                 FileManager,
-#                 file_manager_factory(
-#                     id=job_script_id,
-#                     s3_client=s3_client.nextgen,
-#                     bucket_name=settings.NEXTGEN_S3_BUCKET_NAME,
-#                     work_directory=Path(JOBSCRIPTS_WORK_DIR),
-#                     manager_cls=FileManager,
-#                     transformations=IO_TRANSFORMATIONS,
-#                 ),
-#             )
-#
-#         @classmethod
-#         def get_from_json(cls, input_json: dict):
-#             """
-#             Get job script files from the legacy json file ``job_script_data_as_string``.
-#             """
-#             main_filename = "application.sh"
-#             main_file_path = Path(main_filename)
-#
-#             try:
-#                 unpacked_data = json.loads(input_json)
-#                 job_script = unpacked_data.get(main_filename, "")
-#             except json.JSONDecodeError:
-#                 job_script = ""
-#
-#             return cls(
-#                 main_file_path=main_file_path,
-#                 files={main_file_path: job_script},
-#             )
-#
-#     s3man = s3_folder(
-#         applications=db_gen(
-#             legacy=FileManagerReadOnly(
-#                 engine=EngineS3(
-#                     s3_client.legacy,
-#                     settings.LEGACY_S3_BUCKET_NAME,
-#                     "jobbergate-resources",
-#                 ),
-#             ),
-#             nextgen=NextGenApplicationFiles,
-#         ),
-#         jobscripts=db_gen(
-#             legacy=None,
-#             nextgen=NextGenJobScriptFiles,
-#         ),
-#     )
-#
-#     return s3man
+@contextlib.asynccontextmanager
+async def s3_bucket(is_legacy: bool = True):
+
+    if is_legacy:
+        endpoint_url = settings.LEGACY_S3_ENDPOINT_URL
+        bucket_name = settings.LEGACY_S3_BUCKET_NAME
+        key_id = settings.LEGACY_AWS_ACCESS_KEY_ID
+        access_key = settings.LEGACY_AWS_SECRET_ACCESS_KEY
+    else:
+        endpoint_url = settings.NEXTGEN_S3_ENDPOINT_URL
+        bucket_name = settings.NEXTGEN_S3_BUCKET_NAME
+        key_id = settings.NEXTGEN_AWS_ACCESS_KEY_ID
+        access_key = settings.NEXTGEN_AWS_SECRET_ACCESS_KEY
+
+    session = aioboto3.Session(aws_access_key_id=key_id, aws_secret_access_key=access_key)
+
+    async with session.resource("s3", endpoint_url=endpoint_url) as s3:
+        bucket = await s3.Bucket(bucket_name)
+        yield bucket
 
 
 @contextlib.contextmanager
-def get_upload_files_from_tar(s3_obj):
-    supported_extensions = {".py", ".yaml", ".j2", ".jinja2"}
-#
-#     with tempfile.TemporaryDirectory() as tmpdir:
-#         tmp_path = Path(tmpdir)
-#         with tarfile.open(fileobj=BytesIO(s3_obj), mode="r:gz") as tar:
-#             tar.extractall(tmp_path)
-#
-#         logger.debug(
-#             f"Extracted tarball to {tmp_path}, including the files: {[path.name for path in tmp_path.rglob('*')]}"
-#         )
-#
-#         with contextlib.ExitStack() as stack:
-#             yield [
-#                 UploadFile(
-#                     path.name,
-#                     stack.enter_context(open(path, "rb")),
-#                     "text/plain",
-#                 )
-#                 for path in tmp_path.rglob("*")
-#                 if path.is_file() and path.suffix in supported_extensions
-#             ]
+def extract_tarball(legacy_object):
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+        with tarfile.open(fileobj=BytesIO(legacy_object), mode="r:gz") as tar:
+            tar.extractall(tmp_path)
+
+        yield tmp_path
 
 
-def transfer_s3(s3man, applications_map):
-    """
-    Transfer data from legacy s3 bucket to nextgen s3 bucket.
+def get_id_from_legacy_s3_key(key: str) -> int:
 
-    If the application_id in the legacy s3 key name doesn't exist in our application
-    map, skip the object. If the legacy s3 key doesn't match the expected pattern, skip
-    the object. Otherwise put the object into the nextgen s3 bucket with the application
-    id mapped to the appropriate nextgen application.
-    """
-#     logger.info(
-#         "Transferring S3 data from legacy to nextgen store, "
-#         f"{len(applications_map)} applications are expected, "
-#         f"{len(s3man.legacy)} objects were found at the legacy bucket."
-#     )
-#
-#     legacy_key_mapping = KeyMappingNumeratedFolder("jobbergate.tar.gz")
-#
-#     bad_pattern_skips = 0
-#     missing_id_skips = 0
-#     error_when_uploading = 0
-#     successful_transfers = 0
-#     transferred_ids = []
-#     missing_files = set(applications_map.values())
-#     for legacy_key in s3man.legacy.keys():
-#         try:
-#             legacy_application_id = legacy_key_mapping.get_dict_key_from_engine(legacy_key)
-#         except (ValueError, TypeError):
-#             bad_pattern_skips += 1
-#             logger.warning(f"Bad pattern at legacy object {legacy_key.as_posix()}")
-#             continue
-#         nextgen_application_id = applications_map.get(int(legacy_application_id))
-#         if not nextgen_application_id:
-#             missing_id_skips += 1
-#             logger.warning(f"Missing id at legacy object {legacy_key.as_posix()}")
-#             continue
-#
-#         legacy_obj = s3man.legacy[legacy_key]
-#         try:
-#             logger.debug(
-#                 f"Started processing uploaded files {legacy_application_id=} "
-#                 f"to {nextgen_application_id=} from the legacy bucket key '{str(legacy_key)}'"
-#             )
-#             with get_upload_files_from_tar(legacy_obj) as upload_files:
-#                 application_files = s3man.nextgen.get_from_upload_files(upload_files)
-#         except Exception as e:
-#             error_when_uploading += 1
-#             logger.error(
-#                 f"Error processing the files {legacy_application_id=} to {nextgen_application_id=}: {e}"
-#             )
-#         else:
-#             application_files.write_to_s3(nextgen_application_id, remove_previous_files=True)
-#             transferred_ids.append(nextgen_application_id)
-#             successful_transfers += 1
-#             missing_files.remove(nextgen_application_id)
-#             logger.debug(f"Successful transferred: {legacy_application_id=} to {nextgen_application_id=}")
-#
-#     logger.info(
-#         f"Finished transferring {successful_transfers} objects from s3. "
-#         f"{len(applications_map)} applications were expected, "
-#         f"{len(s3man.legacy)} objects were found at the legacy bucket."
-#     )
-#
-#     logger.info(f"Skipped {bad_pattern_skips} objects due to unparsable key on legacy bucket.")
-#     logger.info(
-#         f"Skipped {missing_id_skips} objects due to missing application_id (files on S3 but id not on nextgen database)"
-#     )
-#     logger.info(f"Skipped {error_when_uploading} unprocessable objects")
-#     logger.info(f"No application files were found for application ids: {missing_files}")
-#
-#     return transferred_ids
+    with handle_errors(f"Error extraction application id and user id from: {key}"):
+        splitted = key.split("/")
+        user = int(splitted[1])
+        id = int(splitted[3])
+
+    return id
+
+
+def check_application_files(work_dir: Path):
+    with check_expressions("Check application files") as check:
+        for file in [APPLICATION_CONFIG_FILE_NAME, APPLICATION_SOURCE_FILE_NAME]:
+            check((work_dir / file).is_file(), f"File {file} was not found")
+        check(
+            len(list((work_dir / APPLICATION_TEMPLATE_FOLDER).glob("*"))) >= 1,
+            "No template file was found",
+        )
+
+
+async def transfer_application_files(legacy_applications) -> Set[int]:
+
+    logger.info("Start migrating application files to s3")
+
+    legacy_application_ids = {application["id"] for application in legacy_applications}
+
+    async def transfer_helper(s3_object, nextgen_bucket):
+        id = get_id_from_legacy_s3_key(s3_object.key)
+
+        require_condition(
+            id in legacy_application_ids,
+            f"Missing application_id={id} (files on S3 but id not on the database)",
+        )
+
+        with handle_errors(f"Error retrieving object from legacy bucket: {s3_object.key}"):
+
+            s3_legacy_object = await s3_object.get()
+            s3_legacy_content = await s3_legacy_object["Body"].read()
+
+        key = f"{APPLICATIONS_WORK_DIR}/{id}/"
+
+        with handle_errors(f"Error manipulating the files from: {s3_object.key}"):
+
+            with extract_tarball(s3_legacy_content) as work_dir:
+
+                check_application_files(work_dir)
+
+                for file in [APPLICATION_CONFIG_FILE_NAME, APPLICATION_SOURCE_FILE_NAME]:
+                    await nextgen_bucket.upload_file(work_dir / file, key + file)
+
+                template_folder = work_dir / APPLICATION_TEMPLATE_FOLDER
+                for template in template_folder.rglob("*"):
+                    await nextgen_bucket.upload_file(
+                        template,
+                        f"{key}{APPLICATION_TEMPLATE_FOLDER}/{template.name}",
+                    )
+
+            return id
+
+    async with s3_bucket(is_legacy=True) as legacy_bucket:
+        async with s3_bucket(is_legacy=False) as nextgen_bucket:
+
+            prefix = "jobbergate-resources/"
+
+            tasks = [
+                asyncio.create_task(transfer_helper(s3_object, nextgen_bucket))
+                async for s3_object in legacy_bucket.objects.filter(Prefix=prefix)
+            ]
+
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            for r in results:
+                if isinstance(r, Exception):
+                    logger.warning(str(r))
+
+            transferred_ids = {i for i in results if isinstance(i, int)}
+
+            logger.success(f"Finished migrating {len(transferred_ids)} applications to s3")
+
+            return list(transferred_ids)

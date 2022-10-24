@@ -15,7 +15,7 @@ from slurp.migrators.applications import mark_uploaded, migrate_applications
 from slurp.migrators.job_scripts import migrate_job_scripts, transfer_job_script_files
 from slurp.migrators.job_submissions import migrate_job_submissions
 from slurp.pull_legacy import pull_applications, pull_job_scripts, pull_job_submissions, pull_users
-from slurp.s3_ops import build_managers, transfer_s3
+from slurp.s3_ops import transfer_application_files
 
 app = typer.Typer()
 
@@ -67,7 +67,6 @@ def migrate(
 
         legacy_job_scripts = pull_job_scripts(legacy_db)
         migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map)
-        asyncio.run(transfer_job_script_files(legacy_job_scripts))
 
         if not ignore_submissions:
             legacy_job_submissions = pull_job_submissions(legacy_db)
@@ -77,8 +76,10 @@ def migrate(
         reset_id_seq(nextgen_db, "job_scripts")
         reset_id_seq(nextgen_db, "job_submissions")
 
+    transferred_ids = asyncio.run(transfer_application_files(legacy_applications))
+    with db(is_legacy=False) as nextgen_db:
+        mark_uploaded(nextgen_db, transferred_ids)
+
+    asyncio.run(transfer_job_script_files(legacy_job_scripts))
+
     logger.success("Finished migration!")
-
-    # transferred_ids = transfer_s3(s3man.applications, applications_map)
-
-    #  mark_uploaded(nextgen_db, transferred_ids)

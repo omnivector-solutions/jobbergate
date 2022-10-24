@@ -3,13 +3,13 @@ Provides logic for migrating job_script data from legacy db to nextgen db.
 """
 
 import asyncio
+from io import BytesIO
 import json
 
-import aioboto3
 from loguru import logger
 
 from slurp.batch import batch
-from slurp.config import settings
+from slurp.s3_ops import s3_bucket
 
 
 def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, batch_size=1000):
@@ -78,12 +78,7 @@ async def transfer_job_script_files(legacy_job_scripts):
     main_filename = "application.sh"
     s3_key_template = f"job-scripts/{{job_script_id}}/main-file/{main_filename}"
 
-    session = aioboto3.Session(
-        aws_access_key_id=settings.NEXTGEN_AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.NEXTGEN_AWS_SECRET_ACCESS_KEY,
-    )
-
-    async def transfer_helper(s3, job_script_data_as_string, job_script_id):
+    async def transfer_helper(bucket, job_script_data_as_string, job_script_id):
 
         try:
             unpacked_data = json.loads(job_script_data_as_string)
@@ -100,21 +95,17 @@ async def transfer_job_script_files(legacy_job_scripts):
 
         s3_key = s3_key_template.format(job_script_id=job_script_id)
         try:
-            await s3.put_object(
-                Body=job_script_content,
-                Bucket=settings.NEXTGEN_S3_BUCKET_NAME,
-                Key=s3_key,
-            )
+            await bucket.upload_fileobj(BytesIO(job_script_content.encode("utf-8")), s3_key)
             return True
         except Exception:
-            logger.error("Error uploading job-script to: ", s3_key)
+            logger.error(f"Error uploading job-script to {s3_key=}")
             return False
 
-    async with session.client("s3", endpoint_url=settings.NEXTGEN_S3_ENDPOINT_URL) as s3:
+    async with s3_bucket(is_legacy=False) as bucket:
 
         tasks = (
             asyncio.create_task(
-                transfer_helper(s3, job_script["job_script_data_as_string"], job_script["id"])
+                transfer_helper(bucket, job_script["job_script_data_as_string"], job_script["id"])
             )
             for job_script in legacy_job_scripts
         )
