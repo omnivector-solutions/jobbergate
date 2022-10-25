@@ -86,7 +86,7 @@ async def transfer_job_script_files(legacy_job_scripts):
         Helper function that handles the transfer of a single job-script.
         """
         with handle_errors(
-            f"Error getting the job-script content from the JSON: {job_script_data_as_string}"
+            f"Error getting the job-script content from the JSON ({job_script_id=}): {job_script_data_as_string}"
         ):
             unpacked_data = json.loads(job_script_data_as_string)
             job_script_content = unpacked_data[main_filename]
@@ -95,7 +95,7 @@ async def transfer_job_script_files(legacy_job_scripts):
 
         s3_key = s3_key_template.format(job_script_id=job_script_id)
 
-        with handle_errors(f"Error uploading the job-script content to {s3_key=}"):
+        with handle_errors(f"Error uploading {job_script_id=} content to {s3_key=}"):
             await bucket.upload_fileobj(BytesIO(job_script_content.encode("utf-8")), s3_key)
 
         return job_script_id
