@@ -58,10 +58,10 @@ def get_id_from_legacy_s3_key(key: str) -> int:
 
     with handle_errors(f"Error extracting application id and user id from: {key}"):
         splitted = key.split("/")
-        user = int(splitted[1])
-        id = int(splitted[3])
+        user_id = int(splitted[1])
+        applicaton_id = int(splitted[3])
 
-    return id
+    return applicaton_id
 
 
 def check_application_files(work_dir: Path):
@@ -129,12 +129,12 @@ async def transfer_application_files(legacy_applications) -> Set[int]:
 
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            for r in results:
-                if isinstance(r, Exception):
-                    logger.warning(str(r))
+    for r in results:
+        if isinstance(r, Exception):
+            logger.warning(str(r))
 
-            transferred_ids = {i for i in results if isinstance(i, int)}
+    transferred_ids = {i for i in results if isinstance(i, int)}
 
-            logger.success(f"Finished migrating {len(transferred_ids)} applications to s3")
+    logger.success(f"Finished migrating {len(transferred_ids)} applications to s3")
 
-            return list(transferred_ids)
+    return list(transferred_ids)

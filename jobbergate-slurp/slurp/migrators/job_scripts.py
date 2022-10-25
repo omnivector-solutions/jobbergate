@@ -5,6 +5,7 @@ Provides logic for migrating job_script data from legacy db to nextgen db.
 import asyncio
 from io import BytesIO
 import json
+from buzz import handle_errors, require_condition
 
 from loguru import logger
 
@@ -80,23 +81,20 @@ async def transfer_job_script_files(legacy_job_scripts):
 
     async def transfer_helper(bucket, job_script_data_as_string, job_script_id):
 
-        try:
+        with handle_errors(
+            f"Error getting the job-script content from the JSON: {job_script_data_as_string}"
+        ):
             unpacked_data = json.loads(job_script_data_as_string)
-            job_script_content = unpacked_data.get(main_filename, "")
-        except json.JSONDecodeError:
-            logger.error(f"Error loading job-script from json: {job_script_data_as_string}")
-            job_script_content = ""
+            job_script_content = unpacked_data[main_filename]
 
-        if not job_script_content:
-            logger.warning(f"Empty job script content for {job_script_id=}")
+        require_condition(bool(job_script_content), f"Empty job script content for {job_script_id=}")
 
         s3_key = s3_key_template.format(job_script_id=job_script_id)
-        try:
+
+        with handle_errors(f"Error uploading the job-script content to {s3_key=}"):
             await bucket.upload_fileobj(BytesIO(job_script_content.encode("utf-8")), s3_key)
-            return True
-        except Exception:
-            logger.error(f"Error uploading job-script to {s3_key=}")
-            return False
+
+        return job_script_id
 
     async with s3_bucket(is_legacy=False) as bucket:
 
@@ -107,6 +105,12 @@ async def transfer_job_script_files(legacy_job_scripts):
             for job_script in legacy_job_scripts
         )
 
-        result = await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    logger.success(f"Finished migrating {len(result)} job-script files to s3")
+    for r in results:
+        if isinstance(r, Exception):
+            logger.warning(str(r))
+
+    transferred_ids = {i for i in results if isinstance(i, int)}
+
+    logger.success(f"Finished migrating {len(transferred_ids)} job-script files to s3")

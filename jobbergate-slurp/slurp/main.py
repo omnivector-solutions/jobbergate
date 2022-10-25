@@ -57,8 +57,11 @@ def migrate(
     """
     Migrates data from the legacy database to the nextgen database.
     """
-    logger.add(f"file_{datetime.now().replace(microsecond=0).isoformat()}.log")
+
+    timestamp = datetime.now().replace(microsecond=0).isoformat()
+    logger.add(f"file_{timestamp}.log")
     logger.info("Migrating jobbergate data from legacy to nextgen database")
+
     with db(is_legacy=True) as legacy_db, db(is_legacy=False) as nextgen_db:
         user_map = pull_users(legacy_db)
 
