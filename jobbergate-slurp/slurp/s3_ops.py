@@ -4,6 +4,7 @@ Provides a convenience class for managing calls to S3.
 import asyncio
 import contextlib
 import itertools
+import re
 import tarfile
 import tempfile
 from io import BytesIO
@@ -24,6 +25,11 @@ APPLICATION_TEMPLATE_FOLDER = "templates"
 
 @contextlib.asynccontextmanager
 async def s3_bucket(is_legacy: bool = True):
+    """
+    Context manager used to get a bucket from S3.
+
+    It is connected to the legacy bucket when is_legacy is True, and to the nextgen bucket otherwise.
+    """
 
     if is_legacy:
         endpoint_url = settings.LEGACY_S3_ENDPOINT_URL
@@ -45,6 +51,11 @@ async def s3_bucket(is_legacy: bool = True):
 
 @contextlib.contextmanager
 def extract_tarball(legacy_object):
+    """
+    Extract the files in the tarball to a temporary directory.
+
+    Its path is yielded for reference. The directory is deleted after the context manager is closed.
+    """
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir)
@@ -54,17 +65,42 @@ def extract_tarball(legacy_object):
         yield tmp_path
 
 
+legacy_key_pattern = r"^{}[/](?P<user_id>\d+)[/]{}[/](?P<application_id>\d+)[/]{}$".format(
+    "jobbergate-resources",
+    "applications",
+    "jobbergate.tar.gz",
+)
+legacy_key_compiled = re.compile(legacy_key_pattern)
+
+
 def get_id_from_legacy_s3_key(key: str) -> int:
+    """
+    Get the application id from a given key at the legacy bucket.
 
-    with handle_errors(f"Error extracting application id and user id from: {key}"):
-        splitted = key.split("/")
-        user_id = int(splitted[1])
-        applicaton_id = int(splitted[3])
+    The key is expected to be in the format:
+        jobbergate-resources/<user_id>/applications/<application_id>/jobbergate.tar.gz
+    where <user_id> and <application_id> are integers.
+    """
 
-    return applicaton_id
+    match = legacy_key_compiled.match(key)
+
+    require_condition(
+        match is not None,
+        f"No match was found for application-id and user-id and: {key}",
+    )
+
+    return int(match.group("application_id"))
 
 
 def check_application_files(work_dir: Path):
+    """
+    Check if the required files are present in the application directory.
+
+    It includes:
+        - jobbergate.yaml
+        - jobbergate.py
+        - One or more jinja templates
+    """
     with check_expressions(
         f"Check on application files failed, the available files are: {[f.as_posix() for f in work_dir.rglob('*')]}"
     ) as check:
@@ -77,12 +113,17 @@ def check_application_files(work_dir: Path):
 
 
 async def transfer_application_files(legacy_applications) -> Set[int]:
-
+    """
+    Transfer the application files from the legacy bucket to the nextgen bucket.
+    """
     logger.info("Start migrating application files to s3")
 
     legacy_application_ids = {application["id"] for application in legacy_applications}
 
     async def transfer_helper(s3_object, nextgen_bucket):
+        """
+        Helper function that transfers the files from one entry at the legacy bucket to the nextgen bucket.
+        """
         id = get_id_from_legacy_s3_key(s3_object.key)
 
         require_condition(

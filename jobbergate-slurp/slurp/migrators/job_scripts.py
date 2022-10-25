@@ -73,14 +73,18 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, batch_size=100
 
 
 async def transfer_job_script_files(legacy_job_scripts):
-
+    """
+    Transfer job-script files from a column at the legacy database to nextgen s3.
+    """
     logger.info("Start migrating job-script files to s3")
 
     main_filename = "application.sh"
     s3_key_template = f"job-scripts/{{job_script_id}}/main-file/{main_filename}"
 
     async def transfer_helper(bucket, job_script_data_as_string, job_script_id):
-
+        """
+        Helper function that handles the transfer of a single job-script.
+        """
         with handle_errors(
             f"Error getting the job-script content from the JSON: {job_script_data_as_string}"
         ):
