@@ -171,11 +171,14 @@ async def transfer_application_files(legacy_applications) -> List[int]:
 
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    exceptions = (r for r in results if isinstance(r, Exception))
-    for e in exceptions:
-        logger.warning(str(e))
-
-    transferred_ids = {i for i in results if isinstance(i, int)}
+    transferred_ids = set()
+    for r in results:
+        if isinstance(r, Exception):
+            logger.warning(str(r))
+        elif isinstance(r, int):
+            transferred_ids.add(r)
+        else:
+            logger.error("Unexpected result: {} {}".format(type(r), r))
 
     logger.success(f"Finished migrating {len(transferred_ids)} applications to s3")
 
