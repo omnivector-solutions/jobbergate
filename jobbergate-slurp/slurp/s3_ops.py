@@ -9,7 +9,7 @@ import tarfile
 import tempfile
 from io import BytesIO
 from pathlib import Path
-from typing import Set
+from typing import List
 
 import aioboto3
 from buzz import check_expressions, handle_errors, require_condition
@@ -28,7 +28,8 @@ async def s3_bucket(is_legacy: bool = True):
     """
     Context manager used to get a bucket from S3.
 
-    It is connected to the legacy bucket when is_legacy is True, and to the nextgen bucket otherwise.
+    It is connected to the legacy bucket when is_legacy is True, otherwise,
+    it is connected to the nextgen bucket.
     """
 
     if is_legacy:
@@ -112,7 +113,7 @@ def check_application_files(work_dir: Path):
         check(len(list(template_files)) >= 1, "No template file was found")
 
 
-async def transfer_application_files(legacy_applications) -> Set[int]:
+async def transfer_application_files(legacy_applications) -> List[int]:
     """
     Transfer the application files from the legacy bucket to the nextgen bucket.
     """
@@ -170,9 +171,9 @@ async def transfer_application_files(legacy_applications) -> Set[int]:
 
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    for r in results:
-        if isinstance(r, Exception):
-            logger.warning(str(r))
+    exceptions = (r for r in results if isinstance(r, Exception))
+    for e in exceptions:
+        logger.warning(str(e))
 
     transferred_ids = {i for i in results if isinstance(i, int)}
 

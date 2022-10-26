@@ -74,7 +74,7 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, batch_size=100
 
 async def transfer_job_script_files(legacy_job_scripts):
     """
-    Transfer job-script files from a column at the legacy database to nextgen s3.
+    Transfer job-script files from a column in the legacy database to nextgen s3.
     """
     logger.info("Start migrating job-script files to s3")
 
@@ -111,9 +111,9 @@ async def transfer_job_script_files(legacy_job_scripts):
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    for r in results:
-        if isinstance(r, Exception):
-            logger.warning(str(r))
+    exceptions = (r for r in results if isinstance(r, Exception))
+    for e in exceptions:
+        logger.warning(str(e))
 
     transferred_ids = {i for i in results if isinstance(i, int)}
 
