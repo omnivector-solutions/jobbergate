@@ -3,17 +3,19 @@ The main slurp application.
 
 Provides a Typer app and associated commands.
 """
+import asyncio
+from datetime import datetime
 import subprocess
 
 import typer
 from loguru import logger
 
-from slurp.connections import build_url, db
+from slurp.connections import build_url, db, reset_id_seq
 from slurp.migrators.applications import mark_uploaded, migrate_applications
-from slurp.migrators.job_scripts import migrate_job_scripts
+from slurp.migrators.job_scripts import migrate_job_scripts, transfer_job_script_files
 from slurp.migrators.job_submissions import migrate_job_submissions
 from slurp.pull_legacy import pull_applications, pull_job_scripts, pull_job_submissions, pull_users
-from slurp.s3_ops import build_managers, transfer_s3
+from slurp.s3_ops import transfer_application_files
 
 app = typer.Typer()
 
@@ -55,25 +57,31 @@ def migrate(
     """
     Migrates data from the legacy database to the nextgen database.
     """
+
+    timestamp = datetime.now().replace(microsecond=0).isoformat()
+    logger.add(f"file_{timestamp}.log")
     logger.info("Migrating jobbergate data from legacy to nextgen database")
-    s3man = build_managers()
+
     with db(is_legacy=True) as legacy_db, db(is_legacy=False) as nextgen_db:
         user_map = pull_users(legacy_db)
 
         legacy_applications = pull_applications(legacy_db)
-        applications_map = migrate_applications(nextgen_db, legacy_applications, user_map)
+        migrate_applications(nextgen_db, legacy_applications, user_map)
+        reset_id_seq(nextgen_db, "applications")
 
         legacy_job_scripts = pull_job_scripts(legacy_db)
-        job_scripts_map = migrate_job_scripts(
-            nextgen_db, legacy_job_scripts, user_map, applications_map, s3man.jobscripts
-        )
+        migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map)
+        reset_id_seq(nextgen_db, "job_scripts")
 
         if not ignore_submissions:
             legacy_job_submissions = pull_job_submissions(legacy_db)
-            migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map, job_scripts_map)
+            migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map)
+            reset_id_seq(nextgen_db, "job_submissions")
 
-        transferred_ids = transfer_s3(s3man.applications, applications_map)
-
+    transferred_ids = asyncio.run(transfer_application_files(legacy_applications))
+    with db(is_legacy=False) as nextgen_db:
         mark_uploaded(nextgen_db, transferred_ids)
+
+    asyncio.run(transfer_job_script_files(legacy_job_scripts))
 
     logger.success("Finished migration!")

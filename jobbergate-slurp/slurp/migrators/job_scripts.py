@@ -2,30 +2,60 @@
 Provides logic for migrating job_script data from legacy db to nextgen db.
 """
 
+import asyncio
+from io import BytesIO
+import json
+from buzz import handle_errors, require_condition
+
 from loguru import logger
 
+from slurp.batch import batch
+from slurp.s3_ops import s3_bucket
 
-def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_map, s3man):
+
+def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, batch_size=1000):
     """
     Inserts job_script data to nextgen database.
 
     Given a list of legacy job_scripts, a user map, and an application map, create
     records in the nextgen database for each job_script.
-
-    :returns: An dict mapping legacy job_script ids to nextgen job_script ids
     """
-    job_scripts_map = {}
     logger.info("Migrating job_scripts to nextgen database")
 
-    s3man.nextgen.engine.ensure_bucket()
+    for job_script_batch in batch(legacy_job_scripts, batch_size):
 
-    for job_script in legacy_job_scripts:
-        owner_email = user_map[job_script["job_script_owner_id"]]["email"]
-        nextgen_application_id = application_map[job_script["application_id"]]
+        mogrified_params = ",".join(
+            [
+                nextgen_db.mogrify(
+                    """
+                    (
+                        %(id)s,
+                        %(name)s,
+                        %(description)s,
+                        %(owner_email)s,
+                        %(application_id)s,
+                        %(created)s,
+                        %(updated)s
+                    )
+                    """,
+                    dict(
+                        id=job_script["id"],
+                        name=job_script["job_script_name"],
+                        description=job_script["job_script_description"],
+                        owner_email=user_map[job_script["job_script_owner_id"]]["email"],
+                        application_id=job_script["application_id"],
+                        created=job_script["created_at"],
+                        updated=job_script["updated_at"],
+                    ),
+                )
+                for job_script in job_script_batch
+            ]
+        )
 
-        result = nextgen_db.execute(
+        nextgen_db.execute(
             """
             insert into job_scripts (
+                id,
                 job_script_name,
                 job_script_description,
                 job_script_owner_email,
@@ -33,30 +63,65 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, application_ma
                 created_at,
                 updated_at
             )
-            values (
-                %(name)s,
-                %(description)s,
-                %(owner_email)s,
-                %(application_id)s,
-                %(created)s,
-                %(updated)s
-            )
-            returning id
-            """,
-            dict(
-                name=job_script["job_script_name"],
-                description=job_script["job_script_description"],
-                owner_email=owner_email,
-                application_id=nextgen_application_id,
-                created=job_script["created_at"],
-                updated=job_script["updated_at"],
+            values {}
+            """.format(
+                mogrified_params
             ),
         )
 
-        nextgen_jobscript_id = result.fetchone()["id"]
-        job_scripts_map[job_script["id"]] = nextgen_jobscript_id
-
-        s3man.nextgen[nextgen_jobscript_id] = job_script["job_script_data_as_string"]
-
     logger.success("Finished migrating job_scripts")
-    return job_scripts_map
+
+
+async def transfer_job_script_files(legacy_job_scripts):
+    """
+    Transfer job-script files from a column in the legacy database to nextgen s3.
+    """
+    logger.info("Start migrating job-script files to s3")
+
+    main_filename = "application.sh"
+    s3_key_template = f"job-scripts/{{job_script_id}}/main-file/{main_filename}"
+
+    async def transfer_helper(bucket, job_script_data_as_string, job_script_id):
+        """
+        Helper function that handles the transfer of a single job-script.
+        """
+        with handle_errors(
+            f"Error getting the job-script content from the JSON ({job_script_id=}): {job_script_data_as_string}"
+        ):
+            unpacked_data = json.loads(job_script_data_as_string)
+            job_script_content = unpacked_data[main_filename]
+
+        require_condition(bool(job_script_content), f"Empty job script content for {job_script_id=}")
+
+        s3_key = s3_key_template.format(job_script_id=job_script_id)
+
+        with handle_errors(f"Error uploading {job_script_id=} content to {s3_key=}"):
+            await bucket.upload_fileobj(BytesIO(job_script_content.encode("utf-8")), s3_key)
+
+        return job_script_id
+
+    async with s3_bucket(is_legacy=False) as bucket:
+
+        tasks = (
+            asyncio.create_task(
+                transfer_helper(bucket, job_script["job_script_data_as_string"], job_script["id"])
+            )
+            for job_script in legacy_job_scripts
+        )
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    transferred_ids = set()
+    for i, r in enumerate(results):
+        if isinstance(r, Exception):
+            logger.warning(str(r))
+        elif isinstance(r, int):
+            transferred_ids.add(r)
+        else:
+            logger.error(
+                "Unexpected result for job_script_id={}: {} {}".format(
+                    legacy_job_scripts[i]["id"], type(r), r
+                )
+            )
+
+    logger.success(f"Finished migrating {len(transferred_ids)} job-script files to s3")

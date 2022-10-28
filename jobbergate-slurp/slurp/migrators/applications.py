@@ -3,58 +3,66 @@ Provides logic for migrating application data from legacy db to nextgen db.
 """
 from loguru import logger
 
+from slurp.batch import batch
 
-def migrate_applications(nextgen_db, legacy_applications, user_map):
+
+def migrate_applications(nextgen_db, legacy_applications, user_map, batch_size=1000):
     """
     Inserts application data to nextgen database.
 
     Given a list of legacy applications and a user map, create records in the
     nextgen database for each application.
-
-    :returns: An dict mapping legacy application ids to nextgen application ids
     """
-    application_map = {}
     logger.info("Inserting applications to nextgen database")
-    for application in legacy_applications:
-        owner_email = user_map[application["application_owner_id"]]["email"]
+    for application_batch in batch(legacy_applications, batch_size):
+
+        mogrified_params = ",".join(
+            [
+                nextgen_db.mogrify(
+                    """
+                    (
+                        %(id)s,
+                        %(name)s,
+                        %(identifier)s,
+                        %(description)s,
+                        %(owner_email)s,
+                        false,
+                        %(created)s,
+                        %(updated)s
+                            )
+                    """,
+                    dict(
+                        id=application["id"],
+                        name=application["application_name"],
+                        identifier=application["application_identifier"],
+                        description=application["application_description"],
+                        owner_email=user_map[application["application_owner_id"]]["email"],
+                        created=application["created_at"],
+                        updated=application["updated_at"],
+                    ),
+                )
+                for application in application_batch
+            ]
+        )
 
         nextgen_db.execute(
             """
             insert into applications (
+                id,
                 application_name,
                 application_identifier,
                 application_description,
                 application_owner_email,
-                application_config,
                 application_uploaded,
                 created_at,
                 updated_at
             )
-            values (
-                %(name)s,
-                %(identifier)s,
-                %(description)s,
-                %(owner_email)s,
-                %(config)s,
-                false,
-                %(created)s,
-                %(updated)s
-            )
-            returning id
-            """,
-            dict(
-                name=application["application_name"],
-                identifier=application["application_identifier"],
-                description=application["application_description"],
-                owner_email=owner_email,
-                config=application["application_config"],
-                created=application["created_at"],
-                updated=application["updated_at"],
-            ),
+            values {}
+            """.format(mogrified_params),
         )
-        application_map[application["id"]] = nextgen_db.fetchone()["id"]
+        logger.success(f"Finished batch of {batch_size}")
+
     logger.success("Finished migrating applications")
-    return application_map
 
 
 def mark_uploaded(nextgen_db, ids):
