@@ -2,22 +2,20 @@
  Continuous Integration
 ========================
 
-Jobbergate uses `GitHub actions <https://github.com/omnivector-solutions/jobbergate/actions>`_ as continuous integration tools. They are described in details in this page.
+Jobbergate uses `GitHub actions <https://github.com/omnivector-solutions/jobbergate/actions>`_ as continuous integration tools. They are described in detail on this page.
 
--------------------
- Quality Assurance
--------------------
+Quality Assurance
+-----------------
 
 A dedicated GitHub action is included at Jobbergate's repository 
 (`test_on_push.yaml <https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/test_on_push.yaml>`_)
 to run the quality assurance tools for all sub-projects at once.
-It includes unit tests, code coverage, linters, code formatters, and static code checkers,
-that are detailed in the section :any:`Quality Assurance Tools`.
+They include unit tests, code coverage, linters, code formatters, and static type checkers.
+Each is detailed in the section :any:`Quality Assurance Tools`.
 This action is triggered whenever a new commit is pushed to the ``main`` branch or to a pull request.
 
------------------
- Publish on PyPI
------------------
+Publish on PyPI
+---------------
 
 The major components of Jobbergate are published on PyPI, the Python Package Index.
 They are available at:
@@ -28,16 +26,15 @@ They are available at:
 The steps to publish them to PyPI are automatized by three GitHub actions,
 that are better described bellow.
 
-^^^^^^^^^^^^^^^^^^^^^
- Prepare for release
-^^^^^^^^^^^^^^^^^^^^^
+Prepare for release
+^^^^^^^^^^^^^^^^^^^
 
 This action
 (`prepare_release.yaml <https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/prepare_release.yaml>`_)
 is triggered on a workflow dispatch event and demands some interactions
 to ensure code quality. It takes as arguments:
 
-* The base branch where the action will run from. Notice that the use of the ``main``
+* The base branch from which the action will run. Notice that the use of the ``main``
   branch is highly recommended in order to keep a linear commit history between releases and pre-releases.
 * The bump version rule to be applied, based on
   `Poetry version <https://python-poetry.org/docs/cli/#version>`_.
@@ -46,8 +43,8 @@ to ensure code quality. It takes as arguments:
 
 Once activated, this action:
 
-* Uses Poetry to bump the version number of all the Jobbergate packages;
-* Checks if the new version number is synchronized between them, and fails if they are not;
+* Uses Poetry to bump the version number of all the Jobbergate packages.
+* Checks if the new version number is synchronized between them, and fails if they are not.
 * Creates a new entry on each changelog file with the new version number and the current date,
   including all unreleased features and bug fixes.
 * Creates a new branch named ``release/<version>``.
@@ -58,17 +55,15 @@ Once activated, this action:
 The remaining steps of the workflow are chained automatically once the PR is
 accepted and merged into main.
 
-^^^^^^^^^^^^^^^^^^
- Create a new tag
-^^^^^^^^^^^^^^^^^^
+Create a new tag
+^^^^^^^^^^^^^^^^
 
 When a release PR is merged into the ``main`` branch, this action
 (`tag_on_merged_pull_request.yaml <https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/tag_on_merged_pull_request.yaml>`_)
 is triggered. It creates and pushes a new tag to the repository, based on the new version number.
 
-^^^^^^^^^^^^^^^^
- Publish on Tag
-^^^^^^^^^^^^^^^^
+Publish on Tag
+^^^^^^^^^^^^^^
 
 This action
 (`publish_on_tag.yaml <https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/publish_on_tag.yaml>`_)
