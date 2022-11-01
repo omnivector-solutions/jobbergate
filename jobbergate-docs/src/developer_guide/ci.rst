@@ -49,8 +49,9 @@ Once activated, this action:
   including all unreleased features and bug fixes.
 * Creates a new branch named ``release/<version>``.
 * Opens a draft pull request titled ``Release <version>``.
-  In this way, all the changes above can be reviewed before the release is published,
-  and all quality assurance tests are executed for the pull request.
+
+In this way, all the changes above can be reviewed before the release is published,
+and all quality assurance tests are executed for the pull request.
 
 The remaining steps of the workflow are chained automatically once the PR is
 accepted and merged into main.
