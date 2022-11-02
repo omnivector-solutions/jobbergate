@@ -43,3 +43,4 @@ jobs:
         run: |
           VERSION=`poetry version -s`
           aws s3 sync ./build s3://docs.omnivector.solutions/jobbergate/$VERSION
+          aws s3 sync ./build s3://docs.omnivector.solutions/jobbergate/latest
