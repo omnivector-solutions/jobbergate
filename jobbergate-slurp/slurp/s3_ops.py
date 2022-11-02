@@ -129,7 +129,7 @@ async def transfer_application_files(legacy_applications) -> List[int]:
 
         require_condition(
             id in legacy_application_ids,
-            f"Missing application_id={id} (files on S3 but id not on the database)",
+            f"Missing application id (files on S3 but id not on the database): {s3_object.key}",
         )
 
         with handle_errors(f"Error retrieving object from legacy bucket: {s3_object.key}"):
