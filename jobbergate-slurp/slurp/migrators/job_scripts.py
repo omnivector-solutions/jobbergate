@@ -72,7 +72,7 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, batch_size=100
     logger.success("Finished migrating job_scripts")
 
 
-async def transfer_job_script_files(legacy_job_scripts):
+async def transfer_job_script_files(legacy_job_scripts, batch_size=400):
     """
     Transfer job-script files from a column in the legacy database to nextgen s3.
     """
@@ -100,28 +100,30 @@ async def transfer_job_script_files(legacy_job_scripts):
 
         return job_script_id
 
+    transferred_ids = set()
     async with s3_bucket(is_legacy=False) as bucket:
 
-        tasks = (
-            asyncio.create_task(
-                transfer_helper(bucket, job_script["job_script_data_as_string"], job_script["id"])
-            )
-            for job_script in legacy_job_scripts
-        )
+        for job_script_batch in batch(legacy_job_scripts, batch_size):
 
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
-    transferred_ids = set()
-    for i, r in enumerate(results):
-        if isinstance(r, Exception):
-            logger.warning(str(r))
-        elif isinstance(r, int):
-            transferred_ids.add(r)
-        else:
-            logger.error(
-                "Unexpected result for job_script_id={}: {} {}".format(
-                    legacy_job_scripts[i]["id"], type(r), r
+            tasks = (
+                asyncio.create_task(
+                    transfer_helper(bucket, job_script["job_script_data_as_string"], job_script["id"])
                 )
+                for job_script in job_script_batch
             )
+
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            for i, r in enumerate(results):
+                if isinstance(r, Exception):
+                    logger.warning(str(r))
+                elif isinstance(r, int):
+                    transferred_ids.add(r)
+                else:
+                    logger.error(
+                        "Unexpected result for job_script_id={}: {} {}".format(
+                            job_script_batch[i]["id"], type(r), r
+                        )
+                    )
 
     logger.success(f"Finished migrating {len(transferred_ids)} job-script files to s3")
