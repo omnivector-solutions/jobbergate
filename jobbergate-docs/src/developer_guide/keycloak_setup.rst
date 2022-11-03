@@ -10,7 +10,8 @@ This document describes the procedure for setting up an already deployed Keycloa
 The version of Keycloak used for this guide is `19.0.2`.
 
 The examples provided here describe how to set it up for a local deployment (for example, one deployed with Docker).
-However, the instructions should be easily extensible for any deployment.
+However, the instructions should be easily extensible for any deployment that relies on
+a single-node Keycloak cluster.
 
 
 Create a new Realm
