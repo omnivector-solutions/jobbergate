@@ -6,10 +6,11 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Added version metadata to the API
 
 3.3.3 -- 2022-10-17
 -------------------
-Added logic to ignore leading templates/ path in default template
+- Added logic to ignore leading templates/ path in default template
 
 3.3.2 -- 2022-10-13
 -------------------
