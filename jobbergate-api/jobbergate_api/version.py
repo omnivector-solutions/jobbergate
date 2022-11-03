@@ -21,8 +21,8 @@ def get_version_from_poetry() -> str:
     """
     Get the version from pyproject.toml.
 
-    This is a fallback method if the package is not installed, but just copied,
-    like in a Dockerfile.
+    This is a fallback method if the package is not installed, but just copied
+    and accessed locally, like in a Docker image.
     """
     return toml.load("pyproject.toml")["tool"]["poetry"]["version"]
 
