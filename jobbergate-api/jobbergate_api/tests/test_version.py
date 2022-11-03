@@ -80,7 +80,7 @@ class TestGetVersion:
         mock_get_version_from_metadata.side_effect = PackageNotFoundError
         mock_get_version_from_poetry.side_effect = FileNotFoundError
 
-        assert get_version() == "0.0.0"
+        assert get_version() == "unknown"
 
         mock_get_version_from_metadata.assert_called_once()
         mock_get_version_from_poetry.assert_called_once()

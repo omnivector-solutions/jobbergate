@@ -30,6 +30,8 @@ def get_version_from_poetry() -> str:
 def get_version() -> str:
     """
     Get the version from the metadata if available, otherwise from pyproject.toml.
+
+    Returns "unknown" if both methods fail.
     """
     try:
         return get_version_from_metadata()
@@ -37,7 +39,7 @@ def get_version() -> str:
         try:
             return get_version_from_poetry()
         except (FileNotFoundError, KeyError):
-            return "0.0.0"
+            return "unknown"
 
 
 __version__ = get_version()
