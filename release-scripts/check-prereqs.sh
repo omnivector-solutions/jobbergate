@@ -2,7 +2,7 @@
 
 BASE_BRANCH="main"
 SUBPROJECT=${PWD##*/}
-ALL_SUBPROJECTS="jobbergate-api jobbergate-cli"
+ALL_SUBPROJECTS="jobbergate-api jobbergate-cli jobbergate-docs"
 
 function bail {
     echo "!!! $1 -- Aborting !!!"
