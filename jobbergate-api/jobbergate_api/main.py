@@ -12,13 +12,27 @@ from loguru import logger
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
+from jobbergate_api import __version__
 from jobbergate_api.apps.applications.routers import router as applications_router
 from jobbergate_api.apps.job_scripts.routers import router as job_scripts_router
 from jobbergate_api.apps.job_submissions.routers import router as job_submissions_router
 from jobbergate_api.config import settings
 from jobbergate_api.storage import database, handle_fk_error
 
-subapp = FastAPI()
+subapp = FastAPI(
+    title="Jobbergate-API",
+    version=__version__,
+    contact={
+        "name": "Omnivector Solutions",
+        "url": "https://www.omnivector.solutions/",
+        "email": "info@omnivector.solutions",
+    },
+    license_info={
+        "name": "MIT License",
+        "url": "https://github.com/omnivector-solutions/jobbergate/blob/main/LICENSE",
+    },
+)
+
 subapp.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
