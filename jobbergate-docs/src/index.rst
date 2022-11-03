@@ -26,3 +26,4 @@ Table of Contents
    Tutorial <tutorial>
    Developer Guide <developer_guide/index>
    Attribution <attribution>
+   Contact Us <contact>
