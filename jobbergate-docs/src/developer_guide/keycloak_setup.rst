@@ -86,10 +86,6 @@ Add the following roles:
 +---------------------------------+-------------------------------------------+
 | jobbergate:job-submissions:view | Allow to view job submissions             |
 +---------------------------------+-------------------------------------------+
-| license-manager:booking:edit    | Allow to edit bookings                    |
-+---------------------------------+-------------------------------------------+
-| license-manager:booking:view    | Allow to view bookings                    |
-+---------------------------------+-------------------------------------------+
 
 
 Add Mappers
@@ -148,10 +144,6 @@ Click on the `Roles` tab, and click the `Add Role` button. Add all the following
 | jobbergate:job-submissions:edit | Allow to edit job submissions             |
 +---------------------------------+-------------------------------------------+
 | jobbergate:job-submissions:view | Allow to view job submissions             |
-+---------------------------------+-------------------------------------------+
-| license-manager:booking:edit    | Allow to edit bookings                    |
-+---------------------------------+-------------------------------------------+
-| license-manager:booking:view    | Allow to view bookings                    |
 +---------------------------------+-------------------------------------------+
 
 
