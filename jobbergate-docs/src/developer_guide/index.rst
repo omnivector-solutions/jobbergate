@@ -18,3 +18,4 @@ Table of Contents
    Integration Testing <integration_testing>
    Continuous Integration <ci>
    S3 File Storage <s3_file_storage>
+   Setting up Keycloak <keycloak_setup>
