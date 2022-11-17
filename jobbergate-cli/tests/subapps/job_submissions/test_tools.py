@@ -216,7 +216,7 @@ def test_fetch_job_submission_data__success__using_id(
     dummy_job_submission_data,
     dummy_domain,
 ):
-    job_submission_data = dummy_job_submission_data[0]
+    job_submission_data = dummy_job_submission_data[3]
     job_submission_id = job_submission_data["id"]
     fetch_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-submissions/{job_submission_id}")
     fetch_route.mock(
@@ -229,3 +229,4 @@ def test_fetch_job_submission_data__success__using_id(
     result = fetch_job_submission_data(dummy_context, job_submission_id)
     assert fetch_route.called
     assert result == JobSubmissionResponse(**job_submission_data)
+    assert result.report_message == job_submission_data.get("report_message")

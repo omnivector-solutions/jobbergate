@@ -188,6 +188,18 @@ def dummy_job_submission_data(dummy_job_script_data):
             slurm_job_id=9999,
             status="CREATED",
         ),
+        dict(
+            id=4,
+            created_at="2022-11-17 11:17:00",
+            updated_at="2022-11-17 11:17:00",
+            job_submission_name="sub4",
+            job_submission_description="Job Submission 4",
+            job_submission_owner_email="felipe@omnivector.solutions",
+            job_script_id=99,
+            slurm_job_id=9999,
+            status="REJECTED",
+            report_message="Failed to submit job to slurm",
+        ),
     ]
 
 
