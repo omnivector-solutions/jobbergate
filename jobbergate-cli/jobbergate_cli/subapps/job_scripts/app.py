@@ -107,9 +107,14 @@ def get_one(
 @handle_abort
 def create(
     ctx: typer.Context,
-    name: str = typer.Option(
-        ...,
-        help="The name of the job script to create.",
+    name: Optional[str] = typer.Option(
+        None,
+        help=dedent(
+            """
+            The name of the job script to create.
+            If this is not supplied, the name will be derived from the base application.
+            """
+        ),
     ),
     application_id: Optional[int] = typer.Option(
         None,

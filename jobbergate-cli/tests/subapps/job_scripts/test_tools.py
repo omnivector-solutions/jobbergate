@@ -1,3 +1,4 @@
+import importlib
 import json
 import pathlib
 
@@ -5,8 +6,8 @@ import httpx
 import pytest
 
 from jobbergate_cli.exceptions import Abort
-from jobbergate_cli.schemas import JobScriptResponse
-from jobbergate_cli.subapps.job_scripts.tools import fetch_job_script_data, validate_parameter_file
+from jobbergate_cli.schemas import ApplicationResponse, JobScriptResponse
+from jobbergate_cli.subapps.job_scripts.tools import create_job_script, fetch_job_script_data, validate_parameter_file
 
 
 def test_validate_parameter_file__success(tmp_path):
@@ -46,3 +47,121 @@ def test_fetch_job_script_data__success(
     )
     job_script = fetch_job_script_data(dummy_context, 1)
     assert job_script == JobScriptResponse(**dummy_job_script_data[0])
+
+
+def test_create_job_script__providing_a_name(
+    dummy_application_data,
+    dummy_job_script_data,
+    dummy_domain,
+    dummy_context,
+    dummy_render_class,
+    attach_persona,
+    respx_mock,
+    mocker,
+):
+    """
+    Test that we can create a job script with the desired name.
+    """
+    attach_persona("dummy@dummy.com")
+
+    application_response = ApplicationResponse(**dummy_application_data[0])
+    mocked_fetch_application_data = mocker.patch(
+        "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
+        return_value=application_response,
+    )
+
+    dummy_render_class.prepared_input = dict(
+        foo="FOO",
+        bar="BAR",
+        baz="BAZ",
+    )
+
+    desired_job_script_data = dummy_job_script_data[0]
+    mocker.patch.object(
+        importlib.import_module("inquirer.prompt"),
+        "ConsoleRender",
+        new=dummy_render_class,
+    )
+    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-scripts")
+    create_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.CREATED,
+            json=desired_job_script_data,
+        ),
+    )
+
+    actual_job_script_data = create_job_script(
+        dummy_context,
+        name=desired_job_script_data["job_script_name"],
+        application_id=1,
+        fast=True,
+    )
+
+    mocked_fetch_application_data.assert_called_once_with(
+        dummy_context,
+        id=1,
+        identifier=None,
+    )
+
+    assert actual_job_script_data == JobScriptResponse(**desired_job_script_data)
+
+
+def test_create_job_script__without_a_name(
+    dummy_application_data,
+    dummy_job_script_data,
+    dummy_domain,
+    dummy_context,
+    dummy_render_class,
+    attach_persona,
+    respx_mock,
+    mocker,
+):
+    """
+    Test that we can create a job script without providing a name.
+
+    In this case, it should be created with the name of the base application.
+    """
+    attach_persona("dummy@dummy.com")
+
+    application_response = ApplicationResponse(**dummy_application_data[0])
+    mocked_fetch_application_data = mocker.patch(
+        "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
+        return_value=application_response,
+    )
+
+    dummy_render_class.prepared_input = dict(
+        foo="FOO",
+        bar="BAR",
+        baz="BAZ",
+    )
+
+    desired_job_script_data = dummy_job_script_data[0]
+    desired_job_script_data["name"] = application_response.application_name
+
+    mocker.patch.object(
+        importlib.import_module("inquirer.prompt"),
+        "ConsoleRender",
+        new=dummy_render_class,
+    )
+    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-scripts")
+    create_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.CREATED,
+            json=desired_job_script_data,
+        ),
+    )
+
+    actual_job_script_data = create_job_script(
+        dummy_context,
+        name=None,
+        application_id=application_response.id,
+        fast=True,
+    )
+
+    mocked_fetch_application_data.assert_called_once_with(
+        dummy_context,
+        id=application_response.id,
+        identifier=None,
+    )
+
+    assert actual_job_script_data == JobScriptResponse(**desired_job_script_data)

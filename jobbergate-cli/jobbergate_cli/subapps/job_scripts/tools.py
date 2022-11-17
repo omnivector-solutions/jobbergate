@@ -97,7 +97,7 @@ def create_job_script(
 
     request_data = JobScriptCreateRequestData(
         application_id=app_data.id,
-        job_script_name=name,
+        job_script_name=name if name else app_data.application_name,
         sbatch_params=sbatch_params,
         param_dict=app_config,
         job_script_description=description,
