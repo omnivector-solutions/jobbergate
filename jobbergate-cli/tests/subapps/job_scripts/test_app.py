@@ -133,7 +133,7 @@ def test_create__non_fast_mode_and_job_submission(
     test_app = make_test_app("create", create)
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
     mocked_fetch_application_data = mocker.patch(
-        "jobbergate_cli.subapps.job_scripts.app.fetch_application_data",
+        "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
         return_value=application_response,
     )
     mocked_create_job_submission = mocker.patch(
@@ -254,7 +254,7 @@ def test_create__with_fast_mode_and_no_job_submission(
     test_app = make_test_app("create", create)
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
     mocked_fetch_application_data = mocker.patch(
-        "jobbergate_cli.subapps.job_scripts.app.fetch_application_data",
+        "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
         return_value=application_response,
     )
     result = cli_runner.invoke(
