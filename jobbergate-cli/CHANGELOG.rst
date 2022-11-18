@@ -7,6 +7,7 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 - Make the name optional when creating a new job script on the CLI
+- Fixed `report_message` not showing on the detailed view of a job submissions
 
 3.3.3 -- 2022-10-17
 -------------------
