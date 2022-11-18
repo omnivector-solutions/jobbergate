@@ -144,6 +144,7 @@ class JobSubmissionResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     status: str
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
+    report_message: Optional[str]
 
 
 class JobScriptCreateRequestData(pydantic.BaseModel):
