@@ -11,14 +11,8 @@ from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.render import StyleMapper, render_json, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import (
-    JobbergateContext,
-    JobScriptCreateRequestData,
-    JobScriptResponse,
-    ListResponseEnvelope,
-)
-from jobbergate_cli.subapps.applications.tools import execute_application, fetch_application_data, load_application_data
-from jobbergate_cli.subapps.job_scripts.tools import fetch_job_script_data, validate_parameter_file
+from jobbergate_cli.schemas import JobbergateContext, JobScriptResponse, ListResponseEnvelope
+from jobbergate_cli.subapps.job_scripts.tools import create_job_script, fetch_job_script_data
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
 from jobbergate_cli.subapps.job_submissions.tools import create_job_submission
 from jobbergate_cli.text_tools import dedent
@@ -113,9 +107,14 @@ def get_one(
 @handle_abort
 def create(
     ctx: typer.Context,
-    name: str = typer.Option(
-        ...,
-        help="The name of the job script to create.",
+    name: Optional[str] = typer.Option(
+        None,
+        help=dedent(
+            """
+            The name of the job script to create.
+            If this is not supplied, the name will be derived from the base application.
+            """
+        ),
     ),
     application_id: Optional[int] = typer.Option(
         None,
@@ -156,39 +155,17 @@ def create(
     """
     jg_ctx: JobbergateContext = ctx.obj
 
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
-
-    app_data = fetch_application_data(jg_ctx, id=application_id, identifier=application_identifier)
-    (app_config, app_module) = load_application_data(app_data)
-
-    request_data = JobScriptCreateRequestData(
-        application_id=app_data.id,
-        job_script_name=name,
-        sbatch_params=sbatch_params,
-        param_dict=app_config,
-        job_script_description=description,
+    job_script_result = create_job_script(
+        jg_ctx,
+        name,
+        application_id,
+        application_identifier,
+        description,
+        sbatch_params,
+        param_file,
+        fast,
     )
 
-    supplied_params = validate_parameter_file(param_file) if param_file else dict()
-    execute_application(app_module, app_config, supplied_params, fast_mode=fast)
-
-    if app_config.jobbergate_config.job_script_name is not None:
-        request_data.job_script_name = app_config.jobbergate_config.job_script_name
-
-    job_script_result = cast(
-        JobScriptResponse,
-        make_request(
-            jg_ctx.client,
-            "/jobbergate/job-scripts",
-            "POST",
-            expected_status=201,
-            abort_message="Couldn't create job script",
-            support=True,
-            request_model=request_data,
-            response_model_cls=JobScriptResponse,
-        ),
-    )
     render_single_result(
         jg_ctx,
         job_script_result,
