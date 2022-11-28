@@ -303,6 +303,7 @@ class JobSubmissionResponse(BaseModel):
     client_id: Optional[str]
     status: JobSubmissionStatus
     report_message: Optional[str]
+    execution_parameters: Optional[JobProperties]
 
     class Config:
         orm_mode = True
@@ -320,6 +321,7 @@ class PendingJobSubmission(BaseModel, extra=Extra.ignore):
     job_submission_name: str
     job_submission_owner_email: str
     execution_directory: Optional[Path]
+    execution_parameters: Optional[JobProperties]
     job_script_name: str
     application_name: str
     job_script_files: JobScriptFiles
