@@ -92,7 +92,9 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     )
     burst_buffer: Optional[str] = Field(description="Burst buffer specification.")
     cluster_constraints: Optional[str] = Field(
-        description="Specifies features that a federated cluster must have to have a sibling job submitted to it.",
+        description=(
+            "Specifies features that a federated cluster must have to have a sibling job submitted to it."
+        )
     )
     comment: Optional[str] = Field(description="An arbitrary comment.")
     constraints: Optional[str] = Field(description="node features required by job.")
@@ -103,7 +105,9 @@ class JobProperties(BaseModel, extra=Extra.forbid):
         )
     )
     cores_per_socket: Optional[int] = Field(
-        description="Restrict node selection to nodes with at least the specified number of cores per socket.",
+        description=(
+            "Restrict node selection to nodes with at least the specified number of cores per socket."
+        )
     )
     cpu_binding: Optional[str] = Field(description="Cpu binding")
     cpu_binding_hint: Optional[str] = Field(description="Cpu binding hint")
@@ -117,14 +121,17 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     cpus_per_gpu: Optional[str] = Field(description="Number of CPUs requested per allocated GPU.")
     cpus_per_task: Optional[int] = Field(
         description=(
-            "Advise the Slurm controller that ensuing job steps will require ncpus number of processors per task."
+            "Advise the Slurm controller that ensuing job steps will require "
+            "ncpus number of processors per task."
         ),
     )
     current_working_directory: Optional[str] = Field(
         description="Instruct Slurm to connect the batch script's standard output directly to the file name."
     )
     deadline: Optional[str] = Field(
-        description="Remove the job if no ending is possible before this deadline (start > (deadline - time[-min]))."
+        description=(
+            "Remove the job if no ending is possible before this deadline (start > (deadline - time[-min]))."
+        )
     )
     delay_boot: Optional[int] = Field(
         description=(
@@ -133,7 +140,9 @@ class JobProperties(BaseModel, extra=Extra.forbid):
         )
     )
     dependency: Optional[str] = Field(
-        description="Defer the start of this job until the specified dependencies have been satisfied completed."
+        description=(
+            "Defer the start of this job until the specified dependencies have been satisfied completed."
+        )
     )
     distribution: Optional[str] = Field(
         description="Specify alternate distribution methods for remote processes."
@@ -141,7 +150,8 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     environment: Optional[Dict[str, str]] = Field(description="Dictionary of environment entries.")
     exclusive: Optional[Literal["user", "mcs", "exclusive", "oversubscribe"]] = Field(
         description=(
-            "The job allocation can share nodes just other users with the 'user' option or with the 'mcs' option)."
+            "The job allocation can share nodes just other users with the "
+            "'user' option or with the 'mcs' option)."
         )
     )
     get_user_environment: Optional[bool] = Field(
@@ -223,7 +233,9 @@ class JobProperties(BaseModel, extra=Extra.forbid):
         description="Instruct Slurm to connect the batch script's standard error directly to the file name."
     )
     standard_in: Optional[str] = Field(
-        description="Instruct Slurm to connect the batch script's standard input directly to the file name specified."
+        description=(
+            "Instruct Slurm to connect the batch script's standard input directly to the file name specified."
+        )
     )
     standard_out: Optional[str] = Field(
         description="Instruct Slurm to connect the batch script's standard output directly to the file name."
