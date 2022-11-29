@@ -40,7 +40,7 @@ job_submission_meta_mapper = MetaMapper(
         description="The foreign-key to the job_script from which this instance was created",
         example=71,
     ),
-    execution_duirectory=MetaField(
+    execution_directory=MetaField(
         description="The directory on the cluster where the job should be executed",
         example="/home/someuser/job-data/test-77",
     ),
@@ -59,6 +59,10 @@ job_submission_meta_mapper = MetaMapper(
     report_message=MetaField(
         description="The report message received from cluster-agent when a job submission is rejected",
         example="Unrecognized SBATCH arguments",
+    ),
+    execution_parameters=MetaField(
+        description="The parameters to be passed to the job submission",
+        example={"name": "job-submission-name", "comment": "I am a comment"},
     ),
 )
 
