@@ -104,7 +104,7 @@ async def job_submission_create(
 
     logger.debug(f"Job-submission created: {job_submission_data=}")
 
-    return JobSubmissionResponse(**job_submission_data)
+    return JobSubmissionResponse(**job_submission_data)  # type: ignore
 
 
 @router.get(
