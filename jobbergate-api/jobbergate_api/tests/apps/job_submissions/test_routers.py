@@ -51,6 +51,7 @@ async def test_create_job_submission__with_client_id_in_token(
         job_script_id=inserted_job_script_id,
         job_submission_name="sub1",
         job_submission_owner_email="owner1@org.com",
+        execution_parameters={"name": "job-submission-name", "comment": "I am a comment"},
     )
 
     # Removed defaults to make sure these are correctly set by other mechanisms
@@ -79,6 +80,10 @@ async def test_create_job_submission__with_client_id_in_token(
     assert job_submission.status == JobSubmissionStatus.CREATED
     assert job_submission.created_at in window
     assert job_submission.updated_at in window
+
+    assert job_submission.execution_parameters is not None
+    assert job_submission.execution_parameters.name == "job-submission-name"
+    assert job_submission.execution_parameters.comment == "I am a comment"
 
 
 @pytest.mark.asyncio
@@ -120,6 +125,10 @@ async def test_create_job_submission__with_client_id_in_request_body(
                 job_submission_name="sub1",
                 job_submission_owner_email="owner1@org.com",
                 client_id="silly-cluster-client",
+                execution_parameters={
+                    "name": "job-submission-name",
+                    "comment": "I am a comment",
+                },
             ),
         )
 
@@ -141,6 +150,10 @@ async def test_create_job_submission__with_client_id_in_request_body(
     assert job_submission.status == JobSubmissionStatus.CREATED
     assert job_submission.created_at in window
     assert job_submission.updated_at in window
+
+    assert job_submission.execution_parameters is not None
+    assert job_submission.execution_parameters.name == "job-submission-name"
+    assert job_submission.execution_parameters.comment == "I am a comment"
 
 
 @pytest.mark.asyncio
@@ -179,6 +192,7 @@ async def test_create_job_submission__with_execution_directory(
         job_submission_name="sub1",
         job_submission_owner_email="owner1@org.com",
         execution_directory="/some/fake/path",
+        execution_parameters={"name": "job-submission-name", "comment": "I am a comment"},
     )
 
     # Removed defaults to make sure these are correctly set by other mechanisms
@@ -207,6 +221,10 @@ async def test_create_job_submission__with_execution_directory(
     assert job_submission.status == JobSubmissionStatus.CREATED
     assert job_submission.created_at in window
     assert job_submission.updated_at in window
+
+    assert job_submission.execution_parameters is not None
+    assert job_submission.execution_parameters.name == "job-submission-name"
+    assert job_submission.execution_parameters.comment == "I am a comment"
 
 
 @pytest.mark.asyncio
