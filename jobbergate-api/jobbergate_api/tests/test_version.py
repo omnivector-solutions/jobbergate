@@ -23,8 +23,13 @@ def test_get_version_from_metadata():
 def test_get_version_from_poetry():
     """
     Test the function get_version_from_poetry.
+
+    It is necessary to replace alpha and beta by a and b when running
+    prereleases on poetry 1.1.*, this can be removed for poetry 1.2.*,
+    since the version scheme is already normalized.
     """
-    assert get_version_from_poetry() == __version__
+    poetry_version = get_version_from_poetry().replace("-alpha.", "a").replace("-beta.", "b")
+    assert poetry_version == __version__
 
 
 @mock.patch("jobbergate_api.version.get_version_from_poetry")
