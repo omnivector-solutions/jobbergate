@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+3.3.4-alpha.0 -- 2022-11-30
+---------------------------
 - Added version metadata to the API
 
 3.3.3 -- 2022-10-17
