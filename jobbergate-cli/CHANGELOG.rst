@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+3.3.4 -- 2022-12-02
+-------------------
+
 3.3.4-alpha.0 -- 2022-11-30
 ---------------------------
 - Make the name optional when creating a new job script on the CLI
