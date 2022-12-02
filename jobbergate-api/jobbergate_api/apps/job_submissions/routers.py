@@ -17,6 +17,7 @@ from jobbergate_api.apps.job_submissions.models import (
     searchable_fields,
     sortable_fields,
 )
+from jobbergate_api.apps.job_submissions.properties_parser import get_job_properties_from_job_script
 from jobbergate_api.apps.job_submissions.schemas import (
     ActiveJobSubmission,
     JobSubmissionCreateRequest,
@@ -89,6 +90,16 @@ async def job_submission_create(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=message,
         )
+
+    try:
+        job_properties = get_job_properties_from_job_script(
+            job_submission.job_script_id, **job_submission.execution_parameters.dict(exclude_unset=True)
+        )
+        create_dict["execution_parameters"] = job_properties.dict(exclude_unset=True)
+    except Exception as e:
+        message = f"Error extracting execution parameters from job script: {str(e)}"
+        logger.error(message)
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=message)
 
     logger.debug("Inserting job-submission")
 

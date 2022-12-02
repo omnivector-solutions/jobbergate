@@ -5,6 +5,9 @@ from typing import Any, Dict, Iterator, List, Union
 
 from bidict import bidict
 from loguru import logger
+from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
+
+from jobbergate_api.apps.job_submissions.schemas import JobProperties
 
 _IDENTIFICATION_FLAG = "#SBATCH"
 _INLINE_COMMENT_MARK = "#"
@@ -285,20 +288,25 @@ def convert_sbatch_to_slurm_api(input: Dict[str, Any]) -> Dict[str, Any]:
     return mapped
 
 
-def get_job_parameters(jobscript: str, **kwargs) -> Dict[str, Any]:
+def get_job_parameters(jobscript: str) -> Dict[str, Any]:
     """
     Parse all SBATCH parameters from a job script, map their names to Slurm API
     parameters, and return them as a key-value pairing dictionary.
+    """
+    return convert_sbatch_to_slurm_api(jobscript_to_dict(jobscript))
+
+
+def get_job_properties_from_job_script(job_script_id: int, **kwargs) -> JobProperties:
+    """
+    Get the job properties for Slurm REST API from a job script file, given its id.
 
     Extra keyword arguments can be used to overwrite any parameter from the
     job script, like name or current_working_directory.
     """
-
-    slurm_parameters = convert_sbatch_to_slurm_api(jobscript_to_dict(jobscript))
-
+    job_script_files = JobScriptFiles.get_from_s3(job_script_id)
+    slurm_parameters = get_job_parameters(job_script_files.main_file)
     merged_parameters = {**slurm_parameters, **kwargs}
-
-    return merged_parameters
+    return JobProperties.parse_obj(merged_parameters)
 
 
 parser = build_parser()

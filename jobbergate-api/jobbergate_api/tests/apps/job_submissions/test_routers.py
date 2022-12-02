@@ -2,6 +2,7 @@
 Tests for the /job-submissions/ endpoint.
 """
 import pathlib
+from unittest import mock
 
 import pytest
 from fastapi import status
@@ -11,7 +12,7 @@ from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.job_submissions.models import job_submissions_table
-from jobbergate_api.apps.job_submissions.schemas import JobSubmissionResponse
+from jobbergate_api.apps.job_submissions.schemas import JobProperties, JobSubmissionResponse
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.storage import database
 
@@ -58,8 +59,12 @@ async def test_create_job_submission__with_client_id_in_token(
     create_data.pop("status", None)
     create_data.pop("client_id", None)
 
-    with time_frame() as window:
-        response = await client.post("/jobbergate/job-submissions/", json=create_data)
+    with mock.patch(
+        "jobbergate_api.apps.job_submissions.routers.get_job_properties_from_job_script"
+    ) as mocked:
+        mocked.return_value = JobProperties.parse_obj(create_data["execution_parameters"])
+        with time_frame() as window:
+            response = await client.post("/jobbergate/job-submissions/", json=create_data)
 
     assert response.status_code == status.HTTP_201_CREATED
 
@@ -117,20 +122,27 @@ async def test_create_job_submission__with_client_id_in_request_body(
         Permissions.JOB_SUBMISSIONS_EDIT,
         client_id="dummy-cluster-client",
     )
-    with time_frame() as window:
-        response = await client.post(
-            "/jobbergate/job-submissions/",
-            json=fill_job_submission_data(
-                job_script_id=inserted_job_script_id,
-                job_submission_name="sub1",
-                job_submission_owner_email="owner1@org.com",
-                client_id="silly-cluster-client",
-                execution_parameters={
-                    "name": "job-submission-name",
-                    "comment": "I am a comment",
-                },
-            ),
-        )
+
+    execution_parameters = {
+        "name": "job-submission-name",
+        "comment": "I am a comment",
+    }
+
+    with mock.patch(
+        "jobbergate_api.apps.job_submissions.routers.get_job_properties_from_job_script"
+    ) as mocked:
+        mocked.return_value = JobProperties.parse_obj(execution_parameters)
+        with time_frame() as window:
+            response = await client.post(
+                "/jobbergate/job-submissions/",
+                json=fill_job_submission_data(
+                    job_script_id=inserted_job_script_id,
+                    job_submission_name="sub1",
+                    job_submission_owner_email="owner1@org.com",
+                    client_id="silly-cluster-client",
+                    execution_parameters=execution_parameters,
+                ),
+            )
 
     assert response.status_code == status.HTTP_201_CREATED
 
@@ -199,8 +211,12 @@ async def test_create_job_submission__with_execution_directory(
     create_data.pop("status", None)
     create_data.pop("client_id", None)
 
-    with time_frame() as window:
-        response = await client.post("/jobbergate/job-submissions/", json=create_data)
+    with mock.patch(
+        "jobbergate_api.apps.job_submissions.routers.get_job_properties_from_job_script"
+    ) as mocked:
+        mocked.return_value = JobProperties.parse_obj(create_data["execution_parameters"])
+        with time_frame() as window:
+            response = await client.post("/jobbergate/job-submissions/", json=create_data)
 
     assert response.status_code == status.HTTP_201_CREATED
 
