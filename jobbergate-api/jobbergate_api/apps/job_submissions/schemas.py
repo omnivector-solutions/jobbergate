@@ -61,7 +61,10 @@ job_submission_meta_mapper = MetaMapper(
         example="Unrecognized SBATCH arguments",
     ),
     execution_parameters=MetaField(
-        description="The parameters to be passed to the job submission",
+        description=(
+            "The parameters to be passed to the job submission. "
+            "See more details at: https://slurm.schedmd.com/rest_api.html#v0.0.36_job_properties"
+        ),
         example={"name": "job-submission-name", "comment": "I am a comment"},
     ),
 )
