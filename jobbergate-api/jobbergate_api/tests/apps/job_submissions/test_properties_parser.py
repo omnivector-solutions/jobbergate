@@ -88,7 +88,6 @@ def test_clean_line(line, desired_value):
     (
         ("--help", ["--help"]),
         ("--abc=0", ["--abc", "0"]),
-        ("--abc = 0", ["--abc", "0"]),
         ("-J job_name", ["-J", "job_name"]),
         ("-v -J job_name", ["-v", "-J", "job_name"]),
         ("-J job_name -v", ["-J", "job_name", "-v"]),
@@ -124,7 +123,7 @@ def dummy_slurm_script():
         #SBATCH --mail-user=email@somewhere.com # Where to send mail
         #SBATCH --mem=1gb                       # Job memory request
         #SBATCH --time=00:05:00                 # Time limit hrs:min:sec
-        #SBATCH --output = serial_test_%j.log   # Standard output and error log
+        #SBATCH --output=serial_test_%j.log     # Standard output and error log
         #SBATCH --wait-all-nodes=0              #
         pwd; hostname; date
 
