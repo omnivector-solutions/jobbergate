@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-cli
 
 Unreleased
 ----------
+* Move SBATCH params to Job Script submission
 
 3.3.4 -- 2022-12-05
 -------------------
