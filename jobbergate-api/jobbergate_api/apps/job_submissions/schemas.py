@@ -225,7 +225,6 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     )
     signal: Optional[str] = Field(
         description="When a job is within sig_time seconds of its end time, send it the signal sig_num.",
-        # regex=r"[B:]<sig_num>[@<sig_time>]",
     )
     sockets_per_node: Optional[int] = Field(
         description="Restrict node selection to nodes with at least the specified number of sockets."
