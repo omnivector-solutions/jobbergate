@@ -4,7 +4,7 @@ Parser for Slurm REST API parameters from SBATCH parameters at the job script fi
 from argparse import ArgumentParser
 from dataclasses import dataclass, field
 from itertools import chain
-from typing import Any, Dict, Iterator, List, Union
+from typing import Any, Dict, Iterator, List, Sequence, Union, cast
 
 from bidict import bidict
 from loguru import logger
@@ -234,7 +234,7 @@ def build_mapping_sbatch_to_slurm() -> bidict:
     """
     Create a mapper to translate in both ways between the names expected by Slurm REST API and SBATCH.
     """
-    mapping = bidict()
+    mapping: bidict = bidict()
 
     for item in sbatch_to_slurm:
         if item.slurmrestd_var_name:
@@ -252,7 +252,9 @@ def jobscript_to_dict(jobscript: str) -> Dict[str, Union[str, bool]]:
 
     Raise ValueError if any of the parameters are unknown to the parser.
     """
-    parsed_args, unknown_arg = parser.parse_known_args(_clean_jobscript(jobscript))
+    parsed_args, unknown_arg = parser.parse_known_args(
+        cast(Sequence[str], _clean_jobscript(jobscript)),
+    )
 
     if unknown_arg:
         raise ValueError("Unrecognized SBATCH arguments: {}".format(" ".join(unknown_arg)))

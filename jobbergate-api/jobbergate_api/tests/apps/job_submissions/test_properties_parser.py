@@ -362,7 +362,10 @@ def test_jobscript_to_dict__raises_exception_for_unknown_parameter():
         jobscript_to_dict("#SBATCH --foo\n#SBATCH --bar=0")
 
 
-@pytest.mark.parametrize("item", filter(lambda i: i.slurmrestd_var_name, sbatch_to_slurm))
+@pytest.mark.parametrize(
+    "item",
+    filter(lambda i: getattr(i, "slurmrestd_var_name", False), sbatch_to_slurm),
+)
 def test_convert_sbatch_to_slurm_api__success(item):
     """
     Test if the keys in a dictionary are properly renamed from SBATCH to Slurm Rest API namespace.
