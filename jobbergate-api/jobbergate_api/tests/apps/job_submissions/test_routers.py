@@ -75,11 +75,16 @@ async def test_create_job_submission__with_client_id_in_token(
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 1
 
-    id_rows = await database.fetch_all("SELECT id FROM job_submissions")
-    assert len(id_rows) == 1
-
     job_submission = JobSubmissionResponse(**response.json())
-    assert job_submission.id == id_rows[0][0]
+
+    # Check that the response correspond to the entry in the database
+    job_submission_raw_data = await database.fetch_one(
+        query=job_submissions_table.select().where(job_submissions_table.c.id == 1)
+    )
+    assert job_submission == JobSubmissionResponse(**job_submission_raw_data)  # type: ignore
+
+    # Check that each field is correctly set
+    assert job_submission.id == 1
     assert job_submission.job_submission_name == "sub1"
     assert job_submission.job_submission_owner_email == "owner1@org.com"
     assert job_submission.job_submission_description is None
@@ -153,11 +158,16 @@ async def test_create_job_submission__with_client_id_in_request_body(
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 1
 
-    id_rows = await database.fetch_all("SELECT id FROM job_submissions")
-    assert len(id_rows) == 1
-
     job_submission = JobSubmissionResponse(**response.json())
-    assert job_submission.id == id_rows[0][0]
+
+    # Check that the response correspond to the entry in the database
+    job_submission_raw_data = await database.fetch_one(
+        query=job_submissions_table.select().where(job_submissions_table.c.id == 1)
+    )
+    assert job_submission == JobSubmissionResponse(**job_submission_raw_data)  # type: ignore
+
+    # Check that each field is correctly set
+    assert job_submission.id == 1
     assert job_submission.job_submission_name == "sub1"
     assert job_submission.job_submission_owner_email == "owner1@org.com"
     assert job_submission.job_submission_description is None
@@ -231,11 +241,15 @@ async def test_create_job_submission__with_execution_directory(
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 1
 
-    id_rows = await database.fetch_all("SELECT id FROM job_submissions")
-    assert len(id_rows) == 1
-
     job_submission = JobSubmissionResponse(**response.json())
-    assert job_submission.id == id_rows[0][0]
+
+    # Check that the response correspond to the entry in the database
+    job_submission_raw_data = await database.fetch_one(
+        query=job_submissions_table.select().where(job_submissions_table.c.id == 1)
+    )
+    assert job_submission == JobSubmissionResponse(**job_submission_raw_data)  # type: ignore
+
+    assert job_submission.id == 1
     assert job_submission.job_submission_name == "sub1"
     assert job_submission.job_submission_owner_email == "owner1@org.com"
     assert job_submission.job_submission_description is None
