@@ -1,13 +1,16 @@
+"""
+Test the properties parser module.
+"""
 import contextlib
 import inspect
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import MutableMapping
 from unittest import mock
-from pydantic import ValidationError
 
 import pytest
 from bidict import bidict
+from pydantic import ValidationError
 
 from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_submissions.properties_parser import (
@@ -76,8 +79,9 @@ def test_flagged_line(line, desired_value):
 )
 def test_clean_line(line, desired_value):
     """
-    Check if the provided lines are cleaned properly, i.e.,
-    identification flag, inline comments, and comment mark are all removed.
+    Check if the provided lines are cleaned properly.
+
+    I.e., identification flag, inline comments, and comment mark are all removed.
     """
     actual_value = _clean_line(line)
     assert actual_value == desired_value
@@ -98,9 +102,9 @@ def test_clean_line(line, desired_value):
 )
 def test_split_line(line, desired_value):
     """
-    Check if the provided lines are splitted properly at white spaces and equal
-    character. This procedure is important because it is the way argparse
-    expects to receive the parameters.
+    Check if the provided lines are splitted properly at white spaces and equal character.
+
+    This procedure is important because it is the way argparse expects to receive the parameters.
     """
     actual_value = _split_line(line)
     assert actual_value == desired_value
@@ -141,6 +145,7 @@ def dummy_slurm_script():
 def test_clean_jobscript(dummy_slurm_script):
     """
     Check if all sbatch parameters are correctly extracted from a job script.
+
     This operation combines many of the functions tested above (filter,
     clean, and slit the parameters on each line).
     """
@@ -173,8 +178,7 @@ def test_clean_jobscript(dummy_slurm_script):
 @pytest.mark.parametrize("item", sbatch_to_slurm)
 class TestSbatchToSlurmList:
     """
-    Test all the fields of the objects SbatchToSlurm that are
-    stored in the list sbatch_to_slurm.
+    Test all the fields of the objects SbatchToSlurm that are stored in the list sbatch_to_slurm.
     """
 
     def test_slurmrestd_var_name__is_string(self, item):
@@ -204,8 +208,9 @@ class TestSbatchToSlurmList:
 
     def test_sbatch__is_not_empty(self, item):
         """
-        Check if the field sbatch is not empty by asserting that it has more
-        than three characters, since it starts with a double hyphen.
+        Check if the field sbatch is not empty by asserting that it has more than three characters.
+
+        Notice it is supposed to start with a double hyphen.
         """
         assert len(item.sbatch) >= 3
 
@@ -230,8 +235,7 @@ class TestSbatchToSlurmList:
 
     def test_sbatch_short__is_not_empty(self, item):
         """
-        Check if of the optional field sbatch_short is equal to two, since it
-        should be a hyphen and a letter.
+        Check if of the optional field sbatch_short is equal to two, since it should be a hyphen and a letter.
         """
         if item.sbatch_short:
             assert len(item.sbatch_short) == 2
@@ -262,9 +266,10 @@ class TestSbatchToSlurmList:
 @pytest.mark.parametrize("field", ["slurmrestd_var_name", "sbatch", "sbatch_short"])
 def test_sbatch_to_slurm_list__contains_only_unique_values(field):
     """
-    Test that any given field has no duplicated values for all parameters stored
-    at sbatch_to_slurm. This aims to avoid ambiguity at the SBATCH argparser and
-    the two-way mapping between SBATCH and Slurm Rest API namespaces.
+    Test that any given field has no duplicated values for all parameters stored at sbatch_to_slurm.
+
+    This aims to avoid ambiguity at the SBATCH argparser and the two-way mapping between
+    SBATCH and Slurm Rest API namespaces.
     """
     list_of_values = [getattr(i, field) for i in sbatch_to_slurm if bool(getattr(i, field))]
 
@@ -279,7 +284,7 @@ class TestArgumentParserCustomExit:
     @pytest.fixture(scope="module")
     def parser(self):
         """
-        An instance of parser, used to support the tests in this class.
+        Support the tests in this class bt providing an instance of the parser.
         """
         parser = ArgumentParserCustomExit()
         parser.add_argument("--foo", type=int)
@@ -288,8 +293,7 @@ class TestArgumentParserCustomExit:
 
     def test_argument_parser_success(self, parser):
         """
-        Test the base case, where the arguments are successfully parsed and
-        converted to the expected type.
+        Test the base case, where the arguments are successfully parsed and converted to the expected type.
         """
         args = parser.parse_args("--foo=10 --bar".split())
         assert {"foo": 10, "bar": True} == vars(args)
@@ -303,8 +307,7 @@ class TestArgumentParserCustomExit:
 
     def test_argument_parser_raise_value_error_in_case_of_wrong_type(self, parser):
         """
-        Test that ValueError is raised when the value for some parameter is
-        incompatible with its type.
+        Test that ValueError is raised when the value for some parameter is incompatible with its type.
         """
         with pytest.raises(ValueError, match="error: argument --foo: invalid int value:"):
             parser.parse_args("--foo some_text".split())
@@ -320,8 +323,7 @@ def test_build_parser():
 
 def test_build_mapping_sbatch_to_slurm():
     """
-    Test if build_mapping_sbatch_to_slurm runs with no problem and
-    returns the correct type.
+    Test if build_mapping_sbatch_to_slurm runs with no problem and returns the correct type.
     """
     mapping = build_mapping_sbatch_to_slurm()
     assert isinstance(mapping, bidict)
@@ -329,10 +331,10 @@ def test_build_mapping_sbatch_to_slurm():
 
 def test_jobscript_to_dict__success(dummy_slurm_script):
     """
-    Test if the SBATCH parameters are properly extracted from a job script
-    and returned in a dictionary mapping parameters to their value.
-    """
+    Test if the SBATCH parameters are properly extracted from a job script.
 
+    They are expected to be returned a dictionary mapping parameters to their value.
+    """
     desired_dict = {
         "no_kill": True,
         "requeue": False,
@@ -363,8 +365,9 @@ def test_jobscript_to_dict__raises_exception_for_unknown_parameter():
 @pytest.mark.parametrize("item", filter(lambda i: i.slurmrestd_var_name, sbatch_to_slurm))
 def test_convert_sbatch_to_slurm_api__success(item):
     """
-    Test if the keys in a dictionary are properly renamed from SBATCH to Slurm
-    Rest API namespace. Notice the values should not be affected.
+    Test if the keys in a dictionary are properly renamed from SBATCH to Slurm Rest API namespace.
+
+    Notice the values should not be affected.
     """
     desired_dict = {item.slurmrestd_var_name: None}
 
@@ -376,8 +379,7 @@ def test_convert_sbatch_to_slurm_api__success(item):
 
 def test_convert_sbatch_to_slurm_api__raises_exception_for_unknown_parameter():
     """
-    Test if the conversion of dictionary keys from SBATCH to Slurm Rest API
-    namespace raises KeyError when facing unknown names.
+    Test the conversion of dict keys from SBATCH to Slurm Rest API raises KeyError when facing unknown names.
     """
     with pytest.raises(KeyError, match="Impossible to convert from SBATCH to Slurm REST API:"):
         convert_sbatch_to_slurm_api(dict(foo=0, bar=1))
@@ -385,8 +387,9 @@ def test_convert_sbatch_to_slurm_api__raises_exception_for_unknown_parameter():
 
 def test_get_job_parameters(dummy_slurm_script):
     """
-    Test if all SBATCH parameters are properly extracted from a given job script,
-    the name of each of them is mapped to Slurm Rest API namespace and returned
+    Test if all SBATCH parameters are properly extracted from a given job script.
+
+    The name of each of them is mapped to Slurm Rest API namespace and returned
     in a dictionary. Notice get_job_parameters accepts extra keywords that can be
     used to overwrite the values from the job script.
     """
@@ -433,8 +436,9 @@ def mock_job_script_files():
 
 class TestGetJobPropertiesFromJobScript:
     """
-    Test the get_job_properties_from_job_script function.It covers job properties obtained
-    from the job script and from the users when creating a job submission.
+    Test the get_job_properties_from_job_script function.
+
+    It covers job properties obtained from the job script and from the users when creating a job submission.
     """
 
     def test_base_case(self, mock_job_script_files):
@@ -521,7 +525,7 @@ class TestBidictMapping:
     @pytest.fixture
     def dummy_mapping(self):
         """
-        A dummy dictionary used for testing.
+        Provide a dummy dictionary used for testing.
         """
         return {f"key_{i}": f"value_{i}" for i in range(5)}
 
@@ -539,8 +543,9 @@ class TestBidictMapping:
 
     def test_bidict__can_be_compared_to_a_dictionary_inverse(self, dummy_mapping):
         """
-        Check if bidict can be comparable to a dictionary, this time checking
-        its inverse capability (i.e., swapping keys and values).
+        Check if bidict can be comparable to a dictionary.
+
+        This time checking its inverse capability (i.e., swapping keys and values).
         """
         desired_value = {value: key for key, value in dummy_mapping.items()}
 
@@ -549,8 +554,9 @@ class TestBidictMapping:
 
 class TestExclusiveParameter:
     """
-    --exclusive is a special SBATCH parameter that can be used in some different ways:
+    --exclusive is a special SBATCH parameter that can be used in some different ways.
 
+    See the details:
     1. --exclusive as a flag, meaning the value 'exclusive' should be recovered for slurmd.
     2. --exclusive=<value>, meaning the value <value> should be recovered for slurmd.
     According to the Slurm documentation, the value can be 'user' or 'mcs'.
