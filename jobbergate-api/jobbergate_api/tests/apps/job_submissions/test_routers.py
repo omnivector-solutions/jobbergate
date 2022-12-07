@@ -410,6 +410,10 @@ async def test_get_job_submission_by_id(
             job_script_id=inserted_job_script_id,
             job_submission_name="sub1",
             job_submission_owner_email="owner1@org.com",
+            execution_parameters={
+                "name": "job-submission-name",
+                "comment": "I am a comment",
+            },
         ),
     )
 
@@ -509,16 +513,28 @@ async def test_get_job_submissions__no_param(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub1",
                 job_submission_owner_email="owner1@org.com",
+                execution_parameters={
+                    "name": "job-submission-name-1",
+                    "comment": "I am a comment",
+                },
             ),
             dict(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub2",
                 job_submission_owner_email="owner999@org.com",
+                execution_parameters={
+                    "name": "job-submission-name-2",
+                    "comment": "I am a comment",
+                },
             ),
             dict(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub3",
                 job_submission_owner_email="owner1@org.com",
+                execution_parameters={
+                    "name": "job-submission-name-3",
+                    "comment": "I am a comment",
+                },
             ),
         ),
     )
@@ -612,16 +628,28 @@ async def test_get_job_submissions__with_all_param(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub1",
                 job_submission_owner_email="owner1@org.com",
+                execution_parameters={
+                    "name": "job-submission-name-1",
+                    "comment": "I am a comment",
+                },
             ),
             dict(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub2",
                 job_submission_owner_email="owner999@org.com",
+                execution_parameters={
+                    "name": "job-submission-name-2",
+                    "comment": "I am a comment",
+                },
             ),
             dict(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub3",
                 job_submission_owner_email="owner1@org.com",
+                execution_parameters={
+                    "name": "job-submission-name-3",
+                    "comment": "I am a comment",
+                },
             ),
         ),
     )
@@ -1414,6 +1442,10 @@ async def test_job_submissions_agent_pending__success(
                 job_submission_owner_email="email1@dummy.com",
                 status=JobSubmissionStatus.CREATED,
                 client_id="dummy-client",
+                execution_parameters={
+                    "name": "job-submission-name-1",
+                    "comment": "I am a comment",
+                },
             ),
             dict(
                 job_script_id=inserted_job_script_id,
@@ -1421,6 +1453,10 @@ async def test_job_submissions_agent_pending__success(
                 job_submission_owner_email="email2@dummy.com",
                 status=JobSubmissionStatus.COMPLETED,
                 client_id="dummy-client",
+                execution_parameters={
+                    "name": "job-submission-name-2",
+                    "comment": "I am a comment",
+                },
             ),
             dict(
                 job_script_id=inserted_job_script_id,
@@ -1428,6 +1464,10 @@ async def test_job_submissions_agent_pending__success(
                 job_submission_owner_email="email3@dummy.com",
                 status=JobSubmissionStatus.CREATED,
                 client_id="silly-client",
+                execution_parameters={
+                    "name": "job-submission-name-3",
+                    "comment": "I am a comment",
+                },
             ),
             dict(
                 job_script_id=inserted_job_script_id,
@@ -1435,6 +1475,10 @@ async def test_job_submissions_agent_pending__success(
                 job_submission_owner_email="email4@dummy.com",
                 status=JobSubmissionStatus.CREATED,
                 client_id="dummy-client",
+                execution_parameters={
+                    "name": "job-submission-name-4",
+                    "comment": "I am a comment",
+                },
             ),
         ),
     )
