@@ -144,7 +144,7 @@ async def job_submission_get(job_submission_id: int = Query(...)):
 
     logger.debug(f"Job-submission data: {job_submission_data=}")
 
-    return job_submission_data
+    return JobSubmissionResponse(**job_submission_data)  # type: ignore
 
 
 @router.get(

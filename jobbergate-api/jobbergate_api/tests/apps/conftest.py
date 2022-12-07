@@ -92,6 +92,10 @@ def job_submission_data():
         "job_submission_owner_email": "owner1@org.com",
         "client_id": "dummy-client-id",
         "status": JobSubmissionStatus.CREATED,
+        "execution_parameters": {
+            "name": "job-submission-name",
+            "comment": "I am a comment",
+        },
     }
 
 

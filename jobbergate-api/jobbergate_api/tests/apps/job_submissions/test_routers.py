@@ -426,6 +426,9 @@ async def test_get_job_submission_by_id(
     assert data["job_submission_owner_email"] == "owner1@org.com"
     assert data["job_script_id"] == inserted_job_script_id
 
+    assert data["execution_parameters"]["name"] == "job-submission-name"
+    assert data["execution_parameters"]["comment"] == "I am a comment"
+
 
 @pytest.mark.asyncio
 async def test_get_job_submission_by_id_bad_permission(
