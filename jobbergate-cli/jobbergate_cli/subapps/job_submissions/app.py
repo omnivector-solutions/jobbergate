@@ -3,6 +3,7 @@ Provide a ``typer`` app that can interact with Job Submission data in a cruddy m
 """
 
 from pathlib import Path
+from textwrap import dedent
 from typing import Any, Dict, Optional, cast
 
 import typer
@@ -19,6 +20,7 @@ from jobbergate_cli.subapps.job_submissions.tools import create_job_submission, 
 HIDDEN_FIELDS = [
     "created_at",
     "updated_at",
+    "execution_parameters",
 ]
 
 
@@ -50,12 +52,26 @@ def create(
     ),
     execution_directory: Optional[Path] = typer.Option(
         None,
-        help="""
+        help=dedent(
+            """
             The path on the cluster where the job script should be executed.
             If provided as a relative path, it will be converted as an absolute path from your current
-            working directory. If you use "~" to denote your home directory, the path will be expanded to an absolute
-            path for your home directory on *this* machine.
-        """,
+            working directory. If you use "~" to denote your home directory, the path will be expanded to an
+            absolute path for your home directory on *this* machine.
+            """
+        ).strip(),
+    ),
+    execution_parameters: Optional[Path] = typer.Option(
+        None,
+        help=dedent(
+            """
+            The path to a JSON file containing the parameters to be passed to the job submission.
+            See more details at: https://slurm.schedmd.com/rest_api.html#v0.0.36_job_properties
+            """
+        ).strip(),
+        exists=True,
+        readable=True,
+        resolve_path=True,
     ),
 ):
     """
@@ -73,6 +89,7 @@ def create(
         description=description,
         execution_directory=execution_directory,
         cluster_name=cluster_name,
+        execution_parameters_file=execution_parameters,
     )
     render_single_result(
         jg_ctx,
@@ -86,7 +103,11 @@ def create(
 @handle_abort
 def list_all(
     ctx: typer.Context,
-    show_all: bool = typer.Option(False, "--all", help="Show all job submissions, even the ones owned by others"),
+    show_all: bool = typer.Option(
+        False,
+        "--all",
+        help="Show all job submissions, even the ones owned by others",
+    ),
     search: Optional[str] = typer.Option(None, help="Apply a search term to results"),
     sort_order: SortOrder = typer.Option(SortOrder.UNSORTED, help="Specify sort order"),
     sort_field: Optional[str] = typer.Option(None, help="The field by which results should be sorted"),
