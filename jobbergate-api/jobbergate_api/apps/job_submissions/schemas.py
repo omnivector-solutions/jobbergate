@@ -284,7 +284,7 @@ class JobSubmissionCreateRequest(BaseModel):
     job_script_id: int
     execution_directory: Optional[Path]
     client_id: Optional[str]
-    execution_parameters: Optional[JobProperties]
+    execution_parameters: JobProperties = Field(default_factory=dict)
 
     class Config:
         schema_extra = job_submission_meta_mapper
