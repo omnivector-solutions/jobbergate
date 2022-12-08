@@ -9,6 +9,7 @@ from jobbergate_cli.config import settings
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobSubmissionCreateRequestData, JobSubmissionResponse
+from jobbergate_cli.subapps.job_scripts.tools import validate_parameter_file
 
 
 def create_job_submission(
@@ -18,6 +19,7 @@ def create_job_submission(
     description: Optional[str] = None,
     cluster_name: Optional[str] = None,
     execution_directory: Optional[Path] = None,
+    execution_parameters_file: Optional[Path] = None,
 ) -> JobSubmissionResponse:
     """
     Create a Job Submission from the given Job Script.
@@ -51,11 +53,17 @@ def create_job_submission(
         ),
     )
 
+    if execution_parameters_file is None:
+        execution_parameters = None
+    else:
+        execution_parameters = validate_parameter_file(execution_parameters_file)
+
     job_submission_data = JobSubmissionCreateRequestData(
         job_submission_name=name,
         job_submission_description=description,
         job_script_id=job_script_id,
         cluster_name=cluster_name,
+        execution_parameters=execution_parameters,
     )
 
     if execution_directory is not None:
