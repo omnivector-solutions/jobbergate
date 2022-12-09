@@ -80,7 +80,7 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     account: Optional[str] = Field(
         description="Charge resources used by this job to specified account.",
     )
-    account_gather_freqency: Optional[str] = Field(
+    account_gather_frequency: Optional[str] = Field(
         description="Define the job accounting and profiling sampling intervals.",
     )
     argv: Optional[List[str]] = Field(description="Arguments to the script.")
@@ -161,8 +161,11 @@ class JobProperties(BaseModel, extra=Extra.forbid):
             "'user' option or with the 'mcs' option)."
         )
     )
-    get_user_environment: Optional[bool] = Field(
-        description="Load new login environment for user on job node."
+    get_user_environment: int = Field(
+        default=1,
+        description="Load new login environment for user on job node.",
+        ge=0,
+        le=1,
     )
     gres: Optional[str] = Field(
         description="Specifies a comma delimited list of generic consumable resources."
