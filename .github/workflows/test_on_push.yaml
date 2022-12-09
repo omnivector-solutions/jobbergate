@@ -52,7 +52,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.6'
+          python-version: '3.6.15'
           architecture: 'x64'
       - uses: Gr1N/setup-poetry@v7
         with:
