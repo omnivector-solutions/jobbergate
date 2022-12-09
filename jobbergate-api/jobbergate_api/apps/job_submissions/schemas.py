@@ -63,7 +63,7 @@ job_submission_meta_mapper = MetaMapper(
     execution_parameters=MetaField(
         description=(
             "The parameters to be passed to the job submission. "
-            "See more details at: https://slurm.schedmd.com/rest_api.html#v0.0.36_job_properties"
+            "See more details at: https://slurm.schedmd.com/rest_api.html"
         ),
         example={"name": "job-submission-name", "comment": "I am a comment"},
     ),
@@ -74,7 +74,7 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     """
     Specialized model for job properties.
 
-    See more details at: https://slurm.schedmd.com/rest_api.html#v0.0.36_job_properties
+    See more details at: https://slurm.schedmd.com/rest_api.html
     """
 
     account: Optional[str] = Field(

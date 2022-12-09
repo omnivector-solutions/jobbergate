@@ -66,7 +66,7 @@ def create(
         help=dedent(
             """
             The path to a JSON file containing the parameters to be passed to the job submission.
-            See more details at: https://slurm.schedmd.com/rest_api.html#v0.0.36_job_properties
+            See more details at: https://slurm.schedmd.com/rest_api.html
             """
         ).strip(),
         exists=True,
