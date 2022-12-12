@@ -6,6 +6,8 @@ import json
 import pathlib
 from typing import Any, Dict, List, Optional, cast
 
+from loguru import logger
+
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobScriptCreateRequestData, JobScriptResponse
@@ -131,12 +133,19 @@ def create_job_script(
 
 def download_job_script_files(
     job_script_data: JobScriptResponse,
-    output_path: pathlib.Path,
-) -> None:
+    destination_path: pathlib.Path,
+) -> List[pathlib.Path]:
     """
     Download the job script files from the API and save them to the output path.
     """
+    logger.debug(f"Saving job script files to {destination_path.as_posix()}")
+    downloaded_files: List[pathlib.Path] = []
+
     for filename, file_content in job_script_data.job_script_files.files.items():
-        file_path = output_path / filename
+        file_path = destination_path / filename
         file_path.parent.mkdir(parents=True, exist_ok=True)
         file_path.write_text(file_content)
+        downloaded_files.append(file_path)
+
+    logger.debug(f"The following files were saved: {list(map(str, downloaded_files))}")
+    return downloaded_files

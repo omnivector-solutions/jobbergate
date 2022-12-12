@@ -4,11 +4,16 @@ import pathlib
 import httpx
 import pytest
 
-from jobbergate_cli.constants import JOBBERGATE_APPLICATION_CONFIG
+from jobbergate_cli.constants import (
+    JOBBERGATE_APPLICATION_CONFIG,
+    JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
+    JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
+)
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.tools import (
+    download_application_files,
     execute_application,
     fetch_application_data,
     get_upload_files,
@@ -242,3 +247,58 @@ def test_execute_application__with_fast_mode(
         bar="BAR",
         baz="zab",  # Only 'baz' has a default value, so it should be used
     )
+
+
+class TestDownloadApplicationFiles:
+    """
+    Test the download_application_files function.
+    """
+
+    def test_download_application_files__no_files(self, tmp_path):
+        """
+        Test that the function returns an empty list if there are no files to download.
+        """
+        application_data = ApplicationResponse(
+            id=1,
+            application_name="dummy",
+            application_owner_email="dummy@email.com",
+            application_uploaded=True,
+        )
+
+        desired_list_of_files = []
+
+        assert download_application_files(application_data, tmp_path) == desired_list_of_files
+        assert list(tmp_path.rglob("*")) == desired_list_of_files
+
+    def test_download_application_files__all_files(
+        self,
+        tmp_path,
+        dummy_module_source,
+        dummy_config_source,
+        dummy_template_source,
+    ):
+        """
+        Test that the function downloads all files.
+        """
+        application_data = ApplicationResponse(
+            id=13,
+            application_name="dummy",
+            application_owner_email="dummy@dummy.org",
+            application_uploaded=True,
+            application_source_file=dummy_module_source,
+            application_config=dummy_config_source,
+            application_templates={"test-job-script.py.j2": dummy_template_source},
+        )
+
+        desired_list_of_files = [
+            tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
+            tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
+            tmp_path / "templates" / "test-job-script.py.j2",
+        ]
+
+        assert download_application_files(application_data, tmp_path) == desired_list_of_files
+        assert set(tmp_path.rglob("*")) == {tmp_path / "templates", *desired_list_of_files}
+
+        assert (tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME).read_text() == dummy_config_source
+        assert (tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME).read_text() == dummy_module_source
+        assert (tmp_path / "templates" / "test-job-script.py.j2").read_text() == dummy_template_source

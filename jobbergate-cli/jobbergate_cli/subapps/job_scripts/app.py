@@ -331,7 +331,13 @@ def download_files(
     """
     jg_ctx: JobbergateContext = ctx.obj
     result = fetch_job_script_data(jg_ctx, id)
-    download_job_script_files(
+    downloaded_files = download_job_script_files(
         job_script_data=result,
-        output_path=pathlib.Path.cwd(),
+        destination_path=pathlib.Path.cwd(),
+    )
+    terminal_message(
+        f"""
+        A total of {len(downloaded_files)} job script files were successfully downloaded.
+        """,
+        subject="Job script download succeeded",
     )

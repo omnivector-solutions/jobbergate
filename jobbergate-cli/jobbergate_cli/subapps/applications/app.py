@@ -339,7 +339,13 @@ def download_files(
     """
     jg_ctx: JobbergateContext = ctx.obj
     result = fetch_application_data(jg_ctx, id=id, identifier=identifier)
-    download_application_files(
+    downloaded_files = download_application_files(
         application_data=result,
         destination_path=pathlib.Path.cwd(),
+    )
+    terminal_message(
+        f"""
+        A total of {len(downloaded_files)} application files were successfully downloaded.
+        """,
+        subject="Application download succeeded",
     )

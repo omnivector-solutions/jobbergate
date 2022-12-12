@@ -6,7 +6,7 @@ import contextlib
 import copy
 import io
 import pathlib
-from typing import Any, Dict, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import yaml
 from loguru import logger
@@ -193,25 +193,34 @@ def upload_application(
 def download_application_files(
     application_data: ApplicationResponse,
     destination_path: pathlib.Path,
-) -> None:
+) -> List[pathlib.Path]:
     """
     Download the application files from the API and save into a local destination.
     """
+    logger.debug(f"Saving application files to {destination_path.as_posix()}")
+    downloaded_files: List[pathlib.Path] = []
+
     if application_data.application_config:
         config_path = destination_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
         config_path.parent.mkdir(parents=True, exist_ok=True)
         config_path.write_text(application_data.application_config)
+        downloaded_files.append(config_path)
 
     if application_data.application_source_file:
         source_path = destination_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
         source_path.parent.mkdir(parents=True, exist_ok=True)
         source_path.write_text(application_data.application_source_file)
+        downloaded_files.append(source_path)
 
     if application_data.application_templates:
         for filename, file_content in application_data.application_templates.items():
             template_path = destination_path / "templates" / filename
             template_path.parent.mkdir(parents=True, exist_ok=True)
             template_path.write_text(file_content)
+            downloaded_files.append(template_path)
+
+    logger.debug(f"The following files were saved: {list(map(str, downloaded_files))}")
+    return downloaded_files
 
 
 def load_application_config_from_source(config_source: str) -> JobbergateApplicationConfig:

@@ -31,6 +31,7 @@ def test_list_all__makes_request_and_renders_results():
             "create-application",
             "delete-application",
             "update-application",
+            "download-application",
             "list-job-scripts",
             "get-job-script",
             "create-job-script",
@@ -40,6 +41,7 @@ def test_list_all__makes_request_and_renders_results():
             "get-job-submission",
             "create-job-submission",
             "delete-job-submission",
+            "download-job-script",
         ]
     )
 

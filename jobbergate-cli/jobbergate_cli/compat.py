@@ -10,7 +10,7 @@ from jobbergate_cli.subapps.applications.app import delete as delete_application
 from jobbergate_cli.subapps.applications.app import get_one as get_application
 from jobbergate_cli.subapps.applications.app import list_all as list_applications
 from jobbergate_cli.subapps.applications.app import update as update_application
-from jobbergate_cli.subapps.job_scripts.app import download_files as download_files_application
+from jobbergate_cli.subapps.applications.app import download_files as download_files_application
 from jobbergate_cli.subapps.job_scripts.app import create as create_job_script
 from jobbergate_cli.subapps.job_scripts.app import delete as delete_job_script
 from jobbergate_cli.subapps.job_scripts.app import get_one as get_job_script
