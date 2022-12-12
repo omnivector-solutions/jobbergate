@@ -12,7 +12,7 @@ from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.render import StyleMapper, render_json, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobScriptResponse, ListResponseEnvelope
-from jobbergate_cli.subapps.job_scripts.tools import create_job_script, fetch_job_script_data
+from jobbergate_cli.subapps.job_scripts.tools import create_job_script, download_job_script_files, fetch_job_script_data
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
 from jobbergate_cli.subapps.job_submissions.tools import create_job_submission
 from jobbergate_cli.text_tools import dedent
@@ -318,3 +318,20 @@ def show_files(
         else:
             footer = "This is the main job script file" if main_file_path == file_path else None
             terminal_message(file_contents, subject=file_path, footer=footer)
+
+
+@app.command()
+@handle_abort
+def download_files(
+    ctx: typer.Context,
+    id: int = typer.Option(int, help="The specific id of the job script."),
+):
+    """
+    Download the files from a job script to the current working directory.
+    """
+    jg_ctx: JobbergateContext = ctx.obj
+    result = fetch_job_script_data(jg_ctx, id)
+    download_job_script_files(
+        job_script_data=result,
+        output_path=pathlib.Path.cwd(),
+    )

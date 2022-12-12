@@ -127,3 +127,16 @@ def create_job_script(
     )
 
     return job_script_result
+
+
+def download_job_script_files(
+    job_script_data: JobScriptResponse,
+    output_path: pathlib.Path,
+) -> None:
+    """
+    Download the job script files from the API and save them to the output path.
+    """
+    for filename, file_content in job_script_data.job_script_files.files.items():
+        file_path = output_path / filename
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(file_content)
