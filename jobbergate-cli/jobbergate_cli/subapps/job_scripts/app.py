@@ -336,8 +336,12 @@ def download_files(
         destination_path=pathlib.Path.cwd(),
     )
     terminal_message(
-        f"""
-        A total of {len(downloaded_files)} job script files were successfully downloaded.
-        """,
+        dedent(
+            """
+            A total of {} job script files were successfully downloaded.
+            """.format(
+                len(downloaded_files)
+            )
+        ),
         subject="Job script download succeeded",
     )
