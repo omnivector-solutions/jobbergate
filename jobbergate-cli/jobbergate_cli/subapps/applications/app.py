@@ -12,7 +12,12 @@ from jobbergate_cli.exceptions import handle_abort
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
-from jobbergate_cli.subapps.applications.tools import fetch_application_data, load_default_config, upload_application
+from jobbergate_cli.subapps.applications.tools import (
+    download_application_files,
+    fetch_application_data,
+    load_default_config,
+    upload_application,
+)
 
 
 # TODO: move hidden field logic to the API
@@ -313,4 +318,28 @@ def delete(
         The application was successfully deleted.
         """,
         subject="Application delete succeeded",
+    )
+
+
+@app.command()
+@handle_abort
+def download_files(
+    ctx: typer.Context,
+    id: Optional[int] = typer.Option(
+        None,
+        help=f"The specific id of the application. {ID_NOTE}",
+    ),
+    identifier: Optional[str] = typer.Option(
+        None,
+        help=f"The human-friendly identifier of the application. {IDENTIFIER_NOTE}",
+    ),
+):
+    """
+    Download the files from an application to the current working directory.
+    """
+    jg_ctx: JobbergateContext = ctx.obj
+    result = fetch_application_data(jg_ctx, id=id, identifier=identifier)
+    download_application_files(
+        application_data=result,
+        destination_path=pathlib.Path.cwd(),
     )

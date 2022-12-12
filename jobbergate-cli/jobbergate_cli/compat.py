@@ -48,6 +48,10 @@ def add_legacy_compatible_commands(app: typer.Typer):
         name="update-application",
         help="UPDATE an Application.",
     )(update_application)
+    app.command(
+        name="download-application",
+        help="Download application files.",
+    )(update_application)
 
     # Job Scripts
     app.command(

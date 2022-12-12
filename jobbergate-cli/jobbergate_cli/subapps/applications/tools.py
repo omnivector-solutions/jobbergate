@@ -11,7 +11,12 @@ from typing import Any, Dict, Optional, Tuple, cast
 import yaml
 from loguru import logger
 
-from jobbergate_cli.constants import JOBBERGATE_APPLICATION_CONFIG, JOBBERGATE_APPLICATION_SUPPORTED_FILES
+from jobbergate_cli.constants import (
+    JOBBERGATE_APPLICATION_CONFIG,
+    JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
+    JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
+    JOBBERGATE_APPLICATION_SUPPORTED_FILES,
+)
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig, JobbergateContext
@@ -183,6 +188,30 @@ def upload_application(
             ),
         )
         return response_code == 201
+
+
+def download_application_files(
+    application_data: ApplicationResponse,
+    destination_path: pathlib.Path,
+) -> None:
+    """
+    Download the application files from the API and save into a local destination.
+    """
+    if application_data.application_config:
+        config_path = destination_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_text(application_data.application_config)
+
+    if application_data.application_source_file:
+        source_path = destination_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_text(application_data.application_source_file)
+
+    if application_data.application_templates:
+        for filename, file_content in application_data.application_templates.items():
+            template_path = destination_path / "templates" / filename
+            template_path.parent.mkdir(parents=True, exist_ok=True)
+            template_path.write_text(file_content)
 
 
 def load_application_config_from_source(config_source: str) -> JobbergateApplicationConfig:
