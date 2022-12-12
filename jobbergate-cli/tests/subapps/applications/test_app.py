@@ -1,14 +1,19 @@
 import shlex
+from unittest import mock
 
 import httpx
+import pytest
 
+from jobbergate_cli.constants import JOBBERGATE_APPLICATION_CONFIG_FILE_NAME, JOBBERGATE_APPLICATION_MODULE_FILE_NAME
 from jobbergate_cli.schemas import ApplicationResponse, ListResponseEnvelope, Pagination
 from jobbergate_cli.subapps.applications.app import (
     HIDDEN_FIELDS,
     create,
     delete,
+    download_files,
     get_one,
     list_all,
+    pathlib,
     style_mapper,
     update,
 )
@@ -391,3 +396,114 @@ def test_delete__success(respx_mock, make_test_app, dummy_domain, cli_runner):
     assert result.exit_code == 0, f"delete failed: {result.stdout}"
     assert delete_route.called
     assert "Application delete succeeded" in result.stdout
+
+
+class TestDownloadApplicationFiles:
+    """
+    Test the download application files subcommand.
+    """
+
+    @pytest.fixture()
+    def test_app(self, make_test_app):
+        """
+        Fixture to create a test app.
+        """
+        return make_test_app("download", download_files)
+
+    def test_download__success__using_id(
+        self,
+        respx_mock,
+        test_app,
+        dummy_application_data,
+        dummy_domain,
+        cli_runner,
+        mocker,
+        tmp_path,
+        dummy_config_source,
+        dummy_module_source,
+    ):
+        """
+        Test that the download application files subcommand works as expected.
+        """
+        respx_mock.get(f"{dummy_domain}/jobbergate/applications/1").mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                json=dummy_application_data[0],
+            ),
+        )
+        mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.terminal_message")
+
+        with mock.patch.object(pathlib.Path, "cwd", return_value=tmp_path):
+            result = cli_runner.invoke(test_app, shlex.split("download --id=1"))
+
+        assert result.exit_code == 0, f"download failed: {result.stdout}"
+        mocked_render.assert_called_once_with(
+            "A total of 2 application files were successfully downloaded.",
+            subject="Application download succeeded",
+        )
+
+        desired_set_of_files = {
+            tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
+            tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
+        }
+        assert set(tmp_path.rglob("*")) == desired_set_of_files
+
+        assert (tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME).read_text() == dummy_config_source
+        assert (tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME).read_text() == dummy_module_source
+
+    def test_download__success__using_identifier(
+        self,
+        respx_mock,
+        test_app,
+        dummy_application_data,
+        dummy_domain,
+        cli_runner,
+        mocker,
+        tmp_path,
+        dummy_config_source,
+        dummy_module_source,
+    ):
+        """
+        Test that the download application files subcommand works as expected.
+        """
+        respx_mock.get(f"{dummy_domain}/jobbergate/applications/dummy").mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                json=dummy_application_data[0],
+            ),
+        )
+        mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.terminal_message")
+
+        with mock.patch.object(pathlib.Path, "cwd", return_value=tmp_path):
+            result = cli_runner.invoke(test_app, shlex.split("download --identifier=dummy"))
+
+        assert result.exit_code == 0, f"download failed: {result.stdout}"
+        mocked_render.assert_called_once_with(
+            "A total of 2 application files were successfully downloaded.",
+            subject="Application download succeeded",
+        )
+
+        desired_set_of_files = {
+            tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
+            tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
+        }
+        assert set(tmp_path.rglob("*")) == desired_set_of_files
+
+        assert (tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME).read_text() == dummy_config_source
+        assert (tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME).read_text() == dummy_module_source
+
+    def test_download__fails_with_neither_id_or_identifier(self, test_app, cli_runner):
+        """
+        Test that the download application files subcommand fails when neither id nor identifier are supplied.
+        """
+        result = cli_runner.invoke(test_app, shlex.split("download"))
+        assert result.exit_code != 0
+        assert "You must supply either" in result.stdout
+
+    def test_download__fails_with_both_id_and_identifier(self, test_app, cli_runner):
+        """
+        Test that the download application files subcommand fails when both id and identifier are supplied.
+        """
+        result = cli_runner.invoke(test_app, shlex.split("download --id=1 --identifier=dummy"))
+        assert result.exit_code != 0
+        assert "You may not supply both" in result.stdout

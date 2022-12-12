@@ -3,6 +3,7 @@ Provide a ``typer`` app that can interact with Application data in a cruddy mann
 """
 
 import pathlib
+from textwrap import dedent
 from typing import Any, Dict, Optional, cast
 
 import typer
@@ -344,8 +345,12 @@ def download_files(
         destination_path=pathlib.Path.cwd(),
     )
     terminal_message(
-        f"""
-        A total of {len(downloaded_files)} application files were successfully downloaded.
-        """,
+        dedent(
+            """
+            A total of {} application files were successfully downloaded.
+            """.format(
+                len(downloaded_files)
+            )
+        ).strip(),
         subject="Application download succeeded",
     )
