@@ -6,7 +6,6 @@ from unittest import mock
 import httpx
 import pytest
 
-from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import (
     ApplicationResponse,
     JobScriptResponse,
@@ -21,7 +20,6 @@ from jobbergate_cli.subapps.job_scripts.app import (
     delete,
     download_files,
     get_one,
-    handle_abort,
     list_all,
     pathlib,
     show_files,
@@ -470,7 +468,7 @@ class TestDownloadJobScriptFiles:
             ),
         )
 
-        with mock.patch("jobbergate_cli.subapps.job_scripts.app.download_job_script_files") as mocked:
+        with mock.patch("jobbergate_cli.subapps.job_scripts.app.save_job_script_files") as mocked:
             result = cli_runner.invoke(test_app, shlex.split("download --id=1"))
             mocked.assert_not_called()
 
