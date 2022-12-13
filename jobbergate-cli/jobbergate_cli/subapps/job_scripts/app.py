@@ -12,7 +12,7 @@ from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.render import StyleMapper, render_json, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobScriptResponse, ListResponseEnvelope
-from jobbergate_cli.subapps.job_scripts.tools import create_job_script, download_job_script_files, fetch_job_script_data
+from jobbergate_cli.subapps.job_scripts.tools import create_job_script, fetch_job_script_data, save_job_script_files
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
 from jobbergate_cli.subapps.job_submissions.tools import create_job_submission
 from jobbergate_cli.text_tools import dedent
@@ -331,7 +331,7 @@ def download_files(
     """
     jg_ctx: JobbergateContext = ctx.obj
     result = fetch_job_script_data(jg_ctx, id)
-    downloaded_files = download_job_script_files(
+    saved_files = save_job_script_files(
         job_script_data=result,
         destination_path=pathlib.Path.cwd(),
     )
@@ -340,7 +340,7 @@ def download_files(
             """
             A total of {} job script files were successfully downloaded.
             """.format(
-                len(downloaded_files)
+                len(saved_files)
             )
         ),
         subject="Job script download succeeded",

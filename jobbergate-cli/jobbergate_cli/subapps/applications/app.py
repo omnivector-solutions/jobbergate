@@ -14,9 +14,9 @@ from jobbergate_cli.render import StyleMapper, render_list_results, render_singl
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 from jobbergate_cli.subapps.applications.tools import (
-    download_application_files,
     fetch_application_data,
     load_default_config,
+    save_application_files,
     upload_application,
 )
 
@@ -340,7 +340,7 @@ def download_files(
     """
     jg_ctx: JobbergateContext = ctx.obj
     result = fetch_application_data(jg_ctx, id=id, identifier=identifier)
-    downloaded_files = download_application_files(
+    saved_files = save_application_files(
         application_data=result,
         destination_path=pathlib.Path.cwd(),
     )
@@ -349,7 +349,7 @@ def download_files(
             """
             A total of {} application files were successfully downloaded.
             """.format(
-                len(downloaded_files)
+                len(saved_files)
             )
         ).strip(),
         subject="Application download succeeded",

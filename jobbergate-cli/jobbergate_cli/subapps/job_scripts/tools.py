@@ -131,21 +131,21 @@ def create_job_script(
     return job_script_result
 
 
-def download_job_script_files(
+def save_job_script_files(
     job_script_data: JobScriptResponse,
     destination_path: pathlib.Path,
 ) -> List[pathlib.Path]:
     """
-    Download the job script files from the API and save them to the output path.
+    Safe the job script files from the API response to the output path.
     """
     logger.debug(f"Saving job script files to {destination_path.as_posix()}")
-    downloaded_files: List[pathlib.Path] = []
+    saved_files: List[pathlib.Path] = []
 
     for filename, file_content in job_script_data.job_script_files.files.items():
         file_path = destination_path / filename
         file_path.parent.mkdir(parents=True, exist_ok=True)
         file_path.write_text(file_content)
-        downloaded_files.append(file_path)
+        saved_files.append(file_path)
 
-    logger.debug(f"The following files were saved: {list(map(str, downloaded_files))}")
-    return downloaded_files
+    logger.debug(f"The following files were saved: {list(map(str, saved_files))}")
+    return saved_files
