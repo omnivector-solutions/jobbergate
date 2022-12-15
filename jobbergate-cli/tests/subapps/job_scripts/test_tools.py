@@ -3,14 +3,14 @@ import json
 import pathlib
 
 import httpx
-from pydantic import ValidationError
 import pytest
+from pydantic import ValidationError
 
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ApplicationResponse, JobScriptResponse
 from jobbergate_cli.subapps.job_scripts.tools import (
     create_job_script,
-    download_job_script_files,
+    save_job_script_files,
     fetch_job_script_data,
     validate_parameter_file,
 )
@@ -173,14 +173,14 @@ def test_create_job_script__without_a_name(
     assert actual_job_script_data == JobScriptResponse(**desired_job_script_data)
 
 
-class TestDownloadJobScriptFiles:
+class TestSaveJobScriptFiles:
     """
-    Test the download_job_script_files function.
+    Test the save_job_script_files function.
     """
 
-    def test_download_job_scripts_files__no_files(self, dummy_job_script_data):
+    def test_save_job_scripts_files__no_files(self, dummy_job_script_data):
         """
-        Base test for the download_job_script_files function.
+        Base test for the save_job_script_files function.
 
         job_script_files is a required field on JobScriptResponse, so job script files are always present.
         """
@@ -190,7 +190,7 @@ class TestDownloadJobScriptFiles:
         with pytest.raises(ValidationError):
             JobScriptResponse(**job_script_data)
 
-    def test_download_job_scripts_files__all_files(
+    def test_save_job_scripts_files__all_files(
         self,
         tmp_path,
         dummy_job_script_data,
@@ -202,7 +202,7 @@ class TestDownloadJobScriptFiles:
         job_script_data = JobScriptResponse(**dummy_job_script_data[0])
 
         desired_list_of_files = [tmp_path / "application.sh"]
-        actual_list_of_files = download_job_script_files(job_script_data, tmp_path)
+        actual_list_of_files = save_job_script_files(job_script_data, tmp_path)
 
         assert actual_list_of_files == desired_list_of_files
         assert set(tmp_path.rglob("*")) == set(desired_list_of_files)

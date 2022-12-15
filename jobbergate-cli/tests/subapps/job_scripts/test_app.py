@@ -468,7 +468,7 @@ class TestDownloadJobScriptFiles:
             ),
         )
 
-        with mock.patch("jobbergate_cli.subapps.job_scripts.app.save_job_script_files") as mocked:
+        with mock.patch("jobbergate_cli.subapps.job_scripts.tools.save_job_script_files") as mocked:
             result = cli_runner.invoke(test_app, shlex.split("download --id=1"))
             mocked.assert_not_called()
 

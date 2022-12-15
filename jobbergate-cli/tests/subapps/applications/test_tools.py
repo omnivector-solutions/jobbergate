@@ -13,7 +13,7 @@ from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.tools import (
-    download_application_files,
+    save_application_files,
     execute_application,
     fetch_application_data,
     get_upload_files,
@@ -251,10 +251,10 @@ def test_execute_application__with_fast_mode(
 
 class TestDownloadApplicationFiles:
     """
-    Test the download_application_files function.
+    Test the save_application_files function.
     """
 
-    def test_download_application_files__no_files(self, tmp_path):
+    def test_save_application_files__no_files(self, tmp_path):
         """
         Test that the function returns an empty list if there are no files to download.
         """
@@ -267,10 +267,10 @@ class TestDownloadApplicationFiles:
 
         desired_list_of_files = []
 
-        assert download_application_files(application_data, tmp_path) == desired_list_of_files
+        assert save_application_files(application_data, tmp_path) == desired_list_of_files
         assert list(tmp_path.rglob("*")) == desired_list_of_files
 
-    def test_download_application_files__all_files(
+    def test_save_application_files__all_files(
         self,
         tmp_path,
         dummy_module_source,
@@ -296,7 +296,7 @@ class TestDownloadApplicationFiles:
             tmp_path / "templates" / "test-job-script.py.j2",
         ]
 
-        assert download_application_files(application_data, tmp_path) == desired_list_of_files
+        assert save_application_files(application_data, tmp_path) == desired_list_of_files
         assert set(tmp_path.rglob("*")) == {tmp_path / "templates", *desired_list_of_files}
 
         assert (tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME).read_text() == dummy_config_source
