@@ -4,7 +4,7 @@ Parser for Slurm REST API parameters from SBATCH parameters at the job script fi
 from argparse import ArgumentParser
 from dataclasses import dataclass, field
 from itertools import chain
-from typing import Any, Dict, Iterator, List, Sequence, Union, cast
+from typing import Any, Dict, List, Union
 
 from bidict import bidict
 from loguru import logger
@@ -42,7 +42,7 @@ def _split_line(line: str) -> List[str]:
     return line.replace("=", " ").split()
 
 
-def _clean_jobscript(jobscript: str) -> Iterator[str]:
+def _clean_jobscript(jobscript: str) -> List[str]:
     """
     Transform a job script string.
 
@@ -50,12 +50,12 @@ def _clean_jobscript(jobscript: str) -> Iterator[str]:
     the identification flag and mapping a cleaning procedure to them in order
     to remove the identification flag, remove inline comments, and strip extra
     white spaces. Finally, split each pair of parameter/value and chain them
-    in a single iterator.
+    in a single list.
     """
     jobscript_filtered = filter(_flagged_line, jobscript.splitlines())
     jobscript_cleaned = map(_clean_line, jobscript_filtered)
     jobscript_splitted = map(_split_line, jobscript_cleaned)
-    return chain.from_iterable(jobscript_splitted)
+    return list(chain.from_iterable(jobscript_splitted))
 
 
 @dataclass(frozen=True)
@@ -251,9 +251,7 @@ def jobscript_to_dict(jobscript: str) -> Dict[str, Union[str, bool]]:
 
     Raise ValueError if any of the parameters are unknown to the parser.
     """
-    parsed_args, unknown_arg = parser.parse_known_args(
-        cast(Sequence[str], _clean_jobscript(jobscript)),
-    )
+    parsed_args, unknown_arg = parser.parse_known_args(args=_clean_jobscript(jobscript))
 
     if unknown_arg:
         raise ValueError("Unrecognized SBATCH arguments: {}".format(" ".join(unknown_arg)))
