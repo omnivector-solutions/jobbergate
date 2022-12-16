@@ -279,10 +279,9 @@ def convert_sbatch_to_slurm_api(input: Dict[str, Any]) -> Dict[str, Any]:
     for sbatch_name, value in input.items():
         try:
             slurm_name = mapping_sbatch_to_slurm[sbatch_name]
+            mapped[slurm_name] = value
         except KeyError:
             unknown_keys.append(sbatch_name)
-        else:
-            mapped[slurm_name] = value
 
     if unknown_keys:
         error_message = "Impossible to convert from SBATCH to Slurm REST API: {}"
