@@ -663,3 +663,73 @@ class TestExclusiveParameter:
         actual_dict = jobscript_to_dict(jobscript)
 
         assert actual_dict == desired_dict
+
+
+class TestRequeueParameter:
+    """
+    Requeue is a slurm parameter whose value comes from two sbatch flags: --requeue and --no-requeue.
+    """
+
+    def test_empty_jobscript(self):
+        """
+        Base case: no parameters at all.
+        """
+        jobscript = ""
+
+        desired_dict = {}
+
+        actual_dict = jobscript_to_dict(jobscript)
+
+        assert actual_dict == desired_dict
+
+    def test_requeue_flag(self):
+        """
+        Test the first scenario: --requeue.
+        """
+        jobscript = "#SBATCH --requeue"
+
+        desired_dict = {"requeue": True}
+
+        actual_dict = jobscript_to_dict(jobscript)
+
+        assert actual_dict == desired_dict
+
+    def test_no_requeue_flag(self):
+        """
+        Test the first scenario: --no-requeue.
+        """
+        jobscript = "#SBATCH --no-requeue"
+
+        desired_dict = {"requeue": False}
+
+        actual_dict = jobscript_to_dict(jobscript)
+
+        assert actual_dict == desired_dict
+
+    def test_both_exclusive_and_oversubscribe_1(self):
+        """
+        Test that when both are used, the last of them takes precedence.
+
+        In this case, --no-requeue is the last one.
+        """
+        jobscript = "#SBATCH --requeue\n#SBATCH --no-requeue"
+
+        desired_dict = {"requeue": False}
+
+        actual_dict = jobscript_to_dict(jobscript)
+
+        assert actual_dict == desired_dict
+
+    def test_both_exclusive_and_oversubscribe_2(self):
+        """
+        Test that when both are used, the last of them takes precedence.
+
+        In this case, --requeue is the last one.
+        """
+        jobscript = "#SBATCH --no-requeue\n#SBATCH --requeue"
+
+        desired_dict = {"requeue": True}
+
+        actual_dict = jobscript_to_dict(jobscript)
+
+        assert actual_dict == desired_dict

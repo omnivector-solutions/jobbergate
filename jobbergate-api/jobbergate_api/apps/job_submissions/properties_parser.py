@@ -146,7 +146,7 @@ sbatch_to_slurm = [
     SbatchToSlurm("", "--network"),
     SbatchToSlurm("nice", "--nice"),
     SbatchToSlurm("no_kill", "--no-kill", "-k", dict(action="store_const", const=True)),
-    SbatchToSlurm("", "--no-requeue", "", dict(action="store_false", dest="requeue")),
+    SbatchToSlurm("", "--no-requeue", "", dict(action="store_false", dest="requeue", default=None)),
     SbatchToSlurm("", "--nodefile", "-F"),
     SbatchToSlurm("", "--nodelist", "-w"),
     SbatchToSlurm("nodes", "--nodes", "-N"),
@@ -173,7 +173,7 @@ sbatch_to_slurm = [
     SbatchToSlurm("qos", "--qos", "-q"),
     SbatchToSlurm("", "--quiet", "-Q", dict(action="store_const", const=True)),
     SbatchToSlurm("", "--reboot", "", dict(action="store_const", const=True)),
-    SbatchToSlurm("requeue", "--requeue", "", dict(action="store_const", const=True)),
+    SbatchToSlurm("requeue", "--requeue", "", dict(action="store_true", default=None)),
     SbatchToSlurm("reservation", "--reservation"),
     SbatchToSlurm("signal", "--signal"),
     SbatchToSlurm("sockets_per_node", "--sockets-per-node", "", dict(type=int)),
@@ -225,8 +225,7 @@ def build_parser() -> ArgumentParser:
     for item in sbatch_to_slurm:
         args = (i for i in (item.sbatch_short, item.sbatch) if i)
         parser.add_argument(*args, **item.argparser_param)
-    # make --requeue and --no-requeue work together, with default to None
-    parser.set_defaults(requeue=None)
+
     return parser
 
 
