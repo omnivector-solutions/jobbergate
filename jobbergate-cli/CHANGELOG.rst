@@ -6,7 +6,9 @@ This file keeps track of all notable changes to jobbergate-cli
 
 Unreleased
 ----------
-* Added support for `execution_parameters` in job submission at the CLI
+- Added support for `execution_parameters` in job submission at the CLI
+- Added new command to download application files to the current working directory
+- Added new command to download job script files to the current working directory
 
 3.3.4 -- 2022-12-05
 -------------------

@@ -7,11 +7,13 @@ import typer
 
 from jobbergate_cli.subapps.applications.app import create as create_application
 from jobbergate_cli.subapps.applications.app import delete as delete_application
+from jobbergate_cli.subapps.applications.app import download_files as download_files_application
 from jobbergate_cli.subapps.applications.app import get_one as get_application
 from jobbergate_cli.subapps.applications.app import list_all as list_applications
 from jobbergate_cli.subapps.applications.app import update as update_application
 from jobbergate_cli.subapps.job_scripts.app import create as create_job_script
 from jobbergate_cli.subapps.job_scripts.app import delete as delete_job_script
+from jobbergate_cli.subapps.job_scripts.app import download_files as download_files_job_script
 from jobbergate_cli.subapps.job_scripts.app import get_one as get_job_script
 from jobbergate_cli.subapps.job_scripts.app import list_all as list_job_scripts
 from jobbergate_cli.subapps.job_scripts.app import update as update_job_script
@@ -48,6 +50,10 @@ def add_legacy_compatible_commands(app: typer.Typer):
         name="update-application",
         help="UPDATE an Application.",
     )(update_application)
+    app.command(
+        name="download-application",
+        help="Download application files.",
+    )(download_files_application)
 
     # Job Scripts
     app.command(
@@ -70,6 +76,10 @@ def add_legacy_compatible_commands(app: typer.Typer):
         name="delete-job-script",
         help="DELETE a job script",
     )(delete_job_script)
+    app.command(
+        name="download-job-script",
+        help="Download job script files.",
+    )(download_files_job_script)
 
     # Job Submissions
     app.command(
