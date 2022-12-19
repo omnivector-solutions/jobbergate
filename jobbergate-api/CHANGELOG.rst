@@ -6,7 +6,9 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
-* Move SBATCH params to Job Script submission
+- Move SBATCH params to Job Script submission
+- Added field `from_application_id` to filter job scripts on the list endpoint
+- Added field `from_job_script_id` to filter job submissions on the list endpoint
 
 3.3.4 -- 2022-12-05
 -------------------
