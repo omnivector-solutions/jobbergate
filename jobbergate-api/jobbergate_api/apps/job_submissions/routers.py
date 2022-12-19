@@ -168,6 +168,10 @@ async def job_submission_list(
     ),
     search: Optional[str] = Query(None),
     sort_field: Optional[str] = Query(None),
+    from_job_script_id: Optional[int] = Query(
+        None,
+        description="Filter job-submissions by the job-script-id they were created from.",
+    ),
     sort_ascending: bool = Query(True),
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW)),
 ):
@@ -186,6 +190,8 @@ async def job_submission_list(
     if not all:
         query = query.where(job_submissions_table.c.job_submission_owner_email == identity_claims.email)
 
+    if from_job_script_id is not None:
+        query = query.where(job_submissions_table.c.job_script_id == from_job_script_id)
     if slurm_job_ids is not None and slurm_job_ids != "":
         try:
             job_ids = [int(i) for i in slurm_job_ids.split(",")]
