@@ -48,6 +48,10 @@ def list_all(
     search: Optional[str] = typer.Option(None, help="Apply a search term to results"),
     sort_order: SortOrder = typer.Option(SortOrder.UNSORTED, help="Specify sort order"),
     sort_field: Optional[str] = typer.Option(None, help="The field by which results should be sorted"),
+    from_application_id: Optional[int] = typer.Option(
+        None,
+        help="Filter job-scripts by the application-id they were created from.",
+    ),
 ):
     """
     Show available job scripts
@@ -65,6 +69,8 @@ def list_all(
         params["sort_ascending"] = SortOrder is SortOrder.ASCENDING
     if sort_field is not None:
         params["sort_field"] = sort_field
+    if from_application_id is not None:
+        params["from_application_id"] = from_application_id
 
     envelope = cast(
         ListResponseEnvelope,
