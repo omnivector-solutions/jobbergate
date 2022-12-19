@@ -74,7 +74,7 @@ class SbatchToSlurm:
     argparser_param: dict = field(default_factory=dict)
 
 
-sbatch_to_slurm = [
+sbatch_to_slurm_mapping = [
     SbatchToSlurm("account", "--account", "-A"),
     SbatchToSlurm("account_gather_freqency", "--acctg-freq"),
     SbatchToSlurm("array", "--array", "-a"),
@@ -222,7 +222,7 @@ def build_parser() -> ArgumentParser:
     Build an ArgumentParser to handle all SBATCH parameters declared at sbatch_to_slurm.
     """
     parser = ArgumentParserCustomExit()
-    for item in sbatch_to_slurm:
+    for item in sbatch_to_slurm_mapping:
         args = (i for i in (item.sbatch_short, item.sbatch) if i)
         parser.add_argument(*args, **item.argparser_param)
 
@@ -235,7 +235,7 @@ def build_mapping_sbatch_to_slurm() -> bidict:
     """
     mapping: bidict = bidict()
 
-    for item in sbatch_to_slurm:
+    for item in sbatch_to_slurm_mapping:
         if item.slurmrestd_var_name:
             sbatch_name = item.sbatch.lstrip("-").replace("-", "_")
             mapping[sbatch_name] = item.slurmrestd_var_name

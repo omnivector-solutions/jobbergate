@@ -27,7 +27,7 @@ from jobbergate_api.apps.job_submissions.properties_parser import (
     get_job_parameters,
     get_job_properties_from_job_script,
     jobscript_to_dict,
-    sbatch_to_slurm,
+    sbatch_to_slurm_mapping,
 )
 from jobbergate_api.apps.job_submissions.schemas import JobProperties
 
@@ -175,7 +175,7 @@ def test_clean_jobscript(dummy_slurm_script):
     assert actual_list == desired_list
 
 
-@pytest.mark.parametrize("item", sbatch_to_slurm)
+@pytest.mark.parametrize("item", sbatch_to_slurm_mapping)
 class TestSbatchToSlurmList:
     """
     Test all the fields of the objects SbatchToSlurm that are stored in the list sbatch_to_slurm.
@@ -271,7 +271,7 @@ def test_sbatch_to_slurm_list__contains_only_unique_values(field):
     This aims to avoid ambiguity at the SBATCH argparser and the two-way mapping between
     SBATCH and Slurm Rest API namespaces.
     """
-    list_of_values = [getattr(i, field) for i in sbatch_to_slurm if bool(getattr(i, field))]
+    list_of_values = [getattr(i, field) for i in sbatch_to_slurm_mapping if bool(getattr(i, field))]
 
     assert len(list_of_values) == len(set(list_of_values))
 
@@ -364,7 +364,7 @@ def test_jobscript_to_dict__raises_exception_for_unknown_parameter():
 
 @pytest.mark.parametrize(
     "item",
-    filter(lambda i: getattr(i, "slurmrestd_var_name", False), sbatch_to_slurm),
+    filter(lambda i: getattr(i, "slurmrestd_var_name", False), sbatch_to_slurm_mapping),
 )
 def test_convert_sbatch_to_slurm_api__success(item):
     """
