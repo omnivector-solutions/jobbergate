@@ -120,9 +120,13 @@ def list_all(
     search: Optional[str] = typer.Option(None, help="Apply a search term to results"),
     sort_order: SortOrder = typer.Option(SortOrder.UNSORTED, help="Specify sort order"),
     sort_field: Optional[str] = typer.Option(None, help="The field by which results should be sorted"),
+    from_job_script_id: Optional[int] = typer.Option(
+        None,
+        help="Filter job-submissions by the job-script-id they were created from.",
+    ),
 ):
     """
-    Show available job scripts
+    Show available job submissions.
     """
     jg_ctx: JobbergateContext = ctx.obj
 
@@ -137,6 +141,8 @@ def list_all(
         params["sort_ascending"] = SortOrder is SortOrder.ASCENDING
     if sort_field is not None:
         params["sort_field"] = sort_field
+    if from_job_script_id is not None:
+        params["from_job_script_id"] = from_job_script_id
 
     envelope = cast(
         ListResponseEnvelope,
