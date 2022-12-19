@@ -145,6 +145,7 @@ class JobSubmissionResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
     report_message: Optional[str]
+    execution_parameters: Optional[Dict[str, Any]]
 
 
 class JobScriptCreateRequestData(pydantic.BaseModel):
@@ -169,6 +170,7 @@ class JobSubmissionCreateRequestData(pydantic.BaseModel):
     job_script_id: int
     client_id: Optional[str] = pydantic.Field(None, alias="cluster_name")
     execution_directory: Optional[Path] = None
+    execution_parameters: Optional[Dict[str, Any]] = None
 
 
 class Pagination(pydantic.BaseModel):

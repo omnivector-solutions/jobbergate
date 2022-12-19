@@ -2,6 +2,7 @@
 Tests for the /job-submissions/ endpoint.
 """
 import pathlib
+from unittest import mock
 
 import pytest
 from fastapi import status
@@ -11,7 +12,7 @@ from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.job_submissions.models import job_submissions_table
-from jobbergate_api.apps.job_submissions.schemas import JobSubmissionResponse
+from jobbergate_api.apps.job_submissions.schemas import JobProperties, JobSubmissionResponse
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.storage import database
 
@@ -51,14 +52,23 @@ async def test_create_job_submission__with_client_id_in_token(
         job_script_id=inserted_job_script_id,
         job_submission_name="sub1",
         job_submission_owner_email="owner1@org.com",
+        execution_parameters={"name": "job-submission-name", "comment": "I am a comment"},
     )
 
     # Removed defaults to make sure these are correctly set by other mechanisms
     create_data.pop("status", None)
     create_data.pop("client_id", None)
 
-    with time_frame() as window:
-        response = await client.post("/jobbergate/job-submissions/", json=create_data)
+    with mock.patch(
+        "jobbergate_api.apps.job_submissions.routers.get_job_properties_from_job_script"
+    ) as mocked:
+        mocked.return_value = JobProperties.parse_obj(create_data["execution_parameters"])
+        with time_frame() as window:
+            response = await client.post("/jobbergate/job-submissions/", json=create_data)
+        mocked.assert_called_once_with(
+            inserted_job_script_id,
+            **create_data["execution_parameters"],
+        )
 
     assert response.status_code == status.HTTP_201_CREATED
 
@@ -69,7 +79,16 @@ async def test_create_job_submission__with_client_id_in_token(
     assert len(id_rows) == 1
 
     job_submission = JobSubmissionResponse(**response.json())
-    assert job_submission.id == id_rows[0][0]
+
+    # Check that the response correspond to the entry in the database
+    job_submission_raw_data = await database.fetch_one(
+        query=job_submissions_table.select().where(job_submissions_table.c.id == id_rows[0][0])
+    )
+    assert job_submission_raw_data is not None
+    assert job_submission == JobSubmissionResponse(**job_submission_raw_data)  # type: ignore
+
+    # Check that each field is correctly set
+    assert job_submission.id == job_submission_raw_data.get("id")
     assert job_submission.job_submission_name == "sub1"
     assert job_submission.job_submission_owner_email == "owner1@org.com"
     assert job_submission.job_submission_description is None
@@ -79,6 +98,10 @@ async def test_create_job_submission__with_client_id_in_token(
     assert job_submission.status == JobSubmissionStatus.CREATED
     assert job_submission.created_at in window
     assert job_submission.updated_at in window
+
+    assert job_submission.execution_parameters is not None
+    assert job_submission.execution_parameters.name == "job-submission-name"
+    assert job_submission.execution_parameters.comment == "I am a comment"
 
 
 @pytest.mark.asyncio
@@ -112,16 +135,27 @@ async def test_create_job_submission__with_client_id_in_request_body(
         Permissions.JOB_SUBMISSIONS_EDIT,
         client_id="dummy-cluster-client",
     )
-    with time_frame() as window:
-        response = await client.post(
-            "/jobbergate/job-submissions/",
-            json=fill_job_submission_data(
-                job_script_id=inserted_job_script_id,
-                job_submission_name="sub1",
-                job_submission_owner_email="owner1@org.com",
-                client_id="silly-cluster-client",
-            ),
-        )
+
+    execution_parameters = {
+        "name": "job-submission-name",
+        "comment": "I am a comment",
+    }
+
+    with mock.patch(
+        "jobbergate_api.apps.job_submissions.routers.get_job_properties_from_job_script"
+    ) as mocked:
+        mocked.return_value = JobProperties.parse_obj(execution_parameters)
+        with time_frame() as window:
+            response = await client.post(
+                "/jobbergate/job-submissions/",
+                json=fill_job_submission_data(
+                    job_script_id=inserted_job_script_id,
+                    job_submission_name="sub1",
+                    job_submission_owner_email="owner1@org.com",
+                    client_id="silly-cluster-client",
+                    execution_parameters=execution_parameters,
+                ),
+            )
 
     assert response.status_code == status.HTTP_201_CREATED
 
@@ -132,7 +166,16 @@ async def test_create_job_submission__with_client_id_in_request_body(
     assert len(id_rows) == 1
 
     job_submission = JobSubmissionResponse(**response.json())
-    assert job_submission.id == id_rows[0][0]
+
+    # Check that the response correspond to the entry in the database
+    job_submission_raw_data = await database.fetch_one(
+        query=job_submissions_table.select().where(job_submissions_table.c.id == id_rows[0][0])
+    )
+    assert job_submission_raw_data is not None
+    assert job_submission == JobSubmissionResponse(**job_submission_raw_data)  # type: ignore
+
+    # Check that each field is correctly set
+    assert job_submission.id == job_submission_raw_data.get("id")
     assert job_submission.job_submission_name == "sub1"
     assert job_submission.job_submission_owner_email == "owner1@org.com"
     assert job_submission.job_submission_description is None
@@ -141,6 +184,10 @@ async def test_create_job_submission__with_client_id_in_request_body(
     assert job_submission.status == JobSubmissionStatus.CREATED
     assert job_submission.created_at in window
     assert job_submission.updated_at in window
+
+    assert job_submission.execution_parameters is not None
+    assert job_submission.execution_parameters.name == "job-submission-name"
+    assert job_submission.execution_parameters.comment == "I am a comment"
 
 
 @pytest.mark.asyncio
@@ -179,14 +226,23 @@ async def test_create_job_submission__with_execution_directory(
         job_submission_name="sub1",
         job_submission_owner_email="owner1@org.com",
         execution_directory="/some/fake/path",
+        execution_parameters={"name": "job-submission-name", "comment": "I am a comment"},
     )
 
     # Removed defaults to make sure these are correctly set by other mechanisms
     create_data.pop("status", None)
     create_data.pop("client_id", None)
 
-    with time_frame() as window:
-        response = await client.post("/jobbergate/job-submissions/", json=create_data)
+    with mock.patch(
+        "jobbergate_api.apps.job_submissions.routers.get_job_properties_from_job_script"
+    ) as mocked:
+        mocked.return_value = JobProperties.parse_obj(create_data["execution_parameters"])
+        with time_frame() as window:
+            response = await client.post("/jobbergate/job-submissions/", json=create_data)
+        mocked.assert_called_once_with(
+            inserted_job_script_id,
+            **create_data["execution_parameters"],
+        )
 
     assert response.status_code == status.HTTP_201_CREATED
 
@@ -197,7 +253,15 @@ async def test_create_job_submission__with_execution_directory(
     assert len(id_rows) == 1
 
     job_submission = JobSubmissionResponse(**response.json())
-    assert job_submission.id == id_rows[0][0]
+
+    # Check that the response correspond to the entry in the database
+    job_submission_raw_data = await database.fetch_one(
+        query=job_submissions_table.select().where(job_submissions_table.c.id == id_rows[0][0])
+    )
+    assert job_submission_raw_data is not None
+    assert job_submission == JobSubmissionResponse(**job_submission_raw_data)  # type: ignore
+
+    assert job_submission.id == job_submission_raw_data.get("id")
     assert job_submission.job_submission_name == "sub1"
     assert job_submission.job_submission_owner_email == "owner1@org.com"
     assert job_submission.job_submission_description is None
@@ -207,6 +271,10 @@ async def test_create_job_submission__with_execution_directory(
     assert job_submission.status == JobSubmissionStatus.CREATED
     assert job_submission.created_at in window
     assert job_submission.updated_at in window
+
+    assert job_submission.execution_parameters is not None
+    assert job_submission.execution_parameters.name == "job-submission-name"
+    assert job_submission.execution_parameters.comment == "I am a comment"
 
 
 @pytest.mark.asyncio
@@ -342,6 +410,10 @@ async def test_get_job_submission_by_id(
             job_script_id=inserted_job_script_id,
             job_submission_name="sub1",
             job_submission_owner_email="owner1@org.com",
+            execution_parameters={
+                "name": "job-submission-name",
+                "comment": "I am a comment",
+            },
         ),
     )
 
@@ -357,6 +429,9 @@ async def test_get_job_submission_by_id(
     assert data["job_submission_name"] == "sub1"
     assert data["job_submission_owner_email"] == "owner1@org.com"
     assert data["job_script_id"] == inserted_job_script_id
+
+    assert data["execution_parameters"]["name"] == "job-submission-name"
+    assert data["execution_parameters"]["comment"] == "I am a comment"
 
 
 @pytest.mark.asyncio
@@ -438,16 +513,28 @@ async def test_get_job_submissions__no_param(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub1",
                 job_submission_owner_email="owner1@org.com",
+                execution_parameters={
+                    "name": "job-submission-name-1",
+                    "comment": "I am a comment",
+                },
             ),
             dict(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub2",
                 job_submission_owner_email="owner999@org.com",
+                execution_parameters={
+                    "name": "job-submission-name-2",
+                    "comment": "I am a comment",
+                },
             ),
             dict(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub3",
                 job_submission_owner_email="owner1@org.com",
+                execution_parameters={
+                    "name": "job-submission-name-3",
+                    "comment": "I am a comment",
+                },
             ),
         ),
     )
@@ -541,16 +628,28 @@ async def test_get_job_submissions__with_all_param(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub1",
                 job_submission_owner_email="owner1@org.com",
+                execution_parameters={
+                    "name": "job-submission-name-1",
+                    "comment": "I am a comment",
+                },
             ),
             dict(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub2",
                 job_submission_owner_email="owner999@org.com",
+                execution_parameters={
+                    "name": "job-submission-name-2",
+                    "comment": "I am a comment",
+                },
             ),
             dict(
                 job_script_id=inserted_job_script_id,
                 job_submission_name="sub3",
                 job_submission_owner_email="owner1@org.com",
+                execution_parameters={
+                    "name": "job-submission-name-3",
+                    "comment": "I am a comment",
+                },
             ),
         ),
     )
@@ -1343,6 +1442,10 @@ async def test_job_submissions_agent_pending__success(
                 job_submission_owner_email="email1@dummy.com",
                 status=JobSubmissionStatus.CREATED,
                 client_id="dummy-client",
+                execution_parameters={
+                    "name": "job-submission-name-1",
+                    "comment": "I am a comment",
+                },
             ),
             dict(
                 job_script_id=inserted_job_script_id,
@@ -1350,6 +1453,10 @@ async def test_job_submissions_agent_pending__success(
                 job_submission_owner_email="email2@dummy.com",
                 status=JobSubmissionStatus.COMPLETED,
                 client_id="dummy-client",
+                execution_parameters={
+                    "name": "job-submission-name-2",
+                    "comment": "I am a comment",
+                },
             ),
             dict(
                 job_script_id=inserted_job_script_id,
@@ -1357,6 +1464,10 @@ async def test_job_submissions_agent_pending__success(
                 job_submission_owner_email="email3@dummy.com",
                 status=JobSubmissionStatus.CREATED,
                 client_id="silly-client",
+                execution_parameters={
+                    "name": "job-submission-name-3",
+                    "comment": "I am a comment",
+                },
             ),
             dict(
                 job_script_id=inserted_job_script_id,
@@ -1364,6 +1475,10 @@ async def test_job_submissions_agent_pending__success(
                 job_submission_owner_email="email4@dummy.com",
                 status=JobSubmissionStatus.CREATED,
                 client_id="dummy-client",
+                execution_parameters={
+                    "name": "job-submission-name-4",
+                    "comment": "I am a comment",
+                },
             ),
         ),
     )

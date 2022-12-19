@@ -17,6 +17,7 @@ from jobbergate_api.apps.job_submissions.models import (
     searchable_fields,
     sortable_fields,
 )
+from jobbergate_api.apps.job_submissions.properties_parser import get_job_properties_from_job_script
 from jobbergate_api.apps.job_submissions.schemas import (
     ActiveJobSubmission,
     JobSubmissionCreateRequest,
@@ -66,17 +67,17 @@ async def job_submission_create(
             detail=message,
         )
 
-    create_dict = dict(
+    new_job_submission_data: Dict[str, Any] = dict(
         **job_submission.dict(exclude_unset=True),
         job_submission_owner_email=identity_claims.email,
         status=JobSubmissionStatus.CREATED,
     )
     if job_submission.client_id is None:
-        create_dict.update(client_id=client_id)
+        new_job_submission_data.update(client_id=client_id)
 
-    exec_dir = create_dict.pop("execution_directory", None)
+    exec_dir = new_job_submission_data.pop("execution_directory", None)
     if exec_dir is not None:
-        create_dict.update(execution_directory=str(exec_dir))
+        new_job_submission_data.update(execution_directory=str(exec_dir))
 
     select_query = job_scripts_table.select().where(job_scripts_table.c.id == job_submission.job_script_id)
     logger.trace(f"job_scripts select_query = {render_sql(select_query)}")
@@ -90,13 +91,23 @@ async def job_submission_create(
             detail=message,
         )
 
+    try:
+        job_properties = get_job_properties_from_job_script(
+            job_submission.job_script_id, **job_submission.execution_parameters.dict(exclude_unset=True)
+        )
+        new_job_submission_data["execution_parameters"] = job_properties.dict(exclude_unset=True)
+    except Exception as e:
+        message = f"Error extracting execution parameters from job script: {str(e)}"
+        logger.error(message)
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=message)
+
     logger.debug("Inserting job-submission")
 
     async with database.transaction():
         try:
             insert_query = job_submissions_table.insert().returning(job_submissions_table)
             logger.trace(f"job_submissions insert_query = {render_sql(insert_query)}")
-            job_submission_data = await database.fetch_one(query=insert_query, values=create_dict)
+            job_submission_data = await database.fetch_one(query=insert_query, values=new_job_submission_data)
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             logger.error(f"Reverting database transaction: {str(e)}")
@@ -104,7 +115,7 @@ async def job_submission_create(
 
     logger.debug(f"Job-submission created: {job_submission_data=}")
 
-    return job_submission_data
+    return JobSubmissionResponse(**job_submission_data)  # type: ignore
 
 
 @router.get(
@@ -133,7 +144,7 @@ async def job_submission_get(job_submission_id: int = Query(...)):
 
     logger.debug(f"Job-submission data: {job_submission_data=}")
 
-    return job_submission_data
+    return JobSubmissionResponse(**job_submission_data)  # type: ignore
 
 
 @router.get(
@@ -300,6 +311,8 @@ async def job_submissions_agent_pending(
                 job_submissions_table.c.id,
                 job_submissions_table.c.job_submission_name,
                 job_submissions_table.c.job_submission_owner_email,
+                job_submissions_table.c.execution_directory,
+                job_submissions_table.c.execution_parameters,
                 job_submissions_table.c.job_script_id,
                 job_scripts_table.c.job_script_name,
                 applications_table.c.application_name,

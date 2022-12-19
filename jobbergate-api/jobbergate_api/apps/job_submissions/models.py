@@ -2,6 +2,7 @@
 Database model for the JobSubmission resource.
 """
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Table
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from sqlalchemy.sql.schema import Column
 
@@ -23,6 +24,7 @@ job_submissions_table = Table(
     Column("report_message", String, nullable=True),
     Column("created_at", DateTime, nullable=False, default=func.now()),
     Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=func.now()),
+    Column("execution_parameters", JSONB, nullable=True),
 )
 
 searchable_fields = [
