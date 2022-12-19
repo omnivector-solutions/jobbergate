@@ -136,7 +136,7 @@ def save_job_script_files(
     destination_path: pathlib.Path,
 ) -> List[pathlib.Path]:
     """
-    Safe the job script files from the API response to the output path.
+    Save the job script files from the API response to the output path.
     """
     logger.debug(f"Saving job script files to {destination_path.as_posix()}")
     saved_files: List[pathlib.Path] = []
@@ -149,3 +149,15 @@ def save_job_script_files(
 
     logger.debug(f"The following files were saved: {list(map(str, saved_files))}")
     return saved_files
+
+
+def download_job_script_files(id: int, jg_ctx: JobbergateContext) -> List[pathlib.Path]:
+    """
+    Download the job script files from the API and save them to the current working directory.
+    """
+    result = fetch_job_script_data(jg_ctx, id)
+    downloaded_files = save_job_script_files(
+        job_script_data=result,
+        destination_path=pathlib.Path.cwd(),
+    )
+    return downloaded_files
