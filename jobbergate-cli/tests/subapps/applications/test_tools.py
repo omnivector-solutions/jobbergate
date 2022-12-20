@@ -167,6 +167,7 @@ def test_load_application_from_source__success(dummy_module_source, dummy_jobber
         supporting_files=None,
         supporting_files_output_name=None,
         job_script_name=None,
+        user_supplied_key="user-supplied-value",
     )
     assert application.application_config == dict(
         foo="foo",

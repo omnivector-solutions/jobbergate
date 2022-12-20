@@ -59,7 +59,7 @@ class JobbergateContext(pydantic.BaseModel, arbitrary_types_allowed=True):
     client: Optional[httpx.Client]
 
 
-class JobbergateConfig(pydantic.BaseModel):
+class JobbergateConfig(pydantic.BaseModel, extra=pydantic.Extra.allow):
     """
     A data object describing the config values needed in the "jobbergate_config" section of the
     JobbergateApplicationConfig model.

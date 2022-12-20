@@ -12,6 +12,7 @@ Unreleased
 - Added new option to create-job-submission to allow download job script files to current working directory
 - Added parameters `from_application_id` to filter job scripts on the list command
 - Added parameters `from_job_script_id` to filter job submissions on the list command
+- Fixed missing user defined fields when loading jobbergate.yaml
 
 3.3.4 -- 2022-12-05
 -------------------
