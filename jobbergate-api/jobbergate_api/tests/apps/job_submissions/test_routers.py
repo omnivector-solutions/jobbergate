@@ -675,6 +675,62 @@ async def test_get_job_submissions__with_all_param(
 
 
 @pytest.mark.asyncio
+async def test_get_job_submissions__from_job_script_id(
+    client,
+    fill_application_data,
+    fill_job_script_data,
+    fill_all_job_submission_data,
+    inject_security_header,
+):
+    """
+    Test listing job-submissions when from_job_script_id=<num> is present.
+
+    Only the job-submissions produced from the job-script with id=<num> should be returned.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(),
+    )
+    inserted_job_script_id_1 = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+    inserted_job_script_id_2 = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+    inserted_job_script_id_3 = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+    await database.execute_many(
+        query=job_submissions_table.insert(),
+        values=fill_all_job_submission_data(
+            {"job_script_id": inserted_job_script_id_1},
+            {"job_script_id": inserted_job_script_id_1},
+            {"job_script_id": inserted_job_script_id_2},
+            {"job_script_id": inserted_job_script_id_2},
+            {"job_script_id": inserted_job_script_id_3},
+            {"job_script_id": inserted_job_script_id_3},
+        ),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 6
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
+
+    for job_script_id in [inserted_job_script_id_1, inserted_job_script_id_2, inserted_job_script_id_3]:
+        response = await client.get(f"/jobbergate/job-submissions/?from_job_script_id={job_script_id}")
+        assert response.status_code == status.HTTP_200_OK
+
+        data = response.json()
+        results = data.get("results")
+
+        assert {d["job_script_id"] for d in results} == {job_script_id}
+
+
+@pytest.mark.asyncio
 async def test_get_job_submissions__with_status_param(
     client,
     fill_application_data,

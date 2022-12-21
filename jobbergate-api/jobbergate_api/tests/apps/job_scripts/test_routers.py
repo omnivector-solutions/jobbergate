@@ -820,6 +820,59 @@ async def test_get_job_scripts__with_pagination(
     assert pagination == dict(total=5, start=2, limit=2)
 
 
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_get_job_scripts__from_application_id(
+    client,
+    fill_application_data,
+    fill_all_job_script_data,
+    inject_security_header,
+):
+    """
+    Test listing job_scripts when from_application_id=<num> is present.
+
+    Only the job-scripts produced from the application with id=<num> should be returned.
+    """
+    inserted_application_id_1 = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+    inserted_application_id_2 = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+    inserted_application_id_3 = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+    await database.execute_many(
+        query=job_scripts_table.insert(),
+        values=fill_all_job_script_data(
+            {"application_id": inserted_application_id_1},
+            {"application_id": inserted_application_id_1},
+            {"application_id": inserted_application_id_2},
+            {"application_id": inserted_application_id_2},
+            {"application_id": inserted_application_id_3},
+            {"application_id": inserted_application_id_3},
+        ),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 6
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
+
+    for application_id in [inserted_application_id_1, inserted_application_id_2, inserted_application_id_3]:
+        response = await client.get(
+            f"/jobbergate/job-scripts/?from_application_id={application_id}",
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+        data = response.json()
+        results = data.get("results")
+        assert {d["application_id"] for d in results} == {application_id}, f"{application_id=}"
+
+
 @pytest.mark.freeze_time
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)

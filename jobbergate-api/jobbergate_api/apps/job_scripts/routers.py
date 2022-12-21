@@ -173,6 +173,10 @@ async def job_script_list(
     all: Optional[bool] = Query(False),
     search: Optional[str] = Query(None),
     sort_field: Optional[str] = Query(None),
+    from_application_id: Optional[int] = Query(
+        None,
+        description="Filter job-scripts by the application-id they were created from.",
+    ),
     sort_ascending: bool = Query(True),
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW)),
 ):
@@ -191,6 +195,8 @@ async def job_script_list(
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     if not all:
         query = query.where(job_scripts_table.c.job_script_owner_email == identity_claims.email)
+    if from_application_id is not None:
+        query = query.where(job_scripts_table.c.application_id == from_application_id)
     if search is not None:
         query = query.where(search_clause(search, searchable_fields))
     if sort_field is not None:
