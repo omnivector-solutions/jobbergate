@@ -13,13 +13,13 @@ from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.tools import (
-    save_application_files,
     execute_application,
     fetch_application_data,
     get_upload_files,
     load_application_data,
     load_application_from_source,
     load_default_config,
+    save_application_files,
 )
 from jobbergate_cli.text_tools import dedent
 
@@ -167,6 +167,7 @@ def test_load_application_from_source__success(dummy_module_source, dummy_jobber
         supporting_files=None,
         supporting_files_output_name=None,
         job_script_name=None,
+        user_supplied_key="user-supplied-value",
     )
     assert application.application_config == dict(
         foo="foo",
