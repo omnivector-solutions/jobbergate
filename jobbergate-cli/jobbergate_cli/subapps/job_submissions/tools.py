@@ -53,17 +53,11 @@ def create_job_submission(
         ),
     )
 
-    if execution_parameters_file is None:
-        execution_parameters = None
-    else:
-        execution_parameters = validate_parameter_file(execution_parameters_file)
-
     job_submission_data = JobSubmissionCreateRequestData(
         job_submission_name=name,
         job_submission_description=description,
         job_script_id=job_script_id,
         cluster_name=cluster_name,
-        execution_parameters=execution_parameters,
     )
 
     if execution_directory is not None:
@@ -71,6 +65,9 @@ def create_job_submission(
             execution_directory = Path.cwd() / execution_directory
         execution_directory.resolve()
         job_submission_data.execution_directory = execution_directory
+
+    if execution_parameters_file is not None:
+        job_submission_data.execution_parameters = validate_parameter_file(execution_parameters_file)
 
     result = cast(
         JobSubmissionResponse,

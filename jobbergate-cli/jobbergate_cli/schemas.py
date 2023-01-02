@@ -170,7 +170,7 @@ class JobSubmissionCreateRequestData(pydantic.BaseModel):
     job_script_id: int
     client_id: Optional[str] = pydantic.Field(None, alias="cluster_name")
     execution_directory: Optional[Path] = None
-    execution_parameters: Optional[Dict[str, Any]] = None
+    execution_parameters: Dict[str, Any] = pydantic.Field(default_factory=dict)
 
 
 class Pagination(pydantic.BaseModel):
