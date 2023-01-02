@@ -342,7 +342,7 @@ class PendingJobSubmission(BaseModel, extra=Extra.ignore):
     job_submission_name: str
     job_submission_owner_email: str
     execution_directory: Optional[Path]
-    execution_parameters: Optional[JobProperties]
+    execution_parameters: Dict = Field(default_factory=dict)
     job_script_name: str
     application_name: str
     job_script_files: JobScriptFiles
