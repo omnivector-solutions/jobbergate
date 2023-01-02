@@ -954,7 +954,7 @@ wcwidth = "*"
 
 [[package]]
 name = "psycopg2"
-version = "2.9.3"
+version = "2.9.5"
 description = "psycopg2 - Python-PostgreSQL Database Adapter"
 category = "dev"
 optional = false
@@ -1665,7 +1665,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "07928c39e2bc417c0a8774db67830fa89dc0a6da5ae5af948d08c78e0fe21abf"
+content-hash = "74a5ec7f5876556f366c2c66d6d4cda1a64c771d3ad92df49d09b77482a2f7e5"
 
 [metadata.files]
 alembic = []

@@ -67,6 +67,7 @@ respx = "^0.17.1"
 py-docker-gadgets = "^0.1.1"
 pyproject-flake8 = "^0.0.1-alpha.2"
 flake8-docstrings = "^1.6.0"
+psycopg2 = "^2.9.5"
 
 [tool.poetry.scripts]
 dev-tools = "dev_tools:app"
