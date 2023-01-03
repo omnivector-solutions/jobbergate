@@ -7,14 +7,8 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 
-3.4.0-alpha.2 -- 2023-01-02
----------------------------
-
-3.4.0-alpha.1 -- 2023-01-02
----------------------------
-
-3.4.0-alpha.0 -- 2022-12-21
----------------------------
+3.4.0 -- 2023-01-03
+-------------------
 - Move SBATCH params to Job Script submission
 - Added field `from_application_id` to filter job scripts on the list endpoint
 - Added field `from_job_script_id` to filter job submissions on the list endpoint
