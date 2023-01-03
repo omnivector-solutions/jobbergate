@@ -12,6 +12,8 @@ from jobbergate_api.apps.applications.schemas import ApplicationResponse
 from jobbergate_api.pagination import Pagination, Response, package_response
 from jobbergate_api.storage import database
 
+pytestmark = pytest.mark.usefixtures("startup_event_force")
+
 
 def test_init_fails_on_invalid_parameters():
     """

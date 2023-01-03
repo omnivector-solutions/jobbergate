@@ -15,6 +15,9 @@ from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.storage import database, fetch_instance
 
 
+pytestmark = pytest.mark.usefixtures("startup_event_force")
+
+
 @pytest.mark.asyncio
 async def test_create_application(
     fill_application_data,

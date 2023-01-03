@@ -11,6 +11,9 @@ from jobbergate_api.metadata import metadata
 from jobbergate_api.storage import build_db_url, database, sort_clause
 
 
+pytestmark = pytest.mark.usefixtures("startup_event_force")
+
+
 def test_build_db_url__creates_database_url_from_parts(tweak_settings):
     """
     Provide a test ase for the ``build_db_url()`` function.
