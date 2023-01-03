@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-docs
 Unreleased
 ----------
 
+3.4.0 -- 2023-01-03
+-------------------
+
 3.4.0-alpha.2 -- 2023-01-02
 ---------------------------
 
