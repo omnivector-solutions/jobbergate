@@ -10,7 +10,6 @@ from sqlalchemy import Column, Enum, Integer, Table
 from jobbergate_api.metadata import metadata
 from jobbergate_api.storage import build_db_url, database, sort_clause
 
-
 pytestmark = pytest.mark.usefixtures("startup_event_force")
 
 

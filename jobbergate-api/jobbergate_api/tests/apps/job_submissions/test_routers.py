@@ -16,7 +16,6 @@ from jobbergate_api.apps.job_submissions.schemas import JobProperties, JobSubmis
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.storage import database
 
-
 pytestmark = pytest.mark.usefixtures("startup_event_force")
 
 
