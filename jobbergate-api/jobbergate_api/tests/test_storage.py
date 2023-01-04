@@ -10,6 +10,8 @@ from sqlalchemy import Column, Enum, Integer, Table
 from jobbergate_api.metadata import metadata
 from jobbergate_api.storage import build_db_url, database, sort_clause
 
+# Force the async event loop at the app to begin.
+# Since this is a time consuming fixture, it is just used where strict necessary.
 pytestmark = pytest.mark.usefixtures("startup_event_force")
 
 
