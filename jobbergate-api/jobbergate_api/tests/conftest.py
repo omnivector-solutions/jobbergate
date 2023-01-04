@@ -56,8 +56,7 @@ async def enforce_empty_database(database_engine):
     metadata.drop_all(database_engine)
 
 
-@pytest.fixture(autouse=True)
-@pytest.mark.enforce_empty_database()
+@pytest.fixture()
 async def startup_event_force():
     """
     Force the async event loop to begin.

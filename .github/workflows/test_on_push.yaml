@@ -1,4 +1,4 @@
-name: 'Test'
+name: "Test"
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
 jobs:
   api-tests:
     name: "jobbergate-api tests"
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-20.04"
     services:
       test-db:
         image: postgres
@@ -25,14 +25,15 @@ jobs:
         ports:
           - 5433:5432
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - name: Install poetry
+        run: pipx install poetry==1.1.14
+      - uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
-          architecture: 'x64'
-      - uses: Gr1N/setup-poetry@v7
-        with:
-          poetry-version: 1.1.14
+          python-version: "3.8"
+          architecture: "x64"
+          cache: "poetry"
+          cache-dependency-path: jobbergate-api/poetry.lock
       - name: "run quality control checks"
         working-directory: jobbergate-api
         env:
@@ -41,25 +42,25 @@ jobs:
           TEST_DATABASE_USER: test
           TEST_DATABASE_PSWD: test-pswd
           TEST_DATABASE_NAME: test-jobbergate
-          POETRY_HTTP_BASIC_PYPICLOUD_USERNAME: admin
-          POETRY_HTTP_BASIC_PYPICLOUD_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: make qa
+        run: |
+          poetry env use "3.8"
+          make qa
 
   cli-tests:
     name: "jobbergate-cli tests"
     runs-on: "ubuntu-20.04"
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - name: Install poetry
+        run: pipx install poetry==1.1.14
+      - uses: actions/setup-python@v4
         with:
           python-version: "3.6"
-          architecture: 'x64'
-      - uses: Gr1N/setup-poetry@v7
-        with:
-          poetry-version: 1.1.14
+          architecture: "x64"
+          cache: "poetry"
+          cache-dependency-path: jobbergate-cli/poetry.lock
       - name: "run quality control checks"
         working-directory: jobbergate-cli
-        env:
-          POETRY_HTTP_BASIC_PYPICLOUD_USERNAME: admin
-          POETRY_HTTP_BASIC_PYPICLOUD_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: make qa
+        run: |
+          poetry env use "3.6"
+          make qa

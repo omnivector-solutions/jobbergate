@@ -18,6 +18,10 @@ from jobbergate_api.apps.job_scripts.schemas import JobScriptPartialResponse, Jo
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.storage import database
 
+# Force the async event loop at the app to begin.
+# Since this is a time consuming fixture, it is just used where strict necessary.
+pytestmark = pytest.mark.usefixtures("startup_event_force")
+
 
 @pytest.fixture
 def job_script_data_as_string():
