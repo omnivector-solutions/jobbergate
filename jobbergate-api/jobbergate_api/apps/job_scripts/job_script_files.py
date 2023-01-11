@@ -243,9 +243,6 @@ class JobScriptFiles(BaseModel):
             app_config.jobbergate_config.default_template,
         )
 
-        if default_template_name.startswith("templates/"):
-            (_, default_template_name) = default_template_name.split("/", maxsplit=1)
-
         JobScriptCreationError.require_condition(
             default_template_name in application_files.templates,
             "Selected template {selected} not found in available templates: {templates}".format(
@@ -307,7 +304,7 @@ class JobScriptFiles(BaseModel):
         return jobscript_files
 
     @classmethod
-    def file_manager_factory(self, job_script_id: int) -> FileManager:
+    def file_manager_factory(cls, job_script_id: int) -> FileManager:
         """
         Build an application file manager.
         """

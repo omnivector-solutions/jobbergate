@@ -5,7 +5,7 @@ from datetime import datetime
 from textwrap import dedent
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, validator
 from yaml import safe_load
 
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
@@ -119,6 +119,24 @@ class JobbergateConfig(BaseModel):
             values["supporting_files"] = list(values.get("supporting_files_output_name"))
 
         return values
+
+    @validator("default_template", "supporting_files_output_name", "supporting_files", "template_files")
+    def remove_leading_template_on_path(cls, v):
+        """
+        Remove the leading "templates/" directory on the path for template files.
+
+        This is done in order to support legacy jobbergate applications.
+        """
+        if isinstance(v, str):
+            PREFIX = "templates/"
+            PREFIX_LEN = len(PREFIX)
+            if v.startswith(PREFIX):
+                v = v[PREFIX_LEN:]
+        elif isinstance(v, list):
+            v = [cls.remove_leading_template_on_path(i) for i in v]
+        elif isinstance(v, dict):
+            v = {cls.remove_leading_template_on_path(k): v for k, v in v.items()}
+        return v
 
     class Config:
         extra = "allow"
