@@ -199,7 +199,7 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     memory_binding: Optional[str] = Field(description="Bind tasks to memory.")
     memory_per_cpu: Optional[int] = Field(description="Minimum real memory per cpu (MB).")
     memory_per_gpu: Optional[int] = Field(description="Minimum memory required per allocated GPU.")
-    memory_per_node: Optional[int] = Field(description="Minimum real memory per node (MB).")
+    memory_per_node: Optional[str] = Field(description="Minimum real memory per node (MB).")
     minimum_cpus_per_node: Optional[int] = Field(description="Minimum number of CPUs per node.")
     minimum_nodes: Optional[bool] = Field(
         description="If a range of node counts is given, prefer the smaller count."
