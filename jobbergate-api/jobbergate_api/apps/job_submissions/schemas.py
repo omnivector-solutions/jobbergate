@@ -241,12 +241,12 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     standard_error: Optional[str] = Field(
         description="Instruct Slurm to connect the batch script's standard error directly to the file name."
     )
-    standard_in: Optional[str] = Field(
+    standard_input: Optional[str] = Field(
         description=(
             "Instruct Slurm to connect the batch script's standard input directly to the file name specified."
         )
     )
-    standard_out: Optional[str] = Field(
+    standard_output: Optional[str] = Field(
         description="Instruct Slurm to connect the batch script's standard output directly to the file name."
     )
     tasks: Optional[int] = Field(
