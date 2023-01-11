@@ -269,7 +269,7 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     threads_per_core: Optional[int] = Field(
         description="Restrict node selection to nodes with at least the specified number of threads per core."
     )
-    time_limit: Optional[int] = Field(description="Step time limit.")
+    time_limit: Optional[str] = Field(description="Step time limit.")
     time_minimum: Optional[int] = Field(description="Minimum run time in minutes.")
     wait_all_nodes: Optional[bool] = Field(
         description="Do not begin execution until all nodes are ready for use."
