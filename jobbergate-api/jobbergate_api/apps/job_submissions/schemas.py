@@ -209,10 +209,8 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     no_kill: Optional[bool] = Field(
         description="Do not automatically terminate a job if one of the nodes it has been allocated fails."
     )
-    nodes: Optional[List[int]] = Field(
+    nodes: Optional[str] = Field(
         description="Request that a minimum of nodes nodes and a maximum node count.",
-        min_items=1,
-        max_items=2,
     )
     open_mode: Optional[Literal["append", "truncate"]] = Field(
         description="Open the output and error files using append or truncate mode as specified."
