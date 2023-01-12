@@ -76,7 +76,7 @@ class SbatchToSlurm:
 
 sbatch_to_slurm_mapping = [
     SbatchToSlurm("account", "--account", "-A"),
-    SbatchToSlurm("account_gather_freqency", "--acctg-freq"),
+    SbatchToSlurm("account_gather_frequency", "--acctg-freq"),
     SbatchToSlurm("array", "--array", "-a"),
     SbatchToSlurm("batch_features", "--batch"),
     SbatchToSlurm("burst_buffer", "--bb"),
