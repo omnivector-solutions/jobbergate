@@ -290,9 +290,45 @@ class TestJobScriptFiles:
     ):
         """
         Test that JobScriptFiles can be obtained when rendering ApplicationFiles.
+
+        In order to provide support to legacy jobbergate applications, we need to ignore the leading
+        "templates/" in path for the default_template.
         """
         mangled_param_dict = param_dict.copy()
         mangled_param_dict["jobbergate_config"]["default_template"] = "templates/test_job_script.sh"
+
+        desired_job_script_files = JobScriptFiles(
+            main_file_path="test_job_script.sh",
+            files={
+                "test_job_script.sh": job_script_data_as_string,
+                "support_file_b.py": job_script_data_as_string,
+            },
+        )
+
+        actual_job_script_files = JobScriptFiles.render_from_application(
+            dummy_application_files,
+            mangled_param_dict,
+        )
+
+        assert actual_job_script_files == desired_job_script_files
+
+    def test_render_from_application__ignores_template_path_prefix_in_supporting_files(
+        self,
+        param_dict,
+        job_script_data_as_string,
+        dummy_application_files,
+    ):
+        """
+        Test that JobScriptFiles can be obtained when rendering ApplicationFiles.
+
+        In order to provide support to legacy jobbergate applications, we need to ignore the leading
+        "templates/" in path for each of the supporting_files.
+        """
+        mangled_param_dict = param_dict.copy()
+        mangled_param_dict["jobbergate_config"]["supporting_files"] = ["templates/test_job_script.sh"]
+        mangled_param_dict["jobbergate_config"]["supporting_files_output_name"] = {
+            "templates/test_job_script.sh": ["support_file_b.py"]
+        }
 
         desired_job_script_files = JobScriptFiles(
             main_file_path="test_job_script.sh",

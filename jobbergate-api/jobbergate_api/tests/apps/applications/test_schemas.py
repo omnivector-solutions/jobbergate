@@ -105,6 +105,40 @@ class TestJobbergateConfig:
 
         assert config.supporting_files_output_name == dict(foo=["bar"], baz=["qux"])
 
+    def test_remove_leading_template_on_path__default_template(self):
+        """
+        Test that the leading "templates/" is removed from the field default_template.
+        """
+        config = JobbergateConfig(default_template="templates/test_job_script.sh")
+
+        assert config.default_template == "test_job_script.sh"
+
+    def test_remove_leading_template_on_path__supporting_files_output_name(self):
+        """
+        Test that the leading "templates/" is removed from each key on the dict supporting_files_output_name.
+        """
+        config = JobbergateConfig(
+            supporting_files_output_name={"templates/test_job_script.sh": ["string"]},
+        )
+
+        assert config.supporting_files_output_name == {"test_job_script.sh": ["string"]}
+
+    def test_remove_leading_template_on_path__supporting_files(self):
+        """
+        Test that the leading "templates/" is removed from each entry on the list supporting_files.
+        """
+        config = JobbergateConfig(supporting_files=["templates/test_job_script.sh"])
+
+        assert config.supporting_files == ["test_job_script.sh"]
+
+    def test_remove_leading_template_on_path__template_files(self):
+        """
+        Test that the leading "templates/" is removed from each entry on the list template_files.
+        """
+        config = JobbergateConfig(template_files=["templates/test_job_script.sh"])
+
+        assert config.template_files == ["test_job_script.sh"]
+
 
 def test_application_config(reference_application_config, dummy_application_config):
     """

@@ -6,6 +6,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Fix a compatibility issue on JobbergateConfig by removing the leading "templates/" on the path for template files
+
 
 3.4.0 -- 2023-01-03
 -------------------
