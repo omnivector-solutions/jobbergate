@@ -8,6 +8,7 @@ Unreleased
 ----------
 - Fix a compatibility issue on JobbergateConfig by removing the leading "templates/" on the path for template files
 - Fix some compatibility issues on the JobProperties schema for job submissions
+- Fix the field `execution_parameters` that is optional at job submission creations
 
 
 3.4.0 -- 2023-01-03
