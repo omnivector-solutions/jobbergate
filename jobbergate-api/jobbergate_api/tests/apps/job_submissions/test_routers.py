@@ -109,6 +109,95 @@ async def test_create_job_submission__with_client_id_in_token(
 
 
 @pytest.mark.asyncio
+async def test_create_job_submission__without_execution_parameters(
+    fill_application_data,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    time_frame,
+):
+    """
+    Test POST /job-submissions/ correctly creates a job_submission.
+
+    This test proves that a job_submission is successfully created via a POST request to the /job-submissions/
+    endpoint. We show this by asserting that the job_submission is created in the database after the post
+    request is made, the correct status code (201) is returned. We also show that the ``client_id``
+    is pulled from the token and the created job_submission is connected to that client id.
+
+    This test is the same as the previous one, but it does not include the ``execution_parameters``
+    in the payload, since they are optional.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+
+    dummy_client_id = "dummy-cluster-client"
+    inject_security_header(
+        "owner1@org.com",
+        Permissions.JOB_SUBMISSIONS_EDIT,
+        client_id=dummy_client_id,
+    )
+    create_data = fill_job_submission_data(
+        job_script_id=inserted_job_script_id,
+        job_submission_name="sub1",
+        job_submission_owner_email="owner1@org.com",
+    )
+
+    # Removed defaults to make sure these are correctly set by other mechanisms
+    create_data.pop("status", None)
+    create_data.pop("client_id", None)
+
+    with mock.patch(
+        "jobbergate_api.apps.job_submissions.routers.get_job_properties_from_job_script"
+    ) as mocked:
+        mocked.return_value = JobProperties()
+        with time_frame() as window:
+            response = await client.post("/jobbergate/job-submissions/", json=create_data)
+        mocked.assert_called_once_with(inserted_job_script_id)
+
+    assert response.status_code == status.HTTP_201_CREATED
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 1
+
+    id_rows = await database.fetch_all("SELECT id FROM job_submissions")
+    assert len(id_rows) == 1
+
+    job_submission = JobSubmissionResponse(**response.json())
+
+    # Check that the response correspond to the entry in the database
+    job_submission_raw_data = await database.fetch_one(
+        query=job_submissions_table.select().where(job_submissions_table.c.id == id_rows[0][0])
+    )
+    assert job_submission_raw_data is not None
+    assert job_submission == JobSubmissionResponse(**job_submission_raw_data)  # type: ignore
+
+    # Check that each field is correctly set
+    assert job_submission.id == job_submission_raw_data.get("id")
+    assert job_submission.job_submission_name == create_data.get("job_submission_name")
+    assert job_submission.job_submission_owner_email == create_data.get("job_submission_owner_email")
+    assert job_submission.job_submission_description == create_data.get("job_submission_description")
+    assert job_submission.job_script_id == create_data.get("job_script_id")
+    assert job_submission.execution_directory == create_data.get("execution_directory")
+
+    # client_id was not on the payload, it should be set by other mechanisms
+    assert create_data.get("client_id") is None
+    assert job_submission.client_id == dummy_client_id
+
+    assert job_submission.status == JobSubmissionStatus.CREATED
+    assert job_submission.created_at in window
+    assert job_submission.updated_at in window
+
+    assert job_submission.execution_parameters == JobProperties().dict()
+
+
+@pytest.mark.asyncio
 async def test_create_job_submission__with_client_id_in_request_body(
     fill_application_data,
     fill_job_script_data,
