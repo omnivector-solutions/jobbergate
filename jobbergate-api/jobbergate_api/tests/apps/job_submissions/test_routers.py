@@ -137,10 +137,11 @@ async def test_create_job_submission__without_execution_parameters(
         values=fill_job_script_data(application_id=inserted_application_id),
     )
 
+    dummy_client_id = "dummy-cluster-client"
     inject_security_header(
         "owner1@org.com",
         Permissions.JOB_SUBMISSIONS_EDIT,
-        client_id="dummy-cluster-client",
+        client_id=dummy_client_id,
     )
     create_data = fill_job_submission_data(
         job_script_id=inserted_job_script_id,
@@ -179,12 +180,16 @@ async def test_create_job_submission__without_execution_parameters(
 
     # Check that each field is correctly set
     assert job_submission.id == job_submission_raw_data.get("id")
-    assert job_submission.job_submission_name == "sub1"
-    assert job_submission.job_submission_owner_email == "owner1@org.com"
-    assert job_submission.job_submission_description is None
-    assert job_submission.job_script_id == inserted_job_script_id
-    assert job_submission.execution_directory is None
-    assert job_submission.client_id == "dummy-cluster-client"
+    assert job_submission.job_submission_name == create_data.get("job_submission_name")
+    assert job_submission.job_submission_owner_email == create_data.get("job_submission_owner_email")
+    assert job_submission.job_submission_description == create_data.get("job_submission_description")
+    assert job_submission.job_script_id == create_data.get("job_script_id")
+    assert job_submission.execution_directory == create_data.get("execution_directory")
+
+    # client_id was not on the payload, it should be set by other mechanisms
+    assert create_data.get("client_id") is None
+    assert job_submission.client_id == dummy_client_id
+
     assert job_submission.status == JobSubmissionStatus.CREATED
     assert job_submission.created_at in window
     assert job_submission.updated_at in window
