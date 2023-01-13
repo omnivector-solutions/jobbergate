@@ -76,7 +76,7 @@ class SbatchToSlurm:
 
 sbatch_to_slurm_mapping = [
     SbatchToSlurm("account", "--account", "-A"),
-    SbatchToSlurm("account_gather_freqency", "--acctg-freq"),
+    SbatchToSlurm("account_gather_frequency", "--acctg-freq"),
     SbatchToSlurm("array", "--array", "-a"),
     SbatchToSlurm("batch_features", "--batch"),
     SbatchToSlurm("burst_buffer", "--bb"),
@@ -130,10 +130,9 @@ sbatch_to_slurm_mapping = [
     SbatchToSlurm("", "--ignore-pbs", "", dict(action="store_const", const=True)),
     SbatchToSlurm("standard_input", "--input", "-i"),
     SbatchToSlurm("name", "--job-name", "-J"),
-    # kill_on_invalid_dependency is an invalid key for Slurm API according to our tests
-    # SbatchToSlurm(
-    #     "kill_on_invalid_dependency", "--kill-on-invalid-dep", "", dict(type=int)
-    # ),
+    SbatchToSlurm(
+        "kill_on_invalid_dependency", "--kill-on-invalid-dep", "", dict(type=bool, nargs="?", const=True)
+    ),
     SbatchToSlurm("licenses", "--licenses", "-L"),
     SbatchToSlurm("mail_type", "--mail-type"),
     SbatchToSlurm("mail_user", "--mail-user"),

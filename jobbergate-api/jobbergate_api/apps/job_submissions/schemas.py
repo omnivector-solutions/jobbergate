@@ -199,7 +199,7 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     memory_binding: Optional[str] = Field(description="Bind tasks to memory.")
     memory_per_cpu: Optional[int] = Field(description="Minimum real memory per cpu (MB).")
     memory_per_gpu: Optional[int] = Field(description="Minimum memory required per allocated GPU.")
-    memory_per_node: Optional[int] = Field(description="Minimum real memory per node (MB).")
+    memory_per_node: Optional[str] = Field(description="Minimum real memory per node (MB).")
     minimum_cpus_per_node: Optional[int] = Field(description="Minimum number of CPUs per node.")
     minimum_nodes: Optional[bool] = Field(
         description="If a range of node counts is given, prefer the smaller count."
@@ -209,10 +209,8 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     no_kill: Optional[bool] = Field(
         description="Do not automatically terminate a job if one of the nodes it has been allocated fails."
     )
-    nodes: Optional[List[int]] = Field(
+    nodes: Optional[str] = Field(
         description="Request that a minimum of nodes nodes and a maximum node count.",
-        min_items=1,
-        max_items=2,
     )
     open_mode: Optional[Literal["append", "truncate"]] = Field(
         description="Open the output and error files using append or truncate mode as specified."
@@ -241,12 +239,12 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     standard_error: Optional[str] = Field(
         description="Instruct Slurm to connect the batch script's standard error directly to the file name."
     )
-    standard_in: Optional[str] = Field(
+    standard_input: Optional[str] = Field(
         description=(
             "Instruct Slurm to connect the batch script's standard input directly to the file name specified."
         )
     )
-    standard_out: Optional[str] = Field(
+    standard_output: Optional[str] = Field(
         description="Instruct Slurm to connect the batch script's standard output directly to the file name."
     )
     tasks: Optional[int] = Field(
@@ -269,10 +267,10 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     threads_per_core: Optional[int] = Field(
         description="Restrict node selection to nodes with at least the specified number of threads per core."
     )
-    time_limit: Optional[int] = Field(description="Step time limit.")
+    time_limit: Optional[str] = Field(description="Step time limit.")
     time_minimum: Optional[int] = Field(description="Minimum run time in minutes.")
-    wait_all_nodes: Optional[bool] = Field(
-        description="Do not begin execution until all nodes are ready for use."
+    wait_all_nodes: Optional[int] = Field(
+        description="Do not begin execution until all nodes are ready for use.", ge=0, le=1
     )
     wckey: Optional[str] = Field(description="Specify wckey to be used with job.")
 
