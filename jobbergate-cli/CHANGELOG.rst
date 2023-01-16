@@ -7,8 +7,9 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
-3.4.1-alpha.0 -- 2023-01-13
----------------------------
+3.4.1 -- 2023-01-16
+-------------------
+- Keep version in sync with the API.
 
 3.4.0 -- 2023-01-03
 -------------------
