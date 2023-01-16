@@ -9,9 +9,7 @@ Unreleased
 
 3.4.1 -- 2023-01-16
 -------------------
-
-3.4.1-alpha.0 -- 2023-01-13
----------------------------
+- Keep synchronized with jobbergate-cli and jobbergate-api
 
 3.4.0 -- 2023-01-03
 -------------------
