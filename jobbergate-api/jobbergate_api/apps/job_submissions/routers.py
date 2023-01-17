@@ -408,9 +408,9 @@ async def job_submission_agent_update(
         .returning(job_submissions_table)
     )
     logger.trace(f"update_query = {render_sql(update_query)}")
-    result = await database.fetch_one(update_query)
+    job_submission_data = await database.fetch_one(update_query)
 
-    if result is None:
+    if job_submission_data is None:
         message = (
             f"JobSubmission with id={job_submission_id} "
             f"and client_id={identity_claims.client_id} not found."
@@ -422,9 +422,11 @@ async def job_submission_agent_update(
         )
 
     if report_message and new_status == JobSubmissionStatus.REJECTED:
-        notify_submission_rejected(job_submission_id, report_message, result["job_submission_owner_email"])
+        notify_submission_rejected(
+            job_submission_id, report_message, job_submission_data["job_submission_owner_email"]
+        )
 
-    return result
+    return JobSubmissionResponse(**job_submission_data)  # type: ignore
 
 
 @router.get(

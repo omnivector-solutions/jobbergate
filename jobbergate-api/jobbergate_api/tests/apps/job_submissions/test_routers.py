@@ -1832,6 +1832,96 @@ async def test_job_submissions_agent_update__success(
 
 
 @pytest.mark.asyncio
+async def test_job_submissions_agent_update__job_rejected(
+    fill_application_data,
+    fill_job_script_data,
+    fill_all_job_submission_data,
+    client,
+    inject_security_header,
+):
+    """
+    Test PUT /job-submissions/{job_submission_id} correctly updates a job_submission status to rejected.
+
+    This test proves that a job_submission is successfully updated via a PUT request to the
+    /job-submissions/{job_submission_id} endpoint. We show this by asserting that the job_submission is
+    updated in the database after the post request is made, the correct status code (200) is returned.
+    We also show that the ``status`` column is set to the new status value.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+    await database.execute_many(
+        query=job_submissions_table.insert(),
+        values=fill_all_job_submission_data(
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub1",
+                status=JobSubmissionStatus.CREATED,
+                client_id="dummy-client",
+                slurm_job_id=None,
+                execution_parameters={"name": "job-submission-name", "comment": "I am a comment"},
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub2",
+                status=JobSubmissionStatus.COMPLETED,
+                client_id="dummy-client",
+                slurm_job_id=None,
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub3",
+                status=JobSubmissionStatus.CREATED,
+                client_id="silly-client",
+                slurm_job_id=None,
+            ),
+            dict(
+                job_script_id=inserted_job_script_id,
+                job_submission_name="sub4",
+                status=JobSubmissionStatus.CREATED,
+                client_id="dummy-client",
+                slurm_job_id=None,
+            ),
+        ),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 4
+
+    target_job_submission = await database.fetch_one(
+        query=job_submissions_table.select().where(job_submissions_table.c.job_submission_name == "sub1")
+    )
+    assert target_job_submission is not None
+    job_submission_id = target_job_submission["id"]
+
+    inject_security_header(
+        "who@cares.com",
+        Permissions.JOB_SUBMISSIONS_EDIT,
+        client_id="dummy-client",
+    )
+    response = await client.put(
+        f"/jobbergate/job-submissions/agent/{job_submission_id}",
+        json=dict(
+            new_status=JobSubmissionStatus.REJECTED.value,
+            report_message="Job rejected by the system due to test-test",
+        ),
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    assert data["id"] == job_submission_id
+    assert data["status"] == JobSubmissionStatus.REJECTED
+    assert data["slurm_job_id"] is None
+    assert data["execution_directory"] is None
+    assert data["report_message"] == "Job rejected by the system due to test-test"
+
+
+@pytest.mark.asyncio
 async def test_job_submissions_agent_update__returns_400_if_token_does_not_carry_client_id(
     client,
     inject_security_header,
