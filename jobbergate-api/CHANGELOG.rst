@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Fixed put endpoints on job-submission to return the correct data
 
 3.4.1 -- 2023-01-16
 -------------------
