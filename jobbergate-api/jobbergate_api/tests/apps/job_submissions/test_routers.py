@@ -56,7 +56,6 @@ async def test_create_job_submission__with_client_id_in_token(
         job_script_id=inserted_job_script_id,
         job_submission_name="sub1",
         job_submission_owner_email="owner1@org.com",
-        execution_parameters={"name": "job-submission-name", "comment": "I am a comment"},
     )
 
     # Removed defaults to make sure these are correctly set by other mechanisms
@@ -148,6 +147,9 @@ async def test_create_job_submission__without_execution_parameters(
         job_submission_name="sub1",
         job_submission_owner_email="owner1@org.com",
     )
+
+    # This test aims to prove that the execution_parameters are optional
+    create_data.pop("execution_parameters", None)
 
     # Removed defaults to make sure these are correctly set by other mechanisms
     create_data.pop("status", None)
@@ -319,7 +321,6 @@ async def test_create_job_submission__with_execution_directory(
         job_submission_name="sub1",
         job_submission_owner_email="owner1@org.com",
         execution_directory="/some/fake/path",
-        execution_parameters={"name": "job-submission-name", "comment": "I am a comment"},
     )
 
     # Removed defaults to make sure these are correctly set by other mechanisms
@@ -503,10 +504,6 @@ async def test_get_job_submission_by_id(
             job_script_id=inserted_job_script_id,
             job_submission_name="sub1",
             job_submission_owner_email="owner1@org.com",
-            execution_parameters={
-                "name": "job-submission-name",
-                "comment": "I am a comment",
-            },
         ),
     )
 
