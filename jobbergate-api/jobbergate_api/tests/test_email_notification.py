@@ -8,7 +8,12 @@ from fastapi import HTTPException
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
-from jobbergate_api.email_notification import EmailManager, EmailNotificationError, notify_submission_rejected
+from jobbergate_api.email_notification import (
+    EmailManager,
+    EmailNotificationError,
+    email_manager,
+    notify_submission_rejected,
+)
 
 
 class TestEmailManager:
@@ -113,3 +118,19 @@ def test_notify_submission_rejected():
             to_emails=["support@pytesting.com", "someone@pytesting.com"],
         )
     mocked.assert_called_once()
+
+
+def test_notify_submission_rejected__from_email_unset():
+    """
+    Test that emails are not sent when the attribute `from_email` is undefined.
+
+    Also make sure this should not raise any exception.
+    """
+    with mock.patch.object(target=email_manager, attribute="from_email", new=None):
+        with mock.patch.object(target=email_manager.email_client, attribute="send") as mocked:
+            notify_submission_rejected(
+                job_submission_id=0,
+                report_message="something went wrong!",
+                to_emails=["support@pytesting.com", "someone@pytesting.com"],
+            )
+        mocked.assert_not_called()
