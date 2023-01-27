@@ -20,7 +20,6 @@ from jobbergate_api.apps.job_submissions.properties_parser import (
     _clean_jobscript,
     _clean_line,
     _flagged_line,
-    _split_line,
     build_mapping_sbatch_to_slurm,
     build_parser,
     convert_sbatch_to_slurm_api,
@@ -28,6 +27,7 @@ from jobbergate_api.apps.job_submissions.properties_parser import (
     get_job_properties_from_job_script,
     jobscript_to_dict,
     sbatch_to_slurm_mapping,
+    split,
 )
 from jobbergate_api.apps.job_submissions.schemas import JobProperties
 
@@ -91,22 +91,20 @@ def test_clean_line(line, desired_value):
     "line, desired_value",
     (
         ("--help", ["--help"]),
-        ("--abc=0", ["--abc", "0"]),
+        ("--abc=0", ["--abc=0"]),
         ("-J job_name", ["-J", "job_name"]),
         ("-v -J job_name", ["-v", "-J", "job_name"]),
         ("-J job_name -v", ["-J", "job_name", "-v"]),
-        ("-a=0", ["-a", "0"]),
-        ("-a = 0", ["-a", "0"]),
+        ("-a=0", ["-a=0"]),
+        ("-a = 0", ["-a", "=", "0"]),
         ("-a 0", ["-a", "0"]),
     ),
 )
 def test_split_line(line, desired_value):
     """
-    Check if the provided lines are splitted properly at white spaces and equal character.
-
-    This procedure is important because it is the way argparse expects to receive the parameters.
+    Base check for shlex.split, to record the current behavior.
     """
-    actual_value = _split_line(line)
+    actual_value = split(line)
     assert actual_value == desired_value
 
 
@@ -122,13 +120,15 @@ def dummy_slurm_script():
         #SBATCH                                 # Empty line
         #SBATCH --no-kill --no-requeue          # Flagged params
         #SBATCH -n 4 -A <account>               # Multiple args per line
-        #SBATCH --job-name=serial_job_test      # Job name
+        #SBATCH --job-name "serial_job_test"    # Job name
         #SBATCH --mail-type=END,FAIL            # Mail events (NONE, BEGIN, END, FAIL, ALL)
         #SBATCH --mail-user=email@somewhere.com # Where to send mail
         #SBATCH --mem=1gb                       # Job memory request
         #SBATCH --time=00:05:00                 # Time limit hrs:min:sec
         #SBATCH --output=serial_test_%j.log     # Standard output and error log
-        #SBATCH --wait-all-nodes=0              #
+        #SBATCH --wait-all-nodes 0              #
+        #SBATCH --acctg-freq=task=60,energy=30,network=30,filesystem=60
+        #SBATCH --comment="Hi, I am a comment"
         pwd; hostname; date
 
         module load python
@@ -158,18 +158,15 @@ def test_clean_jobscript(dummy_slurm_script):
         "<account>",
         "--job-name",
         "serial_job_test",
-        "--mail-type",
-        "END,FAIL",
-        "--mail-user",
-        "email@somewhere.com",
-        "--mem",
-        "1gb",
-        "--time",
-        "00:05:00",
-        "--output",
-        "serial_test_%j.log",
+        "--mail-type=END,FAIL",
+        "--mail-user=email@somewhere.com",
+        "--mem=1gb",
+        "--time=00:05:00",
+        "--output=serial_test_%j.log",
         "--wait-all-nodes",
         "0",
+        "--acctg-freq=task=60,energy=30,network=30,filesystem=60",
+        "--comment=Hi, I am a comment",
     ]
     actual_list = list(_clean_jobscript(dummy_slurm_script))
     assert actual_list == desired_list
@@ -347,6 +344,8 @@ def test_jobscript_to_dict__success(dummy_slurm_script):
         "output": "serial_test_%j.log",
         "time": "00:05:00",
         "wait_all_nodes": 0,
+        "acctg_freq": "task=60,energy=30,network=30,filesystem=60",
+        "comment": "Hi, I am a comment",
     }
 
     actual_dict = jobscript_to_dict(dummy_slurm_script)
@@ -408,6 +407,8 @@ def test_get_job_parameters(dummy_slurm_script):
         "standard_output": "serial_test_%j.log",
         "time_limit": "00:05:00",
         "wait_all_nodes": 0,
+        "account_gather_frequency": "task=60,energy=30,network=30,filesystem=60",
+        "comment": "Hi, I am a comment",
     }
 
     actual_dict = get_job_parameters(dummy_slurm_script)
@@ -633,7 +634,9 @@ class TestExclusiveParameter:
         """
         jobscript = "#SBATCH --oversubscribe=test-test"
 
-        with pytest.raises(ValueError, match="Unrecognized SBATCH arguments: test-test"):
+        with pytest.raises(
+            ValueError, match="argument -s/--oversubscribe: ignored explicit argument 'test-test'"
+        ):
             jobscript_to_dict(jobscript)
 
     def test_both_exclusive_and_oversubscribe_1(self):
