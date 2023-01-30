@@ -7,8 +7,9 @@ This file keeps track of all notable changes to jobbergate-docs
 Unreleased
 ----------
 
-3.4.3-alpha.0 -- 2023-01-30
----------------------------
+3.4.3 -- 2023-01-30
+-------------------
+- Keep synchronized with jobbergate-cli and jobbergate-api
 
 3.4.2 -- 2023-01-25
 -------------------
