@@ -4,6 +4,7 @@ Parser for Slurm REST API parameters from SBATCH parameters at the job script fi
 from argparse import ArgumentParser
 from dataclasses import dataclass, field
 from itertools import chain
+from shlex import split
 from typing import Any, Dict, List, Union
 
 from bidict import bidict
@@ -33,15 +34,6 @@ def _clean_line(line: str) -> str:
     return line.lstrip(_IDENTIFICATION_FLAG).split(_INLINE_COMMENT_MARK)[0].strip()
 
 
-def _split_line(line: str) -> List[str]:
-    """
-    Split the provided line at the equal and with spaces characters.
-
-    This procedure is important because it is the way argparse expects to receive the parameters.
-    """
-    return line.replace("=", " ").split()
-
-
 def _clean_jobscript(jobscript: str) -> List[str]:
     """
     Transform a job script string.
@@ -54,7 +46,7 @@ def _clean_jobscript(jobscript: str) -> List[str]:
     """
     jobscript_filtered = filter(_flagged_line, jobscript.splitlines())
     jobscript_cleaned = map(_clean_line, jobscript_filtered)
-    jobscript_splitted = map(_split_line, jobscript_cleaned)
+    jobscript_splitted = map(split, jobscript_cleaned)
     return list(chain.from_iterable(jobscript_splitted))
 
 
