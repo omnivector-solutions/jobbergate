@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 
+3.4.3-alpha.0 -- 2023-01-30
+---------------------------
+
 - Patched the sbatch param parser to support special characters
 
 3.4.2 -- 2023-01-25
