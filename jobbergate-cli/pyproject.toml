@@ -58,6 +58,7 @@ ipython = "^7.10"
 
 [tool.poetry.scripts]
 jobbergate = "jobbergate_cli.main:app"
+test-jobbergate = "jobbergate_cli.end_to_end_testing.main:main"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
