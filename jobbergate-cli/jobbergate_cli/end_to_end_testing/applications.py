@@ -1,20 +1,29 @@
-from pathlib import Path
-from dataclasses import dataclass
-from typing import List
-from jobbergate_cli.end_to_end_testing.constants import APPLICATIONS_CACHE_PATH
-from jobbergate_cli.end_to_end_testing.utils import cached_run
-from jobbergate_cli.end_to_end_testing.base import BaseEntity
-
 import json
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import List
+
 import buzz
+
+from jobbergate_cli.end_to_end_testing.base import BaseEntity
+from jobbergate_cli.end_to_end_testing.constants import APPLICATIONS_CACHE_PATH, TEST_APPLICATIONS_PATH
+from jobbergate_cli.end_to_end_testing.utils import cached_run
+
+
+def get_application_list() -> List[Path]:
+    return [p for p in TEST_APPLICATIONS_PATH.iterdir() if p.is_dir()]
+
+
+def get_test_applications() -> List[Path]:
+    return list(APPLICATIONS_CACHE_PATH.glob("*.json"))
 
 
 @dataclass
 class Applications(BaseEntity):
-    entity_list: List
+    base_applications: List = field(default_factory=get_application_list)
 
     def create(self):
-        for app in self.entity_list:
+        for app in self.base_applications:
             cache = APPLICATIONS_CACHE_PATH / f"{app.name}.json"
             name = app.name
             identifier = str(Path.cwd().name) + "-" + name
@@ -32,7 +41,7 @@ class Applications(BaseEntity):
             )
 
     def get(self):
-        for app in APPLICATIONS_CACHE_PATH.glob("*.json"):
+        for app in get_test_applications():
             app_data = json.loads(app.read_text())
             app_data.pop("updated_at")
             for id_key, id_value in {
@@ -62,7 +71,7 @@ class Applications(BaseEntity):
         expected_ids = set(
             map(
                 lambda app: json.loads(app.read_text())["id"],
-                APPLICATIONS_CACHE_PATH.glob("*.json"),
+                get_test_applications(),
             ),
         )
 

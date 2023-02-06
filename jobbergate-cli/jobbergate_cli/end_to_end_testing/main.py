@@ -1,17 +1,16 @@
 from jobbergate_cli.end_to_end_testing.applications import Applications
-from jobbergate_cli.end_to_end_testing.constants import TEST_APPLICATIONS_PATH
+from jobbergate_cli.end_to_end_testing.job_scripts import JobScripts
 
 
 def main():
 
-    applications = Applications(
-        entity_list=[p for p in TEST_APPLICATIONS_PATH.iterdir() if p.is_dir()],
-    )
+    entity_list = [Applications(), JobScripts()]
 
-    applications.create()
-    applications.get()
-    applications.list()
-    print("main")
+    for entity in entity_list:
+
+        entity.create()
+        entity.get()
+        entity.list()
 
 
 if __name__ == "__main__":
