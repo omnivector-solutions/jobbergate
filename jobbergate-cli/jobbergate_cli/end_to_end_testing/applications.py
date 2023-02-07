@@ -24,11 +24,9 @@ class Applications(BaseEntity):
 
     def create(self):
         for app in self.base_applications:
-            cache = APPLICATIONS_CACHE_PATH / f"{app.name}.json"
             name = app.name
             identifier = str(Path.cwd().name) + "-" + name
             cached_run(
-                cache,
                 "create-application",
                 "--name",
                 name,
@@ -38,6 +36,7 @@ class Applications(BaseEntity):
                 str(app),
                 "--application-desc",
                 "jobbergate-cli-end-to-end-tests",
+                cache_path=APPLICATIONS_CACHE_PATH / f"{app.name}.json",
             )
 
     def get(self):
@@ -49,7 +48,6 @@ class Applications(BaseEntity):
                 "--identifier": app_data["application_identifier"],
             }.items():
                 result = cached_run(
-                    None,
                     "get-application",
                     id_key,
                     str(id_value),
@@ -76,7 +74,6 @@ class Applications(BaseEntity):
         )
 
         actual_result = cached_run(
-            None,
             "list-applications",
             "--user",
             "--sort-field",

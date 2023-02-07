@@ -23,9 +23,7 @@ class JobScripts(BaseEntity):
         for app in self.base_applications:
             app_data = json.loads(app.read_text())
             name = app_data["application_name"]
-            cache = JOB_SCRIPTS_CACHE_PATH / f"{name}.json"
             cached_run(
-                cache,
                 "create-job-script",
                 "--no-submit",
                 "--fast",
@@ -35,6 +33,7 @@ class JobScripts(BaseEntity):
                 app_data["application_identifier"],
                 "--description",
                 app_data["application_description"],
+                cache_path=JOB_SCRIPTS_CACHE_PATH / f"{name}.json",
             )
 
     def get(self):
@@ -43,7 +42,7 @@ class JobScripts(BaseEntity):
 
             id_value = str(app_data["id"])
 
-            result = cached_run(None, "get-job-script", "--id", str(id_value))
+            result = cached_run("get-job-script", "--id", str(id_value))
 
             with buzz.check_expressions(
                 "get-job-script returned unexpected data for --id={}".format(
@@ -65,7 +64,6 @@ class JobScripts(BaseEntity):
         )
 
         actual_result = cached_run(
-            None,
             "list-job-scripts",
             "--sort-field",
             "id",

@@ -23,9 +23,7 @@ class JobSubmissions(BaseEntity):
         for app in self.base_applications:
             app_data = json.loads(app.read_text())
             name = app_data["job_script_name"]
-            cache = JOB_SUBMISSIONS_CACHE_PATH / f"{name}.json"
             cached_run(
-                cache,
                 "create-job-submission",
                 "--name",
                 name,
@@ -34,6 +32,7 @@ class JobSubmissions(BaseEntity):
                 "--description",
                 app_data["job_script_description"],
                 "--no-download",
+                cache_path=JOB_SUBMISSIONS_CACHE_PATH / f"{name}.json",
             )
 
     def get(self):
@@ -42,7 +41,7 @@ class JobSubmissions(BaseEntity):
 
             id_value = str(app_data["id"])
 
-            result = cached_run(None, "get-job-submission", "--id", str(id_value))
+            result = cached_run("get-job-submission", "--id", str(id_value))
 
             with buzz.check_expressions(
                 "get-job-submission returned unexpected data for --id={}".format(
@@ -52,6 +51,7 @@ class JobSubmissions(BaseEntity):
                 app_data.pop("status")
                 app_data.pop("updated_at")
                 app_data.pop("slurm_job_id")
+                app_data.pop("report_message")
                 for key, value in app_data.items():
                     check(
                         result[key] == value,
@@ -67,7 +67,6 @@ class JobSubmissions(BaseEntity):
         )
 
         actual_result = cached_run(
-            None,
             "list-job-submissions",
             "--sort-field",
             "id",
