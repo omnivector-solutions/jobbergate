@@ -5,51 +5,53 @@ from typing import List
 
 import buzz
 
-from jobbergate_cli.end_to_end_testing.applications import get_test_applications
 from jobbergate_cli.end_to_end_testing.base import BaseEntity
-from jobbergate_cli.end_to_end_testing.constants import JOB_SCRIPTS_CACHE_PATH
+from jobbergate_cli.end_to_end_testing.constants import JOB_SUBMISSIONS_CACHE_PATH
+from jobbergate_cli.end_to_end_testing.job_scripts import get_test_job_scripts
 from jobbergate_cli.end_to_end_testing.utils import cached_run
 
 
-def get_test_job_scripts() -> List[Path]:
-    return list(JOB_SCRIPTS_CACHE_PATH.glob("*.json"))
+def get_test_job_submissions() -> List[Path]:
+    return list(JOB_SUBMISSIONS_CACHE_PATH.glob("*.json"))
 
 
 @dataclass
-class JobScripts(BaseEntity):
-    base_applications: List = field(default_factory=get_test_applications)
+class JobSubmissions(BaseEntity):
+    base_applications: List = field(default_factory=get_test_job_scripts)
 
     def create(self):
         for app in self.base_applications:
             app_data = json.loads(app.read_text())
-            name = app_data["application_name"]
-            cache = JOB_SCRIPTS_CACHE_PATH / f"{name}.json"
+            name = app_data["job_script_name"]
+            cache = JOB_SUBMISSIONS_CACHE_PATH / f"{name}.json"
             cached_run(
                 cache,
-                "create-job-script",
-                "--no-submit",
-                "--fast",
+                "create-job-submission",
                 "--name",
                 name,
-                "--application-identifier",
-                app_data["application_identifier"],
+                "--job-script-id",
+                str(app_data["id"]),
                 "--description",
-                app_data["application_description"],
+                app_data["job_script_description"],
+                "--no-download",
             )
 
     def get(self):
-        for app in get_test_job_scripts():
+        for app in get_test_job_submissions():
             app_data = json.loads(app.read_text())
 
             id_value = str(app_data["id"])
 
-            result = cached_run(None, "get-job-script", "--id", str(id_value))
+            result = cached_run(None, "get-job-submission", "--id", str(id_value))
 
             with buzz.check_expressions(
-                "get-job-script returned unexpected data for --id={}".format(
+                "get-job-submission returned unexpected data for --id={}".format(
                     id_value,
                 )
             ) as check:
+                app_data.pop("status")
+                app_data.pop("updated_at")
+                app_data.pop("slurm_job_id")
                 for key, value in app_data.items():
                     check(
                         result[key] == value,
@@ -60,13 +62,13 @@ class JobScripts(BaseEntity):
         expected_ids = set(
             map(
                 lambda app: json.loads(app.read_text())["id"],
-                get_test_job_scripts(),
+                get_test_job_submissions(),
             ),
         )
 
         actual_result = cached_run(
             None,
-            "list-job-scripts",
+            "list-job-submissions",
             "--sort-field",
             "id",
             "--sort-order",
