@@ -8,7 +8,7 @@ import buzz
 from jobbergate_cli.end_to_end_testing.base import BaseEntity
 from jobbergate_cli.end_to_end_testing.constants import JOB_SUBMISSIONS_CACHE_PATH
 from jobbergate_cli.end_to_end_testing.job_scripts import get_test_job_scripts
-from jobbergate_cli.end_to_end_testing.utils import cached_run
+from jobbergate_cli.end_to_end_testing.utils import cached_run, get_set_of_ids
 
 
 def get_test_job_submissions() -> List[Path]:
@@ -59,12 +59,7 @@ class JobSubmissions(BaseEntity):
                     )
 
     def list(self):
-        expected_ids = set(
-            map(
-                lambda app: json.loads(app.read_text())["id"],
-                get_test_job_submissions(),
-            ),
-        )
+        expected_ids = get_set_of_ids(get_test_job_submissions())
 
         actual_result = cached_run(
             "list-job-submissions",
@@ -75,4 +70,7 @@ class JobSubmissions(BaseEntity):
         )
         actual_ids = {i["id"] for i in actual_result}
 
-        assert expected_ids.issubset(actual_ids)
+        buzz.require_condition(
+            expected_ids.issubset(actual_ids),
+            f"Expected_ids={expected_ids} is not a subset of actual_ids={actual_ids}",
+        )

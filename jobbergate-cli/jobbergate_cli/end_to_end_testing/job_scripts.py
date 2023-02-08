@@ -8,7 +8,7 @@ import buzz
 from jobbergate_cli.end_to_end_testing.applications import get_test_applications
 from jobbergate_cli.end_to_end_testing.base import BaseEntity
 from jobbergate_cli.end_to_end_testing.constants import JOB_SCRIPTS_CACHE_PATH
-from jobbergate_cli.end_to_end_testing.utils import cached_run
+from jobbergate_cli.end_to_end_testing.utils import cached_run, get_set_of_ids
 
 
 def get_test_job_scripts() -> List[Path]:
@@ -42,12 +42,10 @@ class JobScripts(BaseEntity):
 
             id_value = str(app_data["id"])
 
-            result = cached_run("get-job-script", "--id", str(id_value))
+            result = cached_run("get-job-script", "--id", id_value)
 
             with buzz.check_expressions(
-                "get-job-script returned unexpected data for --id={}".format(
-                    id_value,
-                )
+                f"get-job-script returned unexpected data for --id={id_value}",
             ) as check:
                 for key, value in app_data.items():
                     check(
@@ -56,12 +54,7 @@ class JobScripts(BaseEntity):
                     )
 
     def list(self):
-        expected_ids = set(
-            map(
-                lambda app: json.loads(app.read_text())["id"],
-                get_test_job_scripts(),
-            ),
-        )
+        expected_ids = get_set_of_ids(get_test_job_scripts())
 
         actual_result = cached_run(
             "list-job-scripts",
@@ -72,4 +65,7 @@ class JobScripts(BaseEntity):
         )
         actual_ids = {i["id"] for i in actual_result}
 
-        assert expected_ids.issubset(actual_ids)
+        buzz.require_condition(
+            expected_ids.issubset(actual_ids),
+            f"Expected_ids={expected_ids} is not a subset of actual_ids={actual_ids}",
+        )
