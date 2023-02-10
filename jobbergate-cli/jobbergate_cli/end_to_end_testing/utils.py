@@ -50,7 +50,7 @@ def cached_run(*args, cache_path: Optional[Path] = None) -> Dict[str, Any]:
     if cache_path is not None:
         logger.debug(f"Saving result to: {cache_path}")
         cache_path.parent.mkdir(parents=True, exist_ok=True)
-        cache_path.write_text(json.dumps(result_json))
+        cache_path.write_text(json.dumps(result_json, indent=4))
 
     return result_json
 
