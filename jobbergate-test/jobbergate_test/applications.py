@@ -1,26 +1,30 @@
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List
 
 import buzz
 
 from jobbergate_test.base import BaseEntity
-from jobbergate_test.constants import APPLICATIONS_CACHE_PATH, TEST_APPLICATIONS_PATH
+from jobbergate_test.constants import APPLICATIONS_CACHE_PATH
 from jobbergate_test.utils import cached_run, get_set_of_ids
-
-
-def get_application_list() -> List[Path]:
-    return [p for p in TEST_APPLICATIONS_PATH.iterdir() if p.is_dir()]
 
 
 def get_test_applications() -> List[Path]:
     return list((APPLICATIONS_CACHE_PATH / "create").glob("*.json"))
 
 
+@dataclass
 class Applications(BaseEntity):
+    application_path: Path
+    test_prefix: str
+
+    def get_application_list(self) -> List[Path]:
+        return [p for p in self.application_path.iterdir() if p.is_dir()]
+
     def create(self):
-        for app in get_application_list():
-            identifier = f"{Path.cwd().name}-{app.name}"
+        for app in self.get_application_list():
+            identifier = f"{self.test_prefix}-{app.name}"
             result = cached_run(
                 "create-application",
                 "--name",

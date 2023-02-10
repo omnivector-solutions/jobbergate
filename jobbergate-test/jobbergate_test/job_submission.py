@@ -33,7 +33,7 @@ class JobSubmissions(BaseEntity):
 
             buzz.require_condition(
                 result.get("job_script_id") == app_data["id"],
-                "The job-script id is not the same as the one in the job-script",
+                "The job-script-id is not the same as the one in the job-script",
             )
 
     def get(self):
