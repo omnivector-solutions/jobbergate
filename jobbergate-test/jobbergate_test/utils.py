@@ -45,7 +45,13 @@ def cached_run(*args, cache_path: Optional[Path] = None) -> Dict[str, Any]:
         return json.loads(cache_path.read_text())
 
     result = run(*command)
-    result_json = json.loads(result.stdout)
+    try:
+        result_json = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        # the command jobbergate --raw --full create-job-script returns
+        # some noise before the json, so we need to filter it out
+        filtered_stdout = "{" + result.stdout.split("{", 1)[-1]
+        result_json = json.loads(filtered_stdout)
 
     if cache_path is not None:
         logger.debug(f"Saving result to: {cache_path}")
