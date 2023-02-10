@@ -11,5 +11,9 @@ class BaseEntity(ABC):
         pass
 
     @abstractmethod
+    def update(self):
+        pass
+
+    @abstractmethod
     def list(self):
         pass

@@ -1,5 +1,4 @@
 import json
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List
 
@@ -18,12 +17,9 @@ def get_test_applications() -> List[Path]:
     return list((APPLICATIONS_CACHE_PATH / "create").glob("*.json"))
 
 
-@dataclass
 class Applications(BaseEntity):
-    base_applications: List = field(default_factory=get_application_list)
-
     def create(self):
-        for app in self.base_applications:
+        for app in get_application_list():
             identifier = f"{Path.cwd().name}-{app.name}"
             result = cached_run(
                 "create-application",

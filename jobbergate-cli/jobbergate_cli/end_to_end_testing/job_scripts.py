@@ -1,5 +1,4 @@
 import json
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List
 
@@ -12,18 +11,15 @@ from jobbergate_cli.end_to_end_testing.utils import cached_run, get_set_of_ids
 
 
 def get_test_job_scripts() -> List[Path]:
-    return list(JOB_SCRIPTS_CACHE_PATH.glob("*.json"))
+    return list((JOB_SCRIPTS_CACHE_PATH / "create").glob("*.json"))
 
 
-@dataclass
 class JobScripts(BaseEntity):
-    base_applications: List = field(default_factory=get_test_applications)
-
     def create(self):
-        for app in self.base_applications:
+        for app in get_test_applications():
             app_data = json.loads(app.read_text())
             name = app_data["application_name"]
-            cached_run(
+            result = cached_run(
                 "create-job-script",
                 "--no-submit",
                 "--fast",
@@ -31,9 +27,12 @@ class JobScripts(BaseEntity):
                 name,
                 "--application-identifier",
                 app_data["application_identifier"],
-                "--description",
-                app_data["application_description"],
-                cache_path=JOB_SCRIPTS_CACHE_PATH / f"{name}.json",
+                cache_path=JOB_SCRIPTS_CACHE_PATH / "create" / f"{name}.json",
+            )
+
+            buzz.require_condition(
+                result.get("application_id") == app_data["id"],
+                "The application id is not the same as the one in the application",
             )
 
     def get(self):
@@ -42,7 +41,12 @@ class JobScripts(BaseEntity):
 
             id_value = str(app_data["id"])
 
-            result = cached_run("get-job-script", "--id", id_value)
+            result = cached_run(
+                "get-job-script",
+                "--id",
+                id_value,
+                cache_path=JOB_SCRIPTS_CACHE_PATH / "get" / app.name,
+            )
 
             with buzz.check_expressions(
                 f"get-job-script returned unexpected data for --id={id_value}",
@@ -53,6 +57,28 @@ class JobScripts(BaseEntity):
                         f"field={key}, expected={value}, actual={result[key]}",
                     )
 
+    def update(self):
+        description = "jobbergate-cli-end-to-end-tests"
+        for app in get_test_job_scripts():
+            app_data = json.loads(app.read_text())
+            app_data.pop("updated_at")
+
+            id_value = str(app_data["id"])
+
+            result = cached_run(
+                "update-job-script",
+                "--id",
+                id_value,
+                "--description",
+                description,
+                cache_path=JOB_SCRIPTS_CACHE_PATH / "update" / app.name,
+            )
+
+            buzz.require_condition(
+                result.get("job_script_description") == description,
+                f"Job-script {app.name} was not updated properly",
+            )
+
     def list(self):
         expected_ids = get_set_of_ids(get_test_job_scripts())
 
@@ -62,6 +88,7 @@ class JobScripts(BaseEntity):
             "id",
             "--sort-order",
             "ASCENDING",
+            cache_path=JOB_SCRIPTS_CACHE_PATH / "list.json",
         )
         actual_ids = {i["id"] for i in actual_result}
 

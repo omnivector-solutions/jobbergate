@@ -1,5 +1,4 @@
 import json
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List
 
@@ -12,27 +11,29 @@ from jobbergate_cli.end_to_end_testing.utils import cached_run, get_set_of_ids
 
 
 def get_test_job_submissions() -> List[Path]:
-    return list(JOB_SUBMISSIONS_CACHE_PATH.glob("*.json"))
+    return list((JOB_SUBMISSIONS_CACHE_PATH / "create").glob("*.json"))
 
 
-@dataclass
 class JobSubmissions(BaseEntity):
-    base_applications: List = field(default_factory=get_test_job_scripts)
-
     def create(self):
-        for app in self.base_applications:
+        for app in get_test_job_scripts():
             app_data = json.loads(app.read_text())
             name = app_data["job_script_name"]
-            cached_run(
+            result = cached_run(
                 "create-job-submission",
                 "--name",
                 name,
                 "--job-script-id",
                 str(app_data["id"]),
                 "--description",
-                app_data["job_script_description"],
+                "jobbergate-cli-end-to-end-tests",
                 "--no-download",
-                cache_path=JOB_SUBMISSIONS_CACHE_PATH / f"{name}.json",
+                cache_path=JOB_SUBMISSIONS_CACHE_PATH / "create" / f"{name}.json",
+            )
+
+            buzz.require_condition(
+                result.get("job_script_id") == app_data["id"],
+                "The job-script id is not the same as the one in the job-script",
             )
 
     def get(self):
@@ -41,7 +42,12 @@ class JobSubmissions(BaseEntity):
 
             id_value = str(app_data["id"])
 
-            result = cached_run("get-job-submission", "--id", str(id_value))
+            result = cached_run(
+                "get-job-submission",
+                "--id",
+                id_value,
+                cache_path=JOB_SUBMISSIONS_CACHE_PATH / "get" / app.name,
+            )
 
             with buzz.check_expressions(
                 "get-job-submission returned unexpected data for --id={}".format(
@@ -58,6 +64,12 @@ class JobSubmissions(BaseEntity):
                         f"field={key}, expected={value}, actual={result[key]}",
                     )
 
+    def update(self):
+        """
+        There is no command available on the cli to update a job-submission.
+        """
+        pass
+
     def list(self):
         expected_ids = get_set_of_ids(get_test_job_submissions())
 
@@ -67,6 +79,7 @@ class JobSubmissions(BaseEntity):
             "id",
             "--sort-order",
             "ASCENDING",
+            cache_path=JOB_SUBMISSIONS_CACHE_PATH / "list.json",
         )
         actual_ids = {i["id"] for i in actual_result}
 

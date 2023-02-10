@@ -22,15 +22,20 @@ def main():
 
     validate_access_token()
 
-    app_list = [Applications, JobScripts, JobSubmissions]
+    app_list = [
+        Applications(),
+        JobScripts(),
+        JobSubmissions(),
+    ]
 
-    for app_class in app_list:
-
-        app = app_class()
+    for app in app_list:
 
         app.create()
         app.get()
+        app.update()
         app.list()
+
+    logger.success("Completed end-to-end testing")
 
 
 if __name__ == "__main__":
