@@ -1,4 +1,5 @@
 import json
+import re
 import subprocess
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
@@ -50,8 +51,10 @@ def cached_run(*args, cache_path: Optional[Path] = None) -> Dict[str, Any]:
     except json.JSONDecodeError:
         # the command jobbergate --raw --full create-job-script returns
         # some noise before the json, so we need to filter it out
-        filtered_stdout = "{" + result.stdout.split("{", 1)[-1]
-        result_json = json.loads(filtered_stdout)
+        filtered_stdout = re.search(r"([\s\S]{[\s\S]+\})$", result.stdout)
+        if not filtered_stdout:
+            raise RuntimeError(f"Could not filter stdout: {result.stdout}")
+        result_json = json.loads(filtered_stdout.group())
 
     if cache_path is not None:
         logger.debug(f"Saving result to: {cache_path}")

@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 import typer
 from buzz import handle_errors
 from jobbergate_cli.auth import (
