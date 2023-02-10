@@ -4,9 +4,9 @@ from typing import List
 
 import buzz
 
-from jobbergate_cli.end_to_end_testing.base import BaseEntity
-from jobbergate_cli.end_to_end_testing.constants import APPLICATIONS_CACHE_PATH, TEST_APPLICATIONS_PATH
-from jobbergate_cli.end_to_end_testing.utils import cached_run, get_set_of_ids
+from jobbergate_test.base import BaseEntity
+from jobbergate_test.constants import APPLICATIONS_CACHE_PATH, TEST_APPLICATIONS_PATH
+from jobbergate_test.utils import cached_run, get_set_of_ids
 
 
 def get_application_list() -> List[Path]:

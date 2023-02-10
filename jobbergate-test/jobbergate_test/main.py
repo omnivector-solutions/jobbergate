@@ -2,9 +2,9 @@ from buzz import handle_errors
 from loguru import logger
 
 from jobbergate_cli.auth import load_tokens_from_cache, validate_token_and_extract_identity
-from jobbergate_cli.end_to_end_testing.applications import Applications
-from jobbergate_cli.end_to_end_testing.job_scripts import JobScripts
-from jobbergate_cli.end_to_end_testing.job_submission import JobSubmissions
+from jobbergate_test.applications import Applications
+from jobbergate_test.job_scripts import JobScripts
+from jobbergate_test.job_submission import JobSubmissions
 
 
 def validate_access_token():

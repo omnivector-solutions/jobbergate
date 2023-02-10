@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "jobbergate-test"
+version = "0.1.0"
+description = "Jobbergate CLI Client"
+authors = ["Omnivector Solutions <info@omnivector.solutions>"]
+license = "MIT"
+readme = "README.rst"
+repository = "https://github.com/omnivector-solutions/jobbergate"
+packages = [{include = "jobbergate_test"}]
+
+[tool.poetry.dependencies]
+python = "^3.6.2"
+jobbergate-cli = {path = "../jobbergate-cli"}
+
+[tool.poetry.dev-dependencies]
+black = "^21.9b0"
+isort = "^5.9.3"
+pyproject-flake8 = "^0.0.1-alpha.2"
+mypy = "^0.931"
+
+[tool.poetry.scripts]
+test-jobbergate = "jobbergate_test.main:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

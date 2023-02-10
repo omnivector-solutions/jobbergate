@@ -4,10 +4,10 @@ from typing import List
 
 import buzz
 
-from jobbergate_cli.end_to_end_testing.applications import get_test_applications
-from jobbergate_cli.end_to_end_testing.base import BaseEntity
-from jobbergate_cli.end_to_end_testing.constants import JOB_SCRIPTS_CACHE_PATH
-from jobbergate_cli.end_to_end_testing.utils import cached_run, get_set_of_ids
+from jobbergate_test.applications import get_test_applications
+from jobbergate_test.base import BaseEntity
+from jobbergate_test.constants import JOB_SCRIPTS_CACHE_PATH
+from jobbergate_test.utils import cached_run, get_set_of_ids
 
 
 def get_test_job_scripts() -> List[Path]:
