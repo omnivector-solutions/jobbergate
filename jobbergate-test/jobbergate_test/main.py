@@ -17,7 +17,7 @@ def validate_access_token():
     logger.info("Start validating access token")
 
     with handle_errors(
-        "Please, login in to Jobbergate. Failed to validate access token."
+        "Failed to validate access token. Please, login to Jobbergate to continue."
     ):
         token_set = load_tokens_from_cache()
         validate_token_and_extract_identity(token_set)
