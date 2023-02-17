@@ -33,8 +33,6 @@ isort = "^5.9.3"
 pyproject-flake8 = "^0.0.1-alpha.2"
 mypy = "^0.931"
 pytest-mock = "^3.6.0"
-
-[tool.poetry.group.dev.dependencies]
 toml = "^0.10.2"
 
 [tool.pytest.ini_options]
