@@ -10,31 +10,51 @@ To run this example::
   $ source env/bin/activate
 
 - Install our two dependencies
-  $ pip install httpx python-jose
+  $ pip install httpx python-jose python-dotenv
 
 - Run the demo
   $ python login-with-api.py
 
-Note: Before running this demo, you will need::
 
-- Jobbergate components running in docker-compose. See the jobbergate-composed README.
+Note: Before running this demo, you will need to have the following config settings::
 
-Note: After logging in the first time, running this demo again will use the token saved in the same directory as
-"demo.token" until that token expires.
+- ARMADA_API_BASE
+- OIDC_DOMAIN
+- OIDC_CLIENT_ID
+- OIDC_AUDIENCE
+
+These can either be set in a `.env` file or as environment variables.
+
+
+Note:  If you want to use a local dev environment, you will need to follow the
+instructions in the README of the `jobbergate-composed` directory to set up a local
+environment using `docker-compose`. You will also need the following config settings::
+
+- OIDC_DOMAIN=http://keycloak.local:8080/realms/jobbergate-local
+- OIDC_CLIENT_ID=cli
+- OIDC_AUDIENCE=https://local.omnivector.solutions
+- ARMADA_API_BASE=http://localhost:8000
+
+Note: After logging in the first time, running this demo again will use the token saved
+in the same directory as "demo.token" until that token expires.
 """
 
 import pathlib
+import os
 import time
 
 import httpx
+from dotenv import load_dotenv
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError
 
-domain="keycloak.local:8080/realms/jobbergate-local"
-client_id="cli"
-audience="https://local.omnivector.solutions"
+load_dotenv()
 
-base_api_url = "http://localhost:8000"
+domain = os.getenv("OIDC_DOMAIN")
+client_id = os.getenv("OIDC_CLIENT_ID")
+audience = os.getenv("OIDC_AUDIENCE")
+base_api_url = os.getenv("ARMADA_API_BASE")
+
 access_token_file = pathlib.Path("./access.token")
 refresh_token_file = pathlib.Path("./refresh.token")
 
@@ -60,7 +80,7 @@ def login():
     Returns a 2-tuple of (access-token, refresh-token)
     """
     response = httpx.post(
-        f"http://{domain}/protocol/openid-connect/auth/device",
+        f"{domain}/protocol/openid-connect/auth/device",
         data=dict(
             client_id=client_id,
             grant_type="client_credentials",
@@ -76,7 +96,7 @@ def login():
     while True:
         time.sleep(wait_interval)
         response = httpx.post(
-            f"http://{domain}/protocol/openid-connect/token",
+            f"{domain}/protocol/openid-connect/token",
             data=dict(
                 grant_type="urn:ietf:params:oauth:grant-type:device_code",
                 device_code=device_code,
@@ -99,7 +119,7 @@ def refresh(refresh_token):
     Refresh an access token using a refresh token.
     """
     response = httpx.post(
-        f"http://{domain}/protocol/openid-connect/token",
+        f"{domain}/protocol/openid-connect/token",
         data=dict(
             client_id=client_id,
             audience=audience,
@@ -107,7 +127,9 @@ def refresh(refresh_token):
             refresh_token=refresh_token,
         ),
     )
+    print("RESPONSE: ", response)
     refreshed_data = response.json()
+    print("Refreshed data: ", refreshed_data)
     access_token = refreshed_data["access_token"]
     return access_token
 
