@@ -163,9 +163,11 @@ def acquire_token():
         if refresh_token is None:
             (access_token, refresh_token) = login()
             refresh_token_file.write_text(refresh_token)
+            refresh_token_file.chmod(0o600)
         else:
             access_token = refresh(refresh_token)
         access_token_file.write_text(access_token)
+        access_token_file.chmod(0o600)
     return access_token
 
 if __name__ == '__main__':
