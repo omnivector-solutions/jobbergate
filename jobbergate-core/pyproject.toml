@@ -24,6 +24,8 @@ python = "^3.6.2"
 loguru = "^0.6.0"
 pydantic = "^1.8.2"
 py-buzz = "^3.1.0"
+python-jose = "^3.3.0"
+pendulum = "^2.1.2"
 
 [tool.poetry.dev-dependencies]
 black = "^21.9b0"
@@ -60,6 +62,7 @@ max-complexity = 40
 
 [[tool.mypy.overrides]]
 module = [
+    "dataclasses",
     "toml",
 ]
 ignore_missing_imports = true
