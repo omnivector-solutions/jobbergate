@@ -1,13 +1,12 @@
 """
 Test the utilities for handling auth in Jobbergate.
 """
-from unittest.mock import patch
 
 import pendulum
 import pytest
 from jose.jwt import encode
 
-from jobbergate_core.auth import Token
+from jobbergate_core.auth import Token, TokenError
 
 
 @pytest.fixture(scope="session")
@@ -23,7 +22,7 @@ def time_now():
     pendulum.set_test_now(None)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def jwt_token(time_now):
     """
     This fixture will create a JWT token using the jose package.
@@ -42,50 +41,28 @@ def jwt_token(time_now):
     return helper
 
 
-@pytest.fixture(scope="session")
-def test_token(jwt_token, tmp_path):
-    """
-    This fixture will create a Token instance.
-    """
-    token_path = tmp_path / "test.txt"
-    token_content = jwt_token()
-
-    yield Token(content=token_content, cache_path=token_path)
-
-
 class TestToken:
-    def test_base_case(self):
+    def test_base_case(self, jwt_token, tmp_path, time_now):
         """
         Test that the Token class can be instantiated.
         """
-        token = Token()
-        assert token.content is None
-        assert token.cache_path is None
+
+        token_data = {
+            "test": "test",
+            "foo": "bar",
+            "email": "good@email.com",
+            "name": "John Doe",
+            "exp": time_now.int_timestamp,
+        }
+        token_path = tmp_path / "test.txt"
+        token_content = jwt_token(**token_data)
+
+        token = Token(content=token_content, cache_path=token_path)
+
+        assert token.content == token_content
+        assert token.cache_path == token_path
         assert token.label == "unknown"
-        assert token.data == {}
-
-    def test_validate_cache_path__success(self, tmp_path):
-        """
-        Test that the validate cache path function works as expected.
-        """
-        token = Token(cache_path=tmp_path / "test.txt")
-        token._validate_cache_path()
-
-    def test_validate_cache_path__path_is_none(self):
-        """
-        Test that validate cache path raises an exception when the path is None.
-        """
-        token = Token()
-        with pytest.raises(Exception):
-            token._validate_cache_path()
-
-    def test_validate_cache_path__path_does_no_exist(self, tmp_path):
-        """
-        Test that validate cache path raises an exception when the path does not exist.
-        """
-        token = Token(cache_path=tmp_path / "dummy-directory" / "test.txt")
-        with pytest.raises(Exception):
-            token._validate_cache_path()
+        assert token.data == token_data
 
     def test_save_to_cache__success(self, tmp_path, jwt_token):
         """
@@ -97,9 +74,7 @@ class TestToken:
 
         token = Token(content=token_content, cache_path=token_path)
 
-        with patch.object(token, "_validate_cache_path") as mocked:
-            token.save_to_cache()
-            mocked.assert_called_once()
+        token.save_to_cache()
 
         assert token_path.read_text() == token_content
 
@@ -107,47 +82,46 @@ class TestToken:
         """
         Test that save_to_cache raises an exception when the path is invalid.
         """
-        token_path = tmp_path / "test.txt"
+        token_path = tmp_path / "unexistent_directory" / "test.txt"
         token_content = jwt_token()
 
         token = Token(content=token_content, cache_path=token_path)
 
-        with patch.object(token, "_validate_cache_path") as mocked:
-            mocked.side_effect = Exception("Dummy error")
-            with pytest.raises(Exception):
-                token.save_to_cache()
-            mocked.assert_called_once()
+        with pytest.raises(TokenError, match="Parent directory does not exist"):
+            token.save_to_cache()
 
-    def test_load_from_cache__success(self, tmp_path, jwt_token):
+    def test_load_from_cache__success(self, tmp_path, jwt_token, time_now):
         """
         Test that the load_from_cache function works as expected.
         """
 
+        token_data = {
+            "test": "test",
+            "foo": "bar",
+            "email": "good@email.com",
+            "name": "John Doe",
+            "exp": time_now.int_timestamp,
+        }
         token_path = tmp_path / "test.txt"
-        token_content = jwt_token()
+        token_content = jwt_token(**token_data)
         token_path.write_text(token_content)
 
-        token = Token(cache_path=token_path)
-
-        with patch.object(token, "_validate_cache_path") as mocked:
-            token.load_from_cache()
-            mocked.assert_called_once()
+        token = Token.load_from_cache(cache_path=token_path)
 
         assert token.content == token_content
+        assert token.cache_path == token_path
+        assert token.label == "unknown"
+        assert token.data == token_data
 
-    def test_load_from_cache__validation_error(self, tmp_path, jwt_token):
+    def test_load_from_cache__validation_error(self, tmp_path):
         """
-        Test that the load_from_cache function works as expected.
+        Test that the load_from_cache function raises an error when the file is not found.
         """
 
         token_path = tmp_path / "test.txt"
-        token = Token(cache_path=token_path)
 
-        with patch.object(token, "_validate_cache_path") as mocked:
-            mocked.side_effect = Exception("Dummy error")
-            with pytest.raises(Exception):
-                token.load_from_cache()
-            mocked.assert_called_once()
+        with pytest.raises(TokenError, match="Token cache file was not found"):
+            Token.load_from_cache(cache_path=token_path)
 
     def test_clear_cache__success(self, tmp_path, jwt_token):
         """
@@ -158,69 +132,47 @@ class TestToken:
         token_content = jwt_token()
         token_path.write_text(token_content)
 
-        token = Token(cache_path=token_path)
+        token = Token(content=token_content, cache_path=token_path)
 
         assert token_path.is_file() is True
         token.clear_cache()
         assert token_path.is_file() is False
 
-    def test_clear_cache__file_not_found(self, tmp_path):
+    def test_clear_cache__file_not_found(self, tmp_path, jwt_token):
         """
         Test that the clear_cache raises no error if the file does no exist.
         """
 
         token_path = tmp_path / "test.txt"
-        token = Token(cache_path=token_path)
+        token_content = jwt_token()
+
+        token = Token(content=token_content, cache_path=token_path)
 
         assert token_path.is_file() is False
         token.clear_cache()
+        assert token_path.is_file() is False
 
-    def test_validate_content__success(self, jwt_token):
+    @pytest.mark.parametrize("test_content", ["some-dummy-text", "", None])
+    def test_validate_content__invalid_token(self, test_content, tmp_path):
         """
-        Test that the validate_content function works as expected.
+        Test that an error is raised when the token content is invalid.
         """
-        token = Token(content=jwt_token())
+        token_path = tmp_path / "test.txt"
 
-        token._validate_content()
-
-    @pytest.mark.parametrize("content", [None, ""])
-    def test_validate_content__invalid_token(self, content):
-        """
-        Test that the validate_content function raises an exception when the token is invalid.
-        """
-        token = Token(content=content)
-
-        with pytest.raises(Exception):
-            token._validate_content()
-
-    def test_update_data__success(self, jwt_token, time_now):
-        """
-        Test that the update_data function works as expected.
-        """
-        token_data = {
-            "test": "test",
-            "foo": "bar",
-            "email": "good@email.com",
-            "name": "John Doe",
-            "exp": time_now.int_timestamp,
-        }
-        token = Token(content=jwt_token(**token_data))
-
-        with patch.object(token, "_validate_content") as mocked:
-            token._update_data()
-            mocked.assert_called_once()
-        assert token.data == token_data
+        with pytest.raises(TokenError):
+            Token(content=test_content, cache_path=token_path)
 
     @pytest.mark.parametrize(
         "time_delta, is_expired",
         [(-1, False), (0, True), (1, True)],
     )
-    def test_is_expired__success(self, time_delta, is_expired, jwt_token, time_now):
+    def test_is_expired__success(self, time_delta, is_expired, tmp_path, jwt_token, time_now):
         """
         Test that the is_expired function works as expected.
         """
+        token_path = tmp_path / "test.txt"
 
         expiration_date = time_now.int_timestamp + time_delta
-        token = Token(content=jwt_token(exp=expiration_date))
+        token = Token(content=jwt_token(exp=expiration_date), cache_path=token_path)
 
         assert token.is_expired() == is_expired

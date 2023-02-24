@@ -1,6 +1,7 @@
 """
 Utilities for handling auth in Jobbergate.
 """
+from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 import time
@@ -13,92 +14,55 @@ from jose.jwt import decode
 from loguru import logger
 
 
-@dataclass
+class AuthenticationError(buzz.Buzz):
+    """
+    Exception for errors related to authentication.
+    """
+
+    pass
+
+
+class TokenError(AuthenticationError):
+    """
+    Exception for errors related to tokens.
+    """
+
+    pass
+
+
+@dataclass(frozen=True)
 class Token:
     """
     Class for handling tokens.
     """
 
-    content: Optional[str] = None
-    cache_path: Optional[Path] = None
+    content: str
+    cache_path: Path
     label: Optional[str] = "unknown"
-    data: Dict[str, Any] = field(default_factory=dict, init=False)
+    data: Dict[str, Any] = field(
+        default_factory=dict,
+        init=False,
+        hash=False,
+        repr=False,
+    )
 
     def __post_init__(self):
         """
         Post init method.
         """
-        if self.content:
-            self._update_data()
-
-    def _validate_cache_path(self):
-        """
-        Validate the cache path.
-        """
-        with buzz.check_expressions(
-            f"Error while saving {self.label} token",
-        ) as check:
-            check(self.cache_path is not None, "No cache path specified")
-            if self.cache_path is not None:
-                check(
-                    self.cache_path.parent.exists(),
-                    f"Cache path {self.cache_path.parent.as_posix()} does not exist",
-                )
-
-    def save_to_cache(self):
-        """
-        Save the token to the cache.
-        """
-        self._validate_cache_path()
-        logger.debug(f"Saving {self.label} token to {self.cache_path.as_posix()}")
-        buzz.require_condition(self.content, "No token content specified")
-
-        with buzz.handle_errors("Unknown error while saving the token"):
-            self.cache_path.write_text(self.content.strip())
-            self.cache_path.chmod(0o600)
-
-    def load_from_cache(self):
-        """
-        Load the token from the cache.
-        """
-        self._validate_cache_path()
-        logger.debug(f"Loading {self.label} token from {self.cache_path.as_posix()}")
-
-        with buzz.handle_errors("Unknown error while loading the token"):
-            self.content = self.cache_path.read_text().strip()
-
+        TokenError.require_condition(bool(self.content), "Token content is empty")
         self._update_data()
-
-    def clear_cache(self):
-        """
-        Clear the cache.
-        """
-        logger.debug(f"Clearing cached {self.label} token")
-        if self.cache_path is not None and self.cache_path.exists():
-            self.cache_path.unlink()
-
-    def _validate_content(self):
-        """
-        Validate token's content.
-        """
-        with buzz.check_expressions(
-            f"Error while getting data from {self.label} token",
-        ) as check:
-            check(self.content is not None, "Token content is None")
-            check(self.content != "", "Token content is empty")
 
     def _update_data(self):
         """
-        Get the data from the token.
+        Extract the data from the token.
         """
         logger.debug(f"Getting data from {self.label} token")
 
-        self._validate_content()
-
-        with buzz.handle_errors("Unknown error while getting data from the token"):
-            self.data = decode(
-                self.content,
-                None,
+        with TokenError.handle_errors("Unable to extract data from the token"):
+            data = decode(
+                token=self.content,
+                key="",
                 options=dict(
                     verify_signature=False,
                     verify_aud=False,
@@ -106,16 +70,53 @@ class Token:
                 ),
             )
 
+        # There is one point to keep in mind when using frozen=True
+        # see https://docs.python.org/3/library/dataclasses.html#frozen-instances
+        object.__setattr__(self, "data", data)
+
+    @classmethod
+    def load_from_cache(cls, cache_path: Path, label: str = "unknown") -> Token:
+        """
+        Alternative initialization method that loads the token from the cache.
+        """
+        logger.debug(f"Loading {label} token from {cache_path.as_posix()}")
+
+        TokenError.require_condition(cache_path.exists(), "Token cache file was not found")
+
+        with TokenError.handle_errors("Unknown error while loading the token"):
+            content = cache_path.read_text().strip()
+
+        return cls(content=content, cache_path=cache_path, label=label)
+
+    def save_to_cache(self):
+        """
+        Save the token to the cache.
+        """
+        logger.debug(f"Saving {self.label} token to {self.cache_path.as_posix()}")
+        TokenError.require_condition(
+            self.cache_path.parent.exists(),
+            "Parent directory does not exist",
+        )
+
+        with TokenError.handle_errors("Unknown error while saving the token"):
+            self.cache_path.write_text(self.content.strip())
+            self.cache_path.chmod(0o600)
+
+    def clear_cache(self):
+        """
+        Clear the cache.
+        """
+        logger.debug(f"Clearing cached {self.label} token")
+        if self.cache_path.exists():
+            self.cache_path.unlink()
+
     def is_expired(self) -> bool:
         """
         Check if the token is expired.
         """
         logger.debug(f"Checking if {self.label} token has expired")
-        token_expiration = self.data.get("exp")
-        buzz.require_condition(
-            token_expiration is not None,
-            "The expiration date was not found",
-        )
+        token_expiration = self.data.get("exp", 0)
+        TokenError.require_condition(token_expiration > 0, "The expiration date was not found")
 
         current_time_UTC = pendulum.now().int_timestamp
         is_expired = token_expiration >= current_time_UTC
