@@ -21,20 +21,25 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.6.2"
+httpx = "^0.22.0"
 loguru = "^0.6.0"
-pydantic = "^1.8.2"
-py-buzz = "^3.1.0"
-python-jose = "^3.3.0"
 pendulum = "^2.1.2"
+py-buzz = "^3.1.0"
+pydantic = "^1.8.2"
+python-jose = "^3.3.0"
 
 [tool.poetry.dev-dependencies]
 black = "^21.9b0"
-pytest-cov = "^3.0.0"
-pytest-random-order = "^1.0.4"
 isort = "^5.9.3"
-pyproject-flake8 = "^0.0.1-alpha.2"
 mypy = "^0.931"
+pyproject-flake8 = "^0.0.1-alpha.2"
+pytest-cov = "^3.0.0"
+pytest-env = "^0.6.2"
+pytest-freezegun = "^0.4.2"
 pytest-mock = "^3.6.0"
+pytest-random-order = "^1.0.4"
+pytest-responsemock = "^1.0.1"
+respx = "^0.19.2"
 toml = "^0.10.2"
 
 [tool.pytest.ini_options]
