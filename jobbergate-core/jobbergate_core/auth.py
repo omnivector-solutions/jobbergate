@@ -2,10 +2,12 @@
 Utilities for handling auth in Jobbergate.
 """
 from __future__ import annotations
-from dataclasses import dataclass, field
-from pathlib import Path
+
 import time
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass, field, replace
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List
 
 import buzz
 import httpx
@@ -30,6 +32,15 @@ class TokenError(AuthenticationError):
     pass
 
 
+class TokenType(str, Enum):
+    """
+    Types of tokens.
+    """
+
+    ACCESS = "access"
+    REFRESH = "refresh"
+
+
 @dataclass(frozen=True)
 class Token:
     """
@@ -37,8 +48,9 @@ class Token:
     """
 
     content: str
-    cache_path: Path
-    label: Optional[str] = "unknown"
+    cache_directory: Path
+    label: TokenType
+    file_path: Path = field(init=False, hash=False, repr=False)
     data: Dict[str, Any] = field(
         default_factory=dict,
         init=False,
@@ -51,9 +63,18 @@ class Token:
         Post init method.
         """
         TokenError.require_condition(bool(self.content), "Token content is empty")
-        self._update_data()
 
-    def _update_data(self):
+        # There is one point to keep in mind when using frozen=True
+        # see https://docs.python.org/3/library/dataclasses.html#frozen-instances
+        object.__setattr__(
+            self,
+            "file_path",
+            self.cache_directory / f"{self.label}.token",
+        )
+        data = self._get_metadata()
+        object.__setattr__(self, "data", data)
+
+    def _get_metadata(self) -> Dict[str, Any]:
         """
         Extract the data from the token.
         """
@@ -70,45 +91,44 @@ class Token:
                 ),
             )
 
-        # There is one point to keep in mind when using frozen=True
-        # see https://docs.python.org/3/library/dataclasses.html#frozen-instances
-        object.__setattr__(self, "data", data)
+        return data
 
     @classmethod
-    def load_from_cache(cls, cache_path: Path, label: str = "unknown") -> Token:
+    def load_from_cache(cls, cache_directory: Path, label: TokenType) -> Token:
         """
         Alternative initialization method that loads the token from the cache.
         """
-        logger.debug(f"Loading {label} token from {cache_path.as_posix()}")
+        file_path = cache_directory / f"{label}.token"
+        logger.debug(f"Loading token from {file_path.as_posix()}")
 
-        TokenError.require_condition(cache_path.exists(), "Token cache file was not found")
+        TokenError.require_condition(file_path.exists(), "Token file was not found")
 
         with TokenError.handle_errors("Unknown error while loading the token"):
-            content = cache_path.read_text().strip()
+            content = file_path.read_text().strip()
 
-        return cls(content=content, cache_path=cache_path, label=label)
+        return cls(content=content, cache_directory=cache_directory, label=label)
 
     def save_to_cache(self):
         """
         Save the token to the cache.
         """
-        logger.debug(f"Saving {self.label} token to {self.cache_path.as_posix()}")
+        logger.debug(f"Saving token to {self.file_path}")
         TokenError.require_condition(
-            self.cache_path.parent.exists(),
+            self.file_path.parent.exists(),
             "Parent directory does not exist",
         )
 
         with TokenError.handle_errors("Unknown error while saving the token"):
-            self.cache_path.write_text(self.content.strip())
-            self.cache_path.chmod(0o600)
+            self.file_path.write_text(self.content.strip())
+            self.file_path.chmod(0o600)
 
     def clear_cache(self):
         """
         Clear the cache.
         """
-        logger.debug(f"Clearing cached {self.label} token")
-        if self.cache_path.exists():
-            self.cache_path.unlink()
+        logger.debug(f"Clearing cached token from {self.file_path}")
+        if self.file_path.exists():
+            self.file_path.unlink()
 
     def is_expired(self) -> bool:
         """
@@ -124,9 +144,15 @@ class Token:
 
         return is_expired
 
+    def replace(self, **changes) -> Token:
+        """
+        Create a new instance of the token with the changes applied.
+        """
+        return replace(self, **changes)
+
 
 @dataclass
-class Authentication:
+class JobbergateAuth:
     """
     Class for handling authentication in Jobbergate.
     """
@@ -135,24 +161,15 @@ class Authentication:
     login_domain: str
     login_audience: str
     login_client_id: str
-    access_token: Token = field(default_factory=Token, init=False)
-    refresh_token: Token = field(default_factory=Token, init=False)
+    access_token: Token
+    refresh_token: Token
     token_list: List = field(init=False, repr=False)
 
     def __post_init__(self):
         """
         Post init method.
         """
-        self.access_token = Token(cache_path=self.cache_path / "access.token", label="access")
-        self.refresh_token = Token(cache_path=self.cache_path / "refresh.token", label="refresh")
-
         self.token_list = [self.access_token, self.refresh_token]
-
-        for token in self.token_list:
-            try:
-                token.load_from_cache()
-            except Exception:
-                logger.warning(f"Error while loading {token.label} token from cache")
 
     def __call__(self, request):
         """
@@ -162,22 +179,35 @@ class Authentication:
         request.headers["Authorization"] = f"Bearer {self.access_token.content}"
         return request
 
-    def fetch_tokens(self):
+    @classmethod
+    def load_from_cache(cls, cache_path: Path, **kwargs) -> JobbergateAuth:
         """
-        Fetch the tokens.
+        Alternative initialization method that loads the tokens from the cache.
         """
-        # logger.debug("Fetching tokens")
-        # self.access_token = Token(
-        #     cache_path=self.cache_path / "access_token",
-        #     label="access",
-        # )
-        # self.refresh_token = Token(
-        #     cache_path=self.cache_path / "refresh_token",
-        #     label="refresh",
-        # )
+        logger.debug(f"Loading tokens from {cache_path.as_posix()}")
 
-        # self.access_token.load_from_cache()
-        # self.refresh_token.load_from_cache()
+        access_token = Token.load_from_cache(
+            cache_path=cache_path / "access.token",
+            label="access",
+        )
+        refresh_token = Token.load_from_cache(
+            cache_path=cache_path / "refresh.token",
+            label="refresh",
+        )
+
+        return cls(
+            cache_path=cache_path,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            **kwargs,
+        )
+
+    def save_to_cache(self):
+        """
+        Save the tokens to the cache.
+        """
+        for token in self.token_list:
+            token.save_to_cache()
 
     def login(self):
         """
@@ -221,15 +251,25 @@ class Authentication:
         """
         Refresh the tokens.
         """
-        response = httpx.post(
-            f"{self.login_domain}/protocol/openid-connect/token",
-            data=dict(
-                client_id=self.login_client_id,
-                audience=self.login_audience,
-                grant_type="refresh_token",
-                refresh_token=self.refresh_token.content,
-            ),
-        )
+        with AuthenticationError.handle_errors(
+            "Unexpected error while refreshing the tokens",
+        ):
+            response = httpx.post(
+                f"{self.login_domain}/protocol/openid-connect/token",
+                data=dict(
+                    client_id=self.login_client_id,
+                    audience=self.login_audience,
+                    grant_type="refresh_token",
+                    refresh_token=self.refresh_token.content,
+                ),
+            )
+            response.raise_for_status()
+
         refreshed_data = response.json()
-        access_token = refreshed_data["access_token"]
-        return access_token
+
+        self.access_token = self.access_token.replace(
+            content=refreshed_data.get("access_token"),
+        )
+        self.refresh_token = self.refresh_token.replace(
+            content=refreshed_data.get("refresh_token"),
+        )
