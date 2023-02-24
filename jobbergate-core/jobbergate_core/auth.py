@@ -52,7 +52,8 @@ class Token:
         buzz.require_condition(self.content, "No token content specified")
 
         with buzz.handle_errors("Unknown error while saving the token"):
-            self.cache_path.write_text(self.content)
+            self.cache_path.write_text(self.content.strip())
+            self.cache_path.chmod(0o600)
 
     def load_from_cache(self):
         """
@@ -62,7 +63,7 @@ class Token:
         logger.debug(f"Loading {self.label} token from {self.cache_path.as_posix()}")
 
         with buzz.handle_errors("Unknown error while loading the token"):
-            self.content = self.cache_path.read_text()
+            self.content = self.cache_path.read_text().strip()
 
         self._update_data()
 
