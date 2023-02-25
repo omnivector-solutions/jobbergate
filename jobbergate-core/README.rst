@@ -2,7 +2,7 @@
  Jobbergate Core
 =================
 
-Jobbergate-core is a sub-project that contains the key components and logic that is shared among all others sub-projects (CLI, API, and Agent), and that can be accessed by the end-users in order to support their custom automation built on top of Jobbergate.
+Jobbergate-core is a sub-project that contains the key components and logic that is shared among all other sub-projects (CLI, API, and Agent). Additionally, jobbergate-core exists to support custom automation built on top of Jobbergate.
 
 License
 -------
