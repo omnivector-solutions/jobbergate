@@ -157,62 +157,65 @@ class JobbergateAuth:
     Class for handling authentication in Jobbergate.
     """
 
-    cache_path: Path
+    cache_directory: Path
     login_domain: str
     login_audience: str
     login_client_id: str
-    access_token: Token
-    refresh_token: Token
-    token_list: List = field(init=False, repr=False)
-
-    def __post_init__(self):
-        """
-        Post init method.
-        """
-        self.token_list = [self.access_token, self.refresh_token]
+    tokens: Dict[TokenType, Token] = field(default_factory=dict)
 
     def __call__(self, request):
         """
         Authenticate the request.
         """
         logger.debug("Authenticating request")
-        request.headers["Authorization"] = f"Bearer {self.access_token.content}"
+
+        self.acquire_tokens()
+
+        access_token = self.tokens.get(TokenType.ACCESS)
+        AuthenticationError.require_condition(access_token, "Access token was not found")
+
+        request.headers["Authorization"] = f"Bearer {access_token.content}"
         return request
 
-    @classmethod
-    def load_from_cache(cls, cache_path: Path, **kwargs) -> JobbergateAuth:
+    def acquire_tokens(self):
         """
-        Alternative initialization method that loads the tokens from the cache.
+        Acquire the tokens.
         """
-        logger.debug(f"Loading tokens from {cache_path.as_posix()}")
+        logger.debug("Acquiring tokens")
+        self.load_from_cache(force=False)
+        if TokenType.ACCESS in self.tokens and not self.tokens[TokenType.ACCESS].is_expired():
+            return
+        elif TokenType.REFRESH in self.tokens and not self.tokens[TokenType.REFRESH].is_expired():
+            self.refresh_tokens()
+            return
+        self.login()
 
-        access_token = Token.load_from_cache(
-            cache_path=cache_path / "access.token",
-            label="access",
-        )
-        refresh_token = Token.load_from_cache(
-            cache_path=cache_path / "refresh.token",
-            label="refresh",
-        )
+    def load_from_cache(self, force: bool = False):
+        """
+        Load the tokens from the cache.
+        """
+        logger.debug(f"Loading tokens from cache directory: {self.cache_directory.as_posix()}")
 
-        return cls(
-            cache_path=cache_path,
-            access_token=access_token,
-            refresh_token=refresh_token,
-            **kwargs,
-        )
+        for t in TokenType:
+            if t in self.tokens and not force:
+                continue
+            try:
+                self.tokens[t] = Token.load_from_cache(self.cache_directory, label=t)
+            except TokenError:
+                logger.debug(f"    {t}.token was not found")
 
     def save_to_cache(self):
         """
         Save the tokens to the cache.
         """
-        for token in self.token_list:
+        for token in self.tokens.values():
             token.save_to_cache()
 
     def login(self):
         """
         Login to Jobbergate.
         """
+        logger.debug("Preparing to login to Jobbergate")
         response = httpx.post(
             f"{self.login_domain}/protocol/openid-connect/auth/device",
             data=dict(
@@ -237,20 +240,16 @@ class JobbergateAuth:
                     client_id=self.login_client_id,
                 ),
             )
-            try:
-                response.raise_for_status()  # Will throw an exception if response isn't in 200s
-                response_data = response.json()
-                return (
-                    response_data["access_token"],
-                    response_data["refresh_token"],
-                )
-            except Exception:
-                pass
+            if response.status_code == "ok":
+                break
+
+        self._process_tokens_from_response(response)
 
     def refresh_tokens(self):
         """
         Refresh the tokens.
         """
+        logger.debug("Preparing to refresh the tokens")
         with AuthenticationError.handle_errors(
             "Unexpected error while refreshing the tokens",
         ):
@@ -260,16 +259,32 @@ class JobbergateAuth:
                     client_id=self.login_client_id,
                     audience=self.login_audience,
                     grant_type="refresh_token",
-                    refresh_token=self.refresh_token.content,
+                    refresh_token=self.tokens[TokenType.REFRESH].content,
                 ),
             )
             response.raise_for_status()
 
-        refreshed_data = response.json()
+        self._process_tokens_from_response(response)
 
-        self.access_token = self.access_token.replace(
-            content=refreshed_data.get("access_token"),
+    def _process_tokens_from_response(self, response):
+        response_data = response.json()
+
+        tokens_content = {t: response_data.get(f"{t}_token") for t in TokenType}
+        AuthenticationError.require_condition(
+            all(tokens_content.values()), "Not all tokens were included in the response"
         )
-        self.refresh_token = self.refresh_token.replace(
-            content=refreshed_data.get("refresh_token"),
-        )
+        self._update_tokens(tokens_content)
+        self.save_to_cache()
+
+    def _update_tokens(self, tokens_content: Dict[TokenType, str]):
+        """
+        Update the tokens with the new content.
+        """
+
+        for token_type, new_content in tokens_content.items():
+            if token_type in self.tokens:
+                self.tokens[token_type] = self.tokens[token_type].replace(content=new_content)
+            else:
+                self.tokens[token_type] = Token(
+                    content=new_content, cache_directory=self.cache_directory, label=token_type
+                )
