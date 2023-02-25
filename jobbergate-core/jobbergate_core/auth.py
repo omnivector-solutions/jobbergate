@@ -200,9 +200,11 @@ class JobbergateAuth:
             if t in self.tokens and not force:
                 continue
             try:
-                self.tokens[t] = Token.load_from_cache(self.cache_directory, label=t)
+                new_token = Token.load_from_cache(self.cache_directory, label=t)
             except TokenError:
                 logger.debug(f"    {t}.token was not found")
+                continue
+            self.tokens[t] = new_token
 
     def save_to_cache(self):
         """
@@ -282,9 +284,8 @@ class JobbergateAuth:
         """
 
         for token_type, new_content in tokens_content.items():
-            if token_type in self.tokens:
-                self.tokens[token_type] = self.tokens[token_type].replace(content=new_content)
-            else:
-                self.tokens[token_type] = Token(
-                    content=new_content, cache_directory=self.cache_directory, label=token_type
-                )
+            self.tokens[token_type] = Token(
+                content=new_content,
+                cache_directory=self.cache_directory,
+                label=token_type,
+            )
