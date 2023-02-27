@@ -12,9 +12,10 @@ python = "^3.8"
 sphinxcontrib-httpdomain = "^1.8.0"
 sphinx-book-theme = "^0.1.6"
 toml = "^0.10.2"
+jobbergate-core = {path = "../jobbergate-core", develop = true }
 
 [tool.poetry.dev-dependencies]
-sphinx-view = "^0.3.1"
+sphinx-autobuild = "^2021.3.14"
 black = "^21.9b0"
 isort = "^5.9.3"
 

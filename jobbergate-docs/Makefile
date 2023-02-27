@@ -27,6 +27,10 @@ format: install
 docs: install
 	poetry run sphinx-build src/ build/
 
+.PHONY: dev
+dev: install
+	poetry run sphinx-autobuild src/ build/ --watch ../jobbergate-core/jobbergate_core
+
 .PHONY: clean
 clean:
 	@find . -iname '*.pyc' -delete
