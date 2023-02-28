@@ -65,94 +65,61 @@ def test_auth_base_case(tmp_path, dummy_jobbergate_auth):
     assert dummy_jobbergate_auth.tokens == {}
 
 
-class TestJobbergateAuthCall:
+class TestJobbergateCheckCredentials:
     """
-    Test the __call__ on JobbergateAuth class, used to authenticate the requests.
+    Test the check_credentials method on JobbergateAuth class.
     """
 
-    def test__success__insert_token_in_header(
-        self,
-        respx_mock,
-        dummy_jobbergate_auth,
-        valid_token,
-    ):
+    def test_check_credentials__success(self, dummy_jobbergate_auth, valid_token):
         """
-        Test that the JobbergateAuth class insert the token in the header.
+        Test that the function works as expected.
         """
         dummy_jobbergate_auth.tokens[TokenType.ACCESS] = valid_token
 
-        test_headers = {"test-header": "test-value", "foo": "bar"}
-        expected_headers = {**test_headers, "Authorization": f"Bearer {valid_token.content}"}
+        assert dummy_jobbergate_auth.check_credentials(token_type=TokenType.ACCESS) == valid_token
 
-        test_endpoint = "http://test.com"
-        respx_mock.get(test_endpoint).mock()
-        request = requests.Request(
-            "GET",
-            test_endpoint,
-            auth=dummy_jobbergate_auth,
-            headers=test_headers,
-        )
-
-        assert request.headers == test_headers
-        with mock.patch.object(dummy_jobbergate_auth, "acquire_tokens") as mock_acquire_tokens:
-            prepared_request = request.prepare()
-            mock_acquire_tokens.assert_called_once()
-        assert prepared_request.headers == expected_headers
-
-    def test__fail__no_access_token(
-        self,
-        respx_mock,
-        dummy_jobbergate_auth,
-    ):
+    def test_check_credentials__fail_token_not_found(self, dummy_jobbergate_auth):
         """
-        Test that the JobbergateAuth class fails if there is no access token.
+        Test that get_credentials fails if the token is not found.
         """
-        dummy_jobbergate_auth.tokens[TokenType.ACCESS] = ""
+        dummy_jobbergate_auth.tokens.clear()  # make sure there is no token
 
-        test_headers = {"test-header": "test-value", "foo": "bar"}
+        with pytest.raises(AuthenticationError, match="access token was not found"):
+            dummy_jobbergate_auth.check_credentials()
 
-        test_endpoint = "http://test.com"
-        respx_mock.get(test_endpoint).mock()
-        request = requests.Request(
-            "GET",
-            test_endpoint,
-            auth=dummy_jobbergate_auth,
-            headers=test_headers,
-        )
-
-        assert request.headers == test_headers
-        with mock.patch.object(dummy_jobbergate_auth, "acquire_tokens") as mock_acquire_tokens:
-            with pytest.raises(AuthenticationError, match="Access token was not found"):
-                request.prepare()
-            mock_acquire_tokens.assert_called_once()
-        assert request.headers == test_headers
-
-    def test_get_validated_access_token__success(self, dummy_jobbergate_auth, valid_token):
+    def test_check_credentials__fail_token_is_expired(self, dummy_jobbergate_auth, expired_token):
         """
-        Test that the get_validated_access_token function works as expected.
-        """
-        dummy_jobbergate_auth.tokens[TokenType.ACCESS] = valid_token
-
-        assert dummy_jobbergate_auth._get_validated_access_token() == valid_token
-
-    def test_get_validated_access_token__fail_token_not_found(self, dummy_jobbergate_auth):
-        """
-        Test that the get_validated_access_token fails if the token is not found.
-        """
-        with pytest.raises(AuthenticationError, match="Access token was not found"):
-            dummy_jobbergate_auth._get_validated_access_token()
-
-    def test_get_validated_access_token__fail_token_is_expired(
-        self,
-        dummy_jobbergate_auth,
-        expired_token,
-    ):
-        """
-        Test that the get_validated_access_token fails if the token is expired.
+        Test that get_credentials fails if the token is expired.
         """
         dummy_jobbergate_auth.tokens[TokenType.ACCESS] = expired_token
-        with pytest.raises(AuthenticationError, match="Access token has expired"):
-            dummy_jobbergate_auth._get_validated_access_token()
+        with pytest.raises(AuthenticationError, match="access token has expired"):
+            dummy_jobbergate_auth.check_credentials(token_type=TokenType.ACCESS)
+
+
+def test_insert_token_in_request_header(respx_mock, dummy_jobbergate_auth, valid_token):
+    """
+    Test that the JobbergateAuth class inserts the token in the header (performed by __call__).
+    """
+    dummy_headers = {"test-header": "test-value", "foo": "bar"}
+    expected_headers = {**dummy_headers, "Authorization": f"Bearer {valid_token.content}"}
+
+    test_endpoint = "http://test.com"
+    respx_mock.get(test_endpoint).mock()
+    request = requests.Request("GET", test_endpoint, auth=dummy_jobbergate_auth, headers=dummy_headers)
+
+    assert request.headers == dummy_headers
+
+    with mock.patch.multiple(
+        dummy_jobbergate_auth,
+        acquire_tokens=mock.DEFAULT,
+        check_credentials=lambda *args, **kwargs: valid_token,
+    ) as mocked_jobbergate_auth:
+        prepared_request = request.prepare()
+
+        for mocked in mocked_jobbergate_auth.values():
+            mocked.call_count = 1
+
+    assert prepared_request.headers == expected_headers
 
 
 @pytest.mark.parametrize(
@@ -233,3 +200,102 @@ def test_acquire_tokens(
 
         for key in mocked_jobbergate_auth.keys():
             assert mocked_jobbergate_auth[key].call_count == expected_call_count.get(key, 0)
+
+
+class TestJobbergateAuthLoadFromCache:
+    """
+    Test the load_from_cache method on JobbergateAuth class.
+    """
+
+    def test_no_tokens_found(self, dummy_jobbergate_auth):
+        """
+        Test that the function works as expected.
+
+        If no tokens are found in cache, the tokens dictionary should stay empty.
+        """
+        assert dummy_jobbergate_auth.tokens == {}
+
+        dummy_jobbergate_auth.load_from_cache()
+
+        assert dummy_jobbergate_auth.tokens == {}
+
+    def test_tokens_found__skip_loaded(self, dummy_jobbergate_auth, valid_token, expired_token):
+        """
+        Test that the function works as expected.
+
+        If a token is already loaded in the class, it should not be overwritten.
+        """
+        cached_tokens = {
+            TokenType.ACCESS: expired_token.replace(label=TokenType.ACCESS),
+            TokenType.REFRESH: expired_token.replace(label=TokenType.REFRESH),
+        }
+        for token in cached_tokens.values():
+            token.save_to_cache()
+
+        internal_tokens = {
+            TokenType.ACCESS: valid_token.replace(label=TokenType.ACCESS),
+            TokenType.REFRESH: valid_token.replace(label=TokenType.REFRESH),
+        }
+
+        dummy_jobbergate_auth.tokens = internal_tokens.copy()
+
+        dummy_jobbergate_auth.load_from_cache(skip_loaded=True)
+
+        assert dummy_jobbergate_auth.tokens == internal_tokens
+        assert dummy_jobbergate_auth.tokens != cached_tokens
+
+    def test_tokens_found__not_skip_loaded(self, dummy_jobbergate_auth, valid_token, expired_token):
+        """
+        Test that the function works as expected.
+
+        If a token is already loaded in the class, it should be replaced.
+        """
+        cached_tokens = {
+            TokenType.ACCESS: expired_token.replace(label=TokenType.ACCESS),
+            TokenType.REFRESH: expired_token.replace(label=TokenType.REFRESH),
+        }
+        for token in cached_tokens.values():
+            token.save_to_cache()
+
+        internal_tokens = {
+            TokenType.ACCESS: valid_token.replace(label=TokenType.ACCESS),
+            TokenType.REFRESH: valid_token.replace(label=TokenType.REFRESH),
+        }
+
+        dummy_jobbergate_auth.tokens = internal_tokens.copy()
+
+        dummy_jobbergate_auth.load_from_cache(skip_loaded=False)
+
+        assert dummy_jobbergate_auth.tokens != internal_tokens
+        assert dummy_jobbergate_auth.tokens == cached_tokens
+
+
+def test_save_to_cache(dummy_jobbergate_auth, valid_token):
+    """
+    Test that the save_to_cache function works as expected.
+
+    The save_to_cache function should:
+        * Create the cache directory if it does not exist
+        * Save the tokens to the cache directory
+    """
+    new_cache_directory = dummy_jobbergate_auth.cache_directory / "new_cache"
+
+    dummy_jobbergate_auth.cache_directory = new_cache_directory
+    dummy_jobbergate_auth.tokens = {
+        TokenType.ACCESS: valid_token.replace(
+            label=TokenType.ACCESS,
+            cache_directory=new_cache_directory,
+        ),
+        TokenType.REFRESH: valid_token.replace(
+            label=TokenType.REFRESH,
+            cache_directory=new_cache_directory,
+        ),
+    }
+
+    assert new_cache_directory.exists() is False
+
+    dummy_jobbergate_auth.save_to_cache()
+
+    assert new_cache_directory.exists() is True
+    for token in dummy_jobbergate_auth.tokens.values():
+        assert token.file_path.read_text() == token.content

@@ -1,6 +1,7 @@
 """
 Utilities for handling auth in Jobbergate.
 """
+from collections import namedtuple
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -11,6 +12,12 @@ from loguru import logger
 
 from .exceptions import AuthenticationError, TokenError
 from .token import Token, TokenType
+
+
+LoginInformation = namedtuple(
+    "LoginInformation",
+    ["verification_url", "wait_interval", "device_code"],
+)
 
 
 @dataclass
@@ -56,7 +63,7 @@ class JobbergateAuth:
         logger.debug("Authenticating request")
 
         self.acquire_tokens()
-        access_token = self.check_credentials()
+        access_token = self.check_credentials(token_type=TokenType.ACCESS)
 
         request.headers["Authorization"] = f"Bearer {access_token.content}"
         return request
@@ -81,21 +88,24 @@ class JobbergateAuth:
             return
         self.login()
 
-    def check_credentials(self) -> Token:
+    def check_credentials(self, token_type: TokenType = TokenType.ACCESS) -> Token:
         """
-        Check that the access credentials are available and not expired.
+        Check if the credentials on the provided ``token_type`` are available and not expired.
+
+        Arguments:
+            token_type (TokenType): The type of token to check (default is ``access``).
 
         Returns:
-            Token: The access token for reference.
+            Token: The token is returned for reference.
 
         Raises:
             AuthenticationError: If the credentials are invalid.
         """
-        access_token = cast(Token, self.tokens.get(TokenType.ACCESS))
-        AuthenticationError.require_condition(access_token, "Access token was not found")
-        AuthenticationError.require_condition(not access_token.is_expired(), "Access token has expired")
+        token = cast(Token, self.tokens.get(token_type))
+        AuthenticationError.require_condition(token, f"{token_type} token was not found")
+        AuthenticationError.require_condition(not token.is_expired(), f"{token_type} token has expired")
 
-        return access_token
+        return token
 
     def load_from_cache(self, skip_loaded: bool = True):
         """
@@ -104,6 +114,10 @@ class JobbergateAuth:
         Arguments:
             skip_loaded (bool): If True, skip tokens that are already loaded, otherwise
                 replace them with the ones from the cache.
+
+        Note:
+            This method does not check if any required token is missing nor is expired,
+            for that, see :meth:`JobbergateAuth.check_credentials`.
         """
         logger.debug("Loading tokens from cache directory: {}", self.cache_directory.as_posix())
 
@@ -136,6 +150,41 @@ class JobbergateAuth:
         Login to Jobbergate.
         """
         logger.debug("Preparing to login to Jobbergate")
+        login_info = self._get_login_information()
+        response = self._wait_for_login_confirmation(login_info)
+        self._process_tokens_from_response(response)
+        logger.success("Login completed")
+
+    def _wait_for_login_confirmation(self, login_info: LoginInformation) -> httpx.Response:
+        print(f"Login Here: {login_info.verification_url}")
+        while True:
+            response = self._get_login_confirmation(login_info)
+            try:
+                response.raise_for_status()
+                break
+            except httpx.HTTPStatusError:
+                logger.debug(
+                    "    Login not completed yet, waiting {} seconds",
+                    login_info.wait_interval,
+                )
+                time.sleep(login_info.wait_interval)
+        logger.debug("Preparing to login to Jobbergate")
+        return response
+
+    def _get_login_confirmation(self, login_info: LoginInformation) -> httpx.Response:
+
+        response = httpx.post(
+            f"{self.login_domain}/protocol/openid-connect/token",
+            data=dict(
+                grant_type="urn:ietf:params:oauth:grant-type:device_code",
+                device_code=login_info.device_code,
+                client_id=self.login_client_id,
+            ),
+        )
+
+        return response
+
+    def _get_login_information(self) -> LoginInformation:
         response = httpx.post(
             f"{self.login_domain}/protocol/openid-connect/auth/device",
             data=dict(
@@ -148,31 +197,25 @@ class JobbergateAuth:
         verification_url = device_code_data["verification_uri_complete"]
         wait_interval = device_code_data["interval"]
         device_code = device_code_data["device_code"]
-
-        print(f"Login Here: {verification_url}")
-        while True:
-            time.sleep(wait_interval)
-            response = httpx.post(
-                f"{self.login_domain}/protocol/openid-connect/token",
-                data=dict(
-                    grant_type="urn:ietf:params:oauth:grant-type:device_code",
-                    device_code=device_code,
-                    client_id=self.login_client_id,
-                ),
-            )
-            try:
-                response.raise_for_status()
-                break
-            except httpx.HTTPStatusError:
-                continue
-
-        self._process_tokens_from_response(response)
+        return LoginInformation(
+            verification_url,
+            wait_interval,
+            device_code,
+        )
 
     def refresh_tokens(self):
         """
         Refresh the tokens.
         """
         logger.debug("Preparing to refresh the tokens")
+
+        refresh_token = self.check_credentials(token_type=TokenType.REFRESH)
+        response = self._get_refresh_token(refresh_token)
+        self._process_tokens_from_response(response)
+
+        logger.success("Tokens refreshed successfully")
+
+    def _get_refresh_token(self, refresh_token):
         with AuthenticationError.handle_errors(
             "Unexpected error while refreshing the tokens",
         ):
@@ -182,12 +225,11 @@ class JobbergateAuth:
                     client_id=self.login_client_id,
                     audience=self.login_audience,
                     grant_type="refresh_token",
-                    refresh_token=self.tokens[TokenType.REFRESH].content,
+                    refresh_token=refresh_token.content,
                 ),
             )
             response.raise_for_status()
-
-        self._process_tokens_from_response(response)
+        return response
 
     def _process_tokens_from_response(self, response):
         response_data = response.json()
