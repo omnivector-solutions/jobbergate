@@ -1,8 +1,8 @@
 """
-Utilities for handling auth in Jobbergate.
+Utilities for handling authentication in the Jobbergate system.
 """
-from collections import namedtuple
 import time
+from collections import namedtuple
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, cast
@@ -23,7 +23,7 @@ LoginInformation = namedtuple(
 @dataclass
 class JobbergateAuth:
     """
-    Class for handling authentication in Jobbergate.
+    High-level class used to handle authentication in Jobbergate.
 
     Arguments:
         cache_directory (Path): Directory to be used for the caching tokens.
@@ -32,7 +32,13 @@ class JobbergateAuth:
         login_client_id (str): Client ID used for login.
         tokens (Dict[TokenType, Token]): Dictionary holding the tokens needed for authentication.
 
+    Note:
+        Consult the values above with your system administrator.
+
     Examples:
+
+        The following example shows how to use the JobbergateAuth class to authenticate a request:
+
         >>> from pathlib import Path
         >>> import requests
         >>> from jobbergate_core import JobbergateAuth
@@ -45,9 +51,20 @@ class JobbergateAuth:
         >>> jobbergate_base_url = "http://localhost:8000/jobbergate"
         >>> jobbergate_auth.acquire_tokens()
         Login Here: http://keycloak.local:8080/realms/jobbergate-local/device?user_code=LMVJ-XOLG
-        >>> response = requests.get(f"{jobbergate_base_url}/applications", auth=jobbergate_auth)
+        >>> response = requests.get(
+        ...     f"{jobbergate_base_url}/applications",
+        ...     auth=jobbergate_auth # this is the important part
+        )
         >>> response.raise_for_status()
         >>> print(f"response = {response.json()}")
+
+        Notice all it takes is to pass the ``jobbergate_auth`` object to the ``auth`` parameter of
+        the ``requests`` library. The same can be done with the ``httpx`` library.
+
+        Behind the scenes, the ``jobbergate_auth`` object calls the ``acquire_tokens`` method to
+        fetch the tokens from the cache directory, or refresh them if they are expired, or login
+        if they are not available. See the :meth:`JobbergateAuth.acquire_tokens` method for more
+        details.
     """
 
     cache_directory: Path
@@ -185,18 +202,26 @@ class JobbergateAuth:
         return response
 
     def _get_login_information(self) -> LoginInformation:
-        response = httpx.post(
-            f"{self.login_domain}/protocol/openid-connect/auth/device",
-            data=dict(
-                client_id=self.login_client_id,
-                grant_type="client_credentials",
-                audience=self.login_audience,
-            ),
-        )
+        with AuthenticationError.handle_errors(
+            "Unexpected error while fetching the tokens",
+        ):
+            response = httpx.post(
+                f"{self.login_domain}/protocol/openid-connect/auth/device",
+                data=dict(
+                    client_id=self.login_client_id,
+                    grant_type="client_credentials",
+                    audience=self.login_audience,
+                ),
+            )
+            response.raise_for_status()
+
         device_code_data = response.json()
-        verification_url = device_code_data["verification_uri_complete"]
-        wait_interval = device_code_data["interval"]
-        device_code = device_code_data["device_code"]
+        with AuthenticationError.handle_errors(
+            "Error processing the request data after fetching the tokens",
+        ):
+            verification_url = device_code_data["verification_uri_complete"]
+            wait_interval = device_code_data["interval"]
+            device_code = device_code_data["device_code"]
         return LoginInformation(
             verification_url,
             wait_interval,

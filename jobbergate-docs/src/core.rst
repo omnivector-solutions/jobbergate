@@ -5,20 +5,20 @@
 Authentication
 --------------
 
-.. automodule:: jobbergate_core.authentication.core
+.. automodule:: jobbergate_core.auth.core
    :members:
    :show-inheritance:
 
 Tokens
 ^^^^^^
 
-.. automodule:: jobbergate_core.authentication.token
+.. automodule:: jobbergate_core.auth.token
    :members:
    :show-inheritance:
 
 Exceptions
 ^^^^^^^^^^
 
-.. automodule:: jobbergate_core.authentication.exceptions
+.. automodule:: jobbergate_core.auth.exceptions
    :members:
    :show-inheritance:

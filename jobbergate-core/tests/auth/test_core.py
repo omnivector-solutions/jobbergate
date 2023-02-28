@@ -3,6 +3,7 @@ Test the utilities for handling auth in Jobbergate.
 """
 from unittest import mock
 
+import httpx
 import pytest
 import requests
 
@@ -299,3 +300,151 @@ def test_save_to_cache(dummy_jobbergate_auth, valid_token):
     assert new_cache_directory.exists() is True
     for token in dummy_jobbergate_auth.tokens.values():
         assert token.file_path.read_text() == token.content
+
+
+class TestJobbergateAuthRefreshTokens:
+    """
+    Test the refresh_tokens method on JobbergateAuth class.
+    """
+
+    def test_refresh_tokens__success(
+        self,
+        respx_mock,
+        jwt_token,
+        dummy_jobbergate_auth,
+        expired_token,
+        valid_token,
+    ):
+        """
+        Test that the function works as expected.
+        """
+        dummy_jobbergate_auth.tokens = {
+            TokenType.ACCESS: expired_token.replace(label=TokenType.ACCESS),
+            TokenType.REFRESH: valid_token.replace(label=TokenType.REFRESH),
+        }
+
+        refreshed_access_token_content = jwt_token(custom_data="refreshed_access_token")
+        refreshed_refresh_token_content = jwt_token(custom_data="refreshed_refresh_token")
+        expected_refreshed_tokens = {
+            TokenType.ACCESS: valid_token.replace(
+                label=TokenType.ACCESS,
+                content=refreshed_access_token_content,
+            ),
+            TokenType.REFRESH: valid_token.replace(
+                label=TokenType.REFRESH,
+                content=refreshed_refresh_token_content,
+            ),
+        }
+
+        endpoint = f"{dummy_jobbergate_auth.login_domain}/protocol/openid-connect/token"
+        respx_mock.post(endpoint).mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                json=dict(
+                    access_token=refreshed_access_token_content,
+                    refresh_token=refreshed_refresh_token_content,
+                ),
+            ),
+        )
+
+        dummy_jobbergate_auth.refresh_tokens()
+
+        assert dummy_jobbergate_auth.tokens == expected_refreshed_tokens
+
+    def test_refresh_tokens__failure_by_missing_data(
+        self,
+        respx_mock,
+        jwt_token,
+        dummy_jobbergate_auth,
+        expired_token,
+        valid_token,
+    ):
+        """
+        Test that the function raises an exception if the response is missing data.
+        """
+        dummy_jobbergate_auth.tokens = {
+            TokenType.ACCESS: expired_token.replace(label=TokenType.ACCESS),
+            TokenType.REFRESH: valid_token.replace(label=TokenType.REFRESH),
+        }
+
+        refreshed_access_token_content = jwt_token(custom_data="refreshed_access_token")
+
+        endpoint = f"{dummy_jobbergate_auth.login_domain}/protocol/openid-connect/token"
+        respx_mock.post(endpoint).mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                json=dict(access_token=refreshed_access_token_content),
+            ),  # note that the refresh token is missing
+        )
+        with pytest.raises(
+            AuthenticationError,
+            match="Not all tokens were included in the response",
+        ):
+            dummy_jobbergate_auth.refresh_tokens()
+
+    def test_refresh_tokens__request_failure(
+        self,
+        respx_mock,
+        dummy_jobbergate_auth,
+        expired_token,
+        valid_token,
+    ):
+        """
+        Test that the function raises an exception if the tokens are not refreshed.
+        """
+        dummy_jobbergate_auth.tokens = {
+            TokenType.ACCESS: expired_token.replace(label=TokenType.ACCESS),
+            TokenType.REFRESH: valid_token.replace(label=TokenType.REFRESH),
+        }
+
+        endpoint = f"{dummy_jobbergate_auth.login_domain}/protocol/openid-connect/token"
+        respx_mock.post(endpoint).mock(
+            return_value=httpx.Response(httpx.codes.BAD_REQUEST),
+        )
+
+        with pytest.raises(
+            AuthenticationError,
+            match="Unexpected error while refreshing the tokens",
+        ):
+            dummy_jobbergate_auth.refresh_tokens()
+
+
+class TestJobbergateAuthLogin:
+    """
+    Test the login method on JobbergateAuth class.
+    """
+
+    def test_login__success(self, respx_mock, dummy_jobbergate_auth, valid_token):
+        """
+        Test that the function works as expected.
+        """
+
+        endpoint = f"{dummy_jobbergate_auth.login_domain}/protocol/openid-connect/auth/device"
+        respx_mock.post(endpoint).mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                json=dict(
+                    device_code="dummy-code",
+                    verification_uri_complete="https://dummy-uri.com",
+                    interval=1,
+                ),
+            ),
+        )
+
+        endpoint = f"{dummy_jobbergate_auth.login_domain}/protocol/openid-connect/token"
+        respx_mock.post(endpoint).mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                json=dict(
+                    access_token=valid_token.content,
+                    refresh_token=valid_token.content,
+                ),
+            ),
+        )
+
+        dummy_jobbergate_auth.login()
+
+        assert dummy_jobbergate_auth.tokens == {
+            TokenType.ACCESS: valid_token.replace(label=TokenType.ACCESS),
+            TokenType.REFRESH: valid_token.replace(label=TokenType.REFRESH),
+        }
