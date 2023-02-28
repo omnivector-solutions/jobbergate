@@ -13,6 +13,7 @@ sphinxcontrib-httpdomain = "^1.8.0"
 sphinx-book-theme = "^0.1.6"
 toml = "^0.10.2"
 jobbergate-core = {path = "../jobbergate-core", develop = true }
+sphinxcontrib-napoleon = "^0.7"
 
 [tool.poetry.dev-dependencies]
 sphinx-autobuild = "^2021.3.14"
