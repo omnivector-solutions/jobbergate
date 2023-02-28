@@ -20,7 +20,7 @@ classifiers = [
 "Changelog" = "https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-core/CHANGELOG.rst"
 
 [tool.poetry.dependencies]
-python = "^3.6.2"
+python = "^3.8"
 httpx = "^0.22.0"
 loguru = "^0.6.0"
 pendulum = "^2.1.2"
@@ -70,6 +70,7 @@ module = [
     "dataclasses",
     "toml",
     "requests",
+    "jose.*",
 ]
 ignore_missing_imports = true
 
