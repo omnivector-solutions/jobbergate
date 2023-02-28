@@ -4,7 +4,7 @@ Utilities for handling auth in Jobbergate.
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict
+from typing import Dict, cast
 
 import httpx
 from loguru import logger
@@ -56,18 +56,23 @@ class JobbergateAuth:
         logger.debug("Authenticating request")
 
         self.acquire_tokens()
-
-        access_token = self.tokens.get(TokenType.ACCESS, "")
-        AuthenticationError.require_condition(access_token, "Access token was not found")
+        access_token = self.check_credentials()
 
         request.headers["Authorization"] = f"Bearer {access_token.content}"
         return request
 
     def acquire_tokens(self):
         """
-        Acquire the tokens.
+        High-level method to acquire a valid access token.
+
+        This method will attempt, in order:
+        * Load the tokens from the cache directory
+        * If the access token is unavailable or expired, refresh both tokens
+          using the refresh token.
+        * If the refresh token is unavailable or expired, login to fetch both tokens
         """
         logger.debug("Acquiring tokens")
+
         self.load_from_cache(skip_loaded=True)
         if TokenType.ACCESS in self.tokens and not self.tokens[TokenType.ACCESS].is_expired():
             return
@@ -76,9 +81,29 @@ class JobbergateAuth:
             return
         self.login()
 
+    def check_credentials(self) -> Token:
+        """
+        Check that the access credentials are available and not expired.
+
+        Returns:
+            Token: The access token for reference.
+
+        Raises:
+            AuthenticationError: If the credentials are invalid.
+        """
+        access_token = cast(Token, self.tokens.get(TokenType.ACCESS))
+        AuthenticationError.require_condition(access_token, "Access token was not found")
+        AuthenticationError.require_condition(not access_token.is_expired(), "Access token has expired")
+
+        return access_token
+
     def load_from_cache(self, skip_loaded: bool = True):
         """
-        Load the tokens from the cache.
+        Load the tokens that are available at the cache directory.
+
+        Arguments:
+            skip_loaded (bool): If True, skip tokens that are already loaded, otherwise
+                replace them with the ones from the cache.
         """
         logger.debug("Loading tokens from cache directory: {}", self.cache_directory.as_posix())
 
@@ -87,15 +112,21 @@ class JobbergateAuth:
                 continue
             try:
                 new_token = Token.load_from_cache(self.cache_directory, label=t)
-            except TokenError:
-                logger.debug(f"    {t}.token was not found")
-                continue
-            self.tokens[t] = new_token
+                self.tokens[t] = new_token
+            except TokenError as e:
+                logger.debug(f"   Error while loading {t}.token: {str(e)}")
 
     def save_to_cache(self):
         """
-        Save the tokens to the cache.
+        Save the tokens to the cache directory.
+
+        Note:
+            This method will create the cache directory if it does not exist.
         """
+        logger.debug(
+            "Saving tokens to cache directory: {}",
+            self.cache_directory.as_posix(),
+        )
         self.cache_directory.mkdir(parents=True, exist_ok=True)
         for token in self.tokens.values():
             token.save_to_cache()
@@ -174,6 +205,10 @@ class JobbergateAuth:
         """
 
         for token_type, new_content in tokens_content.items():
+            AuthenticationError.require_condition(
+                token_type in TokenType,
+                f"Invalid token type: {token_type}",
+            )
             self.tokens[token_type] = Token(
                 content=new_content,
                 cache_directory=self.cache_directory,

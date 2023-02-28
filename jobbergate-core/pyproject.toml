@@ -38,7 +38,7 @@ pytest-env = "^0.6.2"
 pytest-freezegun = "^0.4.2"
 pytest-mock = "^3.6.0"
 pytest-random-order = "^1.0.4"
-pytest-responsemock = "^1.0.1"
+requests-mock = "^1.10"
 respx = "^0.19.2"
 toml = "^0.10.2"
 
@@ -69,6 +69,7 @@ max-complexity = 40
 module = [
     "dataclasses",
     "toml",
+    "requests",
 ]
 ignore_missing_imports = true
 

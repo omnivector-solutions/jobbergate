@@ -54,13 +54,6 @@ class Token:
         data = self._get_metadata()
         object.__setattr__(self, "data", data)
 
-    @property
-    def expiration_date(self) -> str:
-        """
-        Get the expiration date of the token.
-        """
-        return str(pendulum.from_timestamp(self.data["exp"]))
-
     def _get_metadata(self) -> Dict[str, Any]:
         """
         Extract the data from the token.
