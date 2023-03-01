@@ -26,7 +26,7 @@ class JobbergateAuth:
     High-level class used to handle authentication in Jobbergate.
 
     After an instance of this class is created, it can be used to authenticate requests
-    from the `requests`_ library or the `httpx`_ library by passing it to the ``auth``
+    from both `requests`_  and `httpx`_ packages by passing it to the ``auth``
     parameter on the request (see examples bellow).
 
     It works just out of the box. Behind the scenes, this procedure calls the
