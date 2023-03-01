@@ -23,7 +23,7 @@ _LoginInformation = namedtuple(
 @dataclass
 class JobbergateAuth:
     """
-    High-level class used to handle authentication in Jobbergate.
+    High-level class used to manage authentication to requests to the Jobbergate-API
 
     After an instance of this class is created, it can be used to authenticate requests
     from both `requests`_  and `httpx`_ packages by passing it to the ``auth``
@@ -40,11 +40,11 @@ class JobbergateAuth:
     .. _httpx: https://www.python-httpx.org/
 
     Arguments:
-        cache_directory (Path): Directory to be used for the caching tokens.
+        cache_directory (pathlib.Path): Directory to be used for the caching tokens.
         login_domain (str): Domain used for the login.
         login_audience (str): Audience of the login.
         login_client_id (str): Client ID used for login.
-        tokens (Dict[TokenType, Token]): Dictionary holding the tokens needed for authentication.
+        tokens (dict[TokenType, Token]): Dictionary holding the tokens needed for authentication.
 
     Note:
         Consult the values above with your system administrator.

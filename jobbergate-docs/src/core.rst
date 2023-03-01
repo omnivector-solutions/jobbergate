@@ -2,6 +2,8 @@
  Jobbergate Core
 =================
 
+This is a new sub-project on the Jobbergate system that contains the key components and logic to be shared among all others sub-projects (CLI, API, and Agent), and that can be exposed to the end-users to leverage their custom workflows.
+
 Authentication
 --------------
 
