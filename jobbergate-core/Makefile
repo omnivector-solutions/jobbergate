@@ -4,34 +4,34 @@ SHELL:=/bin/bash
 PACKAGE_NAME:=jobbergate_core
 
 .PHONY: install
-install:
+install: ## Install the Python dependencies
 	poetry install
 
 .PHONY: test
-test: install
+test: install ## Run the suite of unit tests
 	poetry run pytest
 
 .PHONY: lint
-lint: install
+lint: install ## Lint the code using black, isort and flake8
 	poetry run black --check ${PACKAGE_NAME} tests
 	poetry run isort --check ${PACKAGE_NAME} tests
 	poetry run pflake8 ${PACKAGE_NAME} tests
 
 .PHONY: mypy
-mypy: install
+mypy: install ## Run static typer checks
 	poetry run mypy ${PACKAGE_NAME} --pretty
 
 .PHONY: qa
-qa: test lint mypy
+qa: test lint mypy ## Run the full suite of quality assurance, i.e. test, lint and static type checker
 	echo "All quality checks pass!"
 
 .PHONY: format
-format: install
+format: install ## Format the code using black and isort
 	poetry run black ${PACKAGE_NAME} tests
 	poetry run isort ${PACKAGE_NAME} tests
 
 .PHONY: clean
-clean:
+clean: ## Remove cache files and similars
 	@find . -iname '*.pyc' -delete
 	@find . -iname '*.pyo' -delete
 	@find . -iname '*~' -delete
@@ -46,5 +46,5 @@ clean:
 	@rm -fr *.egg-info
 
 .PHONY: help
-help: # Display target comments in 'make help'
+help: ## Display target comments in 'make help'
 	grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
