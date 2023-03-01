@@ -5,7 +5,7 @@ import time
 from collections import namedtuple
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, cast
+from typing import Dict
 
 import httpx
 from loguru import logger
@@ -115,11 +115,17 @@ class JobbergateAuth:
         logger.debug("Acquiring tokens")
 
         self.load_from_cache(skip_loaded=True)
-        if TokenType.ACCESS in self.tokens and not self.tokens[TokenType.ACCESS].is_expired():
+        try:
+            self.check_credentials(token_type=TokenType.ACCESS)
             return
-        elif TokenType.REFRESH in self.tokens and not self.tokens[TokenType.REFRESH].is_expired():
+        except AuthenticationError:
+            logger.debug("Access token is not available or expired")
+        try:
+            self.check_credentials(token_type=TokenType.REFRESH)
             self.refresh_tokens()
             return
+        except AuthenticationError:
+            logger.debug("Refresh token is not available or expired")
         self.login()
 
     def check_credentials(self, token_type: TokenType = TokenType.ACCESS) -> Token:
