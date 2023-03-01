@@ -109,7 +109,7 @@ class JobbergateAuth:
         * Load the tokens from the cache directory (see :meth:`JobbergateAuth.load_from_cache`)
         * If the access token is unavailable or expired, refresh both tokens
           using the refresh token (see :meth:`JobbergateAuth.refresh_tokens`)
-        * If the refresh token is unavailable or expired, login to fetch both tokens
+        * If the refresh token is unavailable or expired, login to generate both tokens
           (see :meth:`JobbergateAuth.login`)
         """
         logger.debug("Acquiring tokens")
