@@ -18,6 +18,8 @@ from .exceptions import TokenError
 class TokenType(str, Enum):
     """
     Types of tokens.
+
+    The available types are ``access`` and ``refresh``.
     """
 
     ACCESS = "access"

@@ -409,6 +409,26 @@ class TestJobbergateAuthRefreshTokens:
             dummy_jobbergate_auth.refresh_tokens()
 
 
+def test_logout_success(dummy_jobbergate_auth, valid_token):
+    """
+    Test that the logout function works as expected.
+    """
+    dummy_jobbergate_auth.tokens = {
+        TokenType.ACCESS: valid_token.replace(label=TokenType.ACCESS),
+        TokenType.REFRESH: valid_token.replace(label=TokenType.REFRESH),
+    }
+
+    token_path = [t.file_path for t in dummy_jobbergate_auth.tokens.values()]
+
+    dummy_jobbergate_auth.save_to_cache()
+
+    assert all([path.is_file() is True for path in token_path])
+
+    dummy_jobbergate_auth.logout()
+
+    assert all([path.is_file() is False for path in token_path])
+
+
 class TestJobbergateAuthLogin:
     """
     Test the login method on JobbergateAuth class.
