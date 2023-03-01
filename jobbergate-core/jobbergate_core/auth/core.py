@@ -135,8 +135,8 @@ class JobbergateAuth:
         Raises:
             AuthenticationError: If the credentials are invalid.
         """
-        token = cast(Token, self.tokens.get(token_type))
-        AuthenticationError.require_condition(token, f"{token_type} token was not found")
+        AuthenticationError.require_condition(token_type in self.tokens, f"{token_type} token was not found")
+        token = self.tokens[token_type]
         AuthenticationError.require_condition(not token.is_expired(), f"{token_type} token has expired")
 
         return token
