@@ -55,7 +55,7 @@ class JobbergateAuth:
 
     Examples:
 
-        The following example shows how to use the JobbergateAuth class to authenticate a request:
+        The following example shows how to use the :meth:`JobbergateAuth` class to authenticate a request:
 
         >>> from pathlib import Path
         >>> import requests
