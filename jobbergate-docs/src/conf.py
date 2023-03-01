@@ -30,6 +30,7 @@ smartquotes = False
 pygments_style = "rainbow_dash"
 exclude_patterns = []
 extensions = [
+    "sphinx_copybutton",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.githubpages",
