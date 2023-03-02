@@ -447,6 +447,7 @@ class TestJobbergateAuthHandlerLogin:
                     device_code="dummy-code",
                     verification_uri_complete="https://dummy-uri.com",
                     interval=1,
+                    expires_in=0.5,
                 ),
             ),
         )
@@ -468,3 +469,30 @@ class TestJobbergateAuthHandlerLogin:
             TokenType.ACCESS: valid_token.replace(label=TokenType.ACCESS),
             TokenType.REFRESH: valid_token.replace(label=TokenType.REFRESH),
         }
+
+    def test_login__raises_timeout(self, respx_mock, dummy_jobbergate_auth):
+        """
+        Test that the function raises an exception if the process times out.
+        """
+        endpoint = f"{dummy_jobbergate_auth.login_domain}/protocol/openid-connect/auth/device"
+        respx_mock.post(endpoint).mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                json=dict(
+                    device_code="dummy-code",
+                    verification_uri_complete="https://dummy-uri.com",
+                    interval=1,
+                    expires_in=1e-8,  # very small value to force timeout
+                ),
+            ),
+        )
+
+        endpoint = f"{dummy_jobbergate_auth.login_domain}/protocol/openid-connect/token"
+        respx_mock.post(endpoint).mock(
+            return_value=httpx.Response(
+                httpx.codes.BAD_REQUEST,
+            ),
+        )
+
+        with pytest.raises(AuthenticationError, match="Login expired, please try again"):
+            dummy_jobbergate_auth.login()

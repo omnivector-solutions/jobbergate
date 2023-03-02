@@ -16,7 +16,7 @@ from jobbergate_core.auth.token import Token, TokenType
 
 _LoginInformation = namedtuple(
     "_LoginInformation",
-    ["verification_url", "wait_interval", "device_code"],
+    ["verification_url", "wait_interval", "device_code", "expires_at"],
 )
 
 
@@ -214,6 +214,9 @@ class JobbergateAuthHandler:
     def _wait_for_login_confirmation(self, login_info: _LoginInformation) -> httpx.Response:
         print(f"Login Here: {login_info.verification_url}")
         while True:
+            AuthenticationError.require_condition(
+                login_info.expires_at > time.time(), "Login expired, please try again"
+            )
             response = self._get_login_confirmation(login_info)
             try:
                 response.raise_for_status()
@@ -256,15 +259,17 @@ class JobbergateAuthHandler:
 
         device_code_data = response.json()
         with AuthenticationError.handle_errors(
-            "Error processing the request data after fetching the tokens",
+            f"Error processing the request data after fetching the token, {device_code_data=}",
         ):
             verification_url = device_code_data["verification_uri_complete"]
             wait_interval = device_code_data["interval"]
             device_code = device_code_data["device_code"]
+            expires_at = time.time() + device_code_data["expires_in"]
         return _LoginInformation(
             verification_url,
             wait_interval,
             device_code,
+            expires_at,
         )
 
     def refresh_tokens(self):
