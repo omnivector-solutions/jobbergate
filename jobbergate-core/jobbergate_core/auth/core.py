@@ -10,8 +10,8 @@ from typing import Dict
 import httpx
 from loguru import logger
 
-from .exceptions import AuthenticationError, TokenError
-from .token import Token, TokenType
+from jobbergate_core.auth.exceptions import AuthenticationError, TokenError
+from jobbergate_core.auth.token import Token, TokenType
 
 
 _LoginInformation = namedtuple(

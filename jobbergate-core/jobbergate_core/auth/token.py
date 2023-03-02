@@ -12,7 +12,7 @@ import pendulum
 from jose.jwt import decode
 from loguru import logger
 
-from .exceptions import TokenError
+from jobbergate_core.auth.exceptions import TokenError
 
 
 class TokenType(str, Enum):

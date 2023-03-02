@@ -1,9 +1,9 @@
 """
 Utilities for handling auth in Jobbergate.
 """
-from .core import JobbergateAuth
-from .exceptions import AuthenticationError, TokenError
-from .token import Token, TokenType
+from jobbergate_core.auth.core import JobbergateAuth
+from jobbergate_core.auth.exceptions import AuthenticationError, TokenError
+from jobbergate_core.auth.token import Token, TokenType
 
 
 __all__ = [

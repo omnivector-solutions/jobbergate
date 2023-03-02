@@ -1,8 +1,8 @@
 """
 Jobbergate-core contains key components that are shared among sub-projects.
 """
-from .auth import AuthenticationError, JobbergateAuth, TokenError
-from .version import __version__
+from jobbergate_core.auth import AuthenticationError, JobbergateAuth, TokenError
+from jobbergate_core.version import __version__
 
 
 __all__ = [
