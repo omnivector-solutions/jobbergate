@@ -27,9 +27,9 @@ class JobbergateAuthHandler:
 
     After an instance of this class is created, it can be used to authenticate requests
     from both `requests`_  and `httpx`_ packages by passing it to the ``auth``
-    parameter on the request (see examples bellow).
+    parameter on the request (see examples below).
 
-    It works just out of the box. Behind the scenes, this procedure calls the
+    It just works out of the box. Behind the scenes, this procedure calls the
     :meth:`JobbergateAuth.acquire_tokens` method to load the available tokens from the cache directory, it
     will try to refresh them if they are expired, or will provide an URL to the user to login on the system.
 
@@ -56,7 +56,8 @@ class JobbergateAuthHandler:
 
     Examples:
 
-        The following example shows how to use the :meth:`JobbergateAuthHandler` class to authenticate a request:
+        The following example shows how to use the :meth:`JobbergateAuthHandler`
+        class to authenticate a request:
 
         >>> from pathlib import Path
         >>> import requests
