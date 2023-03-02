@@ -40,11 +40,12 @@ class JobbergateAuthHandler:
     .. _httpx: https://www.python-httpx.org/
 
     Arguments:
-        cache_directory (pathlib.Path): Directory to be used for the caching tokens.
-        login_domain (str): Domain used for the login.
-        login_audience (str): Audience of the login.
-        login_client_id (str): Client ID used for login.
-        tokens (dict[TokenType, Token]): Dictionary holding the tokens needed for authentication.
+        cache_directory: Directory to be used for the caching tokens.
+        login_domain: Domain used for the login.
+        login_audience: Audience of the login.
+        login_client_id: Client ID used for login.
+        login_max_wait: Maximum time to wait for the login to be completed, in seconds.
+        tokens: Dictionary holding the tokens needed for authentication.
 
     Note:
         These values depend on the identity provider used for authentication.
@@ -102,7 +103,7 @@ class JobbergateAuthHandler:
         request.headers["Authorization"] = f"Bearer {access_token.content}"
         return request
 
-    def acquire_tokens(self):
+    def acquire_tokens(self) -> None:
         """
         High-level method to acquire a valid access token.
 
@@ -135,10 +136,10 @@ class JobbergateAuthHandler:
         Check if the credentials on the provided ``token_type`` are available and not expired.
 
         Arguments:
-            token_type (TokenType): The type of token to check (default is ``access``).
+            token_type: The type of token to check (default is ``access``).
 
         Returns:
-            Token: The token is returned for reference.
+            The token is returned for reference.
 
         Raises:
             AuthenticationError: If the credentials are invalid.
@@ -149,12 +150,12 @@ class JobbergateAuthHandler:
 
         return token
 
-    def load_from_cache(self, skip_loaded: bool = True):
+    def load_from_cache(self, skip_loaded: bool = True) -> None:
         """
         Load the tokens that are available at the cache directory.
 
         Arguments:
-            skip_loaded (bool): If True, skip tokens that are already loaded, otherwise
+            skip_loaded: If True, skip tokens that are already loaded, otherwise
                 replace them with the ones from the cache.
 
         Note:
@@ -172,7 +173,7 @@ class JobbergateAuthHandler:
             except TokenError as e:
                 logger.debug(f"   Error while loading {t}.token: {str(e)}")
 
-    def save_to_cache(self):
+    def save_to_cache(self) -> None:
         """
         Save the tokens to the cache directory.
 
@@ -187,7 +188,7 @@ class JobbergateAuthHandler:
         for token in self.tokens.values():
             token.save_to_cache()
 
-    def logout(self):
+    def logout(self) -> None:
         """
         Logout from Jobbergate by clearing the loaded tokens and their cache on the disk.
         """
@@ -196,7 +197,7 @@ class JobbergateAuthHandler:
             token.clear_cache()
         self.tokens.clear()
 
-    def login(self):
+    def login(self) -> None:
         """
         Login to Jobbergate.
 
@@ -272,7 +273,7 @@ class JobbergateAuthHandler:
             expires_at,
         )
 
-    def refresh_tokens(self):
+    def refresh_tokens(self) -> None:
         """
         Refresh the tokens.
 

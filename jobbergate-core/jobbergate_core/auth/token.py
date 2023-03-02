@@ -30,16 +30,15 @@ class Token:
     Low-level class used to handling tokens.
 
     Arguments:
-        content (str): The content of the token.
-        cache_directory (pathlib.Path): The directory used for cache.
-        label (TokenType): The type of token.
+        content: The content of the token.
+        cache_directory: The directory used for cache.
+        label: The type of token.
 
     Attributes:
-        file_path (pathlib.Path): The path to the file associated with the token.
+        file_path: The path to the file associated with the token.
           It is computed  as ``<cache_directory>/<label>.token``.
-        data (dict[str, typing.Any]): Metadata decoded from the token's content
-          are available in this dictionary. Expiration date and permissions are
-          some examples of data that can be found.
+        data: Metadata decoded from the token's content are available in this dictionary.
+          Expiration date and permissions are some examples of data that can be found.
     """
 
     content: str
@@ -94,11 +93,11 @@ class Token:
         Alternative initialization method that loads the token from the cache.
 
         Args:
-            cache_directory (Path): The path to the cache directory.
-            label (TokenType): The type of token.
+            cache_directory: The path to the cache directory.
+            label: The type of token.
 
         Returns:
-            Token: The loaded Token.
+            The loaded Token.
         """
         file_path = cache_directory / f"{label}.token"
         logger.debug(f"Loading token from {file_path.as_posix()}")
@@ -138,7 +137,7 @@ class Token:
         Check if the token is expired.
 
         Returns:
-            bool: True if the token is expired, False otherwise.
+            True if the token is expired, False otherwise.
 
         Raises:
             TokenError: If the expiration date is not found.
@@ -158,8 +157,8 @@ class Token:
         Create a new instance of the token with the changes applied.
 
         Keyword Arguments:
-            content (str): The content of the token.
-            cache_directory (Path): The directory containing the cache.
-            label (TokenType): The type of token.
+            content: The content of the token.
+            cache_directory: The directory containing the cache.
+            label: The type of token.
         """
         return replace(self, **changes)
