@@ -143,11 +143,12 @@ class Token:
             TokenError: If the expiration date is not found.
         """
         logger.debug(f"Checking if {self.label} token has expired")
-        token_expiration = self.data.get("exp", 0)
-        TokenError.require_condition(token_expiration > 0, "The expiration date was not found")
+
+        TokenError.require_condition("exp" in self.data, "The expiration date was not found")
+        token_expiration = self.data["exp"]
 
         current_time_UTC = pendulum.now().int_timestamp
-        is_expired = token_expiration >= current_time_UTC
+        is_expired = token_expiration <= current_time_UTC
         logger.debug(f"    Token is expired: {is_expired}")
 
         return is_expired

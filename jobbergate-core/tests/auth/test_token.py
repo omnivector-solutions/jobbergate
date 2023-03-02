@@ -156,7 +156,7 @@ class TestToken:
 
     @pytest.mark.parametrize(
         "time_delta, is_expired",
-        [(-1, False), (0, True), (1, True)],
+        [(-1, True), (0, True), (1, False)],
     )
     def test_is_expired__success(self, time_delta, is_expired, tmp_path, jwt_token, time_now):
         """

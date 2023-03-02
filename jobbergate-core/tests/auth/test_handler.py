@@ -4,6 +4,7 @@ Test the utilities for handling auth in Jobbergate.
 from unittest import mock
 
 import httpx
+import pendulum
 import pytest
 import requests
 
@@ -18,25 +19,25 @@ DUMMY_LOGIN_CLIENT_ID = "cli"
 
 
 @pytest.fixture
-def valid_token(tmp_path, time_now, jwt_token):
+def valid_token(tmp_path, jwt_token):
     """
     Return a valid token.
     """
 
     return Token(
-        content=jwt_token(exp=time_now.int_timestamp - 10),
+        content=jwt_token(exp=pendulum.tomorrow().int_timestamp),
         cache_directory=tmp_path,
         label=TokenType.ACCESS,
     )
 
 
 @pytest.fixture
-def expired_token(tmp_path, time_now, jwt_token):
+def expired_token(tmp_path, jwt_token):
     """
     Return an expired token.
     """
     return Token(
-        content=jwt_token(exp=time_now.int_timestamp + 10),
+        content=jwt_token(exp=pendulum.yesterday().int_timestamp),
         cache_directory=tmp_path,
         label=TokenType.ACCESS,
     )
