@@ -3,7 +3,7 @@ Test the utilities for handling auth in Jobbergate.
 """
 import pytest
 
-from jobbergate_core.auth import Token, TokenError, TokenType
+from jobbergate_core.auth.token import Token, TokenError, TokenType
 
 
 class TestToken:
@@ -171,10 +171,3 @@ class TestToken:
         )
 
         assert token.is_expired() == is_expired
-
-
-class TestJobbergateAuth:
-    def test_get_token__success(self, mocker, jwt_token, time_now):
-        """
-        Test that the get_token function works as expected.
-        """

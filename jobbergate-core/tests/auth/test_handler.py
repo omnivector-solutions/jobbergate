@@ -7,7 +7,7 @@ import httpx
 import pytest
 import requests
 
-from jobbergate_core.auth import JobbergateAuth
+from jobbergate_core.auth import JobbergateAuthHandler
 from jobbergate_core.auth.exceptions import AuthenticationError
 from jobbergate_core.auth.token import Token, TokenType
 
@@ -45,9 +45,9 @@ def expired_token(tmp_path, time_now, jwt_token):
 @pytest.fixture
 def dummy_jobbergate_auth(tmp_path):
     """
-    Return a dummy JobbergateAuth object.
+    Return a dummy JobbergateAuthHandler object.
     """
-    return JobbergateAuth(
+    return JobbergateAuthHandler(
         cache_directory=tmp_path,
         login_domain=DUMMY_LOGIN_DOMAIN,
         login_audience=DUMMY_LOGIN_AUDIENCE,
@@ -57,7 +57,7 @@ def dummy_jobbergate_auth(tmp_path):
 
 def test_auth_base_case(tmp_path, dummy_jobbergate_auth):
     """
-    Test that the JobbergateAuth class can be instantiated.
+    Test that the JobbergateAuthHandler class can be instantiated.
     """
     assert dummy_jobbergate_auth.cache_directory == tmp_path
     assert dummy_jobbergate_auth.login_domain == DUMMY_LOGIN_DOMAIN
@@ -68,7 +68,7 @@ def test_auth_base_case(tmp_path, dummy_jobbergate_auth):
 
 class TestJobbergateCheckCredentials:
     """
-    Test the check_credentials method on JobbergateAuth class.
+    Test the check_credentials method on JobbergateAuthHandler class.
     """
 
     def test_check_credentials__success(self, dummy_jobbergate_auth, valid_token):
@@ -99,7 +99,7 @@ class TestJobbergateCheckCredentials:
 
 def test_insert_token_in_request_header(respx_mock, dummy_jobbergate_auth, valid_token):
     """
-    Test that the JobbergateAuth class inserts the token in the header (performed by __call__).
+    Test that the JobbergateAuthHandler class inserts the token in the header (performed by __call__).
     """
     dummy_headers = {"test-header": "test-value", "foo": "bar"}
     expected_headers = {**dummy_headers, "Authorization": f"Bearer {valid_token.content}"}
@@ -203,9 +203,9 @@ def test_acquire_tokens(
             assert mocked_jobbergate_auth[key].call_count == expected_call_count.get(key, 0)
 
 
-class TestJobbergateAuthLoadFromCache:
+class TestJobbergateAuthHandlerLoadFromCache:
     """
-    Test the load_from_cache method on JobbergateAuth class.
+    Test the load_from_cache method on JobbergateAuthHandler class.
     """
 
     def test_no_tokens_found(self, dummy_jobbergate_auth):
@@ -302,9 +302,9 @@ def test_save_to_cache(dummy_jobbergate_auth, valid_token):
         assert token.file_path.read_text() == token.content
 
 
-class TestJobbergateAuthRefreshTokens:
+class TestJobbergateAuthHandlerRefreshTokens:
     """
-    Test the refresh_tokens method on JobbergateAuth class.
+    Test the refresh_tokens method on JobbergateAuthHandler class.
     """
 
     def test_refresh_tokens__success(
@@ -429,9 +429,9 @@ def test_logout_success(dummy_jobbergate_auth, valid_token):
     assert all([path.is_file() is False for path in token_path])
 
 
-class TestJobbergateAuthLogin:
+class TestJobbergateAuthHandlerLogin:
     """
-    Test the login method on JobbergateAuth class.
+    Test the login method on JobbergateAuthHandler class.
     """
 
     def test_login__success(self, respx_mock, dummy_jobbergate_auth, valid_token):

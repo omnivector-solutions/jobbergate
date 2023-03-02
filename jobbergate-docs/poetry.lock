@@ -612,6 +612,21 @@ sphinx = ["ablog (>=0.10.13,<0.11.0)", "folium", "ipywidgets", "matplotlib", "my
 testing = ["coverage", "myst-nb (>=0.13,<1.0)", "pytest (>=6.0.1,<6.1.0)", "pytest-cov", "pytest-regressions (>=2.0.1,<2.1.0)", "sphinx-thebe"]
 
 [[package]]
+name = "sphinx-copybutton"
+version = "0.5.1"
+description = "Add a copy button to each of your code cells."
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+sphinx = ">=1.8"
+
+[package.extras]
+code-style = ["pre-commit (==2.12.1)"]
+rtd = ["ipython", "myst-nb", "sphinx", "sphinx-book-theme", "sphinx-examples"]
+
+[[package]]
 name = "sphinxcontrib-applehelp"
 version = "1.0.4"
 description = "sphinxcontrib-applehelp is a Sphinx extension which outputs Apple help books"
@@ -777,7 +792,7 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "47c6bc92973a5a665e0bba76bdefb6c380704e53744c7c48b8893ba2c1373c6e"
+content-hash = "dafa0a0293526aa5cc33c8125b078dda2ba60a024ce38be605cb60da0b0a2767"
 
 [metadata.files]
 alabaster = [
@@ -1197,6 +1212,10 @@ sphinx-autobuild = [
 sphinx-book-theme = [
     {file = "sphinx-book-theme-0.1.10.tar.gz", hash = "sha256:c74d7deb36e6fea4bcb3a979d162d9fd80e93b7ea4da78ebf8286da4b898582a"},
     {file = "sphinx_book_theme-0.1.10-py3-none-any.whl", hash = "sha256:1722b60c8ac87aa53758f4403912972cb28d0c253196446339859124e92f686f"},
+]
+sphinx-copybutton = [
+    {file = "sphinx-copybutton-0.5.1.tar.gz", hash = "sha256:366251e28a6f6041514bfb5439425210418d6c750e98d3a695b73e56866a677a"},
+    {file = "sphinx_copybutton-0.5.1-py3-none-any.whl", hash = "sha256:0842851b5955087a7ec7fc870b622cb168618ad408dee42692e9a5c97d071da8"},
 ]
 sphinxcontrib-applehelp = [
     {file = "sphinxcontrib-applehelp-1.0.4.tar.gz", hash = "sha256:828f867945bbe39817c210a1abfd1bc4895c8b73fcaade56d45357a348a07d7e"},

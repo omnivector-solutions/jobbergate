@@ -7,7 +7,7 @@ This is a new sub-project on the Jobbergate system that contains the key compone
 Authentication
 --------------
 
-.. automodule:: jobbergate_core.auth.core
+.. automodule:: jobbergate_core.auth.handler
    :members:
    :show-inheritance:
 

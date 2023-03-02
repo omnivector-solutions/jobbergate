@@ -21,7 +21,7 @@ _LoginInformation = namedtuple(
 
 
 @dataclass
-class JobbergateAuth:
+class JobbergateAuthHandler:
     """
     High-level class used to manage authentication to requests to the Jobbergate-API
 
@@ -56,12 +56,12 @@ class JobbergateAuth:
 
     Examples:
 
-        The following example shows how to use the :meth:`JobbergateAuth` class to authenticate a request:
+        The following example shows how to use the :meth:`JobbergateAuthHandler` class to authenticate a request:
 
         >>> from pathlib import Path
         >>> import requests
-        >>> from jobbergate_core import JobbergateAuth
-        >>> jobbergate_auth = JobbergateAuth(
+        >>> from jobbergate_core import JobbergateAuthHandler
+        >>> jobbergate_auth = JobbergateAuthHandler(
         ...     cache_directory=Path("."),
         ...     login_domain="http://keycloak.local:8080/realms/jobbergate-local",
         ...     login_audience="https://local.omnivector.solutions",
