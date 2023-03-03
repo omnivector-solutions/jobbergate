@@ -67,7 +67,7 @@ async def test_create_job_submission__with_client_id_in_token(
     ) as mocked:
         mocked.return_value = JobProperties.parse_obj(create_data["execution_parameters"])
         with time_frame() as window:
-            response = await client.post("/jobbergate/job-submissions/", json=create_data)
+            response = await client.post("/jobbergate/job-submissions", json=create_data)
         mocked.assert_called_once_with(
             inserted_job_script_id,
             **create_data["execution_parameters"],
@@ -91,7 +91,7 @@ async def test_create_job_submission__with_client_id_in_token(
     assert job_submission == JobSubmissionResponse(**job_submission_raw_data)  # type: ignore
 
     # Check that each field is correctly set
-    assert job_submission.id == job_submission_raw_data.get("id")
+    assert job_submission.id == job_submission_raw_data["id"]
     assert job_submission.job_submission_name == "sub1"
     assert job_submission.job_submission_owner_email == "owner1@org.com"
     assert job_submission.job_submission_description is None
@@ -160,7 +160,7 @@ async def test_create_job_submission__without_execution_parameters(
     ) as mocked:
         mocked.return_value = JobProperties()
         with time_frame() as window:
-            response = await client.post("/jobbergate/job-submissions/", json=create_data)
+            response = await client.post("/jobbergate/job-submissions", json=create_data)
         mocked.assert_called_once_with(inserted_job_script_id)
 
     assert response.status_code == status.HTTP_201_CREATED
@@ -181,7 +181,7 @@ async def test_create_job_submission__without_execution_parameters(
     assert job_submission == JobSubmissionResponse(**job_submission_raw_data)  # type: ignore
 
     # Check that each field is correctly set
-    assert job_submission.id == job_submission_raw_data.get("id")
+    assert job_submission.id == job_submission_raw_data["id"]
     assert job_submission.job_submission_name == create_data.get("job_submission_name")
     assert job_submission.job_submission_owner_email == create_data.get("job_submission_owner_email")
     assert job_submission.job_submission_description == create_data.get("job_submission_description")
@@ -242,7 +242,7 @@ async def test_create_job_submission__with_client_id_in_request_body(
         mocked.return_value = JobProperties.parse_obj(execution_parameters)
         with time_frame() as window:
             response = await client.post(
-                "/jobbergate/job-submissions/",
+                "/jobbergate/job-submissions",
                 json=fill_job_submission_data(
                     job_script_id=inserted_job_script_id,
                     job_submission_name="sub1",
@@ -270,7 +270,7 @@ async def test_create_job_submission__with_client_id_in_request_body(
     assert job_submission == JobSubmissionResponse(**job_submission_raw_data)  # type: ignore
 
     # Check that each field is correctly set
-    assert job_submission.id == job_submission_raw_data.get("id")
+    assert job_submission.id == job_submission_raw_data["id"]
     assert job_submission.job_submission_name == "sub1"
     assert job_submission.job_submission_owner_email == "owner1@org.com"
     assert job_submission.job_submission_description is None
@@ -332,7 +332,7 @@ async def test_create_job_submission__with_execution_directory(
     ) as mocked:
         mocked.return_value = JobProperties.parse_obj(create_data["execution_parameters"])
         with time_frame() as window:
-            response = await client.post("/jobbergate/job-submissions/", json=create_data)
+            response = await client.post("/jobbergate/job-submissions", json=create_data)
         mocked.assert_called_once_with(
             inserted_job_script_id,
             **create_data["execution_parameters"],
@@ -355,7 +355,7 @@ async def test_create_job_submission__with_execution_directory(
     assert job_submission_raw_data is not None
     assert job_submission == JobSubmissionResponse(**job_submission_raw_data)  # type: ignore
 
-    assert job_submission.id == job_submission_raw_data.get("id")
+    assert job_submission.id == job_submission_raw_data["id"]
     assert job_submission.job_submission_name == "sub1"
     assert job_submission.job_submission_owner_email == "owner1@org.com"
     assert job_submission.job_submission_description is None
@@ -386,7 +386,7 @@ async def test_create_job_submission_without_job_script(
     """
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT)
     response = await client.post(
-        "/jobbergate/job-submissions/", json=fill_job_submission_data(job_script_id=9999)
+        "/jobbergate/job-submissions", json=fill_job_submission_data(job_script_id=9999)
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -420,7 +420,7 @@ async def test_create_job_submission_bad_permission(
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.post(
-        "/jobbergate/job-submissions/",
+        "/jobbergate/job-submissions",
         json=fill_job_submission_data(job_script_id=inserted_job_script_id),
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -464,7 +464,7 @@ async def test_create_job_submission_without_client_id(
     )
     create_data.pop("client_id", None)
     response = await client.post(
-        "/jobbergate/job-submissions/",
+        "/jobbergate/job-submissions",
         json=create_data,
     )
 
@@ -633,7 +633,7 @@ async def test_get_job_submissions__no_param(
     assert count[0][0] == 3
 
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
-    response = await client.get("/jobbergate/job-submissions/")
+    response = await client.get("/jobbergate/job-submissions")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -683,7 +683,7 @@ async def test_get_job_submissions__bad_permission(
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
-    response = await client.get("/jobbergate/job-submissions/")
+    response = await client.get("/jobbergate/job-submissions")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -748,7 +748,7 @@ async def test_get_job_submissions__with_all_param(
     assert count[0][0] == 3
 
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
-    response = await client.get("/jobbergate/job-submissions/?all=True")
+    response = await client.get("/jobbergate/job-submissions?all=True")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -811,7 +811,7 @@ async def test_get_job_submissions__from_job_script_id(
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
 
     for job_script_id in [inserted_job_script_id_1, inserted_job_script_id_2, inserted_job_script_id_3]:
-        response = await client.get(f"/jobbergate/job-submissions/?from_job_script_id={job_script_id}")
+        response = await client.get(f"/jobbergate/job-submissions?from_job_script_id={job_script_id}")
         assert response.status_code == status.HTTP_200_OK
 
         data = response.json()
@@ -870,7 +870,7 @@ async def test_get_job_submissions__with_status_param(
     assert count[0][0] == 3
 
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
-    response = await client.get(f"/jobbergate/job-submissions/?submit_status={JobSubmissionStatus.CREATED}")
+    response = await client.get(f"/jobbergate/job-submissions?submit_status={JobSubmissionStatus.CREATED}")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -1088,7 +1088,7 @@ async def test_list_job_submission_pagination(
     assert count[0][0] == 5
 
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
-    response = await client.get("/jobbergate/job-submissions/?start=0&limit=1")
+    response = await client.get("/jobbergate/job-submissions?start=0&limit=1")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -1103,7 +1103,7 @@ async def test_list_job_submission_pagination(
         limit=1,
     )
 
-    response = await client.get("/jobbergate/job-submissions/?start=1&limit=2")
+    response = await client.get("/jobbergate/job-submissions?start=1&limit=2")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -1118,7 +1118,7 @@ async def test_list_job_submission_pagination(
         limit=2,
     )
 
-    response = await client.get("/jobbergate/job-submissions/?start=2&limit=2")
+    response = await client.get("/jobbergate/job-submissions?start=2&limit=2")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()

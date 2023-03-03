@@ -281,7 +281,11 @@ def make_files_param():
             yield [
                 (
                     "upload_files",
-                    (path.name, stack.enter_context(open(path)), "text/plain"),
+                    (
+                        path.name,
+                        stack.enter_context(open(path, mode="rb")),
+                        "text/plain",
+                    ),
                 )
                 for path in file_paths
             ]

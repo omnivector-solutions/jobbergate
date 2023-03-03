@@ -27,7 +27,7 @@ def test_get_suffix(filename, suffix, make_dummy_file):
     Test if the file suffix is correctly from an UploadFile.
     """
     dummy_file = make_dummy_file(filename)
-    dummy_upload = UploadFile(filename, file=dummy_file)
+    dummy_upload = UploadFile(file=dummy_file, filename=filename)
     assert get_suffix(dummy_upload) == suffix
 
 

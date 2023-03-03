@@ -39,7 +39,7 @@ async def test_create_application(
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     with time_frame() as window:
         response = await client.post(
-            "/jobbergate/applications/",
+            "/jobbergate/applications",
             json=fill_application_data(
                 application_name="test-name",
                 application_identifier="test-identifier",
@@ -80,7 +80,7 @@ async def test_create_application_bad_permission(
     assert count[0][0] == 0
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
-    response = await client.post("/jobbergate/applications/", json=application_data)
+    response = await client.post("/jobbergate/applications", json=application_data)
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
@@ -102,7 +102,7 @@ async def test_create_without_application_name(
     """
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     response = await client.post(
-        "/jobbergate/applications/",
+        "/jobbergate/applications",
         json={k: v for (k, v) in application_data.items() if k != "application_name"},
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -433,7 +433,7 @@ async def test_get_applications__no_params(
     assert count[0][0] == 3
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
-    response = await client.get("/jobbergate/applications/")
+    response = await client.get("/jobbergate/applications")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -478,7 +478,7 @@ async def test_get_application___bad_permission(
     assert count[0][0] == 3
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
-    response = await client.get("/jobbergate/applications/")
+    response = await client.get("/jobbergate/applications")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -587,7 +587,7 @@ async def test_get_applications__with_all_param(
         limit=None,
     )
 
-    response = await client.get("/jobbergate/applications/?all=True")
+    response = await client.get("/jobbergate/applications?all=True")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -746,7 +746,7 @@ async def test_get_applications__with_pagination(
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
     response = await client.get(
-        "/jobbergate/applications/?start=0&limit=1&all=true&sort_field=application_identifier"
+        "/jobbergate/applications?start=0&limit=1&all=true&sort_field=application_identifier"
     )
     assert response.status_code == status.HTTP_200_OK
 
@@ -762,7 +762,7 @@ async def test_get_applications__with_pagination(
         limit=1,
     )
 
-    response = await client.get("/jobbergate/applications/?start=1&limit=2&all=true")
+    response = await client.get("/jobbergate/applications?start=1&limit=2&all=true")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -777,7 +777,7 @@ async def test_get_applications__with_pagination(
         limit=2,
     )
 
-    response = await client.get("/jobbergate/applications/?start=2&limit=2&all=true")
+    response = await client.get("/jobbergate/applications?start=2&limit=2&all=true")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()

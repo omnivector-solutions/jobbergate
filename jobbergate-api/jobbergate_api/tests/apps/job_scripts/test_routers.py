@@ -118,7 +118,7 @@ async def test_create_job_script(
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     with time_frame() as window:
         response = await client.post(
-            "/jobbergate/job-scripts/",
+            "/jobbergate/job-scripts",
             json=fill_job_script_data(
                 application_id=inserted_application_id,
                 param_dict=param_dict,
@@ -167,7 +167,7 @@ async def test_create_job_script_application_not_uploaded(
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     response = await client.post(
-        "/jobbergate/job-scripts/",
+        "/jobbergate/job-scripts",
         json=fill_job_script_data(
             application_id=inserted_application_id,
             param_dict=param_dict,
@@ -204,7 +204,7 @@ async def test_create_job_script_bad_permission(
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.post(
-        "/jobbergate/job-scripts/",
+        "/jobbergate/job-scripts",
         json=fill_job_script_data(
             application_id=inserted_application_id,
             param_dict=param_dict,
@@ -235,7 +235,7 @@ async def test_create_job_script_without_application(
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
 
     response = await client.post(
-        "/jobbergate/job-scripts/",
+        "/jobbergate/job-scripts",
         json=fill_job_script_data(application_id=9999, param_dict=param_dict),
     )
 
@@ -277,7 +277,7 @@ async def test_create_job_script_file_not_found(
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     response = await client.post(
-        "/jobbergate/job-scripts/",
+        "/jobbergate/job-scripts",
         json=fill_job_script_data(
             application_id=inserted_application_id,
             param_dict=param_dict,
@@ -328,7 +328,7 @@ async def test_create_job_script_unable_to_write_file_to_s3(
         side_effect=KeyError,
     ):
         response = await client.post(
-            "/jobbergate/job-scripts/",
+            "/jobbergate/job-scripts",
             json=fill_job_script_data(
                 application_id=inserted_application_id,
                 param_dict=param_dict,
@@ -508,7 +508,7 @@ async def test_get_job_script__no_params(
     assert count[0][0] == 3
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
-    response = await client.get("/jobbergate/job-scripts/")
+    response = await client.get("/jobbergate/job-scripts")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -551,7 +551,7 @@ async def test_get_job_scripts__bad_permission(
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
-    response = await client.get("/jobbergate/job-scripts/")
+    response = await client.get("/jobbergate/job-scripts")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -600,7 +600,7 @@ async def test_get_job_scripts__with_all_param(
     assert count[0][0] == 3
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
-    response = await client.get("/jobbergate/job-scripts/?all=True")
+    response = await client.get("/jobbergate/job-scripts?all=True")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -868,7 +868,7 @@ async def test_get_job_scripts__from_application_id(
 
     for application_id in [inserted_application_id_1, inserted_application_id_2, inserted_application_id_3]:
         response = await client.get(
-            f"/jobbergate/job-scripts/?from_application_id={application_id}",
+            f"/jobbergate/job-scripts?from_application_id={application_id}",
         )
         assert response.status_code == status.HTTP_200_OK
 

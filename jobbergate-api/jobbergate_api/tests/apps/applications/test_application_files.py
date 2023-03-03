@@ -6,6 +6,7 @@ import contextlib
 
 import pytest
 from fastapi import UploadFile
+from starlette.datastructures import Headers
 
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.constants import (
@@ -85,7 +86,11 @@ def make_uploaded_files():
         """
         with contextlib.ExitStack() as stack:
             yield [
-                UploadFile(path.name, stack.enter_context(open(path, "rb")), "text/plain")
+                UploadFile(
+                    file=stack.enter_context(open(path, "rb")),
+                    filename=path.name,
+                    headers=Headers(headers={"content-type": "text/plain"}),
+                )
                 for path in file_paths
             ]
 

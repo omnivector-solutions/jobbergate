@@ -137,7 +137,7 @@ class ApplicationFiles(BaseModel):
         return application_files
 
     @classmethod
-    def file_manager_factory(self, application_id: int) -> FileManager:
+    def file_manager_factory(cls, application_id: int) -> FileManager:
         """
         Build an application file manager.
         """
