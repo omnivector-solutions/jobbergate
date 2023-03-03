@@ -82,7 +82,7 @@ class JobbergateAuthHandler:
     cache_directory: Path
     login_domain: str
     login_audience: str
-    login_client_id: str
+    login_client_id: str = "default"
     tokens: Dict[TokenType, Token] = field(default_factory=dict)
 
     def __call__(self, request):
