@@ -92,7 +92,7 @@ ignore = "D200,D106,D402"
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = ["--random-order", "--cov=jobbergate_api"]
-testpaths = ["jobbergate_api/tests"]
+testpaths = ["tests"]
 env = [
     "DEPLOY_ENV = TEST",  # Enforces that test database env vars will be used
     "ARMASEC_DOMAIN = armasec.dev",  # Must align with the rs256_domain fixture in armasec's pytest extension

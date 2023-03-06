@@ -34,31 +34,31 @@ console as well as a coverage report for the unit tests::
    collecting ... 2022-09-07 16:31:37.548 | INFO     | jobbergate_api.main:<module>:39 - Skipping Sentry
    collected 158 items
 
-   jobbergate_api/tests/apps/job_scripts/test_routers.py ........................                                                                     [ 15%]
-   jobbergate_api/tests/apps/applications/test_schemas.py ....                                                                                        [ 17%]
-   jobbergate_api/tests/test_file_validation.py ...........                                                                                           [ 24%]
-   jobbergate_api/tests/test_email_notification.py .......                                                                                            [ 29%]
-   jobbergate_api/tests/apps/applications/test_application_files.py .........                                                                         [ 34%]
-   jobbergate_api/tests/apps/job_submissions/test_routers.py .................................                                                        [ 55%]
-   jobbergate_api/tests/apps/job_scripts/test_job_script_files.py .........                                                                           [ 61%]
-   jobbergate_api/tests/apps/test_main.py .                                                                                                           [ 62%]
-   jobbergate_api/tests/test_meta_mapper.py ...                                                                                                       [ 63%]
-   jobbergate_api/tests/test_s3_manager.py ...                                                                                                        [ 65%]
-   jobbergate_api/tests/test_config.py ................                                                                                               [ 75%]
-   jobbergate_api/tests/test_pagination.py ........                                                                                                   [ 81%]
-   jobbergate_api/tests/test_storage.py ..                                                                                                            [ 82%]
-   jobbergate_api/tests/test_security.py ...                                                                                                          [ 84%]
-   jobbergate_api/tests/apps/applications/test_routers.py .........................                                                                   [100%]
+   tests/apps/job_scripts/test_routers.py ........................                                                                     [ 15%]
+   tests/apps/applications/test_schemas.py ....                                                                                        [ 17%]
+   tests/test_file_validation.py ...........                                                                                           [ 24%]
+   tests/test_email_notification.py .......                                                                                            [ 29%]
+   tests/apps/applications/test_application_files.py .........                                                                         [ 34%]
+   tests/apps/job_submissions/test_routers.py .................................                                                        [ 55%]
+   tests/apps/job_scripts/test_job_script_files.py .........                                                                           [ 61%]
+   tests/apps/test_main.py .                                                                                                           [ 62%]
+   tests/test_meta_mapper.py ...                                                                                                       [ 63%]
+   tests/test_s3_manager.py ...                                                                                                        [ 65%]
+   tests/test_config.py ................                                                                                               [ 75%]
+   tests/test_pagination.py ........                                                                                                   [ 81%]
+   tests/test_storage.py ..                                                                                                            [ 82%]
+   tests/test_security.py ...                                                                                                          [ 84%]
+   tests/apps/applications/test_routers.py .........................                                                                   [100%]
 
    ==================================================================== warnings summary ====================================================================
-   jobbergate_api/tests/conftest.py:53
-     /home/dusktreader/git-repos/omnivector/jobbergate/jobbergate-api/jobbergate_api/tests/conftest.py:53: PytestUnknownMarkWarning: Unknown pytest.mark.enforce_empty_database - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/mark.html
+   tests/conftest.py:53
+     /home/dusktreader/git-repos/omnivector/jobbergate/jobbergate-api/tests/conftest.py:53: PytestUnknownMarkWarning: Unknown pytest.mark.enforce_empty_database - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/mark.html
        @pytest.mark.enforce_empty_database()
 
-   jobbergate_api/tests/apps/job_scripts/test_routers.py: 37 warnings
-   jobbergate_api/tests/apps/job_submissions/test_routers.py: 40 warnings
-   jobbergate_api/tests/test_pagination.py: 10 warnings
-   jobbergate_api/tests/apps/applications/test_routers.py: 42 warnings
+   tests/apps/job_scripts/test_routers.py: 37 warnings
+   tests/apps/job_submissions/test_routers.py: 40 warnings
+   tests/test_pagination.py: 10 warnings
+   tests/apps/applications/test_routers.py: 42 warnings
      /home/dusktreader/.cache/pypoetry/virtualenvs/jobbergate-api-zc2JKxO9-py3.8/lib/python3.8/site-packages/databases/backends/postgres.py:114: DeprecationWarning: The `Row.keys()` method is deprecated to mimic SQLAlchemy behaviour, use `Row._mapping.keys()` instead.
        warnings.warn(
 
@@ -95,29 +95,29 @@ console as well as a coverage report for the unit tests::
    jobbergate_api/s3_manager.py                                          14      0   100%
    jobbergate_api/security.py                                            22      0   100%
    jobbergate_api/storage.py                                             52      1    98%   128
-   jobbergate_api/tests/__init__.py                                       0      0   100%
-   jobbergate_api/tests/apps/__init__.py                                  0      0   100%
-   jobbergate_api/tests/apps/applications/__init__.py                     0      0   100%
-   jobbergate_api/tests/apps/applications/test_application_files.py     104      0   100%
-   jobbergate_api/tests/apps/applications/test_routers.py               368      0   100%
-   jobbergate_api/tests/apps/applications/test_schemas.py                14      0   100%
-   jobbergate_api/tests/apps/conftest.py                                 41      0   100%
-   jobbergate_api/tests/apps/job_scripts/__init__.py                      0      0   100%
-   jobbergate_api/tests/apps/job_scripts/conftest.py                     10      2    80%   32, 49
-   jobbergate_api/tests/apps/job_scripts/test_job_script_files.py       102      0   100%
-   jobbergate_api/tests/apps/job_scripts/test_routers.py                373      3    99%   48-64, 72
-   jobbergate_api/tests/apps/job_submissions/__init__.py                  0      0   100%
-   jobbergate_api/tests/apps/job_submissions/test_routers.py            483      0   100%
-   jobbergate_api/tests/apps/test_main.py                                 7      0   100%
-   jobbergate_api/tests/conftest.py                                     114      1    99%   127
-   jobbergate_api/tests/test_config.py                                   33      0   100%
-   jobbergate_api/tests/test_email_notification.py                       44      0   100%
-   jobbergate_api/tests/test_file_validation.py                          17      0   100%
-   jobbergate_api/tests/test_meta_mapper.py                              27      0   100%
-   jobbergate_api/tests/test_pagination.py                               55      0   100%
-   jobbergate_api/tests/test_s3_manager.py                               17      0   100%
-   jobbergate_api/tests/test_security.py                                 39      0   100%
-   jobbergate_api/tests/test_storage.py                                   7      0   100%
+   tests/__init__.py                                       0      0   100%
+   tests/apps/__init__.py                                  0      0   100%
+   tests/apps/applications/__init__.py                     0      0   100%
+   tests/apps/applications/test_application_files.py     104      0   100%
+   tests/apps/applications/test_routers.py               368      0   100%
+   tests/apps/applications/test_schemas.py                14      0   100%
+   tests/apps/conftest.py                                 41      0   100%
+   tests/apps/job_scripts/__init__.py                      0      0   100%
+   tests/apps/job_scripts/conftest.py                     10      2    80%   32, 49
+   tests/apps/job_scripts/test_job_script_files.py       102      0   100%
+   tests/apps/job_scripts/test_routers.py                373      3    99%   48-64, 72
+   tests/apps/job_submissions/__init__.py                  0      0   100%
+   tests/apps/job_submissions/test_routers.py            483      0   100%
+   tests/apps/test_main.py                                 7      0   100%
+   tests/conftest.py                                     114      1    99%   127
+   tests/test_config.py                                   33      0   100%
+   tests/test_email_notification.py                       44      0   100%
+   tests/test_file_validation.py                          17      0   100%
+   tests/test_meta_mapper.py                              27      0   100%
+   tests/test_pagination.py                               55      0   100%
+   tests/test_s3_manager.py                               17      0   100%
+   tests/test_security.py                                 39      0   100%
+   tests/test_storage.py                                   7      0   100%
    ------------------------------------------------------------------------------------------------
    TOTAL                                                               3083     60    98%
 
