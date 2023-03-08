@@ -16,8 +16,10 @@ import sqlalchemy
 from asgi_lifespan import LifespanManager
 from file_storehouse.engine import EngineLocal
 from httpx import AsyncClient
-from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate, JobScriptTemplateFiles
 
+from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate, JobScriptTemplateFile
+from jobbergate_api.apps.job_scripts.models import JobScript, JobScriptFile
+from jobbergate_api.apps.job_submissions.models import JobSubmission
 from jobbergate_api.apps.models import Base
 from jobbergate_api.apps.smart_templates.models import SmartTemplate
 from jobbergate_api.config import settings
@@ -51,10 +53,10 @@ async def enforce_empty_database(database_engine):
     for table in (
         SmartTemplate,
         JobScriptTemplate,
-        JobScriptTemplateFiles,
-        # applications_table,
-        # job_scripts_table,
-        # job_submissions_table,
+        JobScriptTemplateFile,
+        JobScript,
+        JobScriptFile,
+        JobSubmission,
     ):
         count = await database.execute(sqlalchemy.select([sqlalchemy.func.count()]).select_from(table))
         assert count == 0

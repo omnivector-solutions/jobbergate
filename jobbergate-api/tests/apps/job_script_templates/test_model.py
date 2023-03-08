@@ -6,7 +6,7 @@ from asyncpg.exceptions import ForeignKeyViolationError, UniqueViolationError
 from sqlalchemy import delete, insert
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate, JobScriptTemplateFiles
+from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate, JobScriptTemplateFile
 from jobbergate_api.storage import database
 
 # Force the async event loop at the app to begin.
@@ -81,15 +81,15 @@ class TestJobTemplateFiles:
             file_type=FileType.ENTRYPOINT,
         )
 
-        expected_value = JobScriptTemplateFiles(**dummy_values)
+        expected_value = JobScriptTemplateFile(**dummy_values)
 
         with time_frame() as window:
-            insert_query = insert(JobScriptTemplateFiles).returning(JobScriptTemplateFiles)
+            insert_query = insert(JobScriptTemplateFile).returning(JobScriptTemplateFile)
             data = await database.fetch_one(query=insert_query, values=dummy_values)
 
         assert data is not None
 
-        actual_value = JobScriptTemplateFiles(**data._mapping)
+        actual_value = JobScriptTemplateFile(**data._mapping)
 
         assert actual_value.created_at in window
         assert actual_value.updated_at in window
@@ -116,7 +116,7 @@ class TestJobTemplateFiles:
             file_type=FileType.ENTRYPOINT,
         )
 
-        insert_query = insert(JobScriptTemplateFiles).returning(JobScriptTemplateFiles)
+        insert_query = insert(JobScriptTemplateFile).returning(JobScriptTemplateFile)
         file_data = await database.fetch_one(query=insert_query, values=file_values)
 
         assert file_data is not None
@@ -138,7 +138,7 @@ class TestJobTemplateFiles:
             file_type=FileType.ENTRYPOINT,
         )
 
-        insert_query = insert(JobScriptTemplateFiles).returning(JobScriptTemplateFiles)
+        insert_query = insert(JobScriptTemplateFile).returning(JobScriptTemplateFile)
         await database.fetch_one(query=insert_query, values=dummy_values)
         with pytest.raises(
             UniqueViolationError,
@@ -158,7 +158,7 @@ class TestJobTemplateFiles:
             file_type=FileType.ENTRYPOINT,
         )
 
-        insert_query = insert(JobScriptTemplateFiles)
+        insert_query = insert(JobScriptTemplateFile)
         with pytest.raises(
             ForeignKeyViolationError,
             match='insert or update on table "job_script_template_files" violates foreign key constraint',

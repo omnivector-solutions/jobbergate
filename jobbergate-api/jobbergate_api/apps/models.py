@@ -1,13 +1,11 @@
 """Functionalities to be shared by all models."""
 from datetime import datetime
+from typing import Optional
 
-from sqlalchemy import Column, DateTime, String, inspect
-from sqlalchemy.orm.decl_api import declarative_mixin
-from sqlalchemy.orm.mapper import Mapper
-from sqlalchemy.sql import functions
-
+from sqlalchemy import Column, DateTime, String
 from sqlalchemy.orm import registry
-from sqlalchemy.orm.decl_api import DeclarativeMeta
+from sqlalchemy.orm.decl_api import DeclarativeMeta, declarative_mixin
+from sqlalchemy.sql import functions
 
 mapper_registry = registry()
 
@@ -34,6 +32,10 @@ class BaseFieldsMixin:
     Common resources between all tables.
 
     The attributes define rows and the methods API-level resources.
+
+    Attributes:
+        created_at: The date and time when the row was created.
+        updated_at: The date and time when the row was updated.
     """
 
     created_at: datetime = Column(DateTime, nullable=False, default=functions.now())
@@ -46,24 +48,18 @@ class BaseFieldsMixin:
 
 
 @declarative_mixin
-class NameDescriptionEmailMixin:
+class ExtraFieldsMixin:
     """
     Common resources between all tables.
 
     The attributes define rows and the methods API-level resources.
+
+    Attributes:
+        name: The name of the resource.
+        description: The description of the resource.
+        owner_email: The email of the owner of the resource.
     """
 
-    name = Column(String, nullable=False)
-    description = Column(String, default="")
-    owner_email = Column(String, nullable=False, index=True)
-
-
-@declarative_mixin
-class FileMixin:
-    """
-    Common resources between all tables.
-
-    The attributes define rows and the methods API-level resources.
-    """
-
-    filename: str = Column(String, nullable=False)
+    name: str = Column(String, nullable=False, index=True)
+    description: Optional[str] = Column(String, default="")
+    owner_email: str = Column(String, nullable=False, index=True)
