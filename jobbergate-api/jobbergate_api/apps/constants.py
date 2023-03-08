@@ -3,7 +3,7 @@
 from enum import Enum
 
 
-class FileFileType(str, Enum):
+class FileType(str, Enum):
     """File type enum."""
 
     ENTRYPOINT = "ENTRYPOINT"

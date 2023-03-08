@@ -1,43 +1,28 @@
 """Database models for the smart template resource."""
-from sqlalchemy import DateTime, Integer, String, Table, text
+from typing import Any
+
+from sqlalchemy import Integer, String, text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.sql import func
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql.schema import Column
 
-from jobbergate_api.metadata import metadata
+from jobbergate_api.apps.models import Base, BaseFieldsMixin, NameDescriptionEmailMixin
 
-smart_templates_table = Table(
-    "smart_templates",
-    metadata,
-    Column("id", Integer, primary_key=True),
-    Column("name", String, nullable=False, index=True),
-    Column("identifier", String, unique=True, index=True),
-    Column(
-        "runtime_config",
+
+class SmartTemplate(Base, BaseFieldsMixin, NameDescriptionEmailMixin):
+    """Smart template table definition."""
+
+    __tablename__ = "smart_templates"
+
+    id: int = Column(Integer, primary_key=True)
+    identifier: str = Column(String, unique=True, index=True)
+    runtime_config: dict[str, Any] = Column(
         JSONB,
         nullable=False,
         default=text("'{}'::jsonb"),
         server_default=text("'{}'::jsonb"),
-    ),
-    Column("description", String, default=""),
-    Column("owner_email", String, nullable=False, index=True),
-    Column("created_at", DateTime, nullable=False, default=func.now()),
-    Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=func.now()),
-    Column("file_key", String, nullable=True),
-)
+    )
 
-searchable_fields = [
-    smart_templates_table.c.name,
-    smart_templates_table.c.identifier,
-    smart_templates_table.c.description,
-    smart_templates_table.c.owner_email,
-]
-
-sortable_fields = [
-    smart_templates_table.c.id,
-    smart_templates_table.c.name,
-    smart_templates_table.c.identifier,
-    smart_templates_table.c.owner_email,
-    smart_templates_table.c.created_at,
-    smart_templates_table.c.updated_at,
-]
+    @hybrid_property
+    def file_key(self) -> str:
+        return f"smart_templates/{self.id}/jobbergate.py"
