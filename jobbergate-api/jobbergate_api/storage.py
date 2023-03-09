@@ -35,7 +35,7 @@ def build_db_url(force_test: bool = False) -> str:
 
     return str(
         URL.build(
-            scheme="postgresql",
+            scheme="postgresql+asyncpg",
             user=getattr(settings, f"{prefix}DATABASE_USER"),
             password=getattr(settings, f"{prefix}DATABASE_PSWD"),
             host=getattr(settings, f"{prefix}DATABASE_HOST"),

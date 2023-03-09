@@ -1,17 +1,66 @@
 """Database models for the job script template resource."""
+import asyncio
+from contextlib import asynccontextmanager
 import json
 
 import pytest
 from asyncpg.exceptions import ForeignKeyViolationError, UniqueViolationError
-from sqlalchemy import delete, insert
+from sqlalchemy import delete, insert, join, select
+from sqlalchemy.orm import joinedload, relationship, subqueryload, contains_eager
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate, JobScriptTemplateFile
+from jobbergate_api.apps.job_script_templates.models import (
+    JobScriptTemplate,
+    JobScriptTemplateFile,
+    job_script_templates_table,
+    job_script_template_files_table,
+)
+from jobbergate_api.apps.job_script_templates.routers import job_script_template_create
 from jobbergate_api.storage import database
+from jobbergate_api.database import SessionLocal
 
 # Force the async event loop at the app to begin.
 # Since this is a time consuming fixture, it is just used where strict necessary.
-pytestmark = pytest.mark.usefixtures("startup_event_force")
+# pytestmark = pytest.mark.usefixtures("startup_event_force")
+
+
+@pytest.fixture
+def get_session():
+    """A fixture to return the async session used to run SQL queries against a database."""
+
+    @asynccontextmanager
+    async def _get_session():
+        """Get the async session to execute queries against the database."""
+        # async_session = _scoped_session()
+        async with SessionLocal() as session:
+            async with session.begin():
+                try:
+                    yield session
+                except Exception as err:
+                    await session.rollback()
+                    raise err
+                finally:
+                    await session.close()
+
+    return _get_session
+
+
+@pytest.fixture(scope="session", autouse=True)
+def event_loop():
+    """
+    Create an instance of the default event loop for each test case.
+
+    This fixture is used to run each test in a different async loop. Running all
+    in the same loop causes errors with SQLAlchemy. See the following two issues:
+
+    1. https://github.com/tiangolo/fastapi/issues/5692
+    2. https://github.com/encode/starlette/issues/1315
+
+    [Reference](https://tonybaloney.github.io/posts/async-test-patterns-for-pytest-and-unittest.html)
+    """
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest.fixture(scope="module")
@@ -59,16 +108,15 @@ async def test_job_templates__success(template_values, time_frame):
 
 @pytest.mark.asyncio
 @pytest.fixture(scope="function")
-async def job_script_template(template_values):
+async def job_script_template(get_session, template_values):
     """Return a job_script_template object."""
-    insert_query = insert(JobScriptTemplate).returning(JobScriptTemplate)
-    data = await database.fetch_one(query=insert_query, values=template_values)
+    template = JobScriptTemplate(**template_values)
+    async with get_session() as sess:
+        sess.add(template)
+        await sess.commit()
+        # sess.refresh(template)
 
-    assert data is not None
-
-    job_template = JobScriptTemplate(**data._mapping)
-
-    yield job_template
+        yield template
 
 
 class TestJobTemplateFiles:
@@ -101,6 +149,45 @@ class TestJobTemplateFiles:
             expected_value.id,
             expected_value.filename,
         )
+
+    @pytest.mark.asyncio
+    async def test_add_files__get_file_bundle(self, get_session, job_script_template, time_frame):
+
+        test_files = [
+            dict(
+                id=job_script_template.id,
+                filename="test-filename.py.j2",
+                file_type=FileType.ENTRYPOINT,
+            ),
+            dict(
+                id=job_script_template.id,
+                filename="test-filename.json.j2",
+                file_type=FileType.SUPPORT,
+            ),
+        ]
+
+        async with get_session() as sess:
+
+            for f in test_files:
+                file = JobScriptTemplateFile(**f)
+                sess.add(file)
+            await sess.commit()
+
+        async with get_session() as sess:
+
+            query = (
+                select(JobScriptTemplate)
+                .options(joinedload("files"))
+                .where(JobScriptTemplate.id == job_script_template.id)
+            )
+
+            data = (await sess.execute(query)).scalars().first()
+
+        result = {**data._mapping}
+
+        job_template = JobScriptTemplate(**data._mapping)
+
+        assert True
 
     @pytest.mark.asyncio
     async def test_add_files__cascade_delete(self, template_values):

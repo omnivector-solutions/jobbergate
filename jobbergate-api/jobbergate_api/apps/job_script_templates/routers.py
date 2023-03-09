@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, status
 
-from jobbergate_api.apps.job_script_templates.crud import create
+from jobbergate_api.apps.job_script_templates.dependecies import create
 from jobbergate_api.apps.job_script_templates.schemas import JobTemplateResponse
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.security import guard

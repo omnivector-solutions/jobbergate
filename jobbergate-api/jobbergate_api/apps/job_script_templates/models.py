@@ -3,6 +3,8 @@ from typing import Any, Optional
 
 from sqlalchemy import Enum, ForeignKey, Integer, String, text
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import Column
 
 from jobbergate_api.apps.constants import FileType
@@ -36,6 +38,8 @@ class JobScriptTemplate(Base, BaseFieldsMixin, ExtraFieldsMixin):
         server_default=text("'{}'::jsonb"),
     )
 
+    files: list["JobScriptTemplateFile"] = relationship("JobScriptTemplateFile", lazy="subquery")
+
 
 class JobScriptTemplateFile(Base, BaseFieldsMixin):
     """Job script template files table definition."""
@@ -50,10 +54,10 @@ class JobScriptTemplateFile(Base, BaseFieldsMixin):
     filename: str = Column(String, primary_key=True)
     file_type: FileType = Column(Enum(FileType), nullable=False)
 
-    @property
+    @hybrid_property
     def file_key(self) -> str:
         return f"{self.__tablename__}/{self.id}/{self.filename}"
 
 
 job_script_templates_table = JobScriptTemplate.__table__
-job_script_template_files = JobScriptTemplateFile.__table__
+job_script_template_files_table = JobScriptTemplateFile.__table__
