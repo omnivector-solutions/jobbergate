@@ -33,31 +33,31 @@ async def test_create_application(
     endpoint. We show this by asserting that the application is created in the database after the post
     request is made and the correct status code (201) is returned.
     """
-    id_rows = await database.fetch_all("SELECT id FROM applications")
+    id_rows = await database.fetch_all("SELECT id FROM job_script_templates")
     assert len(id_rows) == 0
+
+    expected_data = fill_application_data(
+        name="test-name",
+        identifier="test-identifier",
+        description="test-description",
+    )
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     with time_frame() as window:
-        response = await client.post(
-            "/jobbergate/applications",
-            json=fill_application_data(
-                application_name="test-name",
-                application_identifier="test-identifier",
-            ),
-        )
+        response = await client.post("/jobbergate/applications", json=expected_data)
 
     assert response.status_code == status.HTTP_201_CREATED
 
-    id_rows = await database.fetch_all("SELECT id FROM applications")
+    id_rows = await database.fetch_all("SELECT id FROM job_script_templates")
     assert len(id_rows) == 1
 
     application = ApplicationPartialResponse(**response.json())
 
     assert application.id == id_rows[0][0]
-    assert application.application_name == "test-name"
-    assert application.application_identifier == "test-identifier"
-    assert application.application_owner_email == "owner1@org.com"
-    assert application.application_description is None
+    assert application.name == expected_data["name"]
+    assert application.identifier == expected_data["identifier"]
+    assert application.description == expected_data["description"]
+    assert application.owner_email == "owner1@org.com"
     assert application.created_at in window
     assert application.updated_at in window
 

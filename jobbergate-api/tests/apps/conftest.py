@@ -12,8 +12,8 @@ def application_data():
     Provide a fixture that supplies test application data.
     """
     return {
-        "application_owner_email": "test@email.com",
-        "application_name": "test_name",
+        "name": "test_name",
+        "owner_email": "test@email.com",
     }
 
 

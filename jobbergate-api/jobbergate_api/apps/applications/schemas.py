@@ -170,9 +170,9 @@ class ApplicationCreateRequest(BaseModel):
     Request model for creating Application instances.
     """
 
-    application_name: str
-    application_identifier: Optional[str]
-    application_description: Optional[str] = None
+    name: str
+    identifier: Optional[str]
+    description: Optional[str] = None
 
     class Config:
         schema_extra = application_meta_mapper
@@ -200,11 +200,10 @@ class ApplicationPartialResponse(BaseModel):
     id: int
     created_at: Optional[datetime] = datetime.utcnow()
     updated_at: Optional[datetime] = datetime.utcnow()
-    application_name: str
-    application_identifier: Optional[str]
-    application_description: Optional[str]
-    application_owner_email: str
-    application_uploaded: bool
+    name: str
+    identifier: Optional[str]
+    description: Optional[str]
+    owner_email: str
 
     class Config:
         orm_mode = True

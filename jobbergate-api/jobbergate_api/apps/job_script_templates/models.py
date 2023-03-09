@@ -16,6 +16,12 @@ class JobScriptTemplate(Base, BaseFieldsMixin, ExtraFieldsMixin):
     Attributes:
         id: The id of the job script template.
         identifier: The identifier of the job script template.
+        name: The name of the job script template.
+        description: The description of the job script template.
+        owner_email: The email of the owner of the job script template.
+        template_vars: The template variables of the job script template.
+        created_at: The date and time when the job script template was created.
+        updated_at: The date and time when the job script template was updated.
     """
 
     __tablename__ = "job_script_templates"
@@ -47,3 +53,7 @@ class JobScriptTemplateFile(Base, BaseFieldsMixin):
     @property
     def file_key(self) -> str:
         return f"{self.__tablename__}/{self.id}/{self.filename}"
+
+
+job_script_templates_table = JobScriptTemplate.__table__
+job_script_template_files = JobScriptTemplateFile.__table__

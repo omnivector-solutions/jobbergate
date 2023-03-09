@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, File, Header, HTTPException, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
 from loguru import logger
-from sqlalchemy import not_
+from sqlalchemy import insert, not_
 
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table, searchable_fields, sortable_fields
@@ -18,6 +18,7 @@ from jobbergate_api.apps.applications.schemas import (
     ApplicationResponse,
     ApplicationUpdateRequest,
 )
+from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, ok_response, package_response
@@ -51,13 +52,13 @@ async def applications_create(
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     create_dict = dict(
         **application.dict(exclude_unset=True),
-        application_owner_email=identity_claims.email,
+        owner_email=identity_claims.email,
     )
 
     logger.debug("Inserting application")
 
     try:
-        insert_query = applications_table.insert().returning(applications_table)
+        insert_query = insert(JobScriptTemplate).returning(JobScriptTemplate)
         logger.trace(f"insert_query = {render_sql(insert_query)}")
         application_data = await database.fetch_one(query=insert_query, values=create_dict)
 
