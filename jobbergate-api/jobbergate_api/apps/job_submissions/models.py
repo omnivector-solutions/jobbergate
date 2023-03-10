@@ -2,12 +2,12 @@
 Database model for the JobSubmission resource.
 """
 from typing import Any
+
 from sqlalchemy import Enum, ForeignKey, Integer, String, text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.sql.schema import Column
 
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
-from jobbergate_api.apps.models import Base, BaseFieldsMixin, ExtraFieldsMixin
+from jobbergate_api.apps.models import Base, BaseFieldsMixin, ExtraFieldsMixin, Mapped, mapped_column
 
 
 class JobSubmission(Base, BaseFieldsMixin, ExtraFieldsMixin):
@@ -32,14 +32,14 @@ class JobSubmission(Base, BaseFieldsMixin, ExtraFieldsMixin):
 
     __tablename__ = "job_submissions"
 
-    id: int = Column(Integer, primary_key=True)
-    job_script_id: int = Column(Integer, ForeignKey("job_scripts.id"), nullable=False)
-    execution_directory: str = Column(String)
-    slurm_job_id: int = Column(Integer, default=None)
-    client_id: str = Column(String, nullable=False, index=True)
-    status: JobSubmissionStatus = Column(Enum(JobSubmissionStatus), nullable=False, index=True)
-    report_message: str = Column(String, nullable=True)
-    execution_parameters: dict[str, Any] = Column(
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    job_script_id: Mapped[int] = mapped_column(Integer, ForeignKey("job_scripts.id"), nullable=False)
+    execution_directory: Mapped[str] = mapped_column(String)
+    slurm_job_id: Mapped[int] = mapped_column(Integer, default=None)
+    client_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    status: Mapped[JobSubmissionStatus] = mapped_column(Enum(JobSubmissionStatus), nullable=False, index=True)
+    report_message: Mapped[str] = mapped_column(String, nullable=True)
+    execution_parameters: Mapped[dict[str, Any]] = mapped_column(
         "template_vars",
         JSONB,
         nullable=False,

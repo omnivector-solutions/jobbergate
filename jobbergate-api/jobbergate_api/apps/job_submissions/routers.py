@@ -31,7 +31,6 @@ from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,
-    database,
     render_sql,
     search_clause,
     sort_clause,

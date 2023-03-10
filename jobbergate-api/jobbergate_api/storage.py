@@ -5,8 +5,9 @@ import re
 import typing
 
 import asyncpg
-import databases
-import databases.core
+
+# import databases
+# import databases.core
 import fastapi
 import pydantic
 import sqlalchemy
@@ -45,7 +46,7 @@ def build_db_url(force_test: bool = False) -> str:
     )
 
 
-database = databases.Database(build_db_url(), force_rollback=settings.DEPLOY_ENV.lower() == "test")
+# database = databases.Database(build_db_url(), force_rollback=settings.DEPLOY_ENV.lower() == "test")
 
 
 def render_sql(query) -> str:

@@ -26,7 +26,7 @@ from jobbergate_api.config import settings
 from jobbergate_api.main import app
 from jobbergate_api.metadata import metadata
 from jobbergate_api.s3_manager import file_manager_factory
-from jobbergate_api.storage import build_db_url, database
+from jobbergate_api.storage import build_db_url
 
 # Charset for producing random strings
 CHARSET = string.ascii_letters + string.digits + string.punctuation

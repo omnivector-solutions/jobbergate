@@ -5,18 +5,16 @@ import json
 
 import pytest
 from asyncpg.exceptions import ForeignKeyViolationError, UniqueViolationError
-from sqlalchemy import delete, insert, join, select
-from sqlalchemy.orm import joinedload, relationship, subqueryload, contains_eager
+from sqlalchemy import delete, insert, select
+from sqlalchemy.orm import joinedload
 
 from jobbergate_api.apps.constants import FileType
+from jobbergate_api.apps.models import Base
+from jobbergate_api.database import engine
 from jobbergate_api.apps.job_script_templates.models import (
     JobScriptTemplate,
     JobScriptTemplateFile,
-    job_script_templates_table,
-    job_script_template_files_table,
 )
-from jobbergate_api.apps.job_script_templates.routers import job_script_template_create
-from jobbergate_api.storage import database
 from jobbergate_api.database import SessionLocal
 
 # Force the async event loop at the app to begin.
@@ -61,6 +59,17 @@ def event_loop():
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
+
+
+@pytest.fixture(autouse=True, scope="session")
+async def enforce_empty_database():
+    """
+    Make sure our database is empty at the end of each test.
+    """
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+        yield
 
 
 @pytest.fixture(scope="module")
@@ -182,12 +191,6 @@ class TestJobTemplateFiles:
             )
 
             data = (await sess.execute(query)).scalars().first()
-
-        result = {**data._mapping}
-
-        job_template = JobScriptTemplate(**data._mapping)
-
-        assert True
 
     @pytest.mark.asyncio
     async def test_add_files__cascade_delete(self, template_values):

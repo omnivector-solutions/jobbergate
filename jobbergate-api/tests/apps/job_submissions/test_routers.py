@@ -14,7 +14,6 @@ from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.apps.job_submissions.schemas import JobProperties, JobSubmissionResponse
 from jobbergate_api.apps.permissions import Permissions
-from jobbergate_api.storage import database
 
 # Force the async event loop at the app to begin.
 # Since this is a time consuming fixture, it is just used where strict necessary.

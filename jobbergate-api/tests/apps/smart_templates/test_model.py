@@ -7,7 +7,6 @@ from asyncpg.exceptions import UniqueViolationError
 from sqlalchemy import insert
 
 from jobbergate_api.apps.smart_templates.models import SmartTemplate
-from jobbergate_api.storage import database
 
 # Force the async event loop at the app to begin.
 # Since this is a time consuming fixture, it is just used where strict necessary.

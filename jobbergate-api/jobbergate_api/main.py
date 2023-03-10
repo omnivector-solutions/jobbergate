@@ -18,7 +18,7 @@ from jobbergate_api.apps.job_script_templates.routers import router as job_scrip
 from jobbergate_api.apps.job_scripts.routers import router as job_scripts_router
 from jobbergate_api.apps.job_submissions.routers import router as job_submissions_router
 from jobbergate_api.config import settings
-from jobbergate_api.storage import database, handle_fk_error
+from jobbergate_api.storage import handle_fk_error
 
 subapp = FastAPI(
     title="Jobbergate-API",

@@ -5,10 +5,9 @@ from sqlalchemy import Enum, ForeignKey, Integer, String, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.schema import Column
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.models import Base, BaseFieldsMixin, ExtraFieldsMixin
+from jobbergate_api.apps.models import Base, BaseFieldsMixin, ExtraFieldsMixin, Mapped, mapped_column
 
 
 class JobScriptTemplate(Base, BaseFieldsMixin, ExtraFieldsMixin):
@@ -28,9 +27,9 @@ class JobScriptTemplate(Base, BaseFieldsMixin, ExtraFieldsMixin):
 
     __tablename__ = "job_script_templates"
 
-    id: int = Column(Integer, primary_key=True)
-    identifier: Optional[str] = Column(String, unique=True, index=True)
-    template_vars: dict[str, Any] = Column(
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    identifier: Mapped[Optional[str]] = mapped_column(String, unique=True, index=True)
+    template_vars: Mapped[dict[str, Any]] = mapped_column(
         "template_vars",
         JSONB,
         nullable=False,
@@ -38,7 +37,7 @@ class JobScriptTemplate(Base, BaseFieldsMixin, ExtraFieldsMixin):
         server_default=text("'{}'::jsonb"),
     )
 
-    files: list["JobScriptTemplateFile"] = relationship("JobScriptTemplateFile", lazy="subquery")
+    files: Mapped[list["JobScriptTemplateFile"]] = relationship("JobScriptTemplateFile", lazy="subquery")
 
 
 class JobScriptTemplateFile(Base, BaseFieldsMixin):
@@ -46,13 +45,13 @@ class JobScriptTemplateFile(Base, BaseFieldsMixin):
 
     __tablename__ = "job_script_template_files"
 
-    id: int = Column(
+    id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey(JobScriptTemplate.id, ondelete="CASCADE"),
         primary_key=True,
     )
-    filename: str = Column(String, primary_key=True)
-    file_type: FileType = Column(Enum(FileType), nullable=False)
+    filename: Mapped[str] = mapped_column(String, primary_key=True)
+    file_type: Mapped[FileType] = mapped_column(Enum(FileType), nullable=False)
 
     @hybrid_property
     def file_key(self) -> str:

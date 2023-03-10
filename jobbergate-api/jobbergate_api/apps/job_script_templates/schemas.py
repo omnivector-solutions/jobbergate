@@ -12,6 +12,9 @@ class JobTemplateCreateRequest(BaseModel):
     description: Optional[str]
     template_vars: Optional[dict[str, Any]]
 
+    class Config:
+        orm_mode = True
+
 
 class JobTemplateResponse(BaseModel):
     """Schema for the request to create a job template."""
