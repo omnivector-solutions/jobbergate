@@ -16,6 +16,18 @@ class JobTemplateCreateRequest(BaseModel):
         orm_mode = True
 
 
+class JobTemplateUpdateRequest(BaseModel):
+    """Schema for the request to update a job template."""
+
+    name: Optional[str]
+    identifier: Optional[str]
+    description: Optional[str]
+    template_vars: Optional[dict[str, Any]]
+
+    class Config:
+        orm_mode = True
+
+
 class JobTemplateResponse(BaseModel):
     """Schema for the request to create a job template."""
 
