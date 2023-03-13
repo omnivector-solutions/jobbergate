@@ -15,11 +15,3 @@ SessionLocal = async_scoped_session(
     ),
     scopefunc=current_task,
 )
-
-
-async def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        await db.close()

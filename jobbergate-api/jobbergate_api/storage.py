@@ -24,7 +24,7 @@ from jobbergate_api.config import settings
 INTEGRITY_CHECK_EXCEPTIONS = (UniqueViolationError,)
 
 
-def build_db_url(force_test: bool = False) -> str:
+def build_db_url(force_test: bool = False, asynchronous: bool = True) -> str:
     """
     Build a database url based on settings.
 
@@ -36,7 +36,7 @@ def build_db_url(force_test: bool = False) -> str:
 
     return str(
         URL.build(
-            scheme="postgresql+asyncpg",
+            scheme="postgresql+asyncpg" if asynchronous else "postgresql",
             user=getattr(settings, f"{prefix}DATABASE_USER"),
             password=getattr(settings, f"{prefix}DATABASE_PSWD"),
             host=getattr(settings, f"{prefix}DATABASE_HOST"),

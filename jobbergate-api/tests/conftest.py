@@ -2,6 +2,7 @@
 Configuration of pytest.
 """
 
+import asyncio
 import contextlib
 import dataclasses
 import datetime
@@ -12,66 +13,47 @@ from textwrap import dedent
 from unittest.mock import patch
 
 import pytest
-import sqlalchemy
-from asgi_lifespan import LifespanManager
 from file_storehouse.engine import EngineLocal
 from httpx import AsyncClient
 
-from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate, JobScriptTemplateFile
-from jobbergate_api.apps.job_scripts.models import JobScript, JobScriptFile
-from jobbergate_api.apps.job_submissions.models import JobSubmission
 from jobbergate_api.apps.models import Base
-from jobbergate_api.apps.smart_templates.models import SmartTemplate
 from jobbergate_api.config import settings
+from jobbergate_api.database import engine
 from jobbergate_api.main import app
-from jobbergate_api.metadata import metadata
 from jobbergate_api.s3_manager import file_manager_factory
-from jobbergate_api.storage import build_db_url
 
 # Charset for producing random strings
 CHARSET = string.ascii_letters + string.digits + string.punctuation
 
 
-# @pytest.fixture(autouse=True, scope="session")
-# async def database_engine():
-#     """
-#     Provide a fixture to get access to the database engine with a fixture.
-#     """
-#     engine = sqlalchemy.create_engine(build_db_url())
-#     yield engine
+@pytest.fixture(scope="session", autouse=True)
+def event_loop():
+    """
+    Create an instance of the default event loop for each test case.
+
+    This fixture is used to run each test in a different async loop. Running all
+    in the same loop causes errors with SQLAlchemy. See the following two issues:
+
+    1. https://github.com/tiangolo/fastapi/issues/5692
+    2. https://github.com/encode/starlette/issues/1315
+
+    [Reference](https://tonybaloney.github.io/posts/async-test-patterns-for-pytest-and-unittest.html)
+    """
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 
-# @pytest.fixture(autouse=True, scope="session")
-# async def enforce_empty_database(database_engine):
-#     """
-#     Make sure our database is empty at the end of each test.
-#     """
-#     Base.metadata.create_all(database_engine)
-#     yield
-
-#     await database.connect()
-#     for table in (
-#         SmartTemplate,
-#         JobScriptTemplate,
-#         JobScriptTemplateFile,
-#         JobScript,
-#         JobScriptFile,
-#         JobSubmission,
-#     ):
-#         count = await database.execute(sqlalchemy.select([sqlalchemy.func.count()]).select_from(table))
-#         assert count == 0
-#     await database.disconnect()
-
-#     metadata.drop_all(database_engine)
-
-
-# @pytest.fixture()
-# async def startup_event_force():
-#     """
-#     Force the async event loop to begin.
-#     """
-#     async with LifespanManager(app):
-#         yield
+@pytest.fixture(autouse=True, scope="session")
+async def enforce_empty_database():
+    """
+    Make sure our database is empty at the end of each test.
+    """
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all, checkfirst=True)
+    yield
+    # async with engine.begin() as conn:
+    # await conn.run_sync(Base.metadata.drop_all)
 
 
 @pytest.fixture(autouse=True)
@@ -82,6 +64,12 @@ def enforce_mocked_oidc_provider(mock_openid_server):
     No actual calls to an OIDC provider will be made.
     """
     yield
+
+
+@pytest.fixture
+def tester_email() -> str:
+    """Dummy tester email."""
+    return "tester@omnivector.solutions"
 
 
 @pytest.fixture
