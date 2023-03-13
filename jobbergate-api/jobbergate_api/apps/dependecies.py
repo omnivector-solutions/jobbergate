@@ -16,4 +16,5 @@ async def db_session():
         AsyncSession: The database session.
     """
     async with SessionLocal() as session:
-        yield session
+        async with session.begin():
+            yield session

@@ -1,7 +1,8 @@
 """Services for the job_script_templates resource, including module specific business logic."""
 import dataclasses
 
-from sqlalchemy import select, func, update
+from sqlalchemy import func, select, update
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate
@@ -44,7 +45,7 @@ class JobScriptTemplateService:
         """Delete a job_script_template by id or identifier."""
         job_template = await self.get(id_or_identifier)
         if job_template is None:
-            return
+            raise NoResultFound("JobScriptTemplate not found")
         await self.session.delete(job_template)
         await self.session.flush()
 

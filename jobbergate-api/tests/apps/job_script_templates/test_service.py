@@ -2,7 +2,7 @@
 from typing import Any
 
 import pytest
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate
 from jobbergate_api.apps.job_script_templates.schemas import (
@@ -147,11 +147,12 @@ class TestCreateJobScriptTemplateService:
     @pytest.mark.parametrize("identification", [0, "test-identifier"])
     async def test_delete__id_or_identifier_not_found(self, identification, template_service):
         """Test that the behavior is correct when the id or identifier is not found."""
-        await template_service.delete(identification)
+        with pytest.raises(NoResultFound):
+            await template_service.delete(identification)
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("identification_attribute", ("id", "identifier"))
-    async def test_update(self, template_service, inserted_test_data, identification_attribute):
+    async def test_update__success(self, template_service, inserted_test_data, identification_attribute):
         """Test that the template is updated successfully."""
         identification = getattr(inserted_test_data, identification_attribute)
 
@@ -170,3 +171,21 @@ class TestCreateJobScriptTemplateService:
         )
 
         assert JobTemplateUpdateRequest.from_orm(actual_data) == expected_data
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("identification", [0, "test-identifier"])
+    async def test_update__not_found(self, identification, template_service):
+        """Test that the template is updated successfully."""
+
+        update_data = JobTemplateUpdateRequest(
+            name="new-name",
+            identifier="new-identifier",
+            description=None,
+            template_vars={"new_output_dir": "/tmp"},
+        )
+
+        with pytest.raises(NoResultFound):
+            await template_service.update(
+                id_or_identifier=identification,
+                incoming_data=update_data,
+            )
