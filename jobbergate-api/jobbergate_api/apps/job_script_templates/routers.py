@@ -109,7 +109,13 @@ async def job_script_template_delete(
 ):
     """Delete a job script template by id or identifier."""
     logger.info(f"Deleting job script template with {id_or_identifier=}")
-    await service.delete(id_or_identifier)
+    try:
+        await service.delete(id_or_identifier)
+    except NoResultFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job script template with {id_or_identifier=} was not found",
+        )
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 

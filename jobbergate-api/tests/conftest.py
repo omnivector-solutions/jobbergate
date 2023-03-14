@@ -44,16 +44,30 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(autouse=True, scope="session")
-async def enforce_empty_database():
+@pytest.fixture(scope="function")
+async def database():
+    """
+    Create a new database connection and transaction for each test.
+    """
+    conn = await engine.connect()
+    txn = await conn.begin()
+    yield conn
+    await txn.rollback()
+    await conn.close()
+
+
+@pytest.fixture(autouse=True, scope="function")
+async def enforce_empty_database(database):
     """
     Make sure our database is empty at the end of each test.
+
+    Notes:
+        The order is important when deleting tables given that some tables have foreign keys.
     """
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all, checkfirst=True)
+    await database.run_sync(Base.metadata.create_all, checkfirst=True)
     yield
-    # async with engine.begin() as conn:
-    # await conn.run_sync(Base.metadata.drop_all)
+    for table in reversed(Base.metadata.sorted_tables):
+        await database.execute(table.delete())
 
 
 @pytest.fixture(autouse=True)
