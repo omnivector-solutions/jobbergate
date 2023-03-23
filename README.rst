@@ -38,9 +38,12 @@ enable the re-use and remote submission of job scripts to a Slurm cluster.
 There are 2 main components of Jobbergate that are hosted as sub-projects of this
 repository:
 
-* `jobbergate-api <https://github.com/omnivector-solutions/jobbergate/jobbergate-api>`_
-* `jobbergate-cli <https://github.com/omnivector-solutions/jobbergate/jobbergate-cli>`_
+* `jobbergate-api <https://github.com/omnivector-solutions/jobbergate/tree/main/jobbergate-api>`_
+* `jobbergate-cli <https://github.com/omnivector-solutions/jobbergate/tree/main/jobbergate-cli>`_
+
 
 The complete documentation for Jobbergate can be viewed at the
 `Jobbergate Documentation <https://docs.omnivector.solutions/jobbergate/index.html>`_
 site.
+
+If you don't have acess, you may generate the documentation, following the README.rst at jobbergate-docs folder.
