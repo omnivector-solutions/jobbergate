@@ -79,7 +79,7 @@ services:
       CLUSTER_AGENT_OIDC_AUDIENCE: https://local.omnivector.solutions
       CLUSTER_AGENT_OIDC_CLIENT_ID: local-slurm
       CLUSTER_AGENT_OIDC_CLIENT_SECRET: SVkaJ2f9xeYfOVzQPHXYyiwr12za4xGF
-      CLUSTER_AGENT_OIDC_USE_HTTPS: false
+      CLUSTER_AGENT_OIDC_USE_HTTPS: "false"
       CLUSTER_AGENT_CACHE_DIR: /cache
       CLUSTER_AGENT_SLURMRESTD_JWT_KEY_STRING: ${JWT_SECRET:-supersecret}
     depends_on:
