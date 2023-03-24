@@ -75,12 +75,16 @@ use this command:
 
    docker-compose ps
 
+.. 
+   # TODO:
+   When finished agent implmentation, insert this line after c2 in table below 
+   jobbergate-composed-cluster-agent-1         "/agent/entrypoint.sh"   cluster-agent         running
+
 If everything is operating as it should, you will see output that looks like this::
 
    NAME                                        COMMAND                  SERVICE               STATUS              PORTS
    c1                                          "/usr/local/bin/slur…"   c1                    running             6818/tcp
    c2                                          "/usr/local/bin/slur…"   c2                    running             6818/tcp
-   jobbergate-composed-cluster-agent-1         "/agent/entrypoint.sh"   cluster-agent         running
    jobbergate-composed-db-1                    "docker-entrypoint.s…"   db                    running             0.0.0.0:5432->5432/tcp
    jobbergate-composed-jobbergate-api-1        "/bin/sh -c /app/dev…"   jobbergate-api        running (healthy)   0.0.0.0:8000->80/tcp
    jobbergate-composed-jobbergate-cli-1        "python3"                jobbergate-cli        exited (0)

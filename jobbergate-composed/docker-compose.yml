@@ -58,33 +58,35 @@ services:
 
   # When the jobbegate-agent is completed, it will be included here and not rely on a
   # relative path outside of the jobbergate git repo
-  cluster-agent:
-    build:
-      context: ../../cluster-agent/
-      dockerfile: Dockerfile.dev
-    networks:
-      - jobbergate-net
-    volumes:
-      - ../../cluster-agent/cluster_agent/:/agent/cluster_agent
-      - cluster-agent-cache:/cache/
-      - ./slurm-work-dir:/slurm-work-dir/
-    entrypoint: /agent/entrypoint.sh
-    environment:
-      CLUSTER_AGENT_BASE_SLURMRESTD_URL: http://slurmrestd:6820
-      CLUSTER_AGENT_X_SLURM_USER_NAME: local-user
-      CLUSTER_AGENT_DEFAULT_SLURM_WORK_DIR: /slurm-work-dir
-      CLUSTER_AGENT_BASE_API_URL: http://jobbergate-api:80
-      CLUSTER_AGENT_SENTRY_DSN:
-      CLUSTER_AGENT_OIDC_DOMAIN: keycloak.local:8080/realms/jobbergate-local
-      CLUSTER_AGENT_OIDC_AUDIENCE: https://local.omnivector.solutions
-      CLUSTER_AGENT_OIDC_CLIENT_ID: local-slurm
-      CLUSTER_AGENT_OIDC_CLIENT_SECRET: SVkaJ2f9xeYfOVzQPHXYyiwr12za4xGF
-      CLUSTER_AGENT_OIDC_USE_HTTPS: "false"
-      CLUSTER_AGENT_CACHE_DIR: /cache
-      CLUSTER_AGENT_SLURMRESTD_JWT_KEY_STRING: ${JWT_SECRET:-supersecret}
-    depends_on:
-      jobbergate-api:
-        condition: service_healthy
+  
+  # TODO: Clustr agent not working yet? Need to include a docker file to work
+  # cluster-agent:
+  #   build:
+  #     context: ../../cluster-agent/
+  #     dockerfile: Dockerfile.dev
+  #   networks:
+  #     - jobbergate-net
+  #   volumes:
+  #     - ../../cluster-agent/cluster_agent/:/agent/cluster_agent
+  #     - cluster-agent-cache:/cache/
+  #     - ./slurm-work-dir:/slurm-work-dir/
+  #   entrypoint: /agent/entrypoint.sh
+  #   environment:
+  #     CLUSTER_AGENT_BASE_SLURMRESTD_URL: http://slurmrestd:6820
+  #     CLUSTER_AGENT_X_SLURM_USER_NAME: local-user
+  #     CLUSTER_AGENT_DEFAULT_SLURM_WORK_DIR: /slurm-work-dir
+  #     CLUSTER_AGENT_BASE_API_URL: http://jobbergate-api:80
+  #     CLUSTER_AGENT_SENTRY_DSN:
+  #     CLUSTER_AGENT_OIDC_DOMAIN: keycloak.local:8080/realms/jobbergate-local
+  #     CLUSTER_AGENT_OIDC_AUDIENCE: https://local.omnivector.solutions
+  #     CLUSTER_AGENT_OIDC_CLIENT_ID: local-slurm
+  #     CLUSTER_AGENT_OIDC_CLIENT_SECRET: SVkaJ2f9xeYfOVzQPHXYyiwr12za4xGF
+  #     CLUSTER_AGENT_OIDC_USE_HTTPS: "false"
+  #     CLUSTER_AGENT_CACHE_DIR: /cache
+  #     CLUSTER_AGENT_SLURMRESTD_JWT_KEY_STRING: ${JWT_SECRET:-supersecret}
+  #   depends_on:
+  #     jobbergate-api:
+  #       condition: service_healthy
 
   db:
     image: postgres
