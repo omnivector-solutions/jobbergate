@@ -30,9 +30,9 @@ class Token:
     Low-level class used to handling tokens.
 
     Arguments:
-        content: The content of the token.
         cache_directory: The directory used for cache.
         label: The type of token.
+        content: The content of the token (default is ``""``).
 
     Attributes:
         file_path: The path to the file associated with the token.
@@ -41,9 +41,9 @@ class Token:
           Expiration date and permissions are some examples of data that can be found.
     """
 
-    content: str
     cache_directory: Path
     label: TokenType
+    content: str = ""
     file_path: Path = field(init=False, hash=False, repr=False)
     data: Dict[str, Any] = field(
         default_factory=dict,
@@ -56,7 +56,7 @@ class Token:
         """
         Post init method.
         """
-        TokenError.require_condition(bool(self.content), "Token content is empty")
+        TokenError.require_condition(isinstance(self.content, str), "Token content is not a string.")
 
         # There is one point to keep in mind when using frozen=True
         # see https://docs.python.org/3/library/dataclasses.html#frozen-instances
@@ -65,8 +65,9 @@ class Token:
             "file_path",
             self.cache_directory / f"{self.label}.token",
         )
-        data = self._get_metadata()
-        object.__setattr__(self, "data", data)
+        if self.content:
+            data = self._get_metadata()
+            object.__setattr__(self, "data", data)
 
     def _get_metadata(self) -> Dict[str, Any]:
         """
@@ -87,19 +88,18 @@ class Token:
 
         return data
 
-    @classmethod
-    def load_from_cache(cls, cache_directory: Path, label: TokenType) -> Token:
+    def load_from_cache(self) -> Token:
         """
-        Alternative initialization method that loads the token from the cache.
+        Load the token from the cache directory.
 
         Args:
             cache_directory: The path to the cache directory.
             label: The type of token.
 
         Returns:
-            The loaded Token.
+            A new token with the content replaced.
         """
-        file_path = cache_directory / f"{label}.token"
+        file_path = self.cache_directory / f"{self.label}.token"
         logger.debug(f"Loading token from {file_path.as_posix()}")
 
         TokenError.require_condition(file_path.exists(), "Token file was not found")
@@ -107,7 +107,7 @@ class Token:
         with TokenError.handle_errors("Unknown error while loading the token"):
             content = file_path.read_text().strip()
 
-        return cls(content=content, cache_directory=cache_directory, label=label)
+        return self.replace(content=content)
 
     def save_to_cache(self) -> None:
         """
@@ -117,6 +117,8 @@ class Token:
             TokenError: If the parent directory does not exist.
             TokenError: If there is an unknown error while saving the token.
         """
+        if not self.content:
+            return
         logger.debug(f"Saving token to {self.file_path}")
         TokenError.require_condition(self.file_path.parent.exists(), "Parent directory does not exist")
 
@@ -153,6 +155,12 @@ class Token:
 
         return is_expired
 
+    def is_valid(self) -> bool:
+        """
+        Verify if the token is valid, i.e., has content and is not expired.
+        """
+        return bool(self.content) and self.is_expired() is False
+
     def replace(self, **changes) -> Token:
         """
         Create a new instance of the token with the changes applied.
@@ -163,3 +171,10 @@ class Token:
             label: The type of token.
         """
         return replace(self, **changes)
+
+    @property
+    def bearer_token(self) -> str:
+        """
+        Return the token with the ``Bearer`` prefix.
+        """
+        return f"Bearer {self.content}"

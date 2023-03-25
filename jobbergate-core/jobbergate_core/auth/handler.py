@@ -30,8 +30,8 @@ class JobbergateAuthHandler:
     parameter on the request (see examples below).
 
     It just works out of the box. Behind the scenes, this procedure calls the
-    :meth:`JobbergateAuth.acquire_tokens` method to load the available tokens from the cache directory, it
-    will try to refresh them if they are expired, or will provide an URL to the user to login on the system.
+    :meth:`JobbergateAuthHandler.acquire_access` method to load the available tokens from the cache directory,
+    it tries to refresh them if they are expired, or provides an URL to the user to login on the system.
 
     Notice all steps above are also available individually as public methods, allowing a fine control for
     advanced users.
@@ -44,7 +44,6 @@ class JobbergateAuthHandler:
         login_domain: Domain used for the login.
         login_audience: Audience of the login.
         login_client_id: Client ID used for login.
-        tokens: Dictionary holding the tokens needed for authentication.
 
     Note:
         These values depend on the identity provider used for authentication. Consult your system
@@ -69,12 +68,11 @@ class JobbergateAuthHandler:
         ...     login_client_id="cli",
         ... )
         >>> jobbergate_base_url = "http://localhost:8000/jobbergate"
-        >>> jobbergate_auth.acquire_tokens()
-        Login Here: http://keycloak.local:8080/realms/jobbergate-local/device?user_code=LMVJ-XOLG
         >>> response = requests.get(
         ...     f"{jobbergate_base_url}/applications",
         ...     auth=jobbergate_auth # this is the important part
         )
+        Login Here: http://keycloak.local:8080/realms/jobbergate-local/device?user_code=LMVJ-XOLG
         >>> response.raise_for_status()
         >>> print(f"response = {response.json()}")
     """
@@ -83,7 +81,12 @@ class JobbergateAuthHandler:
     login_domain: str
     login_audience: str
     login_client_id: str = "default"
-    tokens: Dict[TokenType, Token] = field(default_factory=dict)
+    _access_token: Token = field(init=False, repr=False)
+    _refresh_token: Token = field(init=False, repr=False)
+
+    def __post_init__(self):
+        self._access_token = Token(cache_directory=self.cache_directory, label=TokenType.ACCESS)
+        self._refresh_token = Token(cache_directory=self.cache_directory, label=TokenType.REFRESH)
 
     def __call__(self, request):
         """
@@ -95,82 +98,48 @@ class JobbergateAuthHandler:
         It adds the ``Authorization`` header to the request with the access token.
         """
         logger.debug("Authenticating request")
-
-        self.acquire_tokens()
-        access_token = self.check_credentials(token_type=TokenType.ACCESS)
-
-        request.headers["Authorization"] = f"Bearer {access_token.content}"
+        request.headers["Authorization"] = self.acquire_access()
         return request
 
-    def acquire_tokens(self) -> None:
+    def acquire_access(self) -> str:
         """
         High-level method to acquire a valid access token.
 
         This method will attempt, in order:
 
-        * Load the tokens from the cache directory (see :meth:`JobbergateAuth.load_from_cache`)
+        * Use the internal access token from the instance
+        * Load the tokens from the cache directory (see :meth:`JobbergateAuthHandler.load_from_cache`)
         * If the access token is unavailable or expired, refresh both tokens
-          using the refresh token grant type (see :meth:`JobbergateAuth.refresh_tokens`)
+          using the refresh token grant type (see :meth:`JobbergateAuthHandler.refresh_tokens`)
         * If the refresh token is unavailable or expired, login to generate both tokens
-          (see :meth:`JobbergateAuth.login`)
-        """
-        logger.debug("Acquiring tokens")
-
-        self.load_from_cache(skip_loaded=True)
-        try:
-            self.check_credentials(token_type=TokenType.ACCESS)
-            return
-        except AuthenticationError:
-            logger.debug("Access token is not available or expired")
-        try:
-            self.check_credentials(token_type=TokenType.REFRESH)
-            self.refresh_tokens()
-            return
-        except AuthenticationError:
-            logger.debug("Refresh token is not available or expired")
-        self.login()
-
-    def check_credentials(self, token_type: TokenType = TokenType.ACCESS) -> Token:
-        """
-        Check if the credentials on the provided ``token_type`` are available and not expired.
-
-        Arguments:
-            token_type: The type of token to check (default is ``access``).
+          (see :meth:`JobbergateAuthHandler.login`)
 
         Returns:
-            The token is returned for reference.
+            The bearer access token.
 
         Raises:
-            AuthenticationError: If the credentials are invalid.
+            AuthenticationError: If all of the steps above fail to acquire a valid access token.
         """
-        AuthenticationError.require_condition(token_type in self.tokens, f"{token_type} token was not found")
-        token = self.tokens[token_type]
-        AuthenticationError.require_condition(not token.is_expired(), f"{token_type} token has expired")
+        logger.debug("Acquiring access token")
 
-        return token
+        for procedure_name in (None, "load_from_cache", "refresh_tokens", "login"):
+            if procedure_name:
+                procedure = getattr(self, procedure_name)
+                try:
+                    procedure()
+                except TokenError:
+                    logger.debug("{} failed, moving to the next procedure", procedure_name)
+            if self._access_token.is_valid():
+                return self._access_token.bearer_token
+        raise AuthenticationError("Unable to acquire the access token")
 
-    def load_from_cache(self, skip_loaded: bool = True) -> None:
+    def load_from_cache(self) -> None:
         """
         Load the tokens that are available at the cache directory.
-
-        Arguments:
-            skip_loaded: If True, skip tokens that are already loaded, otherwise
-                replace them with the ones from the cache.
-
-        Note:
-            This method does not check if any required token is missing nor is expired,
-            for that, see :meth:`JobbergateAuth.check_credentials`.
         """
         logger.debug("Loading tokens from cache directory: {}", self.cache_directory.as_posix())
-
-        for t in TokenType:
-            if t in self.tokens and skip_loaded:
-                continue
-            try:
-                new_token = Token.load_from_cache(self.cache_directory, label=t)
-                self.tokens[t] = new_token
-            except TokenError as e:
-                logger.debug(f"   Error while loading {t}.token: {str(e)}")
+        self._access_token = self._access_token.load_from_cache()
+        self._refresh_token = self._refresh_token.load_from_cache()
 
     def save_to_cache(self) -> None:
         """
@@ -184,17 +153,18 @@ class JobbergateAuthHandler:
             self.cache_directory.as_posix(),
         )
         self.cache_directory.mkdir(parents=True, exist_ok=True)
-        for token in self.tokens.values():
-            token.save_to_cache()
+        self._access_token.save_to_cache()
+        self._refresh_token.save_to_cache()
 
     def logout(self) -> None:
         """
         Logout from Jobbergate by clearing the loaded tokens and their cache on the disk.
         """
         logger.debug("Logging out from Jobbergate")
-        for token in self.tokens.values():
-            token.clear_cache()
-        self.tokens.clear()
+        self._access_token = self._access_token.replace(content="")
+        self._access_token.clear_cache()
+        self._refresh_token = self._refresh_token.replace(content="")
+        self._refresh_token.clear_cache()
 
     def login(self) -> None:
         """
@@ -231,7 +201,6 @@ class JobbergateAuthHandler:
         return response
 
     def _get_login_confirmation(self, login_info: _LoginInformation) -> httpx.Response:
-
         response = httpx.post(
             f"{self.login_domain}/protocol/openid-connect/token",
             data=dict(
@@ -277,16 +246,23 @@ class JobbergateAuthHandler:
         Refresh the tokens.
 
         After the refresh operation is completed, the tokens will be saved to the cache directory.
+
+        Raises:
+            AuthenticationError: If the refresh token is missing or expired.
         """
         logger.debug("Preparing to refresh the tokens")
 
-        refresh_token = self.check_credentials(token_type=TokenType.REFRESH)
-        response = self._get_refresh_token(refresh_token)
+        if not self._refresh_token.content:
+            raise TokenError("The refresh is unavailable, please login again")
+        if self._refresh_token.is_expired():
+            raise TokenError("Refresh token is expired, please login again")
+
+        response = self._get_refresh_token()
         self._process_tokens_from_response(response)
 
         logger.success("Tokens refreshed successfully")
 
-    def _get_refresh_token(self, refresh_token):
+    def _get_refresh_token(self):
         with AuthenticationError.handle_errors(
             "Unexpected error while refreshing the tokens",
         ):
@@ -296,7 +272,7 @@ class JobbergateAuthHandler:
                     client_id=self.login_client_id,
                     audience=self.login_audience,
                     grant_type="refresh_token",
-                    refresh_token=refresh_token.content,
+                    refresh_token=self._refresh_token.content,
                 ),
             )
             response.raise_for_status()
@@ -316,14 +292,9 @@ class JobbergateAuthHandler:
         """
         Update the tokens with the new content.
         """
-
-        for token_type, new_content in tokens_content.items():
-            AuthenticationError.require_condition(
-                token_type in TokenType,
-                f"Invalid token type: {token_type}",
-            )
-            self.tokens[token_type] = Token(
-                content=new_content,
-                cache_directory=self.cache_directory,
-                label=token_type,
-            )
+        access_token = tokens_content.get(TokenType.ACCESS, "")
+        if access_token:
+            self._access_token = self._access_token.replace(content=access_token)
+        refresh_token = tokens_content.get(TokenType.REFRESH, "")
+        if refresh_token:
+            self._refresh_token = self._refresh_token.replace(content=refresh_token)

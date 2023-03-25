@@ -28,10 +28,10 @@ pydantic = "^1.8.2"
 python-jose = "^3.3.0"
 
 [tool.poetry.dev-dependencies]
-black = "^21.9b0"
+black = "^23.1"
 isort = "^5.9.3"
 mypy = "^0.931"
-pyproject-flake8 = "^0.0.1-alpha.2"
+pyproject-flake8 = "^3.8"
 pytest-cov = "^3.0.0"
 pytest-env = "^0.6.2"
 pytest-freezegun = "^0.4.2"

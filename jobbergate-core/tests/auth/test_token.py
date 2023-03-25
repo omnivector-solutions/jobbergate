@@ -33,6 +33,22 @@ class TestToken:
         assert token.file_path == tmp_path / "access.token"
         assert token.data == token_data
 
+    def test_init_empty_token(self, tmp_path):
+        """
+        Test that an empty token can be initiated.
+        """
+
+        token = Token(
+            cache_directory=tmp_path,
+            label=TokenType.ACCESS,
+        )
+
+        assert token.content == ""
+        assert token.cache_directory == tmp_path
+        assert token.label == "access"
+        assert token.file_path == tmp_path / "access.token"
+        assert token.data == {}
+
     def test_save_to_cache__success(self, tmp_path, jwt_token):
         """
         Test that the save_to_cache function works as expected.
@@ -85,7 +101,11 @@ class TestToken:
         token_content = jwt_token(**token_data)
         token_path.write_text(token_content)
 
-        token = Token.load_from_cache(cache_directory=tmp_path, label=token_label)
+        token = Token(cache_directory=tmp_path, label=token_label)
+
+        assert token.content == ""
+
+        token = token.load_from_cache()
 
         assert token.content == token_content
         assert token.cache_directory == tmp_path
@@ -103,7 +123,7 @@ class TestToken:
         assert token_path.exists() is False
 
         with pytest.raises(TokenError, match="Token file was not found"):
-            Token.load_from_cache(cache_directory=tmp_path, label=TokenType.ACCESS)
+            Token(cache_directory=tmp_path, label=TokenType.ACCESS).load_from_cache()
 
     def test_clear_cache__success(self, tmp_path, jwt_token):
         """
@@ -142,7 +162,7 @@ class TestToken:
         token.clear_cache()
         assert token_path.is_file() is False
 
-    @pytest.mark.parametrize("test_content", ["some-dummy-text", "", None])
+    @pytest.mark.parametrize("test_content", ["some-dummy-text", None])
     def test_validate_content__invalid_token(self, test_content, tmp_path):
         """
         Test that an error is raised when the token content is invalid.
@@ -171,3 +191,41 @@ class TestToken:
         )
 
         assert token.is_expired() == is_expired
+
+    @pytest.mark.parametrize(
+        "content, is_expired, is_valid",
+        [
+            (True, False, True),
+            (True, True, False),
+            (False, True, False),
+            (False, False, False),
+        ],
+    )
+    def test_is_valid(self, content, is_expired, is_valid, valid_token, expired_token, tmp_path):
+        """
+        Test that a token is valid for a given combination of content and expiration state.
+        """
+        token_content = ""
+        if content:
+            token_content = expired_token.content if is_expired else valid_token.content
+        token = Token(
+            cache_directory=tmp_path,
+            label=TokenType.ACCESS,
+            content=token_content,
+        )
+
+        assert token.is_valid() == is_valid
+
+    def test_bearer_token(self, tmp_path, jwt_token):
+        """
+        Test that the bearer_token property works as expected.
+        """
+        token_content = jwt_token()
+
+        token = Token(
+            content=token_content,
+            cache_directory=tmp_path,
+            label=TokenType.ACCESS,
+        )
+
+        assert token.bearer_token == f"Bearer {token_content}"

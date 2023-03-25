@@ -2,6 +2,8 @@ import pendulum
 import pytest
 from jose.jwt import encode
 
+from jobbergate_core.auth.token import Token, TokenType
+
 
 @pytest.fixture(scope="session")
 def time_now():
@@ -23,7 +25,6 @@ def jwt_token(time_now):
     """
 
     def helper(expiration_time=time_now, **kwargs):
-
         payload = {
             "exp": expiration_time.int_timestamp,
             **kwargs,
@@ -33,3 +34,27 @@ def jwt_token(time_now):
         return jwt_token
 
     return helper
+
+
+@pytest.fixture
+def valid_token(tmp_path, jwt_token):
+    """
+    Return a valid token.
+    """
+    return Token(
+        content=jwt_token(exp=pendulum.tomorrow().int_timestamp),
+        cache_directory=tmp_path,
+        label=TokenType.ACCESS,
+    )
+
+
+@pytest.fixture
+def expired_token(tmp_path, jwt_token):
+    """
+    Return an expired token.
+    """
+    return Token(
+        content=jwt_token(exp=pendulum.yesterday().int_timestamp),
+        cache_directory=tmp_path,
+        label=TokenType.ACCESS,
+    )
