@@ -2,6 +2,7 @@
 Provide commands for interating with local databases.
 """
 
+import sys
 import json
 import subprocess
 
@@ -24,7 +25,7 @@ def login(test: bool = typer.Option(False, help="Log into the test database.")):
     """
     url = build_db_url(force_test=test)
     logger.debug(f"Logging into database: {url}")
-    subprocess.run(["pgcli", url])
+    subprocess.run([PGCLI_CMD, url])    try:
 
 
 @app.command()
@@ -56,7 +57,11 @@ def start(test: bool = typer.Option(False, help="Start a test database.")):
 
     logger.debug(f"Starting {name} with:\n {json.dumps(kwargs, indent=2)}")
 
-    docker_gadgets.start_service(name, **kwargs)
+    try:
+        docker_gadgets.start_service(name, **kwargs)
+    except Exception as e:
+        logger.error(f"Failed to start database {name}: {str(e)}")
+        sys.exit(1)
 
 
 @app.command()
