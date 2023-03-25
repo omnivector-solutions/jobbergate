@@ -39,4 +39,4 @@ tie it to both the Job Script in the Jobbergate data store and to the Job object
 Slurm uses.
 
 
-.. _`Jinja 2`_: https://palletsprojects.com/p/jinja/
+.. _`Jinja 2`: https://palletsprojects.com/p/jinja/

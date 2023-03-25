@@ -22,4 +22,4 @@ The Jobbergate CLI can also be used to sign in to the Jobbergate API and to retr
 identify the current user. This token can then be used for accessing the Jobbergate API through other means.
 
 
-.. _`Jobbergate CLI`: https://github.com/omnivector-solutions/jobbergate/jobbergate-cli
+.. _`Jobbergate CLI`: https://github.com/omnivector-solutions/jobbergate/tree/main/jobbergate-cli

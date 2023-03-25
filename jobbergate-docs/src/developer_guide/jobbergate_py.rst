@@ -39,7 +39,7 @@ The ``mainflow()`` method must take a dictionary named ``data`` as a keyword arg
 This kwarg should default to ``None``, and it should be set to an empty dict if the
 default is not overridden.
 
-Each workflow can also specify the net workflow method to call after its questions have
+Each workflow can also specify the next workflow method to call after its questions have
 been asked and answered. In this way, the workflows can be organized in a dynamic series
 where the path is dictated by the user responses.
 
@@ -76,7 +76,7 @@ class. The question types include::
    The BooleanList question has some very complex logic. The source code should be
    examined to understand what this does in detail.
 
-All of the implementation of the quetion classes (including the base class) can be found
+All of the implementation of the question classes (including the base class) can be found
 in `the questions module`_ of the Jobbergate source code.
 
 
@@ -98,5 +98,5 @@ the Application Source seeks to collect from the user. The values for each item 
 default values for that template variable.
 
 
-.. _the application_base module: https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-cli/jobbergate_cli/subapps/applications/applications_base.py>
-.. _the questions module: https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-cli/jobbergate_cli/subapps/applications/questions.py>
+.. _the application_base module: https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-cli/jobbergate_cli/subapps/applications/applications_base.py
+.. _the questions module: https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-cli/jobbergate_cli/subapps/applications/questions.py

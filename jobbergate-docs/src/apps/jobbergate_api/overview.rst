@@ -10,10 +10,10 @@ There jobbergate-api offers interactive documentation via `swagger`_.
 The API's endpoints are secured and require valid JWTs issued by the OIDC provider the
 API is configured with.
 
-.. TODO::
+.. TODO
 
    reference the documentation for setting up OIDC
 
 
-.. _`Jobbergate API`: https://github.com/omnivector-solutions/jobbergate/jobbergate-api
+.. _`Jobbergate API`: https://github.com/omnivector-solutions/jobbergate/tree/main/jobbergate-api
 .. _`swagger`: https://armada-k8s.staging.omnivector.solutions/jobbergate/docs>

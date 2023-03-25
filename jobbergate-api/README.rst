@@ -15,7 +15,7 @@ It integrates with an OIDC server to provide identity and auth for its endpoints
 
 See also:
 
-* `jobbergate-cli <https://github.com/omnivector-solutions/jobbergate/jobbergate-cli>`_
+* `jobbergate-cli <https://github.com/omnivector-solutions/jobbergate/tree/main/jobbergate-cli>`_
 
 License
 -------

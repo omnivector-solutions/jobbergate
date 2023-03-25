@@ -18,8 +18,10 @@ a static website.
 Build the Docs
 ==============
 
-To build the documentation static site, run the following command::
 
+To build the documentation static site, under a python environment (version >=3.8), run the following commands::
+
+    $ pip install poetry
     $ make docs
 
 

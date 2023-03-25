@@ -6,7 +6,12 @@ Jobbergate makes use of quality control tools in all three of its major componen
 CLI, and Agent). The tools are invoked in the same way in each of the subprojects, and
 may be invoked *en masse* from the root Jobbergate directory.
 
+Requirements
+------------
 
+* python version 3.8 or greater
+* Check `psycopg2`_ if you have trouble installing this library. You may need to install i.e. python3-dev and libpq-dev.
+  
 Running Unit Tests
 ------------------
 
@@ -196,4 +201,5 @@ Finally, all of the quality checks can be run using ``make``:
 .. _black: https://black.readthedocs.io/en/stable/
 .. _isort: https://github.com/PyCQA/isort
 .. _mypy: http://www.mypy-lang.org/
+.. _psycopg2: https://www.psycopg.org/docs/install.html
 

@@ -27,7 +27,7 @@ by passing them the ``--help`` flag:
 
 See also:
 
-* `jobbergate-api <https://github.com/omnivector-solutions/jobbergate/jobbergate-api>`_
+* `jobbergate-api <https://github.com/omnivector-solutions/jobbergate/tree/main/jobbergate-api>`_
 
 License
 -------

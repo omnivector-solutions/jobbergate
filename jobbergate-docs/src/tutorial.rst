@@ -20,12 +20,20 @@ Setup
 Follow these few steps to set up your computer to run this tutorial locally. You will need administrator privileges
 on your machine to do so.
 
+Requirements
+------------
+
+* `Docker Compose (next section)`
+* `python version 3.8 or greater`
+* `You may have issues on running on a Ubuntu 18.04 or fewer versions, due to the docker-compose compatibility with jobbergate.`
+
+
 docker-compose
 ..............
 
 For this tutorial, we will be using an instance of Jobbergate that is deployed locally using docker-compose. If you
 do not have it already, follow `this guide <https://docs.docker.com/compose/install/>`_ to install docker-compose before
-you begin the tutorial.
+you begin the tutorial. You may also use `Docker Desktop with Docker Compose <https://www.docker.com/get-started/>`
 
 
 hostfile
