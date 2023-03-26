@@ -25,7 +25,7 @@ def login(test: bool = typer.Option(False, help="Log into the test database.")):
     """
     url = build_db_url(force_test=test)
     logger.debug(f"Logging into database: {url}")
-    subprocess.run([PGCLI_CMD, url])    try:
+    subprocess.run(["pgcli", url])
 
 
 @app.command()
