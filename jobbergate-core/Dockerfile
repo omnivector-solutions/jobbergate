@@ -16,7 +16,10 @@ WORKDIR /app
 #COPY ./pyproject.toml poetry.lock ./
 COPY . ./
 
-RUN poetry install --no-ansi --only main
+RUN poetry install --no-root --no-ansi --only main && \
+    poetry build -f wheel -n && \
+    /app/.venv/bin/pip install --no-deps dist/*.whl && \
+    rm -rf dist *.egg-info
 
 FROM python:3.11-slim
 
