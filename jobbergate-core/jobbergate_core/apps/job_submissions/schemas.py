@@ -218,9 +218,9 @@ class JobSubmissionResponse(BaseModel):
     Complete model to match the database for the JobSubmission resource.
     """
 
-    id: Optional[int] = Field(None)
-    created_at: Optional[datetime]
-    updated_at: Optional[datetime]
+    id: int
+    created_at: datetime
+    updated_at: datetime
     job_submission_name: str
     job_submission_description: Optional[str]
     job_submission_owner_email: str

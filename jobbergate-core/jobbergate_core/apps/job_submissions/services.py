@@ -1,9 +1,10 @@
-from dataclasses import dataclass
 import time
+from dataclasses import dataclass
+from typing import List, Optional, Sequence
 
 import requests
-from jobbergate_core.apps.job_submissions.constants import JobSubmissionStatus
 
+from jobbergate_core.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_core.apps.job_submissions.schemas import JobSubmissionCreateRequest, JobSubmissionResponse
 from jobbergate_core.auth.handler import JobbergateAuthHandler
 
@@ -22,6 +23,28 @@ class JobSubmission:
         response.raise_for_status()
         return JobSubmissionResponse(**response.json())
 
+    def create_batch(
+        self,
+        create_data: Sequence[JobSubmissionCreateRequest],
+        dependencies: Optional[Sequence[JobSubmissionResponse]] = None,
+        dependency_type: str = "afterok",
+    ) -> List[JobSubmissionResponse]:
+        if dependencies:
+            ensured_dependencies = (self.get_ensure_slurm_id(dependency) for dependency in dependencies)
+            dependency = "{}:{}".format(
+                dependency_type, ":".join(map(str, (v.slurm_job_id for v in ensured_dependencies)))
+            )
+        else:
+            dependency = None
+
+        result = []
+        for data in create_data:
+            if dependency:
+                data.execution_parameters.dependency = dependency
+            result.append(self.create(data))
+
+        return result
+
     def get(self, id: int) -> JobSubmissionResponse:
         response = requests.get(
             url=f"{self.jobbergate_api_url}/job-submissions/{id}",
@@ -32,13 +55,15 @@ class JobSubmission:
 
     def get_ensure_slurm_id(
         self,
-        id: int,
+        job_submission: JobSubmissionResponse,
         time_out: int = 120,
         waiting_interval: int = 30,
     ) -> JobSubmissionResponse:
+        if job_submission.slurm_job_id is not None:
+            return job_submission
         expires_at = time.time() + time_out
         while expires_at > time.time():
-            response = self.get(id=id)
+            response = self.get(id=job_submission.id)
 
             if response.slurm_job_id is not None:
                 return response
