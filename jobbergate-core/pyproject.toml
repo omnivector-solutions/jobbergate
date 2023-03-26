@@ -13,6 +13,7 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Topic :: Scientific/Engineering",
 ]
+packages = [{ include = "jobbergate_core" },]
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/omnivector-solutions/jobbergate/issues"
