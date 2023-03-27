@@ -15,6 +15,7 @@ from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_scripts.schemas import JobScriptPartialResponse, JobScriptResponse
+from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.storage import database
 
@@ -1139,14 +1140,17 @@ async def test_delete_job_script_bad_permission(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_delete_job_script__fk_error(
+async def test_delete_job_script__unlinks_job_submissions(
     client,
     fill_application_data,
     fill_job_script_data,
+    fill_job_submission_data,
     inject_security_header,
 ):
     """
-    Test DELETE /job_script/<id> correctly returns a 409 on a foreign-key constraint error.
+    Test DELETE /job_scripts/<id> correctly deletes a job_script linked to a job_submission.
+
+    Test that a the job_script_id field for connected job_submissions is set to null.
     """
     inserted_application_id = await database.execute(
         query=applications_table.insert(),
@@ -1160,20 +1164,27 @@ async def test_delete_job_script__fk_error(
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
 
+    await database.execute(
+        query=job_submissions_table.insert(),
+        values=fill_job_submission_data(job_script_id=inserted_job_script_id),
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 1
+    count = await database.fetch_all(
+        "SELECT COUNT(*) FROM job_submissions where job_script_id=:inserted_id",
+        values=dict(inserted_id=inserted_job_script_id),
+    )
+    assert count[0][0] == 1
+
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
-    with mock.patch(
-        "jobbergate_api.storage.database.execute",
-        side_effect=asyncpg.exceptions.ForeignKeyViolationError(
-            f"""
-            update or delete on table "job_scripts" violates foreign key constraint
-            "job_submissions_job_script_id_fkey" on table "job_submissions"
-            DETAIL:  Key (id)=({inserted_job_script_id}) is still referenced from table "job_submissions".
-            """
-        ),
-    ):
-        response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
-    assert response.status_code == status.HTTP_409_CONFLICT
-    error_data = json.loads(response.text)["detail"]
-    assert error_data["message"] == "Delete failed due to foreign-key constraint"
-    assert error_data["table"] == "job_submissions"
-    assert error_data["pk_id"] == f"{inserted_job_script_id}"
+    response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 0
+
+    count = await database.fetch_all(
+        "SELECT COUNT(*) FROM job_submissions where job_script_id=:inserted_id",
+        values=dict(inserted_id=inserted_job_script_id),
+    )
+    assert count[0][0] == 0

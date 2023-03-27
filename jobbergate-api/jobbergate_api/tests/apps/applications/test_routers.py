@@ -11,6 +11,7 @@ from fastapi import status
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import ApplicationPartialResponse
+from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.storage import database, fetch_instance
 
@@ -245,15 +246,16 @@ async def test_delete_application_not_found(client, inject_security_header):
 
 
 @pytest.mark.asyncio
-async def test_delete_application__fk_error(
+async def test_delete_application__unlinks_job_scripts(
     client,
     application_data,
+    job_script_data,
     inject_security_header,
 ):
     """
-    Test DELETE /applications/<id> correctly returns a 409 when a foreign-key error occurs.
+    Test DELETE /applications/<id> correctly deletes an application linked to a job_script.
 
-    Test that a helpful message when a delete is blocked by a foreign-key constraint.
+    Test that a the application_id field for connected job_scripts is set to null.
     """
     inserted_id = await database.execute(
         query=applications_table.insert(),
@@ -262,23 +264,32 @@ async def test_delete_application__fk_error(
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
+    await database.execute(
+        query=job_scripts_table.insert(),
+        values=dict(
+            **job_script_data,
+            application_id=inserted_id,
+        )
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+    count = await database.fetch_all(
+        "SELECT COUNT(*) FROM job_scripts where application_id=:inserted_id",
+        values=dict(inserted_id=inserted_id),
+    )
+    assert count[0][0] == 1
+
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    with mock.patch(
-        "jobbergate_api.storage.database.execute",
-        side_effect=asyncpg.exceptions.ForeignKeyViolationError(
-            f"""
-            update or delete on table "applications" violates foreign key constraint
-            "job_scripts_application_id_fkey" on table "job_scripts"
-            DETAIL:  Key (id)=({inserted_id}) is still referenced from table "job_scripts".
-            """
-        ),
-    ):
-        response = await client.delete(f"/jobbergate/applications/{inserted_id}")
-    assert response.status_code == status.HTTP_409_CONFLICT
-    error_data = json.loads(response.text)["detail"]
-    assert error_data["message"] == "Delete failed due to foreign-key constraint"
-    assert error_data["table"] == "job_scripts"
-    assert error_data["pk_id"] == f"{inserted_id}"
+    response = await client.delete(f"/jobbergate/applications/{inserted_id}")
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 0
+
+    count = await database.fetch_all(
+        "SELECT COUNT(*) FROM job_scripts where application_id=:inserted_id",
+        values=dict(inserted_id=inserted_id),
+    )
+    assert count[0][0] == 0
 
 
 @pytest.mark.asyncio
