@@ -1,3 +1,4 @@
+"""Services for job submissions."""
 import time
 from dataclasses import dataclass
 from typing import List, Optional, Sequence
@@ -11,10 +12,13 @@ from jobbergate_core.auth.handler import JobbergateAuthHandler
 
 @dataclass
 class JobSubmission:
+    """Job Submission Service."""
+
     jobbergate_api_url: str
     jobbergate_auth: JobbergateAuthHandler
 
     def create(self, create_data: JobSubmissionCreateRequest) -> JobSubmissionResponse:
+        """Create a new job submission."""
         response = requests.post(
             url=f"{self.jobbergate_api_url}/job-submissions",
             auth=self.jobbergate_auth,
@@ -29,6 +33,7 @@ class JobSubmission:
         dependencies: Optional[Sequence[JobSubmissionResponse]] = None,
         dependency_type: str = "afterok",
     ) -> List[JobSubmissionResponse]:
+        """Create a batch of job submissions with optional dependencies."""
         if dependencies:
             ensured_dependencies = (self.get_ensure_slurm_id(dependency) for dependency in dependencies)
             dependency = "{}:{}".format(
@@ -46,6 +51,7 @@ class JobSubmission:
         return result
 
     def get(self, id: int) -> JobSubmissionResponse:
+        """Get a job submission by id."""
         response = requests.get(
             url=f"{self.jobbergate_api_url}/job-submissions/{id}",
             auth=self.jobbergate_auth,
@@ -54,11 +60,9 @@ class JobSubmission:
         return JobSubmissionResponse(**response.json())
 
     def get_ensure_slurm_id(
-        self,
-        job_submission: JobSubmissionResponse,
-        time_out: int = 120,
-        waiting_interval: int = 30,
+        self, job_submission: JobSubmissionResponse, time_out: int = 120, waiting_interval: int = 30
     ) -> JobSubmissionResponse:
+        """Get a job submission by id and ensure that the slurm_job_id is not None."""
         if job_submission.slurm_job_id is not None:
             return job_submission
         expires_at = time.time() + time_out
@@ -78,6 +82,7 @@ class JobSubmission:
         raise Exception("Timeout waiting for slurm_job_id")
 
     def delete(self, id: int) -> None:
+        """Delete a job submission by id."""
         response = requests.delete(
             url=f"{self.jobbergate_api_url}/job-submissions/{id}",
             auth=self.jobbergate_auth,
