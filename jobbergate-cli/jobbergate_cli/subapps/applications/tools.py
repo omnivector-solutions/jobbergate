@@ -18,6 +18,7 @@ from jobbergate_cli.constants import (
     JOBBERGATE_APPLICATION_SUPPORTED_FILES,
 )
 from jobbergate_cli.exceptions import Abort
+from jobbergate_cli.render import terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig, JobbergateContext
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
@@ -273,3 +274,37 @@ def execute_application(
     app_params = gather_param_values(app_module, supplied_params=supplied_params, fast_mode=fast_mode)
     app_config.application_config.update(**app_params)
     return app_params
+
+
+def change_archive_status(
+    jg_ctx: JobbergateContext,
+    application_id: int,
+    should_archive: bool,
+):
+    """
+    Change the "is_archived" status of an application.
+
+    :param: jg_ctx:           The JobbergateContext. Needed to access the Httpx client with which to make API calls
+    :param: application_id:   The id of the application for which to change the archived status
+    :param: should_archive:   If true, archive the application. Otherwise restore it.
+    """
+    # Make static type checkers happy
+    assert jg_ctx.client is not None
+
+    message_stub = "archive" if should_archive else "restore"
+    make_request(
+        jg_ctx.client,
+        f"/jobbergate/applications/{application_id}",
+        "PUT",
+        expected_status=200,
+        expect_response=False,
+        abort_message=f"Request to {message_stub} application was not accepted by the API",
+        support=True,
+        json=dict(is_archived=should_archive),
+    )
+    terminal_message(
+        f"""
+        The application was successfully {message_stub}d.
+        """,
+        subject=f"Application {message_stub} succeeded",
+    )

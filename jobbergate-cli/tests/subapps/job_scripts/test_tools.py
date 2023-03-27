@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ApplicationResponse, JobScriptResponse
 from jobbergate_cli.subapps.job_scripts.tools import (
+    change_archive_status,
     create_job_script,
     fetch_job_script_data,
     save_job_script_files,
@@ -208,3 +209,43 @@ class TestSaveJobScriptFiles:
         assert set(tmp_path.rglob("*")) == set(desired_list_of_files)
 
         assert (tmp_path / "application.sh").read_text() == dummy_template_source
+
+
+def test_change_archive_status__success__archive(
+    respx_mock,
+    dummy_context,
+    dummy_job_script_data,
+    dummy_domain,
+):
+    """
+    Test that the change_archive_status() method sends an update request that archives the job_script.
+
+    Verifies that the request body only includes the is_archived parameter set to True.
+    """
+    js_data = dummy_job_script_data[0]
+    js_id = js_data["id"]
+    archive_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-scripts/{js_id}")
+
+    change_archive_status(dummy_context, js_id, True)
+    assert archive_route.called
+    assert json.loads(archive_route.calls.last.request.content) == dict(is_archived=True)
+
+
+def test_change_archive_status__success__restore(
+    respx_mock,
+    dummy_context,
+    dummy_job_script_data,
+    dummy_domain,
+):
+    """
+    Test that the change_archive_status() method sends an update request that restores the job_script.
+
+    Verifies that the request body only includes the is_archived parameter set to False.
+    """
+    js_data = dummy_job_script_data[0]
+    js_id = js_data["id"]
+    archive_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-scripts/{js_id}")
+
+    change_archive_status(dummy_context, js_id, False)
+    assert archive_route.called
+    assert json.loads(archive_route.calls.last.request.content) == dict(is_archived=False)
