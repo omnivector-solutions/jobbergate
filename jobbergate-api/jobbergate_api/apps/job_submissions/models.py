@@ -16,7 +16,7 @@ job_submissions_table = Table(
     Column("job_submission_name", String, nullable=False, index=True),
     Column("job_submission_description", String, default=""),
     Column("job_submission_owner_email", String, nullable=False, index=True),
-    Column("job_script_id", ForeignKey("job_scripts.id"), nullable=False),
+    Column("job_script_id", ForeignKey("job_scripts.id"), nullable=True),
     Column("execution_directory", String),
     Column("slurm_job_id", Integer, default=None),
     Column("client_id", String, nullable=False, index=True),

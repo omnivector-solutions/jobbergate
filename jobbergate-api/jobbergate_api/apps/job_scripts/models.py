@@ -14,7 +14,7 @@ job_scripts_table = Table(
     Column("job_script_name", String, nullable=False, index=True),
     Column("job_script_description", String, default=""),
     Column("job_script_owner_email", String, nullable=False, index=True),
-    Column("application_id", ForeignKey("applications.id")),
+    Column("application_id", ForeignKey("applications.id"), nullable=True),
     Column("created_at", DateTime, nullable=False, default=func.now()),
     Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=func.now()),
 )
