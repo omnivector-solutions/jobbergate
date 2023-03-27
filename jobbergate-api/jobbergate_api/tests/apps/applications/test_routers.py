@@ -1,10 +1,8 @@
 """
 Tests for the /applications/ endpoint.
 """
-import json
 from unittest import mock
 
-import asyncpg
 import pytest
 from fastapi import status
 
