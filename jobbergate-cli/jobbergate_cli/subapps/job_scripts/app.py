@@ -19,7 +19,12 @@ from jobbergate_cli.render import (
 )
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobScriptResponse, ListResponseEnvelope
-from jobbergate_cli.subapps.job_scripts.tools import create_job_script, download_job_script_files, fetch_job_script_data
+from jobbergate_cli.subapps.job_scripts.tools import (
+    change_archive_status,
+    create_job_script,
+    download_job_script_files,
+    fetch_job_script_data,
+)
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
 from jobbergate_cli.subapps.job_submissions.tools import create_job_submission
 from jobbergate_cli.text_tools import dedent
@@ -31,6 +36,7 @@ HIDDEN_FIELDS = [
     "updated_at",
     "job_script_data_as_string",
     "job_script_files",
+    "is_archived",
 ]
 
 
@@ -48,6 +54,7 @@ app = typer.Typer(help="Commands to interact with job scripts")
 def list_all(
     ctx: typer.Context,
     show_all: bool = typer.Option(False, "--all", help="Show all job scripts, even the ones owned by others"),
+    include_archived: bool = typer.Option(False, help="Show archived job_scripts as well"),
     search: Optional[str] = typer.Option(None, help="Apply a search term to results"),
     sort_order: SortOrder = typer.Option(SortOrder.UNSORTED, help="Specify sort order"),
     sort_field: Optional[str] = typer.Option(None, help="The field by which results should be sorted"),
@@ -65,7 +72,7 @@ def list_all(
     assert jg_ctx is not None
     assert jg_ctx.client is not None
 
-    params: Dict[str, Any] = dict(all=show_all)
+    params: Dict[str, Any] = dict(all=show_all, include_archived=include_archived)
     if search is not None:
         params["search"] = search
     if sort_order is not SortOrder.UNSORTED:
@@ -93,7 +100,7 @@ def list_all(
         envelope,
         title="Job Scripts List",
         style_mapper=style_mapper,
-        hidden_fields=HIDDEN_FIELDS,
+        hidden_fields=HIDDEN_FIELDS + (["is_archived"] if include_archived else []),
     )
 
 
@@ -323,6 +330,36 @@ def delete(
         "The job script was successfully deleted.",
         subject="Job script delete succeeded",
     )
+
+
+@app.command()
+@handle_abort
+def archive(
+    ctx: typer.Context,
+    id: int = typer.Option(
+        ...,
+        help="the specific id of the job_script to archive.",
+    ),
+):
+    """
+    Archive an existing job_script.
+    """
+    change_archive_status(ctx.obj, id, True)
+
+
+@app.command()
+@handle_abort
+def restore(
+    ctx: typer.Context,
+    id: int = typer.Option(
+        ...,
+        help="the specific id of the job_script to restore from the archive.",
+    ),
+):
+    """
+    Restore an archived job_script.
+    """
+    change_archive_status(ctx.obj, id, False)
 
 
 @app.command()
