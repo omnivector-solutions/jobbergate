@@ -271,7 +271,7 @@ async def test_delete_application__unlinks_job_scripts(
         values=dict(
             **job_script_data,
             application_id=inserted_id,
-        )
+        ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
