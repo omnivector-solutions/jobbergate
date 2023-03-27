@@ -1,11 +1,11 @@
-name: 'Publish Docs'
+name: "Publish Docs"
 
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
 
 jobs:
   publish:
@@ -31,7 +31,7 @@ jobs:
 
       - uses: Gr1N/setup-poetry@v7
         with:
-          poetry-version: 1.1.14
+          poetry-version: 1.4.1
 
       - name: Build docs
         working-directory: ./jobbergate-docs
