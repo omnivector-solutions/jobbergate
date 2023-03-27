@@ -18,6 +18,7 @@ from jobbergate_api.apps.applications.schemas import (
     ApplicationResponse,
     ApplicationUpdateRequest,
 )
+from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, ok_response, package_response
@@ -162,6 +163,16 @@ async def application_delete(
     """
     Delete application from the database and S3 given it's id.
     """
+    logger.debug(f"Unlinking job_scripts with links to application {application_id=}")
+    update_query = (
+        job_scripts_table.update()
+        .where(job_scripts_table.c.application_id == application_id)
+        .values(dict(application_id=None))
+    )
+
+    logger.trace(f"update_query = {render_sql(update_query)}")
+    await database.execute(update_query)
+
     logger.debug(f"Preparing to delete {application_id=} from the database and S3")
 
     where_stmt = applications_table.c.id == application_id

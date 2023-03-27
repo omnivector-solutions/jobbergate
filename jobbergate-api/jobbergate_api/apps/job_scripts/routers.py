@@ -18,6 +18,7 @@ from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptResponse,
     JobScriptUpdateRequest,
 )
+from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.security import IdentityClaims, guard
@@ -216,6 +217,15 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     """
     Delete job_script given its id.
     """
+    logger.debug(f"Unlinking job_submissions with links to job_script {job_script_id=}")
+    update_query = (
+        job_submissions_table.update()
+        .where(job_submissions_table.c.job_script_id == job_script_id)
+        .values(dict(job_script_id=None))
+    )
+    logger.trace(f"update_query = {render_sql(update_query)}")
+    await database.execute(update_query)
+
     logger.debug(f"Preparing to delete {job_script_id=}")
     where_stmt = job_scripts_table.c.id == job_script_id
 
