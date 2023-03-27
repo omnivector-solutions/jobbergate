@@ -271,6 +271,7 @@ async def application_delete_by_identifier(
 async def applications_list(
     user: bool = Query(False),
     all: bool = Query(False),
+    include_archived: bool = Query(False),
     search: Optional[str] = Query(None),
     sort_field: Optional[str] = Query(None),
     sort_ascending: bool = Query(True),
@@ -288,6 +289,8 @@ async def applications_list(
         query = query.where(applications_table.c.application_owner_email == identity_claims.email)
     if not all:
         query = query.where(not_(applications_table.c.application_identifier.is_(None)))
+    if not include_archived:
+        query = query.where(not_(applications_table.c.is_archived))
     if search is not None:
         query = query.where(search_clause(search, searchable_fields))
     if sort_field is not None:

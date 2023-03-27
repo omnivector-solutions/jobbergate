@@ -476,7 +476,8 @@ async def test_get_job_script__no_params(
 
     This test proves that GET /job-scripts/ returns the correct job_scripts for the user making
     the request. We show this by asserting that the job_scripts returned in the response are
-    only job_scripts owned by the user making the request.
+    only job_scripts owned by the user making the request. This test also ensures that archived
+    job_scripts are not included by default.
     """
     inserted_application_id = await database.execute(
         query=applications_table.insert(),
@@ -500,11 +501,17 @@ async def test_get_job_script__no_params(
                 job_script_owner_email="owner1@org.com",
                 application_id=inserted_application_id,
             ),
+            dict(
+                job_script_name="js4",
+                job_script_owner_email="owner1@org.com",
+                application_id=inserted_application_id,
+                is_archived=True,
+            ),
         ),
     )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 3
+    assert count[0][0] == 4
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get("/jobbergate/job-scripts/")
@@ -600,6 +607,67 @@ async def test_get_job_scripts__with_all_param(
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get("/jobbergate/job-scripts/?all=True")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    results = data.get("results")
+    assert results
+    assert [d["job_script_name"] for d in results] == ["script1", "script2", "script3"]
+
+    pagination = data.get("pagination")
+    assert pagination == dict(
+        total=3,
+        start=None,
+        limit=None,
+    )
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_get_job_scripts__with_include_archived_param(
+    client,
+    fill_application_data,
+    fill_all_job_script_data,
+    inject_security_header,
+):
+    """
+    Test that listing job_scripts, when include_archived=True, contains archived job_scripts.
+
+    This test proves that the user making the request can see archived job_scripts.
+    We show this by creating three job_scripts, one that is archived, and two that are not.
+    Assert that the response to GET /job-scripts/?include_archived=True includes all three job_scripts.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+    await database.execute_many(
+        query=job_scripts_table.insert(),
+        values=fill_all_job_script_data(
+            {
+                "job_script_name": "script1",
+                "job_script_owner_email": "owner1@org.com",
+                "application_id": inserted_application_id,
+            },
+            {
+                "job_script_name": "script2",
+                "job_script_owner_email": "owner1@org.com",
+                "application_id": inserted_application_id,
+                "is_archived": True,
+            },
+            {
+                "job_script_name": "script3",
+                "job_script_owner_email": "owner1@org.com",
+                "application_id": inserted_application_id,
+            },
+        ),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 3
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
+    response = await client.get("/jobbergate/job-scripts/?include_archived=True")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -920,6 +988,7 @@ async def test_update_job_script(
                     "main_file_path": main_file_path,
                     "files": {main_file_path: main_file_content},
                 },
+                "is_archived": True,
             },
         )
 
@@ -931,6 +1000,7 @@ async def test_update_job_script(
     assert JobScriptFiles(**data["job_script_files"]) == dummy_job_script_files
     assert JobScriptFiles.get_from_s3(inserted_job_script_id) == dummy_job_script_files
     assert data["id"] == inserted_job_script_id
+    assert data["is_archived"] is True
 
     query = job_scripts_table.select(job_scripts_table.c.id == inserted_job_script_id)
     job_script = JobScriptPartialResponse.parse_obj(await database.fetch_one(query))
@@ -939,6 +1009,7 @@ async def test_update_job_script(
     assert job_script.job_script_name == "new name"
     assert job_script.job_script_description == "new description"
     assert job_script.updated_at in window
+    assert job_script.is_archived
 
 
 @pytest.mark.asyncio
