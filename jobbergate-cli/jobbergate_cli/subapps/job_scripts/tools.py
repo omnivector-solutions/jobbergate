@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, cast
 from loguru import logger
 
 from jobbergate_cli.exceptions import Abort
+from jobbergate_cli.render import terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobScriptCreateRequestData, JobScriptResponse
 from jobbergate_cli.subapps.applications.tools import execute_application, fetch_application_data, load_application_data
@@ -161,3 +162,38 @@ def download_job_script_files(id: int, jg_ctx: JobbergateContext) -> List[pathli
         destination_path=pathlib.Path.cwd(),
     )
     return downloaded_files
+
+
+def change_archive_status(
+    jg_ctx: JobbergateContext,
+    job_script_id: int,
+    should_archive: bool,
+):
+    """
+    Change the "is_archived" status of a job_script.
+
+    :param: jg_ctx:           The JobbergateContext. Needed to access the Httpx client with which to make API calls
+    :param:  job_script_id:   The id of the job_script for which to change the archived status
+    :param: should_archive:   If true, archive the job_script. Otherwise restore it.
+    """
+    # Make static type checkers happy
+    assert jg_ctx.client is not None
+
+    message_stub = "archive" if should_archive else "restore"
+    make_request(
+        jg_ctx.client,
+        f"/jobbergate/job-scripts/{job_script_id}",
+        "PUT",
+        expected_status=200,
+        expect_response=False,
+        abort_message=f"Request to {message_stub} job_script was not accepted by the API",
+        support=True,
+        json=dict(is_archived=should_archive),
+    )
+    message_stub = "archive" if should_archive else "restore"
+    terminal_message(
+        f"""
+        The job_script was successfully {message_stub}d.
+        """,
+        subject=f"Job Script {message_stub} succeeded",
+    )

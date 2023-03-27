@@ -20,6 +20,7 @@ from jobbergate_cli.render import (
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 from jobbergate_cli.subapps.applications.tools import (
+    change_archive_status,
     fetch_application_data,
     load_default_config,
     save_application_files,
@@ -71,6 +72,7 @@ def list_all(
     ctx: typer.Context,
     show_all: bool = typer.Option(False, "--all", help="Show all applications, even the ones without identifier"),
     user_only: bool = typer.Option(False, "--user", help="Show only applications owned by the current user"),
+    include_archived: bool = typer.Option(False, help="Show archived applications as well"),
     search: Optional[str] = typer.Option(None, help="Apply a search term to results"),
     sort_order: SortOrder = typer.Option(SortOrder.UNSORTED, help="Specify sort order"),
     sort_field: Optional[str] = typer.Option(None, help="The field by which results should be sorted"),
@@ -87,6 +89,7 @@ def list_all(
     params: Dict[str, Any] = dict(
         all=show_all,
         user=user_only,
+        include_archived=include_archived,
     )
     if search is not None:
         params["search"] = search
@@ -113,7 +116,7 @@ def list_all(
         envelope,
         title="Applications List",
         style_mapper=style_mapper,
-        hidden_fields=HIDDEN_FIELDS,
+        hidden_fields=HIDDEN_FIELDS + (["is_archived"] if include_archived else []),
     )
 
 
@@ -349,6 +352,36 @@ def delete(
         """,
         subject="Application delete succeeded",
     )
+
+
+@app.command()
+@handle_abort
+def archive(
+    ctx: typer.Context,
+    id: int = typer.Option(
+        ...,
+        help=f"the specific id of the application to archive. {ID_NOTE}",
+    ),
+):
+    """
+    Archive an existing application.
+    """
+    change_archive_status(ctx.obj, id, True)
+
+
+@app.command()
+@handle_abort
+def restore(
+    ctx: typer.Context,
+    id: int = typer.Option(
+        ...,
+        help=f"the specific id of the application to restore from the archive. {ID_NOTE}",
+    ),
+):
+    """
+    Restore an archived application.
+    """
+    change_archive_status(ctx.obj, id, False)
 
 
 @app.command()
