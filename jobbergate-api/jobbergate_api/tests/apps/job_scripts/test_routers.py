@@ -1,12 +1,10 @@
 """
 Tests for the /job-scripts/ endpoint.
 """
-import json
 import pathlib
 from textwrap import dedent
 from unittest import mock
 
-import asyncpg
 import pytest
 from fastapi import status
 
@@ -1177,9 +1175,7 @@ async def test_delete_job_script__unlinks_job_submissions(
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
-    with mock.patch(
-        "jobbergate_api.apps.job_scripts.job_script_files.JobScriptFiles.delete_from_s3",
-    ) as mocked_delete:
+    with mock.patch("jobbergate_api.apps.job_scripts.job_script_files.JobScriptFiles.delete_from_s3"):
         response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
