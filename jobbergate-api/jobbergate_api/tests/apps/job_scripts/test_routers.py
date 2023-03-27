@@ -1177,8 +1177,11 @@ async def test_delete_job_script__unlinks_job_submissions(
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
-    response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
-    assert response.status_code == status.HTTP_204_NO_CONTENT
+    with mock.patch(
+        "jobbergate_api.apps.job_scripts.job_script_files.JobScriptFiles.delete_from_s3",
+    ) as mocked_delete:
+        response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 0
