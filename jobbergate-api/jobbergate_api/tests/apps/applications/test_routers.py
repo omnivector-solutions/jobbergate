@@ -246,7 +246,9 @@ async def test_delete_application_not_found(client, inject_security_header):
 
 
 @pytest.mark.asyncio
+@mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.delete_from_s3")
 async def test_delete_application__unlinks_job_scripts(
+    mocked_application_deleter,
     client,
     application_data,
     job_script_data,
