@@ -153,6 +153,11 @@ def dummy_job_script_data(dummy_application_data, dummy_job_script_files):
 
 
 @pytest.fixture
+def dummy_job_script_data_reversed(dummy_job_script_data):
+    return [dummy_job_script_data[2], dummy_job_script_data[1], dummy_job_script_data[0]]
+
+
+@pytest.fixture
 def dummy_job_submission_data(dummy_job_script_data):
     return [
         dict(

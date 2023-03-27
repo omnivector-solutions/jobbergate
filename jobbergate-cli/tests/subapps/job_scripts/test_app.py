@@ -6,6 +6,7 @@ from unittest import mock
 import httpx
 import pytest
 
+from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.schemas import (
     ApplicationResponse,
     JobScriptResponse,
@@ -52,6 +53,117 @@ def test_list_all__makes_request_and_renders_results(
     test_app = make_test_app("list-all", list_all)
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_list_results")
     result = cli_runner.invoke(test_app, ["list-all"])
+    assert result.exit_code == 0, f"list-all failed: {result.stdout}"
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        ListResponseEnvelope(
+            results=dummy_job_script_data,
+            pagination=Pagination(total=3, start=None, limit=None),
+        ),
+        title="Job Scripts List",
+        style_mapper=style_mapper,
+        hidden_fields=HIDDEN_FIELDS,
+    )
+
+
+def test_list_all__search_makes_request_and_renders_results(
+    respx_mock,
+    make_test_app,
+    dummy_context,
+    dummy_job_script_data,
+    dummy_domain,
+    cli_runner,
+    mocker,
+):
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts?all=false&search=script1").mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=dict(
+                results=[dummy_job_script_data[0]],
+                pagination=dict(
+                    total=1,
+                ),
+            ),
+        ),
+    )
+    test_app = make_test_app("list-all", list_all)
+    mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_list_results")
+    result = cli_runner.invoke(test_app, shlex.split("list-all --search script1"))
+    assert result.exit_code == 0, f"list-all failed: {result.stdout}"
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        ListResponseEnvelope(
+            results=[dummy_job_script_data[0]],
+            pagination=Pagination(total=1, start=None, limit=None),
+        ),
+        title="Job Scripts List",
+        style_mapper=style_mapper,
+        hidden_fields=HIDDEN_FIELDS,
+    )
+    assert dummy_job_script_data[0]["id"] == 1, f"list-all searched item failed "
+
+
+def test_list_all__sort_order_makes_request_and_renders_results(
+    respx_mock,
+    make_test_app,
+    dummy_context,
+    dummy_job_script_data_reversed,
+    dummy_domain,
+    cli_runner,
+    mocker,
+):
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts?all=false&sort_ascending=false&sort_field=id").mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=dict(
+                results=dummy_job_script_data_reversed,
+                pagination=dict(
+                    total=3,
+                ),
+            ),
+        ),
+    )
+    test_app = make_test_app("list-all", list_all)
+    mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_list_results")
+    result = cli_runner.invoke(test_app, shlex.split(f"list-all --sort-order {SortOrder.DESCENDING} --sort-field id"))
+    assert result.exit_code == 0, f"list-all failed: {result.stdout}"
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        ListResponseEnvelope(
+            results=dummy_job_script_data_reversed,
+            pagination=Pagination(total=3, start=None, limit=None),
+        ),
+        title="Job Scripts List",
+        style_mapper=style_mapper,
+        hidden_fields=HIDDEN_FIELDS,
+    )
+    assert dummy_job_script_data_reversed[0]["id"] == 3, f"list-all List item order failed "
+    assert dummy_job_script_data_reversed[2]["id"] == 1, f"list-all List item order failed "
+
+
+def test_list_all__from_application_id_makes_request_and_renders_results(
+    respx_mock,
+    make_test_app,
+    dummy_context,
+    dummy_job_script_data,
+    dummy_domain,
+    cli_runner,
+    mocker,
+):
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts?all=false&from_application_id=1").mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=dict(
+                results=dummy_job_script_data,
+                pagination=dict(
+                    total=3,
+                ),
+            ),
+        ),
+    )
+    test_app = make_test_app("list-all", list_all)
+    mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_list_results")
+    result = cli_runner.invoke(test_app, shlex.split("list-all --from-application-id 1"))
     assert result.exit_code == 0, f"list-all failed: {result.stdout}"
     mocked_render.assert_called_once_with(
         dummy_context,
