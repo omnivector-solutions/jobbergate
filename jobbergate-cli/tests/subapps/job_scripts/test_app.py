@@ -371,10 +371,21 @@ def test_delete__makes_request_and_sends_terminal_message(
         return_value=httpx.Response(httpx.codes.NO_CONTENT),
     )
     test_app = make_test_app("delete", delete)
-    result = cli_runner.invoke(test_app, shlex.split(f"delete --id={job_script_id}"))
+    result = cli_runner.invoke(test_app, shlex.split(f"delete --id={job_script_id} --confirm"))
     assert result.exit_code == 0, f"delete failed: {result.stdout}"
     assert delete_route.called
     assert "JOB SCRIPT DELETE SUCCEEDED"
+
+
+def test_delete__aborts_without_confirmation(respx_mock, make_test_app, dummy_domain, cli_runner):
+    delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/job-scripts/1")
+    delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
+
+    test_app = make_test_app("delete", delete)
+    result = cli_runner.invoke(test_app, shlex.split("delete --id=1"), input="n\n")
+    assert result.exit_code == 0, f"delete failed: {result.stdout}"
+    assert not delete_route.called
+    assert "No job_script was deleted" in result.stdout
 
 
 def test_show_files__success(

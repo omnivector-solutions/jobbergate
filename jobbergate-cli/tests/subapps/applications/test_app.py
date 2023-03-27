@@ -392,10 +392,21 @@ def test_delete__success(respx_mock, make_test_app, dummy_domain, cli_runner):
     delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
 
     test_app = make_test_app("delete", delete)
-    result = cli_runner.invoke(test_app, shlex.split("delete --id=1"))
+    result = cli_runner.invoke(test_app, shlex.split("delete --id=1 --confirm"))
     assert result.exit_code == 0, f"delete failed: {result.stdout}"
     assert delete_route.called
     assert "Application delete succeeded" in result.stdout
+
+
+def test_delete__aborts_without_confirmation(respx_mock, make_test_app, dummy_domain, cli_runner):
+    delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/applications/1")
+    delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
+
+    test_app = make_test_app("delete", delete)
+    result = cli_runner.invoke(test_app, shlex.split("delete --id=1"), input="n\n")
+    assert result.exit_code == 0, f"delete failed: {result.stdout}"
+    assert not delete_route.called
+    assert "No application was deleted" in result.stdout
 
 
 class TestDownloadApplicationFiles:

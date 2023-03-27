@@ -10,7 +10,13 @@ import typer
 
 from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import handle_abort
-from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
+from jobbergate_cli.render import (
+    StyleMapper,
+    render_list_results,
+    render_single_result,
+    terminal_confirm,
+    terminal_message,
+)
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 from jobbergate_cli.subapps.job_scripts.tools import download_job_script_files
@@ -196,10 +202,32 @@ def delete(
         ...,
         help="The id of the job submission to delete",
     ),
+    confirm: bool = typer.Option(
+        None,
+        "--confirm",
+        "-y",
+        help="If supplied, do not ask for confirmation; just delete.",
+    ),
 ):
     """
     Delete an existing job submission.
     """
+    if not confirm and not terminal_confirm(
+        """
+        [yellow]Job Submissons are a historical record and should not usually be deleted.
+        """,
+        subject="Deleting is permanent!",
+        color="red",
+    ):
+        terminal_message(
+            """
+            No job_submission was deleted.
+            """,
+            subject="Aborted",
+            color="yellow",
+        )
+        return
+
     jg_ctx: JobbergateContext = ctx.obj
 
     # Make static type checkers happy
