@@ -33,6 +33,7 @@ subapp = FastAPI(
     },
 )
 
+# Add CORS middleware to the sub-app
 subapp.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -41,6 +42,7 @@ subapp.add_middleware(
     allow_headers=["*"],
 )
 
+# Initialize Sentry and add Sentry middleware to the sub-app
 if settings.SENTRY_DSN and settings.DEPLOY_ENV.lower() != "test":
     logger.info("Initializing Sentry")
     sentry_sdk.init(
@@ -52,12 +54,7 @@ if settings.SENTRY_DSN and settings.DEPLOY_ENV.lower() != "test":
 else:
     logger.info("Skipping Sentry")
 
-subapp.include_router(applications_router)
-subapp.include_router(job_scripts_router)
-subapp.include_router(job_submissions_router)
-subapp.exception_handler(asyncpg.exceptions.ForeignKeyViolationError)(handle_fk_error)
-
-
+# Define a health-check endpoint for the sub-app
 @subapp.get(
     "/health",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -71,6 +68,14 @@ async def health_check():
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+# Include the routers in the sub-app
+subapp.include_router(applications_router)
+subapp.include_router(job_scripts_router)
+subapp.include_router(job_submissions_router)
+subapp.exception_handler(asyncpg.exceptions.ForeignKeyViolationError)(handle_fk_error)
+
+
+# Create a main FastAPI app and mount the sub-app onto it
 app = FastAPI()
 app.mount("/jobbergate", subapp)
 
@@ -103,6 +108,7 @@ async def disconnect_database():
     await database.disconnect()
 
 
+# Set up exception handling
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, err: RequestValidationError):
     """
