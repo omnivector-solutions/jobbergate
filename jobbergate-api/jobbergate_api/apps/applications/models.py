@@ -18,6 +18,7 @@ applications_table = Table(
     Column("application_uploaded", Boolean, nullable=False, default=False_()),
     Column("created_at", DateTime, nullable=False, default=func.now()),
     Column("updated_at", DateTime, nullable=False, default=func.now(), onupdate=func.now()),
+    Column("is_archived", Boolean, nullable=False, default=False_()),
 )
 
 searchable_fields = [

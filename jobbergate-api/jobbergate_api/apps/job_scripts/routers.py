@@ -6,6 +6,7 @@ from typing import Optional
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from loguru import logger
+from sqlalchemy import not_
 
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
@@ -172,6 +173,7 @@ async def job_script_get(job_script_id: int = Query(...)):
 async def job_script_list(
     pagination: Pagination = Depends(),
     all: Optional[bool] = Query(False),
+    include_archived: bool = Query(False),
     search: Optional[str] = Query(None),
     sort_field: Optional[str] = Query(None),
     from_application_id: Optional[int] = Query(
@@ -196,6 +198,8 @@ async def job_script_list(
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     if not all:
         query = query.where(job_scripts_table.c.job_script_owner_email == identity_claims.email)
+    if not include_archived:
+        query = query.where(not_(job_scripts_table.c.is_archived))
     if from_application_id is not None:
         query = query.where(job_scripts_table.c.application_id == from_application_id)
     if search is not None:
