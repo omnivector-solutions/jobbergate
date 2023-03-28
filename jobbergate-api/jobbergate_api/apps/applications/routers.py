@@ -161,9 +161,9 @@ async def application_delete(
     application_id: int = Query(..., description="id of the application to delete"),
 ):
     """
-    Delete application from the database and S3 given it's id.
+    Delete application from the database and S3 given its id.
     """
-    logger.debug(f"Unlinking job_scripts with links to application {application_id=}")
+    logger.debug(f"Orphaning job_scripts rendered from application {application_id=}")
     update_query = (
         job_scripts_table.update()
         .where(job_scripts_table.c.application_id == application_id)
