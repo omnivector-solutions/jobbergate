@@ -5,17 +5,21 @@ familiar with the old commands
 
 import typer
 
+from jobbergate_cli.subapps.applications.app import archive as archive_application
 from jobbergate_cli.subapps.applications.app import create as create_application
 from jobbergate_cli.subapps.applications.app import delete as delete_application
 from jobbergate_cli.subapps.applications.app import download_files as download_files_application
 from jobbergate_cli.subapps.applications.app import get_one as get_application
 from jobbergate_cli.subapps.applications.app import list_all as list_applications
+from jobbergate_cli.subapps.applications.app import restore as restore_application
 from jobbergate_cli.subapps.applications.app import update as update_application
+from jobbergate_cli.subapps.job_scripts.app import archive as archive_job_script
 from jobbergate_cli.subapps.job_scripts.app import create as create_job_script
 from jobbergate_cli.subapps.job_scripts.app import delete as delete_job_script
 from jobbergate_cli.subapps.job_scripts.app import download_files as download_files_job_script
 from jobbergate_cli.subapps.job_scripts.app import get_one as get_job_script
 from jobbergate_cli.subapps.job_scripts.app import list_all as list_job_scripts
+from jobbergate_cli.subapps.job_scripts.app import restore as restore_job_script
 from jobbergate_cli.subapps.job_scripts.app import update as update_job_script
 from jobbergate_cli.subapps.job_submissions.app import create as create_job_submission
 from jobbergate_cli.subapps.job_submissions.app import delete as delete_job_submission
@@ -43,6 +47,14 @@ def add_legacy_compatible_commands(app: typer.Typer):
         help="CREATE an Application.",
     )(create_application)
     app.command(
+        name="archive-application",
+        help="ARCHIVE an Application.",
+    )(archive_application)
+    app.command(
+        name="restore-application",
+        help="RESTORE an Application.",
+    )(restore_application)
+    app.command(
         name="delete-application",
         help="DELETE an Application.",
     )(delete_application)
@@ -68,6 +80,14 @@ def add_legacy_compatible_commands(app: typer.Typer):
         name="create-job-script",
         help="CREATE a job script",
     )(create_job_script)
+    app.command(
+        name="archive-job-script",
+        help="ARCHIVE a Job Script.",
+    )(archive_job_script)
+    app.command(
+        name="restore-job-script",
+        help="RESTORE a Job Script.",
+    )(restore_job_script)
     app.command(
         name="update-job-script",
         help="UPDATE a job script",
