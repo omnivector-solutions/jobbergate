@@ -343,6 +343,9 @@ def archive(
 ):
     """
     Archive an existing job_script.
+
+    A job_script that is archived will not appear in lists by default. This is a way to
+    effectively hide a job_script from view.
     """
     change_archive_status(ctx.obj, id, True)
 
