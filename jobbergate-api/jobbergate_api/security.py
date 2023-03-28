@@ -66,6 +66,9 @@ class IdentityClaims(BaseModel):
         Raises:
             ValueError: If the payload is invalid or the email is not a valid email address.
         """
+        if payload is None:
+            raise ValueError("Token payload is None")
+
         if not isinstance(payload, TokenPayload):
             raise ValueError("Invalid token payload")
 
