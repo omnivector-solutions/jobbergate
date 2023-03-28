@@ -9,8 +9,8 @@ class JobbergateApplication(JobbergateApplicationBase):
             data=dict()
         data["nextworkflow"] = "subflow"
         return [
-            Text("foo", message="gimme the foo!"),
-            Text("bar", message="gimme the bar!"),
+            Text("foo", message="gimme the foo!", default="foo"),
+            Text("bar", message="gimme the bar!", default="bar"),
         ]
 
     def subflow(self, data=None):

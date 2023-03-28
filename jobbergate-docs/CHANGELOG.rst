@@ -7,6 +7,10 @@ This file keeps track of all notable changes to jobbergate-docs
 Unreleased
 ----------
 
+3.5.0-alpha.0 -- 2023-03-28
+---------------------------
+- Added new page describing jobbergate-core and its components
+
 3.4.3 -- 2023-01-30
 -------------------
 - Keep synchronized with jobbergate-cli and jobbergate-api

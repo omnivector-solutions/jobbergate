@@ -16,20 +16,31 @@ To run this example::
   $ python create-with-api.py
 
 
-Note: Before running this demo, you will need::
+Note: Before running this demo, you will need:
 
-- Jobbergate components running in docker-compose. See the jobbergate-composed README.
-- An Auth token in the same directory named "access.token". You may use the ``login-with-api.py`` for this.
+- An ARMADA_API_BASE config set as an environment variable or in a `.env` file
+- An Auth token in the same directory named "access.token".
+  You may use the ``login-with-api.py`` for this.
+
+
+Note:  If you want to use a local dev environment, you will need to follow the
+instructions in the README of the `jobbergate-composed` directory to set up a local
+environment using `docker-compose`. You will also need the following config settings::
+
+- ARMADA_API_BASE=http://localhost:8000
 """
 
 import json
 import pathlib
 import time
 
+from dotenv import load_dotenv
 import httpx
 
 
-base_api_url = "http://localhost:8000"
+load_dotenv()
+base_api_url = os.getenv("ARMADA_API_BASE")
+
 access_token_file = pathlib.Path("./access.token")
 token = access_token_file.read_text().rstrip()
 application_path = pathlib.Path("./simple-application")

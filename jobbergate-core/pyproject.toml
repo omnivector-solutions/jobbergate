@@ -1,0 +1,78 @@
+[tool.poetry]
+name = "jobbergate-core"
+version = "3.5.0-alpha.0"
+description = "Jobbergate Core"
+authors = ["Omnivector Solutions <info@omnivector.solutions>"]
+license = "MIT"
+readme = "README.rst"
+repository = "https://github.com/omnivector-solutions/jobbergate"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Development Status :: 5 - Production/Stable",
+    "Topic :: Scientific/Engineering",
+]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/omnivector-solutions/jobbergate/issues"
+"Changelog" = "https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-core/CHANGELOG.rst"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+httpx = "^0.22.0"
+loguru = "^0.6.0"
+pendulum = "^2.1.2"
+py-buzz = "^3.1.0"
+pydantic = "^1.8.2"
+python-jose = "^3.3.0"
+
+[tool.poetry.dev-dependencies]
+black = "^23.1"
+isort = "^5.9.3"
+mypy = "^0.931"
+pyproject-flake8 = "^3.8"
+pytest-cov = "^3.0.0"
+pytest-env = "^0.6.2"
+pytest-freezegun = "^0.4.2"
+pytest-mock = "^3.6.0"
+pytest-random-order = "^1.0.4"
+requests-mock = "^1.10"
+respx = "^0.19.2"
+toml = "^0.10.2"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = [
+    "--random-order",
+    "--cov=jobbergate_core",
+    "--cov-report=term-missing",
+    "--cov-fail-under=85",
+]
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+line_length = 120
+lines_after_imports = "2"
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+
+[tool.flake8]
+max-line-length = 120
+max-complexity = 40
+
+[[tool.mypy.overrides]]
+module = [
+    "dataclasses",
+    "toml",
+    "requests",
+    "jose.*",
+]
+ignore_missing_imports = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
