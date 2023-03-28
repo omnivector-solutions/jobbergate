@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-docs
 
 Unreleased
 ----------
+- Added new page describing jobbergate-core and its components
 
 3.4.3 -- 2023-01-30
 -------------------

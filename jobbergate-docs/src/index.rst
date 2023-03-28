@@ -25,5 +25,6 @@ Table of Contents
    Resources <resources>
    Tutorial <tutorial>
    Developer Guide <developer_guide/index>
+   Jobbergate-Core <core>
    Attribution <attribution>
    Contact Us <contact>
