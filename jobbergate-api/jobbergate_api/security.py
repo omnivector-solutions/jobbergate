@@ -76,5 +76,5 @@ class IdentityClaims(BaseModel):
                 EmailStr.validate(email)
             except ValueError as e:
                 raise ValueError(f"Invalid email address {email}: {e}")
-            init_kwargs.update(email=email)
+        init_kwargs.update(email=email)
         return cls(**init_kwargs)
