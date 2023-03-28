@@ -63,11 +63,18 @@ class IdentityClaims(BaseModel):
         Create an instance from a Token payload.
 
         Automatically validates that the email is an email address if it is provided.
+        Raises:
+            ValueError: If the payload is invalid or the email is not a valid email address.
         """
-        init_kwargs = dict(
-            client_id=payload.client_id,
-        )
+        if not isinstance(payload, TokenPayload):
+            raise ValueError("Invalid token payload")
+
+        init_kwargs = dict(client_id=payload.client_id)
         email = getattr(payload, "email", None)
         if email is not None:
+            try:
+                EmailStr.validate(email)
+            except ValueError as e:
+                raise ValueError(f"Invalid email address {email}: {e}")
             init_kwargs.update(email=email)
         return cls(**init_kwargs)
