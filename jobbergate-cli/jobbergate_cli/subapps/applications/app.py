@@ -365,6 +365,9 @@ def archive(
 ):
     """
     Archive an existing application.
+
+    An application that is archived will not appear in lists by default. This is a way to
+    effectively hide an application from view.
     """
     change_archive_status(ctx.obj, id, True)
 
