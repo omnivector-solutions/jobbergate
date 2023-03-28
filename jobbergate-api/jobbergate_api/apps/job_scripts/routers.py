@@ -132,23 +132,11 @@ async def job_script_get(job_script_id: int = Query(...)):
     """
     Return the job_script given its id.
     """
-    logger.debug(f"Getting {job_script_id=}")
-
-    query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
-    logger.trace(f"get_query = {render_sql(query)}")
-    job_script = await database.fetch_one(query)
-
-    if not job_script:
-        message = f"JobScript with id={job_script_id} not found."
-        logger.warning(message)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
-        )
+    job_script = await _fetch_job_script(job_script_id)
 
     try:
         response = JobScriptResponse(
-            **job_script,
+            **job_script.dict(),
             job_script_files=JobScriptFiles.get_from_s3(job_script_id),
         )
     except (KeyError, ValueError):
@@ -159,7 +147,7 @@ async def job_script_get(job_script_id: int = Query(...)):
             detail=message,
         )
 
-    logger.debug(f"Job-script data: {response}")
+    logger.debug(f"Job-script data with files: {response}")
 
     return response
 
@@ -211,12 +199,16 @@ async def job_script_list(
     "/job-scripts/{job_script_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete job script",
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
 )
-async def job_script_delete(job_script_id: int = Query(..., description="id of the job script to delete")):
+async def job_script_delete(
+    job_script_id: int = Query(..., description="id of the job script to delete"),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT)),
+):
     """
     Delete job_script given its id.
     """
+    await _fetch_and_verify_ownership(job_script_id, token_payload)
+
     logger.debug(f"Unlinking job_submissions with links to job_script {job_script_id=}")
     update_query = (
         job_submissions_table.update()
@@ -227,22 +219,7 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     await database.execute(update_query)
 
     logger.debug(f"Preparing to delete {job_script_id=}")
-    where_stmt = job_scripts_table.c.id == job_script_id
-
-    get_query = job_scripts_table.select().where(where_stmt)
-    logger.trace(f"get_query = {render_sql(get_query)}")
-
-    raw_job_script = await database.fetch_one(get_query)
-    if not raw_job_script:
-
-        message = f"JobScript with id={job_script_id} not found."
-        logger.warning(message)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
-        )
-
-    delete_query = job_scripts_table.delete().where(where_stmt)
+    delete_query = job_scripts_table.delete().where(job_scripts_table.c.id == job_script_id)
     logger.trace(f"delete_query = {render_sql(delete_query)}")
     await database.execute(delete_query)
 
@@ -258,12 +235,16 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     status_code=status.HTTP_200_OK,
     description="Endpoint to update a job_script given the id",
     response_model=JobScriptResponse,
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
 )
-async def job_script_update(job_script_id: int, job_script: JobScriptUpdateRequest):
+async def job_script_update(
+    job_script_id: int,
+    job_script: JobScriptUpdateRequest,
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT)),
+):
     """
     Update a job_script given its id.
     """
+    await _fetch_and_verify_ownership(job_script_id, token_payload)
     logger.debug(f"Updating {job_script_id=}")
 
     update_query = (
@@ -308,6 +289,49 @@ async def job_script_update(job_script_id: int, job_script: JobScriptUpdateReque
             )
 
     return job_script_response
+
+
+async def _fetch_job_script(id: int) -> JobScriptPartialResponse:
+    logger.debug(f"Fetching job_script by {id=}")
+
+    query = job_scripts_table.select().where(job_scripts_table.c.id == id)
+    logger.trace(f"get_query = {render_sql(query)}")
+
+    job_script_data = await database.fetch_one(query)
+    if not job_script_data:
+        message = f"Job Script {id=} not found."
+        logger.warning(message)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=message,
+        )
+    job_script = JobScriptPartialResponse(**job_script_data)
+    logger.trace(f"Fetched Job Script: {job_script}")
+    return job_script
+
+
+def _require_ownership(job_script: JobScriptPartialResponse, identity: IdentityClaims):
+    """
+    Assert that a job_script is owned by a given identity and raise an HTTP exception otherwise.
+    """
+    message = f"Job Script {job_script.id} is not owned by {identity.email}"
+    logger.error(message)
+    if not job_script.job_script_owner_email == identity.email:
+        raise HTTPException(
+            detail=message,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+
+async def _fetch_and_verify_ownership(id: int, token_payload: TokenPayload) -> JobScriptPartialResponse:
+    """
+    Verify that a job_script fetched by its id is owned by a the identity in the token payload.
+    """
+    job_script = await _fetch_job_script(id)
+    identity = IdentityClaims.from_token_payload(token_payload)
+    logger.debug(f"Verifying ownership of job_script {job_script.id} by owner {identity.email}")
+    _require_ownership(job_script, identity)
+    return job_script
 
 
 def include_router(app):

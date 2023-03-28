@@ -128,23 +128,8 @@ async def job_submission_get(job_submission_id: int = Query(...)):
     """
     Return the job_submission given it's id.
     """
-    logger.debug(f"Getting {job_submission_id=}")
-
-    query = job_submissions_table.select().where(job_submissions_table.c.id == job_submission_id)
-    logger.trace(f"query = {render_sql(query)}")
-    job_submission_data = await database.fetch_one(query)
-
-    if not job_submission_data:
-        message = f"JobSubmission with id={job_submission_id} not found."
-        logger.warning(message)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
-        )
-
-    logger.debug(f"Job-submission data: {job_submission_data=}")
-
-    return JobSubmissionResponse(**job_submission_data)  # type: ignore
+    response = await _fetch_job_submission(job_submission_id)
+    return response
 
 
 @router.get(
@@ -218,29 +203,18 @@ async def job_submission_list(
     "/job-submissions/{job_submission_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete job submission",
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT))],
 )
 async def job_submission_delete(
     job_submission_id: int = Query(..., description="id of the job submission to delete"),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT)),
 ):
     """
     Delete job_submission given its id.
     """
+    await _fetch_and_verify_ownership(job_submission_id, token_payload)
+
     logger.debug(f"Deleting {job_submission_id=}")
-    where_stmt = job_submissions_table.c.id == job_submission_id
-
-    get_query = job_submissions_table.select().where(where_stmt)
-    logger.trace(f"get_query = {render_sql(get_query)}")
-    raw_job_submission = await database.fetch_one(get_query)
-    if not raw_job_submission:
-        message = f"JobSubmission with id={job_submission_id} not found"
-        logger.warning(message)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
-        )
-
-    delete_query = job_submissions_table.delete().where(where_stmt)
+    delete_query = job_submissions_table.delete().where(job_submissions_table.c.id == job_submission_id)
     logger.trace(f"delete_query = {render_sql(delete_query)}")
     await database.execute(delete_query)
 
@@ -250,12 +224,16 @@ async def job_submission_delete(
     status_code=status.HTTP_200_OK,
     description="Endpoint to update a job_submission given the id",
     response_model=JobSubmissionResponse,
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT))],
 )
-async def job_submission_update(job_submission_id: int, job_submission: JobSubmissionUpdateRequest):
+async def job_submission_update(
+    job_submission_id: int, job_submission: JobSubmissionUpdateRequest,
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT)),
+):
     """
     Update a job_submission given its id.
     """
+    await _fetch_and_verify_ownership(job_submission_id, token_payload)
+
     logger.debug(f"Updating {job_submission_id=}")
 
     update_dict = job_submission.dict(exclude_unset=True)
@@ -461,6 +439,49 @@ async def job_submissions_agent_active(
 
     rows = await database.fetch_all(query)
     return rows
+
+
+async def _fetch_job_submission(id: int) -> JobSubmissionResponse:
+    logger.debug(f"Fetching job_submission by {id=}")
+
+    query = job_submissions_table.select().where(job_submissions_table.c.id == id)
+    logger.trace(f"get_query = {render_sql(query)}")
+
+    job_submission_data = await database.fetch_one(query)
+    if not job_submission_data:
+        message = f"Job Submission {id=} not found."
+        logger.warning(message)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=message,
+        )
+    job_submission = JobSubmissionResponse(**job_submission_data)
+    logger.trace(f"Fetched Job Submission: {job_submission}")
+    return job_submission
+
+
+def _require_ownership(job_submission: JobSubmissionResponse, identity: IdentityClaims):
+    """
+    Assert that a job_submission is owned by a given identity and raise an HTTP exception otherwise.
+    """
+    message = f"Job Submission {job_submission.id} is not owned by {identity.email}"
+    logger.error(message)
+    if not job_submission.job_submission_owner_email == identity.email:
+        raise HTTPException(
+            detail=message,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+
+async def _fetch_and_verify_ownership(id: int, token_payload: TokenPayload) -> JobSubmissionResponse:
+    """
+    Verify that a job_script fetched by its id is owned by a the identity in the token payload.
+    """
+    job_submission = await _fetch_job_submission(id)
+    identity = IdentityClaims.from_token_payload(token_payload)
+    logger.debug(f"Verifying ownership of job_submission {job_submission.id} by owner {identity.email}")
+    _require_ownership(job_submission, identity)
+    return job_submission
 
 
 def include_router(app):

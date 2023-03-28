@@ -1046,6 +1046,45 @@ async def test_update_job_script_bad_permission(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
+async def test_update_job_script_wrong_user(
+    client,
+    fill_application_data,
+    fill_job_script_data,
+    inject_security_header,
+):
+    """
+    Test that it is not possible to update a job_script if the requesting user doesn't own it.
+
+    This test proves that it is not possible to update a job_script if the user making the request doesn't
+    own the job script they are requesting to update. We show this by asserting that the response status code
+    of the request is 403, and that the data stored in the database for the job_script is not updated.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(job_script_name="target-js", application_id=inserted_application_id),
+    )
+
+    inject_security_header("wrong-user@forbidden.com", Permissions.JOB_SCRIPTS_EDIT)
+    response = await client.put(
+        f"/jobbergate/job-scripts/{inserted_job_script_id}",
+        json={"job_script_name": "new name"},
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    query = job_scripts_table.select(job_scripts_table.c.job_script_name == "target-js")
+    job_script_row = await database.fetch_one(query)
+
+    assert job_script_row is not None
+    assert job_script_row["job_script_name"] == "target-js"
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
 async def test_delete_job_script(
     client,
     fill_application_data,
@@ -1128,6 +1167,42 @@ async def test_delete_job_script_bad_permission(
     assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
+    response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_delete_job_script_wrong_user(
+    client,
+    fill_application_data,
+    fill_job_script_data,
+    inject_security_header,
+):
+    """
+    Test that it is not possible to delete a job_script when the user is not the owner of the job_script.
+
+    This test proves that it is not possible to delete a job_script if the user don't own it.
+    We show this by assert that a 403 response status code is returned and the job_script still exists in
+    the database after the request.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+
+    inject_security_header("wrong-owner@forbidden.com", Permissions.JOB_SCRIPTS_EDIT)
     response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
