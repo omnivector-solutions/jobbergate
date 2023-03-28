@@ -237,7 +237,7 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     """
     Delete job_script given its id.
     """
-    logger.debug(f"Unlinking job_submissions with links to job_script {job_script_id=}")
+    logger.debug(f"Orphaning job_submissions submitted from job_script {job_script_id=}")
     update_query = (
         job_submissions_table.update()
         .where(job_submissions_table.c.job_script_id == job_script_id)
