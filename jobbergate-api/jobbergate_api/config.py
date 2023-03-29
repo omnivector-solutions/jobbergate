@@ -53,13 +53,24 @@ class Settings(BaseSettings):
     TEST_DATABASE_USER: str = "test-user"
     TEST_DATABASE_PSWD: str = "test-pswd"
     TEST_DATABASE_NAME: str = "test-db"
-    TEST_DATABASE_PORT: int = 5433
+    TEST_DATABASE_PORT: int = 5432
 
     # S3 configuration
     S3_BUCKET_NAME: str = Field("jobbergate-staging-eu-north-1-resources")
     S3_ENDPOINT_URL: Optional[str]
 
     # Security Settings. For details, see https://github.com/omnivector-solutions/armasec
+    
+    # TODO 
+    #   any string in ARMASEC_DOMAIN here avoids error:
+    #     ARMASEC_DOMAIN field required (type=value_error.missing)
+    #   when running: 
+    #     "poetry run dev-tools db start" from jobbergete-api folder
+    #
+    #   check its a problem in other environments
+    # i.e. 
+    # ARMASEC_DOMAIN: str =  ""
+    
     ARMASEC_DOMAIN: str
     ARMASEC_USE_HTTPS: bool = Field(True)
     ARMASEC_AUDIENCE: Optional[HttpUrl]

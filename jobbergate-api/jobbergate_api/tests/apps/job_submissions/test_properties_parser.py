@@ -15,11 +15,14 @@ from pydantic import ValidationError
 from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_submissions.properties_parser import (
     _IDENTIFICATION_FLAG,
+    _ENVIRONMENT_FLAG,
     _INLINE_COMMENT_MARK,
     ArgumentParserCustomExit,
     _clean_jobscript,
-    _clean_line,
-    _flagged_line,
+    _clean_line_sbatch,
+    _clean_line_env_var,
+    slurm_flagged_line,
+    env_var_flagged_line,
     build_mapping_sbatch_to_slurm,
     build_parser,
     convert_sbatch_to_slurm_api,
@@ -59,7 +62,7 @@ def test_flagged_line(line, desired_value):
     """
     Check if the flagged lines are identified properly.
     """
-    actual_value = _flagged_line(line)
+    actual_value = slurm_flagged_line(line)
     assert actual_value == desired_value
 
 
@@ -77,15 +80,26 @@ def test_flagged_line(line, desired_value):
         ("#SBATCH -a=C&Aaccount # A comment", "-a=C&Aaccount"),
     ),
 )
-def test_clean_line(line, desired_value):
+
+def test_clean_line_sbatch(line, desired_value):
     """
     Check if the provided lines are cleaned properly.
 
     I.e., identification flag, inline comments, and comment mark are all removed.
     """
-    actual_value = _clean_line(line)
+    actual_value = _clean_line_sbatch(line)
     assert actual_value == desired_value
 
+
+# TODO
+# def test_clean_line_env_var(line, desired_value):
+#     """
+#     Check if the provided lines are cleaned properly.
+
+#     I.e., identification flag, inline comments, and comment mark are all removed.
+#     """
+#     actual_value = _clean_line_env_var(line_env)
+#     assert actual_value == desired_value_env3.5.0-alpha.0 -- 2023-03-28
 
 @pytest.mark.parametrize(
     "line, desired_value",
@@ -134,6 +148,7 @@ def dummy_slurm_script():
         module load python
 
         echo "Running plot script on a single CPU core"
+        export SLURM_CPUS_PER_TASK=1
 
         python /data/training/SLURM/plot_template.py
 
@@ -168,8 +183,12 @@ def test_clean_jobscript(dummy_slurm_script):
         "--acctg-freq=task=60,energy=30,network=30,filesystem=60",
         "--comment=Hi, I am a comment",
     ]
-    actual_list = list(_clean_jobscript(dummy_slurm_script))
+    actual_list = list(_clean_jobscript(dummy_slurm_script, _IDENTIFICATION_FLAG))
     assert actual_list == desired_list
+
+    actual_list = list(_clean_jobscript(dummy_slurm_script, _ENVIRONMENT_FLAG))
+    assert actual_list == ['SLURM_CPUS_PER_TASK=1']
+
 
 
 @pytest.mark.parametrize("item", sbatch_to_slurm_mapping)
@@ -258,6 +277,20 @@ class TestSbatchToSlurmList:
             args = (i for i in (item.sbatch_short, item.sbatch) if i)
             parser = ArgumentParserCustomExit()
             parser.add_argument(*args, **item.argparser_param)
+
+    def test_sbatch_env_var__is_string(self, item):
+        """
+        Check if the field sbatch_env_var is a string.
+        """
+        assert isinstance(item.sbatch_env_var, str)
+    
+    def test_sbatch_env_var__contains_only_letters(self, item):
+        """
+        Check if the field sbatch_env_var contains only letters.
+        """
+        if item.sbatch_env_var:
+            assert item.sbatch_env_var.replace("_", "").isalpha()
+
 
 
 @pytest.mark.parametrize("field", ["slurmrestd_var_name", "sbatch", "sbatch_short"])
