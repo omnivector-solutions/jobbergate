@@ -11,6 +11,7 @@ Table of Contents
 .. toctree::
    :maxdepth: 2
 
+   Requirements <requirements>
    jobergate.py <jobbergate_py>
    jobergate.yaml <jobbergate_yaml>
    Developer Tools <dev_tools>

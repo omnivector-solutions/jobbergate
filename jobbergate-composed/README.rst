@@ -23,15 +23,15 @@ Requirements
 ------------
 
 * `Docker Compose (next section)`
-* `python version 3.8 or greater`
-* `You may have issues on running on a Ubuntu 18.04 or fewer versions, due to the docker-compose compatibility with jobbergate.`
+* `python version 3.8`
+* `You may have issues on running on a Ubuntu 18.04 or fewer versions, due to the old docker-compose version.`
 
 
 docker-compose
 ..............
 
 Follow `this guide <https://docs.docker.com/compose/install/>`_ to install docker-compose before
-you begin the tutorial. You may also use `Docker Desktop with Docker Compose <https://www.docker.com/get-started/>`
+you begin the tutorial. You may also use `Docker Desktop with Docker Compose <https://www.docker.com/get-started/>`. 
 
 
 Usage
