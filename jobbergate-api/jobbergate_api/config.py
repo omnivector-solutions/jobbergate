@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     TEST_DATABASE_USER: str = "test-user"
     TEST_DATABASE_PSWD: str = "test-pswd"
     TEST_DATABASE_NAME: str = "test-db"
-    TEST_DATABASE_PORT: int = 5432
+    TEST_DATABASE_PORT: int = 5433
 
     # S3 configuration
     S3_BUCKET_NAME: str = Field("jobbergate-staging-eu-north-1-resources")
