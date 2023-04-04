@@ -6,6 +6,7 @@ from typing import Optional
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from loguru import logger
+from sqlalchemy import join, select
 
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
@@ -115,7 +116,7 @@ async def job_script_create(
     logger.debug(f"Job-script created: {dict(job_script_data)}")
 
     response = JobScriptResponse(
-        **job_script_data,
+        **{**job_script_data, "application_name": application.application_name},
         job_script_files=jobscript_files,
     )
     return response
@@ -133,7 +134,17 @@ async def job_script_get(job_script_id: int = Query(...)):
     """
     logger.debug(f"Getting {job_script_id=}")
 
-    query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
+    query = (
+        select([job_scripts_table, applications_table.c.application_name])
+        .select_from(
+            join(
+                job_scripts_table,
+                applications_table,
+                applications_table.columns.id == job_scripts_table.columns.application_id,
+            )
+        )
+        .where(job_scripts_table.c.id == job_script_id)
+    )
     logger.trace(f"get_query = {render_sql(query)}")
     job_script = await database.fetch_one(query)
 
@@ -191,7 +202,13 @@ async def job_script_list(
     """
     logger.debug("Preparing to list job-scripts")
 
-    query = job_scripts_table.select()
+    query = select([job_scripts_table, applications_table.c.application_name]).select_from(
+        join(
+            job_scripts_table,
+            applications_table,
+            applications_table.c.id == job_scripts_table.c.application_id,
+        )
+    )
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     if not all:
         query = query.where(job_scripts_table.c.job_script_owner_email == identity_claims.email)
@@ -201,8 +218,10 @@ async def job_script_list(
         query = query.where(search_clause(search, searchable_fields))
     if sort_field is not None:
         query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
+    else:
+        query = query.order_by(job_scripts_table.c.id.asc())
 
-    logger.trace(f"Query = {render_sql(query)}")
+    logger.debug(f"Query = {render_sql(query)}")
     return await package_response(JobScriptPartialResponse, query, pagination)
 
 

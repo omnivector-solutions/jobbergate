@@ -323,6 +323,7 @@ class JobSubmissionResponse(BaseModel):
     status: JobSubmissionStatus
     report_message: Optional[str]
     execution_parameters: Optional[JobProperties]
+    job_script_name: Optional[str] = None
 
     class Config:
         orm_mode = True

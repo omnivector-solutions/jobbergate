@@ -26,6 +26,7 @@ async def test_create_job_submission__with_client_id_in_token(
     fill_application_data,
     fill_job_script_data,
     fill_job_submission_data,
+    job_script_data,
     client,
     inject_security_header,
     time_frame,
@@ -88,7 +89,9 @@ async def test_create_job_submission__with_client_id_in_token(
         query=job_submissions_table.select().where(job_submissions_table.c.id == id_rows[0][0])
     )
     assert job_submission_raw_data is not None
-    assert job_submission == JobSubmissionResponse(**job_submission_raw_data)  # type: ignore
+    assert job_submission == JobSubmissionResponse(
+        **{**job_submission_raw_data, **job_script_data}
+    )  # type: ignore
 
     # Check that each field is correctly set
     assert job_submission.id == job_submission_raw_data.get("id")
@@ -112,6 +115,7 @@ async def test_create_job_submission__without_execution_parameters(
     fill_application_data,
     fill_job_script_data,
     fill_job_submission_data,
+    job_script_data,
     client,
     inject_security_header,
     time_frame,
@@ -178,7 +182,9 @@ async def test_create_job_submission__without_execution_parameters(
         query=job_submissions_table.select().where(job_submissions_table.c.id == id_rows[0][0])
     )
     assert job_submission_raw_data is not None
-    assert job_submission == JobSubmissionResponse(**job_submission_raw_data)  # type: ignore
+    assert job_submission == JobSubmissionResponse(
+        **{**job_submission_raw_data, **job_script_data}
+    )  # type: ignore
 
     # Check that each field is correctly set
     assert job_submission.id == job_submission_raw_data.get("id")
@@ -204,6 +210,7 @@ async def test_create_job_submission__with_client_id_in_request_body(
     fill_application_data,
     fill_job_script_data,
     fill_job_submission_data,
+    job_script_data,
     client,
     inject_security_header,
     time_frame,
@@ -267,7 +274,9 @@ async def test_create_job_submission__with_client_id_in_request_body(
         query=job_submissions_table.select().where(job_submissions_table.c.id == id_rows[0][0])
     )
     assert job_submission_raw_data is not None
-    assert job_submission == JobSubmissionResponse(**job_submission_raw_data)  # type: ignore
+    assert job_submission == JobSubmissionResponse(
+        **{**job_submission_raw_data, **job_script_data}
+    )  # type: ignore
 
     # Check that each field is correctly set
     assert job_submission.id == job_submission_raw_data.get("id")
@@ -290,6 +299,7 @@ async def test_create_job_submission__with_execution_directory(
     fill_application_data,
     fill_job_script_data,
     fill_job_submission_data,
+    job_script_data,
     client,
     inject_security_header,
     time_frame,
@@ -353,7 +363,9 @@ async def test_create_job_submission__with_execution_directory(
         query=job_submissions_table.select().where(job_submissions_table.c.id == id_rows[0][0])
     )
     assert job_submission_raw_data is not None
-    assert job_submission == JobSubmissionResponse(**job_submission_raw_data)  # type: ignore
+    assert job_submission == JobSubmissionResponse(
+        **{**job_submission_raw_data, **job_script_data}
+    )  # type: ignore
 
     assert job_submission.id == job_submission_raw_data.get("id")
     assert job_submission.job_submission_name == "sub1"
