@@ -4,7 +4,7 @@ Can load configuration from a dotenv file if supplied.
 """
 
 from pathlib import Path
-from sys import exit
+import sys
 from typing import Optional
 
 from pydantic import AnyHttpUrl, BaseSettings, Field, ValidationError, root_validator
@@ -14,6 +14,19 @@ from jobbergate_cli.constants import OV_CONTACT
 from jobbergate_cli.render import terminal_message
 from jobbergate_cli.text_tools import conjoin
 
+def base_path() -> Path:
+    """
+    Return the base path for the application to be used from a pythoninstaller bundle.
+
+    Returns:
+        Path: The base path for the application.
+    
+    Notes:
+        See: https://pyinstaller.org/en/stable/runtime-information.html
+    """
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS)
+    return Path.cwd()
 
 class Settings(BaseSettings):
     """
@@ -97,7 +110,7 @@ class Settings(BaseSettings):
         if constants.JOBBERGATE_DEFAULT_DOTENV_PATH.is_file():
             env_file = constants.JOBBERGATE_DEFAULT_DOTENV_PATH
         else:
-            env_file = Path(".env")
+            env_file = base_path() / ".env"
 
 
 def build_settings(*args, **kwargs):
@@ -119,7 +132,7 @@ def build_settings(*args, **kwargs):
             ),
             subject="Configuration Error",
         )
-        exit(1)
+        sys.exit(1)
 
 
 settings = build_settings()
