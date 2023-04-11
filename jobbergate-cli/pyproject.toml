@@ -20,7 +20,7 @@ classifiers = [
 "Changelog" = "https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-cli/CHANGELOG.rst"
 
 [tool.poetry.dependencies]
-python = "^3.6.2"
+python = ">=3.8,<3.12"
 click = "^8.0.1"
 inquirer = "^2.7.0"
 PyYAML = "^5.4.1"
@@ -42,19 +42,20 @@ pep562 = "^1.1"
 
 [tool.poetry.dev-dependencies]
 black = "^21.9b0"
-pytest-cov = "^3.0.0"
-pytest-random-order = "^1.0.4"
-pytest-freezegun = "^0.4.2"
-pytest-responsemock = "^1.0.1"
-isort = "^5.9.3"
-pytest-env = "^0.6.2"
-respx = "^0.19.2"
-plummet = {extras = ["time-machine"], version = "^1.1.0"}
-pyproject-flake8 = "^0.0.1-alpha.2"
-mypy = "^0.931"
-pytest-mock = "^3.6.0"
-types-PyYAML = "^6.0.4"
 ipython = "^7.10"
+isort = "^5.9.3"
+mypy = "^0.931"
+plummet = {extras = ["time-machine"], version = "^1.1.0"}
+pyinstaller = "^5.9.0"
+pyproject-flake8 = "^0.0.1-alpha.2"
+pytest-cov = "^3.0.0"
+pytest-env = "^0.6.2"
+pytest-freezegun = "^0.4.2"
+pytest-mock = "^3.6.0"
+pytest-random-order = "^1.0.4"
+pytest-responsemock = "^1.0.1"
+respx = "^0.19.2"
+types-PyYAML = "^6.0.4"
 
 [tool.poetry.scripts]
 jobbergate = "jobbergate_cli.main:app"
