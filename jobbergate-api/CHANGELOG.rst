@@ -7,8 +7,10 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 
-3.5.0-alpha.0 -- 2023-03-28
----------------------------
+3.5.0 -- 2023-04-12
+-------------------
+- Removed strict dependence between job_scripts and applications to allow deletes
+- Added functionality to archive applications and job_scripts
 
 3.4.3 -- 2023-01-30
 -------------------
