@@ -207,7 +207,7 @@ async def job_script_delete(
     """
     Delete job_script given its id.
     """
-    await _fetch_and_verify_ownership(job_script_id, token_payload)
+    await _fetch_job_script_and_verify_ownership(job_script_id, token_payload)
 
     logger.debug(f"Unlinking job_submissions with links to job_script {job_script_id=}")
     update_query = (
@@ -244,7 +244,7 @@ async def job_script_update(
     """
     Update a job_script given its id.
     """
-    await _fetch_and_verify_ownership(job_script_id, token_payload)
+    await _fetch_job_script_and_verify_ownership(job_script_id, token_payload)
     logger.debug(f"Updating {job_script_id=}")
 
     update_query = (
@@ -292,6 +292,9 @@ async def job_script_update(
 
 
 async def _fetch_job_script(id: int) -> JobScriptPartialResponse:
+    """
+    Fetch a job script by its id.
+    """
     logger.debug(f"Fetching job_script by {id=}")
 
     query = job_scripts_table.select().where(job_scripts_table.c.id == id)
@@ -323,7 +326,9 @@ def _require_ownership(job_script: JobScriptPartialResponse, identity: IdentityC
         )
 
 
-async def _fetch_and_verify_ownership(id: int, token_payload: TokenPayload) -> JobScriptPartialResponse:
+async def _fetch_job_script_and_verify_ownership(
+    id: int, token_payload: TokenPayload
+) -> JobScriptPartialResponse:
     """
     Verify that a job_script fetched by its id is owned by a the identity in the token payload.
     """

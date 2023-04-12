@@ -2,18 +2,25 @@
 Tests for the /job-submissions/ endpoint.
 """
 import pathlib
+from datetime import datetime
 from unittest import mock
 
 import pytest
-from fastapi import status
+from fastapi import HTTPException, status
 
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.job_submissions.models import job_submissions_table
+from jobbergate_api.apps.job_submissions.routers import (
+    _fetch_job_submission,
+    _fetch_job_submission_and_verify_ownership,
+    _require_ownership,
+)
 from jobbergate_api.apps.job_submissions.schemas import JobProperties, JobSubmissionResponse
 from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.security import IdentityClaims, TokenPayload
 from jobbergate_api.storage import database
 
 # Force the async event loop at the app to begin.
@@ -2126,3 +2133,129 @@ async def test_job_submissions_agent_active__returns_400_if_token_does_not_carry
     response = await client.get("/jobbergate/job-submissions/agent/active")
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "token does not contain a `client_id`" in response.text
+
+
+@pytest.mark.asyncio
+async def test__fetch_job_script__succeeds_with_valid_id(
+    fill_application_data,
+    fill_job_script_data,
+    fill_job_submission_data,
+):
+    """
+    Test that the _fetch_job_script method can successfully retrieve a job_script by id.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+    inserted_job_submission_id = await database.execute(
+        query=job_submissions_table.insert(),
+        values=fill_job_submission_data(
+            job_script_id=inserted_job_script_id,
+            job_submission_name="sub1",
+            job_submission_owner_email="owner1@org.com",
+        ),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 1
+
+    job_submission = await _fetch_job_submission(inserted_job_submission_id)
+    assert job_submission.id == inserted_job_submission_id
+
+
+@pytest.mark.asyncio
+async def test__fetch_job_script__fails_when_job_script_not_found():
+    """
+    Test that the _fetch_job_script method throws a 404 error if no matching job_script is found.
+    """
+    with pytest.raises(HTTPException) as err_info:
+        await _fetch_job_submission(9999)
+
+    assert err_info.value.status_code == status.HTTP_404_NOT_FOUND
+    assert "not found" in err_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test__require_ownership__does_nothing_if_owner_matches():
+    """
+    Test that the helper method _require_ownership() completes without error when the owner matches.
+    """
+    dummy_job_submission = JobSubmissionResponse(
+        job_submission_name="who cares",
+        job_submission_owner_email="owner1@org.com",
+        job_script_id=21,
+        status=JobSubmissionStatus.SUBMITTED,
+    )  # type: ignore
+    identity_claims = IdentityClaims(
+        email="owner1@org.com",
+        client_id="doesn't matter",
+    )
+    _require_ownership(dummy_job_submission, identity_claims)
+
+
+@pytest.mark.asyncio
+async def test__require_ownership__throws_403_http_exception_if_owner_does_not_match():
+    """
+    Test that the helper method _require_ownership() throws an 403 error if the owner does not match.
+    """
+    dummy_job_submission = JobSubmissionResponse(
+        job_submission_name="who cares",
+        job_submission_owner_email="owner1@org.com",
+        job_script_id=21,
+        status=JobSubmissionStatus.SUBMITTED,
+    )  # type: ignore
+    identity_claims = IdentityClaims(
+        email="other@owner.com",
+        client_id="doesn't matter",
+    )
+    with pytest.raises(HTTPException) as err_info:
+        _require_ownership(dummy_job_submission, identity_claims)
+    assert err_info.value.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.asyncio
+async def test__fetch_job_submission_and_verify_ownership__succeeds_with_valid_identifier_and_matching_owner(
+    fill_application_data,
+    fill_job_script_data,
+    fill_job_submission_data,
+):
+    """
+    Test that the _fetch_application_and_verify_ownership method can succeeds with valid inputs.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+    inserted_job_submission_id = await database.execute(
+        query=job_submissions_table.insert(),
+        values=fill_job_submission_data(
+            job_script_id=inserted_job_script_id,
+            job_submission_name="sub1",
+            job_submission_owner_email="owner1@org.com",
+        ),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 1
+
+    token_payload = TokenPayload(
+        sub="dummy",
+        permissions=[],
+        exp=datetime.now(),
+        azp="idiot",
+        email="owner1@org.com",
+    )
+
+    job_submission = await _fetch_job_submission_and_verify_ownership(
+        inserted_job_submission_id, token_payload
+    )
+    assert job_submission.id == inserted_job_submission_id

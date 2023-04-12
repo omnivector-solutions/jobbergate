@@ -211,7 +211,7 @@ async def job_submission_delete(
     """
     Delete job_submission given its id.
     """
-    await _fetch_and_verify_ownership(job_submission_id, token_payload)
+    await _fetch_job_submission_and_verify_ownership(job_submission_id, token_payload)
 
     logger.debug(f"Deleting {job_submission_id=}")
     delete_query = job_submissions_table.delete().where(job_submissions_table.c.id == job_submission_id)
@@ -226,13 +226,14 @@ async def job_submission_delete(
     response_model=JobSubmissionResponse,
 )
 async def job_submission_update(
-    job_submission_id: int, job_submission: JobSubmissionUpdateRequest,
+    job_submission_id: int,
+    job_submission: JobSubmissionUpdateRequest,
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT)),
 ):
     """
     Update a job_submission given its id.
     """
-    await _fetch_and_verify_ownership(job_submission_id, token_payload)
+    await _fetch_job_submission_and_verify_ownership(job_submission_id, token_payload)
 
     logger.debug(f"Updating {job_submission_id=}")
 
@@ -442,6 +443,9 @@ async def job_submissions_agent_active(
 
 
 async def _fetch_job_submission(id: int) -> JobSubmissionResponse:
+    """
+    Fetch a job submission by its id.
+    """
     logger.debug(f"Fetching job_submission by {id=}")
 
     query = job_submissions_table.select().where(job_submissions_table.c.id == id)
@@ -473,9 +477,11 @@ def _require_ownership(job_submission: JobSubmissionResponse, identity: Identity
         )
 
 
-async def _fetch_and_verify_ownership(id: int, token_payload: TokenPayload) -> JobSubmissionResponse:
+async def _fetch_job_submission_and_verify_ownership(
+    id: int, token_payload: TokenPayload
+) -> JobSubmissionResponse:
     """
-    Verify that a job_script fetched by its id is owned by a the identity in the token payload.
+    Verify that a job_script fetched by its id is owned by the identity in the token payload.
     """
     job_submission = await _fetch_job_submission(id)
     identity = IdentityClaims.from_token_payload(token_payload)

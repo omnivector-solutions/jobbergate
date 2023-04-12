@@ -1,16 +1,23 @@
 """
 Tests for the /applications/ endpoint.
 """
+from datetime import datetime
 from unittest import mock
 
 import pytest
-from fastapi import status
+from fastapi import HTTPException, status
 
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
+from jobbergate_api.apps.applications.routers import (
+    _fetch_application,
+    _fetch_application_and_verify_ownership,
+    _require_ownership,
+)
 from jobbergate_api.apps.applications.schemas import ApplicationPartialResponse
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.security import IdentityClaims, TokenPayload
 from jobbergate_api.storage import database, fetch_instance
 
 # Force the async event loop at the app to begin.
@@ -1147,3 +1154,141 @@ async def test_delete_file_fails_on_wrong_owner(
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
     mocked_application_deleter.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test__fetch_application__succeeds_with_valid_id(
+    fill_application_data,
+):
+    """
+    Test that the _fetch_application method can successfully retrieve an application by id.
+    """
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_identifier="app1"),
+    )
+    await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_identifier="app2"),
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 2
+
+    application = await _fetch_application(inserted_id)
+    assert application.id == inserted_id
+
+
+@pytest.mark.asyncio
+async def test__fetch_application__succeeds_with_valid_identifier(
+    fill_application_data,
+):
+    """
+    Test that the _fetch_application method can successfully retrieve an application by identifier.
+    """
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_identifier="app1"),
+    )
+    await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_identifier="app2"),
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 2
+
+    application = await _fetch_application("app1")
+    assert application.id == inserted_id
+
+
+@pytest.mark.asyncio
+async def test__fetch_application__fails_with_invalid_identification_type(
+    fill_application_data,
+):
+    """
+    Test that the _fetch_application method throws a 400 error if the identification argument is invalid.
+    """
+    with pytest.raises(HTTPException) as err_info:
+        await _fetch_application(3.0)
+
+    assert err_info.value.status_code == status.HTTP_400_BAD_REQUEST
+    assert "must be provided as int or str" in err_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test__fetch_application__fails_when_application_not_found(
+    fill_application_data,
+):
+    """
+    Test that the _fetch_application method throws a 404 error if no matching application is found.
+    """
+    with pytest.raises(HTTPException) as err_info:
+        await _fetch_application(9999)
+
+    assert err_info.value.status_code == status.HTTP_404_NOT_FOUND
+    assert "not found" in err_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test__require_ownership__does_nothing_if_owner_matches():
+    """
+    Test that the helper method _require_ownership() completes without error when the owner matches.
+    """
+    dummy_application = ApplicationPartialResponse(
+        id=13,
+        application_name="who cares",
+        application_owner_email="owner1@org.com",
+    )
+    identity_claims = IdentityClaims(
+        email="owner1@org.com",
+        client_id="doesn't matter",
+    )
+    _require_ownership(dummy_application, identity_claims)
+
+
+@pytest.mark.asyncio
+async def test__require_ownership__throws_403_http_exception_if_owner_does_not_match():
+    """
+    Test that the helper method _require_ownership() throws an 403 error if the owner does not match.
+    """
+    dummy_application = ApplicationPartialResponse(
+        id=13,
+        application_name="who cares",
+        application_owner_email="owner1@org.com",
+    )
+    identity_claims = IdentityClaims(
+        email="other@owner.com",
+        client_id="doesn't matter",
+    )
+    with pytest.raises(HTTPException) as err_info:
+        _require_ownership(dummy_application, identity_claims)
+    assert err_info.value.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.asyncio
+async def test__fetch_application_and_verify_ownership__succeeds_with_valid_identifier_and_matching_owner(
+    fill_application_data,
+):
+    """
+    Test that the _fetch_application_and_verify_ownership method can succeeds with valid inputs.
+    """
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_identifier="app1", application_owner_email="owner1@org.com"),
+    )
+    await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_identifier="app2"),
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 2
+
+    token_payload = TokenPayload(
+        sub="dummy",
+        permissions=[],
+        exp=datetime.now(),
+        azp="idiot",
+        email="owner1@org.com",
+    )
+
+    application = await _fetch_application_and_verify_ownership("app1", token_payload)
+    assert application.id == inserted_id

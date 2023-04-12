@@ -87,7 +87,7 @@ async def applications_upload(
     """
     Upload application files using an authenticated user token.
     """
-    application = await _fetch_and_verify_ownership(application_id, token_payload)
+    application = await _fetch_application_and_verify_ownership(application_id, token_payload)
 
     logger.debug(f"Preparing to receive upload files for {application_id=}")
 
@@ -123,7 +123,7 @@ async def applications_delete_upload(
     """
     Delete application files using an authenticated user token.
     """
-    application = await _fetch_and_verify_ownership(application_id, token_payload)
+    application = await _fetch_application_and_verify_ownership(application_id, token_payload)
 
     logger.debug(f"Preparing to delete files for {application_id=}")
 
@@ -157,7 +157,7 @@ async def application_delete(
     """
     Delete application from the database and S3 given it's id.
     """
-    application = await _fetch_and_verify_ownership(application_id, token_payload)
+    application = await _fetch_application_and_verify_ownership(application_id, token_payload)
 
     logger.debug(f"Unlinking job_scripts with links to application {application.id=}")
     update_query = (
@@ -193,7 +193,7 @@ async def application_delete_by_identifier(
     Delete application from the database and S3 given it's identifier.
     """
     logger.debug(f"Preparing to delete {identifier=} from the database and S3")
-    application = await _fetch_and_verify_ownership(identifier, token_payload)
+    application = await _fetch_application_and_verify_ownership(identifier, token_payload)
 
     delete_query = applications_table.delete().where(applications_table.c.id == application.id)
     logger.trace(f"delete_query = {render_sql(delete_query)}")
@@ -280,7 +280,7 @@ async def application_update(
     Update an application given it's id.
     """
     logger.debug(f"Preparing to update {application_id=}")
-    await _fetch_and_verify_ownership(application_id, token_payload)
+    await _fetch_application_and_verify_ownership(application_id, token_payload)
 
     update_query = (
         applications_table.update()
@@ -301,6 +301,9 @@ async def application_update(
 
 
 async def _fetch_application(application_identification: Union[int, str]) -> ApplicationPartialResponse:
+    """
+    Fetch an application given either the integer id or string identifier.
+    """
     logger.debug(f"Fetching application by {application_identification=}")
 
     if isinstance(application_identification, int):
@@ -345,7 +348,7 @@ def _require_ownership(application: ApplicationPartialResponse, identity: Identi
         )
 
 
-async def _fetch_and_verify_ownership(
+async def _fetch_application_and_verify_ownership(
     identification: Union[int, str], token_payload: TokenPayload
 ) -> ApplicationPartialResponse:
     """
