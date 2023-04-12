@@ -120,6 +120,8 @@ The following sub-commands are available for ``applications``:
 * get-one
 * list
 * update
+* archive
+* restore
 
 Details for each subcommand can be viewed by passing the ``--help`` flag to any of them.
 
@@ -143,6 +145,8 @@ The following sub-commands are available for ``job-scripts``:
 * get-one
 * list
 * update
+* archive
+* restore
 
 Details for each subcommand can be viewed by passing the ``--help`` flag to any of them.
 

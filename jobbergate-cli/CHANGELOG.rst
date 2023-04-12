@@ -15,6 +15,8 @@ Unreleased
 
 3.5.0-alpha.0 -- 2023-03-28
 ---------------------------
+- Added archive and restore commands
+- Added confirmation prompt for delete commands
 
 3.4.3 -- 2023-01-30
 -------------------
