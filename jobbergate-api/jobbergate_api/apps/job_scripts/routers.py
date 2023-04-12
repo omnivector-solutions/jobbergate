@@ -116,7 +116,8 @@ async def job_script_create(
     logger.debug(f"Job-script created: {dict(job_script_data)}")
 
     response = JobScriptResponse(
-        **{**job_script_data, "application_name": application.application_name},
+        **job_script_data,
+        application_name=application.application_name,
         job_script_files=jobscript_files,
     )
     return response

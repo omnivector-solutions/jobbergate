@@ -116,7 +116,7 @@ async def job_submission_create(
     logger.debug(f"Job-submission created: {job_submission_data=}")
 
     return JobSubmissionResponse(
-        **{**job_submission_data, "job_script_name": raw_job_script.get("job_script_name")}  # type: ignore
+        **job_submission_data, job_script_name=raw_job_script.get("job_script_name")  # type: ignore
     )
 
 
