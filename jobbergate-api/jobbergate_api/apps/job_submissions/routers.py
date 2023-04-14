@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from armasec import TokenPayload
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from loguru import logger
-from sqlalchemy import select
+from sqlalchemy import join, select
 
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
@@ -115,7 +115,9 @@ async def job_submission_create(
 
     logger.debug(f"Job-submission created: {job_submission_data=}")
 
-    return JobSubmissionResponse(**job_submission_data)  # type: ignore
+    return JobSubmissionResponse(
+        **job_submission_data, job_script_name=raw_job_script.get("job_script_name")  # type: ignore
+    )
 
 
 @router.get(
@@ -130,7 +132,17 @@ async def job_submission_get(job_submission_id: int = Query(...)):
     """
     logger.debug(f"Getting {job_submission_id=}")
 
-    query = job_submissions_table.select().where(job_submissions_table.c.id == job_submission_id)
+    query = (
+        select([job_submissions_table, job_scripts_table.c.job_script_name])
+        .select_from(
+            join(
+                job_submissions_table,
+                job_scripts_table,
+                job_submissions_table.c.job_script_id == job_scripts_table.c.id,
+            )
+        )
+        .where(job_submissions_table.c.id == job_submission_id)
+    )
     logger.trace(f"query = {render_sql(query)}")
     job_submission_data = await database.fetch_one(query)
 
@@ -181,7 +193,13 @@ async def job_submission_list(
     logger.debug("Fetching job submissions")
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     logger.debug(f"Extracted identity claims from token: {identity_claims}")
-    query = job_submissions_table.select()
+    query = select([job_submissions_table, job_scripts_table.c.job_script_name]).select_from(
+        join(
+            job_submissions_table,
+            job_scripts_table,
+            job_submissions_table.c.job_script_id == job_scripts_table.c.id,
+        )
+    )
 
     logger.debug("Building query")
     if submit_status:
@@ -205,6 +223,8 @@ async def job_submission_list(
         query = query.where(search_clause(search, searchable_fields))
     if sort_field is not None:
         query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
+    else:
+        query = query.order_by(job_submissions_table.c.id.asc())
 
     logger.trace(f"Query built as: {render_sql(query)}")
 
