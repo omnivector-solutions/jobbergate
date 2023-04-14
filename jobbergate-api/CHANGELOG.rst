@@ -7,6 +7,7 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 - Added endpoint to update the application files individually
+- Patched job submissions and job scripts GET endpoints to return the parent name in the payload
 
 3.5.0-alpha.0 -- 2023-03-28
 ---------------------------
