@@ -1,6 +1,7 @@
 """
 Router for the Application resource.
 """
+from pathlib import PurePath
 from typing import List, Optional, Union
 
 from armasec import TokenPayload
@@ -78,9 +79,7 @@ async def applications_create(
 )
 async def applications_upload(
     application_id: int = Query(..., description="id of the application for which to upload a file"),
-    upload_files: List[UploadFile] = File(
-        ..., media_type="text/plain", description="The application files to be uploaded"
-    ),
+    upload_files: List[UploadFile] = File(..., description="The application files to be uploaded"),
     content_length: int = Header(...),
 ):
     """
@@ -106,6 +105,34 @@ async def applications_upload(
 
     logger.trace(f"update_query = {render_sql(update_query)}")
     await database.execute(update_query)
+
+
+@router.patch(
+    "/applications/{application_id}/upload/individually",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={204: {"description": "File(s) was(were) patched successfully"}},
+    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
+)
+async def update_application_source_file(
+    application_id: int = Query(..., description="id of the application for which to upload a file"),
+    source_file: Union[UploadFile, None] = File(default=None),
+    config_file: Union[UploadFile, None] = File(default=None),
+    template_files: Union[List[UploadFile], None] = None,
+):
+    """Update the application files individually."""
+    # TODO: limit by file size
+    ApplicationFiles(
+        application_config=config_file.file.read().decode("utf-8") if config_file is not None else None,
+        application_source_file=source_file.file.read().decode("utf-8") if source_file is not None else None,
+        application_templates={
+            PurePath(template_file.filename).name: template_file.file.read().decode("utf-8")
+            for template_file in template_files
+        }
+        if template_files is not None
+        else {},
+    ).write_to_s3(application_id, remove_previous_files=False)
+
+    return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.delete(

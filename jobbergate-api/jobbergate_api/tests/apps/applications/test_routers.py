@@ -943,6 +943,110 @@ async def test_upload_file__works_with_small_file(
 
 @pytest.mark.asyncio
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.write_to_s3")
+async def test_upload_file_individually(
+    mocked_application_writer,
+    client,
+    inject_security_header,
+    fill_application_data,
+    tweak_settings,
+    make_dummy_file,
+    dummy_application_config,
+    dummy_template,
+    dummy_application_source_file,
+    make_files_param,
+):
+    """
+    Test that the application files can be patched individually.
+
+    This test proves that any application file, i.e. config, source or template,
+    can be patched individually.
+    """
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+    application = await fetch_instance(inserted_id, applications_table, ApplicationPartialResponse)
+    assert not application.application_uploaded
+
+    dummy_config_file = make_dummy_file("jobbergate.yaml", content=dummy_application_config)
+    dummy_source_file = make_dummy_file("jobbergate.py", content=dummy_application_source_file)
+    dummy_template_file = make_dummy_file("jobbergate.yaml", content=dummy_template)
+
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
+
+    # test upload only the source file
+    response = await client.patch(
+        f"/jobbergate/applications/{inserted_id}/upload/individually",
+        files={"source_file": open(dummy_source_file, "rb")},
+    )
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    # test upload only the config file
+    response = await client.patch(
+        f"/jobbergate/applications/{inserted_id}/upload/individually",
+        files={"config_file": open(dummy_config_file, "rb")},
+    )
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    # test upload only the template file
+    response = await client.patch(
+        f"/jobbergate/applications/{inserted_id}/upload/individually",
+        files={"template_file": open(dummy_template_file, "rb")},
+    )
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    # test upload the source file and the template file
+    response = await client.patch(
+        f"/jobbergate/applications/{inserted_id}/upload/individually",
+        files={
+            "source_file": open(dummy_source_file, "rb"),
+            "template_file": open(dummy_template_file, "rb"),
+        },
+    )
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    # test upload the source file and the config file
+    response = await client.patch(
+        f"/jobbergate/applications/{inserted_id}/upload/individually",
+        files={"source_file": open(dummy_source_file, "rb"), "config_file": open(dummy_config_file, "rb")},
+    )
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    # test upload the config file and the template file
+    response = await client.patch(
+        f"/jobbergate/applications/{inserted_id}/upload/individually",
+        files={
+            "template_file": open(dummy_template_file, "rb"),
+            "config_file": open(dummy_config_file, "rb"),
+        },
+    )
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    # test upload all files
+    response = await client.patch(
+        f"/jobbergate/applications/{inserted_id}/upload/individually",
+        files={
+            "template_file": open(dummy_template_file, "rb"),
+            "source_file": open(dummy_source_file, "rb"),
+            "config_file": open(dummy_config_file, "rb"),
+        },
+    )
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    mocked_application_writer.assert_has_calls(
+        [mock.call(inserted_id, remove_previous_files=False) for _ in range(7)]
+    )
+
+
+@pytest.mark.asyncio
+@mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.write_to_s3")
 async def test_upload_file__fails_with_413_on_large_file(
     mocked_application_writer,
     client,
