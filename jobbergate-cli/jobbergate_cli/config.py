@@ -39,6 +39,8 @@ class Settings(BaseSettings):
 
     # enable http tracing
     JOBBERGATE_DEBUG: bool = Field(False)
+    JOBBERGATE_REQUESTS_TIMEOUT: Optional[int] = None
+    JOBBERGATE_REQUESTS_VERIFY: bool = True
 
     # Setry's configuration
     SENTRY_DSN: Optional[str]
