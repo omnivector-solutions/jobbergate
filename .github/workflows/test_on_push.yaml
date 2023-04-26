@@ -18,10 +18,6 @@ jobs:
         with:
           python-version: "3.8"
           architecture: "x64"
-          cache: "poetry-core-cache"
-          cache-dependency-path: |
-            jobbergate-core/poetry.lock
-            jobbergate-core/pyproject.toml
       - name: "run quality control checks"
         working-directory: jobbergate-core
         run: |
@@ -53,10 +49,6 @@ jobs:
         with:
           python-version: "3.8"
           architecture: "x64"
-          cache: "poetry-api-cache"
-          cache-dependency-path: |
-            jobbergate-api/poetry.lock
-            jobbergate-api/pyproject.toml
       - name: "run quality control checks"
         working-directory: jobbergate-api
         env:
@@ -83,5 +75,6 @@ jobs:
       - name: "run quality control checks"
         working-directory: jobbergate-cli
         run: |
+          poetry config virtualenvs.in-project true
           poetry env use "3.6"
           make qa
