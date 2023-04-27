@@ -9,6 +9,7 @@ Unreleased
 
 3.5.0-alpha.2 -- 2023-04-27
 ---------------------------
+- Updated container files and dependencies to improve the deployment (no user facing changes)
 
 3.5.0-alpha.1 -- 2023-04-14
 ---------------------------
