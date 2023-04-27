@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 
+3.5.0-alpha.0 -- 2023-04-27
+---------------------------
+
 3.5.0-alpha.1 -- 2023-04-14
 ---------------------------
 - Added endpoint to update the application files individually
