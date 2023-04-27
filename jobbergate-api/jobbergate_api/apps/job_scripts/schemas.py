@@ -108,8 +108,8 @@ class JobScriptPartialResponse(BaseModel):
     job_script_name: str
     job_script_description: Optional[str] = None
     job_script_owner_email: str
-    application_id: int
     application_name: Optional[str] = None
+    application_id: Optional[int] = None
     is_archived: bool
 
     class Config:

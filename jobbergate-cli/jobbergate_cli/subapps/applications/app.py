@@ -33,6 +33,7 @@ HIDDEN_FIELDS = [
     "application_config",
     "application_source_file",
     "application_templates",
+    "is_archived",
     "created_at",
     "updated_at",
 ]
