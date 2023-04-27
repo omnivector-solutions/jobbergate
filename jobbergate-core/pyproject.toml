@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jobbergate-core"
-version = "3.5.0-alpha.1"
+version = "3.5.0-alpha.2"
 description = "Jobbergate Core"
 authors = ["Omnivector Solutions <info@omnivector.solutions>"]
 license = "MIT"
