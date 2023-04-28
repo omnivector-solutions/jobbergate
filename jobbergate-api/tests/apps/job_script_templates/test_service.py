@@ -1,4 +1,4 @@
-"""Database models for the job script template resource."""
+"""Database models for the smart template resource."""
 from typing import Any
 
 import pytest

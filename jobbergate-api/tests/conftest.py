@@ -57,17 +57,19 @@ async def database():
 
 
 @pytest.fixture(autouse=True, scope="function")
-async def enforce_empty_database(database):
+async def enforce_empty_database():
     """
     Make sure our database is empty at the end of each test.
 
     Notes:
         The order is important when deleting tables given that some tables have foreign keys.
     """
-    await database.run_sync(Base.metadata.create_all, checkfirst=True)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all, checkfirst=True)
     yield
-    for table in reversed(Base.metadata.sorted_tables):
-        await database.execute(table.delete())
+    async with engine.begin() as conn:
+        for table in reversed(Base.metadata.sorted_tables):
+            await conn.execute(table.delete())
 
 
 @pytest.fixture(autouse=True)

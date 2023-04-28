@@ -2,16 +2,16 @@
 Database model for the JobScript resource.
 """
 from sqlalchemy import Enum, ForeignKey, Integer, String
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.schema import Column
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.models import Base, BaseFieldsMixin, ExtraFieldsMixin
+from jobbergate_api.apps.models import Base, BaseFieldsMixin, ExtraFieldsMixin, Mapped, mapped_column
 
 
 class JobScript(Base, BaseFieldsMixin, ExtraFieldsMixin):
     """
-    Job script template table definition.
+    Job script table definition.
 
     Attributes:
         id: The id of the job script.
@@ -25,30 +25,30 @@ class JobScript(Base, BaseFieldsMixin, ExtraFieldsMixin):
 
     __tablename__ = "job_scripts"
 
-    id: int = Column(Integer, primary_key=True)
-    parent_template_id: int = Column(
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    parent_template_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("job_script_templates.id"),
+        ForeignKey("job_script_templates.id", ondelete="SET NULL"),
         nullable=True,
     )
 
-    # files: list[JobScriptFile] = relationship("JobScriptFile", lazy="subquery")
+    files: Mapped[list["JobScriptFile"]] = relationship("JobScriptFile", lazy="subquery")
 
 
 class JobScriptFile(Base, BaseFieldsMixin):
-    """Job script template files table definition."""
+    """Job script files table definition."""
 
     __tablename__ = "job_script_files"
 
-    id: int = Column(
+    id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey(JobScript.id, ondelete="CASCADE"),
         primary_key=True,
     )
-    filename: str = Column(String, primary_key=True)
-    file_type: FileType = Column(Enum(FileType), nullable=False)
+    filename: Mapped[str] = mapped_column(String, primary_key=True)
+    file_type: Mapped[FileType] = mapped_column(Enum(FileType), nullable=False)
 
-    @property
+    @hybrid_property
     def file_key(self) -> str:
         return f"{self.__tablename__}/{self.id}/{self.filename}"
 

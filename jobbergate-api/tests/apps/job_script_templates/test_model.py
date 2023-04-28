@@ -43,35 +43,6 @@ def get_session():
     return _get_session
 
 
-@pytest.fixture(scope="session", autouse=True)
-def event_loop():
-    """
-    Create an instance of the default event loop for each test case.
-
-    This fixture is used to run each test in a different async loop. Running all
-    in the same loop causes errors with SQLAlchemy. See the following two issues:
-
-    1. https://github.com/tiangolo/fastapi/issues/5692
-    2. https://github.com/encode/starlette/issues/1315
-
-    [Reference](https://tonybaloney.github.io/posts/async-test-patterns-for-pytest-and-unittest.html)
-    """
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(autouse=True, scope="session")
-async def enforce_empty_database():
-    """
-    Make sure our database is empty at the end of each test.
-    """
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
-        yield
-
-
 @pytest.fixture(scope="module")
 def template_values():
     """Return a dictionary with dummy values."""
@@ -85,7 +56,7 @@ def template_values():
 
 
 @pytest.mark.asyncio
-async def test_job_templates__success(template_values, time_frame):
+async def test_job_templates__success(template_values, time_frame, database):
     """
     Test that job_script_templates table is created and populated correctly.
 

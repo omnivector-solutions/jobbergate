@@ -38,6 +38,7 @@ class JobScriptTemplate(Base, BaseFieldsMixin, ExtraFieldsMixin):
     )
 
     files: Mapped[list["JobScriptTemplateFile"]] = relationship("JobScriptTemplateFile", lazy="subquery")
+    smart_template: Mapped["SmartTemplate"] = relationship("SmartTemplate", lazy="subquery")
 
 
 class JobScriptTemplateFile(Base, BaseFieldsMixin):
@@ -58,5 +59,40 @@ class JobScriptTemplateFile(Base, BaseFieldsMixin):
         return f"{self.__tablename__}/{self.id}/{self.filename}"
 
 
+class SmartTemplate(Base, BaseFieldsMixin):
+    """
+    Smart template table definition.
+
+    Attributes:
+        id: The id of the smart template (foreign key from job-script-template).
+        runtime_config: The runtime configuration of the smart template.
+        created_at: The date and time when the smart template was created.
+        updated_at: The date and time when the smart template was updated.
+
+    Note:
+        Class defined here to avoid circular import issues with JobScriptTemplate.
+    """
+
+    __tablename__ = "smart_templates"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey(JobScriptTemplate.id, ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )
+    runtime_config: Mapped[dict[str, Any]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=text("'{}'::jsonb"),
+        server_default=text("'{}'::jsonb"),
+    )
+
+    @property
+    def file_key(self) -> str:
+        return f"{self.__tablename__}/{self.id}/jobbergate.py"
+
+
 job_script_templates_table = JobScriptTemplate.__table__
 job_script_template_files_table = JobScriptTemplateFile.__table__
+smart_templates_table = SmartTemplate.__table__
