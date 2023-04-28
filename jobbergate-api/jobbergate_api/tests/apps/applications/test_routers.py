@@ -1,16 +1,15 @@
 """
 Tests for the /applications/ endpoint.
 """
-import json
 from unittest import mock
 
-import asyncpg
 import pytest
 from fastapi import status
 
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import ApplicationPartialResponse
+from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.storage import database, fetch_instance
 
@@ -245,15 +244,18 @@ async def test_delete_application_not_found(client, inject_security_header):
 
 
 @pytest.mark.asyncio
-async def test_delete_application__fk_error(
+@mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.delete_from_s3")
+async def test_delete_application__unlinks_job_scripts(
+    mocked_application_deleter,
     client,
     application_data,
+    job_script_data,
     inject_security_header,
 ):
     """
-    Test DELETE /applications/<id> correctly returns a 409 when a foreign-key error occurs.
+    Test DELETE /applications/<id> correctly deletes an application linked to a job_script.
 
-    Test that a helpful message when a delete is blocked by a foreign-key constraint.
+    Test that a the application_id field for connected job_scripts is set to null.
     """
     inserted_id = await database.execute(
         query=applications_table.insert(),
@@ -262,23 +264,32 @@ async def test_delete_application__fk_error(
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
-    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
-    with mock.patch(
-        "jobbergate_api.storage.database.execute",
-        side_effect=asyncpg.exceptions.ForeignKeyViolationError(
-            f"""
-            update or delete on table "applications" violates foreign key constraint
-            "job_scripts_application_id_fkey" on table "job_scripts"
-            DETAIL:  Key (id)=({inserted_id}) is still referenced from table "job_scripts".
-            """
+    await database.execute(
+        query=job_scripts_table.insert(),
+        values=dict(
+            **job_script_data,
+            application_id=inserted_id,
         ),
-    ):
-        response = await client.delete(f"/jobbergate/applications/{inserted_id}")
-    assert response.status_code == status.HTTP_409_CONFLICT
-    error_data = json.loads(response.text)["detail"]
-    assert error_data["message"] == "Delete failed due to foreign-key constraint"
-    assert error_data["table"] == "job_scripts"
-    assert error_data["pk_id"] == f"{inserted_id}"
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+    count = await database.fetch_all(
+        "SELECT COUNT(*) FROM job_scripts where application_id=:inserted_id",
+        values=dict(inserted_id=inserted_id),
+    )
+    assert count[0][0] == 1
+
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
+    response = await client.delete(f"/jobbergate/applications/{inserted_id}")
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 0
+
+    count = await database.fetch_all(
+        "SELECT COUNT(*) FROM job_scripts where application_id=:inserted_id",
+        values=dict(inserted_id=inserted_id),
+    )
+    assert count[0][0] == 0
 
 
 @pytest.mark.asyncio
@@ -419,7 +430,8 @@ async def test_get_applications__no_params(
 
     This test proves that GET /applications returns the correct applications for the user making
     the request. We show this by asserting that the applications returned in the response are
-    only applications owned by the user making the request.
+    only applications owned by the user making the request. This test also ensures that archived
+    applications are not included by default.
     """
     await database.execute_many(
         applications_table.insert(),
@@ -427,10 +439,11 @@ async def test_get_applications__no_params(
             dict(application_identifier="app1"),
             dict(application_identifier="app2"),
             dict(application_identifier="app3"),
+            dict(application_identifier="app4", is_archived=True),
         ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 3
+    assert count[0][0] == 4
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
     response = await client.get("/jobbergate/applications/")
@@ -494,7 +507,7 @@ async def test_get_applications__with_user_param(
     This test proves that the user making the request cannot see applications owned by other users.
     We show this by creating applications that are owned by another user id and assert that
     the user making the request to list applications doesn't see any of the other user's
-    applications in the response
+    applications in the response.
     """
     await database.execute_many(
         query=applications_table.insert(),
@@ -588,6 +601,59 @@ async def test_get_applications__with_all_param(
     )
 
     response = await client.get("/jobbergate/applications/?all=True")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    results = data.get("results")
+    pagination = data.get("pagination")
+    assert pagination == dict(
+        total=3,
+        start=None,
+        limit=None,
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_applications__with_include_archived_param(
+    client,
+    fill_all_application_data,
+    inject_security_header,
+):
+    """
+    Test that listing applications, when include_archived=True, contains archived applications.
+
+    This test proves that the user making the request can see archived applications.
+    We show this by creating three applications, two that are normal, and one that is archived.
+    Assert that the response to GET /applications/?include_archived=True includes all three applications.
+    """
+    await database.execute_many(
+        query=applications_table.insert(),
+        values=fill_all_application_data(
+            dict(application_identifier="app1"),
+            dict(application_identifier="app2", is_archived=True),
+            dict(application_identifier="app3"),
+        ),
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 3
+
+    inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
+
+    response = await client.get("/jobbergate/applications")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    results = data.get("results")
+    assert [d["application_identifier"] for d in results] == ["app1", "app3"]
+
+    pagination = data.get("pagination")
+    assert pagination == dict(
+        total=2,
+        start=None,
+        limit=None,
+    )
+
+    response = await client.get("/jobbergate/applications/?include_archived=True")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -827,6 +893,7 @@ async def test_update_application(
                 application_name="new_name",
                 application_identifier="new_identifier",
                 application_description="new_description",
+                is_archived=True,
             ),
         )
     assert response.status_code == status.HTTP_200_OK
@@ -835,6 +902,7 @@ async def test_update_application(
     assert data["application_name"] == "new_name"
     assert data["application_identifier"] == "new_identifier"
     assert data["application_description"] == "new_description"
+    assert data["is_archived"] is True
 
     query = applications_table.select(applications_table.c.id == id)
     result = await database.fetch_one(query)
@@ -844,6 +912,7 @@ async def test_update_application(
     assert result["application_identifier"] == "new_identifier"
     assert result["application_owner_email"] == "owner1@org.com"
     assert result["application_description"] == "new_description"
+    assert result["is_archived"] is True
     assert result["updated_at"] in window
 
 

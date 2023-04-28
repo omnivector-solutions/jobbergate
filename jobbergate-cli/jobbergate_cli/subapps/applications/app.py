@@ -10,10 +10,17 @@ import typer
 
 from jobbergate_cli.constants import OV_CONTACT, SortOrder
 from jobbergate_cli.exceptions import handle_abort
-from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
+from jobbergate_cli.render import (
+    StyleMapper,
+    render_list_results,
+    render_single_result,
+    terminal_confirm,
+    terminal_message,
+)
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 from jobbergate_cli.subapps.applications.tools import (
+    change_archive_status,
     fetch_application_data,
     load_default_config,
     save_application_files,
@@ -26,6 +33,7 @@ HIDDEN_FIELDS = [
     "application_config",
     "application_source_file",
     "application_templates",
+    "is_archived",
     "created_at",
     "updated_at",
 ]
@@ -65,6 +73,7 @@ def list_all(
     ctx: typer.Context,
     show_all: bool = typer.Option(False, "--all", help="Show all applications, even the ones without identifier"),
     user_only: bool = typer.Option(False, "--user", help="Show only applications owned by the current user"),
+    include_archived: bool = typer.Option(False, help="Show archived applications as well"),
     search: Optional[str] = typer.Option(None, help="Apply a search term to results"),
     sort_order: SortOrder = typer.Option(SortOrder.UNSORTED, help="Specify sort order"),
     sort_field: Optional[str] = typer.Option(None, help="The field by which results should be sorted"),
@@ -81,6 +90,7 @@ def list_all(
     params: Dict[str, Any] = dict(
         all=show_all,
         user=user_only,
+        include_archived=include_archived,
     )
     if search is not None:
         params["search"] = search
@@ -107,7 +117,7 @@ def list_all(
         envelope,
         title="Applications List",
         style_mapper=style_mapper,
-        hidden_fields=HIDDEN_FIELDS,
+        hidden_fields=HIDDEN_FIELDS + (["is_archived"] if include_archived else []),
     )
 
 
@@ -295,10 +305,33 @@ def delete(
         ...,
         help=f"the specific id of the application to delete. {ID_NOTE}",
     ),
+    confirm: bool = typer.Option(
+        None,
+        "--confirm",
+        "-y",
+        help="If supplied, do not ask for confirmation; just delete.",
+    ),
 ):
     """
     Delete an existing application.
     """
+    if not confirm and not terminal_confirm(
+        """
+        [yellow]Any files uploaded for this Application will be completely removed.
+        Any references to it in other items will also be removed.
+        """,
+        subject="Deleting is permanent!",
+        color="red",
+    ):
+        terminal_message(
+            """
+            No application was deleted.
+            """,
+            subject="Aborted",
+            color="yellow",
+        )
+        return
+
     jg_ctx: JobbergateContext = ctx.obj
 
     # Make static type checkers happy
@@ -320,6 +353,39 @@ def delete(
         """,
         subject="Application delete succeeded",
     )
+
+
+@app.command()
+@handle_abort
+def archive(
+    ctx: typer.Context,
+    id: int = typer.Option(
+        ...,
+        help=f"the specific id of the application to archive. {ID_NOTE}",
+    ),
+):
+    """
+    Archive an existing application.
+
+    An application that is archived will not appear in lists by default. This is a way to
+    effectively hide an application from view.
+    """
+    change_archive_status(ctx.obj, id, True)
+
+
+@app.command()
+@handle_abort
+def restore(
+    ctx: typer.Context,
+    id: int = typer.Option(
+        ...,
+        help=f"the specific id of the application to restore from the archive. {ID_NOTE}",
+    ),
+):
+    """
+    Restore an archived application.
+    """
+    change_archive_status(ctx.obj, id, False)
 
 
 @app.command()

@@ -6,7 +6,7 @@ from typing import Optional
 from armasec import TokenPayload
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from loguru import logger
-from sqlalchemy import join, select
+from sqlalchemy import join, not_, select
 
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
@@ -19,6 +19,7 @@ from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptResponse,
     JobScriptUpdateRequest,
 )
+from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.security import IdentityClaims, guard
@@ -183,6 +184,7 @@ async def job_script_get(job_script_id: int = Query(...)):
 async def job_script_list(
     pagination: Pagination = Depends(),
     all: Optional[bool] = Query(False),
+    include_archived: bool = Query(False),
     search: Optional[str] = Query(None),
     sort_field: Optional[str] = Query(None),
     from_application_id: Optional[int] = Query(
@@ -213,6 +215,8 @@ async def job_script_list(
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     if not all:
         query = query.where(job_scripts_table.c.job_script_owner_email == identity_claims.email)
+    if not include_archived:
+        query = query.where(not_(job_scripts_table.c.is_archived))
     if from_application_id is not None:
         query = query.where(job_scripts_table.c.application_id == from_application_id)
     if search is not None:
@@ -236,6 +240,15 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     """
     Delete job_script given its id.
     """
+    logger.debug(f"Orphaning job_submissions submitted from job_script {job_script_id=}")
+    update_query = (
+        job_submissions_table.update()
+        .where(job_submissions_table.c.job_script_id == job_script_id)
+        .values(dict(job_script_id=None))
+    )
+    logger.trace(f"update_query = {render_sql(update_query)}")
+    await database.execute(update_query)
+
     logger.debug(f"Preparing to delete {job_script_id=}")
     where_stmt = job_scripts_table.c.id == job_script_id
 

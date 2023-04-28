@@ -97,6 +97,7 @@ class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     application_description: Optional[str] = None
     application_owner_email: str
     application_uploaded: bool
+    is_archived: Optional[bool] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     application_config: Optional[str] = None
@@ -124,6 +125,7 @@ class JobScriptResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     job_script_description: Optional[str] = None
     job_script_files: JobScriptFiles
     job_script_owner_email: str
+    is_archived: Optional[bool] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

@@ -88,6 +88,10 @@ application_meta_mapper = MetaMapper(
         description="Indicates if the application file zip has been uploaded yet.",
         example=True,
     ),
+    is_archived=MetaField(
+        description="Indicates if the application has been archived.",
+        example=False,
+    ),
 )
 
 
@@ -187,6 +191,7 @@ class ApplicationUpdateRequest(BaseModel):
     application_identifier: Optional[str]
     application_description: Optional[str]
     application_config: Optional[str]
+    is_archived: Optional[bool]
 
     class Config:
         schema_extra = application_meta_mapper
@@ -205,6 +210,7 @@ class ApplicationPartialResponse(BaseModel):
     application_description: Optional[str]
     application_owner_email: str
     application_uploaded: bool
+    is_archived: bool
 
     class Config:
         orm_mode = True

@@ -1,4 +1,5 @@
 import importlib
+import json
 import pathlib
 
 import httpx
@@ -13,6 +14,7 @@ from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.tools import (
+    change_archive_status,
     execute_application,
     fetch_application_data,
     get_upload_files,
@@ -303,3 +305,43 @@ class TestDownloadApplicationFiles:
         assert (tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME).read_text() == dummy_config_source
         assert (tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME).read_text() == dummy_module_source
         assert (tmp_path / "templates" / "test-job-script.py.j2").read_text() == dummy_template_source
+
+
+def test_change_archive_status__success__archive(
+    respx_mock,
+    dummy_context,
+    dummy_application_data,
+    dummy_domain,
+):
+    """
+    Test that the change_archive_status() method sends an update request that archives the application.
+
+    Verifies that the request body only includes the is_archived parameter set to True.
+    """
+    app_data = dummy_application_data[0]
+    app_id = app_data["id"]
+    archive_route = respx_mock.put(f"{dummy_domain}/jobbergate/applications/{app_id}")
+
+    change_archive_status(dummy_context, app_id, True)
+    assert archive_route.called
+    assert json.loads(archive_route.calls.last.request.content) == dict(is_archived=True)
+
+
+def test_change_archive_status__success__restore(
+    respx_mock,
+    dummy_context,
+    dummy_application_data,
+    dummy_domain,
+):
+    """
+    Test that the change_archive_status() method sends an update request that restores the application.
+
+    Verifies that the request body only includes the is_archived parameter set to False.
+    """
+    app_data = dummy_application_data[0]
+    app_id = app_data["id"]
+    archive_route = respx_mock.put(f"{dummy_domain}/jobbergate/applications/{app_id}")
+
+    change_archive_status(dummy_context, app_id, False)
+    assert archive_route.called
+    assert json.loads(archive_route.calls.last.request.content) == dict(is_archived=False)

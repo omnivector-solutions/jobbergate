@@ -57,6 +57,10 @@ job_script_meta_mapper = MetaMapper(
         description="Parameters to use when rendering the job_script jinja2 template",
         example={"param1": 7, "param2": 13},
     ),
+    is_archived=MetaField(
+        description="Indicates if the job_script has been archived.",
+        example=False,
+    ),
 )
 
 
@@ -85,6 +89,7 @@ class JobScriptUpdateRequest(BaseModel):
     job_script_files: Optional[JobScriptFiles]
     sbatch_params: Optional[List[str]]
     param_dict: Optional[str]
+    is_archived: Optional[bool]
 
     class Config:
         schema_extra = job_script_meta_mapper
@@ -103,8 +108,9 @@ class JobScriptPartialResponse(BaseModel):
     job_script_name: str
     job_script_description: Optional[str] = None
     job_script_owner_email: str
-    application_id: int
     application_name: Optional[str] = None
+    application_id: Optional[int] = None
+    is_archived: bool
 
     class Config:
         orm_mode = True

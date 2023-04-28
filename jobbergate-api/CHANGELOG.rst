@@ -6,6 +6,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Removed strict dependence between job_scripts and applications to allow deletes
+- Added functionality to archive applications and job_scripts
 
 3.5.0-alpha.2 -- 2023-04-27
 ---------------------------
@@ -18,10 +20,10 @@ Unreleased
 
 3.5.0-alpha.0 -- 2023-03-28
 ---------------------------
+- Keep version in sync with other subprojects.
 
 3.4.3 -- 2023-01-30
 -------------------
-
 - Patched the sbatch param parser to support special characters
 
 3.4.2 -- 2023-01-25

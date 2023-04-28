@@ -9,6 +9,7 @@ import pydantic
 from rich import print_json
 from rich.console import Console
 from rich.panel import Panel
+from rich.prompt import Confirm
 from rich.table import Table
 
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
@@ -88,6 +89,19 @@ def terminal_message(message, subject=None, color="green", footer=None, indent=T
     console.print()
     console.print(Panel(text, **panel_kwargs))
     console.print()
+
+
+def terminal_confirm(*args, question: str = "Are you sure you want to continue?", **kwargs) -> bool:
+    """
+    Print a nicely formatted message as output to the user using a ``rich`` ``Panel``.
+
+    :param: *args:    Arguments for nested ``terminal_message``
+    :param: *kwargs:  Arguments for nested ``terminal_message``
+    :param: question: The text for the confirmation question
+    """
+    terminal_message(*args, **kwargs)
+    result = Confirm().ask(question)
+    return result
 
 
 def render_json(data: Any):

@@ -16,12 +16,14 @@ from jobbergate_cli.schemas import (
 from jobbergate_cli.subapps.job_scripts.app import (
     HIDDEN_FIELDS,
     JOB_SUBMISSION_HIDDEN_FIELDS,
+    archive,
     create,
     delete,
     download_files,
     get_one,
     list_all,
     pathlib,
+    restore,
     show_files,
     style_mapper,
     update,
@@ -38,7 +40,7 @@ def test_list_all__makes_request_and_renders_results(
     cli_runner,
     mocker,
 ):
-    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts?all=false").mock(
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(
@@ -62,6 +64,37 @@ def test_list_all__makes_request_and_renders_results(
         title="Job Scripts List",
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,
+    )
+
+
+def test_list_all__with_include_archived_option(
+    respx_mock,
+    make_test_app,
+    dummy_context,
+    dummy_domain,
+    cli_runner,
+    mocker,
+):
+    list_all_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts").mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=dict(results=[], pagination=dict(total=0)),
+        ),
+    )
+    test_app = make_test_app("list-all", list_all)
+    mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_list_results")
+    result = cli_runner.invoke(test_app, ["list-all", "--include-archived"])
+    assert result.exit_code == 0, f"list-all failed: {result.stdout}"
+    assert list_all_route.calls.last.request.url.params["include_archived"] == "true"
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        ListResponseEnvelope(
+            results=[],
+            pagination=Pagination(total=0),
+        ),
+        title="Job Scripts List",
+        style_mapper=style_mapper,
+        hidden_fields=HIDDEN_FIELDS + ["is_archived"],
     )
 
 
@@ -371,10 +404,21 @@ def test_delete__makes_request_and_sends_terminal_message(
         return_value=httpx.Response(httpx.codes.NO_CONTENT),
     )
     test_app = make_test_app("delete", delete)
-    result = cli_runner.invoke(test_app, shlex.split(f"delete --id={job_script_id}"))
+    result = cli_runner.invoke(test_app, shlex.split(f"delete --id={job_script_id} --confirm"))
     assert result.exit_code == 0, f"delete failed: {result.stdout}"
     assert delete_route.called
     assert "JOB SCRIPT DELETE SUCCEEDED"
+
+
+def test_delete__aborts_without_confirmation(respx_mock, make_test_app, dummy_domain, cli_runner):
+    delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/job-scripts/1")
+    delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
+
+    test_app = make_test_app("delete", delete)
+    result = cli_runner.invoke(test_app, shlex.split("delete --id=1"), input="n\n")
+    assert result.exit_code == 0, f"delete failed: {result.stdout}"
+    assert not delete_route.called
+    assert "No job_script was deleted" in result.stdout
 
 
 def test_show_files__success(
@@ -475,3 +519,35 @@ class TestDownloadJobScriptFiles:
             mocked.assert_not_called()
 
         assert result.exit_code == 1
+
+
+def test_archive__success(
+    make_test_app,
+    dummy_context,
+    cli_runner,
+    mocker,
+):
+    """
+    Test that the archive command invokes the change_archive_status() helper with correct args.
+    """
+    test_app = make_test_app("archive", archive)
+    mocked_tool = mocker.patch("jobbergate_cli.subapps.job_scripts.app.change_archive_status")
+    result = cli_runner.invoke(test_app, shlex.split("archive --id=1"))
+    assert result.exit_code == 0, f"archive failed: {result.stdout}"
+    mocked_tool.assert_called_once_with(dummy_context, 1, True)
+
+
+def test_restore__success(
+    make_test_app,
+    dummy_context,
+    cli_runner,
+    mocker,
+):
+    """
+    Test that the restore command invokes the change_archive_status() helper with correct args.
+    """
+    test_app = make_test_app("restore", restore)
+    mocked_tool = mocker.patch("jobbergate_cli.subapps.job_scripts.app.change_archive_status")
+    result = cli_runner.invoke(test_app, shlex.split("restore --id=1"))
+    assert result.exit_code == 0, f"restore failed: {result.stdout}"
+    mocked_tool.assert_called_once_with(dummy_context, 1, False)

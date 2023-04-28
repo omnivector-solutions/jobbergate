@@ -316,7 +316,7 @@ class JobSubmissionResponse(BaseModel):
     job_submission_name: str
     job_submission_description: Optional[str]
     job_submission_owner_email: str
-    job_script_id: int
+    job_script_id: Optional[int]
     execution_directory: Optional[Path]
     slurm_job_id: Optional[int]
     client_id: Optional[str]

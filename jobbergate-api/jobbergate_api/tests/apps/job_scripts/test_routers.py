@@ -1,12 +1,10 @@
 """
 Tests for the /job-scripts/ endpoint.
 """
-import json
 import pathlib
 from textwrap import dedent
 from unittest import mock
 
-import asyncpg
 import pytest
 from fastapi import status
 
@@ -15,6 +13,7 @@ from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_scripts.schemas import JobScriptPartialResponse, JobScriptResponse
+from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.storage import database
 
@@ -477,7 +476,8 @@ async def test_get_job_script__no_params(
 
     This test proves that GET /job-scripts/ returns the correct job_scripts for the user making
     the request. We show this by asserting that the job_scripts returned in the response are
-    only job_scripts owned by the user making the request.
+    only job_scripts owned by the user making the request. This test also ensures that archived
+    job_scripts are not included by default.
     """
     inserted_application_id = await database.execute(
         query=applications_table.insert(),
@@ -501,11 +501,17 @@ async def test_get_job_script__no_params(
                 job_script_owner_email="owner1@org.com",
                 application_id=inserted_application_id,
             ),
+            dict(
+                job_script_name="js4",
+                job_script_owner_email="owner1@org.com",
+                application_id=inserted_application_id,
+                is_archived=True,
+            ),
         ),
     )
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 3
+    assert count[0][0] == 4
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get("/jobbergate/job-scripts/")
@@ -601,6 +607,67 @@ async def test_get_job_scripts__with_all_param(
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get("/jobbergate/job-scripts/?all=True")
+    assert response.status_code == status.HTTP_200_OK
+
+    data = response.json()
+    results = data.get("results")
+    assert results
+    assert [d["job_script_name"] for d in results] == ["script1", "script2", "script3"]
+
+    pagination = data.get("pagination")
+    assert pagination == dict(
+        total=3,
+        start=None,
+        limit=None,
+    )
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_get_job_scripts__with_include_archived_param(
+    client,
+    fill_application_data,
+    fill_all_job_script_data,
+    inject_security_header,
+):
+    """
+    Test that listing job_scripts, when include_archived=True, contains archived job_scripts.
+
+    This test proves that the user making the request can see archived job_scripts.
+    We show this by creating three job_scripts, one that is archived, and two that are not.
+    Assert that the response to GET /job-scripts/?include_archived=True includes all three job_scripts.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+    await database.execute_many(
+        query=job_scripts_table.insert(),
+        values=fill_all_job_script_data(
+            {
+                "job_script_name": "script1",
+                "job_script_owner_email": "owner1@org.com",
+                "application_id": inserted_application_id,
+            },
+            {
+                "job_script_name": "script2",
+                "job_script_owner_email": "owner1@org.com",
+                "application_id": inserted_application_id,
+                "is_archived": True,
+            },
+            {
+                "job_script_name": "script3",
+                "job_script_owner_email": "owner1@org.com",
+                "application_id": inserted_application_id,
+            },
+        ),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 3
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
+    response = await client.get("/jobbergate/job-scripts/?include_archived=True")
     assert response.status_code == status.HTTP_200_OK
 
     data = response.json()
@@ -921,6 +988,7 @@ async def test_update_job_script(
                     "main_file_path": main_file_path,
                     "files": {main_file_path: main_file_content},
                 },
+                "is_archived": True,
             },
         )
 
@@ -932,6 +1000,7 @@ async def test_update_job_script(
     assert JobScriptFiles(**data["job_script_files"]) == dummy_job_script_files
     assert JobScriptFiles.get_from_s3(inserted_job_script_id) == dummy_job_script_files
     assert data["id"] == inserted_job_script_id
+    assert data["is_archived"] is True
 
     query = job_scripts_table.select(job_scripts_table.c.id == inserted_job_script_id)
     job_script = JobScriptPartialResponse.parse_obj(await database.fetch_one(query))
@@ -940,6 +1009,7 @@ async def test_update_job_script(
     assert job_script.job_script_name == "new name"
     assert job_script.job_script_description == "new description"
     assert job_script.updated_at in window
+    assert job_script.is_archived
 
 
 @pytest.mark.asyncio
@@ -1139,14 +1209,17 @@ async def test_delete_job_script_bad_permission(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
-async def test_delete_job_script__fk_error(
+async def test_delete_job_script__unlinks_job_submissions(
     client,
     fill_application_data,
     fill_job_script_data,
+    fill_job_submission_data,
     inject_security_header,
 ):
     """
-    Test DELETE /job_script/<id> correctly returns a 409 on a foreign-key constraint error.
+    Test DELETE /job_scripts/<id> correctly deletes a job_script linked to a job_submission.
+
+    Test that a the job_script_id field for connected job_submissions is set to null.
     """
     inserted_application_id = await database.execute(
         query=applications_table.insert(),
@@ -1160,20 +1233,28 @@ async def test_delete_job_script__fk_error(
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
 
+    await database.execute(
+        query=job_submissions_table.insert(),
+        values=fill_job_submission_data(job_script_id=inserted_job_script_id),
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 1
+    count = await database.fetch_all(
+        "SELECT COUNT(*) FROM job_submissions where job_script_id=:inserted_id",
+        values=dict(inserted_id=inserted_job_script_id),
+    )
+    assert count[0][0] == 1
+
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
-    with mock.patch(
-        "jobbergate_api.storage.database.execute",
-        side_effect=asyncpg.exceptions.ForeignKeyViolationError(
-            f"""
-            update or delete on table "job_scripts" violates foreign key constraint
-            "job_submissions_job_script_id_fkey" on table "job_submissions"
-            DETAIL:  Key (id)=({inserted_job_script_id}) is still referenced from table "job_submissions".
-            """
-        ),
-    ):
+    with mock.patch("jobbergate_api.apps.job_scripts.job_script_files.JobScriptFiles.delete_from_s3"):
         response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
-    assert response.status_code == status.HTTP_409_CONFLICT
-    error_data = json.loads(response.text)["detail"]
-    assert error_data["message"] == "Delete failed due to foreign-key constraint"
-    assert error_data["table"] == "job_submissions"
-    assert error_data["pk_id"] == f"{inserted_job_script_id}"
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 0
+
+    count = await database.fetch_all(
+        "SELECT COUNT(*) FROM job_submissions where job_script_id=:inserted_id",
+        values=dict(inserted_id=inserted_job_script_id),
+    )
+    assert count[0][0] == 0

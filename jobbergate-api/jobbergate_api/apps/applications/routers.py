@@ -19,6 +19,7 @@ from jobbergate_api.apps.applications.schemas import (
     ApplicationResponse,
     ApplicationUpdateRequest,
 )
+from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, ok_response, package_response
@@ -187,8 +188,18 @@ async def application_delete(
     application_id: int = Query(..., description="id of the application to delete"),
 ):
     """
-    Delete application from the database and S3 given it's id.
+    Delete application from the database and S3 given its id.
     """
+    logger.debug(f"Orphaning job_scripts rendered from application {application_id=}")
+    update_query = (
+        job_scripts_table.update()
+        .where(job_scripts_table.c.application_id == application_id)
+        .values(dict(application_id=None))
+    )
+
+    logger.trace(f"update_query = {render_sql(update_query)}")
+    await database.execute(update_query)
+
     logger.debug(f"Preparing to delete {application_id=} from the database and S3")
 
     where_stmt = applications_table.c.id == application_id
@@ -260,6 +271,7 @@ async def application_delete_by_identifier(
 async def applications_list(
     user: bool = Query(False),
     all: bool = Query(False),
+    include_archived: bool = Query(False),
     search: Optional[str] = Query(None),
     sort_field: Optional[str] = Query(None),
     sort_ascending: bool = Query(True),
@@ -277,6 +289,8 @@ async def applications_list(
         query = query.where(applications_table.c.application_owner_email == identity_claims.email)
     if not all:
         query = query.where(not_(applications_table.c.application_identifier.is_(None)))
+    if not include_archived:
+        query = query.where(not_(applications_table.c.is_archived))
     if search is not None:
         query = query.where(search_clause(search, searchable_fields))
     if sort_field is not None:
