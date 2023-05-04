@@ -393,6 +393,193 @@ async def test_get_job_script_by_id(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
+async def test_download_job_script_file_by_id__success(
+    client,
+    fill_job_script_data,
+    inject_security_header,
+    mocked_file_manager_factory,
+):
+    """Test that a job script file can be downloaded."""
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(),
+    )
+
+    main_file_path = pathlib.Path("jobbergate.py")
+    expected_file_content = "print(__name__)"
+
+    dummy_job_script_files = JobScriptFiles(
+        main_file_path=main_file_path, files={main_file_path: expected_file_content}
+    )
+    dummy_job_script_files.write_to_s3(inserted_job_script_id)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
+    response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}/download")
+
+    assert response.status_code == status.HTTP_200_OK
+
+    assert response.read() == expected_file_content.encode()
+    assert response.headers["filename"] == main_file_path.as_posix()
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_download_job_script_file_by_id__job_script_not_found(
+    client,
+    inject_security_header,
+):
+    """Test that a job script file can not be downloaded when its id is not found at the database."""
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 0
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
+    response = await client.get("/jobbergate/job-scripts/1/download")
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert "JobScript with id=1 was not found." in response.text
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_download_job_script_file_by_id__job_script_file_not_found(
+    client,
+    fill_job_script_data,
+    inject_security_header,
+    mocked_file_manager_factory,
+):
+    """Test that a job script file can not be downloaded when its not found at s3."""
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
+    response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}/download")
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert f"Main file from job_script_id={inserted_job_script_id} was not found." in response.text
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_upload_job_script_file_by_id__success(
+    client,
+    fill_job_script_data,
+    inject_security_header,
+    make_dummy_file,
+    mocked_file_manager_factory,
+):
+    """Test that a job script file can be uploaded."""
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(),
+    )
+
+    main_file_path = pathlib.Path("jobbergate.py")
+
+    old_file_content = "I'm going to be replaced"
+    new_file_content = "I'm the new content"
+
+    dummy_job_script_files = JobScriptFiles(
+        main_file_path=main_file_path, files={main_file_path: old_file_content}
+    )
+    dummy_job_script_files.write_to_s3(inserted_job_script_id)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+
+    new_job_script_file = make_dummy_file(main_file_path, content=new_file_content)
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
+
+    response = await client.patch(
+        f"/jobbergate/job-scripts/{inserted_job_script_id}/upload",
+        files={"job_script_file": open(new_job_script_file, "rb")},
+    )
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    expected_job_script_files = JobScriptFiles(
+        main_file_path=main_file_path, files={main_file_path: new_file_content}
+    )
+    actual_job_script_files = JobScriptFiles.get_from_s3(inserted_job_script_id)
+
+    assert actual_job_script_files == expected_job_script_files
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_upload_job_script_file_by_id__job_script_not_found(
+    client,
+    inject_security_header,
+    make_dummy_file,
+):
+    """Test that a job script file can be uploaded when its id is not found at the database."""
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 0
+
+    main_file_path = pathlib.Path("jobbergate.py")
+    main_file_content = "I'm going to be replaced"
+
+    new_job_script_file = make_dummy_file(main_file_path, content=main_file_content)
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
+
+    response = await client.patch(
+        "/jobbergate/job-scripts/1/upload",
+        files={"job_script_file": open(new_job_script_file, "rb")},
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert "JobScript with id=1 was not found." in response.text
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_upload_job_script_file_by_id__job_script_file_not_found(
+    client,
+    fill_job_script_data,
+    inject_security_header,
+    make_dummy_file,
+    mocked_file_manager_factory,
+):
+    """Test that a job script file can not be uploaded when its not found at s3."""
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(),
+    )
+
+    main_file_path = pathlib.Path("jobbergate.py")
+
+    main_file_path = pathlib.Path("jobbergate.py")
+    new_file_content = "I'm going to be replaced"
+
+    new_job_script_file = make_dummy_file(main_file_path, content=new_file_content)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+
+    new_job_script_file = make_dummy_file(main_file_path, content=new_file_content)
+
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
+
+    response = await client.patch(
+        f"/jobbergate/job-scripts/{inserted_job_script_id}/upload",
+        files={"job_script_file": open(new_job_script_file, "rb")},
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert f"Main file from job_script_id={inserted_job_script_id} was not found." in response.text
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
 async def test_get_job_script_by_id_file_not_found_at_s3(
     client,
     fill_application_data,
