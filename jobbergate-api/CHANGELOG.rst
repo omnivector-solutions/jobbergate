@@ -8,7 +8,7 @@ Unreleased
 ----------
 - Removed strict dependence between job_scripts and applications to allow deletes
 - Added functionality to archive applications and job_scripts
-- Added endpoints to upload/download the main job script file give its id
+- Added endpoints to upload/download the main job script file given its id
 
 3.5.0-alpha.2 -- 2023-04-27
 ---------------------------
