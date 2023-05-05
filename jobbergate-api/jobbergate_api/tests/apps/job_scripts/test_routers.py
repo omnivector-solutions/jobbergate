@@ -473,6 +473,7 @@ async def test_upload_job_script_file_by_id__success(
     fill_job_script_data,
     inject_security_header,
     make_dummy_file,
+    time_frame,
     mocked_file_manager_factory,
 ):
     """Test that a job script file can be uploaded."""
@@ -498,10 +499,11 @@ async def test_upload_job_script_file_by_id__success(
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
 
-    response = await client.patch(
-        f"/jobbergate/job-scripts/{inserted_job_script_id}/upload",
-        files={"job_script_file": open(new_job_script_file, "rb")},
-    )
+    with time_frame() as window:
+        response = await client.patch(
+            f"/jobbergate/job-scripts/{inserted_job_script_id}/upload",
+            files={"job_script_file": open(new_job_script_file, "rb")},
+        )
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -511,6 +513,11 @@ async def test_upload_job_script_file_by_id__success(
     actual_job_script_files = JobScriptFiles.get_from_s3(inserted_job_script_id)
 
     assert actual_job_script_files == expected_job_script_files
+
+    query = job_scripts_table.select(job_scripts_table.c.id == inserted_job_script_id)
+    job_script = JobScriptPartialResponse.parse_obj(await database.fetch_one(query))
+
+    assert job_script.updated_at in window
 
 
 @pytest.mark.asyncio

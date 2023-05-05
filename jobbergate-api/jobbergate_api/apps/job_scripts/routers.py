@@ -1,6 +1,4 @@
-"""
-Router for the JobScript resource.
-"""
+"""Router for the JobScript resource."""
 from typing import Optional
 
 from armasec import TokenPayload
@@ -8,6 +6,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, 
 from fastapi.responses import PlainTextResponse
 from loguru import logger
 from sqlalchemy import join, not_, select
+from sqlalchemy.sql import func
 
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
@@ -210,6 +209,12 @@ async def job_script_replace_file_content(
         root_dir = s3_path.parts[0]
         if root_dir == JOBSCRIPTS_MAIN_FILE_FOLDER:
             file_manager[s3_path] = file_content
+            update_query = (
+                job_scripts_table.update()
+                .where(job_scripts_table.c.id == job_script["id"])
+                .values(updated_at=func.now())
+            )
+            await database.execute(update_query)
             logger.debug(f"Success replacing the main file from {job_script_id=}")
             return None
 
