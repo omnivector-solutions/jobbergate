@@ -1,18 +1,23 @@
 """Router for the Job Script Template resource."""
 from armasec import TokenPayload
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query
 from fastapi import Response as FastAPIResponse
-from fastapi import status
+from fastapi import UploadFile, status
+from fastapi.responses import StreamingResponse
 from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
-from jobbergate_api.apps.job_script_templates.dependecies import template_service
+from jobbergate_api.apps.constants import FileType
+from jobbergate_api.apps.job_script_templates.dependecies import template_files_service, template_service
 from jobbergate_api.apps.job_script_templates.schemas import (
     JobTemplateCreateRequest,
     JobTemplateResponse,
     JobTemplateUpdateRequest,
 )
-from jobbergate_api.apps.job_script_templates.service import JobScriptTemplateService
+from jobbergate_api.apps.job_script_templates.service import (
+    JobScriptTemplateFilesService,
+    JobScriptTemplateService,
+)
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.security import IdentityClaims, guard
 
@@ -120,13 +125,91 @@ async def job_script_template_delete(
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
 
-async def job_script_template_get_file():
-    pass
+@router.get(
+    "/{id_or_identifier}/upload/{file_name}",
+    description="Endpoint to get a file from a job script template by id or identifier",
+    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW))],
+)
+async def job_script_template_get_file(
+    id_or_identifier: int | str = Query(None),
+    file_name: str = Query(None),
+    service: JobScriptTemplateService = Depends(template_service),
+    file_service: JobScriptTemplateFilesService = Depends(template_files_service),
+):
+    """
+    Get a job script template file by id or identifier.
+
+    Note:
+        See https://fastapi.tiangolo.com/advanced/custom-response/#streamingresponse
+    """
+    job_script_template = await service.get(id_or_identifier)
+    if job_script_template is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job script template with {id_or_identifier=} was not found",
+        )
+
+    job_script_template_file_list = [f for f in job_script_template.files if f.filename == file_name]
+    if not job_script_template_file_list:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job script template file with {file_name=} was not found",
+        )
+
+    job_script_template_file = job_script_template_file_list[0]
+
+    return StreamingResponse(content=file_service.get(job_script_template_file), media_type="text/plain")
 
 
-async def job_script_template_upload_file():
-    pass
+@router.patch(
+    "/{id_or_identifier}/upload/{file_type}",
+    status_code=status.HTTP_200_OK,
+    description="Endpoint to upload a file to a job script template by id or identifier",
+    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
+)
+async def job_script_template_upload_file(
+    id_or_identifier: int | str = Query(None),
+    file_type: FileType = Query(None),
+    upload_file: UploadFile = File(..., description="File to upload"),
+    service: JobScriptTemplateService = Depends(template_service),
+    file_service: JobScriptTemplateFilesService = Depends(template_files_service),
+):
+    """Upload a file to a job script template by id or identifier."""
+    job_script_template = await service.get(id_or_identifier)
+    if job_script_template is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job script template with {id_or_identifier=} was not found",
+        )
+    await file_service.upsert(job_script_template.id, file_type, upload_file)
 
 
-async def job_script_template_delete_file():
-    pass
+@router.delete(
+    "/{id_or_identifier}/upload/{file_name}",
+    status_code=status.HTTP_200_OK,
+    description="Endpoint to delete a file to a job script template by id or identifier",
+    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
+)
+async def job_script_template_delete_file(
+    id_or_identifier: int | str = Query(None),
+    file_name: str = Query(None),
+    service: JobScriptTemplateService = Depends(template_service),
+    file_service: JobScriptTemplateFilesService = Depends(template_files_service),
+):
+    job_script_template = await service.get(id_or_identifier)
+    if job_script_template is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job script template with {id_or_identifier=} was not found",
+        )
+
+    job_script_template_file_list = [f for f in job_script_template.files if f.filename == file_name]
+    if not job_script_template_file_list:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job script template file with {file_name=} was not found",
+        )
+
+    job_script_template_file = job_script_template_file_list[0]
+
+    await file_service.delete(job_script_template_file)

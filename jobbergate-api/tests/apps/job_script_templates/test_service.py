@@ -1,8 +1,12 @@
 """Database models for the smart template resource."""
+from io import BytesIO
 from typing import Any
+from fastapi import UploadFile
 
 import pytest
+from aioboto3.session import Session as Boto3Session
 from sqlalchemy.exc import IntegrityError, NoResultFound
+from jobbergate_api.apps.constants import FileType
 
 from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate
 from jobbergate_api.apps.job_script_templates.schemas import (
@@ -10,8 +14,10 @@ from jobbergate_api.apps.job_script_templates.schemas import (
     JobTemplateUpdateRequest,
 )
 from jobbergate_api.apps.job_script_templates.service import (
+    JobScriptTemplateFilesService,
     JobScriptTemplateService,
 )
+from jobbergate_api.config import settings
 from jobbergate_api.database import SessionLocal
 
 # Force the async event loop at the app to begin.
@@ -20,11 +26,17 @@ from jobbergate_api.database import SessionLocal
 
 
 @pytest.fixture
-async def template_service():
-    """Return the services module."""
+async def db_session():
+    """Return the database session."""
     async with SessionLocal() as session:
-        yield JobScriptTemplateService(session=session)
-        session.rollback()
+        yield session
+        await session.rollback()
+
+
+@pytest.fixture
+async def template_service(db_session):
+    """Return the services module."""
+    yield JobScriptTemplateService(session=db_session)
 
 
 @pytest.fixture
@@ -189,3 +201,53 @@ class TestCreateJobScriptTemplateService:
                 id_or_identifier=identification,
                 incoming_data=update_data,
             )
+
+
+@pytest.fixture
+async def template_files_service(db_session):
+    """Return the services module."""
+    s3_session = Boto3Session()
+    async with s3_session.resource(
+        "s3",
+        endpoint_url="http://localhost:9000",
+        aws_access_key_id="compose-s3-key",
+        aws_secret_access_key="compose-s3-secret",
+    ) as s3:
+        bucket = await s3.Bucket("jobbergate-resources")
+        yield JobScriptTemplateFilesService(session=db_session, bucket=bucket)
+
+
+# class TestTemplateFilesService:
+#     @pytest.mark.asyncio
+#     def test_object_is_valid(self, template_files_service):
+#         """Test that the object is valid."""
+#         assert isinstance(template_files_service, JobScriptTemplateFilesService)
+
+#     @pytest.mark.asyncio
+#     async def test_add_file__end_to_end(self, template_files_service, inserted_test_data, tmp_path):
+#         """Test that the file is added successfully."""
+#         file_name = "test.txt"
+#         file_content = "test"
+#         file_type = FileType.ENTRYPOINT
+
+#         file_path = tmp_path / file_name
+#         file_path.write_text(file_content)
+#         with open(file_path, "rb") as f:
+#             template_file = await template_files_service.upsert(
+#                 job_script_template_id=inserted_test_data.id,
+#                 file_type=file_type,
+#                 upload_file=UploadFile(f, filename=file_path.name),
+#             )
+
+#         assert template_file.id == inserted_test_data.id
+#         assert template_file.file_type == file_type
+#         assert template_file.filename == file_name
+
+#         fileobj = await template_files_service.get(template_file)
+
+#         assert await fileobj["Body"].read() == file_content.encode()
+
+#         await template_files_service.delete(template_file)
+
+#         with pytest.raises(Exception):
+#             await template_files_service.get(template_file)

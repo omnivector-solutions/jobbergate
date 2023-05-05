@@ -1,7 +1,4 @@
-"""
-Configuration of pytest.
-"""
-
+"""Configuration of pytest."""
 import asyncio
 import contextlib
 import dataclasses
@@ -10,17 +7,14 @@ import random
 import string
 import typing
 from textwrap import dedent
-from unittest.mock import patch
 
 import pytest
-from file_storehouse.engine import EngineLocal
 from httpx import AsyncClient
 
 from jobbergate_api.apps.models import Base
 from jobbergate_api.config import settings
 from jobbergate_api.database import engine
 from jobbergate_api.main import app
-from jobbergate_api.s3_manager import file_manager_factory
 
 # Charset for producing random strings
 CHARSET = string.ascii_letters + string.digits + string.punctuation
@@ -304,26 +298,3 @@ def make_files_param():
             ]
 
     return _helper
-
-
-@pytest.fixture(scope="function")
-def mocked_file_manager_factory(tmp_path):
-    """
-    Fixture to replace the default file engine (EngineS3) by a local one.
-
-    In this way, all objects are stored in a temporary directory ``tmp_path``,
-    that is yield for reference. Files and directories can than be managed
-    normally with pathlib.Path.
-
-    It also clears the cache from file_manager_factory.
-    """
-
-    def local_engine_factory(*, prefix: str, **kwargs):
-        return EngineLocal(base_path=tmp_path / prefix)
-
-    file_manager_factory.cache_clear()
-
-    with patch("jobbergate_api.s3_manager.engine_factory", wraps=local_engine_factory):
-        yield tmp_path
-
-    file_manager_factory.cache_clear()

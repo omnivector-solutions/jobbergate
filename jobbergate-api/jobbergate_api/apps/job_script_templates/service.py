@@ -1,11 +1,14 @@
 """Services for the job_script_templates resource, including module specific business logic."""
 import dataclasses
+from typing import Any
 
+from fastapi import UploadFile
 from sqlalchemy import func, select, update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
+from jobbergate_api.apps.constants import FileType
 
-from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate
+from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate, JobScriptTemplateFile
 from jobbergate_api.apps.job_script_templates.schemas import (
     JobTemplateCreateRequest,
     JobTemplateUpdateRequest,
@@ -73,3 +76,41 @@ def _locate_by_id_or_identifier(id_or_identifier: int | str, query):
     else:
         raise ValueError("id_or_identifier must be a string or integer")
     return query
+
+
+@dataclasses.dataclass
+class JobScriptTemplateFilesService:
+
+    session: AsyncSession
+    bucket: Any
+
+    async def get(self, template_file: JobScriptTemplateFile):
+        """Get a job_script_template file."""
+        fileobj = await self.bucket.meta.client.get_object(
+            Bucket=self.bucket.name, Key=template_file.file_key
+        )
+        yield fileobj
+
+    async def upsert(
+        self,
+        job_script_template_id: int,
+        file_type: FileType,
+        upload_file: UploadFile,
+    ) -> JobScriptTemplateFile:
+        """Upsert a job_script_template file."""
+        template_file = JobScriptTemplateFile(
+            id=job_script_template_id, filename=upload_file.filename, file_type=file_type
+        )
+
+        await self.bucket.upload_fileobj(Fileobj=upload_file.file, Key=template_file.file_key)
+
+        await self.session.merge(template_file)
+        await self.session.flush()
+        await self.session.refresh(template_file)
+        return template_file
+
+    async def delete(self, template_file: JobScriptTemplateFile) -> None:
+        """Delete a job_script_template file."""
+        await self.session.delete(template_file)
+        await self.bucket.meta.client.delete_object(Bucket=self.bucket.name, Key=template_file.file_key)
+        await self.session.flush()
