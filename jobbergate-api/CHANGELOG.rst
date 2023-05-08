@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+3.5.0-alpha.3 -- 2023-05-08
+---------------------------
 - Removed strict dependence between job_scripts and applications to allow deletes
 - Added functionality to archive applications and job_scripts
 - Added endpoints to upload/download the main job script file given its id
