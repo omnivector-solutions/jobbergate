@@ -1,17 +1,21 @@
-"""
-Router for the JobScript resource.
-"""
+"""Router for the JobScript resource."""
 from typing import Optional
 
 from armasec import TokenPayload
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi.responses import PlainTextResponse
 from loguru import logger
 from sqlalchemy import join, not_, select
+from sqlalchemy.sql import func
 
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import ApplicationResponse
-from jobbergate_api.apps.job_scripts.job_script_files import JobScriptCreationError, JobScriptFiles
+from jobbergate_api.apps.job_scripts.job_script_files import (
+    JOBSCRIPTS_MAIN_FILE_FOLDER,
+    JobScriptCreationError,
+    JobScriptFiles,
+)
 from jobbergate_api.apps.job_scripts.models import job_scripts_table, searchable_fields, sortable_fields
 from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptCreateRequest,
@@ -174,6 +178,82 @@ async def job_script_get(job_script_id: int = Query(...)):
     logger.debug(f"Job-script data: {response}")
 
     return response
+
+
+@router.patch(
+    "/job-scripts/{job_script_id}/upload",
+    status_code=status.HTTP_204_NO_CONTENT,
+    description="Endpoint to replace a job script file.",
+    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
+)
+async def job_script_replace_file_content(
+    job_script_id: int = Query(...),
+    job_script_file: UploadFile = File(...),
+):
+    """Replace the content on a job script file."""
+    logger.debug(f"Replacing the main file from {job_script_id=}")
+
+    query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
+    logger.trace(f"get_query = {render_sql(query)}")
+    job_script = await database.fetch_one(query)
+
+    if not job_script:
+        message = f"JobScript with id={job_script_id} was not found."
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+    file_manager = JobScriptFiles.file_manager_factory(job_script_id)
+    file_content = job_script_file.file.read().decode("utf-8")
+
+    for s3_path in file_manager.keys():
+        root_dir = s3_path.parts[0]
+        if root_dir == JOBSCRIPTS_MAIN_FILE_FOLDER:
+            file_manager[s3_path] = file_content
+            update_query = (
+                job_scripts_table.update()
+                .where(job_scripts_table.c.id == job_script["id"])
+                .values(updated_at=func.now())
+            )
+            await database.execute(update_query)
+            logger.debug(f"Success replacing the main file from {job_script_id=}")
+            return None
+
+    message = f"Main file from {job_script_id=} was not found."
+    logger.warning(message)
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+
+@router.get(
+    "/job-scripts/{job_script_id}/download",
+    status_code=status.HTTP_200_OK,
+    description="Endpoint to download a job script file.",
+    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW))],
+)
+async def job_script_download_file(job_script_id: int = Query(...)):
+    """Download the job script file."""
+    logger.debug(f"Downloading main file from {job_script_id=}")
+
+    query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
+    logger.trace(f"get_query = {render_sql(query)}")
+    job_script = await database.fetch_one(query)
+
+    if not job_script:
+        message = f"JobScript with id={job_script_id} was not found."
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+    file_manager = JobScriptFiles.file_manager_factory(job_script_id)
+
+    for s3_path in file_manager.keys():
+        root_dir = s3_path.parts[0]
+        if root_dir == JOBSCRIPTS_MAIN_FILE_FOLDER:
+            file_content = file_manager[s3_path]
+            filename = s3_path.relative_to(JOBSCRIPTS_MAIN_FILE_FOLDER).as_posix()
+            return PlainTextResponse(file_content, media_type="text/plain", headers={"filename": filename})
+
+    message = f"Main file from {job_script_id=} was not found."
+    logger.warning(message)
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 
 @router.get(
