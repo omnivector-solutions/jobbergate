@@ -196,6 +196,7 @@ async def job_script_template_delete_file(
     service: JobScriptTemplateService = Depends(template_service),
     file_service: JobScriptTemplateFilesService = Depends(template_files_service),
 ):
+    """Delete a file from a job script template by id or identifier."""
     job_script_template = await service.get(id_or_identifier)
     if job_script_template is None:
         raise HTTPException(

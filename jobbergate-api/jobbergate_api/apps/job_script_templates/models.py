@@ -90,6 +90,7 @@ class SmartTemplate(Base, BaseFieldsMixin):
 
     @property
     def file_key(self) -> str:
+        """Return the file key for the smart template file."""
         return f"{self.__tablename__}/{self.id}/jobbergate.py"
 
 

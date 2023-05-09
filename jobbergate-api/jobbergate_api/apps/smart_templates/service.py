@@ -1,6 +1,8 @@
 """Services for the smart_templates resource, including module specific business logic."""
 import dataclasses
+from typing import Any
 
+from fastapi import UploadFile
 from sqlalchemy import func, select, update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -50,3 +52,25 @@ class SmartTemplateService:
         result = await self.session.execute(query)
         await self.session.flush()
         return result.scalar_one()
+
+
+@dataclasses.dataclass
+class SmartTemplateFilesService:
+    """Service for the smart_template_files resource."""
+
+    bucket: Any
+
+    async def get(self, template_file: SmartTemplate):
+        """Get a smart_template file."""
+        fileobj = await self.bucket.meta.client.get_object(
+            Bucket=self.bucket.name, Key=template_file.file_key
+        )
+        yield fileobj
+
+    async def upsert(self, smart_template: SmartTemplate, upload_file: UploadFile) -> None:
+        """Upsert a smart_template file."""
+        await self.bucket.upload_fileobj(Fileobj=upload_file.file, Key=smart_template.file_key)
+
+    async def delete(self, smart_template: SmartTemplate) -> None:
+        """Delete a smart_template file."""
+        await self.bucket.meta.client.delete_object(Bucket=self.bucket.name, Key=smart_template.file_key)

@@ -50,6 +50,7 @@ class JobScriptFile(Base, BaseFieldsMixin):
 
     @hybrid_property
     def file_key(self) -> str:
+        """Return the file key."""
         return f"{self.__tablename__}/{self.id}/{self.filename}"
 
 
