@@ -24,7 +24,7 @@ from jobbergate_api.config import settings
 INTEGRITY_CHECK_EXCEPTIONS = (UniqueViolationError,)
 
 
-def build_db_url(force_test: bool = False, asynchronous: bool = True) -> str:
+def build_db_url(force_test: bool = False, asynchronous: bool = False) -> str:
     """
     Build a database url based on settings.
 
@@ -44,9 +44,6 @@ def build_db_url(force_test: bool = False, asynchronous: bool = True) -> str:
             path="/{}".format(getattr(settings, f"{prefix}DATABASE_NAME")),
         )
     )
-
-
-# database = databases.Database(build_db_url(), force_rollback=settings.DEPLOY_ENV.lower() == "test")
 
 
 def render_sql(query) -> str:

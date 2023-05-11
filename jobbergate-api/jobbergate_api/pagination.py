@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field
 from pydantic.generics import GenericModel
 from sqlalchemy import func, select
 
+database = None
+
 
 class Pagination(BaseModel):
     """

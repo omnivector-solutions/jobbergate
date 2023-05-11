@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 from jobbergate_api.storage import build_db_url
 
-engine = create_async_engine(build_db_url(), pool_pre_ping=True)
+engine = create_async_engine(build_db_url(asynchronous=True), pool_pre_ping=True)
 SessionLocal = async_scoped_session(
     sessionmaker(
         engine,

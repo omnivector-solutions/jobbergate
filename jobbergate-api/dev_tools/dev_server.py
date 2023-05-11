@@ -6,7 +6,7 @@ from time import sleep
 import typer
 import uvicorn
 from loguru import logger
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 from jobbergate_api.storage import build_db_url
 
@@ -28,7 +28,7 @@ def _wait_for_db(wait_count, wait_interval):
         try:
             engine = create_engine(database_url)
             with engine.connect() as db:
-                db.execute("select version()")
+                db.execute(text("select version()"))
             return
         except Exception as err:
             logger.warning(f"Database is not yet healthy: {err}")

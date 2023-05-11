@@ -18,7 +18,7 @@ app = typer.Typer()
 @app.command()
 def login(test: bool = typer.Option(False, help="Log into the test database.")):
     """Log into a local database."""
-    url = build_db_url(force_test=test, asynchronous=False)
+    url = build_db_url(force_test=test)
     logger.debug(f"Logging into database: {url}")
     subprocess.run(["pgcli", url])
 

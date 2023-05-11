@@ -87,24 +87,6 @@ def init_logger():
     logger.info(f"Logging configured 📝 Level: {settings.LOG_LEVEL}")
 
 
-@app.on_event("startup")
-async def init_database():
-    """
-    Connect the database; create it if necessary.
-    """
-    logger.debug("Initializing database")
-    await database.connect()
-
-
-@app.on_event("shutdown")
-async def disconnect_database():
-    """
-    Disconnect the database.
-    """
-    logger.debug("Disconnecting database")
-    await database.disconnect()
-
-
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, err: RequestValidationError):
     """
