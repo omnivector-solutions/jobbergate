@@ -71,7 +71,7 @@ def upgrade():
     op.create_index(op.f("ix_job_scripts_name"), "job_scripts", ["name"], unique=False)
     op.create_index(op.f("ix_job_scripts_owner_email"), "job_scripts", ["owner_email"], unique=False)
     op.create_table(
-        "smart_templates",
+        "workflow_files",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("identifier", sa.String(), nullable=True),
         sa.Column(
@@ -153,7 +153,7 @@ def downgrade():
     op.drop_index(op.f("ix_job_submissions_client_id"), table_name="job_submissions")
     op.drop_table("job_submissions")
     op.drop_table("job_script_files")
-    op.drop_table("smart_templates")
+    op.drop_table("workflow_files")
     op.drop_index(op.f("ix_job_scripts_owner_email"), table_name="job_scripts")
     op.drop_index(op.f("ix_job_scripts_name"), table_name="job_scripts")
     op.drop_table("job_scripts")

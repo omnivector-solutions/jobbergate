@@ -7,6 +7,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from jobbergate_api.apps.constants import FileType
+from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
 from jobbergate_api.apps.models import Base, BaseFieldsMixin, ExtraFieldsMixin, Mapped, mapped_column
 
 
@@ -37,8 +38,10 @@ class JobScriptTemplate(Base, BaseFieldsMixin, ExtraFieldsMixin):
         server_default=text("'{}'::jsonb"),
     )
 
-    files: Mapped[list["JobScriptTemplateFile"]] = relationship("JobScriptTemplateFile", lazy="subquery")
-    smart_template: Mapped["SmartTemplate"] = relationship("SmartTemplate", lazy="subquery")
+    template_files: Mapped[list["JobScriptTemplateFile"]] = relationship(
+        "JobScriptTemplateFile", lazy="subquery"
+    )
+    workflow_file: Mapped["WorkflowFile"] = relationship("WorkflowFile", lazy="subquery")
 
 
 class JobScriptTemplateFile(Base, BaseFieldsMixin):
@@ -59,21 +62,18 @@ class JobScriptTemplateFile(Base, BaseFieldsMixin):
         return f"{self.__tablename__}/{self.id}/{self.filename}"
 
 
-class SmartTemplate(Base, BaseFieldsMixin):
+class WorkflowFile(Base, BaseFieldsMixin):
     """
-    Smart template table definition.
+    Workflow file table definition.
 
     Attributes:
-        id: The id of the smart template (foreign key from job-script-template).
-        runtime_config: The runtime configuration of the smart template.
-        created_at: The date and time when the smart template was created.
-        updated_at: The date and time when the smart template was updated.
-
-    Note:
-        Class defined here to avoid circular import issues with JobScriptTemplate.
+        id: The id of the workflow (foreign key from job-script-template).
+        runtime_config: The runtime configuration of the workflow.
+        created_at: The date and time when the workflow was created.
+        updated_at: The date and time when the workflow was updated.
     """
 
-    __tablename__ = "smart_templates"
+    __tablename__ = "workflow_files"
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -90,10 +90,10 @@ class SmartTemplate(Base, BaseFieldsMixin):
 
     @property
     def file_key(self) -> str:
-        """Return the file key for the smart template file."""
-        return f"{self.__tablename__}/{self.id}/jobbergate.py"
+        """Return the file key for the workflow file."""
+        return f"{self.__tablename__}/{self.id}/{WORKFLOW_FILE_NAME}"
 
 
 job_script_templates_table = JobScriptTemplate.__table__
 job_script_template_files_table = JobScriptTemplateFile.__table__
-smart_templates_table = SmartTemplate.__table__
+workflow_files_table = WorkflowFile.__table__

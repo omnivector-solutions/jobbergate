@@ -6,9 +6,13 @@ from fastapi import UploadFile
 from sqlalchemy import func, select, update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
-from jobbergate_api.apps.constants import FileType
 
-from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate, JobScriptTemplateFile
+from jobbergate_api.apps.constants import FileType
+from jobbergate_api.apps.job_script_templates.models import (
+    JobScriptTemplate,
+    JobScriptTemplateFile,
+    WorkflowFile,
+)
 from jobbergate_api.apps.job_script_templates.schemas import (
     JobTemplateCreateRequest,
     JobTemplateUpdateRequest,
@@ -113,4 +117,41 @@ class JobScriptTemplateFilesService:
         """Delete a job_script_template file."""
         await self.session.delete(template_file)
         await self.bucket.meta.client.delete_object(Bucket=self.bucket.name, Key=template_file.file_key)
+        await self.session.flush()
+
+
+@dataclasses.dataclass
+class WorkflowFilesService:
+    """Service for the workflow resource."""
+
+    session: AsyncSession
+    bucket: Any
+
+    async def get(self, workflow_file: WorkflowFile):
+        """Get a workflow file."""
+        fileobj = await self.bucket.meta.client.get_object(
+            Bucket=self.bucket.name, Key=workflow_file.file_key
+        )
+        yield fileobj
+
+    async def upsert(
+        self,
+        job_script_template_id: int,
+        runtime_config: dict[str, Any],
+        upload_file: UploadFile,
+    ) -> WorkflowFile:
+        """Upsert a workflow file."""
+        workflow_file = WorkflowFile(id=job_script_template_id, runtime_config=runtime_config)
+
+        await self.bucket.upload_fileobj(Fileobj=upload_file.file, Key=workflow_file.file_key)
+
+        await self.session.merge(workflow_file)
+        await self.session.flush()
+        await self.session.refresh(workflow_file)
+        return workflow_file
+
+    async def delete(self, workflow_file: WorkflowFile) -> None:
+        """Delete a workflow file."""
+        await self.session.delete(workflow_file)
+        await self.bucket.meta.client.delete_object(Bucket=self.bucket.name, Key=workflow_file.file_key)
         await self.session.flush()

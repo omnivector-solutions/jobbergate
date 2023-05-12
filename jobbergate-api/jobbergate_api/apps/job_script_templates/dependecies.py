@@ -11,6 +11,7 @@ from jobbergate_api.apps.dependecies import db_session, s3_bucket
 from jobbergate_api.apps.job_script_templates.service import (
     JobScriptTemplateFilesService,
     JobScriptTemplateService,
+    WorkflowFilesService,
 )
 
 
@@ -30,3 +31,11 @@ async def template_files_service(
 ) -> JobScriptTemplateFilesService:
     """Dependency to get the job_script_template_files service."""
     return JobScriptTemplateFilesService(session, bucket)
+
+
+async def workflow_files_service(
+    session: AsyncSession = Depends(db_session),
+    bucket=Depends(s3_bucket),
+) -> WorkflowFilesService:
+    """Dependency to get the job_script_template_files service."""
+    return WorkflowFilesService(session, bucket)
