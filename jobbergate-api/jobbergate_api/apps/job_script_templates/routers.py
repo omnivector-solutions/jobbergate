@@ -44,7 +44,7 @@ async def job_script_template_create(
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
 ):
     """Create a new job script template."""
-    logger.info(f"Creating a new job script template with {JobTemplateCreateRequest=}")
+    logger.info(f"Creating a new job script template with {create_request=}")
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     if identity_claims.email is None:
@@ -70,7 +70,7 @@ async def job_script_template_create(
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW))],
 )
 async def job_script_template_get(
-    id_or_identifier: int | str = Query(None),
+    id_or_identifier: int | str = Query(...),
     service: JobScriptTemplateService = Depends(template_service),
 ):
     """Get a job script template by id or identifier."""
@@ -159,7 +159,7 @@ async def job_script_template_get_file(
             detail=f"Job script template with {id_or_identifier=} was not found",
         )
 
-    job_script_template_file_list = [f for f in job_script_template.files if f.filename == file_name]
+    job_script_template_file_list = [f for f in job_script_template.template_files if f.filename == file_name]
     if not job_script_template_file_list:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -214,7 +214,7 @@ async def job_script_template_delete_file(
             detail=f"Job script template with {id_or_identifier=} was not found",
         )
 
-    job_script_template_file_list = [f for f in job_script_template.files if f.filename == file_name]
+    job_script_template_file_list = [f for f in job_script_template.template_files if f.filename == file_name]
     if not job_script_template_file_list:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

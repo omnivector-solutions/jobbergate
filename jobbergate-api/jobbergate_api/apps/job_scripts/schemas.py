@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
-from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
+from jobbergate_api.apps.constants import FileType
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
 job_script_meta_mapper = MetaMapper(
@@ -65,59 +65,44 @@ class JobScriptCreateRequest(BaseModel):
     Request model for creating JobScript instances.
     """
 
-    job_script_name: str
-    job_script_description: Optional[str]
-    application_id: int
-    sbatch_params: Optional[List[str]]
-    param_dict: Optional[Dict[str, Any]]
+    name: str
+    description: Optional[str]
 
     class Config:
         schema_extra = job_script_meta_mapper
 
 
-class JobScriptUpdateRequest(BaseModel):
+class JobScriptUpdateRequest(JobScriptCreateRequest):
     """
     Request model for updating JobScript instances.
     """
 
-    job_script_name: Optional[str]
-    job_script_description: Optional[str]
-    job_script_files: Optional[JobScriptFiles]
-    sbatch_params: Optional[List[str]]
-    param_dict: Optional[str]
-
     class Config:
         schema_extra = job_script_meta_mapper
 
 
-class JobScriptPartialResponse(BaseModel):
-    """
-    Complete model to match database for the JobScript resource.
+class JobScriptFile(BaseModel):
+    """Model for the job_script_files field of the JobScript resource."""
 
-    Notice this model does not include job_script_files from S3.
-    """
-
-    id: Optional[int] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    job_script_name: str
-    job_script_description: Optional[str] = None
-    job_script_owner_email: str
-    application_id: int
+    filename: str
+    file_type: FileType
 
     class Config:
         orm_mode = True
         schema_extra = job_script_meta_mapper
 
 
-class JobScriptResponse(JobScriptPartialResponse):
-    """
-    Complete model to match database for the JobScript resource.
+class JobScriptResponse(BaseModel):
+    """Model to match database for the JobScript resource."""
 
-    In addition to the field job_script_files from S3, for the JobScript resource.
-    """
-
-    job_script_files: JobScriptFiles
+    id: Optional[int] = None
+    name: str
+    owner_email: str
+    files: list[JobScriptFile]
+    description: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    parent_template_id: Optional[int] = None
 
     class Config:
         orm_mode = True

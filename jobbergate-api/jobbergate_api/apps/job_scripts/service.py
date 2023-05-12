@@ -1,13 +1,13 @@
 """Services for the job_script_templates resource, including module specific business logic."""
 import dataclasses
 from typing import Any
-from fastapi import UploadFile
 
+from fastapi import UploadFile
 from sqlalchemy import func, select, update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
-from jobbergate_api.apps.constants import FileType
 
+from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.job_scripts.models import JobScript, JobScriptFile
 from jobbergate_api.apps.job_scripts.schemas import JobScriptCreateRequest, JobScriptUpdateRequest
 

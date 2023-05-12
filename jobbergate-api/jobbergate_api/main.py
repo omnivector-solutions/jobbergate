@@ -13,7 +13,6 @@ from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
 from jobbergate_api import __version__
-from jobbergate_api.apps.applications.routers import router as applications_router
 from jobbergate_api.apps.job_script_templates.routers import router as job_script_templates_router
 from jobbergate_api.apps.job_scripts.routers import router as job_scripts_router
 from jobbergate_api.apps.job_submissions.routers import router as job_submissions_router
@@ -53,10 +52,10 @@ if settings.SENTRY_DSN and settings.DEPLOY_ENV.lower() != "test":
 else:
     logger.info("Skipping Sentry")
 
-# subapp.include_router(applications_router)
-# subapp.include_router(job_scripts_router)
-# subapp.include_router(job_submissions_router)
 subapp.include_router(job_script_templates_router)
+# subapp.include_router(applications_router)
+subapp.include_router(job_scripts_router)
+# subapp.include_router(job_submissions_router)
 subapp.exception_handler(asyncpg.exceptions.ForeignKeyViolationError)(handle_fk_error)
 
 

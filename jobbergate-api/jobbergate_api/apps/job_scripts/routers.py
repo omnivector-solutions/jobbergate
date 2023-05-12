@@ -1,301 +1,217 @@
-"""
-Router for the JobScript resource.
-"""
-from typing import Optional
+"""Router for the Job Script Template resource."""
+from typing import Any
 
 from armasec import TokenPayload
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Query
+from fastapi import Response as FastAPIResponse
+from fastapi import UploadFile, status
+from fastapi.responses import StreamingResponse
 from loguru import logger
+from sqlalchemy.exc import IntegrityError, NoResultFound
 
-from jobbergate_api.apps.applications.application_files import ApplicationFiles
-from jobbergate_api.apps.applications.models import applications_table
-from jobbergate_api.apps.applications.schemas import ApplicationResponse
-from jobbergate_api.apps.job_scripts.job_script_files import JobScriptCreationError, JobScriptFiles
-from jobbergate_api.apps.job_scripts.models import job_scripts_table, searchable_fields, sortable_fields
+from jobbergate_api.apps.constants import FileType
+from jobbergate_api.apps.job_scripts.dependecies import job_script_files_service, job_script_service
 from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptCreateRequest,
-    JobScriptPartialResponse,
     JobScriptResponse,
     JobScriptUpdateRequest,
 )
+from jobbergate_api.apps.job_scripts.service import JobScriptFilesService, JobScriptService
 from jobbergate_api.apps.permissions import Permissions
-from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.security import IdentityClaims, guard
-from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, render_sql, search_clause, sort_clause
 
-router = APIRouter()
+router = APIRouter(prefix="/job-scripts")
 
 
 @router.post(
-    "/job-scripts",
+    "",
     status_code=status.HTTP_201_CREATED,
     response_model=JobScriptResponse,
-    description="Endpoint for job_script creation",
+    description="Endpoint for job script creation",
 )
 async def job_script_create(
-    job_script: JobScriptCreateRequest,
+    create_request: JobScriptCreateRequest,
+    service: JobScriptService = Depends(job_script_service),
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT)),
 ):
-    """
-    Create a new job script.
-
-    Make a post request to this endpoint with the required values to create a new job script.
-    """
-    logger.debug(f"Creating {job_script=}")
-
-    select_query = applications_table.select().where(applications_table.c.id == job_script.application_id)
-    logger.trace(f"select_query = {render_sql(select_query)}")
-
-    raw_application = await database.fetch_one(select_query)
-
-    if not raw_application:
-        message = f"Application with id={job_script.application_id} not found."
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
-
-    application = ApplicationResponse.parse_obj(raw_application)
-
-    if application.application_uploaded is False:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Application with id={job_script.application_id} was not uploaded.",
-        )
+    """Create a new job script template."""
+    logger.info(f"Creating a new job script with {create_request=}")
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
-
-    create_dict = dict(
-        **{k: v for (k, v) in job_script.dict(exclude_unset=True).items() if k != "param_dict"},
-        job_script_owner_email=identity_claims.email,
-    )
+    if identity_claims.email is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The token payload does not contain an email",
+        )
 
     try:
-        jobscript_files = JobScriptFiles.render_from_application(
-            application_files=ApplicationFiles.get_from_s3(application.id),
-            user_supplied_parameters=job_script.param_dict,
-            sbatch_params=create_dict.pop("sbatch_params", []),
+        new_job_script = await service.create(create_request, identity_claims.email)
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Job script template with the same identifier already exists",
         )
-    except JobScriptCreationError as e:
-        message = str(e)
-        logger.error(message)
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=message)
-
-    logger.debug("Inserting job_script")
-
-    async with database.transaction():
-
-        try:
-            insert_query = job_scripts_table.insert().returning(job_scripts_table)
-            logger.trace(f"insert_query = {render_sql(insert_query)}")
-            job_script_data = await database.fetch_one(query=insert_query, values=create_dict)
-
-            if job_script_data is None:
-                message = "An error occurred when inserting the JobScript at the database."
-                logger.error(message)
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=message,
-                )
-
-            jobscript_files.write_to_s3(job_script_data["id"])
-
-        except INTEGRITY_CHECK_EXCEPTIONS as e:
-            logger.error(f"Reverting database transaction: {str(e)}")
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
-
-        except KeyError as e:
-            logger.error(f"Reverting database transaction: {str(e)}")
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
-
-    logger.debug(f"Job-script created: {dict(job_script_data)}")
-
-    response = JobScriptResponse(
-        **job_script_data,
-        job_script_files=jobscript_files,
-    )
-    return response
+    return new_job_script
 
 
 @router.get(
-    "/job-scripts/{job_script_id}",
-    description="Endpoint to get a job_script",
+    "/{id}",
+    description="Endpoint to return a job script by its id",
     response_model=JobScriptResponse,
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW))],
 )
-async def job_script_get(job_script_id: int = Query(...)):
-    """
-    Return the job_script given its id.
-    """
-    logger.debug(f"Getting {job_script_id=}")
-
-    query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
-    logger.trace(f"get_query = {render_sql(query)}")
-    job_script = await database.fetch_one(query)
-
-    if not job_script:
-        message = f"JobScript with id={job_script_id} not found."
-        logger.warning(message)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
-        )
-
-    try:
-        response = JobScriptResponse(
-            **job_script,
-            job_script_files=JobScriptFiles.get_from_s3(job_script_id),
-        )
-    except (KeyError, ValueError):
-        message = f"JobScript file not found for id={job_script_id}."
-        logger.warning(message)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
-        )
-
-    logger.debug(f"Job-script data: {response}")
-
-    return response
-
-
-@router.get(
-    "/job-scripts",
-    description="Endpoint to list job_scripts",
-    responses=ok_response(JobScriptPartialResponse),
-)
-async def job_script_list(
-    pagination: Pagination = Depends(),
-    all: Optional[bool] = Query(False),
-    search: Optional[str] = Query(None),
-    sort_field: Optional[str] = Query(None),
-    from_application_id: Optional[int] = Query(
-        None,
-        description="Filter job-scripts by the application-id they were created from.",
-    ),
-    sort_ascending: bool = Query(True),
-    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW)),
+async def job_script_get(
+    id_or_identifier: int = Query(...),
+    service: JobScriptService = Depends(job_script_service),
 ):
-    """
-    List job_scripts for the authenticated user.
-
-    Note::
-
-       Use responses instead of response_model to skip a second round of validation and serialization. This
-       is already happening in the ``package_response`` method. So, we uses ``responses`` so that FastAPI
-       can generate the correct OpenAPI spec but not post-process the response.
-    """
-    logger.debug("Preparing to list job-scripts")
-
-    query = job_scripts_table.select()
-    identity_claims = IdentityClaims.from_token_payload(token_payload)
-    if not all:
-        query = query.where(job_scripts_table.c.job_script_owner_email == identity_claims.email)
-    if from_application_id is not None:
-        query = query.where(job_scripts_table.c.application_id == from_application_id)
-    if search is not None:
-        query = query.where(search_clause(search, searchable_fields))
-    if sort_field is not None:
-        query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
-
-    logger.trace(f"Query = {render_sql(query)}")
-    return await package_response(JobScriptPartialResponse, query, pagination)
-
-
-@router.delete(
-    "/job-scripts/{job_script_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    description="Endpoint to delete job script",
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
-)
-async def job_script_delete(job_script_id: int = Query(..., description="id of the job script to delete")):
-    """
-    Delete job_script given its id.
-    """
-    logger.debug(f"Preparing to delete {job_script_id=}")
-    where_stmt = job_scripts_table.c.id == job_script_id
-
-    get_query = job_scripts_table.select().where(where_stmt)
-    logger.trace(f"get_query = {render_sql(get_query)}")
-
-    raw_job_script = await database.fetch_one(get_query)
-    if not raw_job_script:
-
-        message = f"JobScript with id={job_script_id} not found."
-        logger.warning(message)
+    """Get a job script by id."""
+    logger.info(f"Getting job script {id=}")
+    result = await service.get(id_or_identifier)
+    if result is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
+            detail=f"Job script {id=} was not found",
         )
+    return result
 
-    delete_query = job_scripts_table.delete().where(where_stmt)
-    logger.trace(f"delete_query = {render_sql(delete_query)}")
-    await database.execute(delete_query)
 
-    try:
-        JobScriptFiles.delete_from_s3(job_script_id)
-    except KeyError:
-        # There is no need to raise an error if we try to delete a file that does not exist
-        logger.warning(f"Tried to delete {job_script_id=}, but it was not found on S3.")
+async def job_script_get_list():
+    pass
 
 
 @router.put(
-    "/job-scripts/{job_script_id}",
+    "/{id}",
     status_code=status.HTTP_200_OK,
-    description="Endpoint to update a job_script given the id",
+    description="Endpoint to update a job script by id",
     response_model=JobScriptResponse,
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
 )
-async def job_script_update(job_script_id: int, job_script: JobScriptUpdateRequest):
-    """
-    Update a job_script given its id.
-    """
-    logger.debug(f"Updating {job_script_id=}")
-
-    update_query = (
-        job_scripts_table.update()
-        .where(job_scripts_table.c.id == job_script_id)
-        .values(
-            job_script.dict(exclude_unset=True, exclude={"job_script_files"}),
+async def job_script_update(
+    update_request: JobScriptUpdateRequest,
+    id: int = Query(...),
+    service: JobScriptService = Depends(job_script_service),
+):
+    """Update a job script template by id or identifier."""
+    logger.info(f"Updating job script {id=}")
+    try:
+        result = await service.update(id, update_request)
+    except NoResultFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job script {id=} was not found",
         )
-        .returning(job_scripts_table)
-    )
-    logger.trace(f"update_query = {render_sql(update_query)}")
-
-    async with database.transaction():
-
-        try:
-            result = await database.fetch_one(update_query)
-        except INTEGRITY_CHECK_EXCEPTIONS as e:
-            logger.error(f"Reverting database transaction: {str(e)}")
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-
-        if result is None:
-            message = f"JobScript with id={job_script_id} not found."
-            logger.warning(message)
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=message,
-            )
-
-        job_script_response = dict(result)
-
-        try:
-            if job_script.job_script_files:
-                job_script.job_script_files.write_to_s3(job_script_id)
-                job_script_response["job_script_files"] = job_script.job_script_files
-            else:
-                job_script_response["job_script_files"] = JobScriptFiles.get_from_s3(job_script_id)
-        except (KeyError, ValueError) as e:
-            logger.error(f"Reverting database transaction: {str(e)}")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"File for JobScript with id={job_script_id} not found in S3.",
-            )
-
-    return job_script_response
+    return result
 
 
-def include_router(app):
+@router.delete(
+    "/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    description="Endpoint to delete a job script by id",
+    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
+)
+async def job_script_delete(
+    id: int = Query(...),
+    service: JobScriptService = Depends(job_script_service),
+):
+    """Delete a job script template by id or identifier."""
+    logger.info(f"Deleting job script {id=}")
+    try:
+        await service.delete(id)
+    except NoResultFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job script {id=} was not found",
+        )
+
+    return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get(
+    "/{id}/upload/{file_name}",
+    description="Endpoint to get a file from a job script",
+    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW))],
+)
+async def job_script_get_file(
+    id: int = Query(...),
+    file_name: str = Query(...),
+    service: JobScriptService = Depends(job_script_service),
+    file_service: JobScriptFilesService = Depends(job_script_files_service),
+):
     """
-    Include the router for this module in the app.
+    Get a job script file.
+
+    Note:
+        See https://fastapi.tiangolo.com/advanced/custom-response/#streamingresponse
     """
-    app.include_router(router)
+    job_script = await service.get(id)
+    if job_script is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job script {id=} was not found",
+        )
+
+    job_script_file_list = [f for f in job_script.files if f.filename == file_name]
+    if not job_script_file_list:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job script file {file_name=} was not found",
+        )
+
+    job_script_file = job_script_file_list[0]
+
+    return StreamingResponse(content=file_service.get(job_script_file), media_type="text/plain")
+
+
+@router.put(
+    "/{id}/upload/{file_type}",
+    status_code=status.HTTP_200_OK,
+    description="Endpoint to upload a file to a job script file",
+    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW))],
+)
+async def job_script_upload_file(
+    id: int = Query(...),
+    file_type: FileType = Query(...),
+    upload_file: UploadFile = File(..., description="File to upload"),
+    service: JobScriptService = Depends(job_script_service),
+    file_service: JobScriptFilesService = Depends(job_script_files_service),
+):
+    """Upload a file to a job script."""
+    job_script = await service.get(id)
+    if job_script is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job script {id=} was not found",
+        )
+    await file_service.upsert(job_script.id, file_type, upload_file)
+
+
+@router.delete(
+    "/{id}/upload/{file_name}",
+    status_code=status.HTTP_200_OK,
+    description="Endpoint to delete a file from a job script",
+    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
+)
+async def job_script_delete_file(
+    id: int = Query(...),
+    file_name: str = Query(...),
+    service: JobScriptService = Depends(job_script_service),
+    file_service: JobScriptFilesService = Depends(job_script_files_service),
+):
+    """Delete a file from a job script template by id or identifier."""
+    job_script = await service.get(id)
+    if job_script is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job script {id=} was not found",
+        )
+
+    job_script_file_list = [f for f in job_script.files if f.filename == file_name]
+    if not job_script_file_list:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job script file {file_name=} was not found",
+        )
+
+    job_script_file = job_script_file_list[0]
+
+    await file_service.delete(job_script_file)
