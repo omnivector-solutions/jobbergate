@@ -91,7 +91,8 @@ class JobScriptTemplateFilesService:
         fileobj = await self.bucket.meta.client.get_object(
             Bucket=self.bucket.name, Key=template_file.file_key
         )
-        yield fileobj
+        file_content = await fileobj["Body"].read()
+        yield file_content
 
     async def upsert(
         self,
@@ -129,7 +130,8 @@ class WorkflowFilesService:
         fileobj = await self.bucket.meta.client.get_object(
             Bucket=self.bucket.name, Key=workflow_file.file_key
         )
-        yield fileobj
+        file_content = await fileobj["Body"].read()
+        yield file_content
 
     async def upsert(
         self,

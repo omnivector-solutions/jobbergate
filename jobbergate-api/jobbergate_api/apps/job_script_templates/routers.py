@@ -136,7 +136,7 @@ async def job_script_template_delete(
 
 
 @router.get(
-    "/{id_or_identifier}/upload/template/{file_name}",
+    "/{id_or_identifier}/upload/template/{file_name:path}",
     description="Endpoint to get a file from a job script template by id or identifier",
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW))],
 )
@@ -152,6 +152,7 @@ async def job_script_template_get_file(
     Note:
         See https://fastapi.tiangolo.com/advanced/custom-response/#streamingresponse
     """
+    logger.debug(f"Getting file {file_name=} from job script template {id_or_identifier=}")
     job_script_template = await service.get(id_or_identifier)
     if job_script_template is None:
         raise HTTPException(

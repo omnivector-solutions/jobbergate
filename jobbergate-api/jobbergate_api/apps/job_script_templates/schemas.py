@@ -1,7 +1,8 @@
+import urllib.parse
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator
 
 
 class JobTemplateCreateRequest(BaseModel):
@@ -29,19 +30,40 @@ class JobTemplateUpdateRequest(BaseModel):
 
 
 class TemplateFileResponse(BaseModel):
+    id: int
     filename: str
     file_type: str
     created_at: datetime
     updated_at: datetime
+
+    url: Optional[str]
+
+    @root_validator
+    def _compute_url(cls, values):
+        values["url"] = "jobbergate/job-script-templates/{}/upload/template/{}".format(
+            values["id"],
+            urllib.parse.quote(values["filename"], safe=""),
+        )
+
+        return values
 
     class Config:
         orm_mode = True
 
 
 class WorkflowFileResponse(BaseModel):
+    id: int
     runtime_config: Optional[dict[str, Any]] = {}
     created_at: datetime
     updated_at: datetime
+
+    url: Optional[str]
+
+    @root_validator
+    def _compute_url(cls, values):
+        values["url"] = f"/jobbergate/job-script-templates/{values['id']}/upload/workflow"
+
+        return values
 
     class Config:
         orm_mode = True
