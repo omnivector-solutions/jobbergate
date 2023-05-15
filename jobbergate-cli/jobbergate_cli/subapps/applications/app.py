@@ -162,12 +162,12 @@ def create(
     Create a new application.
     """
     req_data = load_default_config()
-    req_data["application_name"] = name
+    req_data["name"] = name
     if identifier:
-        req_data["application_identifier"] = identifier
+        req_data["identifier"] = identifier
 
     if application_desc:
-        req_data["application_description"] = application_desc
+        req_data["description"] = application_desc
 
     jg_ctx: JobbergateContext = ctx.obj
 
@@ -178,7 +178,7 @@ def create(
         Dict[str, Any],
         make_request(
             jg_ctx.client,
-            "/jobbergate/applications",
+            "/jobbergate/job-script-templates",
             "POST",
             expected_status=201,
             abort_message="Request to create application was not accepted by the API",

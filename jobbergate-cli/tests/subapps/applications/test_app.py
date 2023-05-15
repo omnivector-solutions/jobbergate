@@ -138,7 +138,7 @@ def test_create__success(
     response_data["application_uploaded"] = False
     application_id = response_data["id"]
 
-    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/applications")
+    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-script-templates")
     create_route.mock(
         return_value=httpx.Response(
             httpx.codes.CREATED,
@@ -189,7 +189,7 @@ def test_create__warns_but_does_not_abort_if_upload_fails(
     response_data["application_uploaded"] = False
     application_id = response_data["id"]
 
-    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/applications")
+    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-script-templates")
     create_route.mock(
         return_value=httpx.Response(
             httpx.codes.CREATED,
