@@ -74,7 +74,7 @@ def fetch_application_data(
         ApplicationResponse,
         make_request(
             jg_ctx.client,
-            f"/jobbergate/applications/{identification}",
+            f"/jobbergate/job-script-templates/{identification}",
             "GET",
             expected_status=200,
             abort_message=f"Couldn't retrieve application {stub} from API",
@@ -201,14 +201,16 @@ def upload_application(
     if response_code != 200:
         return False
 
-    for complete_template_path in itertools.chain(application_path.glob("*.j2"), application_path.glob("*.jinja2")):
+    supporting_files = application_config.jobbergate_config.supporting_files or []
+
+    for complete_template_path in itertools.chain(application_path.rglob("*.j2"), application_path.rglob("*.jinja2")):
 
         relative_template_path = complete_template_path.relative_to(application_path)
         logger.debug(f"Preparing to upload {relative_template_path}")
 
-        with open(relative_template_path, "r", newline="") as template_file:
+        with open(complete_template_path, "r", newline="") as template_file:
 
-            if relative_template_path.as_posix() in application_config.jobbergate_config.supporting_files_output_name:
+            if relative_template_path.as_posix() in supporting_files:
                 file_type = FileType.SUPPORT
             else:
                 file_type = FileType.ENTRYPOINT
@@ -240,7 +242,7 @@ def upload_application(
                 abort_message="Request to upload application module was not accepted by the API",
                 support=True,
                 files={"upload_file": (module_file_path.name, module_file, "text/plain")},
-                json={"runtime_config": application_config.jobbergate_config}
+                json={"runtime_config": application_config.jobbergate_config.dict()}
             ),
         )
     if response_code != 200:

@@ -86,22 +86,34 @@ class JobbergateApplicationConfig(pydantic.BaseModel):
     application_config: Dict[str, Any]
 
 
+class TemplateFileResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+    filename: str
+    file_type: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class WorkflowFileResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+    runtime_config: Optional[Dict[str, Any]] = {}
+    created_at: datetime
+    updated_at: datetime
+
 class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     """
     Describes the format of data for applications retrieved from the Jobbergate API endpoints.
     """
 
     id: int
-    application_name: str
-    application_identifier: Optional[str] = None
-    application_description: Optional[str] = None
-    application_owner_email: str
-    application_uploaded: bool
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    application_config: Optional[str] = None
-    application_source_file: Optional[str] = None
-    application_templates: Optional[Dict[str, str]] = None
+    name: str
+    owner_email: str
+    created_at: datetime
+    updated_at: datetime
+    identifier: Optional[str]
+    description: Optional[str]
+    template_vars: Optional[Dict[str, Any]] = {}
+
+    template_files: List[TemplateFileResponse] = []
+    workflow_file: Optional[WorkflowFileResponse]
 
 
 class JobScriptFiles(pydantic.BaseModel, extra=pydantic.Extra.ignore):
