@@ -91,12 +91,15 @@ class TemplateFileResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     file_type: str
     created_at: datetime
     updated_at: datetime
+    url: str
 
 
 class WorkflowFileResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     runtime_config: Optional[Dict[str, Any]] = {}
     created_at: datetime
     updated_at: datetime
+    url: str
+
 
 class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     """

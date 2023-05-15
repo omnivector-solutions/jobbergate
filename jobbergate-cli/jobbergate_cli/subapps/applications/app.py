@@ -345,8 +345,10 @@ def download_files(
     Download the files from an application to the current working directory.
     """
     jg_ctx: JobbergateContext = ctx.obj
+
     result = fetch_application_data(jg_ctx, id=id, identifier=identifier)
     saved_files = save_application_files(
+        jg_ctx,
         application_data=result,
         destination_path=pathlib.Path.cwd(),
     )

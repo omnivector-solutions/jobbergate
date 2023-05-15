@@ -1,6 +1,7 @@
 """
 Provide utilities for making requests against the Jobbergate API.
 """
+from pathlib import Path
 from typing import Any, Dict, Optional, Type, TypeVar, Union
 
 import httpx
@@ -92,6 +93,7 @@ def make_request(
     support: bool = True,
     response_model_cls: Optional[Type[ResponseModel]] = None,
     request_model: Optional[pydantic.BaseModel] = None,
+    save_to_file: Optional[Path] = None,
     **request_kwargs: Any,
 ) -> Union[ResponseModel, Dict, int]:
     """
@@ -172,6 +174,11 @@ def make_request(
                 support=support,
                 log_message=f"Got an error code for request: {response.status_code}: {response.text}",
             )
+
+    if save_to_file is not None:
+        save_to_file.parent.mkdir(parents=True, exist_ok=True)
+        save_to_file.write_bytes(response.content)
+        return response.status_code
 
     # TODO: constrain methods with a named enum
     if expect_response is False or method == "DELETE":

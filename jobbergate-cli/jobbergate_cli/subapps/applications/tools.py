@@ -94,7 +94,6 @@ def load_application_data(
     :returns: A tuple containing the application config and the application module
     """
     if not app_data.application_config:
-
         raise Abort(
             f"Fail to retrieve the application config file for id={app_data.id}",
             subject="Application config is missing",
@@ -114,7 +113,6 @@ def load_application_data(
         )
 
     if not app_data.application_source_file:
-
         raise Abort(
             f"Fail to retrieve the application source file for id={app_data.id}",
             subject="Application source file is missing",
@@ -194,7 +192,7 @@ def upload_application(
             expect_response=False,
             abort_message="Request to upload application configuration was not accepted by the API",
             support=True,
-            json={"template_vars": application_config.application_config}
+            json={"template_vars": application_config.application_config},
         ),
     )
 
@@ -204,12 +202,10 @@ def upload_application(
     supporting_files = application_config.jobbergate_config.supporting_files or []
 
     for complete_template_path in itertools.chain(application_path.rglob("*.j2"), application_path.rglob("*.jinja2")):
-
         relative_template_path = complete_template_path.relative_to(application_path)
         logger.debug(f"Preparing to upload {relative_template_path}")
 
         with open(complete_template_path, "r", newline="") as template_file:
-
             if relative_template_path.as_posix() in supporting_files:
                 file_type = FileType.SUPPORT
             else:
@@ -242,7 +238,7 @@ def upload_application(
                 abort_message="Request to upload application module was not accepted by the API",
                 support=True,
                 files={"upload_file": (module_file_path.name, module_file, "text/plain")},
-                json={"runtime_config": application_config.jobbergate_config.dict()}
+                json={"runtime_config": application_config.jobbergate_config.dict()},
             ),
         )
     if response_code != 200:
@@ -252,33 +248,61 @@ def upload_application(
 
 
 def save_application_files(
+    jg_ctx: JobbergateContext,
     application_data: ApplicationResponse,
     destination_path: pathlib.Path,
 ) -> List[pathlib.Path]:
     """
     Save the application files from the API response into a local destination.
     """
+    # Make static type checkers happy
+    assert jg_ctx.client is not None
+
     logger.debug(f"Saving application files to {destination_path.as_posix()}")
     saved_files: List[pathlib.Path] = []
 
-    if application_data.application_config:
-        config_path = destination_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-        config_path.parent.mkdir(parents=True, exist_ok=True)
-        config_path.write_text(application_data.application_config)
-        saved_files.append(config_path)
+    application_config = JobbergateApplicationConfig(
+        application_config=application_data.template_vars,
+        jobbergate_config=application_data.workflow_file.runtime_config,
+    )
+    config_path = destination_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        yaml.dump(
+            application_config.dict(
+                exclude_none=True,
+                exclude_unset=True,
+            )
+        )
+    )
+    saved_files.append(config_path)
 
-    if application_data.application_source_file:
-        source_path = destination_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-        source_path.parent.mkdir(parents=True, exist_ok=True)
-        source_path.write_text(application_data.application_source_file)
-        saved_files.append(source_path)
+    for template_file in application_data.template_files:
+        if not template_file.url:
+            continue
 
-    if application_data.application_templates:
-        for filename, file_content in application_data.application_templates.items():
-            template_path = destination_path / "templates" / filename
-            template_path.parent.mkdir(parents=True, exist_ok=True)
-            template_path.write_text(file_content)
-            saved_files.append(template_path)
+        template_path = destination_path / template_file.filename
+        make_request(
+            jg_ctx.client,
+            template_file.url,
+            "GET",
+            expected_status=200,
+            abort_message=f"Couldn't retrieve template file {template_file.filename} from API",
+            save_to_file=template_path,
+        )
+        saved_files.append(template_path)
+
+    if application_data.workflow_file is not None:
+        workflow_path = destination_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+        make_request(
+            jg_ctx.client,
+            application_data.workflow_file.url,
+            "GET",
+            expected_status=200,
+            abort_message="Couldn't retrieve application module file from API",
+            save_to_file=workflow_path,
+        )
+        saved_files.append(workflow_path)
 
     logger.debug(f"The following files were saved: {list(map(str, saved_files))}")
     return saved_files
