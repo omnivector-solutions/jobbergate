@@ -380,7 +380,7 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
 
 
 def test_delete__success(respx_mock, make_test_app, dummy_domain, cli_runner):
-    delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/applications/1")
+    delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/job-script-templates/1")
     delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
 
     test_app = make_test_app("delete", delete)

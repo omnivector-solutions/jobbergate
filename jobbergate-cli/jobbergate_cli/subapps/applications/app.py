@@ -15,7 +15,6 @@ from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 from jobbergate_cli.subapps.applications.tools import (
     fetch_application_data,
-    load_default_config,
     save_application_files,
     upload_application,
 )
@@ -23,9 +22,9 @@ from jobbergate_cli.subapps.applications.tools import (
 
 # TODO: move hidden field logic to the API
 HIDDEN_FIELDS = [
-    "application_config",
-    "application_source_file",
-    "application_templates",
+    "template_vars",
+    "template_files",
+    "workflow_file",
     "created_at",
     "updated_at",
 ]
@@ -314,7 +313,7 @@ def delete(
     # Delete the upload. The API will also remove the application data files
     make_request(
         jg_ctx.client,
-        f"/jobbergate/applications/{id}",
+        f"/jobbergate/job-script-templates/{id}",
         "DELETE",
         expected_status=204,
         expect_response=False,
