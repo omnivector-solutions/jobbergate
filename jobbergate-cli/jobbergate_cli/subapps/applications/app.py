@@ -161,7 +161,7 @@ def create(
     """
     Create a new application.
     """
-    req_data = load_default_config()
+    req_data = dict()
     req_data["name"] = name
     if identifier:
         req_data["identifier"] = identifier

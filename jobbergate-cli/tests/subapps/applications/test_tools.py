@@ -15,24 +15,12 @@ from jobbergate_cli.subapps.applications.application_base import JobbergateAppli
 from jobbergate_cli.subapps.applications.tools import (
     execute_application,
     fetch_application_data,
-    get_upload_files,
     load_application_data,
     load_application_from_source,
     load_default_config,
     save_application_files,
 )
 from jobbergate_cli.text_tools import dedent
-
-
-def test_get_upload_files__fails_if_application_directory_does_not_exist(tmp_path):
-    application_path = tmp_path / "dummy"
-
-    with pytest.raises(
-        Abort,
-        match=f"Application directory {application_path} does not exist",
-    ):
-        with get_upload_files(application_path):
-            pass
 
 
 def test_load_default_config():

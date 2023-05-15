@@ -42,3 +42,10 @@ class SortOrder(str, Enum):
     ASCENDING = "ASCENDING"
     DESCENDING = "DESCENDING"
     UNSORTED = "UNSORTED"
+
+
+class FileType(str, Enum):
+    """File type enum."""
+
+    ENTRYPOINT = "ENTRYPOINT"
+    SUPPORT = "SUPPORT"
