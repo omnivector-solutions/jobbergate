@@ -21,7 +21,6 @@ from jobbergate_api.apps.job_script_templates.schemas import (
 
 @dataclasses.dataclass
 class JobScriptTemplateService:
-
     session: AsyncSession
 
     async def create(self, incoming_data: JobTemplateCreateRequest, owner_email: str) -> JobScriptTemplate:
@@ -84,7 +83,6 @@ def _locate_by_id_or_identifier(id_or_identifier: int | str, query):
 
 @dataclasses.dataclass
 class JobScriptTemplateFilesService:
-
     session: AsyncSession
     bucket: Any
 
@@ -108,10 +106,9 @@ class JobScriptTemplateFilesService:
 
         await self.bucket.upload_fileobj(Fileobj=upload_file.file, Key=template_file.file_key)
 
-        await self.session.merge(template_file)
+        merged = await self.session.merge(template_file)
         await self.session.flush()
-        await self.session.refresh(template_file)
-        return template_file
+        return merged
 
     async def delete(self, template_file: JobScriptTemplateFile) -> None:
         """Delete a job_script_template file."""
@@ -145,10 +142,9 @@ class WorkflowFilesService:
 
         await self.bucket.upload_fileobj(Fileobj=upload_file.file, Key=workflow_file.file_key)
 
-        await self.session.merge(workflow_file)
+        merged = await self.session.merge(workflow_file)
         await self.session.flush()
-        await self.session.refresh(workflow_file)
-        return workflow_file
+        return merged
 
     async def delete(self, workflow_file: WorkflowFile) -> None:
         """Delete a workflow file."""

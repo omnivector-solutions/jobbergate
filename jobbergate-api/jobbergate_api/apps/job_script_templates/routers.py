@@ -101,7 +101,7 @@ async def job_script_template_update(
     service: JobScriptTemplateService = Depends(template_service),
 ):
     """Update a job script template by id or identifier."""
-    logger.info(f"Updating job script template with {id_or_identifier=}")
+    logger.info(f"Updating job script template {id_or_identifier=} with {update_request=}")
     try:
         result = await service.update(id_or_identifier, update_request)
     except NoResultFound:
@@ -185,6 +185,7 @@ async def job_script_template_upload_file(
     file_service: JobScriptTemplateFilesService = Depends(template_files_service),
 ):
     """Upload a file to a job script template by id or identifier."""
+    logger.debug(f"Uploading file {upload_file.filename} to job script template {id_or_identifier=}")
     job_script_template = await service.get(id_or_identifier)
     if job_script_template is None:
         raise HTTPException(
