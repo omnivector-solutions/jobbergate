@@ -233,6 +233,10 @@ def update(
         None,
         help="Optional new application description to be set",
     ),
+    application_name: Optional[str] = typer.Option(
+        None,
+        help="Optional new application name to be set",
+    ),
 ):
     """
     Update an existing application.
@@ -240,10 +244,13 @@ def update(
     req_data = dict()
 
     if identifier:
-        req_data["application_identifier"] = identifier
+        req_data["identifier"] = identifier
 
     if application_desc:
-        req_data["application_description"] = application_desc
+        req_data["description"] = application_desc
+
+    if application_name:
+        req_data["name"] = application_name
 
     jg_ctx: JobbergateContext = ctx.obj
 
@@ -254,7 +261,7 @@ def update(
         Dict[str, Any],
         make_request(
             jg_ctx.client,
-            f"/jobbergate/applications/{id}",
+            f"/jobbergate/job-script-templates/{id}",
             "PUT",
             expected_status=200,
             abort_message="Request to update application was not accepted by the API",

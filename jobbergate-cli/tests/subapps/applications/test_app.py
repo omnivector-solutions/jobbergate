@@ -242,7 +242,7 @@ def test_update__success(
     response_data["application_uploaded"] = False
     application_id = response_data["id"]
 
-    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/applications/{application_id}")
+    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}")
     update_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -250,10 +250,8 @@ def test_update__success(
         ),
     )
 
-    upload_route = respx_mock.post(f"{dummy_domain}/jobbergate/applications/{application_id}/upload")
-    upload_route.mock(
-        return_value=httpx.Response(httpx.codes.CREATED),
-    )
+    mocked_upload = mocker.patch("jobbergate_cli.subapps.applications.app.upload_application")
+    mocked_upload.return_value = True
 
     test_app = make_test_app("update", update)
     mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
@@ -271,7 +269,7 @@ def test_update__success(
     )
     assert result.exit_code == 0, f"update failed: {result.stdout}"
     assert update_route.called
-    assert upload_route.called
+    assert mocked_upload.called
 
     mocked_render.assert_called_once_with(
         dummy_context,
@@ -294,7 +292,7 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(
     response_data["application_uploaded"] = False
     application_id = response_data["id"]
 
-    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/applications/{application_id}")
+    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}")
     update_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -302,10 +300,7 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(
         ),
     )
 
-    upload_route = respx_mock.post(f"{dummy_domain}/jobbergate/applications/{application_id}/upload")
-    upload_route.mock(
-        return_value=httpx.Response(httpx.codes.CREATED),
-    )
+    mocked_upload = mocker.patch("jobbergate_cli.subapps.applications.app.upload_application")
 
     test_app = make_test_app("update", update)
     mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
@@ -322,7 +317,7 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(
     )
     assert result.exit_code == 0, f"update failed: {result.stdout}"
     assert update_route.called
-    assert not upload_route.called
+    assert not mocked_upload.called
 
     mocked_render.assert_called_once_with(
         dummy_context,
@@ -346,7 +341,7 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
     response_data["application_uploaded"] = False
     application_id = response_data["id"]
 
-    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/applications/{application_id}")
+    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}")
     update_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -354,10 +349,8 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
         ),
     )
 
-    upload_route = respx_mock.post(f"{dummy_domain}/jobbergate/applications/{application_id}/upload")
-    upload_route.mock(
-        return_value=httpx.Response(httpx.codes.BAD_REQUEST),
-    )
+    mocked_upload = mocker.patch("jobbergate_cli.subapps.applications.app.upload_application")
+    mocked_upload.return_value = False
 
     test_app = make_test_app("update", update)
     mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
@@ -375,7 +368,7 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
     )
     assert result.exit_code == 0, f"update failed: {result.stdout}"
     assert update_route.called
-    assert upload_route.called
+    assert mocked_upload.called
     assert "application files could not be uploaded" in result.stdout
 
     mocked_render.assert_called_once_with(
