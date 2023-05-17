@@ -21,7 +21,7 @@ Each Application Source script must define exactly one class named
 
 This class should be a regular python class that inherits from the
 ``JobbergateApplicationBase``. This base class is imported from
-`the application_base module`_.
+`the application_base module <https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-cli/jobbergate_cli/subapps/applications/application_base.py>`_.
 
 The ``JobbergateApplication`` implementation may be a simple or complex as needed by
 the user. However, it must define a ``mainflow()`` method which is the first of the
