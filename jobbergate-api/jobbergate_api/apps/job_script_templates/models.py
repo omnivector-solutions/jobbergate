@@ -5,7 +5,7 @@ from typing import Any, Optional
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, attribute_keyed_dict, mapped_column, relationship
 from sqlalchemy.sql import functions
 
 from jobbergate_api.apps.constants import FileType
@@ -49,10 +49,18 @@ class JobScriptTemplate(Base):
         default=functions.now(),
         onupdate=functions.current_timestamp(),
     )
-    template_files: Mapped[list["JobScriptTemplateFile"]] = relationship(
-        "JobScriptTemplateFile", lazy="subquery"
+
+    template_files: Mapped[dict[str, "JobScriptTemplateFile"]] = relationship(
+        "JobScriptTemplateFile",
+        lazy="subquery",
+        collection_class=attribute_keyed_dict("filename"),
+        cascade="all, delete-orphan",
     )
-    workflow_file: Mapped["WorkflowFile"] = relationship("WorkflowFile", lazy="subquery")
+    workflow_file: Mapped["WorkflowFile"] = relationship(
+        "WorkflowFile",
+        lazy="subquery",
+        cascade="all, delete-orphan",
+    )
 
     searchable_fields = [
         description,

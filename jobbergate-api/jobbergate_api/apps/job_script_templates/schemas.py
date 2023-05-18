@@ -81,7 +81,7 @@ class JobTemplateResponse(BaseModel):
     description: Optional[str]
     template_vars: Optional[dict[str, Any]] = {}
 
-    template_files: list[TemplateFileResponse] = []
+    template_files: dict[str, TemplateFileResponse] = {}
     workflow_file: Optional[WorkflowFileResponse]
 
     class Config:

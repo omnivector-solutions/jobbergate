@@ -187,14 +187,13 @@ async def job_script_template_get_file(
             detail=f"Job script template with {id_or_identifier=} was not found",
         )
 
-    job_script_template_file_list = [f for f in job_script_template.template_files if f.filename == file_name]
-    if not job_script_template_file_list:
+    job_script_template_file = job_script_template.template_files.get(file_name)
+
+    if job_script_template_file is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job script template file with {file_name=} was not found",
         )
-
-    job_script_template_file = job_script_template_file_list[0]
 
     return StreamingResponse(content=file_service.get(job_script_template_file), media_type="text/plain")
 
@@ -243,14 +242,13 @@ async def job_script_template_delete_file(
             detail=f"Job script template with {id_or_identifier=} was not found",
         )
 
-    job_script_template_file_list = [f for f in job_script_template.template_files if f.filename == file_name]
-    if not job_script_template_file_list:
+    job_script_template_file = job_script_template.template_files.get(file_name)
+
+    if job_script_template_file is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job script template file with {file_name=} was not found",
         )
-
-    job_script_template_file = job_script_template_file_list[0]
 
     await file_service.delete(job_script_template_file)
 
