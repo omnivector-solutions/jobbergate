@@ -2,7 +2,7 @@
 from typing import Any
 
 from armasec import TokenPayload
-from fastapi import APIRouter, Body, Depends, File, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Path, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
 from fastapi.responses import StreamingResponse
@@ -70,7 +70,7 @@ async def job_script_template_create(
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW))],
 )
 async def job_script_template_get(
-    id_or_identifier: int | str = Query(...),
+    id_or_identifier: int | str = Path(),
     service: JobScriptTemplateService = Depends(template_service),
 ):
     """Get a job script template by id or identifier."""
@@ -97,7 +97,7 @@ async def job_script_template_get_list():
 )
 async def job_script_template_update(
     update_request: JobTemplateUpdateRequest,
-    id_or_identifier: int | str = Query(None),
+    id_or_identifier: int | str = Path(),
     service: JobScriptTemplateService = Depends(template_service),
 ):
     """Update a job script template by id or identifier."""
@@ -119,7 +119,7 @@ async def job_script_template_update(
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def job_script_template_delete(
-    id_or_identifier: int | str = Query(None),
+    id_or_identifier: int | str = Path(),
     service: JobScriptTemplateService = Depends(template_service),
 ):
     """Delete a job script template by id or identifier."""
@@ -141,8 +141,8 @@ async def job_script_template_delete(
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW))],
 )
 async def job_script_template_get_file(
-    id_or_identifier: int | str = Query(None),
-    file_name: str = Query(None),
+    id_or_identifier: int | str = Path(),
+    file_name: str = Path(),
     service: JobScriptTemplateService = Depends(template_service),
     file_service: JobScriptTemplateFilesService = Depends(template_files_service),
 ):
@@ -179,8 +179,8 @@ async def job_script_template_get_file(
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def job_script_template_upload_file(
-    id_or_identifier: int | str = Query(None),
-    file_type: FileType = Query(None),
+    id_or_identifier: int | str = Path(),
+    file_type: FileType = Path(),
     upload_file: UploadFile = File(..., description="File to upload"),
     service: JobScriptTemplateService = Depends(template_service),
     file_service: JobScriptTemplateFilesService = Depends(template_files_service),
@@ -203,8 +203,8 @@ async def job_script_template_upload_file(
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def job_script_template_delete_file(
-    id_or_identifier: int | str = Query(None),
-    file_name: str = Query(None),
+    id_or_identifier: int | str = Path(),
+    file_name: str = Path(),
     service: JobScriptTemplateService = Depends(template_service),
     file_service: JobScriptTemplateFilesService = Depends(template_files_service),
 ):
@@ -234,8 +234,8 @@ async def job_script_template_delete_file(
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW))],
 )
 async def job_script_workflow_get_file(
-    id_or_identifier: int | str = Query(None),
-    file_name: str = Query(None),
+    id_or_identifier: int | str = Path(),
+    file_name: str = Path(),
     service: JobScriptTemplateService = Depends(template_service),
     file_service: WorkflowFilesService = Depends(workflow_files_service),
 ):
@@ -273,7 +273,7 @@ async def job_script_workflow_get_file(
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def job_script_workflow_upload_file(
-    id_or_identifier: int | str = Query(None),
+    id_or_identifier: int | str = Path(),
     upload_file: UploadFile = File(..., description="File to upload"),
     runtime_config: dict[str, Any] | None = Body(None, description="Runtime configuration"),
     service: JobScriptTemplateService = Depends(template_service),
@@ -300,7 +300,7 @@ async def job_script_workflow_upload_file(
     dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def job_script_workflow_delete_file(
-    id_or_identifier: int | str = Query(None),
+    id_or_identifier: int | str = Path(),
     service: JobScriptTemplateService = Depends(template_service),
     file_service: WorkflowFilesService = Depends(workflow_files_service),
 ):

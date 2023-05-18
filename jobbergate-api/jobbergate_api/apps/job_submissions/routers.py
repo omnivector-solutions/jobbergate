@@ -4,7 +4,7 @@ Router for the JobSubmission resource.
 from typing import Any, Dict, List, Optional
 
 from armasec import TokenPayload
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from loguru import logger
 from sqlalchemy import select
 
@@ -123,7 +123,7 @@ async def job_submission_create(
     response_model=JobSubmissionResponse,
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW))],
 )
-async def job_submission_get(job_submission_id: int = Query(...)):
+async def job_submission_get(job_submission_id: int = Path(...)):
     """
     Return the job_submission given it's id.
     """
@@ -220,7 +220,7 @@ async def job_submission_list(
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT))],
 )
 async def job_submission_delete(
-    job_submission_id: int = Query(..., description="id of the job submission to delete"),
+    job_submission_id: int = Path(..., description="id of the job submission to delete"),
 ):
     """
     Delete job_submission given its id.

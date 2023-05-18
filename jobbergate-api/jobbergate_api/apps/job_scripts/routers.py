@@ -1,8 +1,6 @@
 """Router for the Job Script Template resource."""
-from typing import Any
-
 from armasec import TokenPayload
-from fastapi import APIRouter, Body, Depends, File, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Path
 from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
 from fastapi.responses import StreamingResponse
@@ -61,12 +59,12 @@ async def job_script_create(
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW))],
 )
 async def job_script_get(
-    id_or_identifier: int = Query(...),
+    id: int = Path(),
     service: JobScriptService = Depends(job_script_service),
 ):
     """Get a job script by id."""
     logger.info(f"Getting job script {id=}")
-    result = await service.get(id_or_identifier)
+    result = await service.get(id)
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -88,7 +86,7 @@ async def job_script_get_list():
 )
 async def job_script_update(
     update_request: JobScriptUpdateRequest,
-    id: int = Query(...),
+    id: int = Path(),
     service: JobScriptService = Depends(job_script_service),
 ):
     """Update a job script template by id or identifier."""
@@ -110,7 +108,7 @@ async def job_script_update(
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
 )
 async def job_script_delete(
-    id: int = Query(...),
+    id: int = Path(...),
     service: JobScriptService = Depends(job_script_service),
 ):
     """Delete a job script template by id or identifier."""
@@ -132,8 +130,8 @@ async def job_script_delete(
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW))],
 )
 async def job_script_get_file(
-    id: int = Query(...),
-    file_name: str = Query(...),
+    id: int = Path(...),
+    file_name: str = Path(...),
     service: JobScriptService = Depends(job_script_service),
     file_service: JobScriptFilesService = Depends(job_script_files_service),
 ):
@@ -169,8 +167,8 @@ async def job_script_get_file(
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW))],
 )
 async def job_script_upload_file(
-    id: int = Query(...),
-    file_type: FileType = Query(...),
+    id: int = Path(...),
+    file_type: FileType = Path(...),
     upload_file: UploadFile = File(..., description="File to upload"),
     service: JobScriptService = Depends(job_script_service),
     file_service: JobScriptFilesService = Depends(job_script_files_service),
@@ -192,8 +190,8 @@ async def job_script_upload_file(
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
 )
 async def job_script_delete_file(
-    id: int = Query(...),
-    file_name: str = Query(...),
+    id: int = Path(...),
+    file_name: str = Path(...),
     service: JobScriptService = Depends(job_script_service),
     file_service: JobScriptFilesService = Depends(job_script_files_service),
 ):
