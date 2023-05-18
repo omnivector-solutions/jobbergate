@@ -3,7 +3,9 @@ import dataclasses
 from typing import Any
 
 from fastapi import UploadFile
-from sqlalchemy import func, select, update
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import paginate
+from sqlalchemy import func, not_, select, update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +19,7 @@ from jobbergate_api.apps.job_script_templates.schemas import (
     JobTemplateCreateRequest,
     JobTemplateUpdateRequest,
 )
+from jobbergate_api.storage import search_clause, sort_clause
 
 
 @dataclasses.dataclass
@@ -66,9 +69,26 @@ class JobScriptTemplateService:
         await self.session.flush()
         return result.scalar_one()
 
+    async def list(
+        self,
+        all: bool = True,
+        sort_ascending: bool = True,
+        user_email: str | None = None,
+        search: str | None = None,
+        sort_field: str | None = None,
+    ) -> Page[JobScriptTemplate]:
+        """List all job_script_templates."""
+        query = select(JobScriptTemplate)
+        if user_email:
+            query = query.where(JobScriptTemplate.owner_email == user_email)
+        if not all:
+            query = query.where(not_(JobScriptTemplate.identifier.is_(None)))
+        if search:
+            query = query.where(search_clause(search, JobScriptTemplate.searchable_fields))
+        if sort_field:
+            query = query.order_by(sort_clause(sort_field, JobScriptTemplate.sortable_fields, sort_ascending))
 
-def list():
-    pass
+        return await paginate(self.session, query)
 
 
 def _locate_by_id_or_identifier(id_or_identifier: int | str, query):

@@ -8,6 +8,7 @@ import asyncpg
 import sentry_sdk
 from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.exceptions import RequestValidationError
+from fastapi_pagination import add_pagination
 from loguru import logger
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from starlette.middleware.cors import CORSMiddleware
@@ -57,6 +58,8 @@ subapp.include_router(job_script_templates_router)
 subapp.include_router(job_scripts_router)
 # subapp.include_router(job_submissions_router)
 subapp.exception_handler(asyncpg.exceptions.ForeignKeyViolationError)(handle_fk_error)
+
+add_pagination(subapp)
 
 
 @subapp.get(

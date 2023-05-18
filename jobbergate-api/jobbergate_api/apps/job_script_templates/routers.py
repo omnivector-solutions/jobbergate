@@ -1,11 +1,12 @@
 """Router for the Job Script Template resource."""
-from typing import Any
+from typing import Any, Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Body, Depends, File, HTTPException, Path, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
 from fastapi.responses import StreamingResponse
+from fastapi_pagination import Page
 from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
@@ -84,8 +85,34 @@ async def job_script_template_get(
     return result
 
 
-async def job_script_template_get_list():
-    pass
+@router.get(
+    "",
+    description="Endpoint to return a list of job script templates",
+    response_model=Page[JobTemplateResponse],
+    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW))],
+)
+async def job_script_template_get_list(
+    user: bool = Query(False),
+    all: bool = Query(False),
+    search: Optional[str] = Query(None),
+    sort_field: Optional[str] = Query(None),
+    sort_ascending: bool = Query(True),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW)),
+    service: JobScriptTemplateService = Depends(template_service),
+):
+    """Get a list of job script templates."""
+    logger.debug("Preparing to list job script templates")
+
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    user_email = identity_claims.email if user else None
+
+    return await service.list(
+        all=all,
+        sort_ascending=sort_ascending,
+        user_email=user_email,
+        search=search,
+        sort_field=sort_field,
+    )
 
 
 @router.put(
