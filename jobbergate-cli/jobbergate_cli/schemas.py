@@ -188,23 +188,16 @@ class JobSubmissionCreateRequestData(pydantic.BaseModel):
     execution_parameters: Dict[str, Any] = pydantic.Field(default_factory=dict)
 
 
-class Pagination(pydantic.BaseModel):
-    """
-    A model describing the structure of the pagination component of a ListResponseEnvelope.
-    """
-
-    total: int
-    start: Optional[int]
-    limit: Optional[int]
-
-
 class ListResponseEnvelope(pydantic.BaseModel):
     """
     A model describing the structure of response envelopes from "list" endpoints.
     """
 
-    results: List[Dict[str, Any]]
-    pagination: Pagination
+    items: List[Dict[str, Any]]
+    total: int
+    page: int
+    size: int
+    pages: int
 
 
 class ClusterCacheData(pydantic.BaseModel):

@@ -92,7 +92,7 @@ def list_all(
         ListResponseEnvelope,
         make_request(
             jg_ctx.client,
-            "/jobbergate/applications",
+            "/jobbergate/job-script-templates",
             "GET",
             expected_status=200,
             abort_message="Couldn't retrieve applications list from API",
