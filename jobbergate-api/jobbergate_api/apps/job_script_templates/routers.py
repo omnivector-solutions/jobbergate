@@ -30,7 +30,7 @@ from jobbergate_api.apps.job_script_templates.service import (
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.security import IdentityClaims, guard
 
-router = APIRouter(prefix="/job-script-templates")
+router = APIRouter(prefix="/job-script-templates", tags=["Job Script Templates"])
 
 
 @router.post(

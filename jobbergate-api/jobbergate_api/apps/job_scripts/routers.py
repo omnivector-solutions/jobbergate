@@ -8,8 +8,15 @@ from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from jobbergate_api.apps.constants import FileType
+from jobbergate_api.apps.job_script_templates.dependecies import template_files_service, template_service
+from jobbergate_api.apps.job_script_templates.service import (
+    JobScriptTemplateFilesService,
+    JobScriptTemplateService,
+)
 from jobbergate_api.apps.job_scripts.dependecies import job_script_files_service, job_script_service
+from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_scripts.schemas import (
+    RenderFromTemplateRequest,
     JobScriptCreateRequest,
     JobScriptResponse,
     JobScriptUpdateRequest,
@@ -18,7 +25,7 @@ from jobbergate_api.apps.job_scripts.service import JobScriptFilesService, JobSc
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.security import IdentityClaims, guard
 
-router = APIRouter(prefix="/job-scripts")
+router = APIRouter(prefix="/job-scripts", tags=["Job Scripts"])
 
 
 @router.post(
@@ -42,14 +49,49 @@ async def job_script_create(
             detail="The token payload does not contain an email",
         )
 
-    try:
-        new_job_script = await service.create(create_request, identity_claims.email)
-    except IntegrityError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Job script template with the same identifier already exists",
-        )
+    new_job_script = await service.create(create_request, identity_claims.email)
+
     return new_job_script
+
+
+@router.post(
+    "/render-template/{id_or_identifier}",
+    status_code=status.HTTP_201_CREATED,
+    response_model=JobScriptResponse,
+    description="Endpoint for job script creation",
+)
+async def job_script_create_from_template(
+    create_request: JobScriptCreateRequest,
+    render_request: RenderFromTemplateRequest,
+    id_or_identifier: int | str = Path(...),
+    job_script_service: JobScriptService = Depends(job_script_service),
+    job_script_file_service: JobScriptFilesService = Depends(job_script_files_service),
+    template_service: JobScriptTemplateService = Depends(template_service),
+    template_file_service: JobScriptTemplateFilesService = Depends(template_files_service),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT)),
+):
+    """Create a new job script template."""
+    logger.info(f"Creating a new job script from {id_or_identifier=} with {create_request=}")
+
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    if identity_claims.email is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The token payload does not contain an email",
+        )
+
+    base_template = await template_service.get(id_or_identifier)
+    if base_template is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job script template with {id_or_identifier=} was not found",
+        )
+
+    # entrypoint_file =
+
+    job_script = await job_script_service.create(create_request, identity_claims.email)
+
+    return job_script
 
 
 @router.get(

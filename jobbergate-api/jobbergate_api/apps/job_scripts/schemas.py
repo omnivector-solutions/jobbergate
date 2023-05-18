@@ -72,6 +72,18 @@ class JobScriptCreateRequest(BaseModel):
         schema_extra = job_script_meta_mapper
 
 
+class RenderFromTemplateRequest(BaseModel):
+    """Request model for creating a JobScript entry from a template."""
+
+    entrypoint: str
+    supporting_files: Optional[List[str]]
+    sbatch_params: Optional[List[str]]
+    param_dict: Dict[str, Any]
+
+    class Config:
+        schema_extra = job_script_meta_mapper
+
+
 class JobScriptUpdateRequest(JobScriptCreateRequest):
     """
     Request model for updating JobScript instances.

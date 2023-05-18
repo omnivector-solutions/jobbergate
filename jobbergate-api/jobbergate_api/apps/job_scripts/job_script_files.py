@@ -59,7 +59,7 @@ def flatten_param_dict(param_dict: Dict[str, Any]) -> Dict[str, Any]:
     }
     """
     param_dict_flat = {}
-    for (key, value) in param_dict.items():
+    for key, value in param_dict.items():
         if isinstance(value, dict):
             for nest_key, nest_value in value.items():
                 param_dict_flat[nest_key] = nest_value
@@ -97,33 +97,7 @@ def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str
 
 
 class JobScriptFiles(BaseModel):
-    """
-    Model containing job-script files.
-
-    The folder structure aims to mimic the one specified by the application code.
-    In this way, the ``output_directory`` and file names for the main file
-    and supporting files are application specific.
-
-    To differentiate the files, they are stored in two folders, ``main-file`` and
-    ``supporting-files`` and the paths used in this model are relative the those
-    folders. See the example:
-
-        job-scripts
-        └───<id>
-            └───main-file
-            │   └───<output-directory>
-            │       └───<main-file-name>
-            │
-            └───supporting-files
-                └───<output-directory>
-                    │   <supporting-file-name-1>
-                    │   <supporting-file-name-2>
-                    │   <supporting-file-name-3>
-                    └───...
-
-    In this way, services that consume this information can maintain the
-    structure as well (like the user interface and the agents).
-    """
+    """Model containing job-script files."""
 
     main_file_path: Path
     files: Dict[Path, str]
@@ -147,89 +121,19 @@ class JobScriptFiles(BaseModel):
         return self.files.get(self.main_file_path)
 
     @classmethod
-    def get_from_s3(cls, job_script_id: int):
-        """
-        Alternative method to initialize the model getting the objects from S3.
-        """
-        logger.debug(f"Getting job-script files from S3: {job_script_id=}")
-        file_manager = cls.file_manager_factory(job_script_id)
-
-        files = {}
-        main_file_path = None
-        main_file_counter = 0
-
-        for s3_path in file_manager.keys():
-            foldername = s3_path.parts[0]
-            dict_path = s3_path.relative_to(foldername)
-            if foldername == JOBSCRIPTS_MAIN_FILE_FOLDER:
-                files[dict_path] = file_manager.get(s3_path)
-                main_file_counter += 1
-                main_file_path = dict_path
-            elif foldername == JOBSCRIPTS_SUPPORTING_FILES_FOLDER:
-                files[dict_path] = file_manager.get(s3_path)
-
-        require_condition(
-            main_file_counter == 1,
-            f"One and only one main file is expected for a job-script, found {main_file_counter}",
-            ValueError,
-        )
-
-        jobscript_files = cls(main_file_path=main_file_path, files=files)
-
-        logger.debug(f"Done getting job-script files from S3: {job_script_id=}")
-
-        return jobscript_files
-
-    @classmethod
-    def delete_from_s3(cls, job_script_id: int):
-        """
-        Delete the files associated with the given id.
-        """
-        file_manager = cls.file_manager_factory(job_script_id)
-        logger.debug(
-            f"Deleting from S3 the files associated to {job_script_id=}. "
-            f"Files to be deleted: {', '.join(map(str, file_manager.keys()))}"
-        )
-        file_manager.clear()
-        logger.debug(f"Files were deleted for {job_script_id=}")
-
-    def write_to_s3(self, job_script_id: int, *, remove_previous_files: bool = True):
-        """
-        Write to s3 the files associated with a given id.
-        """
-        logger.debug(f"Writing job-script files to S3: {job_script_id=}")
-
-        file_manager = self.file_manager_factory(job_script_id)
-
-        if remove_previous_files and file_manager:
-            self.delete_from_s3(job_script_id)
-
-        for dict_path, content in self.files.items():
-            if dict_path == self.main_file_path:
-                s3_path = JOBSCRIPTS_MAIN_FILE_FOLDER / dict_path
-            else:
-                s3_path = JOBSCRIPTS_SUPPORTING_FILES_FOLDER / dict_path
-            file_manager[s3_path] = content
-
-        logger.debug(f"Done writing job-script files to S3 for {job_script_id=}")
-
-    @classmethod
     def render_from_application(
         cls,
         application_files: ApplicationFiles,
-        user_supplied_parameters: Dict[str, Any] = None,
-        sbatch_params: List[str] = None,
+        user_supplied_parameters: Dict[str, Any] | None = None,
+        sbatch_params: List[str] | None = None,
     ):
-        """
-        Render JobScriptFiles from ApplicationFiles.
-        """
+        """Render JobScriptFiles from ApplicationFiles."""
         logger.debug("Rendering job-script files from an application")
 
         with JobScriptCreationError.check_expressions(
             main_message="One or more application files are missing",
         ) as check:
             check(application_files.config_file, "Application config file was not found")
-            check(application_files.source_file, "Application source file was not found")
             check(application_files.templates, "No template file was found")
 
         with JobScriptCreationError.handle_errors(
@@ -259,7 +163,6 @@ class JobScriptFiles(BaseModel):
                     check(supporting_file in application_files.templates, f"{supporting_file=} was not found")
 
         with JobScriptCreationError.handle_errors("Error rendering the main file"):
-
             param_dict_flat = flatten_param_dict(app_config.dict())
 
             output_directory: Optional[str] = app_config.jobbergate_config.output_directory
@@ -291,7 +194,6 @@ class JobScriptFiles(BaseModel):
             output_name_mapping = app_config.jobbergate_config.supporting_files_output_name
             if output_name_mapping:
                 for template_name, supporting_filename_list in output_name_mapping.items():
-
                     for supporting_filename in supporting_filename_list:
                         path = Path(output_directory, supporting_filename)
 
@@ -302,20 +204,3 @@ class JobScriptFiles(BaseModel):
         logger.debug("Done rendering job-script files from an application")
 
         return jobscript_files
-
-    @classmethod
-    def file_manager_factory(cls, job_script_id: int) -> FileManager:
-        """
-        Build an application file manager.
-        """
-        return cast(
-            FileManager,
-            file_manager_factory(
-                id=job_script_id,
-                s3_client=s3_client,
-                bucket_name=settings.S3_BUCKET_NAME,
-                work_directory=Path(JOBSCRIPTS_WORK_DIR),
-                manager_cls=FileManager,
-                transformations=IO_TRANSFORMATIONS,
-            ),
-        )

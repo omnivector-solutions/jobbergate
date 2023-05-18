@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import UploadFile
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
+from jinja2 import Template
 from sqlalchemy import func, not_, select, update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -136,6 +137,11 @@ class JobScriptTemplateFilesService:
         await self.session.delete(template_file)
         await self.bucket.meta.client.delete_object(Bucket=self.bucket.name, Key=template_file.file_key)
         await self.session.flush()
+
+    async def render(self, template_file: JobScriptTemplateFile, parameters: dict[str, Any]) -> str:
+        """Render a job script template."""
+        async for file_content in self.get(template_file):
+            return str(Template(file_content.decode("utf-8")).render(**parameters))
 
 
 @dataclasses.dataclass
