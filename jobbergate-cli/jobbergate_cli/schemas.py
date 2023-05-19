@@ -115,7 +115,7 @@ class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     description: Optional[str]
     template_vars: Optional[Dict[str, Any]] = {}
 
-    template_files: List[TemplateFileResponse] = []
+    template_files: Dict[str, TemplateFileResponse] = {}
     workflow_file: Optional[WorkflowFileResponse]
 
 
@@ -124,21 +124,28 @@ class JobScriptFiles(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     Model containing job-script files.
     """
 
-    main_file_path: Path
-    files: Dict[str, str]
+    filename: str
+    file_type: str
+    created_at: datetime
+    updated_at: datetime
+    url: str
 
 
-class JobScriptResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+class JobScriptResponse(
+    pydantic.BaseModel,
+    extra=pydantic.Extra.ignore,
+    allow_population_by_field_name=True,
+):
     """
     Describes the format of data for job_scripts retrieved from the Jobbergate API endpoints.
     """
 
     id: int
-    application_id: int
-    job_script_name: str
-    job_script_description: Optional[str] = None
-    job_script_files: JobScriptFiles
-    job_script_owner_email: str
+    application_id: Optional[int] = pydantic.Field(None, alias="parent_template_id")
+    name: str
+    description: Optional[str] = None
+    files: Dict[str, JobScriptFiles] = {}
+    owner_email: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

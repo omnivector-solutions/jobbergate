@@ -132,19 +132,30 @@ def create_job_script(
 
 
 def save_job_script_files(
+    jg_ctx: JobbergateContext,
     job_script_data: JobScriptResponse,
     destination_path: pathlib.Path,
 ) -> List[pathlib.Path]:
     """
     Save the job script files from the API response to the output path.
     """
+    # Make static type checkers happy
+    assert jg_ctx.client is not None
+
     logger.debug(f"Saving job script files to {destination_path.as_posix()}")
     saved_files: List[pathlib.Path] = []
 
-    for filename, file_content in job_script_data.job_script_files.files.items():
+    for filename, metadata in job_script_data.files.items():
         file_path = destination_path / filename
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        file_path.write_text(file_content)
+        make_request(
+            jg_ctx.client,
+            metadata.url,
+            "GET",
+            expected_status=200,
+            abort_message=f"Couldn't retrieve job script file {filename} from API",
+            save_to_file=file_path,
+        )
         saved_files.append(file_path)
 
     logger.debug(f"The following files were saved: {list(map(str, saved_files))}")
@@ -157,6 +168,7 @@ def download_job_script_files(id: int, jg_ctx: JobbergateContext) -> List[pathli
     """
     result = fetch_job_script_data(jg_ctx, id)
     downloaded_files = save_job_script_files(
+        jg_ctx,
         job_script_data=result,
         destination_path=pathlib.Path.cwd(),
     )

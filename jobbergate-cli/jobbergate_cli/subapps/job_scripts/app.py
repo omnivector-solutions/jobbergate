@@ -22,8 +22,7 @@ from jobbergate_cli.text_tools import dedent
 HIDDEN_FIELDS = [
     "created_at",
     "updated_at",
-    "job_script_data_as_string",
-    "job_script_files",
+    "files",
 ]
 
 
@@ -58,7 +57,7 @@ def list_all(
     assert jg_ctx is not None
     assert jg_ctx.client is not None
 
-    params: Dict[str, Any] = dict(all=show_all)
+    params: Dict[str, Any] = dict(user_only=not show_all)
     if search is not None:
         params["search"] = search
     if sort_order is not SortOrder.UNSORTED:
@@ -66,7 +65,7 @@ def list_all(
     if sort_field is not None:
         params["sort_field"] = sort_field
     if from_application_id is not None:
-        params["from_application_id"] = from_application_id
+        params["from_job_script_template_id"] = from_application_id
 
     envelope = cast(
         ListResponseEnvelope,
@@ -181,7 +180,6 @@ def create(
 
     # `submit` will be `None` --submit/--no-submit flag was not set
     if submit is None:
-
         # If not running in "fast" mode, ask the user what to do.
         if not fast:
             submit = typer.confirm("Would you like to submit this job immediately?")
@@ -239,9 +237,9 @@ def update(
 
     update_params: Dict[str, Any] = dict()
     if name is not None:
-        update_params.update(job_script_name=name)
+        update_params.update(name=name)
     if description is not None:
-        update_params.update(job_script_description=description)
+        update_params.update(description=description)
 
     job_script_result = cast(
         JobScriptResponse,
@@ -314,7 +312,7 @@ def show_files(
 
     main_file_path = str(result.job_script_files.main_file_path)
 
-    for (file_path, file_contents) in result.job_script_files.files.items():
+    for file_path, file_contents in result.job_script_files.files.items():
         if plain:
             print()
             print(f"# {file_path}")

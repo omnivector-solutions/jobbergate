@@ -78,8 +78,8 @@ def list_all(
     assert jg_ctx.client is not None
 
     params: Dict[str, Any] = dict(
-        all=show_all,
-        user=user_only,
+        include_null_identifier=show_all,
+        user_only=user_only,
     )
     if search is not None:
         params["search"] = search
