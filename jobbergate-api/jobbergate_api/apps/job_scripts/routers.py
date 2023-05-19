@@ -6,8 +6,10 @@ from fastapi import UploadFile, status
 from fastapi.responses import StreamingResponse
 from loguru import logger
 from sqlalchemy.exc import NoResultFound
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from jobbergate_api.apps.constants import FileType
+from jobbergate_api.apps.dependecies import db_session
 from jobbergate_api.apps.job_script_templates.dependecies import template_files_service, template_service
 from jobbergate_api.apps.job_script_templates.service import (
     JobScriptTemplateFilesService,
@@ -15,10 +17,10 @@ from jobbergate_api.apps.job_script_templates.service import (
 )
 from jobbergate_api.apps.job_scripts.dependecies import job_script_files_service, job_script_service
 from jobbergate_api.apps.job_scripts.schemas import (
-    RenderFromTemplateRequest,
     JobScriptCreateRequest,
     JobScriptResponse,
     JobScriptUpdateRequest,
+    RenderFromTemplateRequest,
 )
 from jobbergate_api.apps.job_scripts.service import JobScriptFilesService, JobScriptService
 from jobbergate_api.apps.permissions import Permissions
@@ -63,6 +65,7 @@ async def job_script_create_from_template(
     create_request: JobScriptCreateRequest,
     render_request: RenderFromTemplateRequest,
     id_or_identifier: int | str = Path(...),
+    session: AsyncSession = Depends(db_session),
     job_script_service: JobScriptService = Depends(job_script_service),
     job_script_file_service: JobScriptFilesService = Depends(job_script_files_service),
     template_service: JobScriptTemplateService = Depends(template_service),
@@ -94,7 +97,7 @@ async def job_script_create_from_template(
             ),
         )
 
-    job_script = await job_script_service.create(create_request, identity_claims.email)
+    job_script = await job_script_service.create(create_request, identity_claims.email, base_template.id)
 
     for i, filename in enumerate(render_request.template_list):
         file_content = await template_file_service.render(
@@ -114,7 +117,7 @@ async def job_script_create_from_template(
             filename=filename.rstrip(".j2").rstrip(".jinja2"),
         )
 
-    return job_script
+    return await session.refresh(job_script)
 
 
 @router.get(

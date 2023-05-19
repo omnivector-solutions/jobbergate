@@ -17,11 +17,17 @@ from jobbergate_api.apps.job_scripts.schemas import JobScriptCreateRequest, JobS
 class JobScriptService:
     session: AsyncSession
 
-    async def create(self, incoming_data: JobScriptCreateRequest, owner_email: str) -> JobScript:
+    async def create(
+        self,
+        incoming_data: JobScriptCreateRequest,
+        owner_email: str,
+        parent_template_id: int | None = None,
+    ) -> JobScript:
         """Add a new job_script_template to the database."""
 
         job_script = JobScript(
             **incoming_data.dict(exclude_unset=True),
+            parent_template_id=parent_template_id,
             owner_email=owner_email,
         )
         self.session.add(job_script)
@@ -86,7 +92,7 @@ class JobScriptFilesService:
         template_file = JobScriptFile(id=job_script_id, filename=filename, file_type=file_type)
 
         if isinstance(upload_content, str):
-            file_obj: Any = io.StringIO(upload_content)
+            file_obj: Any = io.BytesIO(upload_content.encode())
         elif isinstance(upload_content, bytes):
             file_obj = io.BytesIO(upload_content)
         elif isinstance(upload_content, UploadFile):
@@ -96,10 +102,9 @@ class JobScriptFilesService:
 
         await self.bucket.upload_fileobj(Fileobj=file_obj, Key=template_file.file_key)
 
-        await self.session.merge(template_file)
+        merged = await self.session.merge(template_file)
         await self.session.flush()
-        await self.session.refresh(template_file)
-        return template_file
+        return merged
 
     async def delete(self, template_file: JobScriptFile) -> None:
         """Delete a job_script_template file."""

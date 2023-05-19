@@ -97,6 +97,8 @@ class JobScriptFile(BaseModel):
 
     filename: str
     file_type: FileType
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         orm_mode = True
