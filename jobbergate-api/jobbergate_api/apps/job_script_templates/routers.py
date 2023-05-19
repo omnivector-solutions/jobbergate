@@ -89,11 +89,10 @@ async def job_script_template_get(
     "",
     description="Endpoint to return a list of job script templates",
     response_model=Page[JobTemplateResponse],
-    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW))],
 )
 async def job_script_template_get_list(
-    user: bool = Query(False),
-    all: bool = Query(False),
+    user_only: bool = Query(False),
+    include_null_identifier: bool = Query(False),
     search: Optional[str] = Query(None),
     sort_field: Optional[str] = Query(None),
     sort_ascending: bool = Query(True),
@@ -104,10 +103,10 @@ async def job_script_template_get_list(
     logger.debug("Preparing to list job script templates")
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
-    user_email = identity_claims.email if user else None
+    user_email = identity_claims.email if user_only else None
 
     return await service.list(
-        all=all,
+        include_null_identifier=include_null_identifier,
         sort_ascending=sort_ascending,
         user_email=user_email,
         search=search,

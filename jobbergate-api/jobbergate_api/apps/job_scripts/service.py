@@ -4,6 +4,8 @@ import io
 from typing import Any
 
 from fastapi import UploadFile
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import func, select, update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.job_scripts.models import JobScript, JobScriptFile
 from jobbergate_api.apps.job_scripts.schemas import JobScriptCreateRequest, JobScriptUpdateRequest
+from jobbergate_api.storage import search_clause, sort_clause
 
 
 @dataclasses.dataclass
@@ -23,7 +26,7 @@ class JobScriptService:
         owner_email: str,
         parent_template_id: int | None = None,
     ) -> JobScript:
-        """Add a new job_script_template to the database."""
+        """Add a new job script to the database."""
 
         job_script = JobScript(
             **incoming_data.dict(exclude_unset=True),
@@ -36,19 +39,19 @@ class JobScriptService:
         return job_script
 
     async def count(self) -> int:
-        """Count the number of job_script_templates on the database."""
+        """Count the number of job_script on the database."""
         result = await self.session.execute(select(func.count(JobScript.id)))
         return result.scalar_one()
 
     async def get(self, id: int) -> JobScript | None:
-        """Get a job_script_template by id or identifier."""
+        """Get a job script by id."""
         query = select(JobScript)
         query = query.where(JobScript.id == id)
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def delete(self, id: int) -> None:
-        """Delete a job_script_template by id or identifier."""
+        """Delete a job script by id."""
         job_template = await self.get(id)
         if job_template is None:
             raise NoResultFound("JobScript not found")
@@ -56,7 +59,7 @@ class JobScriptService:
         await self.session.flush()
 
     async def update(self, id: int, incoming_data: JobScriptUpdateRequest) -> JobScript:
-        """Update a job_script_template by id or identifier."""
+        """Update a job script by id."""
         query = update(JobScript).returning(JobScript)
         query = query.where(JobScript.id == id)
         query = query.values(**incoming_data.dict(exclude_unset=True))
@@ -64,9 +67,25 @@ class JobScriptService:
         await self.session.flush()
         return result.scalar_one()
 
-
-def list():
-    pass
+    async def list(
+        self,
+        user_email: str | None = None,
+        search: str | None = None,
+        sort_field: str | None = None,
+        sort_ascending: bool = True,
+        from_job_script_template_id: int | None = None,
+    ) -> Page[JobScript]:
+        """List job scripts."""
+        query = select(JobScript)
+        if user_email:
+            query = query.where(JobScript.owner_email == user_email)
+        if from_job_script_template_id is not None:
+            query = query.where(JobScript.parent_template_id == from_job_script_template_id)
+        if search:
+            query = query.where(search_clause(search, JobScript.searchable_fields))
+        if sort_field:
+            query = query.order_by(sort_clause(sort_field, JobScript.sortable_fields, sort_ascending))
+        return await paginate(self.session, query)
 
 
 @dataclasses.dataclass

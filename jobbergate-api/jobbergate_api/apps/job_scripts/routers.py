@@ -1,9 +1,12 @@
 """Router for the Job Script Template resource."""
+from typing import Optional
+
 from armasec import TokenPayload
-from fastapi import APIRouter, Depends, File, HTTPException, Path
+from fastapi import APIRouter, Depends, File, HTTPException, Path, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
 from fastapi.responses import StreamingResponse
+from fastapi_pagination import Page
 from loguru import logger
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,7 +36,7 @@ router = APIRouter(prefix="/job-scripts", tags=["Job Scripts"])
     "",
     status_code=status.HTTP_201_CREATED,
     response_model=JobScriptResponse,
-    description="Endpoint for job script creation",
+    description="Endpoint for creating a stand alone job script. Use file upload to add files.",
 )
 async def job_script_create(
     create_request: JobScriptCreateRequest,
@@ -56,7 +59,7 @@ async def job_script_create(
 
 
 @router.post(
-    "/render-template/{id_or_identifier}",
+    "/render-from-template/{id_or_identifier}",
     status_code=status.HTTP_201_CREATED,
     response_model=JobScriptResponse,
     description="Endpoint for job script creation",
@@ -141,8 +144,36 @@ async def job_script_get(
     return result
 
 
-async def job_script_get_list():
-    pass
+@router.get(
+    "",
+    description="Endpoint to return a list of job scripts",
+    response_model=Page[JobScriptResponse],
+)
+async def job_script_get_list(
+    user_only: bool = Query(False),
+    search: Optional[str] = Query(None),
+    sort_field: Optional[str] = Query(None),
+    sort_ascending: bool = Query(True),
+    from_job_script_template_id: Optional[int] = Query(
+        None,
+        description="Filter job-scripts by the job-script-template-id they were created from.",
+    ),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW)),
+    service: JobScriptService = Depends(job_script_service),
+):
+    """Get a list of job scripts."""
+    logger.debug("Preparing to list job scripts")
+
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    user_email = identity_claims.email if user_only else None
+
+    return await service.list(
+        user_email=user_email,
+        search=search,
+        sort_field=sort_field,
+        sort_ascending=sort_ascending,
+        from_job_script_template_id=from_job_script_template_id,
+    )
 
 
 @router.put(
@@ -153,14 +184,14 @@ async def job_script_get_list():
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
 )
 async def job_script_update(
-    update_request: JobScriptUpdateRequest,
+    update_params: JobScriptUpdateRequest,
     id: int = Path(),
     service: JobScriptService = Depends(job_script_service),
 ):
     """Update a job script template by id or identifier."""
-    logger.info(f"Updating job script {id=}")
+    logger.info(f"Updating job script {id=} with {update_params=}")
     try:
-        result = await service.update(id, update_request)
+        result = await service.update(id, update_params)
     except NoResultFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -1,15 +1,19 @@
 """
 Database model for the JobScript resource.
 """
-from sqlalchemy import Enum, ForeignKey, Integer, String
+from datetime import datetime
+from typing import Optional
+
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, attribute_keyed_dict, mapped_column, relationship
+from sqlalchemy.sql import functions
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.models import Base, BaseFieldsMixin, ExtraFieldsMixin, Mapped, mapped_column
+from jobbergate_api.apps.models import Base, BaseFieldsMixin, Mapped, mapped_column
 
 
-class JobScript(Base, BaseFieldsMixin, ExtraFieldsMixin):
+class JobScript(Base):
     """
     Job script table definition.
 
@@ -26,13 +30,41 @@ class JobScript(Base, BaseFieldsMixin, ExtraFieldsMixin):
     __tablename__ = "job_scripts"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    description: Mapped[Optional[str]] = mapped_column(String, default=None, nullable=True)
+    owner_email: Mapped[str] = mapped_column(String, nullable=False, index=True)
     parent_template_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("job_script_templates.id", ondelete="SET NULL"),
         nullable=True,
     )
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=functions.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=functions.now(),
+        onupdate=functions.current_timestamp(),
+    )
 
-    files: Mapped[list["JobScriptFile"]] = relationship("JobScriptFile", lazy="subquery")
+    files: Mapped[dict[str, "JobScriptFile"]] = relationship(
+        "JobScriptFile",
+        lazy="subquery",
+        collection_class=attribute_keyed_dict("filename"),
+        cascade="all, delete-orphan",
+    )
+
+    searchable_fields = [
+        description,
+        name,
+        owner_email,
+    ]
+    sortable_fields = [
+        id,
+        name,
+        owner_email,
+        created_at,
+        updated_at,
+    ]
 
 
 class JobScriptFile(Base, BaseFieldsMixin):

@@ -1,10 +1,11 @@
 """
 JobScript resource schema.
 """
+import urllib.parse
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, conlist
+from pydantic import BaseModel, conlist, root_validator
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
@@ -95,10 +96,22 @@ class JobScriptUpdateRequest(JobScriptCreateRequest):
 class JobScriptFile(BaseModel):
     """Model for the job_script_files field of the JobScript resource."""
 
+    id: int
     filename: str
     file_type: FileType
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+    url: Optional[str]
+
+    @root_validator
+    def _compute_url(cls, values):
+        values["url"] = "jobbergate/job-scripts/{}/upload/{}".format(
+            values["id"],
+            urllib.parse.quote(values["filename"], safe=""),
+        )
+
+        return values
 
     class Config:
         orm_mode = True
@@ -111,7 +124,7 @@ class JobScriptResponse(BaseModel):
     id: Optional[int] = None
     name: str
     owner_email: str
-    files: list[JobScriptFile]
+    files: dict[str, JobScriptFile] = {}
     description: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

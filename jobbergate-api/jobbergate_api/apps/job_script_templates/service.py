@@ -72,7 +72,7 @@ class JobScriptTemplateService:
 
     async def list(
         self,
-        all: bool = True,
+        include_null_identifier: bool = True,
         sort_ascending: bool = True,
         user_email: str | None = None,
         search: str | None = None,
@@ -82,7 +82,7 @@ class JobScriptTemplateService:
         query = select(JobScriptTemplate)
         if user_email:
             query = query.where(JobScriptTemplate.owner_email == user_email)
-        if not all:
+        if not include_null_identifier:
             query = query.where(not_(JobScriptTemplate.identifier.is_(None)))
         if search:
             query = query.where(search_clause(search, JobScriptTemplate.searchable_fields))
