@@ -256,18 +256,19 @@ def update(
     # Make static type checkers happy
     assert jg_ctx.client is not None
 
-    result = cast(
-        Dict[str, Any],
-        make_request(
-            jg_ctx.client,
-            f"/jobbergate/job-script-templates/{id}",
-            "PUT",
-            expected_status=200,
-            abort_message="Request to update application was not accepted by the API",
-            support=True,
-            json=req_data,
-        ),
-    )
+    if req_data:
+        cast(
+            Dict[str, Any],
+            make_request(
+                jg_ctx.client,
+                f"/jobbergate/job-script-templates/{id}",
+                "PUT",
+                expect_response=False,
+                abort_message="Request to update application was not accepted by the API",
+                support=True,
+                json=req_data,
+            ),
+        )
 
     if application_path is not None:
         successful_upload = upload_application(jg_ctx, application_path, id)
@@ -282,8 +283,8 @@ def update(
                 subject="File upload failed",
                 color="yellow",
             )
-        else:
-            result["application_uploaded"] = True
+
+    result = fetch_application_data(jg_ctx, id=id)
 
     render_single_result(
         jg_ctx,
