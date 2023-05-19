@@ -5,7 +5,7 @@ from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
 from fastapi.responses import StreamingResponse
 from loguru import logger
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy.exc import NoResultFound
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.job_script_templates.dependecies import template_files_service, template_service
@@ -14,7 +14,6 @@ from jobbergate_api.apps.job_script_templates.service import (
     JobScriptTemplateService,
 )
 from jobbergate_api.apps.job_scripts.dependecies import job_script_files_service, job_script_service
-from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_scripts.schemas import (
     RenderFromTemplateRequest,
     JobScriptCreateRequest,
@@ -39,7 +38,7 @@ async def job_script_create(
     service: JobScriptService = Depends(job_script_service),
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT)),
 ):
-    """Create a new job script template."""
+    """Create a stand alone job script template."""
     logger.info(f"Creating a new job script with {create_request=}")
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
@@ -70,7 +69,7 @@ async def job_script_create_from_template(
     template_file_service: JobScriptTemplateFilesService = Depends(template_files_service),
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT)),
 ):
-    """Create a new job script template."""
+    """Create a new job script from a job script template."""
     logger.info(f"Creating a new job script from {id_or_identifier=} with {create_request=}")
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
@@ -87,9 +86,33 @@ async def job_script_create_from_template(
             detail=f"Job script template with {id_or_identifier=} was not found",
         )
 
-    # entrypoint_file =
+    if not set(render_request.template_list).issubset(base_template.template_files.keys()):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The required template files {} are not a subset of the template files for {}".format(
+                render_request.template_list, id_or_identifier
+            ),
+        )
 
     job_script = await job_script_service.create(create_request, identity_claims.email)
+
+    for i, filename in enumerate(render_request.template_list):
+        file_content = await template_file_service.render(
+            base_template.template_files[filename],
+            render_request.param_dict,
+        )
+
+        if i == 0:
+            file_type = FileType.ENTRYPOINT
+        else:
+            file_type = FileType.SUPPORT
+
+        await job_script_file_service.upsert(
+            job_script_id=job_script.id,
+            file_type=file_type,
+            upload_content=file_content,
+            filename=filename.rstrip(".j2").rstrip(".jinja2"),
+        )
 
     return job_script
 

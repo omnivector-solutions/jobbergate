@@ -1,5 +1,6 @@
 """Services for the job_script_templates resource, including module specific business logic."""
 import dataclasses
+import io
 from typing import Any
 
 from fastapi import UploadFile
@@ -14,7 +15,6 @@ from jobbergate_api.apps.job_scripts.schemas import JobScriptCreateRequest, JobS
 
 @dataclasses.dataclass
 class JobScriptService:
-
     session: AsyncSession
 
     async def create(self, incoming_data: JobScriptCreateRequest, owner_email: str) -> JobScript:
@@ -65,7 +65,6 @@ def list():
 
 @dataclasses.dataclass
 class JobScriptFilesService:
-
     session: AsyncSession
     bucket: Any
 
@@ -80,12 +79,22 @@ class JobScriptFilesService:
         self,
         job_script_id: int,
         file_type: FileType,
-        upload_file: UploadFile,
+        upload_content: str | bytes | UploadFile,
+        filename: str,
     ) -> JobScriptFile:
         """Upsert a job_script file."""
-        template_file = JobScriptFile(id=job_script_id, filename=upload_file.filename, file_type=file_type)
+        template_file = JobScriptFile(id=job_script_id, filename=filename, file_type=file_type)
 
-        await self.bucket.upload_fileobj(Fileobj=upload_file.file, Key=template_file.file_key)
+        if isinstance(upload_content, str):
+            file_obj: Any = io.StringIO(upload_content)
+        elif isinstance(upload_content, bytes):
+            file_obj = io.BytesIO(upload_content)
+        elif isinstance(upload_content, UploadFile):
+            file_obj = upload_content.file
+        else:
+            raise TypeError(f"Unsupported file type {type(upload_content)}")
+
+        await self.bucket.upload_fileobj(Fileobj=file_obj, Key=template_file.file_key)
 
         await self.session.merge(template_file)
         await self.session.flush()

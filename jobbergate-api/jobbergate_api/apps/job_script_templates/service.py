@@ -109,11 +109,14 @@ class JobScriptTemplateFilesService:
 
     async def get(self, template_file: JobScriptTemplateFile):
         """Get a job_script_template file."""
+        file_content = await self._get_file_content(template_file)
+        yield file_content
+
+    async def _get_file_content(self, template_file: JobScriptTemplateFile):
         fileobj = await self.bucket.meta.client.get_object(
             Bucket=self.bucket.name, Key=template_file.file_key
         )
-        file_content = await fileobj["Body"].read()
-        yield file_content
+        return await fileobj["Body"].read()
 
     async def upsert(
         self,
@@ -140,8 +143,8 @@ class JobScriptTemplateFilesService:
 
     async def render(self, template_file: JobScriptTemplateFile, parameters: dict[str, Any]) -> str:
         """Render a job script template."""
-        async for file_content in self.get(template_file):
-            return str(Template(file_content.decode("utf-8")).render(**parameters))
+        file_content = await self._get_file_content(template_file)
+        return Template(file_content.decode("utf-8")).render(**parameters)
 
 
 @dataclasses.dataclass

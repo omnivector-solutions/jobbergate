@@ -4,7 +4,7 @@ JobScript resource schema.
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, conlist
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
@@ -75,8 +75,7 @@ class JobScriptCreateRequest(BaseModel):
 class RenderFromTemplateRequest(BaseModel):
     """Request model for creating a JobScript entry from a template."""
 
-    entrypoint: str
-    supporting_files: Optional[List[str]]
+    template_list: conlist(str, min_items=1, unique_items=True)  # type: ignore
     sbatch_params: Optional[List[str]]
     param_dict: Dict[str, Any]
 
