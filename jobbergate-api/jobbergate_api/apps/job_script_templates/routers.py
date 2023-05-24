@@ -261,7 +261,6 @@ async def job_script_template_delete_file(
 )
 async def job_script_workflow_get_file(
     id_or_identifier: int | str = Path(),
-    file_name: str = Path(),
     service: JobScriptTemplateService = Depends(template_service),
     file_service: WorkflowFilesService = Depends(workflow_files_service),
 ):
@@ -282,7 +281,7 @@ async def job_script_workflow_get_file(
     if not workflow_file:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Workflow file with {file_name=} was not found",
+            detail=f"Workflow file {WORKFLOW_FILE_NAME} was not found",
         )
 
     return StreamingResponse(

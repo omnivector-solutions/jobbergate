@@ -89,7 +89,7 @@ async def job_script_create_from_template(
     if not render_request.template_output_name_mapping:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No template was selected for rendering. The template_output_name_mapping cannot be empty.",
+            detail="No template was selected for rendering, template_output_name_mapping is empty.",
         )
 
     base_template = await template_service.get(id_or_identifier)
@@ -113,7 +113,7 @@ async def job_script_create_from_template(
 
     for i, (template_name, output_name) in enumerate(render_request.template_output_name_mapping.items()):
         file_content = await template_file_service.render(
-            base_template.template_files[output_name],
+            base_template.template_files[template_name],
             render_request.param_dict,
         )
 
@@ -124,11 +124,11 @@ async def job_script_create_from_template(
         else:
             file_type = FileType.SUPPORT
 
-        if base_template.template_files[output_name].file_type != file_type:
+        if base_template.template_files[template_name].file_type != file_type:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="The file type {} of {} does not match the expected file type {}".format(
-                    base_template.template_files[output_name].file_type, output_name, file_type
+                    base_template.template_files[template_name].file_type, template_name, file_type
                 ),
             )
 
@@ -136,10 +136,12 @@ async def job_script_create_from_template(
             job_script_id=job_script.id,
             file_type=file_type,
             upload_content=file_content,
-            filename=template_name,
+            filename=output_name,
         )
 
-    return await session.refresh(job_script)
+    await session.refresh(job_script)
+
+    return job_script
 
 
 @router.get(
@@ -210,13 +212,13 @@ async def job_script_update(
     """Update a job script template by id or identifier."""
     logger.info(f"Updating job script {id=} with {update_params=}")
     try:
-        result = await service.update(id, update_params)
+        await service.update(id, update_params)
     except NoResultFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job script {id=} was not found",
         )
-    return result
+    return await service.get(id)
 
 
 @router.delete(
@@ -243,7 +245,7 @@ async def job_script_delete(
 
 
 @router.get(
-    "/{id}/upload/{file_name}",
+    "/{id}/upload/{file_name:path}",
     description="Endpoint to get a file from a job script",
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW))],
 )
@@ -266,14 +268,12 @@ async def job_script_get_file(
             detail=f"Job script {id=} was not found",
         )
 
-    job_script_file_list = [f for f in job_script.files if f.filename == file_name]
-    if not job_script_file_list:
+    job_script_file = job_script.files.get(file_name)
+    if not job_script_file:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job script file {file_name=} was not found",
         )
-
-    job_script_file = job_script_file_list[0]
 
     return StreamingResponse(content=file_service.get(job_script_file), media_type="text/plain")
 
