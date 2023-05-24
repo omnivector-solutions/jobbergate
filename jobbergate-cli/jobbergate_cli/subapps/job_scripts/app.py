@@ -3,6 +3,7 @@ Provide a ``typer`` app that can interact with Job Script data in a cruddy manne
 """
 
 import pathlib
+import tempfile
 from typing import Any, Dict, List, Optional, cast
 
 import typer
@@ -12,7 +13,7 @@ from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.render import StyleMapper, render_json, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobScriptResponse, ListResponseEnvelope
-from jobbergate_cli.subapps.job_scripts.tools import create_job_script, download_job_script_files, fetch_job_script_data
+from jobbergate_cli.subapps.job_scripts.tools import create_job_script, download_job_script_files, fetch_job_script_data, save_job_script_files
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
 from jobbergate_cli.subapps.job_submissions.tools import create_job_submission
 from jobbergate_cli.text_tools import dedent
@@ -297,7 +298,7 @@ def delete(
 @handle_abort
 def show_files(
     ctx: typer.Context,
-    id: int = typer.Option(int, help="The specific id of the job script."),
+    id: int = typer.Option(..., help="The specific id of the job script."),
     plain: bool = typer.Option(False, help="Show the files in plain text."),
 ):
     """
@@ -306,22 +307,22 @@ def show_files(
     jg_ctx: JobbergateContext = ctx.obj
     result = fetch_job_script_data(jg_ctx, id)
 
-    if jg_ctx.raw_output:
-        render_json(result.job_script_files)
-        return
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_path = pathlib.Path(tmp_dir)
+        file_list = save_job_script_files(jg_ctx, result, tmp_path)
 
-    main_file_path = str(result.job_script_files.main_file_path)
-
-    for file_path, file_contents in result.job_script_files.files.items():
-        if plain:
-            print()
-            print(f"# {file_path}")
-            if file_path == main_file_path:
-                print("# This is the main job script file")
-            print(file_contents)
-        else:
-            footer = "This is the main job script file" if main_file_path == file_path else None
-            terminal_message(file_contents, subject=file_path, footer=footer)
+        for (filename, metadata), file_path in zip(result.files.items(), file_list):
+            file_content = file_path.read_text()
+            is_main_file = metadata.file_type.upper() == "ENTRYPOINT"
+            if plain or jg_ctx.raw_output:
+                print()
+                print(f"# {filename}")
+                if is_main_file:
+                    print("# This is the main job script file")
+                print(file_content)
+            else:
+                footer = "This is the main job script file" if is_main_file else None
+                terminal_message(file_content, subject=filename, footer=footer)
 
 
 @app.command()

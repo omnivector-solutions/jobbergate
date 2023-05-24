@@ -113,7 +113,8 @@ def flatten_param_dict(param_dict: Dict[str, Any]) -> Dict[str, Any]:
             param_dict_flat[key] = value
     return param_dict_flat
 
-def _remove_prefix_suffix(s: str) -> str:
+def remove_prefix_suffix(s: str) -> str:
+    """Remove the prefix 'templates/' and suffixes '.j2' and '.jinja2' from a string"""
     if s.startswith("templates/"):
         s = s[10:]
     if s.endswith(".j2"):
@@ -139,12 +140,12 @@ def get_template_output_name_mapping(config: JobbergateConfig) -> Dict[str, str]
         )
 
     output_name_mapping = {
-        config.default_template: output_dir / _remove_prefix_suffix(config.default_template)
+        config.default_template: output_dir / remove_prefix_suffix(config.default_template)
     }
 
     if config.supporting_files:
         for template in config.supporting_files:
-            output_name_mapping[template] = output_dir / _remove_prefix_suffix(template)
+            output_name_mapping[template] = output_dir / remove_prefix_suffix(template)
     if config.supporting_files_output_name:
         for template, output_name in config.supporting_files_output_name.items():
             output_name_mapping[template] = output_dir / output_name
