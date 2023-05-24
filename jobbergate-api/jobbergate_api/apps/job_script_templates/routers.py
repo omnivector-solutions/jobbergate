@@ -1,5 +1,5 @@
 """Router for the Job Script Template resource."""
-from typing import Any, Optional
+from typing import Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Body, Depends, File, HTTPException, Path, Query
@@ -21,6 +21,7 @@ from jobbergate_api.apps.job_script_templates.schemas import (
     JobTemplateCreateRequest,
     JobTemplateResponse,
     JobTemplateUpdateRequest,
+    RunTimeConfig,
 )
 from jobbergate_api.apps.job_script_templates.service import (
     JobScriptTemplateFilesService,
@@ -129,13 +130,14 @@ async def job_script_template_update(
     """Update a job script template by id or identifier."""
     logger.info(f"Updating job script template {id_or_identifier=} with {update_request=}")
     try:
-        result = await service.update(id_or_identifier, update_request)
+        # check this query that is not returning the relations with child files
+        await service.update(id_or_identifier, update_request)
     except NoResultFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job script template with {id_or_identifier=} was not found",
         )
-    return result
+    return await service.get(id_or_identifier)
 
 
 @router.delete(
@@ -298,23 +300,27 @@ async def job_script_workflow_get_file(
 )
 async def job_script_workflow_upload_file(
     id_or_identifier: int | str = Path(),
+    runtime_config: RunTimeConfig = Body(),
     upload_file: UploadFile = File(..., description="File to upload"),
-    runtime_config: dict[str, Any] | None = Body(None, description="Runtime configuration"),
     service: JobScriptTemplateService = Depends(template_service),
     file_service: WorkflowFilesService = Depends(workflow_files_service),
 ):
     """Upload a file to a job script workflow by id or identifier."""
+    logger.debug(
+        f"Preparing to upload workflow file to job script template {id_or_identifier=}: {runtime_config.data=}"
+    )
     job_script_template = await service.get(id_or_identifier)
-
-    if runtime_config is None:
-        runtime_config = {}
 
     if job_script_template is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Job script template with {id_or_identifier=} was not found",
         )
-    await file_service.upsert(job_script_template.id, runtime_config, upload_file)
+    await file_service.upsert(
+        job_script_template.id,
+        runtime_config.data,
+        upload_file,
+    )
 
 
 @router.delete(

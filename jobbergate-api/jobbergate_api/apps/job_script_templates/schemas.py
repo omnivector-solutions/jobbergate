@@ -1,8 +1,25 @@
+import json
 import urllib.parse
 from datetime import datetime
 from typing import Any, Optional
 
 from pydantic import BaseModel, root_validator
+
+
+class RunTimeConfig(BaseModel):
+    """Schema for the runtime config of a job template."""
+
+    data: dict[str, Any]
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate_to_json
+
+    @classmethod
+    def validate_to_json(cls, value):
+        if isinstance(value, str):
+            return cls(**json.loads(value))
+        return value
 
 
 class JobTemplateCreateRequest(BaseModel):
@@ -54,8 +71,8 @@ class TemplateFileResponse(BaseModel):
 class WorkflowFileResponse(BaseModel):
     id: int
     runtime_config: Optional[dict[str, Any]] = {}
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
 
     url: Optional[str]
 
@@ -81,7 +98,7 @@ class JobTemplateResponse(BaseModel):
     description: Optional[str]
     template_vars: Optional[dict[str, Any]] = {}
 
-    template_files: dict[str, TemplateFileResponse] = {}
+    template_files: Optional[dict[str, TemplateFileResponse]] = {}
     workflow_file: Optional[WorkflowFileResponse]
 
     class Config:

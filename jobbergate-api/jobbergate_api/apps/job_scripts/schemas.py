@@ -3,9 +3,9 @@ JobScript resource schema.
 """
 import urllib.parse
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
-from pydantic import BaseModel, conlist, root_validator
+from pydantic import BaseModel, root_validator
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
@@ -76,9 +76,9 @@ class JobScriptCreateRequest(BaseModel):
 class RenderFromTemplateRequest(BaseModel):
     """Request model for creating a JobScript entry from a template."""
 
-    template_list: conlist(str, min_items=1, unique_items=True)  # type: ignore
-    sbatch_params: Optional[List[str]]
-    param_dict: Dict[str, Any]
+    template_output_name_mapping: dict[str, str]
+    sbatch_params: Optional[list[str]]
+    param_dict: dict[str, Any]
 
     class Config:
         schema_extra = job_script_meta_mapper

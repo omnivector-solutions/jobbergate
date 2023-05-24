@@ -19,6 +19,7 @@ from jobbergate_api.apps.job_script_templates.service import (
     JobScriptTemplateService,
 )
 from jobbergate_api.apps.job_scripts.dependecies import job_script_files_service, job_script_service
+from jobbergate_api.apps.job_scripts.job_script_files import inject_sbatch_params
 from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptCreateRequest,
     JobScriptResponse,
@@ -85,6 +86,12 @@ async def job_script_create_from_template(
             detail="The token payload does not contain an email",
         )
 
+    if not render_request.template_output_name_mapping:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No template was selected for rendering. The template_output_name_mapping cannot be empty.",
+        )
+
     base_template = await template_service.get(id_or_identifier)
     if base_template is None:
         raise HTTPException(
@@ -92,32 +99,44 @@ async def job_script_create_from_template(
             detail=f"Job script template with {id_or_identifier=} was not found",
         )
 
-    if not set(render_request.template_list).issubset(base_template.template_files.keys()):
+    if not set(render_request.template_output_name_mapping.keys()).issubset(
+        base_template.template_files.keys()
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The required template files {} are not a subset of the template files for {}".format(
-                render_request.template_list, id_or_identifier
+                render_request.template_output_name_mapping.keys(), id_or_identifier
             ),
         )
 
     job_script = await job_script_service.create(create_request, identity_claims.email, base_template.id)
 
-    for i, filename in enumerate(render_request.template_list):
+    for i, (template_name, output_name) in enumerate(render_request.template_output_name_mapping.items()):
         file_content = await template_file_service.render(
-            base_template.template_files[filename],
+            base_template.template_files[output_name],
             render_request.param_dict,
         )
 
         if i == 0:
             file_type = FileType.ENTRYPOINT
+            if render_request.sbatch_params:
+                file_content = inject_sbatch_params(file_content, render_request.sbatch_params)
         else:
             file_type = FileType.SUPPORT
+
+        if base_template.template_files[output_name].file_type != file_type:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="The file type {} of {} does not match the expected file type {}".format(
+                    base_template.template_files[output_name].file_type, output_name, file_type
+                ),
+            )
 
         await job_script_file_service.upsert(
             job_script_id=job_script.id,
             file_type=file_type,
             upload_content=file_content,
-            filename=filename.rstrip(".j2").rstrip(".jinja2"),
+            filename=template_name,
         )
 
     return await session.refresh(job_script)
