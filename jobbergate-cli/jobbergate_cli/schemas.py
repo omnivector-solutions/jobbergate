@@ -67,9 +67,9 @@ class JobbergateConfig(pydantic.BaseModel, extra=pydantic.Extra.allow):
 
     template_files: Optional[List[Path]]
     default_template: Optional[str] = None
-    output_directory: Optional[Path] = None
+    output_directory: Path = Path(".")
     supporting_files_output_name: Optional[Dict[str, Any]] = None
-    supporting_files: Optional[List[Path]] = None
+    supporting_files: Optional[List[str]] = None
 
     # For some reason, we support the application_config being about to override the *required*
     # job_script_name parameter that is passed at job_script creation time.
@@ -169,18 +169,26 @@ class JobSubmissionResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     report_message: Optional[str]
     execution_parameters: Optional[Dict[str, Any]]
 
+class JobScriptCreateRequest(pydantic.BaseModel):
+    """
+    Request model for creating JobScript instances.
+    """
+    name: str
+    description: Optional[str]
+
+
+class RenderFromTemplateRequest(pydantic.BaseModel):
+    """Request model for creating a JobScript entry from a template."""
+    template_output_name_mapping: Dict[str, str]
+    sbatch_params: Optional[List[str]]
+    param_dict: Dict[str, Any]
 
 class JobScriptCreateRequestData(pydantic.BaseModel):
     """
     Describes the data that will be sent to the ``create`` endpoint of the Jobbergate API for job scripts.
     """
-
-    application_id: int
-    job_script_name: str
-    job_script_description: Optional[str]
-    param_dict: Optional[JobbergateApplicationConfig] = None
-    sbatch_params: Optional[List[Any]] = None
-
+    create_request: JobScriptCreateRequest
+    render_request: RenderFromTemplateRequest
 
 class JobSubmissionCreateRequestData(pydantic.BaseModel):
     """

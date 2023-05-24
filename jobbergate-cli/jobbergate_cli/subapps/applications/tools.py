@@ -86,6 +86,7 @@ def fetch_application_data(
 
 def load_application_data(
     app_data: ApplicationResponse,
+    application_source_file: str,
 ) -> Tuple[JobbergateApplicationConfig, JobbergateApplicationBase]:
     """
     Validates and loads the data for an application returned from the API's applications GET endpoint.
@@ -93,15 +94,11 @@ def load_application_data(
     :param: app_data: A dictionary containing the application data
     :returns: A tuple containing the application config and the application module
     """
-    if not app_data.application_config:
-        raise Abort(
-            f"Fail to retrieve the application config file for id={app_data.id}",
-            subject="Application config is missing",
-            log_message="Application config is missing",
-        )
-
     try:
-        app_config = load_application_config_from_source(app_data.application_config)
+        app_config = JobbergateApplicationConfig(
+            jobbergate_config=app_data.workflow_file.runtime_config, # type: ignore
+            application_config=app_data.template_vars, # type: ignore
+        )
     except Exception as err:
         print("ERR: ", err)
         raise Abort(
@@ -112,15 +109,8 @@ def load_application_data(
             original_error=err,
         )
 
-    if not app_data.application_source_file:
-        raise Abort(
-            f"Fail to retrieve the application source file for id={app_data.id}",
-            subject="Application source file is missing",
-            log_message="Application source file is missing",
-        )
-
     try:
-        app_module = load_application_from_source(app_data.application_source_file, app_config)
+        app_module = load_application_from_source(application_source_file, app_config)
     except Exception as err:
         raise Abort(
             "The application source fetched from the API is not valid",
@@ -199,7 +189,7 @@ def upload_application(
     if response_code != 200:
         return False
 
-    supporting_files = application_config.jobbergate_config.supporting_files or []
+    supporting_files = application_config.jobbergate_config.get("supporting_files", [])
 
     for complete_template_path in itertools.chain(application_path.rglob("*.j2"), application_path.rglob("*.jinja2")):
         relative_template_path = complete_template_path.relative_to(application_path)
@@ -238,7 +228,7 @@ def upload_application(
                 abort_message="Request to upload application module was not accepted by the API",
                 support=True,
                 files={"upload_file": (module_file_path.name, module_file, "text/plain")},
-                json={"runtime_config": application_config.jobbergate_config.dict()},
+                json={"data": application_config.jobbergate_config},
             ),
         )
     if response_code != 200:
