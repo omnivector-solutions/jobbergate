@@ -55,7 +55,7 @@ else:
 
 subapp.include_router(job_script_templates_router)
 subapp.include_router(job_scripts_router)
-# subapp.include_router(job_submissions_router)
+subapp.include_router(job_submissions_router)
 subapp.exception_handler(asyncpg.exceptions.ForeignKeyViolationError)(handle_fk_error)
 
 add_pagination(subapp)

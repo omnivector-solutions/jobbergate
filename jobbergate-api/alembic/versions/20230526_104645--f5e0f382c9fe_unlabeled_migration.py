@@ -1,8 +1,8 @@
 """Unlabeled migration
 
-Revision ID: c804dde9bd1e
+Revision ID: f5e0f382c9fe
 Revises: 
-Create Date: 2023-03-10 10:36:02.806890
+Create Date: 2023-05-26 10:46:45.326500
 
 """
 import sqlalchemy as sa
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "c804dde9bd1e"
+revision = "f5e0f382c9fe"
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -29,11 +29,11 @@ def upgrade():
             server_default=sa.text("'{}'::jsonb"),
             nullable=False,
         ),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=True),
         sa.Column("owner_email", sa.String(), nullable=False),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
@@ -56,16 +56,13 @@ def upgrade():
     op.create_table(
         "job_scripts",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("parent_template_id", sa.Integer(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=True),
         sa.Column("owner_email", sa.String(), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["parent_template_id"],
-            ["job_script_templates.id"],
-        ),
+        sa.Column("parent_template_id", sa.Integer(), nullable=True),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("updated_at", sa.DateTime(), nullable=False),
+        sa.ForeignKeyConstraint(["parent_template_id"], ["job_script_templates.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_job_scripts_name"), "job_scripts", ["name"], unique=False)
@@ -73,7 +70,6 @@ def upgrade():
     op.create_table(
         "workflow_files",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("identifier", sa.String(), nullable=True),
         sa.Column(
             "runtime_config",
             postgresql.JSONB(astext_type=sa.Text()),
@@ -83,12 +79,7 @@ def upgrade():
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(["id"], ["job_script_templates.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(
-            ["identifier"],
-            ["job_script_templates.identifier"],
-        ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("identifier"),
     )
     op.create_table(
         "job_script_files",
@@ -105,7 +96,7 @@ def upgrade():
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("job_script_id", sa.Integer(), nullable=False),
         sa.Column("execution_directory", sa.String(), nullable=False),
-        sa.Column("slurm_job_id", sa.Integer(), nullable=False),
+        sa.Column("slurm_job_id", sa.Integer(), nullable=True),
         sa.Column("client_id", sa.String(), nullable=False),
         sa.Column(
             "status",
@@ -127,11 +118,11 @@ def upgrade():
             server_default=sa.text("'{}'::jsonb"),
             nullable=False,
         ),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=True),
         sa.Column("owner_email", sa.String(), nullable=False),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(
             ["job_script_id"],
             ["job_scripts.id"],

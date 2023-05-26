@@ -6,9 +6,10 @@ from typing import Any, Optional
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import functions
 
+from jobbergate_api.apps.job_scripts.models import JobScript
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.models import Base, Mapped, mapped_column
 
@@ -38,7 +39,7 @@ class JobSubmission(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_script_id: Mapped[int] = mapped_column(Integer, ForeignKey("job_scripts.id"), nullable=False)
     execution_directory: Mapped[str] = mapped_column(String)
-    slurm_job_id: Mapped[int] = mapped_column(Integer, default=None)
+    slurm_job_id: Mapped[int] = mapped_column(Integer, default=None, nullable=True)
     client_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
     status: Mapped[JobSubmissionStatus] = mapped_column(Enum(JobSubmissionStatus), nullable=False, index=True)
     report_message: Mapped[str] = mapped_column(String, nullable=True)
@@ -58,6 +59,13 @@ class JobSubmission(Base):
         nullable=False,
         default=functions.now(),
         onupdate=functions.current_timestamp(),
+    )
+
+    job_script: Mapped["JobScript"] = relationship(
+        "JobScript",
+        backref="submissions",
+        lazy="select",
+        innerjoin=True,
     )
 
     searchable_fields = [

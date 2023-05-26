@@ -290,15 +290,14 @@ def get_job_parameters(jobscript: str) -> Dict[str, Any]:
     return convert_sbatch_to_slurm_api(jobscript_to_dict(jobscript))
 
 
-def get_job_properties_from_job_script(job_script_id: int, **kwargs) -> JobProperties:
+def get_job_properties_from_job_script(main_file_content: str, **kwargs) -> JobProperties:
     """
-    Get the job properties for Slurm REST API from a job script file, given its id.
+    Get the job properties for Slurm REST API from a job script file.
 
     Extra keyword arguments can be used to overwrite any parameter from the
     job script, like name or current_working_directory.
     """
-    job_script_files = JobScriptFiles.get_from_s3(job_script_id)
-    slurm_parameters = get_job_parameters(job_script_files.main_file)
+    slurm_parameters = get_job_parameters(main_file_content)
     merged_parameters = {**slurm_parameters, **kwargs}
     return JobProperties.parse_obj(merged_parameters)
 

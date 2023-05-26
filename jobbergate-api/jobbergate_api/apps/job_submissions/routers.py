@@ -1,37 +1,31 @@
 """
 Router for the JobSubmission resource.
 """
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 from armasec import TokenPayload
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from fastapi_pagination import Page
 from loguru import logger
 from sqlalchemy.exc import NoResultFound
-from sqlalchemy import select
 
-from jobbergate_api.apps.applications.models import applications_table
-from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
-from jobbergate_api.apps.job_scripts.models import job_scripts_table
+from jobbergate_api.apps.constants import FileType
+from jobbergate_api.apps.job_scripts.dependecies import job_script_files_service, job_script_service
+from jobbergate_api.apps.job_scripts.service import JobScriptFilesService, JobScriptService
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.job_submissions.dependecies import job_submission_service
-from jobbergate_api.apps.job_submissions.models import (
-    job_submissions_table,
-)
 from jobbergate_api.apps.job_submissions.properties_parser import get_job_properties_from_job_script
 from jobbergate_api.apps.job_submissions.schemas import (
     ActiveJobSubmission,
+    JobSubmissionAgentUpdateRequest,
     JobSubmissionCreateRequest,
     JobSubmissionResponse,
     JobSubmissionUpdateRequest,
-    PendingJobSubmission,
 )
 from jobbergate_api.apps.job_submissions.service import JobSubmissionService
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.email_notification import notify_submission_rejected
-from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.security import IdentityClaims, guard
-from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, render_sql, search_clause, sort_clause
 
 router = APIRouter(prefix="/job-submissions", tags=["Job Submissions"])
 
@@ -43,18 +37,26 @@ router = APIRouter(prefix="/job-submissions", tags=["Job Submissions"])
     response_model=JobSubmissionResponse,
 )
 async def job_submission_create(
-    job_submission: JobSubmissionCreateRequest,
+    create_request: JobSubmissionCreateRequest,
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT)),
+    job_script_service: JobScriptService = Depends(job_script_service),
+    job_script_file_service: JobScriptFilesService = Depends(job_script_files_service),
+    job_submission_service: JobSubmissionService = Depends(job_submission_service),
 ):
     """
     Create a new job submission.
 
     Make a post request to this endpoint with the required values to create a new job submission.
     """
-    logger.debug(f"Creating {job_submission=}")
+    logger.debug(f"Creating job submissions with {create_request=}")
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
-    client_id = job_submission.client_id or identity_claims.client_id
+    if identity_claims.email is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The token payload does not contain an email",
+        )
+    client_id = create_request.client_id or identity_claims.client_id
     if client_id is None:
         message = "Could not find a client_id in the request body or auth token."
         logger.warning(message)
@@ -62,56 +64,28 @@ async def job_submission_create(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=message,
         )
+    create_request.client_id = client_id
 
-    new_job_submission_data: Dict[str, Any] = dict(
-        **job_submission.dict(exclude_unset=True),
-        job_submission_owner_email=identity_claims.email,
-        status=JobSubmissionStatus.CREATED,
-    )
-    if job_submission.client_id is None:
-        new_job_submission_data.update(client_id=client_id)
-
-    exec_dir = new_job_submission_data.pop("execution_directory", None)
-    if exec_dir is not None:
-        new_job_submission_data.update(execution_directory=str(exec_dir))
-
-    select_query = job_scripts_table.select().where(job_scripts_table.c.id == job_submission.job_script_id)
-    logger.trace(f"job_scripts select_query = {render_sql(select_query)}")
-    raw_job_script = await database.fetch_one(select_query)
-
-    if not raw_job_script:
-        message = f"JobScript id={job_submission.job_script_id} not found."
+    base_job_script = await job_script_service.get(create_request.job_script_id)
+    if base_job_script is None:
+        message = f"Could not find job script with id {create_request.job_script_id}"
         logger.warning(message)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
-    try:
-        job_properties = get_job_properties_from_job_script(
-            job_submission.job_script_id, **job_submission.execution_parameters.dict(exclude_unset=True)
-        )
-        new_job_submission_data["execution_parameters"] = job_properties.dict(exclude_unset=True)
-    except Exception as e:
-        message = f"Error extracting execution parameters from job script: {str(e)}"
-        logger.error(message)
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=message)
+    job_script_files = [f for f in base_job_script.files.values() if f.file_type == FileType.ENTRYPOINT]
 
-    logger.debug("Inserting job-submission")
+    if len(job_script_files) != 1:
+        message = f"Job script {create_request.job_script_id} has {len(job_script_files)} entrypoint files"
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
 
-    async with database.transaction():
-        try:
-            insert_query = job_submissions_table.insert().returning(job_submissions_table)
-            logger.trace(f"job_submissions insert_query = {render_sql(insert_query)}")
-            job_submission_data = await database.fetch_one(query=insert_query, values=new_job_submission_data)
+    main_file_content = await job_script_file_service.get_file_content(job_script_files[0])
+    new_execution_parameters = get_job_properties_from_job_script(
+        main_file_content, **create_request.execution_parameters.dict(exclude_unset=True)
+    )
+    create_request.execution_parameters = new_execution_parameters
 
-        except INTEGRITY_CHECK_EXCEPTIONS as e:
-            logger.error(f"Reverting database transaction: {str(e)}")
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
-
-    logger.debug(f"Job-submission created: {job_submission_data=}")
-
-    return JobSubmissionResponse(**job_submission_data)  # type: ignore
+    return await job_submission_service.create(create_request, identity_claims.email)
 
 
 @router.get(
@@ -124,9 +98,7 @@ async def job_submission_get(
     id: int = Path(...),
     service: JobSubmissionService = Depends(job_submission_service),
 ):
-    """
-    Return the job_submission given it's id.
-    """
+    """Return the job_submission given it's id."""
     logger.debug(f"Getting job submission {id=}")
     result = await service.get(id)
     if result is None:
@@ -212,9 +184,7 @@ async def job_submission_update(
     id: int = Path(),
     service: JobSubmissionService = Depends(job_submission_service),
 ):
-    """
-    Update a job_submission given its id.
-    """
+    """Update a job_submission given its id."""
     logger.debug(f"Updating {id=} with {update_params=}")
     try:
         await service.update(id, update_params)
@@ -230,14 +200,13 @@ async def job_submission_update(
 @router.get(
     "/agent/pending",
     description="Endpoint to list pending job_submissions for the requesting client",
-    response_model=List[PendingJobSubmission],
+    response_model=Page[JobSubmissionResponse],
 )
 async def job_submissions_agent_pending(
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW)),
+    service: JobSubmissionService = Depends(job_submission_service),
 ):
-    """
-    Get a list of pending job submissions for the cluster-agent.
-    """
+    """Get a list of pending job submissions for the cluster-agent."""
     logger.debug("Agent is requesting a list of pending job submissions")
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
@@ -248,73 +217,31 @@ async def job_submissions_agent_pending(
 
     logger.info(f"Fetching newly created job_submissions for client_id: {identity_claims.client_id}")
 
-    query = (
-        select(
-            columns=[
-                job_submissions_table.c.id,
-                job_submissions_table.c.job_submission_name,
-                job_submissions_table.c.job_submission_owner_email,
-                job_submissions_table.c.execution_directory,
-                job_submissions_table.c.execution_parameters,
-                job_submissions_table.c.job_script_id,
-                job_scripts_table.c.job_script_name,
-                applications_table.c.application_name,
-            ]
-        )
-        .select_from(job_submissions_table.join(job_scripts_table).join(applications_table))
-        .where(
-            job_submissions_table.c.status == JobSubmissionStatus.CREATED,
-        )
-        .where(
-            job_submissions_table.c.client_id == identity_claims.client_id,
-        )
+    return await service.list(
+        submit_status=JobSubmissionStatus.CREATED,
+        client_id=identity_claims.client_id,
+        include_files=True,
     )
-    logger.trace(f"query = {render_sql(query)}")
-    rows = await database.fetch_all(query)
-
-    response = []
-    missing_ids = set()
-
-    for row in rows:
-        try:
-            jobscript_id = int(row["job_script_id"])
-            job_script_files = JobScriptFiles.get_from_s3(jobscript_id)
-        except (KeyError, ValueError) as e:
-            logger.error(f"Error getting files for {jobscript_id=}: {str(e)}")
-            missing_ids.add(jobscript_id)
-        else:
-            response.append(PendingJobSubmission(**row, job_script_files=job_script_files))
-
-    if missing_ids:
-        message = f"JobScript file(s) not found, the missing ids are: {', '.join(map(str, missing_ids))}"
-        logger.error(message)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
-        )
-
-    return response
 
 
 @router.put(
-    "/agent/{job_submission_id}",
+    "/agent/{id}",
     status_code=200,
     description="Endpoint for an agent to update the status of a job_submission",
     response_model=JobSubmissionResponse,
 )
 async def job_submission_agent_update(
-    job_submission_id: int,
-    new_status: str = Body(..., embed=True),
-    slurm_job_id: Optional[int] = Body(None, embed=True),
-    report_message: Optional[str] = Body(None, embed=True),
+    update_params: JobSubmissionAgentUpdateRequest,
+    id: int = Path(),
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT)),
+    service: JobSubmissionService = Depends(job_submission_service),
 ):
     """
     Update a job_submission with a new status.
 
     Make a put request to this endpoint with the new status to update a job_submission.
     """
-    logger.debug(f"Agent is requesting to update {job_submission_id=}")
+    logger.debug(f"Agent is requesting to update {id=}")
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     if identity_claims.client_id is None:
@@ -325,58 +252,35 @@ async def job_submission_agent_update(
         )
 
     logger.info(
-        f"Setting status to: {new_status} "
-        f"for job_submission: {job_submission_id} "
+        f"Setting status to: {update_params.status} "
+        f"for job_submission: {id} "
         f"on client_id: {identity_claims.client_id}"
     )
 
-    update_values: Dict[str, Any] = dict(status=new_status)
-    if slurm_job_id is not None:
-        update_values.update(slurm_job_id=slurm_job_id)
-
-    if report_message:
-        update_values.update(report_message=report_message)
-
-    update_query = (
-        job_submissions_table.update()
-        .where(job_submissions_table.c.id == job_submission_id)
-        .where(job_submissions_table.c.client_id == identity_claims.client_id)
-        .values(**update_values)
-        .returning(job_submissions_table)
-    )
-    logger.trace(f"update_query = {render_sql(update_query)}")
-    job_submission_data = await database.fetch_one(update_query)
-
-    if job_submission_data is None:
-        message = (
-            f"JobSubmission with id={job_submission_id} "
-            f"and client_id={identity_claims.client_id} not found."
-        )
-        logger.warning(message)
+    try:
+        job_submission = await service.agent_update(id, identity_claims.client_id, update_params)
+    except NoResultFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=(message),
+            detail=f"Job submission {id=} was not found",
         )
 
-    if report_message and new_status == JobSubmissionStatus.REJECTED:
-        notify_submission_rejected(
-            job_submission_id, report_message, job_submission_data["job_submission_owner_email"]
-        )
+    if update_params.report_message and update_params.status == JobSubmissionStatus.REJECTED:
+        notify_submission_rejected(id, update_params.report_message, job_submission.owner_email)
 
-    return JobSubmissionResponse(**job_submission_data)  # type: ignore
+    return await service.get(id)
 
 
 @router.get(
     "/agent/active",
     description="Endpoint to list active job_submissions for the requesting client",
-    response_model=List[ActiveJobSubmission],
+    response_model=Page[ActiveJobSubmission],
 )
 async def job_submissions_agent_active(
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW)),
+    service: JobSubmissionService = Depends(job_submission_service),
 ):
-    """
-    Get a list of active job submissions for the cluster-agent.
-    """
+    """Get a list of active job submissions for the cluster-agent."""
     logger.debug("Agent is requesting a list of active job submissions")
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
@@ -389,19 +293,12 @@ async def job_submissions_agent_active(
 
     logger.info(f"Fetching active job_submissions for client_id: {identity_claims.client_id}")
 
-    query = (
-        job_submissions_table.select()
-        .where(job_submissions_table.c.status == JobSubmissionStatus.SUBMITTED)
-        .where(job_submissions_table.c.client_id == identity_claims.client_id)
+    return await service.list(
+        submit_status=JobSubmissionStatus.SUBMITTED,
+        # client_id=identity_claims.client_id,
     )
-    logger.trace(f"query = {render_sql(query)}")
-
-    rows = await database.fetch_all(query)
-    return rows
 
 
 def include_router(app):
-    """
-    Include the router for this module in the app.
-    """
+    """Include the router for this module in the app."""
     app.include_router(router)

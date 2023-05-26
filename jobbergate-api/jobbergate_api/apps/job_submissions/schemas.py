@@ -7,7 +7,7 @@ from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Extra, Field
 
-from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
+from jobbergate_api.apps.job_scripts.schemas import JobScriptResponse
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
@@ -283,7 +283,7 @@ class JobSubmissionCreateRequest(BaseModel):
     name: str
     description: Optional[str]
     job_script_id: int
-    execution_directory: Optional[Path]
+    execution_directory: Optional[str]
     client_id: Optional[str]
     execution_parameters: JobProperties = Field(default_factory=JobProperties)
 
@@ -300,6 +300,17 @@ class JobSubmissionUpdateRequest(BaseModel):
     description: Optional[str]
     execution_directory: Optional[str]
     status: Optional[JobSubmissionStatus]
+
+    class Config:
+        schema_extra = job_submission_meta_mapper
+
+
+class JobSubmissionAgentUpdateRequest(BaseModel):
+    """Request model for updating JobSubmission instances."""
+
+    status: JobSubmissionStatus
+    slurm_job_id: Optional[int]
+    report_message: Optional[str]
 
     class Config:
         schema_extra = job_submission_meta_mapper
@@ -324,12 +335,14 @@ class JobSubmissionResponse(BaseModel):
     report_message: Optional[str]
     execution_parameters: Optional[JobProperties]
 
+    job_script: Optional[JobScriptResponse]
+
     class Config:
         orm_mode = True
         schema_extra = job_submission_meta_mapper
 
 
-class PendingJobSubmission(BaseModel, extra=Extra.ignore):
+class PendingJobSubmission(BaseModel):
     """
     Specialized model for the cluster-agent to pull pending job_submissions.
 
@@ -340,7 +353,13 @@ class PendingJobSubmission(BaseModel, extra=Extra.ignore):
     name: str
     owner_email: str
     execution_directory: Optional[Path]
-    execution_parameters: Dict = Field(default_factory=dict)
+    execution_parameters: dict = Field(default_factory=dict)
+    job_script: JobScriptResponse
+
+    class Config:
+        orm_mode = True
+        extra = Extra.ignore
+        schema_extra = job_submission_meta_mapper
 
 
 class ActiveJobSubmission(BaseModel, extra=Extra.ignore):

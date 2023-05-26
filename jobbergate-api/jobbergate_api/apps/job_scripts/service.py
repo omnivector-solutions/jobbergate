@@ -95,10 +95,10 @@ class JobScriptFilesService:
 
     async def get(self, job_script_file: JobScriptFile):
         """Get a job_script_template file."""
-        file_content = await self._get_file_content(job_script_file)
+        file_content = await self.get_file_content(job_script_file)
         yield file_content
 
-    async def _get_file_content(self, template_file: JobScriptFile):
+    async def get_file_content(self, template_file: JobScriptFile) -> str:
         fileobj = await self.bucket.meta.client.get_object(
             Bucket=self.bucket.name, Key=template_file.file_key
         )

@@ -10,8 +10,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from jobbergate_api.apps.job_scripts.models import JobScript
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.job_submissions.models import JobSubmission
-from jobbergate_api.apps.job_submissions.schemas import JobSubmissionCreateRequest, JobSubmissionUpdateRequest
+from jobbergate_api.apps.job_submissions.schemas import (
+    JobSubmissionAgentUpdateRequest,
+    JobSubmissionCreateRequest,
+    JobSubmissionUpdateRequest,
+)
 from jobbergate_api.storage import search_clause, sort_clause
+from sqlalchemy.orm import joinedload
 
 
 @dataclasses.dataclass
@@ -61,6 +66,19 @@ class JobSubmissionService:
         """Update a job submission by id."""
         query = update(JobSubmission).returning(JobSubmission)
         query = query.where(JobSubmission.id == id)
+        query = query.where(JobSubmission.client_id == client_id)
+        query = query.values(**incoming_data.dict(exclude_unset=True))
+        result = await self.session.execute(query)
+        await self.session.flush()
+        return result.scalar_one()
+
+    async def agent_update(
+        self, id: int, client_id: str, incoming_data: JobSubmissionAgentUpdateRequest
+    ) -> JobSubmission:
+        """Update a job submission by id."""
+        query = update(JobSubmission).returning(JobSubmission)
+        query = query.where(JobSubmission.id == id)
+        query = query.where(JobSubmission.client_id == client_id)
         query = query.values(**incoming_data.dict(exclude_unset=True))
         result = await self.session.execute(query)
         await self.session.flush()
@@ -75,11 +93,18 @@ class JobSubmissionService:
         sort_field: str | None = None,
         sort_ascending: bool = True,
         from_job_script_id: int | None = None,
+        client_id: str | None = None,
+        include_files: bool = False,
     ) -> Page[JobSubmission]:
         """List job submissions."""
         query = select(JobSubmission)
+        if include_files:
+            # TODO: there is no need to load all columns of JobScript
+            query = query.options(joinedload(JobSubmission.job_script))
         if user_email:
             query = query.where(JobSubmission.owner_email == user_email)
+        if client_id:
+            query = query.where(JobSubmission.client_id == client_id)
         if slurm_job_ids:
             query = query.where(JobSubmission.slurm_job_id.in_(slurm_job_ids))
         if submit_status:

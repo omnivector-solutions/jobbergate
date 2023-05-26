@@ -121,14 +121,14 @@ class JobScriptFile(BaseModel):
 class JobScriptResponse(BaseModel):
     """Model to match database for the JobScript resource."""
 
-    id: Optional[int] = None
-    name: str
-    owner_email: str
-    files: dict[str, JobScriptFile] = {}
-    description: Optional[str] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    parent_template_id: Optional[int] = None
+    id: Optional[int]
+    name: Optional[str]
+    owner_email: Optional[str]
+    files: Optional[dict[str, JobScriptFile]]
+    description: Optional[str]
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+    parent_template_id: Optional[int]
 
     class Config:
         orm_mode = True
