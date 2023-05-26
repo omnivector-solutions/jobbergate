@@ -160,9 +160,9 @@ class JobSubmissionResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     cluster_name: Optional[str] = pydantic.Field(alias="client_id")
     slurm_job_id: Optional[int]
     execution_directory: Optional[Path]
-    job_submission_name: str
-    job_submission_description: Optional[str] = None
-    job_submission_owner_email: str
+    name: str
+    description: Optional[str] = None
+    owner_email: str
     status: str
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
@@ -195,8 +195,8 @@ class JobSubmissionCreateRequestData(pydantic.BaseModel):
     Describes the data that will be sent to the ``create`` endpoint of the Jobbergate API for job submissions.
     """
 
-    job_submission_name: str
-    job_submission_description: Optional[str] = None
+    name: str
+    description: Optional[str] = None
     job_script_id: int
     client_id: Optional[str] = pydantic.Field(None, alias="cluster_name")
     execution_directory: Optional[Path] = None

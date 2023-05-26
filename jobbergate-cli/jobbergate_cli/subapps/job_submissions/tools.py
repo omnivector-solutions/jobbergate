@@ -54,8 +54,8 @@ def create_job_submission(
     )
 
     job_submission_data = JobSubmissionCreateRequestData(
-        job_submission_name=name,
-        job_submission_description=description,
+        name=name,
+        description=description,
         job_script_id=job_script_id,
         cluster_name=cluster_name,
     )

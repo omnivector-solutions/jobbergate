@@ -189,7 +189,7 @@ def upload_application(
     if response_code != 200:
         return False
 
-    supporting_files = application_config.jobbergate_config.get("supporting_files", [])
+    supporting_files = application_config.jobbergate_config.supporting_files or []
 
     for complete_template_path in itertools.chain(application_path.rglob("*.j2"), application_path.rglob("*.jinja2")):
         relative_template_path = complete_template_path.relative_to(application_path)
