@@ -280,8 +280,8 @@ class JobSubmissionCreateRequest(BaseModel):
     Request model for creating JobSubmission instances.
     """
 
-    job_submission_name: str
-    job_submission_description: Optional[str]
+    name: str
+    description: Optional[str]
     job_script_id: int
     execution_directory: Optional[Path]
     client_id: Optional[str]
@@ -296,9 +296,9 @@ class JobSubmissionUpdateRequest(BaseModel):
     Request model for updating JobSubmission instances.
     """
 
-    job_submission_name: Optional[str]
-    job_submission_description: Optional[str]
-    execution_directory: Optional[Path]
+    name: Optional[str]
+    description: Optional[str]
+    execution_directory: Optional[str]
     status: Optional[JobSubmissionStatus]
 
     class Config:
@@ -310,16 +310,16 @@ class JobSubmissionResponse(BaseModel):
     Complete model to match the database for the JobSubmission resource.
     """
 
-    id: Optional[int] = Field(None)
+    id: int
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
-    job_submission_name: str
-    job_submission_description: Optional[str]
-    job_submission_owner_email: str
+    name: str
+    description: Optional[str]
+    owner_email: str
     job_script_id: int
     execution_directory: Optional[Path]
     slurm_job_id: Optional[int]
-    client_id: Optional[str]
+    client_id: str
     status: JobSubmissionStatus
     report_message: Optional[str]
     execution_parameters: Optional[JobProperties]
@@ -336,14 +336,11 @@ class PendingJobSubmission(BaseModel, extra=Extra.ignore):
     Model also includes data from its job_script and application sources.
     """
 
-    id: Optional[int] = Field(None)
-    job_submission_name: str
-    job_submission_owner_email: str
+    id: int
+    name: str
+    owner_email: str
     execution_directory: Optional[Path]
     execution_parameters: Dict = Field(default_factory=dict)
-    job_script_name: str
-    application_name: str
-    job_script_files: JobScriptFiles
 
 
 class ActiveJobSubmission(BaseModel, extra=Extra.ignore):
@@ -352,5 +349,5 @@ class ActiveJobSubmission(BaseModel, extra=Extra.ignore):
     """
 
     id: int
-    job_submission_name: str
+    name: str
     slurm_job_id: int

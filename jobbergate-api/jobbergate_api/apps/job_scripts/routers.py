@@ -241,8 +241,6 @@ async def job_script_delete(
             detail=f"Job script {id=} was not found",
         )
 
-    return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
-
 
 @router.get(
     "/{id}/upload/{file_name:path}",

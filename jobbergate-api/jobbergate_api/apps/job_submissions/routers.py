@@ -5,17 +5,18 @@ from typing import Any, Dict, List, Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
+from fastapi_pagination import Page
 from loguru import logger
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy import select
 
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
+from jobbergate_api.apps.job_submissions.dependecies import job_submission_service
 from jobbergate_api.apps.job_submissions.models import (
     job_submissions_table,
-    searchable_fields,
-    sortable_fields,
 )
 from jobbergate_api.apps.job_submissions.properties_parser import get_job_properties_from_job_script
 from jobbergate_api.apps.job_submissions.schemas import (
@@ -25,23 +26,19 @@ from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionUpdateRequest,
     PendingJobSubmission,
 )
+from jobbergate_api.apps.job_submissions.service import JobSubmissionService
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.email_notification import notify_submission_rejected
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.security import IdentityClaims, guard
-from jobbergate_api.storage import (
-    INTEGRITY_CHECK_EXCEPTIONS,
-    render_sql,
-    search_clause,
-    sort_clause,
-)
+from jobbergate_api.storage import INTEGRITY_CHECK_EXCEPTIONS, render_sql, search_clause, sort_clause
 
-router = APIRouter()
+router = APIRouter(prefix="/job-submissions", tags=["Job Submissions"])
 
 
 @router.post(
-    "/job-submissions",
-    status_code=201,
+    "",
+    status_code=status.HTTP_201_CREATED,
     description="Endpoint for job_submission creation",
     response_model=JobSubmissionResponse,
 )
@@ -118,46 +115,36 @@ async def job_submission_create(
 
 
 @router.get(
-    "/job-submissions/{job_submission_id}",
+    "/{id}",
     description="Endpoint to get a job_submission",
     response_model=JobSubmissionResponse,
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW))],
 )
-async def job_submission_get(job_submission_id: int = Path(...)):
+async def job_submission_get(
+    id: int = Path(...),
+    service: JobSubmissionService = Depends(job_submission_service),
+):
     """
     Return the job_submission given it's id.
     """
-    logger.debug(f"Getting {job_submission_id=}")
-
-    query = job_submissions_table.select().where(job_submissions_table.c.id == job_submission_id)
-    logger.trace(f"query = {render_sql(query)}")
-    job_submission_data = await database.fetch_one(query)
-
-    if not job_submission_data:
-        message = f"JobSubmission with id={job_submission_id} not found."
-        logger.warning(message)
+    logger.debug(f"Getting job submission {id=}")
+    result = await service.get(id)
+    if result is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
+            detail=f"Job submission {id=} was not found",
         )
-
-    logger.debug(f"Job-submission data: {job_submission_data=}")
-
-    return JobSubmissionResponse(**job_submission_data)  # type: ignore
+    return result
 
 
 @router.get(
-    "/job-submissions",
+    "",
     description="Endpoint to list job_submissions",
-    responses=ok_response(JobSubmissionResponse),
+    response_model=Page[JobSubmissionResponse],
 )
 async def job_submission_list(
-    pagination: Pagination = Depends(),
-    all: Optional[bool] = Query(
-        None,
-        description="If supplied, do not limit job_submissions to only the current user",
-    ),
-    slurm_job_ids: Optional[str] = Query(
+    user_only: Optional[bool] = Query(False),
+    slurm_job_ids: Optional[list[int]] = Query(
         None,
         description="Comma-separated list of slurm-job-ids to match active job_submissions",
     ),
@@ -167,130 +154,81 @@ async def job_submission_list(
     ),
     search: Optional[str] = Query(None),
     sort_field: Optional[str] = Query(None),
+    sort_ascending: bool = Query(True),
     from_job_script_id: Optional[int] = Query(
         None,
         description="Filter job-submissions by the job-script-id they were created from.",
     ),
-    sort_ascending: bool = Query(True),
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW)),
+    service: JobSubmissionService = Depends(job_submission_service),
 ):
-    """
-    List job_submissions for the authenticated user.
-    """
+    """List job_submissions for the authenticated user."""
     logger.debug("Fetching job submissions")
+
     identity_claims = IdentityClaims.from_token_payload(token_payload)
-    logger.debug(f"Extracted identity claims from token: {identity_claims}")
-    query = job_submissions_table.select()
+    user_email = identity_claims.email if user_only else None
 
-    logger.debug("Building query")
-    if submit_status:
-        query = query.where(job_submissions_table.c.status == submit_status)
-
-    if not all:
-        query = query.where(job_submissions_table.c.job_submission_owner_email == identity_claims.email)
-
-    if from_job_script_id is not None:
-        query = query.where(job_submissions_table.c.job_script_id == from_job_script_id)
-    if slurm_job_ids is not None and slurm_job_ids != "":
-        try:
-            job_ids = [int(i) for i in slurm_job_ids.split(",")]
-        except Exception:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Invalid slurm_job_ids param. Must be a comma-separated list of integers",
-            )
-        query = query.where(job_submissions_table.c.slurm_job_id.in_(job_ids))
-    if search is not None:
-        query = query.where(search_clause(search, searchable_fields))
-    if sort_field is not None:
-        query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
-
-    logger.trace(f"Query built as: {render_sql(query)}")
-
-    logger.debug("Awaiting query and response package")
-    response = await package_response(JobSubmissionResponse, query, pagination)
-    logger.debug(f"Response built as: {response}")
-    return response
+    return await service.list(
+        user_email=user_email,
+        slurm_job_ids=slurm_job_ids,
+        submit_status=submit_status,
+        search=search,
+        sort_field=sort_field,
+        sort_ascending=sort_ascending,
+        from_job_script_id=from_job_script_id,
+    )
 
 
 @router.delete(
-    "/job-submissions/{job_submission_id}",
+    "/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete job submission",
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT))],
 )
 async def job_submission_delete(
-    job_submission_id: int = Path(..., description="id of the job submission to delete"),
+    id: int = Path(..., description="id of the job submission to delete"),
+    service: JobSubmissionService = Depends(job_submission_service),
 ):
-    """
-    Delete job_submission given its id.
-    """
-    logger.debug(f"Deleting {job_submission_id=}")
-    where_stmt = job_submissions_table.c.id == job_submission_id
-
-    get_query = job_submissions_table.select().where(where_stmt)
-    logger.trace(f"get_query = {render_sql(get_query)}")
-    raw_job_submission = await database.fetch_one(get_query)
-    if not raw_job_submission:
-        message = f"JobSubmission with id={job_submission_id} not found"
-        logger.warning(message)
+    """Delete job_submission given its id."""
+    logger.info(f"Deleting job submission {id=}")
+    try:
+        await service.delete(id)
+    except NoResultFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
+            detail=f"Job script {id=} was not found",
         )
-
-    delete_query = job_submissions_table.delete().where(where_stmt)
-    logger.trace(f"delete_query = {render_sql(delete_query)}")
-    await database.execute(delete_query)
 
 
 @router.put(
-    "/job-submissions/{job_submission_id}",
+    "/{id}",
     status_code=status.HTTP_200_OK,
     description="Endpoint to update a job_submission given the id",
     response_model=JobSubmissionResponse,
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT))],
 )
-async def job_submission_update(job_submission_id: int, job_submission: JobSubmissionUpdateRequest):
+async def job_submission_update(
+    update_params: JobSubmissionUpdateRequest,
+    id: int = Path(),
+    service: JobSubmissionService = Depends(job_submission_service),
+):
     """
     Update a job_submission given its id.
     """
-    logger.debug(f"Updating {job_submission_id=}")
-
-    update_dict = job_submission.dict(exclude_unset=True)
-    exec_dir = update_dict.pop("execution_directory", None)
-    if exec_dir is not None:
-        update_dict.update(execution_directory=str(exec_dir))
-
-    update_query = (
-        job_submissions_table.update()
-        .where(job_submissions_table.c.id == job_submission_id)
-        .values(update_dict)
-        .returning(job_submissions_table)
-    )
-    logger.trace(f"update_query = {render_sql(update_query)}")
-    async with database.transaction():
-        try:
-            job_submission_data = await database.fetch_one(update_query)
-
-        except INTEGRITY_CHECK_EXCEPTIONS as e:
-            logger.error(f"Reverting database transaction: {str(e)}")
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-
-        if not job_submission_data:
-            message = f"JobSubmission with id={job_submission_id} not found."
-            logger.warning(message)
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=message,
-            )
-
-    return JobSubmissionResponse(**job_submission_data)  # type: ignore
+    logger.debug(f"Updating {id=} with {update_params=}")
+    try:
+        await service.update(id, update_params)
+    except NoResultFound:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job submission {id=} was not found",
+        )
+    return await service.get(id)
 
 
 # The "agent" routes are used for agents to fetch pending job submissions and update their statuses
 @router.get(
-    "/job-submissions/agent/pending",
+    "/agent/pending",
     description="Endpoint to list pending job_submissions for the requesting client",
     response_model=List[PendingJobSubmission],
 )
@@ -359,7 +297,7 @@ async def job_submissions_agent_pending(
 
 
 @router.put(
-    "/job-submissions/agent/{job_submission_id}",
+    "/agent/{job_submission_id}",
     status_code=200,
     description="Endpoint for an agent to update the status of a job_submission",
     response_model=JobSubmissionResponse,
@@ -429,7 +367,7 @@ async def job_submission_agent_update(
 
 
 @router.get(
-    "/job-submissions/agent/active",
+    "/agent/active",
     description="Endpoint to list active job_submissions for the requesting client",
     response_model=List[ActiveJobSubmission],
 )

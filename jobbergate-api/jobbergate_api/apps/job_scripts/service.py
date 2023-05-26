@@ -52,10 +52,10 @@ class JobScriptService:
 
     async def delete(self, id: int) -> None:
         """Delete a job script by id."""
-        job_template = await self.get(id)
-        if job_template is None:
+        job_script = await self.get(id)
+        if job_script is None:
             raise NoResultFound("JobScript not found")
-        await self.session.delete(job_template)
+        await self.session.delete(job_script)
         await self.session.flush()
 
     async def update(self, id: int, incoming_data: JobScriptUpdateRequest) -> JobScript:

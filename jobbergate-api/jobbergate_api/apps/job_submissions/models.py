@@ -1,16 +1,19 @@
 """
 Database model for the JobSubmission resource.
 """
-from typing import Any
+from datetime import datetime
+from typing import Any, Optional
 
-from sqlalchemy import Enum, ForeignKey, Integer, String, text
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, text
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.sql import functions
 
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
-from jobbergate_api.apps.models import Base, BaseFieldsMixin, ExtraFieldsMixin, Mapped, mapped_column
+from jobbergate_api.apps.models import Base, Mapped, mapped_column
 
 
-class JobSubmission(Base, BaseFieldsMixin, ExtraFieldsMixin):
+class JobSubmission(Base):
     """
     Job submission table definition.
 
@@ -46,6 +49,35 @@ class JobSubmission(Base, BaseFieldsMixin, ExtraFieldsMixin):
         default=text("'{}'::jsonb"),
         server_default=text("'{}'::jsonb"),
     )
+    name: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    description: Mapped[Optional[str]] = mapped_column(String, default=None, nullable=True)
+    owner_email: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=functions.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=functions.now(),
+        onupdate=functions.current_timestamp(),
+    )
+
+    searchable_fields = [
+        name,
+        description,
+        owner_email,
+        client_id,
+    ]
+
+    sortable_fields = [
+        id,
+        name,
+        owner_email,
+        job_script_id,
+        slurm_job_id,
+        client_id,
+        created_at,
+        updated_at,
+        status,
+    ]
 
 
 job_submissions_table = JobSubmission.__table__
