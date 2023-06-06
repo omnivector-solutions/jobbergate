@@ -201,6 +201,8 @@ async def job_submission_update(
     "/agent/pending",
     description="Endpoint to list pending job_submissions for the requesting client",
     response_model=Page[JobSubmissionResponse],
+    response_model_exclude_none=True,
+    tags=["Agent"],
 )
 async def job_submissions_agent_pending(
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW)),
@@ -229,6 +231,7 @@ async def job_submissions_agent_pending(
     status_code=200,
     description="Endpoint for an agent to update the status of a job_submission",
     response_model=JobSubmissionResponse,
+    tags=["Agent"],
 )
 async def job_submission_agent_update(
     update_params: JobSubmissionAgentUpdateRequest,
@@ -258,7 +261,11 @@ async def job_submission_agent_update(
     )
 
     try:
-        job_submission = await service.agent_update(id, identity_claims.client_id, update_params)
+        job_submission = await service.agent_update(
+            id,
+            identity_claims.client_id,
+            update_params,
+        )
     except NoResultFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -275,6 +282,7 @@ async def job_submission_agent_update(
     "/agent/active",
     description="Endpoint to list active job_submissions for the requesting client",
     response_model=Page[ActiveJobSubmission],
+    tags=["Agent"],
 )
 async def job_submissions_agent_active(
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_VIEW)),

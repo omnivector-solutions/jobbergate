@@ -66,7 +66,6 @@ class JobSubmissionService:
         """Update a job submission by id."""
         query = update(JobSubmission).returning(JobSubmission)
         query = query.where(JobSubmission.id == id)
-        query = query.where(JobSubmission.client_id == client_id)
         query = query.values(**incoming_data.dict(exclude_unset=True))
         result = await self.session.execute(query)
         await self.session.flush()
