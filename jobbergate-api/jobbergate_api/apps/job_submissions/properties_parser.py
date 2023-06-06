@@ -10,7 +10,6 @@ from typing import Any, Dict, List, Union
 from bidict import bidict
 from loguru import logger
 
-from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_submissions.schemas import JobProperties
 
 _IDENTIFICATION_FLAG = "#SBATCH"

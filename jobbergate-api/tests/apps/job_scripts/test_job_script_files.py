@@ -7,7 +7,6 @@ from textwrap import dedent
 
 import pytest
 
-from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.job_scripts.job_script_files import (
     JOBSCRIPTS_MAIN_FILE_FOLDER,
     JOBSCRIPTS_SUPPORTING_FILES_FOLDER,

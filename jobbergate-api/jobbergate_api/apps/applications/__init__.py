@@ -1,3 +1,0 @@
-"""
-Provide module for applications.
-"""

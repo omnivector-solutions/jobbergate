@@ -3,7 +3,6 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-from jobbergate_api.apps.applications import models  # noqa # must be imported for metadata to work
 from jobbergate_api.apps.job_scripts import models  # noqa # must be imported for metadata to work
 from jobbergate_api.apps.job_submissions import models  # noqa # must be imported for metadata to work
 from jobbergate_api.apps.models import Base

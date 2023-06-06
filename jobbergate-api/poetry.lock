@@ -992,21 +992,6 @@ sqlmodel = ["sqlakeyset (>=2.0.1680321678,<3.0.0)", "sqlmodel (>=0.0.8,<0.0.9)"]
 tortoise = ["tortoise-orm (>=0.16.18,<0.20.0)"]
 
 [[package]]
-name = "file-storehouse"
-version = "0.5.0"
-description = "Manage files in bulk quantity using a friendly dict-like interface"
-category = "main"
-optional = false
-python-versions = ">=3.8,<4.0"
-files = [
-    {file = "file-storehouse-0.5.0.tar.gz", hash = "sha256:78e535862d8b852412e94d5014a31a18289bbcd1f34b570a3a53307b70d69ac8"},
-    {file = "file_storehouse-0.5.0-py3-none-any.whl", hash = "sha256:e5e395aefa4553f29bed4d30dcc7051bf92faa742005bb6320340874b3526083"},
-]
-
-[package.dependencies]
-boto3 = ">=1.24.36,<2.0.0"
-
-[[package]]
 name = "filelock"
 version = "3.12.0"
 description = "A platform independent file lock."
@@ -3302,4 +3287,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "7379c7bff00e6be33dea1989646ce9f63cee7a2c9aea35c078484cf5f03aedab"
+content-hash = "eee18108741f2df7a5ca93fbff2be4c2e7cb9866c4fd83f39f4d22ab4c9486c0"
