@@ -736,3 +736,25 @@ class TestRequeueParameter:
         actual_dict = jobscript_to_dict(jobscript)
 
         assert actual_dict == desired_dict
+
+
+@pytest.mark.parametrize(
+    "input, expected_result",
+    (
+        (None, None),
+        ("USR1@7200", "USR1@7200"),
+        ("B:USR1@7200", "USR1@7200"),
+        ("R:USR1@7200", "R:USR1@7200"),
+        ("RB:USR1@7200", "R:USR1@7200"),
+        ("BR:USR1@7200", "R:USR1@7200"),
+        ("B:BBB", "BBB"),  # a silly case, but let's assert that just the B on the left side is removed
+    ),
+)
+def test_backward_compatibility_on_signal_parameter(input, expected_result):
+    """
+    Test backward compatibility on signal parameter.
+
+    It is expected to remove the 'B' from the prefix while preserving any other, like the 'R'.
+    """
+    actual_result = JobProperties(signal=input).signal
+    assert actual_result == expected_result

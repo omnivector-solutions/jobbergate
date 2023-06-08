@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Extra, Field, validator
 
 from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
@@ -273,6 +273,25 @@ class JobProperties(BaseModel, extra=Extra.forbid):
         description="Do not begin execution until all nodes are ready for use.", ge=0, le=1
     )
     wckey: Optional[str] = Field(description="Specify wckey to be used with job.")
+
+    @validator("signal", pre=True)
+    def _backward_compatibility_on_signal(cls, value):
+        """
+        Remove the prefix B from signal in order to provide compatibility to legacy jobbergate applications.
+
+        The --signal parameter in Slurm commands allows for the specification of a signal to be sent to a job
+        in case of certain events, in order to trigger a specific behavior. The B syntax in sbatch specifies
+        a signal to be sent only to the job's batch shell, but is not supported by srun or the Slurm rest API,
+        since there is no batch shell to be signalized at runtime.
+
+        Notice the use the R option is possible to allow this job to overlap with a reservation with
+        MaxStartDelay set, so it should be preserved on the original value.
+
+        See test_backward_compatibility_on_signal_parameter for usage examples.
+        """
+        if isinstance(value, str) and ":" in value and "B" in value.split(":", 1)[0]:
+            return value.replace("B", "", 1).lstrip(":")
+        return value
 
 
 class JobSubmissionCreateRequest(BaseModel):
