@@ -2,7 +2,7 @@
 from typing import Optional
 
 from armasec import TokenPayload
-from fastapi import APIRouter, Depends, File, HTTPException, Path, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Path, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
 from fastapi.responses import StreamingResponse
@@ -12,7 +12,8 @@ from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.dependecies import db_session
+from jobbergate_api.apps.dependecies import db_session, s3_bucket
+from jobbergate_api.apps.garbage_collector import garbage_collect
 from jobbergate_api.apps.job_script_templates.dependecies import template_files_service, template_service
 from jobbergate_api.apps.job_script_templates.service import (
     JobScriptTemplateFilesService,
@@ -20,6 +21,7 @@ from jobbergate_api.apps.job_script_templates.service import (
 )
 from jobbergate_api.apps.job_scripts.dependecies import job_script_files_service, job_script_service
 from jobbergate_api.apps.job_scripts.job_script_files import inject_sbatch_params
+from jobbergate_api.apps.job_scripts.models import JobScriptFile
 from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptCreateRequest,
     JobScriptResponse,
@@ -329,3 +331,27 @@ async def job_script_delete_file(
     job_script_file = job_script_file_list[0]
 
     await file_service.delete(job_script_file)
+
+
+@router.delete(
+    "/upload/garbage-collector",
+    status_code=status.HTTP_202_ACCEPTED,
+    description="Endpoint to delete all unused files from the job script file storage",
+    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
+    tags=["Garbage collector"],
+)
+async def job_script_template_garbage_collector(
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(db_session),
+    bucket=Depends(s3_bucket),
+):
+    """Delete all unused files from job scripts on the file storage."""
+    logger.info("Starting garbage collection from jobbergate file storage")
+    background_tasks.add_task(
+        garbage_collect,
+        session,
+        bucket,
+        [JobScriptFile],
+        background_tasks,
+    )
+    return {"description": "Garbage collection started"}

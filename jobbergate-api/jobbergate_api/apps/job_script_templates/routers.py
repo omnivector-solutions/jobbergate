@@ -2,21 +2,25 @@
 from typing import Optional
 
 from armasec import TokenPayload
-from fastapi import APIRouter, Body, Depends, File, HTTPException, Path, Query
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, HTTPException, Path, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
 from fastapi.responses import StreamingResponse
 from fastapi_pagination import Page
 from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from jobbergate_api.apps.constants import FileType
+from jobbergate_api.apps.dependecies import db_session, s3_bucket
+from jobbergate_api.apps.garbage_collector import garbage_collect
 from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
 from jobbergate_api.apps.job_script_templates.dependecies import (
     template_files_service,
     template_service,
     workflow_files_service,
 )
+from jobbergate_api.apps.job_script_templates.models import JobScriptTemplateFile, WorkflowFile
 from jobbergate_api.apps.job_script_templates.schemas import (
     JobTemplateCreateRequest,
     JobTemplateResponse,
@@ -349,3 +353,27 @@ async def job_script_workflow_delete_file(
         )
 
     await file_service.delete(workflow_file)
+
+
+@router.delete(
+    "/upload/garbage-collector",
+    status_code=status.HTTP_202_ACCEPTED,
+    description="Endpoint to delete all unused files from the job script template file storage",
+    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
+    tags=["Garbage collector"],
+)
+async def job_script_template_garbage_collector(
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(db_session),
+    bucket=Depends(s3_bucket),
+):
+    """Delete all unused files from jobbergate templates on the file storage."""
+    logger.info("Starting garbage collection from jobbergate file storage")
+    background_tasks.add_task(
+        garbage_collect,
+        session,
+        bucket,
+        [JobScriptTemplateFile, WorkflowFile],
+        background_tasks,
+    )
+    return {"description": "Garbage collection started"}
