@@ -6,6 +6,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Added functionality to make make the signal job property on job submissions backward compatible with legacy applications
+
 
 3.5.0-alpha.3 -- 2023-05-08
 ---------------------------
