@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-core
 Unreleased
 ----------
 
+3.5.0a4 -- 2023-06-12
+---------------------
+
 3.5.0-alpha.3 -- 2023-05-08
 ---------------------------
 - Keep version in sync with other subprojects.
