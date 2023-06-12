@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+3.5.0a4 -- 2023-06-12
+---------------------
+
 3.5.0-alpha.3 -- 2023-05-08
 ---------------------------
 - Removed strict dependence between job_scripts and applications to allow deletes
