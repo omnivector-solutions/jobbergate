@@ -1,6 +1,7 @@
 """
 JobSubmission resource schema.
 """
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Literal, Optional
@@ -289,8 +290,9 @@ class JobProperties(BaseModel, extra=Extra.forbid):
 
         See test_backward_compatibility_on_signal_parameter for usage examples.
         """
-        if isinstance(value, str) and ":" in value and "B" in value.split(":", 1)[0]:
-            return value.replace("B", "", 1).lstrip(":")
+        if value:
+            value = re.sub(r"^B:", "", value)
+            value = re.sub(r"^BR:|^RB:", r"R:", value)
         return value
 
 
