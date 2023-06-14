@@ -5,11 +5,13 @@ Provide tool functions for working with Application data.
 import contextlib
 import copy
 import io
+from buzz import require_condition
+import yaml
+import json
 import itertools
 import pathlib
 from typing import Any, Dict, List, Optional, Tuple, cast
 
-import yaml
 from loguru import logger
 
 from jobbergate_cli.constants import (
@@ -21,10 +23,9 @@ from jobbergate_cli.constants import (
 )
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig, JobbergateContext
+from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig, JobbergateConfig, JobbergateContext
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.questions import gather_param_values
-
 
 def load_default_config() -> Dict[str, Any]:
     """
@@ -91,16 +92,23 @@ def load_application_data(
     """
     Validates and loads the data for an application returned from the API's applications GET endpoint.
 
+    As part of the Jobbergate data restructure, sections of the legacy jobbergate.yaml
+    are now stored in different tables in the backend. This function reconstructs
+    them from app_data.workflow_file.runtime_config and app_data.template_vars
+    for backward compatibility.
+
     :param: app_data: A dictionary containing the application data
     :returns: A tuple containing the application config and the application module
     """
     try:
+        assert app_data.workflow_file is not None # make type checker happy
+
         app_config = JobbergateApplicationConfig(
-            jobbergate_config=app_data.workflow_file.runtime_config, # type: ignore
-            application_config=app_data.template_vars, # type: ignore
+            jobbergate_config=JobbergateConfig(**app_data.workflow_file.runtime_config),
+            application_config=app_data.template_vars,
         )
     except Exception as err:
-        print("ERR: ", err)
+        logger.error("ERR: ", err)
         raise Abort(
             "The application config fetched from the API is not valid",
             subject="Invalid application config",
@@ -251,27 +259,29 @@ def save_application_files(
     logger.debug(f"Saving application files to {destination_path.as_posix()}")
     saved_files: List[pathlib.Path] = []
 
-    application_config = JobbergateApplicationConfig(
-        application_config=application_data.template_vars,
-        jobbergate_config=application_data.workflow_file.runtime_config,
-    )
-    config_path = destination_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-    config_path.write_text(
-        yaml.dump(
-            application_config.dict(
-                exclude_none=True,
-                exclude_unset=True,
+    if application_data.workflow_file is not None:
+        application_config = JobbergateApplicationConfig(
+            application_config=application_data.template_vars,
+            jobbergate_config=JobbergateConfig(**application_data.workflow_file.runtime_config),
+        )
+        config_path = destination_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_text(
+            yaml.dump(
+                json.loads( # workaround to convert path to string
+                    application_config.json(
+                        exclude_none=True,
+                        exclude_unset=True,
+                    ),
+                ),
+                indent=2,
             )
         )
-    )
-    saved_files.append(config_path)
+        saved_files.append(config_path)
 
-    for template_file in application_data.template_files:
-        if not template_file.url:
-            continue
+    for template_file in application_data.template_files.values():
 
-        template_path = destination_path / template_file.filename
+        template_path = destination_path / "templates" / template_file.filename
         make_request(
             jg_ctx.client,
             template_file.url,

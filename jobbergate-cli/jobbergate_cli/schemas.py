@@ -82,8 +82,8 @@ class JobbergateApplicationConfig(pydantic.BaseModel):
     A data object describing the config data needed to instantiate a JobbergateApplication class.
     """
 
-    jobbergate_config: JobbergateConfig
     application_config: Dict[str, Any]
+    jobbergate_config: JobbergateConfig
 
 
 class TemplateFileResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
@@ -95,7 +95,7 @@ class TemplateFileResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
 
 
 class WorkflowFileResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
-    runtime_config: Optional[Dict[str, Any]] = {}
+    runtime_config: Dict[str, Any] = {}
     created_at: datetime
     updated_at: datetime
     url: str
@@ -111,12 +111,12 @@ class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     owner_email: str
     created_at: datetime
     updated_at: datetime
-    identifier: Optional[str]
-    description: Optional[str]
-    template_vars: Optional[Dict[str, Any]] = {}
+    identifier: Optional[str] = None
+    description: Optional[str] = None
+    template_vars: Dict[str, Any] = {}
 
     template_files: Dict[str, TemplateFileResponse] = {}
-    workflow_file: Optional[WorkflowFileResponse]
+    workflow_file: Optional[WorkflowFileResponse] = None
 
 
 class JobScriptFiles(pydantic.BaseModel, extra=pydantic.Extra.ignore):

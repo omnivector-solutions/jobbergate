@@ -189,6 +189,7 @@ def create(
 
     successful_upload = upload_application(jg_ctx, application_path, application_id)
     if not successful_upload:
+        result["application_uploaded"] = False
         terminal_message(
             f"""
             The application files could not be uploaded.
