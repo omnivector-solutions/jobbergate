@@ -4,6 +4,7 @@ Provide tool functions for working with Job Script data
 
 import json
 import pathlib
+import re
 import tempfile
 from typing import Any, Dict, List, Optional, cast
 
@@ -126,12 +127,8 @@ def flatten_param_dict(param_dict: Dict[str, Any]) -> Dict[str, Any]:
 
 def remove_prefix_suffix(s: str) -> str:
     """Remove the prefix 'templates/' and suffixes '.j2' and '.jinja2' from a string"""
-    if s.startswith("templates/"):
-        s = s[10:]
-    if s.endswith(".j2"):
-        s = s[:-3]
-    elif s.endswith(".jinja2"):
-        s = s[:-7]
+    s = re.sub(r"^templates/", "", s)
+    s = re.sub(r"(.j2|.jinja2)$", "", s)
     return s
 
 

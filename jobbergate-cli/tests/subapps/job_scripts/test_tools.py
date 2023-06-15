@@ -10,6 +10,8 @@ from jobbergate_cli.schemas import ApplicationResponse, JobScriptResponse
 from jobbergate_cli.subapps.job_scripts.tools import (
     create_job_script,
     fetch_job_script_data,
+    flatten_param_dict,
+    remove_prefix_suffix,
     save_job_script_files,
     validate_parameter_file,
 )
@@ -233,3 +235,47 @@ class TestSaveJobScriptFiles:
         assert all(r.called for r in get_file_routes)
 
         assert all(p.read_text() == dummy_template_source for p in actual_list_of_files)
+
+
+def test_flatten_param_dict__success():
+    param_dict = {
+        "application_config": {"job_name": "rats", "partitions": ["foo", "bar"]},
+        "jobbergate_config": {
+            "default_template": "test_job_script.sh.j2",
+            "supporting_files": ["support-1.j2", "support-2.j2"],
+            "supporting_files_output_name": {"support-1.j2": "support-10", "support-2.j2": "support-20"},
+            "template_files": ["test_job_script.sh.j2", "support-1.j2", "support-2.j2"],
+            "job_script_name": None,
+            "output_directory": ".",
+            "partition": "debug",
+            "job_name": "rats",
+        },
+    }
+    actual_result = flatten_param_dict(param_dict)
+    expected_result = {
+        "default_template": "test_job_script.sh.j2",
+        "job_name": "rats",
+        "job_script_name": None,
+        "output_directory": ".",
+        "partition": "debug",
+        "partitions": ["foo", "bar"],
+        "supporting_files": ["support-1.j2", "support-2.j2"],
+        "supporting_files_output_name": {"support-1.j2": "support-10", "support-2.j2": "support-20"},
+        "template_files": ["test_job_script.sh.j2", "support-1.j2", "support-2.j2"],
+    }
+
+    assert actual_result == expected_result
+
+
+@pytest.mark.parametrize(
+    "input_string, expected_output",
+    [
+        ("templates/test.sh.j2", "test.sh"),
+        ("path/to/file.py.j2", "path/to/file.py"),
+        ("templates/file.py.jinja2", "file.py"),
+        ("templates/test.sh.jinja2", "test.sh"),
+        ("other/path/test.py", "other/path/test.py"),
+    ],
+)
+def test_remove_prefix_suffix(input_string, expected_output):
+    assert remove_prefix_suffix(input_string) == expected_output
