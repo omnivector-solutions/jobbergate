@@ -365,7 +365,6 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
         ),
     )
 
-
     get_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}")
     get_route.mock(
         return_value=httpx.Response(
@@ -450,8 +449,9 @@ class TestDownloadApplicationFiles:
 
         list_of_files = [f"file-{i}" for i in range(3)]
 
-        mocked_save_files = mocker.patch("jobbergate_cli.subapps.applications.app.save_application_files", return_value = list_of_files)
-
+        mocked_save_files = mocker.patch(
+            "jobbergate_cli.subapps.applications.app.save_application_files", return_value=list_of_files
+        )
 
         with mock.patch.object(pathlib.Path, "cwd", return_value=tmp_path):
             result = cli_runner.invoke(test_app, shlex.split("download --id=1"))
@@ -485,9 +485,7 @@ class TestDownloadApplicationFiles:
         application_data = dummy_application_data[0]
         identifier = application_data["identifier"]
 
-        respx_mock.get(
-            f"{dummy_domain}/jobbergate/job-script-templates/{identifier}"
-        ).mock(
+        respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{identifier}").mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
                 json=dummy_application_data[0],
@@ -497,8 +495,9 @@ class TestDownloadApplicationFiles:
 
         list_of_files = [f"file-{i}" for i in range(3)]
 
-        mocked_save_files = mocker.patch("jobbergate_cli.subapps.applications.app.save_application_files", return_value = list_of_files)
-
+        mocked_save_files = mocker.patch(
+            "jobbergate_cli.subapps.applications.app.save_application_files", return_value=list_of_files
+        )
 
         with mock.patch.object(pathlib.Path, "cwd", return_value=tmp_path):
             result = cli_runner.invoke(test_app, shlex.split(f"download --identifier={identifier}"))
@@ -508,7 +507,7 @@ class TestDownloadApplicationFiles:
             ApplicationResponse(**dummy_application_data[0]),
             tmp_path,
         )
-        
+
         assert result.exit_code == 0, f"download failed: {result.stdout}"
         mocked_render.assert_called_once_with(
             f"A total of {len(list_of_files)} application files were successfully downloaded.",

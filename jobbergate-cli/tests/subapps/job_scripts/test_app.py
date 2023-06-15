@@ -11,7 +11,6 @@ from jobbergate_cli.schemas import (
     JobScriptResponse,
     JobSubmissionResponse,
     ListResponseEnvelope,
-    Pagination,
 )
 from jobbergate_cli.subapps.job_scripts.app import (
     HIDDEN_FIELDS,
@@ -38,14 +37,15 @@ def test_list_all__makes_request_and_renders_results(
     cli_runner,
     mocker,
 ):
-    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts?all=false").mock(
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts?user_only=true").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(
-                results=dummy_job_script_data,
-                pagination=dict(
-                    total=3,
-                ),
+                items=dummy_job_script_data,
+                total=len(dummy_job_script_data),
+                page=1,
+                size=len(dummy_job_script_data),
+                pages=1,
             ),
         ),
     )
@@ -56,8 +56,11 @@ def test_list_all__makes_request_and_renders_results(
     mocked_render.assert_called_once_with(
         dummy_context,
         ListResponseEnvelope(
-            results=dummy_job_script_data,
-            pagination=Pagination(total=3, start=None, limit=None),
+            items=dummy_job_script_data,
+            total=len(dummy_job_script_data),
+            page=1,
+            size=len(dummy_job_script_data),
+            pages=1,
         ),
         title="Job Scripts List",
         style_mapper=style_mapper,
@@ -86,7 +89,7 @@ def test_get_one__success(
     assert result.exit_code == 0, f"get-one failed: {result.stdout}"
     mocked_render.assert_called_once_with(
         dummy_context,
-        JobScriptResponse(**dummy_job_script_data[0]),
+        JobScriptResponse.parse_obj(dummy_job_script_data[0]),
         title="Job Script",
         hidden_fields=HIDDEN_FIELDS,
     )
@@ -96,6 +99,7 @@ def test_create__non_fast_mode_and_job_submission(
     respx_mock,
     make_test_app,
     dummy_context,
+    dummy_module_source,
     dummy_application_data,
     dummy_job_script_data,
     dummy_job_submission_data,
@@ -113,7 +117,9 @@ def test_create__non_fast_mode_and_job_submission(
 
     job_submission_data = dummy_job_submission_data[0]
 
-    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-scripts")
+    create_route = respx_mock.post(
+        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.id}"
+    )
     create_route.mock(
         return_value=httpx.Response(
             httpx.codes.CREATED,
@@ -140,9 +146,17 @@ def test_create__non_fast_mode_and_job_submission(
         "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
         return_value=application_response,
     )
+    assert application_response.workflow_file is not None
+    get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_response.workflow_file.url}")
+    get_workflow_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            content=dummy_module_source.encode(),
+        ),
+    )
     mocked_create_job_submission = mocker.patch(
         "jobbergate_cli.subapps.job_scripts.app.create_job_submission",
-        return_value=JobSubmissionResponse(**job_submission_data),
+        return_value=JobSubmissionResponse.parse_obj(job_submission_data),
     )
     mocker.patch.object(
         importlib.import_module("inquirer.prompt"),
@@ -176,28 +190,26 @@ def test_create__non_fast_mode_and_job_submission(
     )
     assert create_route.called
     content = json.loads(create_route.calls.last.request.content)
-    assert content == dict(
-        param_dict=dict(
-            application_config=dict(
-                foo="oof",
-                bar="BAR",
-                baz="BAZ",
-            ),
-            jobbergate_config=dict(
-                default_template="test-job-script.py.j2",
-                job_script_name=None,
-                output_directory=".",
-                supporting_files=None,
-                supporting_files_output_name=None,
-                template_files=["test-job-script.py.j2"],
-                user_supplied_key="user-supplied-value",
-            ),
-        ),
-        application_id=application_response.id,
-        job_script_name="dummy-name",
-        job_script_description=None,
-        sbatch_params=["1", "2", "3"],
-    )
+    assert content == {
+        "create_request": {"name": "dummy-name", "description": None},
+        "render_request": {
+            "template_output_name_mapping": {"test-job-script.py.j2": "test-job-script.py"},
+            "sbatch_params": ["1", "2", "3"],
+            "param_dict": {
+                "data": {
+                    "foo": "oof",
+                    "bar": "BAR",
+                    "baz": "BAZ",
+                    "template_files": None,
+                    "default_template": "test-job-script.py.j2",
+                    "output_directory": ".",
+                    "supporting_files_output_name": None,
+                    "supporting_files": None,
+                    "job_script_name": None,
+                }
+            },
+        },
+    }
 
     mocked_render.assert_has_calls(
         [
@@ -221,6 +233,7 @@ def test_create__with_fast_mode_and_no_job_submission(
     respx_mock,
     make_test_app,
     dummy_context,
+    dummy_module_source,
     dummy_application_data,
     dummy_job_script_data,
     dummy_domain,
@@ -233,7 +246,9 @@ def test_create__with_fast_mode_and_no_job_submission(
 
     job_script_data = dummy_job_script_data[0]
 
-    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-scripts")
+    create_route = respx_mock.post(
+        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.id}"
+    )
     create_route.mock(
         return_value=httpx.Response(
             httpx.codes.CREATED,
@@ -262,6 +277,14 @@ def test_create__with_fast_mode_and_no_job_submission(
         "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
         return_value=application_response,
     )
+    assert application_response.workflow_file is not None
+    get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_response.workflow_file.url}")
+    get_workflow_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            content=dummy_module_source.encode(),
+        ),
+    )
     result = cli_runner.invoke(
         test_app,
         shlex.split(
@@ -285,28 +308,26 @@ def test_create__with_fast_mode_and_no_job_submission(
     )
     assert create_route.called
     content = json.loads(create_route.calls.last.request.content)
-    assert content == dict(
-        param_dict=dict(
-            application_config=dict(
-                foo="oof",
-                bar="rab",
-                baz="zab",
-            ),
-            jobbergate_config=dict(
-                default_template="test-job-script.py.j2",
-                job_script_name=None,
-                output_directory=".",
-                supporting_files=None,
-                supporting_files_output_name=None,
-                template_files=["test-job-script.py.j2"],
-                user_supplied_key="user-supplied-value",
-            ),
-        ),
-        application_id=application_response.id,
-        job_script_description=None,
-        job_script_name="dummy-name",
-        sbatch_params=["1", "2", "3"],
-    )
+    assert content == {
+        "create_request": {"name": "dummy-name", "description": None},
+        "render_request": {
+            "template_output_name_mapping": {"test-job-script.py.j2": "test-job-script.py"},
+            "sbatch_params": ["1", "2", "3"],
+            "param_dict": {
+                "data": {
+                    "foo": "oof",
+                    "bar": "rab",
+                    "baz": "zab",
+                    "template_files": None,
+                    "default_template": "test-job-script.py.j2",
+                    "output_directory": ".",
+                    "supporting_files_output_name": None,
+                    "supporting_files": None,
+                    "job_script_name": None,
+                }
+            },
+        },
+    }
 
     mocked_render.assert_called_once_with(
         dummy_context,
@@ -383,25 +404,37 @@ def test_show_files__success(
     dummy_job_script_data,
     dummy_job_script_files,
     dummy_domain,
+    dummy_template_source,
     cli_runner,
     mocker,
 ):
     """
     Verify that the ``show-files`` subcommand works as expected.
     """
+    job_script_data = dummy_job_script_data[0]
     respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/1").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
-            json=dummy_job_script_data[0],
+            json=job_script_data,
         ),
     )
+
+    get_file_routes = [respx_mock.get(f"{dummy_domain}/{f['url']}") for f in job_script_data["files"].values()]
+    for route in get_file_routes:
+        route.mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                content=dummy_template_source.encode(),
+            ),
+        )
+
     test_app = make_test_app("show-files", show_files)
     mocked_terminal_message = mocker.patch("jobbergate_cli.subapps.job_scripts.app.terminal_message")
 
     result = cli_runner.invoke(test_app, shlex.split("show-files --id=1"))
     assert result.exit_code == 0, f"get-one failed: {result.stdout}"
     mocked_terminal_message.assert_called_once_with(
-        dummy_job_script_files["files"]["application.sh"],
+        dummy_template_source,
         subject="application.sh",
         footer="This is the main job script file",
     )
@@ -425,34 +458,42 @@ class TestDownloadJobScriptFiles:
         test_app,
         dummy_job_script_data,
         dummy_domain,
+        dummy_context,
         cli_runner,
         mocker,
         tmp_path,
-        dummy_template_source,
     ):
         """
         Test that the ``download`` subcommand works as expected.
         """
+
+        job_script_data = dummy_job_script_data[0]
         respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/1").mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
-                json=dummy_job_script_data[0],
+                json=job_script_data,
             ),
         )
         mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.terminal_message")
 
         with mock.patch.object(pathlib.Path, "cwd", return_value=tmp_path):
-            result = cli_runner.invoke(test_app, shlex.split("download --id=1"))
+            with mock.patch(
+                "jobbergate_cli.subapps.job_scripts.tools.save_job_script_files",
+                return_value=list(job_script_data["files"].keys()),
+            ) as mocked_save_job_script_files:
+                result = cli_runner.invoke(test_app, shlex.split("download --id=1"))
+
+                mocked_save_job_script_files.assert_called_once_with(
+                    dummy_context,
+                    job_script_data=JobScriptResponse.parse_obj(job_script_data),
+                    destination_path=tmp_path,
+                )
 
         assert result.exit_code == 0, f"download failed: {result.stdout}"
         mocked_render.assert_called_once_with(
             "A total of 1 job script files were successfully downloaded.",
             subject="Job script download succeeded",
         )
-
-        desired_list_of_files = {tmp_path / "application.sh"}
-        assert set(tmp_path.rglob("*")) == set(desired_list_of_files)
-        assert (tmp_path / "application.sh").read_text() == dummy_template_source
 
     def test_download__fail(
         self,

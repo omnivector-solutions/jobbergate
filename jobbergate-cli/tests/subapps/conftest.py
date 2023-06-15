@@ -67,7 +67,7 @@ def seed_clusters(mocker):
 
 
 @pytest.fixture
-def dummy_application_data(dummy_module_source, dummy_config_source):
+def dummy_application_data():
     return [
         dict(
             id=1,
@@ -77,6 +77,20 @@ def dummy_application_data(dummy_module_source, dummy_config_source):
             owner_email="tucker.beck@omnivector.solutions",
             created_at="2022-03-01 17:31:00",
             updated_at="2022-03-01 17:31:00",
+            template_files={
+                "test-job-script.py.j2": {
+                    "filename": "test-job-script.py.j2",
+                    "created_at": "2022-03-01 17:31:00",
+                    "updated_at": "2022-03-01 17:31:00",
+                    "file_type": "ENTRYPOINT",
+                    "url": "jobbergate/job-script-templates/1/upload/template/test-job-script.py.j2",
+                }
+            },
+            workflow_file={
+                "created_at": "2022-03-01 17:31:00",
+                "updated_at": "2022-03-01 17:31:00",
+                "url": "jobbergate/job-script-templates/1/upload/workflow",
+            },
         ),
         dict(
             id=2,
@@ -100,10 +114,15 @@ def dummy_application_data(dummy_module_source, dummy_config_source):
 
 
 @pytest.fixture
-def dummy_job_script_files(dummy_template_source):
+def dummy_job_script_files():
     return {
-        "main_file_path": "application.sh",
-        "files": {"application.sh": dummy_template_source},
+        "application.sh": {
+            "filename": "application.sh",
+            "file_type": "ENTRYPOINT",
+            "created_at": "2022-03-01 17:31:00",
+            "updated_at": "2022-03-01 17:31:00",
+            "url": "jobbergate/job-scripts/1/upload/application.sh",
+        }
     }
 
 
@@ -114,31 +133,31 @@ def dummy_job_script_data(dummy_application_data, dummy_job_script_files):
             id=1,
             created_at="2022-03-02 22:08:00",
             updated_at="2022-03-02 22:08:00",
-            job_script_name="script1",
-            job_script_description="Job Script 1",
-            job_script_files=dummy_job_script_files,
-            job_script_owner_email="tucker@omnivector.solutions",
+            name="script1",
+            description="Job Script 1",
+            owner_email="tucker@omnivector.solutions",
             application_id=dummy_application_data[0]["id"],
+            files=dummy_job_script_files,
         ),
         dict(
             id=2,
             created_at="2022-03-02 22:08:00",
             updated_at="2022-03-02 22:08:00",
-            job_script_name="script2",
-            job_script_description="Job Script 2",
-            job_script_files=dummy_job_script_files,
-            job_script_owner_email="tucker@omnivector.solutions",
+            name="script2",
+            description="Job Script 2",
+            owner_email="tucker@omnivector.solutions",
             application_id=1,
+            files=dummy_job_script_files,
         ),
         dict(
             id=3,
             created_at="2022-03-02 22:08:00",
             updated_at="2022-03-02 22:08:00",
-            job_script_name="script3",
-            job_script_description="Job Script 3",
-            job_script_files=dummy_job_script_files,
-            job_script_owner_email="james@omnivector.solutions",
+            name="script3",
+            description="Job Script 3",
+            owner_email="james@omnivector.solutions",
             application_id=1,
+            files=dummy_job_script_files,
         ),
     ]
 
@@ -150,9 +169,9 @@ def dummy_job_submission_data(dummy_job_script_data):
             id=1,
             created_at="2022-03-02 22:08:00",
             updated_at="2022-03-02 22:08:00",
-            job_submission_name="sub1",
-            job_submission_description="Job Submission 1",
-            job_submission_owner_email="tucker@omnivector.solutions",
+            name="sub1",
+            description="Job Submission 1",
+            owner_email="tucker@omnivector.solutions",
             job_script_id=dummy_job_script_data[0]["id"],
             slurm_job_id=13,
             status="CREATED",
@@ -165,9 +184,9 @@ def dummy_job_submission_data(dummy_job_script_data):
             id=1,
             created_at="2022-03-02 22:08:00",
             updated_at="2022-03-02 22:08:00",
-            job_submission_name="sub1",
-            job_submission_description="Job Submission 1",
-            job_submission_owner_email="tucker@omnivector.solutions",
+            name="sub1",
+            description="Job Submission 1",
+            owner_email="tucker@omnivector.solutions",
             job_script_id=88,
             slurm_job_id=8888,
             status="CREATED",
@@ -180,9 +199,9 @@ def dummy_job_submission_data(dummy_job_script_data):
             id=3,
             created_at="2022-03-02 22:08:00",
             updated_at="2022-03-02 22:08:00",
-            job_submission_name="sub3",
-            job_submission_description="Job Submission 3",
-            job_submission_owner_email="tucker@omnivector.solutions",
+            name="sub3",
+            description="Job Submission 3",
+            owner_email="tucker@omnivector.solutions",
             job_script_id=99,
             slurm_job_id=9999,
             status="CREATED",
@@ -195,9 +214,9 @@ def dummy_job_submission_data(dummy_job_script_data):
             id=4,
             created_at="2022-11-17 11:17:00",
             updated_at="2022-11-17 11:17:00",
-            job_submission_name="sub4",
-            job_submission_description="Job Submission 4",
-            job_submission_owner_email="felipe@omnivector.solutions",
+            name="sub4",
+            description="Job Submission 4",
+            owner_email="felipe@omnivector.solutions",
             job_script_id=99,
             slurm_job_id=9999,
             status="REJECTED",

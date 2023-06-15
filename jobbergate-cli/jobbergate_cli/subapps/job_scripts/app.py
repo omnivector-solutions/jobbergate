@@ -193,7 +193,7 @@ def create(
         return
 
     try:
-        job_submission_result = create_job_submission(jg_ctx, job_script_result.id, job_script_result.job_script_name)
+        job_submission_result = create_job_submission(jg_ctx, job_script_result.id, job_script_result.name)
     except Exception as err:
         raise Abort(
             "Failed to immediately submit the job after job script creation.",

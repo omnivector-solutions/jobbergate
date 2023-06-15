@@ -4,7 +4,6 @@ import pathlib
 
 import httpx
 import pytest
-from pydantic import ValidationError
 
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ApplicationResponse, JobScriptResponse
@@ -58,6 +57,7 @@ def test_fetch_job_script_data__success(
 def test_create_job_script__providing_a_name(
     dummy_application_data,
     dummy_job_script_data,
+    dummy_module_source,
     dummy_domain,
     dummy_context,
     dummy_render_class,
@@ -75,6 +75,14 @@ def test_create_job_script__providing_a_name(
         "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
         return_value=application_response,
     )
+    assert application_response.workflow_file is not None
+    get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_response.workflow_file.url}")
+    get_workflow_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            content=dummy_module_source.encode(),
+        ),
+    )
 
     dummy_render_class.prepared_input = dict(
         foo="FOO",
@@ -83,12 +91,15 @@ def test_create_job_script__providing_a_name(
     )
 
     desired_job_script_data = dummy_job_script_data[0]
+
     mocker.patch.object(
         importlib.import_module("inquirer.prompt"),
         "ConsoleRender",
         new=dummy_render_class,
     )
-    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-scripts")
+    create_route = respx_mock.post(
+        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.id}"
+    )
     create_route.mock(
         return_value=httpx.Response(
             httpx.codes.CREATED,
@@ -98,7 +109,7 @@ def test_create_job_script__providing_a_name(
 
     actual_job_script_data = create_job_script(
         dummy_context,
-        name=desired_job_script_data["job_script_name"],
+        name=desired_job_script_data["name"],
         application_id=1,
         fast=True,
     )
@@ -109,12 +120,13 @@ def test_create_job_script__providing_a_name(
         identifier=None,
     )
 
-    assert actual_job_script_data == JobScriptResponse(**desired_job_script_data)
+    assert actual_job_script_data == JobScriptResponse.parse_obj(desired_job_script_data)
 
 
 def test_create_job_script__without_a_name(
     dummy_application_data,
     dummy_job_script_data,
+    dummy_module_source,
     dummy_domain,
     dummy_context,
     dummy_render_class,
@@ -134,6 +146,14 @@ def test_create_job_script__without_a_name(
         "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
         return_value=application_response,
     )
+    assert application_response.workflow_file is not None
+    get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_response.workflow_file.url}")
+    get_workflow_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            content=dummy_module_source.encode(),
+        ),
+    )
 
     dummy_render_class.prepared_input = dict(
         foo="FOO",
@@ -142,14 +162,16 @@ def test_create_job_script__without_a_name(
     )
 
     desired_job_script_data = dummy_job_script_data[0]
-    desired_job_script_data["name"] = application_response.application_name
+    desired_job_script_data["name"] = application_response.name
 
     mocker.patch.object(
         importlib.import_module("inquirer.prompt"),
         "ConsoleRender",
         new=dummy_render_class,
     )
-    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-scripts")
+    create_route = respx_mock.post(
+        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.id}"
+    )
     create_route.mock(
         return_value=httpx.Response(
             httpx.codes.CREATED,
@@ -170,7 +192,7 @@ def test_create_job_script__without_a_name(
         identifier=None,
     )
 
-    assert actual_job_script_data == JobScriptResponse(**desired_job_script_data)
+    assert actual_job_script_data == JobScriptResponse.parse_obj(desired_job_script_data)
 
 
 class TestSaveJobScriptFiles:
@@ -178,33 +200,36 @@ class TestSaveJobScriptFiles:
     Test the save_job_script_files function.
     """
 
-    def test_save_job_scripts_files__no_files(self, dummy_job_script_data):
-        """
-        Base test for the save_job_script_files function.
-
-        job_script_files is a required field on JobScriptResponse, so job script files are always present.
-        """
-        job_script_data = dummy_job_script_data[0].copy()
-        job_script_data.pop("job_script_files")
-
-        with pytest.raises(ValidationError):
-            JobScriptResponse(**job_script_data)
-
     def test_save_job_scripts_files__all_files(
         self,
         tmp_path,
+        respx_mock,
+        dummy_context,
+        dummy_domain,
         dummy_job_script_data,
         dummy_template_source,
     ):
         """
         Test that we can download all the files from a job script.
         """
-        job_script_data = JobScriptResponse(**dummy_job_script_data[0])
+        job_script_data = JobScriptResponse.parse_obj(dummy_job_script_data[0])
 
-        desired_list_of_files = [tmp_path / "application.sh"]
-        actual_list_of_files = save_job_script_files(job_script_data, tmp_path)
+        get_file_routes = [respx_mock.get(f"{dummy_domain}/{f.url}") for f in job_script_data.files.values()]
+        for route in get_file_routes:
+            route.mock(
+                return_value=httpx.Response(
+                    httpx.codes.OK,
+                    content=dummy_template_source.encode(),
+                ),
+            )
+        desired_list_of_files = [tmp_path / f.filename for f in job_script_data.files.values()]
+
+        assert len(desired_list_of_files) >= 1
+
+        actual_list_of_files = save_job_script_files(dummy_context, job_script_data, tmp_path)
 
         assert actual_list_of_files == desired_list_of_files
         assert set(tmp_path.rglob("*")) == set(desired_list_of_files)
+        assert all(r.called for r in get_file_routes)
 
-        assert (tmp_path / "application.sh").read_text() == dummy_template_source
+        assert all(p.read_text() == dummy_template_source for p in actual_list_of_files)

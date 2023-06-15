@@ -11,7 +11,12 @@ from jobbergate_cli.constants import (
     JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
 )
 from jobbergate_cli.exceptions import Abort
-from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig, TemplateFileResponse, WorkflowFileResponse
+from jobbergate_cli.schemas import (
+    ApplicationResponse,
+    JobbergateApplicationConfig,
+    TemplateFileResponse,
+    WorkflowFileResponse,
+)
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.tools import (
     execute_application,
@@ -146,6 +151,7 @@ def test_load_application_data__fails_if_application_config_is_not_valid_YAML(
     with pytest.raises(Abort, match="The application config fetched from the API is not valid"):
         load_application_data(application_data, dummy_module_source)
 
+
 def test_load_application_from_source__success(dummy_module_source, dummy_jobbergate_application_config):
     application = load_application_from_source(dummy_module_source, dummy_jobbergate_application_config)
     assert isinstance(application, JobbergateApplicationBase)
@@ -254,7 +260,7 @@ class TestDownloadApplicationFiles:
             name="dummy",
             owner_email="dummy@email.com",
             created_at=datetime.datetime.now(),
-            updated_at=datetime.datetime.now(),            
+            updated_at=datetime.datetime.now(),
         )
 
         desired_list_of_files = []
