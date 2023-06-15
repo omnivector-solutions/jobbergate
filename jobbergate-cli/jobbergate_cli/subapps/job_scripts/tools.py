@@ -11,7 +11,16 @@ from loguru import logger
 
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import ApplicationResponse, JobScriptCreateRequest, JobScriptCreateRequestData, JobbergateApplicationConfig, JobbergateConfig, JobbergateContext, JobScriptResponse, RenderFromTemplateRequest
+from jobbergate_cli.schemas import (
+    ApplicationResponse,
+    JobbergateApplicationConfig,
+    JobbergateConfig,
+    JobbergateContext,
+    JobScriptCreateRequest,
+    JobScriptCreateRequestData,
+    JobScriptResponse,
+    RenderFromTemplateRequest,
+)
 from jobbergate_cli.subapps.applications.tools import execute_application, fetch_application_data, load_application_data
 
 
@@ -71,6 +80,7 @@ def fetch_job_script_data(
         ),
     )
 
+
 def flatten_param_dict(param_dict: Dict[str, Any]) -> Dict[str, Any]:
     """
     Flatten an input dictionary to support the rendering process.
@@ -113,6 +123,7 @@ def flatten_param_dict(param_dict: Dict[str, Any]) -> Dict[str, Any]:
             param_dict_flat[key] = value
     return param_dict_flat
 
+
 def remove_prefix_suffix(s: str) -> str:
     """Remove the prefix 'templates/' and suffixes '.j2' and '.jinja2' from a string"""
     if s.startswith("templates/"):
@@ -127,21 +138,19 @@ def remove_prefix_suffix(s: str) -> str:
 def get_template_output_name_mapping(config: JobbergateConfig) -> Dict[str, str]:
     """
     Get the mapping of template names to output names.
-    
+
     This provides the mapping as expected by the API v4 from the configuration on CLI v3.
     """
     output_dir = config.output_directory
 
     if not config.default_template:
         raise Abort(
-            f"Default template was not specified",
+            "Default template was not specified",
             subject="Entry point is unspecified",
             log_message="Entry point file not specified",
         )
 
-    output_name_mapping = {
-        config.default_template: output_dir / remove_prefix_suffix(config.default_template)
-    }
+    output_name_mapping = {config.default_template: output_dir / remove_prefix_suffix(config.default_template)}
 
     if config.supporting_files:
         for template in config.supporting_files:
@@ -149,8 +158,9 @@ def get_template_output_name_mapping(config: JobbergateConfig) -> Dict[str, str]
     if config.supporting_files_output_name:
         for template, output_name in config.supporting_files_output_name.items():
             output_name_mapping[template] = output_dir / output_name
-    
+
     return {k: v.as_posix() for k, v in output_name_mapping.items()}
+
 
 def create_job_script(
     jg_ctx: JobbergateContext,
@@ -215,9 +225,9 @@ def create_job_script(
         ),
         render_request=RenderFromTemplateRequest(
             template_output_name_mapping=get_template_output_name_mapping(app_config.jobbergate_config),
-            sbatch_params=sbatch_params,            
+            sbatch_params=sbatch_params,
             param_dict={"data": param_dict_flat},
-        )
+        ),
     )
 
     if app_config.jobbergate_config.job_script_name is not None:
@@ -242,6 +252,7 @@ def create_job_script(
 
     return job_script_result
 
+
 def update_template_files_information(app_data: ApplicationResponse, app_config: JobbergateApplicationConfig):
     """Update the information about the template files if not already present in the configuration."""
     if not app_config.jobbergate_config.default_template:
@@ -255,7 +266,7 @@ def update_template_files_information(app_data: ApplicationResponse, app_config:
                 log_message="Entry point file not specified",
             )
         app_config.jobbergate_config.default_template = list_of_entrypoints[0]
-    
+
     if not app_config.jobbergate_config.supporting_files:
         list_of_supporting_files = [
             i.filename for i in app_data.template_files.values() if i.file_type.upper() == "SUPPORT"

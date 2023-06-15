@@ -27,7 +27,6 @@ from jobbergate_cli.subapps.applications.tools import (
     load_default_config,
     save_application_files,
 )
-from jobbergate_cli.text_tools import dedent
 
 
 def test_load_default_config():

@@ -5,13 +5,12 @@ Provide tool functions for working with Application data.
 import contextlib
 import copy
 import io
-from buzz import require_condition
-import yaml
-import json
 import itertools
+import json
 import pathlib
 from typing import Any, Dict, List, Optional, Tuple, cast
 
+import yaml
 from loguru import logger
 
 from jobbergate_cli.constants import (
@@ -26,6 +25,7 @@ from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig, JobbergateConfig, JobbergateContext
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.questions import gather_param_values
+
 
 def load_default_config() -> Dict[str, Any]:
     """
@@ -101,7 +101,7 @@ def load_application_data(
     :returns: A tuple containing the application config and the application module
     """
     try:
-        assert app_data.workflow_file is not None # make type checker happy
+        assert app_data.workflow_file is not None  # make type checker happy
 
         app_config = JobbergateApplicationConfig(
             jobbergate_config=JobbergateConfig(**app_data.workflow_file.runtime_config),
@@ -268,7 +268,7 @@ def save_application_files(
         config_path.parent.mkdir(parents=True, exist_ok=True)
         config_path.write_text(
             yaml.dump(
-                json.loads( # workaround to convert path to string
+                json.loads(  # workaround to convert path to string
                     application_config.json(
                         exclude_none=True,
                         exclude_unset=True,
@@ -280,7 +280,6 @@ def save_application_files(
         saved_files.append(config_path)
 
     for template_file in application_data.template_files.values():
-
         template_path = destination_path / "templates" / template_file.filename
         make_request(
             jg_ctx.client,

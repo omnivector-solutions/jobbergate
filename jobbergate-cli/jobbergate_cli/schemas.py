@@ -169,26 +169,32 @@ class JobSubmissionResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     report_message: Optional[str]
     execution_parameters: Optional[Dict[str, Any]]
 
+
 class JobScriptCreateRequest(pydantic.BaseModel):
     """
     Request model for creating JobScript instances.
     """
+
     name: str
     description: Optional[str]
 
 
 class RenderFromTemplateRequest(pydantic.BaseModel):
     """Request model for creating a JobScript entry from a template."""
+
     template_output_name_mapping: Dict[str, str]
     sbatch_params: Optional[List[str]]
     param_dict: Dict[str, Any]
+
 
 class JobScriptCreateRequestData(pydantic.BaseModel):
     """
     Describes the data that will be sent to the ``create`` endpoint of the Jobbergate API for job scripts.
     """
+
     create_request: JobScriptCreateRequest
     render_request: RenderFromTemplateRequest
+
 
 class JobSubmissionCreateRequestData(pydantic.BaseModel):
     """

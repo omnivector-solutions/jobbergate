@@ -6,12 +6,7 @@ from unittest import mock
 import httpx
 import pytest
 
-from jobbergate_cli.schemas import (
-    ApplicationResponse,
-    JobScriptResponse,
-    JobSubmissionResponse,
-    ListResponseEnvelope,
-)
+from jobbergate_cli.schemas import ApplicationResponse, JobScriptResponse, JobSubmissionResponse, ListResponseEnvelope
 from jobbergate_cli.subapps.job_scripts.app import (
     HIDDEN_FIELDS,
     JOB_SUBMISSION_HIDDEN_FIELDS,
