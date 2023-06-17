@@ -71,7 +71,7 @@ class JobScriptCreateRequest(BaseModel):
 
     job_script_name: str
     job_script_description: Optional[str]
-    application_id: int
+    application_id: Optional[int]
     sbatch_params: Optional[List[str]]
     param_dict: Optional[Dict[str, Any]]
 
@@ -95,7 +95,7 @@ class JobScriptUpdateRequest(BaseModel):
         schema_extra = job_script_meta_mapper
 
 
-class JobScriptPartialResponse(BaseModel):
+class JobScriptResponse(BaseModel):
     """
     Complete model to match database for the JobScript resource.
 
@@ -107,24 +107,11 @@ class JobScriptPartialResponse(BaseModel):
     updated_at: Optional[datetime] = None
     job_script_name: str
     job_script_description: Optional[str] = None
+    job_script_files: Optional[JobScriptFiles] = None
     job_script_owner_email: str
     application_name: Optional[str] = None
     application_id: Optional[int] = None
     is_archived: bool
-
-    class Config:
-        orm_mode = True
-        schema_extra = job_script_meta_mapper
-
-
-class JobScriptResponse(JobScriptPartialResponse):
-    """
-    Complete model to match database for the JobScript resource.
-
-    In addition to the field job_script_files from S3, for the JobScript resource.
-    """
-
-    job_script_files: JobScriptFiles
 
     class Config:
         orm_mode = True

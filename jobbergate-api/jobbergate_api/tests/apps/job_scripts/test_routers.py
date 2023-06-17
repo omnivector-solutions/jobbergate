@@ -12,7 +12,7 @@ from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
-from jobbergate_api.apps.job_scripts.schemas import JobScriptPartialResponse, JobScriptResponse
+from jobbergate_api.apps.job_scripts.schemas import JobScriptResponse
 from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.storage import database
@@ -78,7 +78,7 @@ def sbatch_params():
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
 @mock.patch("jobbergate_api.apps.job_scripts.job_script_files.JobScriptFiles.write_to_s3")
-async def test_create_job_script(
+async def test_create_job_script__with_application(
     mocked_write_job_script_files_to_s3,
     fill_application_data,
     job_script_data,
@@ -94,7 +94,7 @@ async def test_create_job_script(
     mocked_file_manager_factory,
 ):
     """
-    Test POST /job_scripts/ correctly creates a job_script.
+    Test POST /job_scripts/ correctly creates a job_script with a source application.
 
     This test proves that a job_script is successfully created via a POST request to the /job-scripts/
     endpoint. We show this by asserting that the job_script is created in the database after the post
@@ -142,6 +142,49 @@ async def test_create_job_script(
     assert job_script.created_at in window
     assert job_script.updated_at in window
     assert job_script.job_script_files.main_file == job_script_data_as_string
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_create_job_script__without_application(
+    job_script_data,
+    fill_job_script_data,
+    param_dict,
+    client,
+    inject_security_header,
+    time_frame,
+):
+    """
+    Test POST /job_scripts/ correctly creates a job_script without a source application.
+
+    This test proves that a job_script is successfully created via a POST request to the /job-scripts/
+    endpoint without specifying a source application_id. We show this by asserting that the job_script is
+    created in the database after the post request is made, the correct status code (201) is returned.
+    """
+    inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
+    with time_frame() as window:
+        response = await client.post(
+            "/jobbergate/job-scripts/",
+            json=fill_job_script_data(
+                param_dict=param_dict,
+            ),
+        )
+
+    assert response.status_code == status.HTTP_201_CREATED
+
+    id_rows = await database.fetch_all("SELECT id FROM job_scripts")
+    assert len(id_rows) == 1
+
+    job_script = JobScriptResponse(**response.json())
+
+    assert job_script.id == id_rows[0][0]
+    assert job_script.job_script_name == job_script_data["job_script_name"]
+    assert job_script.job_script_owner_email == "owner1@org.com"
+    assert job_script.job_script_description is None
+    assert job_script.job_script_files == None
+    assert job_script.application_id == None
+    assert job_script.created_at in window
+    assert job_script.updated_at in window
 
 
 @pytest.mark.asyncio
@@ -515,7 +558,7 @@ async def test_upload_job_script_file_by_id__success(
     assert actual_job_script_files == expected_job_script_files
 
     query = job_scripts_table.select(job_scripts_table.c.id == inserted_job_script_id)
-    job_script = JobScriptPartialResponse.parse_obj(await database.fetch_one(query))
+    job_script = JobScriptResponse.parse_obj(await database.fetch_one(query))
 
     assert job_script.updated_at in window
 
@@ -1197,7 +1240,7 @@ async def test_update_job_script(
     assert data["is_archived"] is True
 
     query = job_scripts_table.select(job_scripts_table.c.id == inserted_job_script_id)
-    job_script = JobScriptPartialResponse.parse_obj(await database.fetch_one(query))
+    job_script = JobScriptResponse.parse_obj(await database.fetch_one(query))
 
     assert job_script is not None
     assert job_script.job_script_name == "new name"
@@ -1248,7 +1291,7 @@ async def test_update_job_script_unable_to_write_file_to_s3(
 
     query = job_scripts_table.select(job_scripts_table.c.id == inserted_job_script_id)
 
-    desired_jobscript_data = JobScriptPartialResponse.parse_obj(await database.fetch_one(query))
+    desired_jobscript_data = JobScriptResponse.parse_obj(await database.fetch_one(query))
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
 
@@ -1268,7 +1311,7 @@ async def test_update_job_script_unable_to_write_file_to_s3(
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert "not found in S3" in response.text
 
-    actual_jobscript_data = JobScriptPartialResponse.parse_obj(await database.fetch_one(query))
+    actual_jobscript_data = JobScriptResponse.parse_obj(await database.fetch_one(query))
 
     assert desired_jobscript_data.json() == actual_jobscript_data.json()
 
