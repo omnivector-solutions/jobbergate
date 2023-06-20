@@ -181,8 +181,8 @@ async def test_create_job_script__without_application(
     assert job_script.job_script_name == job_script_data["job_script_name"]
     assert job_script.job_script_owner_email == "owner1@org.com"
     assert job_script.job_script_description is None
-    assert job_script.job_script_files == None
-    assert job_script.application_id == None
+    assert job_script.job_script_files is None
+    assert job_script.application_id is None
     assert job_script.created_at in window
     assert job_script.updated_at in window
 

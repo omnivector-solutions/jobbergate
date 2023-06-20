@@ -89,7 +89,11 @@ async def job_script_create(
     identity_claims = IdentityClaims.from_token_payload(token_payload)
 
     create_dict = dict(
-        **{k: v for (k, v) in job_script.dict(exclude_unset=True).items() if k not in ("param_dict", "sbatch_params")},
+        **{
+            k: v
+            for (k, v) in job_script.dict(exclude_unset=True).items()
+            if k not in ("param_dict", "sbatch_params")
+        },
         job_script_owner_email=identity_claims.email,
     )
 

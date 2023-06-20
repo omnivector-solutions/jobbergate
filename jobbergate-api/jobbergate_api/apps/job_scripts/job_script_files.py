@@ -150,7 +150,7 @@ class JobScriptFiles(BaseModel):
     @classmethod
     def get_from_single_upload_file(cls, upload_file: UploadFile):
         """
-        Initialize a JobScriptFiles from a single upload file
+        Initialize a JobScriptFiles from a single upload file.
         """
         logger.debug("Creating JobScriptFiles from single upload file")
         main_file_path = Path(".", upload_file.filename)
