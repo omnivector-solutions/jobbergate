@@ -190,7 +190,7 @@ async def job_script_get(job_script_id: int = Query(...)):
 
 @router.post(
     "/job-scripts/{job_script_id}/upload",
-    status_code=status.HTTP_204_NO_CONTENT,
+    status_code=status.HTTP_200_OK,
     description="Endpoint to upload a new job script file.",
     dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
 )
@@ -220,7 +220,7 @@ async def job_script_create_file_content(
     )
     await database.execute(update_query)
     logger.debug(f"Success creating job script files from single upload file for {job_script_id=}")
-    return None
+    return dict(message=f"Successfully uploaded {job_script_file.filename} for {job_script_id=}")
 
 
 @router.patch(
