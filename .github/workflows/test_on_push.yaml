@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install poetry
-        run: pipx install poetry==1.1.14
+        run: pipx install poetry==1.4.2
       - uses: actions/setup-python@v4
         with:
           python-version: "3.8"
@@ -45,7 +45,7 @@ jobs:
           TEST_DATABASE_PSWD: test-pswd
           TEST_DATABASE_NAME: test-jobbergate
         run: |
-          poetry env use "3.8"
+          poetry env use 3.8
           make qa
 
   cli-tests:
@@ -54,7 +54,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install poetry
-        run: pipx install poetry==1.1.14
+        run: pipx install poetry==1.4.2
       - uses: actions/setup-python@v4
         with:
           python-version: "3.6"
@@ -66,5 +66,5 @@ jobs:
       - name: "run quality control checks"
         working-directory: jobbergate-cli
         run: |
-          poetry env use "3.6"
+          poetry env use 3.6
           make qa
