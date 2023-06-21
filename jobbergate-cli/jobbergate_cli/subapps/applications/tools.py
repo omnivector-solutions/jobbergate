@@ -5,7 +5,6 @@ Provide tool functions for working with Application data.
 import contextlib
 import copy
 import io
-import itertools
 import json
 import pathlib
 from typing import Any, Dict, List, Optional, Tuple, cast
@@ -177,6 +176,9 @@ def upload_application(
     module_file_path = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
     Abort.require_condition(module_file_path.is_file(), f"Application module file {module_file_path} does not exist")
 
+    template_files_set = set(application_path.rglob("*.j2")) | set(application_path.rglob("*.jinja2"))
+    Abort.require_condition(template_files_set, f"No template files found in {application_path}")
+
     application_config = load_application_config_from_source(config_file_path.read_text())
 
     logger.debug("Preparing to upload the template configuration")
@@ -199,7 +201,7 @@ def upload_application(
 
     supporting_files = application_config.jobbergate_config.supporting_files or []
 
-    for complete_template_path in itertools.chain(application_path.rglob("*.j2"), application_path.rglob("*.jinja2")):
+    for complete_template_path in template_files_set:
         relative_template_path = complete_template_path.relative_to(application_path)
         logger.debug(f"Preparing to upload {relative_template_path}")
 
@@ -235,8 +237,10 @@ def upload_application(
                 expect_response=False,
                 abort_message="Request to upload application module was not accepted by the API",
                 support=True,
-                files={"upload_file": (module_file_path.name, module_file, "text/plain")},
-                json={"data": application_config.jobbergate_config},
+                files={
+                    "upload_file": (module_file_path.name, module_file, "text/plain"),
+                },
+                data={"runtime_config": application_config.jobbergate_config.json()},
             ),
         )
     if response_code != 200:

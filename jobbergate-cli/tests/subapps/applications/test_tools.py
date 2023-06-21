@@ -4,6 +4,7 @@ import pathlib
 
 import httpx
 import pytest
+import respx
 
 from jobbergate_cli.constants import (
     JOBBERGATE_APPLICATION_CONFIG,
@@ -26,6 +27,7 @@ from jobbergate_cli.subapps.applications.tools import (
     load_application_from_source,
     load_default_config,
     save_application_files,
+    upload_application,
 )
 
 
@@ -243,6 +245,72 @@ def test_execute_application__with_fast_mode(
         bar="BAR",
         baz="zab",  # Only 'baz' has a default value, so it should be used
     )
+
+
+class TestUploadApplicationFiles:
+    """Test the upload_application_files function."""
+
+    application_id = 1
+
+    @pytest.fixture(scope="function")
+    def mocked_routes(self, dummy_domain):
+        app_mock = respx.mock(base_url=dummy_domain)
+
+        app_mock.put(
+            path=f"/jobbergate/job-script-templates/{self.application_id}",
+            name="update",
+        ).respond(httpx.codes.OK)
+
+        app_mock.put(
+            path=f"/jobbergate/job-script-templates/{self.application_id}/upload/template/ENTRYPOINT",
+            name="upload_template",
+        ).respond(httpx.codes.OK)
+
+        app_mock.put(
+            path=f"/jobbergate/job-script-templates/{self.application_id}/upload/workflow",
+            name="upload_workflow",
+        ).respond(httpx.codes.OK)
+
+        yield app_mock
+
+    @respx.mock(assert_all_called=True, assert_all_mocked=True)
+    def test_upload_application__success(
+        self,
+        dummy_application_dir,
+        dummy_context,
+        mocked_routes,
+    ):
+        with mocked_routes:
+            result = upload_application(dummy_context, dummy_application_dir, self.application_id)
+
+        assert result is True
+
+    @respx.mock(assert_all_mocked=True)
+    def test_upload_application__fails_directory_does_not_exists(self, dummy_application_dir, dummy_context):
+        application_path = dummy_application_dir / "does-not-exist"
+        with pytest.raises(Abort, match="Application directory"):
+            upload_application(dummy_context, application_path, self.application_id)
+
+    @respx.mock(assert_all_mocked=True)
+    def test_upload_application__fails_config_file_not_found(self, dummy_application_dir, dummy_context):
+        file_path = dummy_application_dir / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
+        file_path.unlink()
+        with pytest.raises(Abort, match="Application config file"):
+            upload_application(dummy_context, dummy_application_dir, self.application_id)
+
+    @respx.mock(assert_all_mocked=True)
+    def test_upload_application__fails_module_file_not_found(self, dummy_application_dir, dummy_context):
+        file_path = dummy_application_dir / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+        file_path.unlink()
+        with pytest.raises(Abort, match="Application module file"):
+            upload_application(dummy_context, dummy_application_dir, self.application_id)
+
+    @respx.mock(assert_all_mocked=True)
+    def test_upload_application__fails_no_template_found(self, dummy_application_dir, dummy_context):
+        file_path = dummy_application_dir / "templates" / "job-script-template.py.j2"
+        file_path.unlink()
+        with pytest.raises(Abort, match="No template files found in"):
+            upload_application(dummy_context, dummy_application_dir, self.application_id)
 
 
 class TestDownloadApplicationFiles:
