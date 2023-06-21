@@ -78,7 +78,7 @@ def test_create_job_script__providing_a_name(
         return_value=application_response,
     )
     assert application_response.workflow_file is not None
-    get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_response.workflow_file.url}")
+    get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_response.workflow_file.path}")
     get_workflow_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -149,7 +149,7 @@ def test_create_job_script__without_a_name(
         return_value=application_response,
     )
     assert application_response.workflow_file is not None
-    get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_response.workflow_file.url}")
+    get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_response.workflow_file.path}")
     get_workflow_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -216,7 +216,7 @@ class TestSaveJobScriptFiles:
         """
         job_script_data = JobScriptResponse.parse_obj(dummy_job_script_data[0])
 
-        get_file_routes = [respx_mock.get(f"{dummy_domain}/{f.url}") for f in job_script_data.files.values()]
+        get_file_routes = [respx_mock.get(f"{dummy_domain}/{f.path}") for f in job_script_data.files.values()]
         for route in get_file_routes:
             route.mock(
                 return_value=httpx.Response(

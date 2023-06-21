@@ -198,7 +198,7 @@ def create_job_script(
         tmp_file_path = pathlib.Path(fp.name)
         make_request(
             jg_ctx.client,
-            app_data.workflow_file.url,
+            app_data.workflow_file.path,
             "GET",
             expected_status=200,
             abort_message="Couldn't retrieve application module file from API",
@@ -291,7 +291,7 @@ def save_job_script_files(
         file_path.parent.mkdir(parents=True, exist_ok=True)
         make_request(
             jg_ctx.client,
-            metadata.url,
+            metadata.path,
             "GET",
             expected_status=200,
             abort_message=f"Couldn't retrieve job script file {filename} from API",

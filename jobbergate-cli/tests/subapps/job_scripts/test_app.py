@@ -142,7 +142,7 @@ def test_create__non_fast_mode_and_job_submission(
         return_value=application_response,
     )
     assert application_response.workflow_file is not None
-    get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_response.workflow_file.url}")
+    get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_response.workflow_file.path}")
     get_workflow_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -273,7 +273,7 @@ def test_create__with_fast_mode_and_no_job_submission(
         return_value=application_response,
     )
     assert application_response.workflow_file is not None
-    get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_response.workflow_file.url}")
+    get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_response.workflow_file.path}")
     get_workflow_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -397,7 +397,6 @@ def test_show_files__success(
     respx_mock,
     make_test_app,
     dummy_job_script_data,
-    dummy_job_script_files,
     dummy_domain,
     dummy_template_source,
     cli_runner,
@@ -414,7 +413,7 @@ def test_show_files__success(
         ),
     )
 
-    get_file_routes = [respx_mock.get(f"{dummy_domain}/{f['url']}") for f in job_script_data["files"].values()]
+    get_file_routes = [respx_mock.get(f"{dummy_domain}/{f['path']}") for f in job_script_data["files"].values()]
     for route in get_file_routes:
         route.mock(
             return_value=httpx.Response(

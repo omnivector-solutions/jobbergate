@@ -103,7 +103,7 @@ def test_load_application_data__success(dummy_module_source, dummy_config_source
             runtime_config=expected_config.jobbergate_config.dict(),
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
-            url="jobbergate/job-script-templates/1/upload/workflow",
+            path="jobbergate/job-script-templates/1/upload/workflow",
         ),
     )
 
@@ -126,7 +126,7 @@ def test_load_application_data__fails_if_application_module_cannot_be_loaded_fro
             runtime_config=expected_config.jobbergate_config.dict(),
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
-            url="jobbergate/job-script-templates/1/upload/workflow",
+            path="jobbergate/job-script-templates/1/upload/workflow",
         ),
     )
 
@@ -364,19 +364,19 @@ class TestDownloadApplicationFiles:
                     created_at=datetime.datetime.now(),
                     updated_at=datetime.datetime.now(),
                     file_type="ENTRYPOINT",
-                    url="jobbergate/job-script-templates/1/upload/template/test-job-script.py.j2",
+                    path="jobbergate/job-script-templates/1/upload/template/test-job-script.py.j2",
                 )
             },
             workflow_file=WorkflowFileResponse(
                 runtime_config=application_config.jobbergate_config.dict(),
                 created_at=datetime.datetime.now(),
                 updated_at=datetime.datetime.now(),
-                url="jobbergate/job-script-templates/1/upload/workflow",
+                path="jobbergate/job-script-templates/1/upload/workflow",
             ),
         )
 
         get_template_routes = [
-            respx_mock.get(f"{dummy_domain}/{t.url}") for t in application_data.template_files.values()
+            respx_mock.get(f"{dummy_domain}/{t.path}") for t in application_data.template_files.values()
         ]
         for route in get_template_routes:
             route.mock(
@@ -385,7 +385,7 @@ class TestDownloadApplicationFiles:
                     content=dummy_template_source.encode(),
                 ),
             )
-        get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_data.workflow_file.url}")
+        get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_data.workflow_file.path}")
         get_workflow_route.mock(
             return_value=httpx.Response(
                 httpx.codes.OK,

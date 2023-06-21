@@ -83,13 +83,13 @@ def dummy_application_data():
                     "created_at": "2022-03-01 17:31:00",
                     "updated_at": "2022-03-01 17:31:00",
                     "file_type": "ENTRYPOINT",
-                    "url": "jobbergate/job-script-templates/1/upload/template/test-job-script.py.j2",
+                    "path": "jobbergate/job-script-templates/1/upload/template/test-job-script.py.j2",
                 }
             },
             workflow_file={
                 "created_at": "2022-03-01 17:31:00",
                 "updated_at": "2022-03-01 17:31:00",
-                "url": "jobbergate/job-script-templates/1/upload/workflow",
+                "path": "jobbergate/job-script-templates/1/upload/workflow",
             },
         ),
         dict(
@@ -121,7 +121,7 @@ def dummy_job_script_files():
             "file_type": "ENTRYPOINT",
             "created_at": "2022-03-01 17:31:00",
             "updated_at": "2022-03-01 17:31:00",
-            "url": "jobbergate/job-scripts/1/upload/application.sh",
+            "path": "jobbergate/job-scripts/1/upload/application.sh",
         }
     }
 

@@ -91,14 +91,14 @@ class TemplateFileResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     file_type: str
     created_at: datetime
     updated_at: datetime
-    url: str
+    path: str
 
 
 class WorkflowFileResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     runtime_config: Dict[str, Any] = {}
     created_at: datetime
     updated_at: datetime
-    url: str
+    path: str
 
 
 class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
@@ -128,7 +128,7 @@ class JobScriptFiles(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     file_type: str
     created_at: datetime
     updated_at: datetime
-    url: str
+    path: str
 
 
 class JobScriptResponse(

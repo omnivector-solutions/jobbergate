@@ -287,7 +287,7 @@ def save_application_files(
         template_path = destination_path / "templates" / template_file.filename
         make_request(
             jg_ctx.client,
-            template_file.url,
+            template_file.path,
             "GET",
             expected_status=200,
             abort_message=f"Couldn't retrieve template file {template_file.filename} from API",
@@ -299,7 +299,7 @@ def save_application_files(
         workflow_path = destination_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
         make_request(
             jg_ctx.client,
-            application_data.workflow_file.url,
+            application_data.workflow_file.path,
             "GET",
             expected_status=200,
             abort_message="Couldn't retrieve application module file from API",
