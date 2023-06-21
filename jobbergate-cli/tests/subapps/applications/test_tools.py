@@ -149,7 +149,7 @@ def test_load_application_data__fails_if_application_config_is_not_valid_YAML(
         workflow_file=None,
     )
 
-    with pytest.raises(Abort, match="The application config fetched from the API is not valid"):
+    with pytest.raises(Abort, match="No workflow file found in application data"):
         load_application_data(application_data, dummy_module_source)
 
 

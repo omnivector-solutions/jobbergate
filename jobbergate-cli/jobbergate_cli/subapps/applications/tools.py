@@ -99,9 +99,13 @@ def load_application_data(
     :param: app_data: A dictionary containing the application data
     :returns: A tuple containing the application config and the application module
     """
+    if app_data.workflow_file is None:  # make type checker happy
+        raise Abort(
+            "No workflow file found in application data",
+            subject="Invalid application data",
+            log_message="No workflow file found in application data",
+        )
     try:
-        assert app_data.workflow_file is not None  # make type checker happy
-
         app_config = JobbergateApplicationConfig(
             jobbergate_config=JobbergateConfig(**app_data.workflow_file.runtime_config),
             application_config=app_data.template_vars,
