@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-docs
 Unreleased
 ----------
 
+3.5.0a5 -- 2023-06-22
+---------------------
+
 3.5.0a4 -- 2023-06-12
 ---------------------
 - Patched the broken link to the application base module source code
