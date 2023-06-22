@@ -587,7 +587,7 @@ async def test_upload_job_script_file_by_id__job_script_not_found(
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert "JobScript with id=1 was not found." in response.text
+    assert "Job Script with job_script_id=1 was not found." in response.text
 
 
 @pytest.mark.asyncio
@@ -626,6 +626,48 @@ async def test_upload_job_script_file_by_id__job_script_file_not_found(
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert f"Main file from job_script_id={inserted_job_script_id} was not found." in response.text
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_upload_job_script_file_by_id__fails_for_non_owner(
+    client,
+    fill_job_script_data,
+    inject_security_header,
+    make_dummy_file,
+):
+    """Test that a job script file can not be uploaded by a non owner."""
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(
+            job_script_owner_email="owner1@org.com",
+        ),
+    )
+
+    main_file_path = pathlib.Path("jobbergate.py")
+
+    old_file_content = "I'm going to be replaced"
+    new_file_content = "I'm the new content"
+
+    dummy_job_script_files = JobScriptFiles(
+        main_file_path=main_file_path, files={main_file_path: old_file_content}
+    )
+    dummy_job_script_files.write_to_s3(inserted_job_script_id)
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+
+    new_job_script_file = make_dummy_file(main_file_path, content=new_file_content)
+
+    inject_security_header("non-owner@org.com", Permissions.JOB_SCRIPTS_EDIT)
+
+    response = await client.patch(
+        f"/jobbergate/job-scripts/{inserted_job_script_id}/upload",
+        files={"job_script_file": open(new_job_script_file, "rb")},
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert "does not own" in response.text
 
 
 @pytest.mark.asyncio
@@ -1354,6 +1396,33 @@ async def test_update_job_script_bad_permission(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
+async def test_update_job_script_non_owner(
+    client,
+    fill_application_data,
+    fill_job_script_data,
+    inject_security_header,
+):
+    """
+    Test that it is not possible to update a job_script if the user is not the owner.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+    job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(job_script_name="target-js", application_id=inserted_application_id),
+    )
+
+    inject_security_header("non-owner@org.com", Permissions.JOB_SCRIPTS_EDIT)
+    response = await client.put(f"/jobbergate/job-scripts/{job_script_id}", json={"job_script_name": "new name"})
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert "does not own" in response.text
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
 async def test_delete_job_script(
     client,
     fill_application_data,
@@ -1442,6 +1511,36 @@ async def test_delete_job_script_bad_permission(
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
+async def test_delete_job_script_non_owner(
+    client,
+    fill_application_data,
+    fill_job_script_data,
+    inject_security_header,
+):
+    """
+    Test that it is not possible to delete a job_script when the user is not the owner.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+
+    inject_security_header("non-owner@org.com", Permissions.JOB_SCRIPTS_EDIT)
+    response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert "does not own" in response.text
 
 
 @pytest.mark.asyncio

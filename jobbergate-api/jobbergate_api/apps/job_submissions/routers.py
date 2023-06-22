@@ -25,7 +25,7 @@ from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionUpdateRequest,
     PendingJobSubmission,
 )
-from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.apps.permissions import Permissions, check_owner
 from jobbergate_api.email_notification import notify_submission_rejected
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.security import IdentityClaims, guard
@@ -38,6 +38,21 @@ from jobbergate_api.storage import (
 )
 
 router = APIRouter()
+
+
+async def _fetch_job_submission_by_id(job_submission_id: int) -> JobSubmissionResponse:
+    """
+    Helper method to fetch a job_submission from the database by its id.
+    """
+    select_query = job_submissions_table.select().where(job_submissions_table.c.id == job_submission_id)
+    raw_job_submission = await database.fetch_one(select_query)
+
+    if not raw_job_submission:
+        message = f"Job Submission with {job_submission_id=} was not found."
+        logger.error(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+    return JobSubmissionResponse.parse_obj(raw_job_submission)
 
 
 @router.post(
@@ -238,29 +253,21 @@ async def job_submission_list(
     "/job-submissions/{job_submission_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete job submission",
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT))],
 )
 async def job_submission_delete(
     job_submission_id: int = Query(..., description="id of the job submission to delete"),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT)),
 ):
     """
     Delete job_submission given its id.
     """
     logger.debug(f"Deleting {job_submission_id=}")
-    where_stmt = job_submissions_table.c.id == job_submission_id
 
-    get_query = job_submissions_table.select().where(where_stmt)
-    logger.trace(f"get_query = {render_sql(get_query)}")
-    raw_job_submission = await database.fetch_one(get_query)
-    if not raw_job_submission:
-        message = f"JobSubmission with id={job_submission_id} not found"
-        logger.warning(message)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
-        )
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    job_submission = await _fetch_job_submission_by_id(job_submission_id)
+    check_owner(job_submission.job_submission_owner_email, identity_claims.email, job_submission_id, "job_submission")
 
-    delete_query = job_submissions_table.delete().where(where_stmt)
+    delete_query = job_submissions_table.delete().where(job_submissions_table.c.id == job_submission_id)
     logger.trace(f"delete_query = {render_sql(delete_query)}")
     await database.execute(delete_query)
 
@@ -270,13 +277,20 @@ async def job_submission_delete(
     status_code=status.HTTP_200_OK,
     description="Endpoint to update a job_submission given the id",
     response_model=JobSubmissionResponse,
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT))],
 )
-async def job_submission_update(job_submission_id: int, job_submission: JobSubmissionUpdateRequest):
+async def job_submission_update(
+    job_submission_id: int,
+    job_submission: JobSubmissionUpdateRequest,
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SUBMISSIONS_EDIT)),
+):
     """
     Update a job_submission given its id.
     """
     logger.debug(f"Updating {job_submission_id=}")
+
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    old_job_submission = await _fetch_job_submission_by_id(job_submission_id)
+    check_owner(old_job_submission.job_submission_owner_email, identity_claims.email, job_submission_id, "job_submission")
 
     update_dict = job_submission.dict(exclude_unset=True)
     exec_dir = update_dict.pop("execution_directory", None)

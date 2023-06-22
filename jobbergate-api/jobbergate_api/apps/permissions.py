@@ -24,8 +24,8 @@ class Permissions(str, Enum):
 
 
 def check_owner(
-        owner_email: Union[str, EmailStr],
-        requester_email: Union[str, EmailStr],
+        owner_email: Union[str, EmailStr, None],
+        requester_email: Union[str, EmailStr, None],
         entity_id: int,
         entity_name: str,
 ):
@@ -34,9 +34,9 @@ def check_owner(
     """
     if not requester_email == owner_email:
         message = (
-            f"User {requester_email} does not own {entity_name} {entity_id}. "
+            f"User {requester_email} does not own {entity_name} with id={entity_id}. "
             f"Only the {entity_name} owner ({owner_email}) "
-            "can modify this {entity_name}."
+            f"can modify this {entity_name}."
         )
         logger.error(message)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=message)

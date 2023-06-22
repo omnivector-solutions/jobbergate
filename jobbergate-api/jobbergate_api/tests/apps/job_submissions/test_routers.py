@@ -1459,6 +1459,44 @@ async def test_update_job_submission_bad_permission(
 
 
 @pytest.mark.asyncio
+async def test_update_job_submission_non_owner(
+    client,
+    fill_application_data,
+    fill_job_script_data,
+    fill_job_submission_data,
+    inject_security_header,
+):
+    """
+    Test that it is not possible to update a job_submission if you are not the owner.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+    inserted_job_submission_id = await database.execute(
+        query=job_submissions_table.insert(),
+        values=fill_job_submission_data(
+            job_script_id=inserted_job_script_id,
+            job_submission_name="old name",
+            job_submission_owner_email="owner1@org.com",
+        ),
+    )
+
+    inject_security_header("non-owner@org.com", Permissions.JOB_SUBMISSIONS_EDIT)
+    response = await client.put(
+        f"/jobbergate/job-submissions/{inserted_job_submission_id}",
+        json=dict(job_submission_name="new name"),
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert "does not own" in response.text
+
+
+@pytest.mark.asyncio
 async def test_delete_job_submission(
     client,
     fill_application_data,
@@ -1556,6 +1594,43 @@ async def test_delete_job_submission_bad_permission(
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
     assert count[0][0] == 1
+
+
+@pytest.mark.asyncio
+async def test_delete_job_submission_non_owner(
+    client,
+    fill_application_data,
+    fill_job_script_data,
+    fill_job_submission_data,
+    inject_security_header,
+):
+    """
+    Test that it is not possible to delete a job_submission if you are not the owner.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+    inserted_job_submission_id = await database.execute(
+        query=job_submissions_table.insert(),
+        values=fill_job_submission_data(
+            job_script_id=inserted_job_script_id,
+            job_submission_owner_email="owner1@org.com",
+        ),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
+    assert count[0][0] == 1
+
+    inject_security_header("non-owner@org.com", Permissions.JOB_SUBMISSIONS_EDIT)
+    response = await client.delete(f"/jobbergate/job-submissions/{inserted_job_submission_id}")
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert "does not own" in response.text
 
 
 @pytest.mark.asyncio

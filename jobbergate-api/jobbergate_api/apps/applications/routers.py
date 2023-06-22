@@ -20,10 +20,9 @@ from jobbergate_api.apps.applications.schemas import (
     ApplicationUpdateRequest,
 )
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
-from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.apps.permissions import Permissions, check_owner
 from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.permissions import check_owner
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,
@@ -34,6 +33,21 @@ from jobbergate_api.storage import (
 )
 
 router = APIRouter()
+
+
+async def _fetch_application_by_id(application_id: int) -> ApplicationPartialResponse:
+    """
+    Helper method to fetch an application from the database by its id.
+    """
+    select_query = applications_table.select().where(applications_table.c.id == application_id)
+    raw_application = await database.fetch_one(select_query)
+
+    if not raw_application:
+        message = f"Application {application_id=} not found."
+        logger.error(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+    return ApplicationPartialResponse.parse_obj(raw_application)
 
 
 @router.post(
@@ -77,12 +91,12 @@ async def applications_create(
     "/applications/{application_id}/upload",
     status_code=status.HTTP_201_CREATED,
     description="Endpoint for uploading application files.",
-    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def applications_upload(
     application_id: int = Query(..., description="id of the application for which to upload a file"),
     upload_files: List[UploadFile] = File(..., description="The application files to be uploaded"),
     content_length: int = Header(...),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
 ):
     """
     Upload application files using an authenticated user token.
@@ -96,6 +110,10 @@ async def applications_upload(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=message,
         )
+
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    application = await _fetch_application_by_id(application_id)
+    check_owner(application.application_owner_email, identity_claims.email, application_id, "application")
 
     ApplicationFiles.get_from_upload_files(upload_files).write_to_s3(application_id)
 
@@ -144,22 +162,6 @@ async def update_application_source_file(
     ).write_to_s3(application_id, remove_previous_files=False)
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
-
-
-async def _fetch_application_by_id(application_id: int) -> ApplicationPartialResponse:
-    """
-    Helper method to fetch an application from the database by its id.
-    """
-    select_query = applications_table.select().where(applications_table.c.id == application_id)
-    raw_application = await database.fetch_one(select_query)
-
-    if not raw_application:
-        message = f"Application {application_id=} not found."
-        logger.error(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
-
-    return ApplicationPartialResponse.parse_obj(raw_application)
-
 
 
 @router.delete(

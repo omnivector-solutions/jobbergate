@@ -146,6 +146,39 @@ def test_make_request__raises_Abort_if_client_request_raises_exception(respx_moc
     assert err_info.value.original_error == original_error
 
 
+def test_make_request__raises_Abort_with_ownership_message_for_403_for_non_owners(respx_mock, dummy_client):
+    """
+    Validate that the ``make_request()`` function will raise an Abort if the ``expected_status`` arg is set and it
+    does not match the status code of the response. Further verify that message is attached telling the user that
+    they may not modify a resource they do not own.
+    """
+    client = dummy_client()
+    req_path = "/fake-path"
+
+    respx_mock.delete(f"{DEFAULT_DOMAIN}{req_path}").mock(
+        return_value=httpx.Response(
+            httpx.codes.FORBIDDEN,
+            json=dict(detail="This jabroni does not own this whingding"),
+        ),
+    )
+
+    with pytest.raises(Abort, match=f"You do not own this resource") as err_info:
+        make_request(
+            client,
+            req_path,
+            "DELETE",
+            expected_status=204,
+            abort_message="There was a big problem",
+            abort_subject="BIG PROBLEM",
+            support=True,
+        )
+    assert err_info.value.subject == "BIG PROBLEM"
+    assert err_info.value.support is False
+    assert "Resource could not be modified by non-owner" in err_info.value.log_message
+    assert "This jabroni does not own this whingding" in err_info.value.log_message
+    assert err_info.value.original_error is None
+
+
 def test_make_request__raises_Abort_when_expected_status_is_not_None_and_response_status_does_not_match_it(
     respx_mock, dummy_client
 ):
