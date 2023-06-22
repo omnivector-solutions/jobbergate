@@ -19,7 +19,6 @@ from jobbergate_api.apps.job_scripts.job_script_files import (
 from jobbergate_api.apps.job_scripts.models import job_scripts_table, searchable_fields, sortable_fields
 from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptCreateRequest,
-    JobScriptPartialResponse,
     JobScriptResponse,
     JobScriptUpdateRequest,
 )
@@ -55,41 +54,48 @@ async def job_script_create(
     """
     logger.debug(f"Creating {job_script=}")
 
-    select_query = applications_table.select().where(applications_table.c.id == job_script.application_id)
-    logger.trace(f"select_query = {render_sql(select_query)}")
+    jobscript_files = None
+    application_name = None
+    if job_script.application_id is not None:
+        select_query = applications_table.select().where(applications_table.c.id == job_script.application_id)
+        logger.trace(f"select_query = {render_sql(select_query)}")
 
-    raw_application = await database.fetch_one(select_query)
+        raw_application = await database.fetch_one(select_query)
 
-    if not raw_application:
-        message = f"Application with id={job_script.application_id} not found."
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+        if not raw_application:
+            message = f"Application with id={job_script.application_id} not found."
+            logger.warning(message)
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
-    application = ApplicationResponse.parse_obj(raw_application)
+        application = ApplicationResponse.parse_obj(raw_application)
+        application_name = application.application_name
 
-    if application.application_uploaded is False:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Application with id={job_script.application_id} was not uploaded.",
-        )
+        if application.application_uploaded is False:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Application with id={job_script.application_id} was not uploaded.",
+            )
+        try:
+            jobscript_files = JobScriptFiles.render_from_application(
+                application_files=ApplicationFiles.get_from_s3(application.id),
+                user_supplied_parameters=job_script.param_dict or {},
+                sbatch_params=job_script.sbatch_params or [],
+            )
+        except JobScriptCreationError as e:
+            message = str(e)
+            logger.error(message)
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=message)
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
 
     create_dict = dict(
-        **{k: v for (k, v) in job_script.dict(exclude_unset=True).items() if k != "param_dict"},
+        **{
+            k: v
+            for (k, v) in job_script.dict(exclude_unset=True).items()
+            if k not in ("param_dict", "sbatch_params")
+        },
         job_script_owner_email=identity_claims.email,
     )
-
-    try:
-        jobscript_files = JobScriptFiles.render_from_application(
-            application_files=ApplicationFiles.get_from_s3(application.id),
-            user_supplied_parameters=job_script.param_dict,
-            sbatch_params=create_dict.pop("sbatch_params", []),
-        )
-    except JobScriptCreationError as e:
-        message = str(e)
-        logger.error(message)
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=message)
 
     logger.debug("Inserting job_script")
 
@@ -108,7 +114,8 @@ async def job_script_create(
                     detail=message,
                 )
 
-            jobscript_files.write_to_s3(job_script_data["id"])
+            if jobscript_files:
+                jobscript_files.write_to_s3(job_script_data["id"])
 
         except INTEGRITY_CHECK_EXCEPTIONS as e:
             logger.error(f"Reverting database transaction: {str(e)}")
@@ -122,7 +129,7 @@ async def job_script_create(
 
     response = JobScriptResponse(
         **job_script_data,
-        application_name=application.application_name,
+        application_name=application_name,
         job_script_files=jobscript_files,
     )
     return response
@@ -147,6 +154,7 @@ async def job_script_get(job_script_id: int = Query(...)):
                 job_scripts_table,
                 applications_table,
                 applications_table.columns.id == job_scripts_table.columns.application_id,
+                isouter=True,
             )
         )
         .where(job_scripts_table.c.id == job_script_id)
@@ -178,6 +186,41 @@ async def job_script_get(job_script_id: int = Query(...)):
     logger.debug(f"Job-script data: {response}")
 
     return response
+
+
+@router.post(
+    "/job-scripts/{job_script_id}/upload",
+    status_code=status.HTTP_200_OK,
+    description="Endpoint to upload a new job script file.",
+    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
+)
+async def job_script_create_file_content(
+    job_script_id: int = Query(...),
+    job_script_file: UploadFile = File(...),
+):
+    """Create a job script file (only if the job script has none)."""
+    logger.debug(f"Creating the main file for {job_script_id=}")
+
+    query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
+    logger.trace(f"get_query = {render_sql(query)}")
+    job_script = await database.fetch_one(query)
+
+    if not job_script:
+        message = f"JobScript with id={job_script_id} was not found."
+        logger.warning(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+    jobscript_files = JobScriptFiles.get_from_single_upload_file(job_script_file)
+    jobscript_files.write_to_s3(job_script_id, remove_previous_files=True)
+
+    update_query = (
+        job_scripts_table.update()
+        .where(job_scripts_table.c.id == job_script["id"])
+        .values(updated_at=func.now())
+    )
+    await database.execute(update_query)
+    logger.debug(f"Success creating job script files from single upload file for {job_script_id=}")
+    return dict(message=f"Successfully uploaded {job_script_file.filename} for {job_script_id=}")
 
 
 @router.patch(
@@ -259,7 +302,7 @@ async def job_script_download_file(job_script_id: int = Query(...)):
 @router.get(
     "/job-scripts",
     description="Endpoint to list job_scripts",
-    responses=ok_response(JobScriptPartialResponse),
+    responses=ok_response(JobScriptResponse),
 )
 async def job_script_list(
     pagination: Pagination = Depends(),
@@ -290,6 +333,7 @@ async def job_script_list(
             job_scripts_table,
             applications_table,
             applications_table.c.id == job_scripts_table.c.application_id,
+            isouter=True,
         )
     )
     identity_claims = IdentityClaims.from_token_payload(token_payload)
@@ -307,7 +351,7 @@ async def job_script_list(
         query = query.order_by(job_scripts_table.c.id.asc())
 
     logger.debug(f"Query = {render_sql(query)}")
-    return await package_response(JobScriptPartialResponse, query, pagination)
+    return await package_response(JobScriptResponse, query, pagination)
 
 
 @router.delete(

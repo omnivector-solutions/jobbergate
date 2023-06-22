@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
 from buzz import Buzz, require_condition
+from fastapi import UploadFile
 from file_storehouse import FileManager
 from jinja2 import Template
 from loguru import logger
@@ -145,6 +146,18 @@ class JobScriptFiles(BaseModel):
         Obtain the main file with this helper property.
         """
         return self.files.get(self.main_file_path)
+
+    @classmethod
+    def get_from_single_upload_file(cls, upload_file: UploadFile):
+        """
+        Initialize a JobScriptFiles from a single upload file.
+        """
+        logger.debug("Creating JobScriptFiles from single upload file")
+        main_file_path = Path(".", upload_file.filename)
+        return cls(
+            main_file_path=main_file_path,
+            files={main_file_path: upload_file.file.read().decode("utf-8")},
+        )
 
     @classmethod
     def get_from_s3(cls, job_script_id: int):

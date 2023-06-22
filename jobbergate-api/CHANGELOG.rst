@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Modified API to allow Job Script creation without parent application
 
 3.5.0a4 -- 2023-06-12
 ---------------------
