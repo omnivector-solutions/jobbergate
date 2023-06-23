@@ -646,13 +646,7 @@ async def test_upload_job_script_file_by_id__fails_for_non_owner(
 
     main_file_path = pathlib.Path("jobbergate.py")
 
-    old_file_content = "I'm going to be replaced"
     new_file_content = "I'm the new content"
-
-    dummy_job_script_files = JobScriptFiles(
-        main_file_path=main_file_path, files={main_file_path: old_file_content}
-    )
-    dummy_job_script_files.write_to_s3(inserted_job_script_id)
 
     count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
     assert count[0][0] == 1
