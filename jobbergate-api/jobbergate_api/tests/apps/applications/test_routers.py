@@ -1291,7 +1291,9 @@ async def test_upload_file__fails_with_413_on_large_file(
 
 @pytest.mark.asyncio
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.delete_from_s3")
-async def test_delete_file(mocked_application_deleter, client, inject_security_header, fill_application_data):
+async def test_delete_file_success(
+    mocked_application_deleter, client, inject_security_header, fill_application_data
+):
     """
     Test that a file is deleted.
 
@@ -1319,7 +1321,9 @@ async def test_delete_file(mocked_application_deleter, client, inject_security_h
 
 @pytest.mark.asyncio
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.delete_from_s3")
-async def test_delete_file(mocked_application_deleter, client, inject_security_header, fill_application_data):
+async def test_delete_file__fails_with_403_for_non_owner(
+    mocked_application_deleter, client, inject_security_header, fill_application_data
+):
     """
     Test that a file is not deleted if the requester is not the owner.
     """

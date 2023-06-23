@@ -39,7 +39,7 @@ router = APIRouter()
 
 async def _fetch_job_script_by_id(job_script_id: int) -> JobScriptResponse:
     """
-    Helper method to fetch a job_script from the database by its id.
+    Fetch a job_script from the database by its id.
     """
     select_query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
     raw_job_script = await database.fetch_one(select_query)

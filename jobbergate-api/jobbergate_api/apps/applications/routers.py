@@ -37,7 +37,7 @@ router = APIRouter()
 
 async def _fetch_application_by_id(application_id: int) -> ApplicationPartialResponse:
     """
-    Helper method to fetch an application from the database by its id.
+    Fetch an application from the database by its id.
     """
     select_query = applications_table.select().where(applications_table.c.id == application_id)
     raw_application = await database.fetch_one(select_query)
@@ -127,7 +127,6 @@ async def applications_upload(
     await database.execute(update_query)
 
 
-
 @router.patch(
     "/applications/{application_id}/upload/individually",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -144,7 +143,6 @@ async def update_application_source_file(
     token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
 ):
     """Update the application files individually."""
-
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     application = await _fetch_application_by_id(application_id)
     check_owner(application.application_owner_email, identity_claims.email, application_id, "application")

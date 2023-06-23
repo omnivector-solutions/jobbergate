@@ -162,7 +162,7 @@ def test_make_request__raises_Abort_with_ownership_message_for_403_for_non_owner
         ),
     )
 
-    with pytest.raises(Abort, match=f"You do not own this resource") as err_info:
+    with pytest.raises(Abort, match="You do not own this resource") as err_info:
         make_request(
             client,
             req_path,

@@ -42,7 +42,7 @@ router = APIRouter()
 
 async def _fetch_job_submission_by_id(job_submission_id: int) -> JobSubmissionResponse:
     """
-    Helper method to fetch a job_submission from the database by its id.
+    Fetch a job_submission from the database by its id.
     """
     select_query = job_submissions_table.select().where(job_submissions_table.c.id == job_submission_id)
     raw_job_submission = await database.fetch_one(select_query)
@@ -265,7 +265,9 @@ async def job_submission_delete(
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     job_submission = await _fetch_job_submission_by_id(job_submission_id)
-    check_owner(job_submission.job_submission_owner_email, identity_claims.email, job_submission_id, "job_submission")
+    check_owner(
+        job_submission.job_submission_owner_email, identity_claims.email, job_submission_id, "job_submission"
+    )
 
     delete_query = job_submissions_table.delete().where(job_submissions_table.c.id == job_submission_id)
     logger.trace(f"delete_query = {render_sql(delete_query)}")
@@ -290,7 +292,12 @@ async def job_submission_update(
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
     old_job_submission = await _fetch_job_submission_by_id(job_submission_id)
-    check_owner(old_job_submission.job_submission_owner_email, identity_claims.email, job_submission_id, "job_submission")
+    check_owner(
+        old_job_submission.job_submission_owner_email,
+        identity_claims.email,
+        job_submission_id,
+        "job_submission",
+    )
 
     update_dict = job_submission.dict(exclude_unset=True)
     exec_dir = update_dict.pop("execution_directory", None)

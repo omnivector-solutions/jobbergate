@@ -1415,7 +1415,9 @@ async def test_update_job_script_non_owner(
     )
 
     inject_security_header("non-owner@org.com", Permissions.JOB_SCRIPTS_EDIT)
-    response = await client.put(f"/jobbergate/job-scripts/{job_script_id}", json={"job_script_name": "new name"})
+    response = await client.put(
+        f"/jobbergate/job-scripts/{job_script_id}", json={"job_script_name": "new name"}
+    )
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert "does not own" in response.text

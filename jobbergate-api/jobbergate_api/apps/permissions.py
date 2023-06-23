@@ -24,13 +24,13 @@ class Permissions(str, Enum):
 
 
 def check_owner(
-        owner_email: Union[str, EmailStr, None],
-        requester_email: Union[str, EmailStr, None],
-        entity_id: int,
-        entity_name: str,
+    owner_email: Union[str, EmailStr, None],
+    requester_email: Union[str, EmailStr, None],
+    entity_id: int,
+    entity_name: str,
 ):
     """
-    Generic method to assert ownership of an entity and raise a 403 exception with message on failure.
+    Assert ownership of an entity and raise a 403 exception with message on failure.
     """
     if not requester_email == owner_email:
         message = (
