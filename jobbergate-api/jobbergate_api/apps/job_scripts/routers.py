@@ -23,7 +23,7 @@ from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptUpdateRequest,
 )
 from jobbergate_api.apps.job_submissions.models import job_submissions_table
-from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.apps.permissions import Permissions, check_owner
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
@@ -35,6 +35,21 @@ from jobbergate_api.storage import (
 )
 
 router = APIRouter()
+
+
+async def _fetch_job_script_by_id(job_script_id: int) -> JobScriptResponse:
+    """
+    Fetch a job_script from the database by its id.
+    """
+    select_query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
+    raw_job_script = await database.fetch_one(select_query)
+
+    if not raw_job_script:
+        message = f"Job Script with {job_script_id=} was not found."
+        logger.error(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+    return JobScriptResponse.parse_obj(raw_job_script)
 
 
 @router.post(
@@ -192,30 +207,25 @@ async def job_script_get(job_script_id: int = Query(...)):
     "/job-scripts/{job_script_id}/upload",
     status_code=status.HTTP_200_OK,
     description="Endpoint to upload a new job script file.",
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
 )
 async def job_script_create_file_content(
     job_script_id: int = Query(...),
     job_script_file: UploadFile = File(...),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT)),
 ):
     """Create a job script file (only if the job script has none)."""
     logger.debug(f"Creating the main file for {job_script_id=}")
 
-    query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
-    logger.trace(f"get_query = {render_sql(query)}")
-    job_script = await database.fetch_one(query)
-
-    if not job_script:
-        message = f"JobScript with id={job_script_id} was not found."
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    job_script = await _fetch_job_script_by_id(job_script_id)
+    check_owner(job_script.job_script_owner_email, identity_claims.email, job_script_id, "job_script")
 
     jobscript_files = JobScriptFiles.get_from_single_upload_file(job_script_file)
     jobscript_files.write_to_s3(job_script_id, remove_previous_files=True)
 
     update_query = (
         job_scripts_table.update()
-        .where(job_scripts_table.c.id == job_script["id"])
+        .where(job_scripts_table.c.id == job_script_id)
         .values(updated_at=func.now())
     )
     await database.execute(update_query)
@@ -227,23 +237,18 @@ async def job_script_create_file_content(
     "/job-scripts/{job_script_id}/upload",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to replace a job script file.",
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
 )
 async def job_script_replace_file_content(
     job_script_id: int = Query(...),
     job_script_file: UploadFile = File(...),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT)),
 ):
     """Replace the content on a job script file."""
     logger.debug(f"Replacing the main file from {job_script_id=}")
 
-    query = job_scripts_table.select().where(job_scripts_table.c.id == job_script_id)
-    logger.trace(f"get_query = {render_sql(query)}")
-    job_script = await database.fetch_one(query)
-
-    if not job_script:
-        message = f"JobScript with id={job_script_id} was not found."
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    job_script = await _fetch_job_script_by_id(job_script_id)
+    check_owner(job_script.job_script_owner_email, identity_claims.email, job_script_id, "job_script")
 
     file_manager = JobScriptFiles.file_manager_factory(job_script_id)
     file_content = job_script_file.file.read().decode("utf-8")
@@ -254,7 +259,7 @@ async def job_script_replace_file_content(
             file_manager[s3_path] = file_content
             update_query = (
                 job_scripts_table.update()
-                .where(job_scripts_table.c.id == job_script["id"])
+                .where(job_scripts_table.c.id == job_script_id)
                 .values(updated_at=func.now())
             )
             await database.execute(update_query)
@@ -358,12 +363,18 @@ async def job_script_list(
     "/job-scripts/{job_script_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete job script",
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
 )
-async def job_script_delete(job_script_id: int = Query(..., description="id of the job script to delete")):
+async def job_script_delete(
+    job_script_id: int = Query(..., description="id of the job script to delete"),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT)),
+):
     """
     Delete job_script given its id.
     """
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    job_script = await _fetch_job_script_by_id(job_script_id)
+    check_owner(job_script.job_script_owner_email, identity_claims.email, job_script_id, "job_script")
+
     logger.debug(f"Orphaning job_submissions submitted from job_script {job_script_id=}")
     update_query = (
         job_submissions_table.update()
@@ -374,22 +385,7 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     await database.execute(update_query)
 
     logger.debug(f"Preparing to delete {job_script_id=}")
-    where_stmt = job_scripts_table.c.id == job_script_id
-
-    get_query = job_scripts_table.select().where(where_stmt)
-    logger.trace(f"get_query = {render_sql(get_query)}")
-
-    raw_job_script = await database.fetch_one(get_query)
-    if not raw_job_script:
-
-        message = f"JobScript with id={job_script_id} not found."
-        logger.warning(message)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
-        )
-
-    delete_query = job_scripts_table.delete().where(where_stmt)
+    delete_query = job_scripts_table.delete().where(job_scripts_table.c.id == job_script_id)
     logger.trace(f"delete_query = {render_sql(delete_query)}")
     await database.execute(delete_query)
 
@@ -405,13 +401,19 @@ async def job_script_delete(job_script_id: int = Query(..., description="id of t
     status_code=status.HTTP_200_OK,
     description="Endpoint to update a job_script given the id",
     response_model=JobScriptResponse,
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
 )
-async def job_script_update(job_script_id: int, job_script: JobScriptUpdateRequest):
+async def job_script_update(
+    job_script_id: int,
+    job_script: JobScriptUpdateRequest,
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT)),
+):
     """
     Update a job_script given its id.
     """
     logger.debug(f"Updating {job_script_id=}")
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    old_job_script = await _fetch_job_script_by_id(job_script_id)
+    check_owner(old_job_script.job_script_owner_email, identity_claims.email, job_script_id, "job_script")
 
     update_query = (
         job_scripts_table.update()

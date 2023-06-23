@@ -113,7 +113,7 @@ async def test_create_without_application_name(
 @pytest.mark.asyncio
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.delete_from_s3")
 async def test_delete_application_no_file_uploaded(
-    mocked_application_deleter, client, application_data, inject_security_header
+    mocked_application_deleter, client, fill_application_data, inject_security_header
 ):
     """
     Test DELETE /applications/<id> correctly deletes an application.
@@ -124,7 +124,9 @@ async def test_delete_application_no_file_uploaded(
     """
     inserted_id = await database.execute(
         query=applications_table.insert(),
-        values=application_data,
+        values=fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
@@ -142,7 +144,7 @@ async def test_delete_application_no_file_uploaded(
 @pytest.mark.asyncio
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.delete_from_s3")
 async def test_delete_application_with_uploaded_file(
-    mocked_application_deleter, client, application_data, inject_security_header
+    mocked_application_deleter, client, fill_application_data, inject_security_header
 ):
     """
     Test DELETE /applications/<id> correctly deletes an application and it's file.
@@ -154,7 +156,9 @@ async def test_delete_application_with_uploaded_file(
     """
     inserted_id = await database.execute(
         query=applications_table.insert(),
-        values=application_data,
+        values=fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
@@ -205,7 +209,7 @@ async def test_delete_application_by_identifier(
 @pytest.mark.asyncio
 async def test_delete_application_bad_permission(
     client,
-    application_data,
+    fill_application_data,
     inject_security_header,
 ):
     """
@@ -217,7 +221,9 @@ async def test_delete_application_bad_permission(
     """
     inserted_id = await database.execute(
         query=applications_table.insert(),
-        values=application_data,
+        values=fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
@@ -225,6 +231,36 @@ async def test_delete_application_bad_permission(
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.delete(f"/jobbergate/applications/{inserted_id}")
     assert response.status_code == status.HTTP_403_FORBIDDEN
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 1
+
+
+@pytest.mark.asyncio
+async def test_delete_application_non_owner(
+    client,
+    fill_application_data,
+    inject_security_header,
+):
+    """
+    Test that it is not possible to delete application if you are not the owner.
+
+    This test proves that an application is not deleted via a DELETE request to the /applications/<id>
+    endpoint. We show this by asserting that the application still exists in the database after the delete
+    request is made and the correct status code is returned.
+    """
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 1
+
+    inject_security_header("other-owner@other.com", Permissions.APPLICATIONS_EDIT)
+    response = await client.delete(f"/jobbergate/applications/{inserted_id}")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert "does not own" in response.text
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
 
@@ -248,7 +284,7 @@ async def test_delete_application_not_found(client, inject_security_header):
 async def test_delete_application__unlinks_job_scripts(
     mocked_application_deleter,
     client,
-    application_data,
+    fill_application_data,
     job_script_data,
     inject_security_header,
 ):
@@ -259,7 +295,9 @@ async def test_delete_application__unlinks_job_scripts(
     """
     inserted_id = await database.execute(
         query=applications_table.insert(),
-        values=application_data,
+        values=fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
     )
     count = await database.fetch_all("SELECT COUNT(*) FROM applications")
     assert count[0][0] == 1
@@ -962,6 +1000,52 @@ async def test_update_application_bad_permission(
 
 
 @pytest.mark.asyncio
+async def test_update_application_non_owner(
+    client,
+    fill_application_data,
+    inject_security_header,
+):
+    """
+    Test that it is not possible to update applications if you are not the owner.
+
+    This test proves that an application's values are not updated following a PUT request to the
+    /application/<id> endpoint by a user without permission. We show this by asserting that the status code
+    403 is returned and that the application_data is still the same as before.
+    """
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(
+            application_name="old-name",
+            application_identifier="old_identifier",
+            application_owner_email="owner1@org.com",
+            application_description="old description",
+        ),
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
+    assert count[0][0] == 1
+
+    inject_security_header("other-owner@org.com", Permissions.APPLICATIONS_EDIT)
+    response = await client.put(
+        f"/jobbergate/applications/{inserted_id}",
+        json=dict(
+            application_name="new_name",
+            application_identifier="new_identifier",
+            application_description="new_description",
+        ),
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert "does not own" in response.text
+
+    query = applications_table.select(applications_table.c.id == inserted_id)
+    result = await database.fetch_one(query)
+
+    assert result is not None
+    assert result["application_name"] == "old-name"
+    assert result["application_identifier"] == "old_identifier"
+    assert result["application_description"] == "old description"
+
+
+@pytest.mark.asyncio
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.write_to_s3")
 @mock.patch(
     "jobbergate_api.apps.applications.routers.ApplicationFiles.get_from_upload_files",
@@ -1007,12 +1091,45 @@ async def test_upload_file__works_with_small_file(
     mocked_application_get_upload.assert_called_once()
 
     application = await fetch_instance(inserted_id, applications_table, ApplicationPartialResponse)
-    assert application.application_uploaded
+
+
+@pytest.mark.asyncio
+async def test_upload_file__fails_for_non_owner(
+    client,
+    inject_security_header,
+    fill_application_data,
+    tweak_settings,
+    make_dummy_file,
+    dummy_application_config,
+    make_files_param,
+):
+    """
+    Test that a file cannot be uploaded by a non-owner.
+    """
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+    application = await fetch_instance(inserted_id, applications_table, ApplicationPartialResponse)
+    assert not application.application_uploaded
+
+    dummy_file = make_dummy_file("jobbergate.yaml", content=dummy_application_config)
+    inject_security_header("non-owner@org.com", Permissions.APPLICATIONS_EDIT)
+    with tweak_settings(MAX_UPLOAD_FILE_SIZE=600):
+        with make_files_param(dummy_file) as files_param:
+            response = await client.post(
+                f"/jobbergate/applications/{inserted_id}/upload",
+                files=files_param,
+            )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert "does not own" in response.text
+    assert not application.application_uploaded
 
 
 @pytest.mark.asyncio
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.write_to_s3")
-async def test_upload_file_individually(
+async def test_upload_file_individually__success(
     mocked_application_writer,
     client,
     inject_security_header,
@@ -1115,6 +1232,37 @@ async def test_upload_file_individually(
 
 
 @pytest.mark.asyncio
+async def test_upload_file_individually__fails_on_non_owner(
+    client,
+    inject_security_header,
+    fill_application_data,
+    make_dummy_file,
+    dummy_application_source_file,
+):
+    """
+    Test that the application files cannot be patched individually by a non-owner.
+    """
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+    application = await fetch_instance(inserted_id, applications_table, ApplicationPartialResponse)
+    assert not application.application_uploaded
+
+    dummy_source_file = make_dummy_file("jobbergate.py", content=dummy_application_source_file)
+
+    inject_security_header("non-owner@org.com", Permissions.APPLICATIONS_EDIT)
+
+    response = await client.patch(
+        f"/jobbergate/applications/{inserted_id}/upload/individually",
+        files={"source_file": open(dummy_source_file, "rb")},
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert "does not own" in response.text
+
+
+@pytest.mark.asyncio
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.write_to_s3")
 async def test_upload_file__fails_with_413_on_large_file(
     mocked_application_writer,
@@ -1143,7 +1291,9 @@ async def test_upload_file__fails_with_413_on_large_file(
 
 @pytest.mark.asyncio
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.delete_from_s3")
-async def test_delete_file(mocked_application_deleter, client, inject_security_header, fill_application_data):
+async def test_delete_file_success(
+    mocked_application_deleter, client, inject_security_header, fill_application_data
+):
     """
     Test that a file is deleted.
 
@@ -1167,3 +1317,28 @@ async def test_delete_file(mocked_application_deleter, client, inject_security_h
 
     application = await fetch_instance(inserted_id, applications_table, ApplicationPartialResponse)
     assert not application.application_uploaded
+
+
+@pytest.mark.asyncio
+@mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.delete_from_s3")
+async def test_delete_file__fails_with_403_for_non_owner(
+    mocked_application_deleter, client, inject_security_header, fill_application_data
+):
+    """
+    Test that a file is not deleted if the requester is not the owner.
+    """
+    inserted_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com", application_uploaded=True),
+    )
+    application: ApplicationPartialResponse = await fetch_instance(
+        inserted_id, applications_table, ApplicationPartialResponse
+    )
+    assert application.application_uploaded
+
+    inject_security_header("non-owner@org.com", Permissions.APPLICATIONS_EDIT)
+    response = await client.delete(f"/jobbergate/applications/{inserted_id}/upload")
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert "does not own" in response.text
+    mocked_application_deleter.assert_not_called()

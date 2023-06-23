@@ -20,7 +20,7 @@ from jobbergate_api.apps.applications.schemas import (
     ApplicationUpdateRequest,
 )
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
-from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.apps.permissions import Permissions, check_owner
 from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.security import IdentityClaims, guard
@@ -33,6 +33,21 @@ from jobbergate_api.storage import (
 )
 
 router = APIRouter()
+
+
+async def _fetch_application_by_id(application_id: int) -> ApplicationPartialResponse:
+    """
+    Fetch an application from the database by its id.
+    """
+    select_query = applications_table.select().where(applications_table.c.id == application_id)
+    raw_application = await database.fetch_one(select_query)
+
+    if not raw_application:
+        message = f"Application {application_id=} not found."
+        logger.error(message)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+    return ApplicationPartialResponse.parse_obj(raw_application)
 
 
 @router.post(
@@ -76,12 +91,12 @@ async def applications_create(
     "/applications/{application_id}/upload",
     status_code=status.HTTP_201_CREATED,
     description="Endpoint for uploading application files.",
-    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def applications_upload(
     application_id: int = Query(..., description="id of the application for which to upload a file"),
     upload_files: List[UploadFile] = File(..., description="The application files to be uploaded"),
     content_length: int = Header(...),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
 ):
     """
     Upload application files using an authenticated user token.
@@ -95,6 +110,10 @@ async def applications_upload(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=message,
         )
+
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    application = await _fetch_application_by_id(application_id)
+    check_owner(application.application_owner_email, identity_claims.email, application_id, "application")
 
     ApplicationFiles.get_from_upload_files(upload_files).write_to_s3(application_id)
 
@@ -111,16 +130,23 @@ async def applications_upload(
 @router.patch(
     "/applications/{application_id}/upload/individually",
     status_code=status.HTTP_204_NO_CONTENT,
-    responses={204: {"description": "File(s) was(were) patched successfully"}},
-    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
+    responses={
+        204: {"description": "File(s) was(were) patched successfully"},
+        403: {"description": "User does not own application"},
+    },
 )
 async def update_application_source_file(
     application_id: int = Query(..., description="id of the application for which to upload a file"),
     source_file: Union[UploadFile, None] = File(default=None),
     config_file: Union[UploadFile, None] = File(default=None),
     template_files: Union[List[UploadFile], None] = None,
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
 ):
     """Update the application files individually."""
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    application = await _fetch_application_by_id(application_id)
+    check_owner(application.application_owner_email, identity_claims.email, application_id, "application")
+
     # TODO: limit by file size
     ApplicationFiles(
         application_config=config_file.file.read().decode("utf-8") if config_file is not None else None,
@@ -140,25 +166,19 @@ async def update_application_source_file(
     "/applications/{application_id}/upload",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint for deleting application files",
-    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def applications_delete_upload(
     application_id: int = Query(..., description="id of the application for which to delete the file"),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
 ):
     """
     Delete application files using an authenticated user token.
     """
     logger.debug(f"Preparing to delete files for {application_id=}")
 
-    select_query = applications_table.select().where(applications_table.c.id == application_id)
-    raw_application = await database.fetch_one(select_query)
-
-    if not raw_application:
-        message = f"Application {application_id=} not found."
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
-
-    application = ApplicationPartialResponse.parse_obj(raw_application)
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    application = await _fetch_application_by_id(application_id)
+    check_owner(application.application_owner_email, identity_claims.email, application_id, "application")
 
     if not application.application_uploaded:
         logger.debug(f"Trying to delete an applications that was not uploaded ({application_id=})")
@@ -182,14 +202,18 @@ async def applications_delete_upload(
     "/applications/{application_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete application",
-    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def application_delete(
     application_id: int = Query(..., description="id of the application to delete"),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
 ):
     """
     Delete application from the database and S3 given its id.
     """
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    application = await _fetch_application_by_id(application_id)
+    check_owner(application.application_owner_email, identity_claims.email, application_id, "application")
+
     logger.debug(f"Orphaning job_scripts rendered from application {application_id=}")
     update_query = (
         job_scripts_table.update()
@@ -229,10 +253,10 @@ async def application_delete(
     "/applications",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete application by identifier",
-    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def application_delete_by_identifier(
     identifier: str = Query(..., description="identifier of the application to delete"),
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
 ):
     """
     Delete application from the database and S3 given it's identifier.
@@ -251,14 +275,17 @@ async def application_delete_by_identifier(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=message,
         )
+    application = ApplicationPartialResponse.parse_obj(raw_application)
 
-    id_ = raw_application["id"]
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    check_owner(application.application_owner_email, identity_claims.email, application.id, "application")
+
     delete_query = applications_table.delete().where(where_stmt)
     logger.trace(f"delete_query = {render_sql(delete_query)}")
 
     await database.execute(delete_query)
 
-    ApplicationFiles.delete_from_s3(id_)
+    ApplicationFiles.delete_from_s3(application.id)
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -359,16 +386,19 @@ async def applications_get_by_id(
     status_code=status.HTTP_200_OK,
     description="Endpoint to update an application given the id",
     response_model=ApplicationPartialResponse,
-    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT))],
 )
 async def application_update(
     application_id: int,
     application: ApplicationUpdateRequest,
+    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
 ):
     """
     Update an application given it's id.
     """
     logger.debug(f"Preparing to update {application_id=}")
+    identity_claims = IdentityClaims.from_token_payload(token_payload)
+    old_application = await _fetch_application_by_id(application_id)
+    check_owner(old_application.application_owner_email, identity_claims.email, application_id, "application")
 
     update_query = (
         applications_table.update()
