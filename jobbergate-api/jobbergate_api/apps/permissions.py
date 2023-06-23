@@ -32,7 +32,7 @@ def check_owner(
     """
     Assert ownership of an entity and raise a 403 exception with message on failure.
     """
-    if not requester_email == owner_email:
+    if requester_email != owner_email:
         message = (
             f"User {requester_email} does not own {entity_name} with id={entity_id}. "
             f"Only the {entity_name} owner ({owner_email}) "
