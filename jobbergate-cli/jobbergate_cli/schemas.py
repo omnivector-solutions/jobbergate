@@ -120,7 +120,7 @@ class JobScriptResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     """
 
     id: int
-    application_id: int
+    application_id: Optional[int] = None
     job_script_name: str
     job_script_description: Optional[str] = None
     job_script_files: JobScriptFiles
@@ -136,7 +136,7 @@ class JobSubmissionResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     """
 
     id: int
-    job_script_id: int
+    job_script_id: Optional[int] = None
     cluster_name: Optional[str] = pydantic.Field(alias="client_id")
     slurm_job_id: Optional[int]
     execution_directory: Optional[Path]

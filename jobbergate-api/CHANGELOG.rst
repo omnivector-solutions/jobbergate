@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Fixed job-submission endpoints to return the ones not linked to a job-script
 
 3.5.0a6 -- 2023-06-26
 ---------------------

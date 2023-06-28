@@ -2,7 +2,9 @@
 from typing import Optional
 
 from armasec import TokenPayload
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query
+from fastapi import Response as FastAPIResponse
+from fastapi import UploadFile, status
 from fastapi.responses import PlainTextResponse
 from loguru import logger
 from sqlalchemy import join, not_, select
@@ -115,7 +117,6 @@ async def job_script_create(
     logger.debug("Inserting job_script")
 
     async with database.transaction():
-
         try:
             insert_query = job_scripts_table.insert().returning(job_scripts_table)
             logger.trace(f"insert_query = {render_sql(insert_query)}")
@@ -395,6 +396,8 @@ async def job_script_delete(
         # There is no need to raise an error if we try to delete a file that does not exist
         logger.warning(f"Tried to delete {job_script_id=}, but it was not found on S3.")
 
+    return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
+
 
 @router.put(
     "/job-scripts/{job_script_id}",
@@ -426,7 +429,6 @@ async def job_script_update(
     logger.trace(f"update_query = {render_sql(update_query)}")
 
     async with database.transaction():
-
         try:
             result = await database.fetch_one(update_query)
         except INTEGRITY_CHECK_EXCEPTIONS as e:
