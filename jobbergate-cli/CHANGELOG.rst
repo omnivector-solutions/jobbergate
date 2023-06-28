@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-cli
 
 Unreleased
 ----------
+
+3.5.0a7 -- 2023-06-28
+---------------------
 - Fixed schemas to support orphaned job-scripts and job-submissions
 
 
