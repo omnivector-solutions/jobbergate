@@ -227,18 +227,6 @@ async def application_delete(
     logger.debug(f"Preparing to delete {application_id=} from the database and S3")
 
     where_stmt = applications_table.c.id == application_id
-    get_query = applications_table.select().where(where_stmt)
-    logger.trace(f"get_query = {render_sql(get_query)}")
-
-    raw_application = await database.fetch_one(get_query)
-    if not raw_application:
-        message = f"Application {application_id=} not found."
-        logger.warning(message)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
-        )
-
     delete_query = applications_table.delete().where(where_stmt)
     logger.trace(f"delete_query = {render_sql(delete_query)}")
 

@@ -154,6 +154,7 @@ async def job_submission_get(job_submission_id: int = Query(...)):
                 job_submissions_table,
                 job_scripts_table,
                 job_submissions_table.c.job_script_id == job_scripts_table.c.id,
+                isouter=True,
             )
         )
         .where(job_submissions_table.c.id == job_submission_id)
@@ -213,6 +214,7 @@ async def job_submission_list(
             job_submissions_table,
             job_scripts_table,
             job_submissions_table.c.job_script_id == job_scripts_table.c.id,
+            isouter=True,
         )
     )
 
