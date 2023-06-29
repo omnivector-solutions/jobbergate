@@ -11,15 +11,12 @@ from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import ApplicationPartialResponse
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.permissions import Permissions
-from jobbergate_api.storage import database, fetch_instance
-
-# Force the async event loop at the app to begin.
-# Since this is a time consuming fixture, it is just used where strict necessary.
-pytestmark = pytest.mark.usefixtures("startup_event_force")
+from jobbergate_api.storage import fetch_all, fetch_count, fetch_instance, insert_data
 
 
 @pytest.mark.asyncio
 async def test_create_application(
+    synth_session,
     fill_application_data,
     client,
     inject_security_header,
@@ -32,8 +29,8 @@ async def test_create_application(
     endpoint. We show this by asserting that the application is created in the database after the post
     request is made and the correct status code (201) is returned.
     """
-    id_rows = await database.fetch_all("SELECT id FROM applications")
-    assert len(id_rows) == 0
+    rows = await fetch_all(synth_session, applications_table, ApplicationPartialResponse)
+    assert len(rows) == 0
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     with time_frame() as window:
@@ -46,23 +43,22 @@ async def test_create_application(
         )
 
     assert response.status_code == status.HTTP_201_CREATED
-
-    id_rows = await database.fetch_all("SELECT id FROM applications")
-    assert len(id_rows) == 1
-
     application = ApplicationPartialResponse(**response.json())
 
-    assert application.id == id_rows[0][0]
+    rows = await fetch_all(synth_session, applications_table, ApplicationPartialResponse)
+    assert len(rows) == 1
+    assert application.id == rows[0].id
     assert application.application_name == "test-name"
     assert application.application_identifier == "test-identifier"
     assert application.application_owner_email == "owner1@org.com"
-    assert application.application_description is None
+    assert application.application_description == ""
     assert application.created_at in window
     assert application.updated_at in window
 
 
 @pytest.mark.asyncio
 async def test_create_application_bad_permission(
+    synth_session,
     application_data,
     client,
     inject_security_header,
@@ -75,19 +71,16 @@ async def test_create_application_bad_permission(
     that the application still does not exists in the database and that the correct status code (403) is
     returned.
     """
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 0
-
+    assert await fetch_count(synth_session, applications_table) == 0
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.post("/jobbergate/applications/", json=application_data)
     assert response.status_code == status.HTTP_403_FORBIDDEN
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 0
+    assert await fetch_count(synth_session, applications_table) == 0
 
 
 @pytest.mark.asyncio
 async def test_create_without_application_name(
+    synth_session,
     application_data,
     client,
     inject_security_header,
@@ -99,21 +92,20 @@ async def test_create_without_application_name(
     trying to create an application without the application_name in the request then assert that the
     application still does not exists in the database and the correct status code (422) is returned.
     """
+    assert await fetch_count(synth_session, applications_table) == 0
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     response = await client.post(
         "/jobbergate/applications/",
         json={k: v for (k, v) in application_data.items() if k != "application_name"},
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 0
+    assert await fetch_count(synth_session, applications_table) == 0
 
 
 @pytest.mark.asyncio
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.delete_from_s3")
 async def test_delete_application_no_file_uploaded(
-    mocked_application_deleter, client, fill_application_data, inject_security_header
+    mocked_application_deleter, synth_session, client, fill_application_data, inject_security_header
 ):
     """
     Test DELETE /applications/<id> correctly deletes an application.
@@ -122,21 +114,18 @@ async def test_delete_application_no_file_uploaded(
     /applications/<id> endpoint. We show this by asserting that the application no longer exists in the
     database after the delete request is made and the correct status code is returned.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(
-            application_owner_email="owner1@org.com",
-        ),
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(application_owner_email="owner1@org.com"),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
+    assert await fetch_count(synth_session, applications_table) == 1
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     response = await client.delete(f"/jobbergate/applications/{inserted_id}")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 0
+    assert await fetch_count(synth_session, applications_table) == 0
 
     mocked_application_deleter.assert_called_once_with(inserted_id)
 
@@ -144,7 +133,7 @@ async def test_delete_application_no_file_uploaded(
 @pytest.mark.asyncio
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.delete_from_s3")
 async def test_delete_application_with_uploaded_file(
-    mocked_application_deleter, client, fill_application_data, inject_security_header
+    mocked_application_deleter, synth_session, client, fill_application_data, inject_security_header
 ):
     """
     Test DELETE /applications/<id> correctly deletes an application and it's file.
@@ -154,21 +143,18 @@ async def test_delete_application_with_uploaded_file(
     database after the delete request is made, the correct status code is returned and the correct boto3
     method was called.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(
-            application_owner_email="owner1@org.com",
-        ),
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(application_owner_email="owner1@org.com"),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
+    assert await fetch_count(synth_session, applications_table) == 1
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     response = await client.delete(f"/jobbergate/applications/{inserted_id}")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 0
+    assert await fetch_count(synth_session, applications_table) == 0
 
     mocked_application_deleter.assert_called_once_with(inserted_id)
 
@@ -176,7 +162,7 @@ async def test_delete_application_with_uploaded_file(
 @pytest.mark.asyncio
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.delete_from_s3")
 async def test_delete_application_by_identifier(
-    mocked_application_deleter, client, fill_application_data, inject_security_header
+    mocked_application_deleter, synth_session, client, fill_application_data, inject_security_header
 ):
     """
     Test DELETE /applications?identifier=<identifier> correctly deletes an application and it's file.
@@ -186,28 +172,28 @@ async def test_delete_application_by_identifier(
     exists in the database after the delete request is made, the correct status code is returned and the
     correct boto3 method was called.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
             application_owner_email="owner1@org.com",
             application_identifier="test-identifier",
         ),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
+    assert await fetch_count(synth_session, applications_table) == 1
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     response = await client.delete("/jobbergate/applications?identifier=test-identifier")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 0
+    assert await fetch_count(synth_session, applications_table) == 0
 
     mocked_application_deleter.assert_called_once_with(inserted_id)
 
 
 @pytest.mark.asyncio
 async def test_delete_application_bad_permission(
+    synth_session,
     client,
     fill_application_data,
     inject_security_header,
@@ -219,24 +205,23 @@ async def test_delete_application_bad_permission(
     endpoint. We show this by asserting that the application still exists in the database after the delete
     request is made and the correct status code is returned.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(
-            application_owner_email="owner1@org.com",
-        ),
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(application_owner_email="owner1@org.com"),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
+    assert await fetch_count(synth_session, applications_table) == 1
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.delete(f"/jobbergate/applications/{inserted_id}")
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
+
+    assert await fetch_count(synth_session, applications_table) == 1
 
 
 @pytest.mark.asyncio
 async def test_delete_application_non_owner(
+    synth_session,
     client,
     fill_application_data,
     inject_security_header,
@@ -248,21 +233,19 @@ async def test_delete_application_non_owner(
     endpoint. We show this by asserting that the application still exists in the database after the delete
     request is made and the correct status code is returned.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(
-            application_owner_email="owner1@org.com",
-        ),
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(application_owner_email="owner1@org.com"),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
+    assert await fetch_count(synth_session, applications_table) == 1
 
     inject_security_header("other-owner@other.com", Permissions.APPLICATIONS_EDIT)
     response = await client.delete(f"/jobbergate/applications/{inserted_id}")
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert "does not own" in response.text
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
+
+    assert await fetch_count(synth_session, applications_table) == 1
 
 
 @pytest.mark.asyncio
@@ -282,7 +265,8 @@ async def test_delete_application_not_found(client, inject_security_header):
 @pytest.mark.asyncio
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.delete_from_s3")
 async def test_delete_application__unlinks_job_scripts(
-    mocked_application_deleter,
+    _,
+    synth_session,
     client,
     fill_application_data,
     job_script_data,
@@ -293,45 +277,45 @@ async def test_delete_application__unlinks_job_scripts(
 
     Test that a the application_id field for connected job_scripts is set to null.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(
-            application_owner_email="owner1@org.com",
-        ),
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(application_owner_email="owner1@org.com"),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
+    assert await fetch_count(synth_session, applications_table) == 1
 
-    await database.execute(
-        query=job_scripts_table.insert(),
-        values=dict(
+    await insert_data(
+        synth_session,
+        job_scripts_table,
+        dict(
             **job_script_data,
             application_id=inserted_id,
         ),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 1
-    count = await database.fetch_all(
-        "SELECT COUNT(*) FROM job_scripts where application_id=:inserted_id",
-        values=dict(inserted_id=inserted_id),
+    assert await fetch_count(synth_session, job_scripts_table) == 1
+    assert (
+        await fetch_count(synth_session, job_scripts_table, job_scripts_table.c.application_id == inserted_id)
+        == 1
     )
-    assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     response = await client.delete(f"/jobbergate/applications/{inserted_id}")
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 0
 
-    count = await database.fetch_all(
-        "SELECT COUNT(*) FROM job_scripts where application_id=:inserted_id",
-        values=dict(inserted_id=inserted_id),
+    assert await fetch_count(synth_session, applications_table) == 0
+    assert (
+        await fetch_count(
+            synth_session,
+            job_scripts_table,
+            job_scripts_table.c.application_id == inserted_id,
+        )
+        == 0
     )
-    assert count[0][0] == 0
 
 
 @pytest.mark.asyncio
 async def test_get_application_by_id__files_not_uploaded(
+    synth_session,
     client,
     fill_application_data,
     inject_security_header,
@@ -344,16 +328,17 @@ async def test_get_application_by_id__files_not_uploaded(
     returned in the response is equal to the application data that exists in the database
     for the given application id.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_identifier="app1"),
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(application_identifier="app1"),
     )
-    await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_identifier="app2"),
+    await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(application_identifier="app2"),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 2
+    assert await fetch_count(synth_session, applications_table) == 2
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
     response = await client.get(f"/jobbergate/applications/{inserted_id}")
@@ -371,6 +356,7 @@ async def test_get_application_by_id__files_not_uploaded(
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.get_from_s3")
 async def test_get_application_by_id__files_uploaded(
     mocked_get_application_files_from_s3,
+    synth_session,
     client,
     fill_application_data,
     inject_security_header,
@@ -386,26 +372,26 @@ async def test_get_application_by_id__files_uploaded(
     returned in the response is equal to the application data that exists in the database
     for the given application id, and the application files are recovered from S3.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
             application_identifier="app1",
             application_uploaded=True,
         ),
     )
-    await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_identifier="app2"),
+    await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(application_identifier="app2"),
     )
+    assert await fetch_count(synth_session, applications_table) == 2
 
     mocked_get_application_files_from_s3.return_value = ApplicationFiles(
         templates={"test_job_script.sh": dummy_template},
         source_file=dummy_application_source_file,
         config_file=dummy_application_config,
     )
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 2
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
     response = await client.get(f"/jobbergate/applications/{inserted_id}")
@@ -436,6 +422,7 @@ async def test_get_application_by_id_invalid(client, inject_security_header):
 
 @pytest.mark.asyncio
 async def test_get_application_by_id_bad_permission(
+    synth_session,
     client,
     application_data,
     inject_security_header,
@@ -447,9 +434,10 @@ async def test_get_application_by_id_bad_permission(
     user don't have the proper permission. We show this by asserting that the status code
     returned is what we would expect (403).
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=application_data,
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        application_data,
     )
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
@@ -459,6 +447,7 @@ async def test_get_application_by_id_bad_permission(
 
 @pytest.mark.asyncio
 async def test_get_applications__no_params(
+    synth_session,
     client,
     fill_all_application_data,
     inject_security_header,
@@ -471,17 +460,16 @@ async def test_get_applications__no_params(
     only applications owned by the user making the request. This test also ensures that archived
     applications are not included by default.
     """
-    await database.execute_many(
-        applications_table.insert(),
-        values=fill_all_application_data(
+    query = applications_table.insert().values(
+        fill_all_application_data(
             dict(application_identifier="app1"),
             dict(application_identifier="app2"),
             dict(application_identifier="app3"),
             dict(application_identifier="app4", is_archived=True),
         ),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 4
+    await synth_session.execute(query)
+    assert await fetch_count(synth_session, applications_table) == 4
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
     response = await client.get("/jobbergate/applications/")
@@ -506,6 +494,7 @@ async def test_get_applications__no_params(
 
 @pytest.mark.asyncio
 async def test_get_application___bad_permission(
+    synth_session,
     client,
     fill_all_application_data,
     inject_security_header,
@@ -517,16 +506,15 @@ async def test_get_application___bad_permission(
     We show this by making a request with an user without creating the permission, and then asserting the
     status code in the response.
     """
-    await database.execute_many(
-        query=applications_table.insert(),
-        values=fill_all_application_data(
+    query = applications_table.insert().values(
+        fill_all_application_data(
             dict(application_identifier="app1"),
             dict(application_identifier="app2"),
             dict(application_identifier="app3"),
         ),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 3
+    await synth_session.execute(query)
+    assert await fetch_count(synth_session, applications_table) == 3
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.get("/jobbergate/applications/")
@@ -535,6 +523,7 @@ async def test_get_application___bad_permission(
 
 @pytest.mark.asyncio
 async def test_get_applications__with_user_param(
+    synth_session,
     client,
     fill_all_application_data,
     inject_security_header,
@@ -547,9 +536,8 @@ async def test_get_applications__with_user_param(
     the user making the request to list applications doesn't see any of the other user's
     applications in the response.
     """
-    await database.execute_many(
-        query=applications_table.insert(),
-        values=fill_all_application_data(
+    query = applications_table.insert().values(
+        fill_all_application_data(
             dict(
                 application_identifier="app1",
                 application_owner_email="owner1@org.com",
@@ -564,8 +552,8 @@ async def test_get_applications__with_user_param(
             ),
         ),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 3
+    await synth_session.execute(query)
+    assert await fetch_count(synth_session, applications_table) == 3
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
     response = await client.get("/jobbergate/applications")
@@ -599,6 +587,7 @@ async def test_get_applications__with_user_param(
 
 @pytest.mark.asyncio
 async def test_get_applications__with_all_param(
+    synth_session,
     client,
     fill_all_application_data,
     inject_security_header,
@@ -611,16 +600,15 @@ async def test_get_applications__with_all_param(
     owned by another user. Assert that the response to GET /applications/?all=True includes all three
     applications.
     """
-    await database.execute_many(
-        query=applications_table.insert(),
-        values=fill_all_application_data(
+    query = applications_table.insert().values(
+        fill_all_application_data(
             dict(application_identifier="app1", application_owner_email="owner1@org.com"),
-            dict(application_owner_email="owner1@org.com"),
+            dict(application_identifier=None, application_owner_email="owner1@org.com"),
             dict(application_identifier="app3", application_owner_email="owner999@org.com"),
         ),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 3
+    await synth_session.execute(query)
+    assert await fetch_count(synth_session, applications_table) == 3
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
 
@@ -653,6 +641,7 @@ async def test_get_applications__with_all_param(
 
 @pytest.mark.asyncio
 async def test_get_applications__with_include_archived_param(
+    synth_session,
     client,
     fill_all_application_data,
     inject_security_header,
@@ -664,16 +653,15 @@ async def test_get_applications__with_include_archived_param(
     We show this by creating three applications, two that are normal, and one that is archived.
     Assert that the response to GET /applications/?include_archived=True includes all three applications.
     """
-    await database.execute_many(
-        query=applications_table.insert(),
-        values=fill_all_application_data(
-            dict(application_identifier="app1"),
+    query = applications_table.insert().values(
+        fill_all_application_data(
+            dict(application_identifier="app1", is_archived=False),
             dict(application_identifier="app2", is_archived=True),
-            dict(application_identifier="app3"),
+            dict(application_identifier="app3", is_archived=False),
         ),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 3
+    await synth_session.execute(query)
+    assert await fetch_count(synth_session, applications_table) == 3
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
 
@@ -706,6 +694,7 @@ async def test_get_applications__with_include_archived_param(
 
 @pytest.mark.asyncio
 async def test_get_applications__with_search_param(
+    synth_session,
     client,
     fill_all_application_data,
     inject_security_header,
@@ -718,18 +707,19 @@ async def test_get_applications__with_search_param(
 
     Assert that the response to GET /applications?search=<search terms> includes correct matches.
     """
-    await database.execute_many(
-        query=applications_table.insert(),
-        values=fill_all_application_data(
+    query = applications_table.insert().values(
+        fill_all_application_data(
             dict(
                 application_name="test name one",
                 application_identifier="app1",
                 application_owner_email="one@org.com",
+                application_description=None,
             ),
             dict(
                 application_name="test name two",
                 application_identifier="app2",
                 application_owner_email="two@org.com",
+                application_description=None,
             ),
             dict(
                 application_name="test name twenty-two",
@@ -739,8 +729,8 @@ async def test_get_applications__with_search_param(
             ),
         ),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 3
+    await synth_session.execute(query)
+    assert await fetch_count(synth_session, applications_table) == 3
 
     inject_security_header("admin@org.com", Permissions.APPLICATIONS_VIEW)
 
@@ -771,6 +761,7 @@ async def test_get_applications__with_search_param(
 
 @pytest.mark.asyncio
 async def test_get_applications__with_sort_params(
+    synth_session,
     client,
     fill_all_application_data,
     inject_security_header,
@@ -785,16 +776,15 @@ async def test_get_applications__with_sort_params(
     Assert that the response to GET /applications?sort_field=<field>&sort_ascending=<bool> includes correctly
     sorted applications.
     """
-    await database.execute_many(
-        query=applications_table.insert(),
-        values=fill_all_application_data(
+    query = applications_table.insert().values(
+        fill_all_application_data(
             dict(application_name="A", application_identifier="Z"),
             dict(application_name="B", application_identifier="Y"),
             dict(application_name="C", application_identifier="X"),
         ),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 3
+    await synth_session.execute(query)
+    assert await fetch_count(synth_session, applications_table) == 3
 
     inject_security_header("admin@org.com", Permissions.APPLICATIONS_VIEW)
 
@@ -825,6 +815,7 @@ async def test_get_applications__with_sort_params(
 
 @pytest.mark.asyncio
 async def test_get_applications__with_pagination(
+    synth_session,
     client,
     fill_all_application_data,
     inject_security_header,
@@ -835,9 +826,8 @@ async def test_get_applications__with_pagination(
     This test proves that the user making the request can see applications paginated.
     We show this by creating three applications and assert that the response is correctly paginated.
     """
-    await database.execute_many(
-        query=applications_table.insert(),
-        values=fill_all_application_data(
+    query = applications_table.insert().values(
+        fill_all_application_data(
             dict(application_identifier="app1", application_owner_email="owner1@org.com"),
             dict(application_identifier="app2", application_owner_email="owner1@org.com"),
             dict(application_identifier="app3", application_owner_email="owner1@org.com"),
@@ -845,8 +835,8 @@ async def test_get_applications__with_pagination(
             dict(application_identifier="app5", application_owner_email="owner1@org.com"),
         ),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 5
+    await synth_session.execute(query)
+    assert await fetch_count(synth_session, applications_table) == 5
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_VIEW)
     response = await client.get(
@@ -899,6 +889,7 @@ async def test_get_applications__with_pagination(
 
 @pytest.mark.asyncio
 async def test_update_application(
+    synth_session,
     client,
     fill_application_data,
     inject_security_header,
@@ -911,22 +902,21 @@ async def test_update_application(
     /application/<id> endpoint. We show this by asserting that the values provided to update the
     application are returned in the response made to the PUT /application/<id> endpoint.
     """
-    await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
             application_identifier="old_identifier",
             application_owner_email="owner1@org.com",
             application_description="old description",
         ),
     )
-    rows = await database.fetch_all("select id from applications")
-    assert len(rows) == 1
-    id = rows[0][0]
+    assert await fetch_count(synth_session, applications_table) == 1
 
     inject_security_header("owner1@org.com", Permissions.APPLICATIONS_EDIT)
     with time_frame() as window:
         response = await client.put(
-            f"/jobbergate/applications/{id}",
+            f"/jobbergate/applications/{inserted_id}",
             json=dict(
                 application_name="new_name",
                 application_identifier="new_identifier",
@@ -942,20 +932,22 @@ async def test_update_application(
     assert data["application_description"] == "new_description"
     assert data["is_archived"] is True
 
-    query = applications_table.select(applications_table.c.id == id)
-    result = await database.fetch_one(query)
+    updated_application = await fetch_instance(
+        synth_session, inserted_id, applications_table, ApplicationPartialResponse
+    )
 
-    assert result is not None
-    assert result["application_name"] == "new_name"
-    assert result["application_identifier"] == "new_identifier"
-    assert result["application_owner_email"] == "owner1@org.com"
-    assert result["application_description"] == "new_description"
-    assert result["is_archived"] is True
-    assert result["updated_at"] in window
+    assert updated_application is not None
+    assert updated_application.application_name == "new_name"
+    assert updated_application.application_identifier == "new_identifier"
+    assert updated_application.application_owner_email == "owner1@org.com"
+    assert updated_application.application_description == "new_description"
+    assert updated_application.is_archived is True
+    assert updated_application.updated_at in window
 
 
 @pytest.mark.asyncio
 async def test_update_application_bad_permission(
+    synth_session,
     client,
     fill_application_data,
     inject_security_header,
@@ -967,17 +959,17 @@ async def test_update_application_bad_permission(
     /application/<id> endpoint by a user without permission. We show this by asserting that the status code
     403 is returned and that the application_data is still the same as before.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
             application_name="old-name",
             application_identifier="old_identifier",
             application_owner_email="owner1@org.com",
             application_description="old description",
         ),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
+    assert await fetch_count(synth_session, applications_table) == 1
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.put(
@@ -990,17 +982,19 @@ async def test_update_application_bad_permission(
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    query = applications_table.select(applications_table.c.id == inserted_id)
-    result = await database.fetch_one(query)
+    unaltered_application = await fetch_instance(
+        synth_session, inserted_id, applications_table, ApplicationPartialResponse
+    )
 
-    assert result is not None
-    assert result["application_name"] == "old-name"
-    assert result["application_identifier"] == "old_identifier"
-    assert result["application_description"] == "old description"
+    assert unaltered_application is not None
+    assert unaltered_application.application_name == "old-name"
+    assert unaltered_application.application_identifier == "old_identifier"
+    assert unaltered_application.application_description == "old description"
 
 
 @pytest.mark.asyncio
 async def test_update_application_non_owner(
+    synth_session,
     client,
     fill_application_data,
     inject_security_header,
@@ -1012,17 +1006,17 @@ async def test_update_application_non_owner(
     /application/<id> endpoint by a user without permission. We show this by asserting that the status code
     403 is returned and that the application_data is still the same as before.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
             application_name="old-name",
             application_identifier="old_identifier",
             application_owner_email="owner1@org.com",
             application_description="old description",
         ),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM applications")
-    assert count[0][0] == 1
+    assert await fetch_count(synth_session, applications_table) == 1
 
     inject_security_header("other-owner@org.com", Permissions.APPLICATIONS_EDIT)
     response = await client.put(
@@ -1036,13 +1030,14 @@ async def test_update_application_non_owner(
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert "does not own" in response.text
 
-    query = applications_table.select(applications_table.c.id == inserted_id)
-    result = await database.fetch_one(query)
+    unaltered_application = await fetch_instance(
+        synth_session, inserted_id, applications_table, ApplicationPartialResponse
+    )
 
-    assert result is not None
-    assert result["application_name"] == "old-name"
-    assert result["application_identifier"] == "old_identifier"
-    assert result["application_description"] == "old description"
+    assert unaltered_application is not None
+    assert unaltered_application.application_name == "old-name"
+    assert unaltered_application.application_identifier == "old_identifier"
+    assert unaltered_application.application_description == "old description"
 
 
 @pytest.mark.asyncio
@@ -1054,6 +1049,7 @@ async def test_update_application_non_owner(
 async def test_upload_file__works_with_small_file(
     mocked_application_writer,
     mocked_application_get_upload,
+    synth_session,
     client,
     inject_security_header,
     fill_application_data,
@@ -1070,11 +1066,16 @@ async def test_upload_file__works_with_small_file(
     checks to make sure that the application row in the database has
     `application_uploaded` set.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(application_owner_email="owner1@org.com"),
     )
-    application = await fetch_instance(inserted_id, applications_table, ApplicationPartialResponse)
+    assert await fetch_count(synth_session, applications_table) == 1
+
+    application = await fetch_instance(
+        synth_session, inserted_id, applications_table, ApplicationPartialResponse
+    )
     assert not application.application_uploaded
 
     dummy_file = make_dummy_file("jobbergate.yaml", content=dummy_application_config)
@@ -1090,11 +1091,15 @@ async def test_upload_file__works_with_small_file(
     mocked_application_writer.assert_called_once()
     mocked_application_get_upload.assert_called_once()
 
-    application = await fetch_instance(inserted_id, applications_table, ApplicationPartialResponse)
+    application = await fetch_instance(
+        synth_session, inserted_id, applications_table, ApplicationPartialResponse
+    )
+    assert application.application_uploaded
 
 
 @pytest.mark.asyncio
 async def test_upload_file__fails_for_non_owner(
+    synth_session,
     client,
     inject_security_header,
     fill_application_data,
@@ -1106,11 +1111,16 @@ async def test_upload_file__fails_for_non_owner(
     """
     Test that a file cannot be uploaded by a non-owner.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(application_owner_email="owner1@org.com"),
     )
-    application = await fetch_instance(inserted_id, applications_table, ApplicationPartialResponse)
+    assert await fetch_count(synth_session, applications_table) == 1
+
+    application = await fetch_instance(
+        synth_session, inserted_id, applications_table, ApplicationPartialResponse
+    )
     assert not application.application_uploaded
 
     dummy_file = make_dummy_file("jobbergate.yaml", content=dummy_application_config)
@@ -1131,6 +1141,7 @@ async def test_upload_file__fails_for_non_owner(
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.write_to_s3")
 async def test_upload_file_individually__success(
     mocked_application_writer,
+    synth_session,
     client,
     inject_security_header,
     fill_application_data,
@@ -1147,11 +1158,16 @@ async def test_upload_file_individually__success(
     This test proves that any application file, i.e. config, source or template,
     can be patched individually.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(application_owner_email="owner1@org.com"),
     )
-    application = await fetch_instance(inserted_id, applications_table, ApplicationPartialResponse)
+    assert await fetch_count(synth_session, applications_table) == 1
+
+    application = await fetch_instance(
+        synth_session, inserted_id, applications_table, ApplicationPartialResponse
+    )
     assert not application.application_uploaded
 
     dummy_config_file = make_dummy_file("jobbergate.yaml", content=dummy_application_config)
@@ -1233,6 +1249,7 @@ async def test_upload_file_individually__success(
 
 @pytest.mark.asyncio
 async def test_upload_file_individually__fails_on_non_owner(
+    synth_session,
     client,
     inject_security_header,
     fill_application_data,
@@ -1242,11 +1259,16 @@ async def test_upload_file_individually__fails_on_non_owner(
     """
     Test that the application files cannot be patched individually by a non-owner.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(application_owner_email="owner1@org.com"),
     )
-    application = await fetch_instance(inserted_id, applications_table, ApplicationPartialResponse)
+    assert await fetch_count(synth_session, applications_table) == 1
+
+    application = await fetch_instance(
+        synth_session, inserted_id, applications_table, ApplicationPartialResponse
+    )
     assert not application.application_uploaded
 
     dummy_source_file = make_dummy_file("jobbergate.py", content=dummy_application_source_file)
@@ -1292,7 +1314,7 @@ async def test_upload_file__fails_with_413_on_large_file(
 @pytest.mark.asyncio
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.delete_from_s3")
 async def test_delete_file_success(
-    mocked_application_deleter, client, inject_security_header, fill_application_data
+    mocked_application_deleter, synth_session, client, inject_security_header, fill_application_data
 ):
     """
     Test that a file is deleted.
@@ -1300,12 +1322,15 @@ async def test_delete_file_success(
     This test proves that an application's file is deleted by making sure that the boto3 put_object method
     is called once and a 201 status code is returned.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com", application_uploaded=True),
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(application_owner_email="owner1@org.com", application_uploaded=True),
     )
-    application: ApplicationPartialResponse = await fetch_instance(
-        inserted_id, applications_table, ApplicationPartialResponse
+    assert await fetch_count(synth_session, applications_table) == 1
+
+    application = await fetch_instance(
+        synth_session, inserted_id, applications_table, ApplicationPartialResponse
     )
     assert application.application_uploaded
 
@@ -1315,24 +1340,29 @@ async def test_delete_file_success(
     assert response.status_code == status.HTTP_204_NO_CONTENT
     mocked_application_deleter.assert_called_once_with(inserted_id)
 
-    application = await fetch_instance(inserted_id, applications_table, ApplicationPartialResponse)
+    application = await fetch_instance(
+        synth_session, inserted_id, applications_table, ApplicationPartialResponse
+    )
     assert not application.application_uploaded
 
 
 @pytest.mark.asyncio
 @mock.patch("jobbergate_api.apps.applications.routers.ApplicationFiles.delete_from_s3")
 async def test_delete_file__fails_with_403_for_non_owner(
-    mocked_application_deleter, client, inject_security_header, fill_application_data
+    mocked_application_deleter, synth_session, client, inject_security_header, fill_application_data
 ):
     """
     Test that a file is not deleted if the requester is not the owner.
     """
-    inserted_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com", application_uploaded=True),
+    inserted_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(application_owner_email="owner1@org.com", application_uploaded=True),
     )
-    application: ApplicationPartialResponse = await fetch_instance(
-        inserted_id, applications_table, ApplicationPartialResponse
+    assert await fetch_count(synth_session, applications_table) == 1
+
+    application = await fetch_instance(
+        synth_session, inserted_id, applications_table, ApplicationPartialResponse
     )
     assert application.application_uploaded
 

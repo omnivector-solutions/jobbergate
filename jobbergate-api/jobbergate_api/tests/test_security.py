@@ -58,5 +58,5 @@ def test_from_token_payload__omits_email_if_not_in_payload():
         exp=datetime.now(),
         azp="idiot",
     )
-    identity = security.IdentityClaims.from_token_payload(payload)
+    identity = security.IdentityPayload.parse_obj(payload)
     assert identity.email is None

@@ -7,8 +7,10 @@ from typing import List, Optional
 
 from armasec import Armasec, TokenPayload
 from armasec.schemas import DomainConfig
+from armasec.token_security import PermissionMode
+from fastapi import Depends
 from loguru import logger
-from pydantic import BaseModel, EmailStr
+from pydantic import EmailStr
 
 from jobbergate_api.config import settings
 
@@ -49,25 +51,25 @@ guard = Armasec(
 )
 
 
-class IdentityClaims(BaseModel):
+class IdentityPayload(TokenPayload):
     """
-    Provide a pydantic data model containing user data extracted from an access token.
+    Provide an extension of TokenPayload that includes the user's identity.
     """
 
-    email: Optional[EmailStr]
-    client_id: Optional[str]
+    email: Optional[EmailStr] = None
 
-    @classmethod
-    def from_token_payload(cls, payload: TokenPayload) -> "IdentityClaims":
-        """
-        Create an instance from a Token payload.
 
-        Automatically validates that the email is an email address if it is provided.
+def lockdown_with_identity(*scopes: str, permission_mode: PermissionMode = PermissionMode.ALL):
+    """
+    Provide a wrapper to be used with dependency injection to extract identity on a secured route.
+    """
+
+    def dependency(
+        token_payload: TokenPayload = Depends(guard.lockdown(*scopes, permission_mode=permission_mode))
+    ) -> IdentityPayload:
         """
-        init_kwargs = dict(
-            client_id=payload.client_id,
-        )
-        email = getattr(payload, "email", None)
-        if email is not None:
-            init_kwargs.update(email=email)
-        return cls(**init_kwargs)
+        Provide an injectable function to lockdown a route and extract the identity payload.
+        """
+        return IdentityPayload.parse_obj(token_payload)
+
+    return dependency

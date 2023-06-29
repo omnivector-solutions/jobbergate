@@ -9,8 +9,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from pydantic.generics import GenericModel
 from sqlalchemy import func, select
-
-from jobbergate_api.storage import database
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class Pagination(BaseModel):
@@ -80,7 +79,12 @@ def ok_response(
     return {200: {"model": Response[TResponseModel]}}
 
 
-async def package_response(model: Type[TResponseModel], query, pagination: Pagination) -> JSONResponse:
+async def package_response(
+    session: AsyncSession,
+    model: Type[TResponseModel],
+    query,
+    pagination: Pagination,
+) -> JSONResponse:
     """
     Package the response in an envelope that includes the response and the metadata.
 
@@ -102,12 +106,15 @@ async def package_response(model: Type[TResponseModel], query, pagination: Pagin
     # The explicit order_by removes any sorting added to the query for the total computation
     # total = await database.fetch_val(query.with_only_columns([func.count()]).order_by(None))
     count_query = select(func.count()).select_from(query.subquery())
-    total = await database.fetch_val(query=count_query)
+    raw_response = await session.execute(count_query)
+    total = raw_response.scalar_one()
+
     if pagination.start is not None:
         query = query.limit(pagination.limit).offset(pagination.start * pagination.limit)
-    raw_response = await database.fetch_all(query)
+
+    raw_response = await session.execute(query)
     validated_response = Response[TResponseModel](
-        results=[model.parse_obj(x) for x in raw_response],
+        results=[model.from_orm(x) for x in raw_response],
         pagination=ResponsePagination(total=total, **pagination.dict()),
     )
     jsonable_response = jsonable_encoder(validated_response)

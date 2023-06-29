@@ -6,13 +6,10 @@ import enum
 
 import pytest
 from sqlalchemy import Column, Enum, Integer, Table
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from jobbergate_api.metadata import metadata
-from jobbergate_api.storage import build_db_url, database, sort_clause
-
-# Force the async event loop at the app to begin.
-# Since this is a time consuming fixture, it is just used where strict necessary.
-pytestmark = pytest.mark.usefixtures("startup_event_force")
+from jobbergate_api.storage import build_db_url, sort_clause
 
 
 def test_build_db_url__creates_database_url_from_parts(tweak_settings):
@@ -36,7 +33,7 @@ def test_build_db_url__creates_database_url_from_parts(tweak_settings):
         TEST_DATABASE_PORT=9999,
     ):
         assert build_db_url() == (
-            "postgresql://built-base-user:built-base-pswd@built-base-host:8888/built-base-name"
+            "postgresql+asyncpg://built-base-user:built-base-pswd@built-base-host:8888/built-base-name"
         )
 
 
@@ -45,7 +42,7 @@ def test_build_db_url__uses_TEST_prefixed_database_settings_if_passed_the_force_
     Provide a test ase for the ``build_db_url()`` function.
 
     Tests that the build_db_url function computes a database url value from separate
-    TEST_DATABASE_ settings when the DEPLOY_ENV is TEST.
+    TEST_DATABASE_ settings when the ``force_test`` flag is passed as ``True``.
     """
     with tweak_settings(
         DEPLOY_ENV="TEST",
@@ -60,13 +57,63 @@ def test_build_db_url__uses_TEST_prefixed_database_settings_if_passed_the_force_
         TEST_DATABASE_NAME="built-test-name",
         TEST_DATABASE_PORT=9999,
     ):
-        assert build_db_url() == (
-            "postgresql://built-test-user:built-test-pswd@built-test-host:9999/built-test-name"
+        assert build_db_url(force_test=True) == (
+            "postgresql+asyncpg://built-test-user:built-test-pswd@built-test-host:9999/built-test-name"
+        )
+
+
+def test_build_db_url__uses_override_db_name(tweak_settings):
+    """
+    Provide a test case for the ``build_db_url()`` function.
+
+    Tests that the build_db_url function computes a database url value from separate
+    TEST_DATABASE_ settings but overrides the database name when the ``override_db_name`` param is passed.
+    """
+    with tweak_settings(
+        DEPLOY_ENV="TEST",
+        DATABASE_USER="built-base-user",
+        DATABASE_PSWD="built-base-pswd",
+        DATABASE_HOST="built-base-host",
+        DATABASE_NAME="built-base-name",
+        DATABASE_PORT=8888,
+        TEST_DATABASE_USER="built-test-user",
+        TEST_DATABASE_PSWD="built-test-pswd",
+        TEST_DATABASE_HOST="built-test-host",
+        TEST_DATABASE_NAME="built-test-name",
+        TEST_DATABASE_PORT=9999,
+    ):
+        assert build_db_url(override_db_name="override") == (
+            "postgresql+asyncpg://built-base-user:built-base-pswd@built-base-host:8888/override"
+        )
+
+
+def test_build_db_url__uses_asynchronous(tweak_settings):
+    """
+    Provide a test case for the ``build_db_url()`` function.
+
+    Tests that the build_db_url function computes a database url value from separate
+    TEST_DATABASE_ settings and omits asyncpg when the ``asynchronous`` flag is ``False``.
+    """
+    with tweak_settings(
+        DEPLOY_ENV="TEST",
+        DATABASE_USER="built-base-user",
+        DATABASE_PSWD="built-base-pswd",
+        DATABASE_HOST="built-base-host",
+        DATABASE_NAME="built-base-name",
+        DATABASE_PORT=8888,
+        TEST_DATABASE_USER="built-test-user",
+        TEST_DATABASE_PSWD="built-test-pswd",
+        TEST_DATABASE_HOST="built-test-host",
+        TEST_DATABASE_NAME="built-test-name",
+        TEST_DATABASE_PORT=9999,
+    ):
+        assert build_db_url(asynchronous=False) == (
+            "postgresql://built-base-user:built-base-pswd@built-base-host:8888/built-base-name"
         )
 
 
 @pytest.mark.asyncio
-async def test_sort_clause__auto_sort_enum_column(database_engine):
+async def test_sort_clause__auto_sort_enum_column(synth_engine):
     """
     Provide a test case for the ``sort_clause()`` function.
 
@@ -89,45 +136,51 @@ async def test_sort_clause__auto_sort_enum_column(database_engine):
     )
     dummy_sortables = [dummy_table.c.id, dummy_table.c.status]
 
-    # Note: do not worry about dropping the table. The pytest fixtures will clean it up for us
-    dummy_table.create(database_engine)
-    await database.execute_many(
-        query=dummy_table.insert(),
-        values=[
-            dict(id=44, status="COMPLETED"),
-            dict(id=45, status="FAILED"),
-            dict(id=46, status="REJECTED"),
-            dict(id=47, status="COMPLETED"),
-            dict(id=48, status="CREATED"),
-            dict(id=49, status="SUBMITTED"),
-            dict(id=50, status="REJECTED"),
-            dict(id=51, status="FAILED"),
-        ],
-    )
-    status_sort_clause = sort_clause("status", dummy_sortables, True)
-    query = dummy_table.select().order_by(status_sort_clause, "id")
-    results = await database.fetch_all(query)
-    assert [(d["id"], d["status"]) for d in results] == [
-        (44, "COMPLETED"),
-        (47, "COMPLETED"),
-        (48, "CREATED"),
-        (45, "FAILED"),
-        (51, "FAILED"),
-        (46, "REJECTED"),
-        (50, "REJECTED"),
-        (49, "SUBMITTED"),
-    ]
+    async with synth_engine.begin() as connection:
+        await connection.run_sync(dummy_table.create, synth_engine)
 
-    status_sort_clause = sort_clause("status", dummy_sortables, False)
-    query = dummy_table.select().order_by(status_sort_clause, "id")
-    results = await database.fetch_all(query)
-    assert [(d["id"], d["status"]) for d in results] == [
-        (49, "SUBMITTED"),
-        (46, "REJECTED"),
-        (50, "REJECTED"),
-        (45, "FAILED"),
-        (51, "FAILED"),
-        (48, "CREATED"),
-        (44, "COMPLETED"),
-        (47, "COMPLETED"),
-    ]
+        async with AsyncSession(connection) as local_session:
+            await local_session.begin()
+            await local_session.execute(
+                dummy_table.insert(),
+                [
+                    dict(id=44, status="COMPLETED"),
+                    dict(id=45, status="FAILED"),
+                    dict(id=46, status="REJECTED"),
+                    dict(id=47, status="COMPLETED"),
+                    dict(id=48, status="CREATED"),
+                    dict(id=49, status="SUBMITTED"),
+                    dict(id=50, status="REJECTED"),
+                    dict(id=51, status="FAILED"),
+                ],
+            )
+            status_sort_clause = sort_clause("status", dummy_sortables, True)
+            query = dummy_table.select().order_by(status_sort_clause, "id")
+            results = await local_session.execute(query)
+            assert [(d.id, d.status) for d in results] == [
+                (44, "COMPLETED"),
+                (47, "COMPLETED"),
+                (48, "CREATED"),
+                (45, "FAILED"),
+                (51, "FAILED"),
+                (46, "REJECTED"),
+                (50, "REJECTED"),
+                (49, "SUBMITTED"),
+            ]
+
+            status_sort_clause = sort_clause("status", dummy_sortables, False)
+            query = dummy_table.select().order_by(status_sort_clause, "id")
+            results = await local_session.execute(query)
+            assert [(d.id, d.status) for d in results] == [
+                (49, "SUBMITTED"),
+                (46, "REJECTED"),
+                (50, "REJECTED"),
+                (45, "FAILED"),
+                (51, "FAILED"),
+                (48, "CREATED"),
+                (44, "COMPLETED"),
+                (47, "COMPLETED"),
+            ]
+            await local_session.close()
+
+        await connection.execute(dummy_table.delete())

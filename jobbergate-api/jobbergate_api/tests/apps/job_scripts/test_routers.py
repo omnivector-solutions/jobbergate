@@ -15,11 +15,7 @@ from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.job_scripts.schemas import JobScriptResponse
 from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.apps.permissions import Permissions
-from jobbergate_api.storage import database
-
-# Force the async event loop at the app to begin.
-# Since this is a time consuming fixture, it is just used where strict necessary.
-pytestmark = pytest.mark.usefixtures("startup_event_force")
+from jobbergate_api.storage import fetch_all, fetch_count, fetch_instance, insert_data
 
 
 @pytest.fixture
@@ -76,10 +72,10 @@ def sbatch_params():
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 @mock.patch("jobbergate_api.apps.job_scripts.job_script_files.JobScriptFiles.write_to_s3")
 async def test_create_job_script__with_application(
     mocked_write_job_script_files_to_s3,
+    synth_session,
     fill_application_data,
     job_script_data,
     fill_job_script_data,
@@ -100,9 +96,10 @@ async def test_create_job_script__with_application(
     endpoint. We show this by asserting that the job_script is created in the database after the post
     request is made, the correct status code (201) is returned.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
             application_owner_email="owner1@org.com",
             application_uploaded=True,
         ),
@@ -125,18 +122,17 @@ async def test_create_job_script__with_application(
         )
 
     assert response.status_code == status.HTTP_201_CREATED
-
-    id_rows = await database.fetch_all("SELECT id FROM job_scripts")
-    assert len(id_rows) == 1
+    rows = await fetch_all(synth_session, job_scripts_table, JobScriptResponse)
+    assert len(rows) == 1
 
     job_script = JobScriptResponse(**response.json())
 
     mocked_write_job_script_files_to_s3.assert_called_once_with(job_script.id)
 
-    assert job_script.id == id_rows[0][0]
+    assert job_script.id == rows[0].id
     assert job_script.job_script_name == job_script_data["job_script_name"]
     assert job_script.job_script_owner_email == "owner1@org.com"
-    assert job_script.job_script_description is None
+    assert job_script.job_script_description == ""
     assert job_script.job_script_files.main_file
     assert job_script.application_id == inserted_application_id
     assert job_script.created_at in window
@@ -145,8 +141,8 @@ async def test_create_job_script__with_application(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_create_job_script__without_application(
+    synth_session,
     job_script_data,
     fill_job_script_data,
     param_dict,
@@ -172,15 +168,15 @@ async def test_create_job_script__without_application(
 
     assert response.status_code == status.HTTP_201_CREATED
 
-    id_rows = await database.fetch_all("SELECT id FROM job_scripts")
-    assert len(id_rows) == 1
+    rows = await fetch_all(synth_session, job_scripts_table, JobScriptResponse)
+    assert len(rows) == 1
 
     job_script = JobScriptResponse(**response.json())
 
-    assert job_script.id == id_rows[0][0]
+    assert job_script.id == rows[0].id
     assert job_script.job_script_name == job_script_data["job_script_name"]
     assert job_script.job_script_owner_email == "owner1@org.com"
-    assert job_script.job_script_description is None
+    assert job_script.job_script_description == ""
     assert job_script.job_script_files is None
     assert job_script.application_id is None
     assert job_script.created_at in window
@@ -188,8 +184,8 @@ async def test_create_job_script__without_application(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_create_job_script_application_not_uploaded(
+    synth_session,
     fill_application_data,
     fill_job_script_data,
     param_dict,
@@ -199,13 +195,15 @@ async def test_create_job_script_application_not_uploaded(
     """
     Test that it is not possible to create job_script when the application is marked as not uploaded.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
             application_owner_email="owner1@org.com",
             application_uploaded=False,
         ),
     )
+    assert await fetch_count(synth_session, applications_table) == 1
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     response = await client.post(
@@ -217,14 +215,12 @@ async def test_create_job_script_application_not_uploaded(
     )
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 0
+    assert await fetch_count(synth_session, job_scripts_table) == 0
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_create_job_script_bad_permission(
+    synth_session,
     fill_application_data,
     fill_job_script_data,
     param_dict,
@@ -239,9 +235,12 @@ async def test_create_job_script_bad_permission(
     that the job_script still does not exists in the database, and the correct status code (403) is returned.
     and that the boto3 method is never called.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
     )
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
@@ -254,14 +253,12 @@ async def test_create_job_script_bad_permission(
     )
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 0
+    assert await fetch_count(synth_session, job_scripts_table) == 0
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_create_job_script_without_application(
+    synth_session,
     fill_job_script_data,
     param_dict,
     client,
@@ -282,16 +279,14 @@ async def test_create_job_script_without_application(
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 0
+    assert await fetch_count(synth_session, job_scripts_table) == 0
 
 
-@database.transaction(force_rollback=True)
 @pytest.mark.asyncio
 @mock.patch("jobbergate_api.apps.applications.application_files.ApplicationFiles.get_from_s3")
 async def test_create_job_script_file_not_found(
     mocked_get_application_files_from_s3,
+    synth_session,
     fill_application_data,
     fill_job_script_data,
     param_dict,
@@ -307,13 +302,15 @@ async def test_create_job_script_file_not_found(
     is not in S3 (raises BotoCoreError), then assert that the job_script still does not exists in the
     database, the correct status code (404) is returned and that the boto3 method was called.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
             application_owner_email="owner1@org.com",
-            application_uploaded=True,
+            application_uploaded=False,
         ),
     )
+    assert await fetch_count(synth_session, applications_table) == 1
 
     mocked_get_application_files_from_s3.return_value = ApplicationFiles()
 
@@ -327,14 +324,12 @@ async def test_create_job_script_file_not_found(
     )
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 0
+    assert await fetch_count(synth_session, job_scripts_table) == 0
 
 
-@database.transaction(force_rollback=True)
 @pytest.mark.asyncio
 async def test_create_job_script_unable_to_write_file_to_s3(
+    synth_session,
     fill_application_data,
     fill_job_script_data,
     param_dict,
@@ -348,21 +343,21 @@ async def test_create_job_script_unable_to_write_file_to_s3(
     """
     Test that a job script is not added to the database when S3 manager gets an error.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
             application_owner_email="owner1@org.com",
-            application_uploaded=True,
+            application_uploaded=False,
         ),
     )
+    assert await fetch_count(synth_session, applications_table) == 1
 
     ApplicationFiles(
         templates={"test_job_script.sh": dummy_template},
         source_file=dummy_application_source_file,
         config_file=dummy_application_config,
     ).write_to_s3(inserted_application_id)
-
-    actual_id_rows = await database.fetch_all("SELECT id FROM job_scripts")
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     with mock.patch(
@@ -378,15 +373,12 @@ async def test_create_job_script_unable_to_write_file_to_s3(
         )
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-    desired_id_rows = await database.fetch_all("SELECT id FROM job_scripts")
-
-    assert actual_id_rows == desired_id_rows
+    assert await fetch_count(synth_session, job_scripts_table) == 0
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_script_by_id(
+    synth_session,
     client,
     fill_application_data,
     job_script_data,
@@ -402,14 +394,22 @@ async def test_get_job_script_by_id(
     returned in the response is equal to the job_script data that exists in the database
     for the given job_script id.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
+            application_owner_email="owner1@org.com",
+            application_name="dummy-application",
+        ),
     )
-    inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(application_id=inserted_application_id),
+    assert await fetch_count(synth_session, applications_table) == 1
+
+    inserted_job_script_id = await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(application_id=inserted_application_id),
     )
+    assert await fetch_count(synth_session, job_scripts_table) == 1
 
     main_file_path = pathlib.Path("jobbergate.py")
     dummy_job_script_files = JobScriptFiles(
@@ -417,11 +417,7 @@ async def test_get_job_script_by_id(
     )
     dummy_job_script_files.write_to_s3(inserted_job_script_id)
 
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 1
-
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
-
     response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}")
 
     assert response.status_code == status.HTTP_200_OK
@@ -431,22 +427,25 @@ async def test_get_job_script_by_id(
     assert data["job_script_name"] == job_script_data["job_script_name"]
     assert data["job_script_owner_email"] == "owner1@org.com"
     assert data["application_id"] == inserted_application_id
+    assert data["application_name"] == "dummy-application"
     assert JobScriptFiles(**data["job_script_files"]) == dummy_job_script_files
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_download_job_script_file_by_id__success(
+    synth_session,
     client,
     fill_job_script_data,
     inject_security_header,
     mocked_file_manager_factory,
 ):
     """Test that a job script file can be downloaded."""
-    inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(),
+    inserted_job_script_id = await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(),
     )
+    assert await fetch_count(synth_session, job_scripts_table) == 1
 
     main_file_path = pathlib.Path("jobbergate.py")
     expected_file_content = "print(__name__)"
@@ -455,9 +454,6 @@ async def test_download_job_script_file_by_id__success(
         main_file_path=main_file_path, files={main_file_path: expected_file_content}
     )
     dummy_job_script_files.write_to_s3(inserted_job_script_id)
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}/download")
@@ -469,38 +465,36 @@ async def test_download_job_script_file_by_id__success(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_download_job_script_file_by_id__job_script_not_found(
+    synth_session,
     client,
     inject_security_header,
 ):
     """Test that a job script file can not be downloaded when its id is not found at the database."""
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 0
+    assert await fetch_count(synth_session, job_scripts_table) == 0
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get("/jobbergate/job-scripts/1/download")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert "JobScript with id=1 was not found." in response.text
+    assert "Could not find job_scripts instance with id 1" in response.text
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_download_job_script_file_by_id__job_script_file_not_found(
+    synth_session,
     client,
     fill_job_script_data,
     inject_security_header,
     mocked_file_manager_factory,
 ):
     """Test that a job script file can not be downloaded when its not found at s3."""
-    inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(),
+    inserted_job_script_id = await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(),
     )
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 1
+    assert await fetch_count(synth_session, job_scripts_table) == 1
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}/download")
@@ -510,8 +504,8 @@ async def test_download_job_script_file_by_id__job_script_file_not_found(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_upload_job_script_file_by_id__success(
+    synth_session,
     client,
     fill_job_script_data,
     inject_security_header,
@@ -520,10 +514,12 @@ async def test_upload_job_script_file_by_id__success(
     mocked_file_manager_factory,
 ):
     """Test that a job script file can be uploaded."""
-    inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(),
+    inserted_job_script_id = await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(),
     )
+    assert await fetch_count(synth_session, job_scripts_table) == 1
 
     main_file_path = pathlib.Path("jobbergate.py")
 
@@ -534,9 +530,6 @@ async def test_upload_job_script_file_by_id__success(
         main_file_path=main_file_path, files={main_file_path: old_file_content}
     )
     dummy_job_script_files.write_to_s3(inserted_job_script_id)
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 1
 
     new_job_script_file = make_dummy_file(main_file_path, content=new_file_content)
 
@@ -557,22 +550,21 @@ async def test_upload_job_script_file_by_id__success(
 
     assert actual_job_script_files == expected_job_script_files
 
-    query = job_scripts_table.select(job_scripts_table.c.id == inserted_job_script_id)
-    job_script = JobScriptResponse.parse_obj(await database.fetch_one(query))
-
+    job_script = await fetch_instance(
+        synth_session, inserted_job_script_id, job_scripts_table, JobScriptResponse
+    )
     assert job_script.updated_at in window
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_upload_job_script_file_by_id__job_script_not_found(
+    synth_session,
     client,
     inject_security_header,
     make_dummy_file,
 ):
-    """Test that a job script file can be uploaded when its id is not found at the database."""
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 0
+    """Test that a job script file cannot be uploaded when its id is not found at the database."""
+    assert await fetch_count(synth_session, job_scripts_table) == 0
 
     main_file_path = pathlib.Path("jobbergate.py")
     main_file_content = "I'm going to be replaced"
@@ -587,12 +579,12 @@ async def test_upload_job_script_file_by_id__job_script_not_found(
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert "Job Script with job_script_id=1 was not found." in response.text
+    assert "Could not find job_scripts instance with id 1" in response.text
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_upload_job_script_file_by_id__job_script_file_not_found(
+    synth_session,
     client,
     fill_job_script_data,
     inject_security_header,
@@ -600,21 +592,15 @@ async def test_upload_job_script_file_by_id__job_script_file_not_found(
     mocked_file_manager_factory,
 ):
     """Test that a job script file can not be uploaded when its not found at s3."""
-    inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(),
+    inserted_job_script_id = await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(),
     )
-
-    main_file_path = pathlib.Path("jobbergate.py")
+    assert await fetch_count(synth_session, job_scripts_table) == 1
 
     main_file_path = pathlib.Path("jobbergate.py")
     new_file_content = "I'm going to be replaced"
-
-    new_job_script_file = make_dummy_file(main_file_path, content=new_file_content)
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 1
-
     new_job_script_file = make_dummy_file(main_file_path, content=new_file_content)
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
@@ -629,28 +615,24 @@ async def test_upload_job_script_file_by_id__job_script_file_not_found(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_upload_job_script_file_by_id__fails_for_non_owner(
+    synth_session,
     client,
     fill_job_script_data,
     inject_security_header,
     make_dummy_file,
 ):
     """Test that a job script file can not be uploaded by a non owner."""
-    inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(
+    inserted_job_script_id = await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(
             job_script_owner_email="owner1@org.com",
         ),
     )
 
     main_file_path = pathlib.Path("jobbergate.py")
-
     new_file_content = "I'm the new content"
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 1
-
     new_job_script_file = make_dummy_file(main_file_path, content=new_file_content)
 
     inject_security_header("non-owner@org.com", Permissions.JOB_SCRIPTS_EDIT)
@@ -665,8 +647,8 @@ async def test_upload_job_script_file_by_id__fails_for_non_owner(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_script_by_id_file_not_found_at_s3(
+    synth_session,
     client,
     fill_application_data,
     fill_job_script_data,
@@ -676,17 +658,23 @@ async def test_get_job_script_by_id_file_not_found_at_s3(
     """
     Test if 404 is returned if a jobscript exists in the database but the file was not found in S3.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
     )
-    inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(application_id=inserted_application_id),
+    assert await fetch_count(synth_session, applications_table) == 1
+
+    inserted_job_script_id = await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(application_id=inserted_application_id),
     )
+    assert await fetch_count(synth_session, job_scripts_table) == 1
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
-
     response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -694,7 +682,6 @@ async def test_get_job_script_by_id_file_not_found_at_s3(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_script_by_id_invalid(client, inject_security_header):
     """
     Test the correct response code is returned when a job_script does not exist.
@@ -709,8 +696,8 @@ async def test_get_job_script_by_id_invalid(client, inject_security_header):
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_script_by_id_bad_permission(
+    synth_session,
     client,
     fill_application_data,
     fill_job_script_data,
@@ -723,22 +710,30 @@ async def test_get_job_script_by_id_bad_permission(
     user don't have the proper permission. We show this by asserting that the status code
     returned is what we would expect (403).
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
     )
-    inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(application_id=inserted_application_id),
+    assert await fetch_count(synth_session, applications_table) == 1
+
+    inserted_job_script_id = await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(application_id=inserted_application_id),
     )
+    assert await fetch_count(synth_session, job_scripts_table) == 1
+
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.get(f"/jobbergate/job-scripts/{inserted_job_script_id}")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_get_job_script__no_params(
+async def test_get_job_scripts__no_params(
+    synth_session,
     client,
     fill_application_data,
     fill_all_job_script_data,
@@ -752,27 +747,35 @@ async def test_get_job_script__no_params(
     only job_scripts owned by the user making the request. This test also ensures that archived
     job_scripts are not included by default.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
     )
-    await database.execute_many(
-        query=job_scripts_table.insert(),
-        values=fill_all_job_script_data(
+    assert await fetch_count(synth_session, applications_table) == 1
+
+    await synth_session.execute(
+        job_scripts_table.insert(),
+        fill_all_job_script_data(
             dict(
                 job_script_name="js1",
                 job_script_owner_email="owner1@org.com",
                 application_id=inserted_application_id,
+                is_archived=False,
             ),
             dict(
                 job_script_name="js2",
                 job_script_owner_email="owner999@org.com",
                 application_id=inserted_application_id,
+                is_archived=False,
             ),
             dict(
                 job_script_name="js3",
                 job_script_owner_email="owner1@org.com",
                 application_id=inserted_application_id,
+                is_archived=False,
             ),
             dict(
                 job_script_name="js4",
@@ -782,9 +785,7 @@ async def test_get_job_script__no_params(
             ),
         ),
     )
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 4
+    assert await fetch_count(synth_session, job_scripts_table) == 4
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get("/jobbergate/job-scripts/")
@@ -804,8 +805,8 @@ async def test_get_job_script__no_params(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_scripts__bad_permission(
+    synth_session,
     client,
     fill_application_data,
     fill_job_script_data,
@@ -817,17 +818,21 @@ async def test_get_job_scripts__bad_permission(
     This test proves that GET /job-scripts/ returns the 403 status code when the user making the request
     don't have the permission to list. We show this by asserting that the response status code is 403.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
     )
-    await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(application_id=inserted_application_id),
-    )
+    assert await fetch_count(synth_session, applications_table) == 1
 
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 1
+    await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(application_id=inserted_application_id),
+    )
+    assert await fetch_count(synth_session, job_scripts_table) == 1
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.get("/jobbergate/job-scripts/")
@@ -835,8 +840,8 @@ async def test_get_job_scripts__bad_permission(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_scripts__with_all_param(
+    synth_session,
     client,
     fill_application_data,
     fill_all_job_script_data,
@@ -850,33 +855,36 @@ async def test_get_job_scripts__with_all_param(
     owned by another user. Assert that the response to GET /job-scripts/?all=True includes all three
     job_scripts.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
-    )
-    await database.execute_many(
-        query=job_scripts_table.insert(),
-        values=fill_all_job_script_data(
-            {
-                "job_script_name": "script1",
-                "job_script_owner_email": "owner1@org.com",
-                "application_id": inserted_application_id,
-            },
-            {
-                "job_script_name": "script2",
-                "job_script_owner_email": "owner999@org.com",
-                "application_id": inserted_application_id,
-            },
-            {
-                "job_script_name": "script3",
-                "job_script_owner_email": "owner1@org.com",
-                "application_id": inserted_application_id,
-            },
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
+            application_owner_email="owner1@org.com",
         ),
     )
+    assert await fetch_count(synth_session, applications_table) == 1
 
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 3
+    await synth_session.execute(
+        job_scripts_table.insert(),
+        fill_all_job_script_data(
+            dict(
+                job_script_name="script1",
+                job_script_owner_email="owner1@org.com",
+                application_id=inserted_application_id,
+            ),
+            dict(
+                job_script_name="script2",
+                job_script_owner_email="owner999@org.com",
+                application_id=inserted_application_id,
+            ),
+            dict(
+                job_script_name="script3",
+                job_script_owner_email="owner1@org.com",
+                application_id=inserted_application_id,
+            ),
+        ),
+    )
+    assert await fetch_count(synth_session, job_scripts_table) == 3
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get("/jobbergate/job-scripts/?all=True")
@@ -896,8 +904,8 @@ async def test_get_job_scripts__with_all_param(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_scripts__with_include_archived_param(
+    synth_session,
     client,
     fill_application_data,
     fill_all_job_script_data,
@@ -910,34 +918,39 @@ async def test_get_job_scripts__with_include_archived_param(
     We show this by creating three job_scripts, one that is archived, and two that are not.
     Assert that the response to GET /job-scripts/?include_archived=True includes all three job_scripts.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
-    )
-    await database.execute_many(
-        query=job_scripts_table.insert(),
-        values=fill_all_job_script_data(
-            {
-                "job_script_name": "script1",
-                "job_script_owner_email": "owner1@org.com",
-                "application_id": inserted_application_id,
-            },
-            {
-                "job_script_name": "script2",
-                "job_script_owner_email": "owner1@org.com",
-                "application_id": inserted_application_id,
-                "is_archived": True,
-            },
-            {
-                "job_script_name": "script3",
-                "job_script_owner_email": "owner1@org.com",
-                "application_id": inserted_application_id,
-            },
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
+            application_owner_email="owner1@org.com",
         ),
     )
+    assert await fetch_count(synth_session, applications_table) == 1
 
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 3
+    await synth_session.execute(
+        job_scripts_table.insert(),
+        fill_all_job_script_data(
+            dict(
+                job_script_name="script1",
+                job_script_owner_email="owner1@org.com",
+                application_id=inserted_application_id,
+                is_archived=False,
+            ),
+            dict(
+                job_script_name="script2",
+                job_script_owner_email="owner1@org.com",
+                application_id=inserted_application_id,
+                is_archived=True,
+            ),
+            dict(
+                job_script_name="script3",
+                job_script_owner_email="owner1@org.com",
+                application_id=inserted_application_id,
+                is_archived=False,
+            ),
+        ),
+    )
+    assert await fetch_count(synth_session, job_scripts_table) == 3
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get("/jobbergate/job-scripts/?include_archived=True")
@@ -957,8 +970,9 @@ async def test_get_job_scripts__with_include_archived_param(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_get_job_scripts__with_search_param(client, inject_security_header, fill_application_data):
+async def test_get_job_scripts__with_search_param(
+    synth_session, client, inject_security_header, fill_application_data
+):
     """
     Test that listing job scripts, when search=<search terms>, returns matches.
 
@@ -967,24 +981,31 @@ async def test_get_job_scripts__with_search_param(client, inject_security_header
 
     Assert that the response to GET /job_scripts?search=<search terms> includes correct matches.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
     )
+    assert await fetch_count(synth_session, applications_table) == 1
+
     common = dict(application_id=inserted_application_id)
-    await database.execute_many(
-        query=job_scripts_table.insert(),
-        values=[
+    await synth_session.execute(
+        job_scripts_table.insert(),
+        [
             dict(
                 id=1,
                 job_script_name="test name one",
                 job_script_owner_email="one@org.com",
+                job_script_description=None,
                 **common,
             ),
             dict(
                 id=2,
                 job_script_name="test name two",
                 job_script_owner_email="two@org.com",
+                job_script_description=None,
                 **common,
             ),
             dict(
@@ -996,8 +1017,7 @@ async def test_get_job_scripts__with_search_param(client, inject_security_header
             ),
         ],
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 3
+    assert await fetch_count(synth_session, job_scripts_table) == 3
 
     inject_security_header("admin@org.com", Permissions.JOB_SCRIPTS_VIEW)
 
@@ -1027,8 +1047,8 @@ async def test_get_job_scripts__with_search_param(client, inject_security_header
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_scripts__with_sort_params(
+    synth_session,
     client,
     fill_application_data,
     inject_security_header,
@@ -1043,17 +1063,22 @@ async def test_get_job_scripts__with_sort_params(
     Assert that the response to GET /job_scripts?sort_field=<field>&sort_ascending=<bool> includes correctly
     sorted job_script.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="admin@org.com"),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
     )
+    assert await fetch_count(synth_session, applications_table) == 1
+
     common = dict(
         job_script_owner_email="admin@org.com",
         application_id=inserted_application_id,
     )
-    await database.execute_many(
-        query=job_scripts_table.insert(),
-        values=[
+    await synth_session.execute(
+        job_scripts_table.insert(),
+        [
             dict(
                 job_script_name="Z",
                 **common,
@@ -1068,8 +1093,7 @@ async def test_get_job_scripts__with_sort_params(
             ),
         ],
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 3
+    assert await fetch_count(synth_session, job_scripts_table) == 3
 
     inject_security_header("admin@org.com", Permissions.JOB_SCRIPTS_VIEW)
 
@@ -1097,8 +1121,8 @@ async def test_get_job_scripts__with_sort_params(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_scripts__with_pagination(
+    synth_session,
     client,
     fill_application_data,
     fill_job_script_data,
@@ -1110,13 +1134,18 @@ async def test_get_job_scripts__with_pagination(
     This test proves that the user making the request can see job_scripts paginated.
     We show this by creating three job_scripts and assert that the response is correctly paginated.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
     )
-    await database.execute_many(
-        query=job_scripts_table.insert(),
-        values=[
+    assert await fetch_count(synth_session, applications_table) == 1
+
+    await synth_session.execute(
+        job_scripts_table.insert(),
+        [
             fill_job_script_data(
                 job_script_name=f"script{i}",
                 job_script_owner_email="owner1@org.com",
@@ -1125,9 +1154,7 @@ async def test_get_job_scripts__with_pagination(
             for i in range(1, 6)
         ],
     )
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 5
+    assert await fetch_count(synth_session, job_scripts_table) == 5
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get("/jobbergate/job-scripts?start=0&limit=1")
@@ -1165,8 +1192,8 @@ async def test_get_job_scripts__with_pagination(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_get_job_scripts__from_application_id(
+    synth_session,
     client,
     fill_application_data,
     fill_all_job_script_data,
@@ -1177,32 +1204,27 @@ async def test_get_job_scripts__from_application_id(
 
     Only the job-scripts produced from the application with id=<num> should be returned.
     """
-    inserted_application_id_1 = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    raw_results = await synth_session.execute(
+        applications_table.insert().returning(applications_table.c.id),
+        [fill_application_data(application_owner_email="owner1@org.com")] * 3,
     )
-    inserted_application_id_2 = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    (inserted_application_id_1, inserted_application_id_2, inserted_application_id_3) = (
+        r.id for r in raw_results
     )
-    inserted_application_id_3 = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
-    )
-    await database.execute_many(
-        query=job_scripts_table.insert(),
-        values=fill_all_job_script_data(
-            {"application_id": inserted_application_id_1},
-            {"application_id": inserted_application_id_1},
-            {"application_id": inserted_application_id_2},
-            {"application_id": inserted_application_id_2},
-            {"application_id": inserted_application_id_3},
-            {"application_id": inserted_application_id_3},
+    assert await fetch_count(synth_session, applications_table) == 3
+
+    await synth_session.execute(
+        job_scripts_table.insert(),
+        fill_all_job_script_data(
+            dict(application_id=inserted_application_id_1),
+            dict(application_id=inserted_application_id_1),
+            dict(application_id=inserted_application_id_2),
+            dict(application_id=inserted_application_id_2),
+            dict(application_id=inserted_application_id_3),
+            dict(application_id=inserted_application_id_3),
         ),
     )
-
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 6
+    assert await fetch_count(synth_session, job_scripts_table) == 6
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_VIEW)
 
@@ -1219,8 +1241,8 @@ async def test_get_job_scripts__from_application_id(
 
 @pytest.mark.freeze_time
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_update_job_script(
+    synth_session,
     client,
     fill_application_data,
     fill_job_script_data,
@@ -1235,14 +1257,21 @@ async def test_update_job_script(
     /job-scripts/<id> endpoint. We show this by assert the response status code to 201, the response data
     corresponds to the updated data, and the data in the database is also updated.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
     )
-    inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(application_id=inserted_application_id),
+    assert await fetch_count(synth_session, applications_table) == 1
+
+    inserted_job_script_id = await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(application_id=inserted_application_id),
     )
+    assert await fetch_count(synth_session, job_scripts_table) == 1
 
     main_file_path = "jobbergate.py"
     main_file_content = "print(__name__)"
@@ -1275,9 +1304,9 @@ async def test_update_job_script(
     assert data["id"] == inserted_job_script_id
     assert data["is_archived"] is True
 
-    query = job_scripts_table.select(job_scripts_table.c.id == inserted_job_script_id)
-    job_script = JobScriptResponse.parse_obj(await database.fetch_one(query))
-
+    job_script = await fetch_instance(
+        synth_session, inserted_job_script_id, job_scripts_table, JobScriptResponse
+    )
     assert job_script is not None
     assert job_script.job_script_name == "new name"
     assert job_script.job_script_description == "new description"
@@ -1286,7 +1315,6 @@ async def test_update_job_script(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_update_job_script_not_found(
     client,
     inject_security_header,
@@ -1303,9 +1331,9 @@ async def test_update_job_script_not_found(
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-@database.transaction(force_rollback=True)
 @pytest.mark.asyncio
 async def test_update_job_script_unable_to_write_file_to_s3(
+    synth_session,
     fill_application_data,
     fill_job_script_data,
     client,
@@ -1315,22 +1343,23 @@ async def test_update_job_script_unable_to_write_file_to_s3(
     """
     Test that a job script is not updated to the database when S3 manager gets an error.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
     )
+    assert await fetch_count(synth_session, applications_table) == 1
 
-    inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(application_id=inserted_application_id),
+    inserted_job_script_id = await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(application_id=inserted_application_id),
     )
-
-    query = job_scripts_table.select(job_scripts_table.c.id == inserted_job_script_id)
-
-    desired_jobscript_data = JobScriptResponse.parse_obj(await database.fetch_one(query))
+    assert await fetch_count(synth_session, job_scripts_table) == 1
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
-
     with mock.patch(
         "jobbergate_api.apps.job_scripts.job_script_files.JobScriptFiles.write_to_s3",
         side_effect=KeyError,
@@ -1347,14 +1376,10 @@ async def test_update_job_script_unable_to_write_file_to_s3(
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert "not found in S3" in response.text
 
-    actual_jobscript_data = JobScriptResponse.parse_obj(await database.fetch_one(query))
-
-    assert desired_jobscript_data.json() == actual_jobscript_data.json()
-
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_update_job_script_bad_permission(
+    synth_session,
     client,
     fill_application_data,
     fill_job_script_data,
@@ -1367,30 +1392,37 @@ async def test_update_job_script_bad_permission(
     show this by asserting that the response status code of the request is 403, and that the data stored in
     the database for the job_script is not updated.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
     )
-    await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(job_script_name="target-js", application_id=inserted_application_id),
+    assert await fetch_count(synth_session, applications_table) == 1
+
+    inserted_job_script_id = await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(job_script_name="target-js", application_id=inserted_application_id),
     )
+    assert await fetch_count(synth_session, job_scripts_table) == 1
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.put("/jobbergate/job-scripts/1", data={"job_script_name": "new name"})
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    query = job_scripts_table.select(job_scripts_table.c.job_script_name == "target-js")
-    job_script_row = await database.fetch_one(query)
-
-    assert job_script_row is not None
-    assert job_script_row["job_script_name"] == "target-js"
+    job_script = await fetch_instance(
+        synth_session, inserted_job_script_id, job_scripts_table, JobScriptResponse
+    )
+    assert job_script is not None
+    assert job_script.job_script_name == "target-js"
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_update_job_script_non_owner(
+    synth_session,
     client,
     fill_application_data,
     fill_job_script_data,
@@ -1399,18 +1431,25 @@ async def test_update_job_script_non_owner(
     """
     Test that it is not possible to update a job_script if the user is not the owner.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(application_owner_email="owner1@org.com"),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(
+            application_owner_email="owner1@org.com",
+        ),
     )
-    job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(job_script_name="target-js", application_id=inserted_application_id),
+    assert await fetch_count(synth_session, applications_table) == 1
+
+    inserted_job_script_id = await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(job_script_name="target-js", application_id=inserted_application_id),
     )
+    assert await fetch_count(synth_session, job_scripts_table) == 1
 
     inject_security_header("non-owner@org.com", Permissions.JOB_SCRIPTS_EDIT)
     response = await client.put(
-        f"/jobbergate/job-scripts/{job_script_id}", json={"job_script_name": "new name"}
+        f"/jobbergate/job-scripts/{inserted_job_script_id}", json={"job_script_name": "new name"}
     )
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -1418,8 +1457,8 @@ async def test_update_job_script_non_owner(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_delete_job_script(
+    synth_session,
     client,
     fill_application_data,
     fill_job_script_data,
@@ -1432,17 +1471,19 @@ async def test_delete_job_script(
     endpoint. We show this by asserting that the job_script no longer exists in the database after the
     request is made and the correct status code is returned (204).
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(),
     )
-    inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(application_id=inserted_application_id),
-    )
+    assert await fetch_count(synth_session, applications_table) == 1
 
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 1
+    inserted_job_script_id = await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(application_id=inserted_application_id),
+    )
+    assert await fetch_count(synth_session, job_scripts_table) == 1
 
     with mock.patch(
         "jobbergate_api.apps.job_scripts.job_script_files.JobScriptFiles.delete_from_s3",
@@ -1454,12 +1495,10 @@ async def test_delete_job_script(
 
     mocked_delete.assert_called_once()
 
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 0
+    assert await fetch_count(synth_session, job_scripts_table) == 0
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_delete_job_script_not_found(client, inject_security_header):
     """
     Test that it is not possible to delete a job_script that is not found.
@@ -1474,8 +1513,8 @@ async def test_delete_job_script_not_found(client, inject_security_header):
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_delete_job_script_bad_permission(
+    synth_session,
     client,
     fill_application_data,
     fill_job_script_data,
@@ -1488,30 +1527,31 @@ async def test_delete_job_script_bad_permission(
     We show this by assert that a 403 response status code is returned and the job_script still exists in
     the database after the request.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(),
     )
-    inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(application_id=inserted_application_id),
-    )
+    assert await fetch_count(synth_session, applications_table) == 1
 
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 1
+    inserted_job_script_id = await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(application_id=inserted_application_id),
+    )
+    assert await fetch_count(synth_session, job_scripts_table) == 1
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 1
+    assert await fetch_count(synth_session, job_scripts_table) == 1
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_delete_job_script_non_owner(
+    synth_session,
     client,
     fill_application_data,
     fill_job_script_data,
@@ -1520,17 +1560,19 @@ async def test_delete_job_script_non_owner(
     """
     Test that it is not possible to delete a job_script when the user is not the owner.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(),
     )
-    inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(application_id=inserted_application_id),
-    )
+    assert await fetch_count(synth_session, applications_table) == 1
 
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 1
+    inserted_job_script_id = await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(application_id=inserted_application_id),
+    )
+    assert await fetch_count(synth_session, job_scripts_table) == 1
 
     inject_security_header("non-owner@org.com", Permissions.JOB_SCRIPTS_EDIT)
     response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
@@ -1540,8 +1582,8 @@ async def test_delete_job_script_non_owner(
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
 async def test_delete_job_script__unlinks_job_submissions(
+    synth_session,
     client,
     fill_application_data,
     fill_job_script_data,
@@ -1553,40 +1595,47 @@ async def test_delete_job_script__unlinks_job_submissions(
 
     Test that a the job_script_id field for connected job_submissions is set to null.
     """
-    inserted_application_id = await database.execute(
-        query=applications_table.insert(),
-        values=fill_application_data(),
+    inserted_application_id = await insert_data(
+        synth_session,
+        applications_table,
+        fill_application_data(),
     )
-    inserted_job_script_id = await database.execute(
-        query=job_scripts_table.insert(),
-        values=fill_job_script_data(application_id=inserted_application_id),
-    )
+    assert await fetch_count(synth_session, applications_table) == 1
 
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 1
+    inserted_job_script_id = await insert_data(
+        synth_session,
+        job_scripts_table,
+        fill_job_script_data(application_id=inserted_application_id),
+    )
+    assert await fetch_count(synth_session, job_scripts_table) == 1
 
-    await database.execute(
-        query=job_submissions_table.insert(),
-        values=fill_job_submission_data(job_script_id=inserted_job_script_id),
+    await insert_data(
+        synth_session,
+        job_submissions_table,
+        fill_job_submission_data(job_script_id=inserted_job_script_id),
     )
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_submissions")
-    assert count[0][0] == 1
-    count = await database.fetch_all(
-        "SELECT COUNT(*) FROM job_submissions where job_script_id=:inserted_id",
-        values=dict(inserted_id=inserted_job_script_id),
+    assert (
+        await fetch_count(
+            synth_session,
+            job_submissions_table,
+            job_submissions_table.c.job_script_id == inserted_job_script_id,
+        )
+        == 1
     )
-    assert count[0][0] == 1
 
     inject_security_header("owner1@org.com", Permissions.JOB_SCRIPTS_EDIT)
     with mock.patch("jobbergate_api.apps.job_scripts.job_script_files.JobScriptFiles.delete_from_s3"):
         response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
-    assert count[0][0] == 0
+    assert await fetch_count(synth_session, job_scripts_table) == 0
 
-    count = await database.fetch_all(
-        "SELECT COUNT(*) FROM job_submissions where job_script_id=:inserted_id",
-        values=dict(inserted_id=inserted_job_script_id),
+    assert await fetch_count(synth_session, job_submissions_table) == 1
+    assert (
+        await fetch_count(
+            synth_session,
+            job_submissions_table,
+            job_submissions_table.c.job_script_id == inserted_job_script_id,
+        )
+        == 0
     )
-    assert count[0][0] == 0

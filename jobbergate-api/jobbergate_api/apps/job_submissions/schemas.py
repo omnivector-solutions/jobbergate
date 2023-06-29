@@ -4,9 +4,10 @@ JobSubmission resource schema.
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field, validator
+from typing_extensions import Literal
 
 from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
@@ -351,7 +352,7 @@ class JobSubmissionResponse(BaseModel):
         schema_extra = job_submission_meta_mapper
 
 
-class PendingJobSubmission(BaseModel, extra=Extra.ignore):
+class PendingJobSubmission(BaseModel):
     """
     Specialized model for the cluster-agent to pull pending job_submissions.
 
@@ -367,8 +368,12 @@ class PendingJobSubmission(BaseModel, extra=Extra.ignore):
     application_name: str
     job_script_files: JobScriptFiles
 
+    class Config:
+        extra = Extra.ignore
+        orm_mode = True
 
-class ActiveJobSubmission(BaseModel, extra=Extra.ignore):
+
+class ActiveJobSubmission(BaseModel):
     """
     Specialized model for the cluster-agent to pull an active job_submission.
     """
@@ -376,3 +381,7 @@ class ActiveJobSubmission(BaseModel, extra=Extra.ignore):
     id: int
     job_submission_name: str
     slurm_job_id: int
+
+    class Config:
+        extra = Extra.ignore
+        orm_mode = True

@@ -4,7 +4,6 @@ Router for the Application resource.
 from pathlib import PurePath
 from typing import List, Optional, Union
 
-from armasec import TokenPayload
 from fastapi import APIRouter, Depends, File, Header, HTTPException, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
@@ -23,31 +22,31 @@ from jobbergate_api.apps.job_scripts.models import job_scripts_table
 from jobbergate_api.apps.permissions import Permissions, check_owner
 from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, ok_response, package_response
-from jobbergate_api.security import IdentityClaims, guard
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,
-    database,
+    SecureSession,
+    fetch_instance,
     render_sql,
     search_clause,
+    secure_session,
     sort_clause,
 )
 
 router = APIRouter()
 
 
-async def _fetch_application_by_id(application_id: int) -> ApplicationPartialResponse:
+async def _fetch_application_by_id(
+    secure_session: SecureSession, application_id: int
+) -> ApplicationPartialResponse:
     """
     Fetch an application from the database by its id.
     """
-    select_query = applications_table.select().where(applications_table.c.id == application_id)
-    raw_application = await database.fetch_one(select_query)
-
-    if not raw_application:
-        message = f"Application {application_id=} not found."
-        logger.error(message)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
-
-    return ApplicationPartialResponse.parse_obj(raw_application)
+    return await fetch_instance(
+        secure_session.session,
+        application_id,
+        applications_table,
+        ApplicationPartialResponse,
+    )
 
 
 @router.post(
@@ -58,25 +57,26 @@ async def _fetch_application_by_id(application_id: int) -> ApplicationPartialRes
 )
 async def applications_create(
     application: ApplicationCreateRequest,
-    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
+    secure_session: SecureSession = Depends(secure_session(Permissions.APPLICATIONS_EDIT)),
 ):
     """
     Create new applications using an authenticated user token.
     """
     logger.debug(f"Creating {application=}")
 
-    identity_claims = IdentityClaims.from_token_payload(token_payload)
     create_dict = dict(
         **application.dict(exclude_unset=True),
-        application_owner_email=identity_claims.email,
+        application_owner_email=secure_session.identity_payload.email,
     )
 
     logger.debug("Inserting application")
 
     try:
-        insert_query = applications_table.insert().returning(applications_table)
-        logger.trace(f"insert_query = {render_sql(insert_query)}")
-        application_data = await database.fetch_one(query=insert_query, values=create_dict)
+        insert_query = applications_table.insert().values(**create_dict).returning(applications_table)
+
+        logger.debug(f"insert_query = {render_sql(secure_session.session, insert_query)}")
+        raw_data = await secure_session.session.execute(insert_query)
+        application_data = raw_data.one()
 
     except INTEGRITY_CHECK_EXCEPTIONS as e:
         logger.error(f"INTEGRITY_CHECK_EXCEPTIONS: {str(e)}")
@@ -96,7 +96,7 @@ async def applications_upload(
     application_id: int = Query(..., description="id of the application for which to upload a file"),
     upload_files: List[UploadFile] = File(..., description="The application files to be uploaded"),
     content_length: int = Header(...),
-    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
+    secure_session: SecureSession = Depends(secure_session(Permissions.APPLICATIONS_EDIT)),
 ):
     """
     Upload application files using an authenticated user token.
@@ -111,9 +111,13 @@ async def applications_upload(
             detail=message,
         )
 
-    identity_claims = IdentityClaims.from_token_payload(token_payload)
-    application = await _fetch_application_by_id(application_id)
-    check_owner(application.application_owner_email, identity_claims.email, application_id, "application")
+    application = await _fetch_application_by_id(secure_session, application_id)
+    check_owner(
+        application.application_owner_email,
+        secure_session.identity_payload.email,
+        application_id,
+        "application",
+    )
 
     ApplicationFiles.get_from_upload_files(upload_files).write_to_s3(application_id)
 
@@ -123,8 +127,8 @@ async def applications_upload(
         .values(dict(application_uploaded=True))
     )
 
-    logger.trace(f"update_query = {render_sql(update_query)}")
-    await database.execute(update_query)
+    logger.trace(f"update_query = {render_sql(secure_session.session, update_query)}")
+    await secure_session.session.execute(update_query)
 
 
 @router.patch(
@@ -140,12 +144,16 @@ async def update_application_source_file(
     source_file: Union[UploadFile, None] = File(default=None),
     config_file: Union[UploadFile, None] = File(default=None),
     template_files: Union[List[UploadFile], None] = None,
-    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
+    secure_session: SecureSession = Depends(secure_session(Permissions.APPLICATIONS_EDIT)),
 ):
     """Update the application files individually."""
-    identity_claims = IdentityClaims.from_token_payload(token_payload)
-    application = await _fetch_application_by_id(application_id)
-    check_owner(application.application_owner_email, identity_claims.email, application_id, "application")
+    application = await _fetch_application_by_id(secure_session, application_id)
+    check_owner(
+        application.application_owner_email,
+        secure_session.identity_payload.email,
+        application_id,
+        "application",
+    )
 
     # TODO: limit by file size
     ApplicationFiles(
@@ -169,16 +177,20 @@ async def update_application_source_file(
 )
 async def applications_delete_upload(
     application_id: int = Query(..., description="id of the application for which to delete the file"),
-    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
+    secure_session: SecureSession = Depends(secure_session(Permissions.APPLICATIONS_EDIT)),
 ):
     """
     Delete application files using an authenticated user token.
     """
     logger.debug(f"Preparing to delete files for {application_id=}")
 
-    identity_claims = IdentityClaims.from_token_payload(token_payload)
-    application = await _fetch_application_by_id(application_id)
-    check_owner(application.application_owner_email, identity_claims.email, application_id, "application")
+    application = await _fetch_application_by_id(secure_session, application_id)
+    check_owner(
+        application.application_owner_email,
+        secure_session.identity_payload.email,
+        application_id,
+        "application",
+    )
 
     if not application.application_uploaded:
         logger.debug(f"Trying to delete an applications that was not uploaded ({application_id=})")
@@ -192,8 +204,8 @@ async def applications_delete_upload(
         .values(dict(application_uploaded=False))
     )
 
-    logger.trace(f"update_query = {render_sql(update_query)}")
-    await database.execute(update_query)
+    logger.trace(f"update_query = {render_sql(secure_session.session, update_query)}")
+    await secure_session.session.execute(update_query)
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -205,14 +217,18 @@ async def applications_delete_upload(
 )
 async def application_delete(
     application_id: int = Query(..., description="id of the application to delete"),
-    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
+    secure_session: SecureSession = Depends(secure_session(Permissions.APPLICATIONS_EDIT)),
 ):
     """
     Delete application from the database and S3 given its id.
     """
-    identity_claims = IdentityClaims.from_token_payload(token_payload)
-    application = await _fetch_application_by_id(application_id)
-    check_owner(application.application_owner_email, identity_claims.email, application_id, "application")
+    application = await _fetch_application_by_id(secure_session, application_id)
+    check_owner(
+        application.application_owner_email,
+        secure_session.identity_payload.email,
+        application_id,
+        "application",
+    )
 
     logger.debug(f"Orphaning job_scripts rendered from application {application_id=}")
     update_query = (
@@ -220,17 +236,13 @@ async def application_delete(
         .where(job_scripts_table.c.application_id == application_id)
         .values(dict(application_id=None))
     )
-
-    logger.trace(f"update_query = {render_sql(update_query)}")
-    await database.execute(update_query)
+    logger.debug(f"update_query = {render_sql(secure_session.session, update_query)}")
+    await secure_session.session.execute(update_query)
 
     logger.debug(f"Preparing to delete {application_id=} from the database and S3")
-
-    where_stmt = applications_table.c.id == application_id
-    delete_query = applications_table.delete().where(where_stmt)
-    logger.trace(f"delete_query = {render_sql(delete_query)}")
-
-    await database.execute(delete_query)
+    delete_query = applications_table.delete().where(applications_table.c.id == application_id)
+    logger.trace(f"delete_query = {render_sql(secure_session.session, delete_query)}")
+    await secure_session.session.execute(delete_query)
 
     ApplicationFiles.delete_from_s3(application_id)
 
@@ -244,7 +256,7 @@ async def application_delete(
 )
 async def application_delete_by_identifier(
     identifier: str = Query(..., description="identifier of the application to delete"),
-    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
+    secure_session: SecureSession = Depends(secure_session(Permissions.APPLICATIONS_EDIT)),
 ):
     """
     Delete application from the database and S3 given it's identifier.
@@ -253,9 +265,10 @@ async def application_delete_by_identifier(
 
     where_stmt = applications_table.c.application_identifier == identifier
     get_query = applications_table.select().where(where_stmt)
-    logger.trace(f"get_query = {render_sql(get_query)}")
+    logger.trace(f"get_query = {render_sql(secure_session.session, get_query)}")
 
-    raw_application = await database.fetch_one(get_query)
+    raw_result = await secure_session.session.execute(get_query)
+    raw_application = raw_result.one_or_none()
     if not raw_application:
         message = f"Application {identifier=} not found."
         logger.warning(message)
@@ -263,15 +276,19 @@ async def application_delete_by_identifier(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=message,
         )
-    application = ApplicationPartialResponse.parse_obj(raw_application)
+    application = ApplicationPartialResponse.from_orm(raw_application)
 
-    identity_claims = IdentityClaims.from_token_payload(token_payload)
-    check_owner(application.application_owner_email, identity_claims.email, application.id, "application")
+    check_owner(
+        application.application_owner_email,
+        secure_session.identity_payload.email,
+        application.id,
+        "application",
+    )
 
     delete_query = applications_table.delete().where(where_stmt)
-    logger.trace(f"delete_query = {render_sql(delete_query)}")
+    logger.trace(f"delete_query = {render_sql(secure_session.session, delete_query)}")
 
-    await database.execute(delete_query)
+    await secure_session.session.execute(delete_query)
 
     ApplicationFiles.delete_from_s3(application.id)
 
@@ -291,17 +308,18 @@ async def applications_list(
     sort_field: Optional[str] = Query(None),
     sort_ascending: bool = Query(True),
     pagination: Pagination = Depends(),
-    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW)),
+    secure_session: SecureSession = Depends(secure_session(Permissions.APPLICATIONS_VIEW)),
 ):
     """
     List all applications.
     """
     logger.debug("Preparing to list the Applications")
 
-    identity_claims = IdentityClaims.from_token_payload(token_payload)
     query = applications_table.select()
     if user:
-        query = query.where(applications_table.c.application_owner_email == identity_claims.email)
+        query = query.where(
+            applications_table.c.application_owner_email == secure_session.identity_payload.email
+        )
     if not all:
         query = query.where(not_(applications_table.c.application_identifier.is_(None)))
     if not include_archived:
@@ -311,18 +329,18 @@ async def applications_list(
     if sort_field is not None:
         query = query.order_by(sort_clause(sort_field, sortable_fields, sort_ascending))
 
-    logger.trace(f"query = {render_sql(query)}")
-    return await package_response(ApplicationPartialResponse, query, pagination)
+    logger.trace(f"query = {render_sql(secure_session.session, query)}")
+    return await package_response(secure_session.session, ApplicationPartialResponse, query, pagination)
 
 
 @router.get(
     "/applications/{application_identification}",
     description="Endpoint to return an application given the id",
     response_model=ApplicationResponse,
-    dependencies=[Depends(guard.lockdown(Permissions.APPLICATIONS_VIEW))],
 )
 async def applications_get_by_id(
     application_identification: Union[int, str] = Query(None),
+    secure_session: SecureSession = Depends(secure_session(Permissions.APPLICATIONS_VIEW)),
 ):
     """
     Return the application given it's id (when int) or identifier (when str).
@@ -341,9 +359,11 @@ async def applications_get_by_id(
             detail="application_identification must be provided as int or str",
         )
 
-    logger.trace(f"get_query = {render_sql(query)}")
+    logger.trace(f"get_query = {render_sql(secure_session.session, query)}")
 
-    application_data = await database.fetch_one(query)
+    raw_result = await secure_session.session.execute(query)
+    application_data = raw_result.one_or_none()
+
     if not application_data:
         message = f"Application {application_identification=} not found."
         logger.warning(message)
@@ -352,21 +372,15 @@ async def applications_get_by_id(
             detail=message,
         )
 
-    logger.trace(f"Application data: {dict(application_data)}")
+    application = ApplicationResponse.from_orm(application_data)
 
-    if application_data["application_uploaded"]:
-        response = ApplicationResponse(
-            **application_data,
-            **ApplicationFiles.get_from_s3(application_data["id"]).dict(
-                by_alias=True,
-                exclude_defaults=True,
-                exclude_unset=True,
-            ),
-        )
-    else:
-        response = ApplicationResponse(**application_data)
+    if application.application_uploaded:
+        application_files = ApplicationFiles.get_from_s3(application.id)
+        application.application_config = application_files.config_file
+        application.application_source_file = application_files.source_file
+        application.application_templates = application_files.templates
 
-    return response
+    return application
 
 
 @router.put(
@@ -378,15 +392,19 @@ async def applications_get_by_id(
 async def application_update(
     application_id: int,
     application: ApplicationUpdateRequest,
-    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.APPLICATIONS_EDIT)),
+    secure_session: SecureSession = Depends(secure_session(Permissions.APPLICATIONS_EDIT)),
 ):
     """
     Update an application given it's id.
     """
     logger.debug(f"Preparing to update {application_id=}")
-    identity_claims = IdentityClaims.from_token_payload(token_payload)
-    old_application = await _fetch_application_by_id(application_id)
-    check_owner(old_application.application_owner_email, identity_claims.email, application_id, "application")
+    old_application = await _fetch_application_by_id(secure_session, application_id)
+    check_owner(
+        old_application.application_owner_email,
+        secure_session.identity_payload.email,
+        application_id,
+        "application",
+    )
 
     update_query = (
         applications_table.update()
@@ -394,15 +412,15 @@ async def application_update(
         .values(application.dict(exclude_unset=True))
         .returning(applications_table)
     )
-    logger.trace(f"update_query = {render_sql(update_query)}")
+    logger.trace(f"update_query = {render_sql(secure_session.session, update_query)}")
 
-    async with database.transaction():
-        try:
-            application_data = await database.fetch_one(update_query)
+    try:
+        raw_result = await secure_session.session.execute(update_query)
 
-        except INTEGRITY_CHECK_EXCEPTIONS as e:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except INTEGRITY_CHECK_EXCEPTIONS as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
+    application_data = raw_result.one()
     return application_data
 
 
