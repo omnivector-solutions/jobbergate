@@ -4,8 +4,7 @@ from unittest import mock
 import httpx
 import pytest
 
-from jobbergate_cli.constants import JOBBERGATE_APPLICATION_CONFIG_FILE_NAME, JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-from jobbergate_cli.schemas import ApplicationResponse, ListResponseEnvelope, Pagination
+from jobbergate_cli.schemas import ApplicationResponse, ListResponseEnvelope
 from jobbergate_cli.subapps.applications.app import (
     HIDDEN_FIELDS,
     create,
@@ -29,14 +28,15 @@ def test_list_all__makes_request_and_renders_results(
     cli_runner,
     mocker,
 ):
-    respx_mock.get(f"{dummy_domain}/jobbergate/applications").mock(
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(
-                results=dummy_application_data,
-                pagination=dict(
-                    total=3,
-                ),
+                items=dummy_application_data,
+                total=len(dummy_application_data),
+                page=1,
+                size=len(dummy_application_data),
+                pages=1,
             ),
         ),
     )
@@ -47,8 +47,11 @@ def test_list_all__makes_request_and_renders_results(
     mocked_render.assert_called_once_with(
         dummy_context,
         ListResponseEnvelope(
-            results=dummy_application_data,
-            pagination=Pagination(total=3),
+            items=dummy_application_data,
+            total=len(dummy_application_data),
+            page=1,
+            size=len(dummy_application_data),
+            pages=1,
         ),
         title="Applications List",
         style_mapper=style_mapper,
@@ -65,7 +68,7 @@ def test_get_one__success__using_id(
     cli_runner,
     mocker,
 ):
-    respx_mock.get(f"{dummy_domain}/jobbergate/applications/1").mock(
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/1").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dummy_application_data[0],
@@ -92,7 +95,7 @@ def test_get_one__success__using_identifier(
     cli_runner,
     mocker,
 ):
-    respx_mock.get(f"{dummy_domain}/jobbergate/applications/dummy").mock(
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/dummy").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dummy_application_data[0],
@@ -136,9 +139,8 @@ def test_create__success(
 ):
     response_data = dummy_application_data[0]
     response_data["application_uploaded"] = False
-    application_id = response_data["id"]
 
-    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/applications")
+    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-script-templates")
     create_route.mock(
         return_value=httpx.Response(
             httpx.codes.CREATED,
@@ -146,8 +148,8 @@ def test_create__success(
         ),
     )
 
-    upload_route = respx_mock.post(f"{dummy_domain}/jobbergate/applications/{application_id}/upload")
-    upload_route.mock(return_value=httpx.Response(httpx.codes.CREATED))
+    mocked_upload = mocker.patch("jobbergate_cli.subapps.applications.app.upload_application")
+    mocked_upload.return_value = True
 
     test_app = make_test_app("create", create)
     mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
@@ -165,7 +167,7 @@ def test_create__success(
     )
     assert result.exit_code == 0, f"create failed: {result.stdout}"
     assert create_route.called
-    assert upload_route.called
+    assert mocked_upload.called
 
     mocked_render.assert_called_once_with(
         dummy_context,
@@ -186,10 +188,9 @@ def test_create__warns_but_does_not_abort_if_upload_fails(
     mocker,
 ):
     response_data = dummy_application_data[0]
-    response_data["application_uploaded"] = False
     application_id = response_data["id"]
 
-    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/applications")
+    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-script-templates")
     create_route.mock(
         return_value=httpx.Response(
             httpx.codes.CREATED,
@@ -197,7 +198,7 @@ def test_create__warns_but_does_not_abort_if_upload_fails(
         ),
     )
 
-    upload_route = respx_mock.post(f"{dummy_domain}/jobbergate/applications/{application_id}/upload")
+    upload_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}")
     upload_route.mock(
         return_value=httpx.Response(httpx.codes.BAD_REQUEST),
     )
@@ -240,10 +241,9 @@ def test_update__success(
     mocker,
 ):
     response_data = dummy_application_data[0]
-    response_data["application_uploaded"] = False
     application_id = response_data["id"]
 
-    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/applications/{application_id}")
+    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}")
     update_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -251,9 +251,15 @@ def test_update__success(
         ),
     )
 
-    upload_route = respx_mock.post(f"{dummy_domain}/jobbergate/applications/{application_id}/upload")
-    upload_route.mock(
-        return_value=httpx.Response(httpx.codes.CREATED),
+    mocked_upload = mocker.patch("jobbergate_cli.subapps.applications.app.upload_application")
+    mocked_upload.return_value = True
+
+    get_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}")
+    get_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=response_data,
+        ),
     )
 
     test_app = make_test_app("update", update)
@@ -272,11 +278,12 @@ def test_update__success(
     )
     assert result.exit_code == 0, f"update failed: {result.stdout}"
     assert update_route.called
-    assert upload_route.called
+    assert get_route.called
+    assert mocked_upload.called
 
     mocked_render.assert_called_once_with(
         dummy_context,
-        {**response_data, "application_uploaded": True},
+        ApplicationResponse(**response_data),
         title="Updated Application",
         hidden_fields=HIDDEN_FIELDS,
     )
@@ -292,10 +299,9 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(
     mocker,
 ):
     response_data = dummy_application_data[0]
-    response_data["application_uploaded"] = False
     application_id = response_data["id"]
 
-    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/applications/{application_id}")
+    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}")
     update_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -303,10 +309,15 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(
         ),
     )
 
-    upload_route = respx_mock.post(f"{dummy_domain}/jobbergate/applications/{application_id}/upload")
-    upload_route.mock(
-        return_value=httpx.Response(httpx.codes.CREATED),
+    get_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}")
+    get_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=response_data,
+        ),
     )
+
+    mocked_upload = mocker.patch("jobbergate_cli.subapps.applications.app.upload_application")
 
     test_app = make_test_app("update", update)
     mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
@@ -323,11 +334,11 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(
     )
     assert result.exit_code == 0, f"update failed: {result.stdout}"
     assert update_route.called
-    assert not upload_route.called
+    assert mocked_upload.not_called
 
     mocked_render.assert_called_once_with(
         dummy_context,
-        {**response_data, "application_uploaded": False},
+        ApplicationResponse(**response_data),
         title="Updated Application",
         hidden_fields=HIDDEN_FIELDS,
     )
@@ -344,10 +355,9 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
     mocker,
 ):
     response_data = dummy_application_data[0]
-    response_data["application_uploaded"] = False
     application_id = response_data["id"]
 
-    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/applications/{application_id}")
+    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}")
     update_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -355,10 +365,15 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
         ),
     )
 
-    upload_route = respx_mock.post(f"{dummy_domain}/jobbergate/applications/{application_id}/upload")
-    upload_route.mock(
-        return_value=httpx.Response(httpx.codes.BAD_REQUEST),
+    get_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}")
+    get_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=response_data,
+        ),
     )
+    mocked_upload = mocker.patch("jobbergate_cli.subapps.applications.app.upload_application")
+    mocked_upload.return_value = False
 
     test_app = make_test_app("update", update)
     mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
@@ -376,19 +391,19 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
     )
     assert result.exit_code == 0, f"update failed: {result.stdout}"
     assert update_route.called
-    assert upload_route.called
+    assert mocked_upload.called
     assert "application files could not be uploaded" in result.stdout
 
     mocked_render.assert_called_once_with(
         dummy_context,
-        {**response_data, "application_uploaded": False},
+        ApplicationResponse(**response_data),
         title="Updated Application",
         hidden_fields=HIDDEN_FIELDS,
     )
 
 
 def test_delete__success(respx_mock, make_test_app, dummy_domain, cli_runner):
-    delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/applications/1")
+    delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/job-script-templates/1")
     delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
 
     test_app = make_test_app("delete", delete)
@@ -416,16 +431,15 @@ class TestDownloadApplicationFiles:
         test_app,
         dummy_application_data,
         dummy_domain,
+        dummy_context,
         cli_runner,
         mocker,
         tmp_path,
-        dummy_config_source,
-        dummy_module_source,
     ):
         """
         Test that the download application files subcommand works as expected.
         """
-        respx_mock.get(f"{dummy_domain}/jobbergate/applications/1").mock(
+        respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/1").mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
                 json=dummy_application_data[0],
@@ -433,23 +447,26 @@ class TestDownloadApplicationFiles:
         )
         mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.terminal_message")
 
+        list_of_files = [f"file-{i}" for i in range(3)]
+
+        mocked_save_files = mocker.patch(
+            "jobbergate_cli.subapps.applications.app.save_application_files", return_value=list_of_files
+        )
+
         with mock.patch.object(pathlib.Path, "cwd", return_value=tmp_path):
             result = cli_runner.invoke(test_app, shlex.split("download --id=1"))
 
-        assert result.exit_code == 0, f"download failed: {result.stdout}"
-        mocked_render.assert_called_once_with(
-            "A total of 2 application files were successfully downloaded.",
-            subject="Application download succeeded",
+        assert mocked_save_files.called_with(
+            dummy_context,
+            ApplicationResponse(**dummy_application_data[0]),
+            tmp_path,
         )
 
-        desired_set_of_files = {
-            tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
-            tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
-        }
-        assert set(tmp_path.rglob("*")) == desired_set_of_files
-
-        assert (tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME).read_text() == dummy_config_source
-        assert (tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME).read_text() == dummy_module_source
+        assert result.exit_code == 0, f"download failed: {result.stdout}"
+        mocked_render.assert_called_once_with(
+            f"A total of {len(list_of_files)} application files were successfully downloaded.",
+            subject="Application download succeeded",
+        )
 
     def test_download__success__using_identifier(
         self,
@@ -457,16 +474,18 @@ class TestDownloadApplicationFiles:
         test_app,
         dummy_application_data,
         dummy_domain,
+        dummy_context,
         cli_runner,
         mocker,
         tmp_path,
-        dummy_config_source,
-        dummy_module_source,
     ):
         """
         Test that the download application files subcommand works as expected.
         """
-        respx_mock.get(f"{dummy_domain}/jobbergate/applications/dummy").mock(
+        application_data = dummy_application_data[0]
+        identifier = application_data["identifier"]
+
+        respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{identifier}").mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
                 json=dummy_application_data[0],
@@ -474,23 +493,26 @@ class TestDownloadApplicationFiles:
         )
         mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.terminal_message")
 
+        list_of_files = [f"file-{i}" for i in range(3)]
+
+        mocked_save_files = mocker.patch(
+            "jobbergate_cli.subapps.applications.app.save_application_files", return_value=list_of_files
+        )
+
         with mock.patch.object(pathlib.Path, "cwd", return_value=tmp_path):
-            result = cli_runner.invoke(test_app, shlex.split("download --identifier=dummy"))
+            result = cli_runner.invoke(test_app, shlex.split(f"download --identifier={identifier}"))
+
+        assert mocked_save_files.called_with(
+            dummy_context,
+            ApplicationResponse(**dummy_application_data[0]),
+            tmp_path,
+        )
 
         assert result.exit_code == 0, f"download failed: {result.stdout}"
         mocked_render.assert_called_once_with(
-            "A total of 2 application files were successfully downloaded.",
+            f"A total of {len(list_of_files)} application files were successfully downloaded.",
             subject="Application download succeeded",
         )
-
-        desired_set_of_files = {
-            tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
-            tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
-        }
-        assert set(tmp_path.rglob("*")) == desired_set_of_files
-
-        assert (tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME).read_text() == dummy_config_source
-        assert (tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME).read_text() == dummy_module_source
 
     def test_download__fails_with_neither_id_or_identifier(self, test_app, cli_runner):
         """

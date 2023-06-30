@@ -18,8 +18,8 @@ def test_create_job_submission__success(
     seed_clusters,
 ):
     job_submission_data = dummy_job_submission_data[0]
-    job_submission_name = job_submission_data["job_submission_name"]
-    job_submission_description = job_submission_data["job_submission_description"]
+    job_submission_name = job_submission_data["name"]
+    job_submission_description = job_submission_data["description"]
 
     job_script_id = job_submission_data["job_script_id"]
 
@@ -53,8 +53,8 @@ def test_create_job_submission__with_explicit_cluster_name(
     seed_clusters,
 ):
     job_submission_data = dummy_job_submission_data[0]
-    job_submission_name = job_submission_data["job_submission_name"]
-    job_submission_description = job_submission_data["job_submission_description"]
+    job_submission_name = job_submission_data["name"]
+    job_submission_description = job_submission_data["description"]
 
     job_script_id = job_submission_data["job_script_id"]
 
@@ -91,8 +91,8 @@ def test_create_job_submission__with_default_cluster_name(
     tweak_settings,
 ):
     job_submission_data = dummy_job_submission_data[0]
-    job_submission_name = job_submission_data["job_submission_name"]
-    job_submission_description = job_submission_data["job_submission_description"]
+    job_submission_name = job_submission_data["name"]
+    job_submission_description = job_submission_data["description"]
 
     job_script_id = job_submission_data["job_script_id"]
 
@@ -127,8 +127,8 @@ def test_create_job_submission__throws_exception_with_no_explicit_or_default_clu
     attach_persona,
 ):
     job_submission_data = dummy_job_submission_data[0]
-    job_submission_name = job_submission_data["job_submission_name"]
-    job_submission_description = job_submission_data["job_submission_description"]
+    job_submission_name = job_submission_data["name"]
+    job_submission_description = job_submission_data["description"]
 
     job_script_id = job_submission_data["job_script_id"]
 
@@ -160,8 +160,8 @@ def test_create_job_submission__with_execution_dir(
     seed_clusters,
 ):
     job_submission_data = dummy_job_submission_data[0]
-    job_submission_name = job_submission_data["job_submission_name"]
-    job_submission_description = job_submission_data["job_submission_description"]
+    job_submission_name = job_submission_data["name"]
+    job_submission_description = job_submission_data["description"]
 
     job_script_id = job_submission_data["job_script_id"]
 

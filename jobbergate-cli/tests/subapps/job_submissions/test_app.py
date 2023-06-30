@@ -3,7 +3,7 @@ import shlex
 
 import httpx
 
-from jobbergate_cli.schemas import JobSubmissionResponse, ListResponseEnvelope, Pagination
+from jobbergate_cli.schemas import JobSubmissionResponse, ListResponseEnvelope
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS, create, delete, get_one, list_all, style_mapper
 from jobbergate_cli.text_tools import unwrap
 
@@ -17,8 +17,8 @@ def test_create(
     tmp_path,
 ):
     job_submission_data = JobSubmissionResponse(**dummy_job_submission_data[0])
-    job_submission_name = job_submission_data.job_submission_name
-    job_submission_description = job_submission_data.job_submission_description
+    job_submission_name = job_submission_data.name
+    job_submission_description = job_submission_data.description
     job_script_id = job_submission_data.id
 
     param_file_path = tmp_path / "param_file.json"
@@ -68,14 +68,15 @@ def test_list_all__makes_request_and_renders_results(
     cli_runner,
     mocker,
 ):
-    respx_mock.get(f"{dummy_domain}/jobbergate/job-submissions?all=false").mock(
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-submissions?user_only=true").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dict(
-                results=dummy_job_submission_data,
-                pagination=dict(
-                    total=3,
-                ),
+                items=dummy_job_submission_data,
+                total=len(dummy_job_submission_data),
+                page=1,
+                size=len(dummy_job_submission_data),
+                pages=1,
             ),
         ),
     )
@@ -86,8 +87,11 @@ def test_list_all__makes_request_and_renders_results(
     mocked_render.assert_called_once_with(
         dummy_context,
         ListResponseEnvelope(
-            results=dummy_job_submission_data,
-            pagination=Pagination(total=3, start=None, limit=None),
+            items=dummy_job_submission_data,
+            total=len(dummy_job_submission_data),
+            page=1,
+            size=len(dummy_job_submission_data),
+            pages=1,
         ),
         title="Job Submission List",
         style_mapper=style_mapper,

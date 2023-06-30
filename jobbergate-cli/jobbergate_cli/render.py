@@ -122,18 +122,18 @@ def render_list_results(
         # dump back to string
         serialized = envelope.json()
         deserialized = json.loads(serialized)
-        render_json(deserialized["results"])
+        render_json(deserialized["items"])
     else:
-        if envelope.pagination.total == 0:
+        if envelope.total == 0:
             terminal_message("There are no results to display", subject="Nothing here...")
             return
         if ctx.full_output or hidden_fields is None:
-            filtered_results = envelope.results
+            filtered_results = envelope.items
         else:
-            filtered_results = [{k: v for (k, v) in d.items() if k not in hidden_fields} for d in envelope.results]
+            filtered_results = [{k: v for (k, v) in d.items() if k not in hidden_fields} for d in envelope.items]
         first_row = filtered_results[0]
 
-        table = Table(title=title, caption=f"Total items: {envelope.pagination.total}")
+        table = Table(title=title, caption=f"Total items: {envelope.total}")
         if style_mapper is None:
             style_mapper = StyleMapper()
         for key in first_row.keys():
@@ -167,7 +167,7 @@ def render_dict(
     table.add_column("Key", header_style="bold yellow", style="yellow")
     table.add_column("Value", header_style="bold white", style="white")
 
-    for (key, value) in data.items():
+    for key, value in data.items():
         if key not in hidden_fields:
             table.add_row(key, str(value))
 

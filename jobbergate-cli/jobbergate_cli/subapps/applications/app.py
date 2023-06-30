@@ -13,19 +13,14 @@ from jobbergate_cli.exceptions import handle_abort
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
-from jobbergate_cli.subapps.applications.tools import (
-    fetch_application_data,
-    load_default_config,
-    save_application_files,
-    upload_application,
-)
+from jobbergate_cli.subapps.applications.tools import fetch_application_data, save_application_files, upload_application
 
 
 # TODO: move hidden field logic to the API
 HIDDEN_FIELDS = [
-    "application_config",
-    "application_source_file",
-    "application_templates",
+    "template_vars",
+    "template_files",
+    "workflow_file",
     "created_at",
     "updated_at",
 ]
@@ -79,8 +74,8 @@ def list_all(
     assert jg_ctx.client is not None
 
     params: Dict[str, Any] = dict(
-        all=show_all,
-        user=user_only,
+        include_null_identifier=show_all,
+        user_only=user_only,
     )
     if search is not None:
         params["search"] = search
@@ -93,7 +88,7 @@ def list_all(
         ListResponseEnvelope,
         make_request(
             jg_ctx.client,
-            "/jobbergate/applications",
+            "/jobbergate/job-script-templates",
             "GET",
             expected_status=200,
             abort_message="Couldn't retrieve applications list from API",
@@ -161,13 +156,13 @@ def create(
     """
     Create a new application.
     """
-    req_data = load_default_config()
-    req_data["application_name"] = name
+    req_data = dict()
+    req_data["name"] = name
     if identifier:
-        req_data["application_identifier"] = identifier
+        req_data["identifier"] = identifier
 
     if application_desc:
-        req_data["application_description"] = application_desc
+        req_data["description"] = application_desc
 
     jg_ctx: JobbergateContext = ctx.obj
 
@@ -178,7 +173,7 @@ def create(
         Dict[str, Any],
         make_request(
             jg_ctx.client,
-            "/jobbergate/applications",
+            "/jobbergate/job-script-templates",
             "POST",
             expected_status=201,
             abort_message="Request to create application was not accepted by the API",
@@ -190,6 +185,7 @@ def create(
 
     successful_upload = upload_application(jg_ctx, application_path, application_id)
     if not successful_upload:
+        result["application_uploaded"] = False
         terminal_message(
             f"""
             The application files could not be uploaded.
@@ -233,6 +229,10 @@ def update(
         None,
         help="Optional new application description to be set",
     ),
+    application_name: Optional[str] = typer.Option(
+        None,
+        help="Optional new application name to be set",
+    ),
 ):
     """
     Update an existing application.
@@ -240,28 +240,32 @@ def update(
     req_data = dict()
 
     if identifier:
-        req_data["application_identifier"] = identifier
+        req_data["identifier"] = identifier
 
     if application_desc:
-        req_data["application_description"] = application_desc
+        req_data["description"] = application_desc
+
+    if application_name:
+        req_data["name"] = application_name
 
     jg_ctx: JobbergateContext = ctx.obj
 
     # Make static type checkers happy
     assert jg_ctx.client is not None
 
-    result = cast(
-        Dict[str, Any],
-        make_request(
-            jg_ctx.client,
-            f"/jobbergate/applications/{id}",
-            "PUT",
-            expected_status=200,
-            abort_message="Request to update application was not accepted by the API",
-            support=True,
-            json=req_data,
-        ),
-    )
+    if req_data:
+        cast(
+            Dict[str, Any],
+            make_request(
+                jg_ctx.client,
+                f"/jobbergate/job-script-templates/{id}",
+                "PUT",
+                expect_response=False,
+                abort_message="Request to update application was not accepted by the API",
+                support=True,
+                json=req_data,
+            ),
+        )
 
     if application_path is not None:
         successful_upload = upload_application(jg_ctx, application_path, id)
@@ -276,8 +280,8 @@ def update(
                 subject="File upload failed",
                 color="yellow",
             )
-        else:
-            result["application_uploaded"] = True
+
+    result = fetch_application_data(jg_ctx, id=id)
 
     render_single_result(
         jg_ctx,
@@ -307,7 +311,7 @@ def delete(
     # Delete the upload. The API will also remove the application data files
     make_request(
         jg_ctx.client,
-        f"/jobbergate/applications/{id}",
+        f"/jobbergate/job-script-templates/{id}",
         "DELETE",
         expected_status=204,
         expect_response=False,
@@ -339,8 +343,10 @@ def download_files(
     Download the files from an application to the current working directory.
     """
     jg_ctx: JobbergateContext = ctx.obj
+
     result = fetch_application_data(jg_ctx, id=id, identifier=identifier)
     saved_files = save_application_files(
+        jg_ctx,
         application_data=result,
         destination_path=pathlib.Path.cwd(),
     )

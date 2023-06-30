@@ -1,8 +1,10 @@
+import datetime
 import importlib
 import pathlib
 
 import httpx
 import pytest
+import respx
 
 from jobbergate_cli.constants import (
     JOBBERGATE_APPLICATION_CONFIG,
@@ -10,29 +12,23 @@ from jobbergate_cli.constants import (
     JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
 )
 from jobbergate_cli.exceptions import Abort
-from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig
+from jobbergate_cli.schemas import (
+    ApplicationResponse,
+    JobbergateApplicationConfig,
+    TemplateFileResponse,
+    WorkflowFileResponse,
+)
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.tools import (
     execute_application,
     fetch_application_data,
-    get_upload_files,
+    load_application_config_from_source,
     load_application_data,
     load_application_from_source,
     load_default_config,
     save_application_files,
+    upload_application,
 )
-from jobbergate_cli.text_tools import dedent
-
-
-def test_get_upload_files__fails_if_application_directory_does_not_exist(tmp_path):
-    application_path = tmp_path / "dummy"
-
-    with pytest.raises(
-        Abort,
-        match=f"Application directory {application_path} does not exist",
-    ):
-        with get_upload_files(application_path):
-            pass
 
 
 def test_load_default_config():
@@ -50,7 +46,7 @@ def test_fetch_application_data__success__using_id(
 ):
     app_data = dummy_application_data[0]
     app_id = app_data["id"]
-    fetch_route = respx_mock.get(f"{dummy_domain}/jobbergate/applications/{app_id}")
+    fetch_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{app_id}")
     fetch_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -70,8 +66,8 @@ def test_fetch_application_data__success__using_identifier(
     dummy_domain,
 ):
     app_data = dummy_application_data[0]
-    app_identifier = app_data["application_identifier"]
-    fetch_route = respx_mock.get(f"{dummy_domain}/jobbergate/applications/{app_identifier}")
+    app_identifier = app_data["identifier"]
+    fetch_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{app_identifier}")
     fetch_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -95,65 +91,66 @@ def test_fetch_application_data__fails_with_neither_id_or_identifier(dummy_conte
 
 
 def test_load_application_data__success(dummy_module_source, dummy_config_source):
-    app_data = ApplicationResponse(
-        id=13,
-        application_name="dummy",
-        application_owner_email="dummy@dummy.org",
-        application_uploaded=True,
-        application_source_file=dummy_module_source,
-        application_config=dummy_config_source,
-    )
-    (app_config, app_module) = load_application_data(app_data)
-    assert isinstance(app_module, JobbergateApplicationBase)
-    assert isinstance(app_config, JobbergateApplicationConfig)
-
-
-def test_load_application_data__fails_if_application_module_cannot_be_loaded_from_source(dummy_config_source):
-    app_data = ApplicationResponse(
-        id=13,
-        application_name="dummy",
-        application_owner_email="dummy@dummy.org",
-        application_uploaded=True,
-        application_source_file="Not python at all",
-        application_config=dummy_config_source,
-    )
-
-    with pytest.raises(Abort, match="The application source fetched from the API is not valid"):
-        load_application_data(app_data)
-
-
-def test_load_application_data__fails_if_application_config_is_not_valid_YAML(dummy_module_source):
-    app_data = ApplicationResponse(
-        id=13,
-        application_name="dummy",
-        application_owner_email="dummy@dummy.org",
-        application_uploaded=True,
-        application_source_file=dummy_module_source,
-        application_config=":",
-    )
-
-    with pytest.raises(Abort, match="The application config fetched from the API is not valid"):
-        load_application_data(app_data)
-
-
-def test_load_application_data__fails_if_application_config_is_not_valid_JobbergateApplicationConfig(
-    dummy_module_source,
-):
-    app_data = ApplicationResponse(
-        id=13,
-        application_name="dummy",
-        application_owner_email="dummy@dummy.org",
-        application_uploaded=True,
-        application_file=dummy_module_source,
-        application_config=dedent(
-            """
-            foo: bar
-            """
+    expected_config = load_application_config_from_source(dummy_config_source)
+    application_data = ApplicationResponse(
+        id=1,
+        name="dummy",
+        owner_email="dummy@email.com",
+        created_at=datetime.datetime.now(),
+        updated_at=datetime.datetime.now(),
+        template_vars=expected_config.application_config,
+        workflow_file=WorkflowFileResponse(
+            runtime_config=expected_config.jobbergate_config.dict(),
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+            path="jobbergate/job-script-templates/1/upload/workflow",
         ),
     )
 
-    with pytest.raises(Abort, match="The application config fetched from the API is not valid"):
-        load_application_data(app_data)
+    actual_config, app_module = load_application_data(application_data, dummy_module_source)
+    assert isinstance(app_module, JobbergateApplicationBase)
+    assert isinstance(actual_config, JobbergateApplicationConfig)
+    assert actual_config == expected_config
+
+
+def test_load_application_data__fails_if_application_module_cannot_be_loaded_from_source(dummy_config_source):
+    expected_config = load_application_config_from_source(dummy_config_source)
+    application_data = ApplicationResponse(
+        id=1,
+        name="dummy",
+        owner_email="dummy@email.com",
+        created_at=datetime.datetime.now(),
+        updated_at=datetime.datetime.now(),
+        template_vars=expected_config.application_config,
+        workflow_file=WorkflowFileResponse(
+            runtime_config=expected_config.jobbergate_config.dict(),
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+            path="jobbergate/job-script-templates/1/upload/workflow",
+        ),
+    )
+
+    with pytest.raises(Abort, match="The application source fetched from the API is not valid"):
+        load_application_data(application_data, "Not Python at all")
+
+
+def test_load_application_data__fails_if_application_config_is_not_valid_YAML(
+    dummy_module_source,
+    dummy_config_source,
+):
+    expected_config = load_application_config_from_source(dummy_config_source)
+    application_data = ApplicationResponse(
+        id=1,
+        name="dummy",
+        owner_email="dummy@email.com",
+        created_at=datetime.datetime.now(),
+        updated_at=datetime.datetime.now(),
+        template_vars=expected_config.application_config,
+        workflow_file=None,
+    )
+
+    with pytest.raises(Abort, match="No workflow file found in application data"):
+        load_application_data(application_data, dummy_module_source)
 
 
 def test_load_application_from_source__success(dummy_module_source, dummy_jobbergate_application_config):
@@ -250,29 +247,99 @@ def test_execute_application__with_fast_mode(
     )
 
 
+class TestUploadApplicationFiles:
+    """Test the upload_application_files function."""
+
+    application_id = 1
+
+    @pytest.fixture(scope="function")
+    def mocked_routes(self, dummy_domain):
+        app_mock = respx.mock(base_url=dummy_domain)
+
+        app_mock.put(
+            path=f"/jobbergate/job-script-templates/{self.application_id}",
+            name="update",
+        ).respond(httpx.codes.OK)
+
+        app_mock.put(
+            path=f"/jobbergate/job-script-templates/{self.application_id}/upload/template/ENTRYPOINT",
+            name="upload_template",
+        ).respond(httpx.codes.OK)
+
+        app_mock.put(
+            path=f"/jobbergate/job-script-templates/{self.application_id}/upload/workflow",
+            name="upload_workflow",
+        ).respond(httpx.codes.OK)
+
+        yield app_mock
+
+    @respx.mock(assert_all_called=True, assert_all_mocked=True)
+    def test_upload_application__success(
+        self,
+        dummy_application_dir,
+        dummy_context,
+        mocked_routes,
+    ):
+        with mocked_routes:
+            result = upload_application(dummy_context, dummy_application_dir, self.application_id)
+
+        assert result is True
+
+    @respx.mock(assert_all_mocked=True)
+    def test_upload_application__fails_directory_does_not_exists(self, dummy_application_dir, dummy_context):
+        application_path = dummy_application_dir / "does-not-exist"
+        with pytest.raises(Abort, match="Application directory"):
+            upload_application(dummy_context, application_path, self.application_id)
+
+    @respx.mock(assert_all_mocked=True)
+    def test_upload_application__fails_config_file_not_found(self, dummy_application_dir, dummy_context):
+        file_path = dummy_application_dir / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
+        file_path.unlink()
+        with pytest.raises(Abort, match="Application config file"):
+            upload_application(dummy_context, dummy_application_dir, self.application_id)
+
+    @respx.mock(assert_all_mocked=True)
+    def test_upload_application__fails_module_file_not_found(self, dummy_application_dir, dummy_context):
+        file_path = dummy_application_dir / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+        file_path.unlink()
+        with pytest.raises(Abort, match="Application module file"):
+            upload_application(dummy_context, dummy_application_dir, self.application_id)
+
+    @respx.mock(assert_all_mocked=True)
+    def test_upload_application__fails_no_template_found(self, dummy_application_dir, dummy_context):
+        file_path = dummy_application_dir / "templates" / "job-script-template.py.j2"
+        file_path.unlink()
+        with pytest.raises(Abort, match="No template files found in"):
+            upload_application(dummy_context, dummy_application_dir, self.application_id)
+
+
 class TestDownloadApplicationFiles:
     """
     Test the save_application_files function.
     """
 
-    def test_save_application_files__no_files(self, tmp_path):
+    def test_save_application_files__no_files(self, tmp_path, dummy_context):
         """
         Test that the function returns an empty list if there are no files to download.
         """
         application_data = ApplicationResponse(
             id=1,
-            application_name="dummy",
-            application_owner_email="dummy@email.com",
-            application_uploaded=True,
+            name="dummy",
+            owner_email="dummy@email.com",
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
         )
 
         desired_list_of_files = []
 
-        assert save_application_files(application_data, tmp_path) == desired_list_of_files
+        assert save_application_files(dummy_context, application_data, tmp_path) == desired_list_of_files
         assert list(tmp_path.rglob("*")) == desired_list_of_files
 
     def test_save_application_files__all_files(
         self,
+        respx_mock,
+        dummy_domain,
+        dummy_context,
         tmp_path,
         dummy_module_source,
         dummy_config_source,
@@ -281,25 +348,63 @@ class TestDownloadApplicationFiles:
         """
         Test that the function downloads all files.
         """
+
+        application_config = load_application_config_from_source(dummy_config_source)
+
         application_data = ApplicationResponse(
-            id=13,
-            application_name="dummy",
-            application_owner_email="dummy@dummy.org",
-            application_uploaded=True,
-            application_source_file=dummy_module_source,
-            application_config=dummy_config_source,
-            application_templates={"test-job-script.py.j2": dummy_template_source},
+            id=1,
+            name="dummy",
+            owner_email="dummy@email.com",
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+            template_vars=application_config.application_config,
+            template_files={
+                "test-job-script.py.j2": TemplateFileResponse(
+                    filename="test-job-script.py.j2",
+                    created_at=datetime.datetime.now(),
+                    updated_at=datetime.datetime.now(),
+                    file_type="ENTRYPOINT",
+                    path="jobbergate/job-script-templates/1/upload/template/test-job-script.py.j2",
+                )
+            },
+            workflow_file=WorkflowFileResponse(
+                runtime_config=application_config.jobbergate_config.dict(),
+                created_at=datetime.datetime.now(),
+                updated_at=datetime.datetime.now(),
+                path="jobbergate/job-script-templates/1/upload/workflow",
+            ),
+        )
+
+        get_template_routes = [
+            respx_mock.get(f"{dummy_domain}/{t.path}") for t in application_data.template_files.values()
+        ]
+        for route in get_template_routes:
+            route.mock(
+                return_value=httpx.Response(
+                    httpx.codes.OK,
+                    content=dummy_template_source.encode(),
+                ),
+            )
+        get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_data.workflow_file.path}")
+        get_workflow_route.mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                content=dummy_module_source.encode(),
+            ),
         )
 
         desired_list_of_files = [
             tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
-            tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
             tmp_path / "templates" / "test-job-script.py.j2",
+            tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
         ]
 
-        assert save_application_files(application_data, tmp_path) == desired_list_of_files
+        assert save_application_files(dummy_context, application_data, tmp_path) == desired_list_of_files
         assert set(tmp_path.rglob("*")) == {tmp_path / "templates", *desired_list_of_files}
 
-        assert (tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME).read_text() == dummy_config_source
+        actual_application_config = load_application_config_from_source(
+            (tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME).read_text()
+        )
+        assert actual_application_config == application_config
         assert (tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME).read_text() == dummy_module_source
         assert (tmp_path / "templates" / "test-job-script.py.j2").read_text() == dummy_template_source

@@ -134,7 +134,7 @@ def list_all(
     assert jg_ctx is not None, "JobbergateContext is uninitialized"
     assert jg_ctx.client is not None, "Client is uninitialized"
 
-    params: Dict[str, Any] = dict(all=show_all)
+    params: Dict[str, Any] = dict(user_only=not show_all)
     if search is not None:
         params["search"] = search
     if sort_order is not SortOrder.UNSORTED:
