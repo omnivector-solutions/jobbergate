@@ -2,19 +2,26 @@
 Tests for the /job-scripts/ endpoint.
 """
 import pathlib
+from datetime import datetime
 from textwrap import dedent
 from unittest import mock
 
 import pytest
-from fastapi import status
+from fastapi import HTTPException, status
 
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_scripts.models import job_scripts_table
+from jobbergate_api.apps.job_scripts.routers import (
+    _fetch_job_script,
+    _fetch_job_script_and_verify_ownership,
+    _require_ownership,
+)
 from jobbergate_api.apps.job_scripts.schemas import JobScriptPartialResponse, JobScriptResponse
 from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.security import IdentityClaims, TokenPayload
 from jobbergate_api.storage import database
 
 # Force the async event loop at the app to begin.
@@ -1046,6 +1053,45 @@ async def test_update_job_script_bad_permission(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
+async def test_update_job_script_wrong_user(
+    client,
+    fill_application_data,
+    fill_job_script_data,
+    inject_security_header,
+):
+    """
+    Test that it is not possible to update a job_script if the requesting user doesn't own it.
+
+    This test proves that it is not possible to update a job_script if the user making the request doesn't
+    own the job script they are requesting to update. We show this by asserting that the response status code
+    of the request is 403, and that the data stored in the database for the job_script is not updated.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(job_script_name="target-js", application_id=inserted_application_id),
+    )
+
+    inject_security_header("wrong-user@forbidden.com", Permissions.JOB_SCRIPTS_EDIT)
+    response = await client.put(
+        f"/jobbergate/job-scripts/{inserted_job_script_id}",
+        json={"job_script_name": "new name"},
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    query = job_scripts_table.select(job_scripts_table.c.job_script_name == "target-js")
+    job_script_row = await database.fetch_one(query)
+
+    assert job_script_row is not None
+    assert job_script_row["job_script_name"] == "target-js"
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
 async def test_delete_job_script(
     client,
     fill_application_data,
@@ -1138,6 +1184,42 @@ async def test_delete_job_script_bad_permission(
 
 @pytest.mark.asyncio
 @database.transaction(force_rollback=True)
+async def test_delete_job_script_wrong_user(
+    client,
+    fill_application_data,
+    fill_job_script_data,
+    inject_security_header,
+):
+    """
+    Test that it is not possible to delete a job_script when the user is not the owner of the job_script.
+
+    This test proves that it is not possible to delete a job_script if the user don't own it.
+    We show this by assert that a 403 response status code is returned and the job_script still exists in
+    the database after the request.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+
+    inject_security_header("wrong-owner@forbidden.com", Permissions.JOB_SCRIPTS_EDIT)
+    response = await client.delete(f"/jobbergate/job-scripts/{inserted_job_script_id}")
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+
+
+@pytest.mark.asyncio
+@database.transaction(force_rollback=True)
 async def test_delete_job_script__unlinks_job_submissions(
     client,
     fill_application_data,
@@ -1187,3 +1269,109 @@ async def test_delete_job_script__unlinks_job_submissions(
         values=dict(inserted_id=inserted_job_script_id),
     )
     assert count[0][0] == 0
+
+
+@pytest.mark.asyncio
+async def test__fetch_job_script__succeeds_with_valid_id(
+    fill_application_data,
+    fill_job_script_data,
+):
+    """
+    Test that the _fetch_job_script method can successfully retrieve a job_script by id.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+
+    job_script = await _fetch_job_script(inserted_job_script_id)
+    assert job_script.id == inserted_job_script_id
+
+
+@pytest.mark.asyncio
+async def test__fetch_job_script__fails_when_job_script_not_found(
+    fill_application_data,
+):
+    """
+    Test that the _fetch_job_script method throws a 404 error if no matching job_script is found.
+    """
+    with pytest.raises(HTTPException) as err_info:
+        await _fetch_job_script(9999)
+
+    assert err_info.value.status_code == status.HTTP_404_NOT_FOUND
+    assert "not found" in err_info.value.detail
+
+
+@pytest.mark.asyncio
+async def test__require_ownership__does_nothing_if_owner_matches():
+    """
+    Test that the helper method _require_ownership() completes without error when the owner matches.
+    """
+    dummy_job_script = JobScriptPartialResponse(
+        id=13,
+        application_id=21,
+        job_script_name="who cares",
+        job_script_owner_email="owner1@org.com",
+    )
+    identity_claims = IdentityClaims(
+        email="owner1@org.com",
+        client_id="doesn't matter",
+    )
+    _require_ownership(dummy_job_script, identity_claims)
+
+
+@pytest.mark.asyncio
+async def test__require_ownership__throws_403_http_exception_if_owner_does_not_match():
+    """
+    Test that the helper method _require_ownership() throws an 403 error if the owner does not match.
+    """
+    dummy_job_script = JobScriptPartialResponse(
+        id=13,
+        application_id=21,
+        job_script_name="who cares",
+        job_script_owner_email="owner1@org.com",
+    )
+    identity_claims = IdentityClaims(
+        email="other@owner.com",
+        client_id="doesn't matter",
+    )
+    with pytest.raises(HTTPException) as err_info:
+        _require_ownership(dummy_job_script, identity_claims)
+    assert err_info.value.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.asyncio
+async def test__fetch_job_script_and_verify_ownership__succeeds_with_valid_identifier_and_matching_owner(
+    fill_application_data,
+    fill_job_script_data,
+):
+    """
+    Test that the _fetch_application_and_verify_ownership method can succeeds with valid inputs.
+    """
+    inserted_application_id = await database.execute(
+        query=applications_table.insert(),
+        values=fill_application_data(application_owner_email="owner1@org.com"),
+    )
+    inserted_job_script_id = await database.execute(
+        query=job_scripts_table.insert(),
+        values=fill_job_script_data(application_id=inserted_application_id),
+    )
+    count = await database.fetch_all("SELECT COUNT(*) FROM job_scripts")
+    assert count[0][0] == 1
+
+    token_payload = TokenPayload(
+        sub="dummy",
+        permissions=[],
+        exp=datetime.now(),
+        azp="idiot",
+        email="owner1@org.com",
+    )
+
+    job_script = await _fetch_job_script_and_verify_ownership(inserted_job_script_id, token_payload)
+    assert job_script.id == inserted_job_script_id

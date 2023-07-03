@@ -201,10 +201,10 @@ class ApplicationPartialResponse(BaseModel):
     created_at: Optional[datetime] = datetime.utcnow()
     updated_at: Optional[datetime] = datetime.utcnow()
     application_name: str
-    application_identifier: Optional[str]
-    application_description: Optional[str]
+    application_identifier: Optional[str] = None
+    application_description: Optional[str] = None
     application_owner_email: str
-    application_uploaded: bool
+    application_uploaded: Optional[bool] = False
 
     class Config:
         orm_mode = True
