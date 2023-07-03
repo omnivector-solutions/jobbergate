@@ -7,38 +7,11 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
-3.5.0a7 -- 2023-06-28
----------------------
-- Fixed schemas to support orphaned job-scripts and job-submissions
-
-
-3.5.0a6 -- 2023-06-26
----------------------
+3.5.0 -- 2023-07-03
+-------------------
 - Reflected error message from API when user attempts to modify resources they don't own
-
-3.5.0a5 -- 2023-06-22
----------------------
-
-3.5.0a4 -- 2023-06-12
----------------------
-
-3.5.0-alpha.3 -- 2023-05-08
----------------------------
 - Removed strict dependence between job_scripts and applications to allow deletes
 - Added functionality to archive applications and job_scripts
-
-3.5.0-alpha.2 -- 2023-04-27
----------------------------
-- Keep version in sync with other subprojects.
-
-3.5.0-alpha.1 -- 2023-04-14
----------------------------
-- Keep version in sync with other subprojects.
-
-3.5.0-alpha.0 -- 2023-03-28
----------------------------
-- Keep version in sync with other subprojects.
-
 
 3.4.3 -- 2023-01-30
 -------------------
