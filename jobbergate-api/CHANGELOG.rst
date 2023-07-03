@@ -7,41 +7,17 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 
-3.5.0a7 -- 2023-06-28
----------------------
-- Fixed job-submission endpoints to return the ones not linked to a job-script
-
-3.5.0a6 -- 2023-06-26
----------------------
+3.5.0 -- 2023-07-03
+-------------------
 - Modified API to restrict modifications to resource owners
-
-3.5.0a5 -- 2023-06-22
----------------------
 - Modified API to allow Job Script creation without parent application
-
-3.5.0a4 -- 2023-06-12
----------------------
 - Added functionality to make make the signal job property on job submissions backward compatible with legacy applications
-
-
-3.5.0-alpha.3 -- 2023-05-08
----------------------------
 - Removed strict dependence between job_scripts and applications to allow deletes
 - Added functionality to archive applications and job_scripts
 - Added endpoints to upload/download the main job script file given its id
-
-3.5.0-alpha.2 -- 2023-04-27
----------------------------
 - Updated container files and dependencies to improve the deployment (no user facing changes)
-
-3.5.0-alpha.1 -- 2023-04-14
----------------------------
 - Added endpoint to update the application files individually
 - Patched job submissions and job scripts GET endpoints to return the parent name in the payload
-
-3.5.0-alpha.0 -- 2023-03-28
----------------------------
-- Keep version in sync with other subprojects.
 
 3.4.3 -- 2023-01-30
 -------------------
