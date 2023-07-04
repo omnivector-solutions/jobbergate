@@ -76,10 +76,11 @@ class EngineFactory:
 
     async def cleanup(self):
         """
-        Close all engines stored in the engine map.
+        Close all engines stored in the engine map and clears the engine_map.
         """
         for engine in self.engine_map.values():
             await engine.dispose()
+        self.engine_map = dict()
 
     def get_engine(self, override_db_name: typing.Optional[str] = None) -> AsyncEngine:
         """

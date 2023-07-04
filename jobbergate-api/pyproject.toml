@@ -71,9 +71,6 @@ psycopg2 = "^2.9.5"
 [tool.poetry.scripts]
 dev-tools = "dev_tools:app"
 
-[tool.poetry.group.dev.dependencies]
-ipdb = "^0.13.13"
-
 [tool.black]
 line-length = 110
 
