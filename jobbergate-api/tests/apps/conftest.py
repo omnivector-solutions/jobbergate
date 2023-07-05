@@ -7,27 +7,21 @@ from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 
 
 @fixture
-def application_data():
+def base_data(tester_email):
     """
     Provide a fixture that supplies test application data.
     """
-    return {
-        "name": "test_name",
-        "owner_email": "test@email.com",
-    }
+    return {"name": "test_name", "description": "test_description", "owner_email": tester_email}
 
 
 @fixture
-def fill_application_data(application_data):
+def fill_application_data(base_data):
     """
     Combine user supplied application data with defaults. If there are overlaps, use the user supplied data.
     """
 
     def _helper(**fields):
-        return {
-            **application_data,
-            **fields,
-        }
+        return {**base_data, **fields}
 
     return _helper
 
@@ -45,27 +39,37 @@ def fill_all_application_data(fill_application_data):
 
 
 @fixture
-def job_script_data():
+def fill_job_template_data(base_data):
     """
-    Provide a fixture that supplies test job_script data.
+    Combine user supplied template data with defaults. If there are overlaps, use the user supplied data.
     """
-    return {
-        "job_script_name": "test_name",
-        "job_script_owner_email": "owner1@org.com",
-    }
+
+    def _helper(**fields):
+        return {**base_data, **fields}
+
+    return _helper
 
 
 @fixture
-def fill_job_script_data(job_script_data):
+def fill_all_job_template_data(fill_job_script_data):
+    """
+    Combine many fields of user supplied template data with defaults.
+    """
+
+    def _helper(*all_fields):
+        return [fill_job_script_data(**f) for f in all_fields]
+
+    return _helper
+
+
+@fixture
+def fill_job_script_data(base_data):
     """
     Combine user supplied job_script data with defaults. If there are overlaps, use the user supplied data.
     """
 
     def _helper(**fields):
-        return {
-            **job_script_data,
-            **fields,
-        }
+        return {**base_data, **fields}
 
     return _helper
 
@@ -83,13 +87,12 @@ def fill_all_job_script_data(fill_job_script_data):
 
 
 @fixture
-def job_submission_data():
+def job_submission_data(base_data):
     """
     Provide a fixture that supplies test job_submission data.
     """
     return {
-        "job_submission_name": "test_name",
-        "job_submission_owner_email": "owner1@org.com",
+        **base_data,
         "client_id": "dummy-client-id",
         "status": JobSubmissionStatus.CREATED,
         "execution_parameters": {"name": "job-submission-name", "comment": "I am a comment"},
@@ -103,10 +106,7 @@ def fill_job_submission_data(job_submission_data):
     """
 
     def _helper(**fields):
-        return {
-            **job_submission_data,
-            **fields,
-        }
+        return {**job_submission_data, **fields}
 
     return _helper
 
@@ -121,3 +121,35 @@ def fill_all_job_submission_data(fill_job_submission_data):
         return [fill_job_submission_data(**f) for f in all_fields]
 
     return _helper
+
+
+@fixture(scope="function")
+def template_service(synth_session):
+    """Fixture to return a job_script_templates service."""
+    from jobbergate_api.apps.job_script_templates.dependecies import template_service
+
+    yield template_service(synth_session)
+
+
+@fixture(scope="function")
+def template_file_service(synth_session, synth_bucket):
+    """Fixture to return a job_script_templates service."""
+    from jobbergate_api.apps.job_script_templates.dependecies import template_files_service
+
+    yield template_files_service(synth_session, synth_bucket)
+
+
+@fixture(scope="function")
+def job_script_service(synth_session):
+    """Fixture to return a job_script_templates service."""
+    from jobbergate_api.apps.job_scripts.dependecies import job_script_service
+
+    yield job_script_service(synth_session)
+
+
+@fixture(scope="function")
+def job_script_files_service(synth_session, synth_bucket):
+    """Fixture to return a job_script_files_service service."""
+    from jobbergate_api.apps.job_scripts.dependecies import job_script_files_service
+
+    yield job_script_files_service(synth_session, synth_bucket)

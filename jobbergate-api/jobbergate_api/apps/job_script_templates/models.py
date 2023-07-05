@@ -28,8 +28,6 @@ class JobScriptTemplate(Base):
         updated_at: The date and time when the job script template was updated.
     """
 
-    __tablename__ = "job_script_templates"
-
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     identifier: Mapped[Optional[str]] = mapped_column(String, unique=True, index=True)
     template_vars: Mapped[dict[str, Any]] = mapped_column(
@@ -82,8 +80,6 @@ class JobScriptTemplate(Base):
 class JobScriptTemplateFile(Base, BaseFieldsMixin):
     """Job script template files table definition."""
 
-    __tablename__ = "job_script_template_files"
-
     id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey(JobScriptTemplate.id, ondelete="CASCADE"),
@@ -108,8 +104,6 @@ class WorkflowFile(Base, BaseFieldsMixin):
         updated_at: The date and time when the workflow was updated.
     """
 
-    __tablename__ = "workflow_files"
-
     id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey(JobScriptTemplate.id, ondelete="CASCADE"),
@@ -127,8 +121,3 @@ class WorkflowFile(Base, BaseFieldsMixin):
     def file_key(self) -> str:
         """Return the file key for the workflow file."""
         return f"{self.__tablename__}/{self.id}/{WORKFLOW_FILE_NAME}"
-
-
-job_script_templates_table = JobScriptTemplate.__table__
-job_script_template_files_table = JobScriptTemplateFile.__table__
-workflow_files_table = WorkflowFile.__table__

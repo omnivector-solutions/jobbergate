@@ -10,10 +10,6 @@ from sqlalchemy import Column, Enum, Integer, Table
 from jobbergate_api.metadata import metadata
 from jobbergate_api.storage import build_db_url, sort_clause
 
-# Force the async event loop at the app to begin.
-# Since this is a time consuming fixture, it is just used where strict necessary.
-pytestmark = pytest.mark.usefixtures("startup_event_force")
-
 
 def test_build_db_url__creates_database_url_from_parts(tweak_settings):
     """
@@ -66,7 +62,7 @@ def test_build_db_url__uses_TEST_prefixed_database_settings_if_passed_the_force_
 
 
 @pytest.mark.asyncio
-async def test_sort_clause__auto_sort_enum_column(database_engine):
+async def test_sort_clause__auto_sort_enum_column(database):
     """
     Provide a test case for the ``sort_clause()`` function.
 

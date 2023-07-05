@@ -2,9 +2,10 @@
 from datetime import datetime
 from typing import Optional
 
+import inflection
 from sqlalchemy import DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, registry
-from sqlalchemy.orm.decl_api import DeclarativeMeta, declarative_mixin
+from sqlalchemy.orm.decl_api import DeclarativeMeta, declarative_mixin, declared_attr
 from sqlalchemy.sql import functions
 
 mapper_registry = registry()
@@ -24,6 +25,10 @@ class Base(metaclass=DeclarativeMeta):
     metadata = mapper_registry.metadata
 
     __init__ = mapper_registry.constructor
+
+    @declared_attr
+    def __tablename__(cls):
+        return inflection.tableize(cls.__name__)
 
 
 @declarative_mixin

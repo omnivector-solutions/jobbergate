@@ -24,6 +24,17 @@ jobs:
           --health-retries 5
         ports:
           - 5433:5432
+      test-s3:
+        image: minio/minio
+        env:
+          MINIO_ROOT_USER: compose-s3-key
+          MINIO_ROOT_PASSWORD: compose-s3-secret
+        ports:
+          - 9000:9000
+          - 9001:9001
+        volumes:
+          - ${{ github.workspace }}/data:/data
+        options: --compat /data
     steps:
       - uses: actions/checkout@v3
       - name: Install poetry

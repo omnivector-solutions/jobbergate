@@ -8,22 +8,18 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jobbergate_api.apps.dependecies import db_session, s3_bucket
-from jobbergate_api.apps.job_scripts.service import JobScriptFilesService, JobScriptService
+from jobbergate_api.apps.job_scripts.models import JobScript, JobScriptFile
+from jobbergate_api.apps.services import FileService, TableService
 
 
-async def job_script_service(session: AsyncSession = Depends(db_session)) -> JobScriptService:
-    """
-    Dependency to get the job_script service.
-
-    Returns:
-        JobScriptService: The job_script service.
-    """
-    return JobScriptService(session=session)
+def job_script_service(session: AsyncSession = Depends(db_session)) -> TableService:
+    """Dependency to get the job_script service."""
+    return TableService(db_session=session, base_table=JobScript)
 
 
-async def job_script_files_service(
+def job_script_files_service(
     session: AsyncSession = Depends(db_session),
     bucket=Depends(s3_bucket),
-) -> JobScriptFilesService:
+) -> FileService:
     """Dependency to get the job_script_files service."""
-    return JobScriptFilesService(session, bucket)
+    return FileService(db_session=session, bucket=bucket, base_table=JobScriptFile)

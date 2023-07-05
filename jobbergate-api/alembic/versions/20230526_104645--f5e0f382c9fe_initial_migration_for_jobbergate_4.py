@@ -1,4 +1,4 @@
-"""Unlabeled migration
+"""Initial migration for Jobbergate 4.x
 
 Revision ID: f5e0f382c9fe
 Revises: 

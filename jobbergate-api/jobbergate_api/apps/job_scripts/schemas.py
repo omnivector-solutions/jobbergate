@@ -102,11 +102,11 @@ class JobScriptFile(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    url: Optional[str]
+    path: Optional[str]
 
     @root_validator
-    def _compute_url(cls, values):
-        values["url"] = "jobbergate/job-scripts/{}/upload/{}".format(
+    def _compute_path(cls, values):
+        values["path"] = "/jobbergate/job-scripts/{}/upload/{}".format(
             values["id"],
             urllib.parse.quote(values["filename"], safe=""),
         )

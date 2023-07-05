@@ -74,9 +74,9 @@ Add the following roles:
 +---------------------------------+-------------------------------------------+
 | Name                            | Description                               |
 +=================================+===========================================+
-| jobbergate:applications:edit    | Allow to view Jobbergate applications     |
+| jobbergate:job-templates:edit   | Allow to view job templates               |
 +---------------------------------+-------------------------------------------+
-| jobbergate:applications:view    | Allow to view applications                |
+| jobbergate:job-templates:view   | Allow to view job templates               |
 +---------------------------------+-------------------------------------------+
 | jobbergate:job-scripts:edit     | Allow to edit job scripts                 |
 +---------------------------------+-------------------------------------------+
@@ -133,9 +133,9 @@ Click on the `Roles` tab, and click the `Add Role` button. Add all the following
 +---------------------------------+-------------------------------------------+
 | Name                            | Description                               |
 +=================================+===========================================+
-| jobbergate:applications:edit    | Allow to view Jobbergate applications     |
+| jobbergate:job-templates:edit    | Allow to view Jobbergate applications     |
 +---------------------------------+-------------------------------------------+
-| jobbergate:applications:view    | Allow to view applications                |
+| jobbergate:job-templates:view    | Allow to view applications                |
 +---------------------------------+-------------------------------------------+
 | jobbergate:job-scripts:edit     | Allow to edit job scripts                 |
 +---------------------------------+-------------------------------------------+

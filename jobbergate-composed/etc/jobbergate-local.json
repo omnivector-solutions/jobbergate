@@ -105,7 +105,7 @@
         },
         {
           "id": "9eaccc11-12fd-433f-8ecd-fab1f5abb429",
-          "name": "jobbergate:applications:edit",
+          "name": "jobbergate:job-templates:edit",
           "composite": false,
           "clientRole": true,
           "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
@@ -121,7 +121,7 @@
         },
         {
           "id": "f432b492-a166-4b67-a4a0-a9077ee459d4",
-          "name": "jobbergate:applications:view",
+          "name": "jobbergate:job-templates:view",
           "composite": false,
           "clientRole": true,
           "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
@@ -351,7 +351,7 @@
       "local-slurm": [
         {
           "id": "82d5fa04-bf1d-4e07-ac0b-47e974d52c04",
-          "name": "jobbergate:applications:view",
+          "name": "jobbergate:job-templates:view",
           "composite": false,
           "clientRole": true,
           "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
@@ -359,7 +359,7 @@
         },
         {
           "id": "4a53e4d7-e14e-41bf-8fd2-9d377419baca",
-          "name": "jobbergate:applications:edit",
+          "name": "jobbergate:job-templates:edit",
           "composite": false,
           "clientRole": true,
           "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
@@ -541,31 +541,43 @@
   "webAuthnPolicyPasswordlessAcceptableAaguids": [],
   "users": [
     {
-      "id" : "b58165b0-f442-4fd1-af45-916ec2ba3a9a",
-      "createdTimestamp" : 1661988243798,
-      "username" : "local-user",
-      "enabled" : true,
-      "totp" : false,
-      "emailVerified" : false,
-      "firstName" : "Local",
-      "lastName" : "User",
-      "email" : "local-user@jobbergate.local",
-      "credentials" : [ {
-        "id" : "0c536f60-f90b-47f3-bef4-0f48ec9c0335",
-        "type" : "password",
-        "createdDate" : 1661988854899,
-        "secretData" : "{\"value\":\"56uNXJzBPkE2KJAenceSqVNZ2MPMfn8p9f52sGjYJ+Nl/2y9vXYSs7+LSbc0dLZOMip/Y/J01+pOJTjGPsq+9g==\",\"salt\":\"Vml/+Z1jvnoxeJnNr+iOYw==\",\"additionalParameters\":{}}",
-        "credentialData" : "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
-      } ],
-      "disableableCredentialTypes" : [ ],
-      "requiredActions" : [ ],
-      "realmRoles" : [ "default-roles-jobbergate-local" ],
-      "clientRoles" : {
-        "cli" : [ "jobbergate:job-submissions:view", "jobbergate:job-scripts:view", "jobbergate:applications:edit", "jobbergate:job-scripts:edit", "jobbergate:applications:view", "jobbergate:job-submissions:edit" ]
+      "id": "b58165b0-f442-4fd1-af45-916ec2ba3a9a",
+      "createdTimestamp": 1661988243798,
+      "username": "local-user",
+      "enabled": true,
+      "totp": false,
+      "emailVerified": false,
+      "firstName": "Local",
+      "lastName": "User",
+      "email": "local-user@jobbergate.local",
+      "credentials": [
+        {
+          "id": "0c536f60-f90b-47f3-bef4-0f48ec9c0335",
+          "type": "password",
+          "createdDate": 1661988854899,
+          "secretData": "{\"value\":\"56uNXJzBPkE2KJAenceSqVNZ2MPMfn8p9f52sGjYJ+Nl/2y9vXYSs7+LSbc0dLZOMip/Y/J01+pOJTjGPsq+9g==\",\"salt\":\"Vml/+Z1jvnoxeJnNr+iOYw==\",\"additionalParameters\":{}}",
+          "credentialData": "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
+        }
+      ],
+      "disableableCredentialTypes": [],
+      "requiredActions": [],
+      "realmRoles": [
+        "default-roles-jobbergate-local"
+      ],
+      "clientRoles": {
+        "cli": [
+          "jobbergate:job-submissions:view",
+          "jobbergate:job-scripts:view",
+          "jobbergate:job-templates:edit",
+          "jobbergate:job-scripts:edit",
+          "jobbergate:job-templates:view",
+          "jobbergate:job-submissions:edit"
+        ]
       },
-      "notBefore" : 0,
-      "groups" : [ ]
-    }, {
+      "notBefore": 0,
+      "groups": []
+    },
+    {
       "id": "583f7cfe-417a-44f5-9528-e17dcba21c90",
       "createdTimestamp": 1661982042098,
       "username": "service-account-local-slurm",
@@ -580,8 +592,8 @@
       ],
       "clientRoles": {
         "local-slurm": [
-          "jobbergate:applications:view",
-          "jobbergate:applications:edit",
+          "jobbergate:job-templates:view",
+          "jobbergate:job-templates:edit",
           "jobbergate:job-scripts:edit",
           "jobbergate:job-submissions:view",
           "jobbergate:job-scripts:view",

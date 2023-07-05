@@ -3,13 +3,12 @@ import urllib.parse
 from datetime import datetime
 from typing import Any, Optional
 
+import pydantic
 from pydantic import BaseModel, root_validator
 
 
-class RunTimeConfig(BaseModel):
+class RunTimeConfig(BaseModel, extra=pydantic.Extra.allow):
     """Schema for the runtime config of a job template."""
-
-    data: dict[str, Any]
 
     @classmethod
     def __get_validators__(cls):
@@ -53,11 +52,11 @@ class TemplateFileResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    url: Optional[str]
+    path: Optional[str]
 
     @root_validator
     def _compute_url(cls, values):
-        values["url"] = "jobbergate/job-script-templates/{}/upload/template/{}".format(
+        values["path"] = "/jobbergate/job-script-templates/{}/upload/template/{}".format(
             values["id"],
             urllib.parse.quote(values["filename"], safe=""),
         )
@@ -74,11 +73,11 @@ class WorkflowFileResponse(BaseModel):
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
 
-    url: Optional[str]
+    path: Optional[str]
 
     @root_validator
     def _compute_url(cls, values):
-        values["url"] = f"/jobbergate/job-script-templates/{values['id']}/upload/workflow"
+        values["path"] = f"/jobbergate/job-script-templates/{values['id']}/upload/workflow"
 
         return values
 

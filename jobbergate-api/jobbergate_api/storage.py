@@ -5,11 +5,7 @@ import re
 import typing
 
 import asyncpg
-
-# import databases
-# import databases.core
 import fastapi
-import pydantic
 import sqlalchemy
 from asyncpg.exceptions import UniqueViolationError
 from fastapi.exceptions import HTTPException
@@ -44,13 +40,6 @@ def build_db_url(force_test: bool = False, asynchronous: bool = False) -> str:
             path="/{}".format(getattr(settings, f"{prefix}DATABASE_NAME")),
         )
     )
-
-
-def render_sql(query) -> str:
-    """
-    Render a sqlalchemy query into a string for debugging.
-    """
-    return query.compile(dialect=database._backend._dialect, compile_kwargs={"literal_binds": True})
 
 
 def search_clause(
@@ -135,17 +124,3 @@ def handle_fk_error(
             ),
         ),
     )
-
-
-T = typing.TypeVar("T", bound=pydantic.BaseModel)
-
-
-async def fetch_instance(id: int, table: sqlalchemy.Table, model: typing.Type[T]) -> T:
-    """
-    Fetch a single frow from a table by its id and unpack it into a response model.
-    """
-    query = table.select(table.c.id == id)
-    result = await database.fetch_one(query)
-    if result is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Could not find {table.name} instance with id {id}")
-    return model.parse_obj(result)

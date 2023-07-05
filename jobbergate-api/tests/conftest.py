@@ -7,13 +7,15 @@ import random
 import string
 import typing
 from textwrap import dedent
+from unittest.mock import patch
+from aioboto3.session import Session
 
 import pytest
 from httpx import AsyncClient
 
 from jobbergate_api.apps.models import Base
 from jobbergate_api.config import settings
-from jobbergate_api.database import engine
+from jobbergate_api.database import SessionLocal, engine
 from jobbergate_api.main import app
 
 # Charset for producing random strings
@@ -38,32 +40,66 @@ def event_loop():
     loop.close()
 
 
+@pytest.fixture(autouse=True, scope="session")
+async def synth_engine():
+    """
+    Provide a fixture to prepare the test database.
+    """
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all, checkfirst=True)
+    try:
+        yield engine
+    finally:
+        async with engine.begin() as connection:
+            for table in reversed(Base.metadata.sorted_tables):
+                await connection.execute(table.delete())
+
+
 @pytest.fixture(scope="function")
-async def database():
+async def synth_session():
     """
-    Create a new database connection and transaction for each test.
+    Get a session from the engine_factory for the current test function.
+
+    This is necessary to make sure that the test code uses the same session as the one returned by
+    the dependency injection for the router code. Otherwise, changes made in the router's session would not
+    be visible in the test code. Not that changes made in this synthesized session are always rolled back
+    and never committed.
     """
-    conn = await engine.connect()
-    txn = await conn.begin()
-    yield conn
-    await txn.rollback()
-    await conn.close()
+
+    async with SessionLocal() as session:
+        await session.begin_nested()
+        with patch("jobbergate_api.apps.dependecies.db_session", return_value=session):
+            yield session
+        await session.rollback()
 
 
-@pytest.fixture(autouse=True, scope="function")
-async def enforce_empty_database():
-    """
-    Make sure our database is empty at the end of each test.
+@pytest.fixture(autouse=True, scope="session")
+async def synth_s3_bucket_session():
+    if settings.S3_ENDPOINT_URL != "http://localhost:9000" or not settings.S3_BUCKET_NAME.startswith("test-"):
+        raise ValueError("Check test credentials for s3")
 
-    Notes:
-        The order is important when deleting tables given that some tables have foreign keys.
-    """
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all, checkfirst=True)
-    yield
-    async with engine.begin() as conn:
-        for table in reversed(Base.metadata.sorted_tables):
-            await conn.execute(table.delete())
+    session = Session()
+
+    async with session.resource("s3", endpoint_url=settings.S3_ENDPOINT_URL) as s3:
+        bucket = await s3.Bucket(settings.S3_BUCKET_NAME)
+        try:
+            await bucket.create()
+        except bucket.meta.client.exceptions.BucketAlreadyOwnedByYou:
+            pass
+
+        with patch("jobbergate_api.apps.dependecies.s3_bucket", return_value=bucket):
+            try:
+                yield bucket
+            finally:
+                await bucket.delete()
+
+
+@pytest.fixture(scope="function")
+async def synth_bucket(synth_s3_bucket_session):
+    try:
+        yield synth_s3_bucket_session
+    finally:
+        await synth_s3_bucket_session.objects.all().delete()
 
 
 @pytest.fixture(autouse=True)
@@ -164,11 +200,11 @@ def tweak_settings():
         Context manager for tweaking app settings temporarily.
         """
         previous_values = {}
-        for (key, value) in kwargs.items():
+        for key, value in kwargs.items():
             previous_values[key] = getattr(settings, key)
             setattr(settings, key, value)
         yield
-        for (key, value) in previous_values.items():
+        for key, value in previous_values.items():
             setattr(settings, key, value)
 
     return _helper

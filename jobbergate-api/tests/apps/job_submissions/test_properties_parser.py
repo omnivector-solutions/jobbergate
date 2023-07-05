@@ -12,7 +12,6 @@ import pytest
 from bidict import bidict
 from pydantic import ValidationError
 
-from jobbergate_api.apps.job_scripts.job_script_files import JobScriptFiles
 from jobbergate_api.apps.job_submissions.properties_parser import (
     _IDENTIFICATION_FLAG,
     _INLINE_COMMENT_MARK,
