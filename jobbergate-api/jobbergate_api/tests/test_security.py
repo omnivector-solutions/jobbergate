@@ -11,7 +11,7 @@ from jobbergate_api.security import IdentityPayload, get_domain_configs
 
 
 def test_get_domain_configs__loads_only_base_settings(tweak_settings):
-
+    """Check if the correct domain configuration is loaded when only one domain is provided."""
     with tweak_settings(
         ARMASEC_DOMAIN="foo.io",
         ARMASEC_AUDIENCE="https://bar.dev",
@@ -25,6 +25,7 @@ def test_get_domain_configs__loads_only_base_settings(tweak_settings):
 
 
 def test_get_domain_configs__loads_admin_settings_if_all_are_present(tweak_settings):
+    """Check if the correct domain configuration is loaded when two domains are provided."""
     with tweak_settings(
         ARMASEC_DOMAIN="foo.io",
         ARMASEC_AUDIENCE="https://bar.dev",
@@ -69,6 +70,7 @@ def test_from_token_payload__omits_email_if_not_in_payload():
 
 
 def test_identity_payload__extracts_organization_id_successfully():
+    """Check if the organization_id is successfully extracted from the token payload."""
     token_payload = {
         "exp": 1689105153,
         "sub": "dummy-sub",
@@ -85,6 +87,7 @@ def test_identity_payload__extracts_organization_id_successfully():
 
 
 def test_identity_payload__fails_validation_with_non_dict_organization():
+    """Check IdentityPayload validation fails if the organization claim is not a dict."""
     token_payload = {
         "exp": 1689105153,
         "sub": "dummy-sub",
@@ -96,6 +99,7 @@ def test_identity_payload__fails_validation_with_non_dict_organization():
 
 
 def test_identity_payload__fails_validation_with_wrong_number_of_organization_values():
+    """Check IdentityPayload validation fails if the organization claim does not have exactly one value."""
     token_payload = {
         "exp": 1689105153,
         "sub": "dummy-sub",
@@ -125,6 +129,7 @@ def test_identity_payload__fails_validation_with_wrong_number_of_organization_va
 
 
 def test_identity_payload__null_organization_id_with_no_organization_claim():
+    """Check IdentityPayload validation does not fail if the organization claim is not present."""
     token_payload = {
         "exp": 1689105153,
         "sub": "dummy-sub",

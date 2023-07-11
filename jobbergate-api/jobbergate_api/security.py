@@ -62,7 +62,7 @@ class IdentityPayload(TokenPayload):
     @root_validator(pre=True)
     def extract_organization(cls, values):
         """
-        Extracts the organization_id from the organization payload.
+        Extract the organization_id from the organization payload.
 
         The payload is expected to look like:
         {
