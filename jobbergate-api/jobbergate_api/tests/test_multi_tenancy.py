@@ -146,14 +146,14 @@ async def test_application_router_with_multi_tenancy(
     This method checks to make sure that the correct database is used for the API request based on the
     client_id that is provided in the auth token in the request header.
     """
-    default_client_id = settings.TEST_DATABASE_NAME
-    alt_client_id = "alt-test-db"
+    default_organization_id = settings.TEST_DATABASE_NAME
+    alt_organization_id = "alt-test-db"
 
     with tweak_settings(MULTI_TENANCY_ENABLED=True):
         async with get_synth_sessions() as (default_session, alt_session):
 
             inject_security_header(
-                "default@email.com", Permissions.APPLICATIONS_EDIT, client_id=default_client_id
+                "default@email.com", Permissions.APPLICATIONS_EDIT, organization_id=default_organization_id
             )
             response = await client.post(
                 "/jobbergate/applications/",
@@ -175,7 +175,9 @@ async def test_application_router_with_multi_tenancy(
             )
             assert default_database_application == default_response_application
 
-            inject_security_header("alt@email.com", Permissions.APPLICATIONS_EDIT, client_id=alt_client_id)
+            inject_security_header(
+                "alt@email.com", Permissions.APPLICATIONS_EDIT, organization_id=alt_organization_id
+            )
             response = await client.post(
                 "/jobbergate/applications/",
                 json=dict(

@@ -112,11 +112,13 @@ async def inject_security_header(client, build_rs256_token):
         owner_email: str,
         *permissions: typing.List[str],
         client_id: typing.Optional[str] = None,
+        organization_id: typing.Optional[str] = None,
     ):
-        claim_overrides = dict(
+        claim_overrides: typing.Dict = dict(
             email=owner_email,
             client_id=client_id,
             permissions=permissions,
+            organization={organization_id: dict()},
         )
         token = build_rs256_token(claim_overrides=claim_overrides)
         client.headers.update({"Authorization": f"Bearer {token}"})

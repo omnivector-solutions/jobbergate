@@ -10,7 +10,7 @@ from armasec.schemas import DomainConfig
 from armasec.token_security import PermissionMode
 from fastapi import Depends
 from loguru import logger
-from pydantic import EmailStr
+from pydantic import EmailStr, root_validator
 
 from jobbergate_api.config import settings
 
@@ -57,6 +57,32 @@ class IdentityPayload(TokenPayload):
     """
 
     email: Optional[EmailStr] = None
+    organization_id: Optional[str] = None
+
+    @root_validator(pre=True)
+    def extract_organization(cls, values):
+        """
+        Extracts the organization_id from the organization payload.
+
+        The payload is expected to look like:
+        {
+            ...,
+            "organization": {
+                "adf99e01-5cd5-41ac-a1af-191381ad7780": {
+                    ...
+                }
+            }
+        }
+        """
+        organization_dict = values.pop("organization", None)
+        if organization_dict is None:
+            return values
+
+        if not isinstance(organization_dict, dict):
+            raise ValueError(f"Invalid organization payload: {organization_dict}")
+        elif len(organization_dict) != 1:
+            raise ValueError(f"Organization payload did not include exactly one value: {organization_dict}")
+        return {**values, "organization_id": next(iter(organization_dict))}
 
 
 def lockdown_with_identity(*scopes: str, permission_mode: PermissionMode = PermissionMode.ALL):

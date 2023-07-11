@@ -140,7 +140,7 @@ def secure_session(*scopes: str, permission_mode: PermissionMode = PermissionMod
         )
     ) -> AsyncIterator[SecureSession]:
 
-        override_db_name = identity_payload.client_id if settings.MULTI_TENANCY_ENABLED else None
+        override_db_name = identity_payload.organization_id if settings.MULTI_TENANCY_ENABLED else None
         session = engine_factory.get_session(override_db_name=override_db_name)
         await session.begin_nested()
         try:
