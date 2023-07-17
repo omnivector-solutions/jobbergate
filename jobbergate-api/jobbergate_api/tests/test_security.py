@@ -69,7 +69,7 @@ def test_from_token_payload__omits_email_if_not_in_payload():
     assert identity.email is None
 
 
-def test_identity_payload__extracts_organization_id_successfully():
+def test_identity_payload__extracts_organization_id_successfully_with_dict_payload():
     """Check if the organization_id is successfully extracted from the token payload."""
     token_payload = {
         "exp": 1689105153,
@@ -86,16 +86,16 @@ def test_identity_payload__extracts_organization_id_successfully():
     assert identity.organization_id == "dummy-organization-id"
 
 
-def test_identity_payload__fails_validation_with_non_dict_organization():
-    """Check IdentityPayload validation fails if the organization claim is not a dict."""
+def test_identity_payload__extracts_organization_id_successfully_with_string_payload():
+    """Check IdentityPayload validation organization payload as string."""
     token_payload = {
         "exp": 1689105153,
         "sub": "dummy-sub",
         "azp": "dummy-client-id",
         "organization": "dummy-organization-id",
     }
-    with pytest.raises(ValidationError, match="Invalid organization payload"):
-        IdentityPayload(**token_payload)
+    identity = IdentityPayload(**token_payload)
+    assert identity.organization_id == "dummy-organization-id"
 
 
 def test_identity_payload__fails_validation_with_wrong_number_of_organization_values():
@@ -137,3 +137,16 @@ def test_identity_payload__null_organization_id_with_no_organization_claim():
     }
     identity = IdentityPayload(**token_payload)
     assert identity.organization_id is None
+
+
+@pytest.mark.parametrize("payload", [None, {}, ["dummy-organization-id"], 123])
+def test_identity_payload__fails_validation_with_unsupported_payload_type(payload):
+    """Check IdentityPayload validation fails if the organization claim does not have exactly one value."""
+    token_payload = {
+        "exp": 1689105153,
+        "sub": "dummy-sub",
+        "azp": "dummy-client-id",
+        "organization": payload,
+    }
+    with pytest.raises(ValidationError):
+        IdentityPayload(**token_payload)
