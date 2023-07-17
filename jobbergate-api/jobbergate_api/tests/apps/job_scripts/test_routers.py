@@ -127,7 +127,7 @@ async def test_create_job_script__with_application(
 
     job_script = JobScriptResponse(**response.json())
 
-    mocked_write_job_script_files_to_s3.assert_called_once_with(job_script.id)
+    mocked_write_job_script_files_to_s3.assert_called_once_with(job_script.id, override_bucket_name=None)
 
     assert job_script.id == rows[0].id
     assert job_script.job_script_name == job_script_data["job_script_name"]

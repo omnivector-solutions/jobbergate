@@ -160,12 +160,12 @@ class JobScriptFiles(BaseModel):
         )
 
     @classmethod
-    def get_from_s3(cls, job_script_id: int):
+    def get_from_s3(cls, job_script_id: int, override_bucket_name: Optional[str] = None):
         """
         Alternative method to initialize the model getting the objects from S3.
         """
         logger.debug(f"Getting job-script files from S3: {job_script_id=}")
-        file_manager = cls.file_manager_factory(job_script_id)
+        file_manager = cls.file_manager_factory(job_script_id, override_bucket_name=override_bucket_name)
 
         files = {}
         main_file_path = None
@@ -194,11 +194,11 @@ class JobScriptFiles(BaseModel):
         return jobscript_files
 
     @classmethod
-    def delete_from_s3(cls, job_script_id: int):
+    def delete_from_s3(cls, job_script_id: int, override_bucket_name: Optional[str] = None):
         """
         Delete the files associated with the given id.
         """
-        file_manager = cls.file_manager_factory(job_script_id)
+        file_manager = cls.file_manager_factory(job_script_id, override_bucket_name=override_bucket_name)
         logger.debug(
             f"Deleting from S3 the files associated to {job_script_id=}. "
             f"Files to be deleted: {', '.join(map(str, file_manager.keys()))}"
@@ -206,13 +206,13 @@ class JobScriptFiles(BaseModel):
         file_manager.clear()
         logger.debug(f"Files were deleted for {job_script_id=}")
 
-    def write_to_s3(self, job_script_id: int, *, remove_previous_files: bool = True):
+    def write_to_s3(self, job_script_id: int, *, remove_previous_files: bool = True, override_bucket_name: Optional[str] = None):
         """
         Write to s3 the files associated with a given id.
         """
         logger.debug(f"Writing job-script files to S3: {job_script_id=}")
 
-        file_manager = self.file_manager_factory(job_script_id)
+        file_manager = self.file_manager_factory(job_script_id, override_bucket_name=override_bucket_name)
 
         if remove_previous_files and file_manager:
             self.delete_from_s3(job_script_id)
@@ -317,7 +317,7 @@ class JobScriptFiles(BaseModel):
         return jobscript_files
 
     @classmethod
-    def file_manager_factory(cls, job_script_id: int) -> FileManager:
+    def file_manager_factory(cls, job_script_id: int, override_bucket_name: Optional[str] = None) -> FileManager:
         """
         Build an application file manager.
         """
@@ -326,7 +326,7 @@ class JobScriptFiles(BaseModel):
             file_manager_factory(
                 id=job_script_id,
                 s3_client=s3_client,
-                bucket_name=settings.S3_BUCKET_NAME,
+                bucket_name=settings.S3_BUCKET_NAME if override_bucket_name is None else override_bucket_name,
                 work_directory=Path(JOBSCRIPTS_WORK_DIR),
                 manager_cls=FileManager,
                 transformations=IO_TRANSFORMATIONS,

@@ -49,6 +49,15 @@ async def _fetch_application_by_id(
     )
 
 
+def _get_override_bucket_name(secure_session: SecureSession) -> Optional[str]:
+    """
+    Get the override_bucket_name based on organization_id if multi-tenancy is enabled.
+    """
+    if settings.MULTI_TENANCY_ENABLED:
+        return secure_session.identity_payload.organization_id
+    return None
+
+
 @router.post(
     "/applications",
     status_code=status.HTTP_201_CREATED,
@@ -121,9 +130,7 @@ async def applications_upload(
 
     ApplicationFiles.get_from_upload_files(upload_files).write_to_s3(
         application_id,
-        override_bucket_name=secure_session.identity_payload.organization_id
-        if settings.MULTI_TENANCY_ENABLED
-        else None,
+        override_bucket_name=_get_override_bucket_name(secure_session),
     )
 
     update_query = (
@@ -173,9 +180,7 @@ async def update_application_source_file(
     ).write_to_s3(
         application_id,
         remove_previous_files=False,
-        override_bucket_name=secure_session.identity_payload.organization_id
-        if settings.MULTI_TENANCY_ENABLED
-        else None,
+        override_bucket_name=_get_override_bucket_name(secure_session),
     )
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
@@ -209,9 +214,7 @@ async def applications_delete_upload(
 
     ApplicationFiles.delete_from_s3(
         application_id,
-        override_bucket_name=secure_session.identity_payload.organization_id
-        if settings.MULTI_TENANCY_ENABLED
-        else None,
+        override_bucket_name=_get_override_bucket_name(secure_session),
     )
 
     update_query = (
@@ -262,9 +265,7 @@ async def application_delete(
 
     ApplicationFiles.delete_from_s3(
         application_id,
-        override_bucket_name=secure_session.identity_payload.organization_id
-        if settings.MULTI_TENANCY_ENABLED
-        else None,
+        override_bucket_name=_get_override_bucket_name(secure_session),
     )
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
@@ -313,9 +314,7 @@ async def application_delete_by_identifier(
 
     ApplicationFiles.delete_from_s3(
         application.id,
-        override_bucket_name=secure_session.identity_payload.organization_id
-        if settings.MULTI_TENANCY_ENABLED
-        else None,
+        override_bucket_name=_get_override_bucket_name(secure_session),
     )
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
@@ -403,9 +402,7 @@ async def applications_get_by_id(
     if application.application_uploaded:
         application_files = ApplicationFiles.get_from_s3(
             application.id,
-            override_bucket_name=secure_session.identity_payload.organization_id
-            if settings.MULTI_TENANCY_ENABLED
-            else None,
+            override_bucket_name=_get_override_bucket_name(secure_session),
         )
         application.application_config = application_files.config_file
         application.application_source_file = application_files.source_file

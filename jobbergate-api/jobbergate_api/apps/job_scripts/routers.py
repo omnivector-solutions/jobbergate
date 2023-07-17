@@ -12,6 +12,7 @@ from sqlalchemy.sql import func
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import ApplicationResponse
+from jobbergate_api.config import settings
 from jobbergate_api.apps.job_scripts.job_script_files import (
     JOBSCRIPTS_MAIN_FILE_FOLDER,
     JobScriptCreationError,
@@ -48,6 +49,15 @@ async def _fetch_job_script_by_id(
     Fetch a job_script from the database by its id.
     """
     return await fetch_instance(secure_session.session, job_script_id, job_scripts_table, JobScriptResponse)
+
+
+def _get_override_bucket_name(secure_session: SecureSession) -> Optional[str]:
+    """
+    Get the override_bucket_name based on organization_id if multi-tenancy is enabled.
+    """
+    if settings.MULTI_TENANCY_ENABLED:
+        return secure_session.identity_payload.organization_id
+    return None
 
 
 @router.post(
@@ -121,7 +131,10 @@ async def job_script_create(
         )
 
         if jobscript_files:
-            jobscript_files.write_to_s3(new_job_script.id)
+            jobscript_files.write_to_s3(
+                new_job_script.id,
+                override_bucket_name=_get_override_bucket_name(secure_session),
+            )
 
     except INTEGRITY_CHECK_EXCEPTIONS as e:
         logger.error(f"Reverting database transaction: {str(e)}")
@@ -176,7 +189,10 @@ async def job_script_get(
     job_script = JobScriptResponse.from_orm(job_script_data)
 
     try:
-        job_script.job_script_files = JobScriptFiles.get_from_s3(job_script_id)
+        job_script.job_script_files = JobScriptFiles.get_from_s3(
+            job_script_id,
+            override_bucket_name=_get_override_bucket_name(secure_session),
+        )
     except (KeyError, ValueError):
         message = f"JobScript file not found for id={job_script_id}."
         logger.warning(message)
@@ -209,7 +225,11 @@ async def job_script_create_file_content(
     )
 
     jobscript_files = JobScriptFiles.get_from_single_upload_file(job_script_file)
-    jobscript_files.write_to_s3(job_script_id, remove_previous_files=True)
+    jobscript_files.write_to_s3(
+        job_script_id,
+        remove_previous_files=True,
+        override_bucket_name=_get_override_bucket_name(secure_session),
+    )
 
     update_query = (
         job_scripts_table.update()
@@ -376,7 +396,10 @@ async def job_script_delete(
     await secure_session.session.execute(delete_query)
 
     try:
-        JobScriptFiles.delete_from_s3(job_script_id)
+        JobScriptFiles.delete_from_s3(
+            job_script_id,
+            override_bucket_name=_get_override_bucket_name(secure_session),
+        )
     except KeyError:
         # There is no need to raise an error if we try to delete a file that does not exist
         logger.warning(f"Tried to delete {job_script_id=}, but it was not found on S3.")
@@ -440,7 +463,10 @@ async def job_script_update(
             job_script.job_script_files.write_to_s3(job_script_id)
             job_script_response.job_script_files = job_script.job_script_files
         else:
-            job_script_response.job_script_files = JobScriptFiles.get_from_s3(job_script_id)
+            job_script_response.job_script_files = JobScriptFiles.get_from_s3(
+                job_script_id,
+                override_bucket_name=_get_override_bucket_name(secure_session),
+            )
     except (KeyError, ValueError) as e:
         logger.error(f"Reverting database transaction: {str(e)}")
         raise HTTPException(
