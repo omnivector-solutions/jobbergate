@@ -12,7 +12,6 @@ from sqlalchemy.sql import func
 from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import ApplicationResponse
-from jobbergate_api.config import settings
 from jobbergate_api.apps.job_scripts.job_script_files import (
     JOBSCRIPTS_MAIN_FILE_FOLDER,
     JobScriptCreationError,
@@ -26,6 +25,7 @@ from jobbergate_api.apps.job_scripts.schemas import (
 )
 from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.apps.permissions import Permissions, check_owner
+from jobbergate_api.config import settings
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.storage import (
     INTEGRITY_CHECK_EXCEPTIONS,

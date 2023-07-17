@@ -206,7 +206,13 @@ class JobScriptFiles(BaseModel):
         file_manager.clear()
         logger.debug(f"Files were deleted for {job_script_id=}")
 
-    def write_to_s3(self, job_script_id: int, *, remove_previous_files: bool = True, override_bucket_name: Optional[str] = None):
+    def write_to_s3(
+        self,
+        job_script_id: int,
+        *,
+        remove_previous_files: bool = True,
+        override_bucket_name: Optional[str] = None,
+    ):
         """
         Write to s3 the files associated with a given id.
         """
@@ -317,7 +323,9 @@ class JobScriptFiles(BaseModel):
         return jobscript_files
 
     @classmethod
-    def file_manager_factory(cls, job_script_id: int, override_bucket_name: Optional[str] = None) -> FileManager:
+    def file_manager_factory(
+        cls, job_script_id: int, override_bucket_name: Optional[str] = None
+    ) -> FileManager:
         """
         Build an application file manager.
         """
