@@ -127,7 +127,7 @@ async def test_delete_application_no_file_uploaded(
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert await fetch_count(synth_session, applications_table) == 0
 
-    mocked_application_deleter.assert_called_once_with(inserted_id)
+    mocked_application_deleter.assert_called_once_with(inserted_id, override_bucket_name=None)
 
 
 @pytest.mark.asyncio
@@ -156,7 +156,7 @@ async def test_delete_application_with_uploaded_file(
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert await fetch_count(synth_session, applications_table) == 0
 
-    mocked_application_deleter.assert_called_once_with(inserted_id)
+    mocked_application_deleter.assert_called_once_with(inserted_id, override_bucket_name=None)
 
 
 @pytest.mark.asyncio
@@ -188,7 +188,7 @@ async def test_delete_application_by_identifier(
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert await fetch_count(synth_session, applications_table) == 0
 
-    mocked_application_deleter.assert_called_once_with(inserted_id)
+    mocked_application_deleter.assert_called_once_with(inserted_id, override_bucket_name=None)
 
 
 @pytest.mark.asyncio
@@ -1243,7 +1243,7 @@ async def test_upload_file_individually__success(
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
     mocked_application_writer.assert_has_calls(
-        [mock.call(inserted_id, remove_previous_files=False) for _ in range(7)]
+        [mock.call(inserted_id, remove_previous_files=False, override_bucket_name=None) for _ in range(7)]
     )
 
 
@@ -1338,7 +1338,7 @@ async def test_delete_file_success(
     response = await client.delete(f"/jobbergate/applications/{inserted_id}/upload")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    mocked_application_deleter.assert_called_once_with(inserted_id)
+    mocked_application_deleter.assert_called_once_with(inserted_id, override_bucket_name=None)
 
     application = await fetch_instance(
         synth_session, inserted_id, applications_table, ApplicationPartialResponse

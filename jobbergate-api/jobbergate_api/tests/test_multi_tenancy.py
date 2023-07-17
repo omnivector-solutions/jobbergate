@@ -10,6 +10,7 @@ import asyncpg
 import pytest
 from fastapi import status
 
+from jobbergate_api.apps.applications.application_files import ApplicationFiles
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import ApplicationPartialResponse
 from jobbergate_api.apps.permissions import Permissions
@@ -134,7 +135,7 @@ async def test_session_tenancy(get_synth_sessions):
 
 
 @pytest.mark.asyncio
-async def test_application_router_with_multi_tenancy(
+async def test_application_router__create_with_multi_tenancy(
     get_synth_sessions,
     client,
     inject_security_header,
@@ -144,7 +145,7 @@ async def test_application_router_with_multi_tenancy(
     Test POST /applications/ correctly creates an application using multi-tenancy.
 
     This method checks to make sure that the correct database is used for the API request based on the
-    client_id that is provided in the auth token in the request header.
+    organization_id that is provided in the auth token in the request header.
     """
     default_organization_id = settings.TEST_DATABASE_NAME
     alt_organization_id = "alt-test-db"
@@ -197,3 +198,116 @@ async def test_application_router_with_multi_tenancy(
                 ApplicationPartialResponse,
             )
             assert alt_database_application == alt_response_application
+
+
+@pytest.mark.asyncio
+async def test_application_router__upload_file_with_multi_tenancy(
+    get_synth_sessions,
+    client,
+    inject_security_header,
+    tweak_settings,
+    make_dummy_file,
+    dummy_application_config,
+    make_files_param,
+):
+    """
+    Test that files are uploaded correctly using using multi-tenancy.
+
+    This method checks to make sure that the correct bucket name is used for the API request based on the
+    organization_id that is provided in the auth token in the request header.
+    """
+    default_organization_id = settings.TEST_DATABASE_NAME
+    alt_organization_id = "alt-test-db"
+
+    dummy_file = make_dummy_file("jobbergate.yaml", content=dummy_application_config)
+
+    with tweak_settings(
+        MULTI_TENANCY_ENABLED=True,
+        MAX_UPLOAD_FILE_SIZE=600,
+    ):
+        with make_files_param(dummy_file) as files_param:
+            async with get_synth_sessions() as (default_session, alt_session):
+
+                with patch(
+                    "jobbergate_api.apps.applications.routers.ApplicationFiles.get_from_upload_files",
+                    return_value=ApplicationFiles(),
+                ):
+                    with patch(
+                        "jobbergate_api.apps.applications.routers.ApplicationFiles.write_to_s3"
+                    ) as mocked_uploader:
+
+                        default_application_data = dict(
+                            application_owner_email="default@email.com",
+                            application_name="default_name",
+                        )
+
+                        default_inserted_id = await insert_data(
+                            default_session,
+                            applications_table,
+                            default_application_data,
+                        )
+                        assert await fetch_count(default_session, applications_table) == 1
+
+                        default_application = await fetch_instance(
+                            default_session,
+                            default_inserted_id,
+                            applications_table,
+                            ApplicationPartialResponse,
+                        )
+                        assert not default_application.application_uploaded
+
+                        inject_security_header(
+                            "default@email.com",
+                            Permissions.APPLICATIONS_EDIT,
+                            organization_id=default_organization_id,
+                        )
+
+                        response = await client.post(
+                            f"/jobbergate/applications/{default_inserted_id}/upload",
+                            files=files_param,
+                        )
+
+                        assert response.status_code == status.HTTP_201_CREATED
+                        mocked_uploader.assert_called_once_with(
+                            default_inserted_id, override_bucket_name=default_organization_id
+                        )
+
+                with patch(
+                    "jobbergate_api.apps.applications.routers.ApplicationFiles.get_from_upload_files",
+                    return_value=ApplicationFiles(),
+                ):
+                    with patch(
+                        "jobbergate_api.apps.applications.routers.ApplicationFiles.write_to_s3"
+                    ) as mocked_uploader:
+
+                        alt_application_data = dict(
+                            application_owner_email="alt@email.com",
+                            application_name="alt_name",
+                        )
+
+                        alt_inserted_id = await insert_data(
+                            alt_session,
+                            applications_table,
+                            alt_application_data,
+                        )
+                        assert await fetch_count(alt_session, applications_table) == 1
+
+                        alt_application = await fetch_instance(
+                            alt_session, alt_inserted_id, applications_table, ApplicationPartialResponse
+                        )
+                        assert not alt_application.application_uploaded
+
+                        inject_security_header(
+                            "alt@email.com",
+                            Permissions.APPLICATIONS_EDIT,
+                            organization_id=alt_organization_id,
+                        )
+                        response = await client.post(
+                            f"/jobbergate/applications/{alt_inserted_id}/upload",
+                            files=files_param,
+                        )
+
+                        assert response.status_code == status.HTTP_201_CREATED
+                        mocked_uploader.assert_called_once_with(
+                            alt_inserted_id, override_bucket_name=alt_organization_id
+                        )
