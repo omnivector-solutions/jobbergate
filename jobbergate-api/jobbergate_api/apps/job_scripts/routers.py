@@ -101,7 +101,9 @@ async def job_script_create(
             )
         try:
             jobscript_files = JobScriptFiles.render_from_application(
-                application_files=ApplicationFiles.get_from_s3(application.id),
+                application_files=ApplicationFiles.get_from_s3(
+                    application.id, override_bucket_name=_get_override_bucket_name(secure_session)
+                ),
                 user_supplied_parameters=job_script.param_dict or {},
                 sbatch_params=job_script.sbatch_params or [],
             )
@@ -259,7 +261,9 @@ async def job_script_replace_file_content(
         job_script.job_script_owner_email, secure_session.identity_payload.email, job_script_id, "job_script"
     )
 
-    file_manager = JobScriptFiles.file_manager_factory(job_script_id)
+    file_manager = JobScriptFiles.file_manager_factory(
+        job_script_id, override_bucket_name=_get_override_bucket_name(secure_session)
+    )
     file_content = job_script_file.file.read().decode("utf-8")
 
     for s3_path in file_manager.keys():
@@ -294,7 +298,9 @@ async def job_script_download_file(
 
     await _fetch_job_script_by_id(secure_session, job_script_id)
 
-    file_manager = JobScriptFiles.file_manager_factory(job_script_id)
+    file_manager = JobScriptFiles.file_manager_factory(
+        job_script_id, override_bucket_name=_get_override_bucket_name(secure_session)
+    )
 
     for s3_path in file_manager.keys():
         root_dir = s3_path.parts[0]
