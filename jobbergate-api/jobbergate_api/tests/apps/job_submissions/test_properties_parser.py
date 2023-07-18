@@ -454,7 +454,7 @@ class TestGetJobPropertiesFromJobScript:
 
         with mock_job_script_files("almost-empty-file") as mocked:
             actual_job_properties = get_job_properties_from_job_script(job_script_id)
-            mocked.assert_called_once_with(job_script_id)
+            mocked.assert_called_once_with(job_script_id, override_bucket_name=None)
 
         assert actual_job_properties == desired_job_properties
 
@@ -467,7 +467,7 @@ class TestGetJobPropertiesFromJobScript:
 
         with mock_job_script_files("#SBATCH --exclusive\n#SBATCH -J test-test") as mocked:
             actual_job_properties = get_job_properties_from_job_script(job_script_id)
-            mocked.assert_called_once_with(job_script_id)
+            mocked.assert_called_once_with(job_script_id, override_bucket_name=None)
 
         assert actual_job_properties == desired_job_properties
 
@@ -485,7 +485,7 @@ class TestGetJobPropertiesFromJobScript:
                 job_script_id,
                 **job_properties,
             )
-            mocked.assert_called_once_with(job_script_id)
+            mocked.assert_called_once_with(job_script_id, override_bucket_name=None)
 
         assert actual_job_properties == desired_job_properties
 
@@ -505,7 +505,7 @@ class TestGetJobPropertiesFromJobScript:
                 job_script_id,
                 **job_properties,
             )
-            mocked.assert_called_once_with(job_script_id)
+            mocked.assert_called_once_with(job_script_id, override_bucket_name=None)
 
         assert actual_job_properties == desired_job_properties
 
@@ -518,7 +518,7 @@ class TestGetJobPropertiesFromJobScript:
         with mock_job_script_files("almost-empty-file") as mocked:
             with pytest.raises(ValidationError, match="1 validation error for JobProperties"):
                 get_job_properties_from_job_script(job_script_id, foo="bar")
-            mocked.assert_called_once_with(job_script_id)
+            mocked.assert_called_once_with(job_script_id, override_bucket_name=None)
 
 
 class TestBidictMapping:

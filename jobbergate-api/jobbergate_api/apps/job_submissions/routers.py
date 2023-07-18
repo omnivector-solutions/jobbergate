@@ -25,6 +25,7 @@ from jobbergate_api.apps.job_submissions.schemas import (
     PendingJobSubmission,
 )
 from jobbergate_api.apps.permissions import Permissions, check_owner
+from jobbergate_api.config import settings
 from jobbergate_api.email_notification import notify_submission_rejected
 from jobbergate_api.pagination import Pagination, ok_response, package_response
 from jobbergate_api.storage import (
@@ -51,6 +52,15 @@ async def _fetch_job_submission_by_id(
     return await fetch_instance(
         secure_session.session, job_submission_id, job_submissions_table, JobSubmissionResponse
     )
+
+
+def _get_override_bucket_name(secure_session: SecureSession) -> Optional[str]:
+    """
+    Get the override_bucket_name based on organization_id if multi-tenancy is enabled.
+    """
+    if settings.MULTI_TENANCY_ENABLED:
+        return secure_session.identity_payload.organization_id
+    return None
 
 
 @router.post(
@@ -100,7 +110,9 @@ async def job_submission_create(
 
     try:
         job_properties = get_job_properties_from_job_script(
-            job_submission.job_script_id, **job_submission.execution_parameters.dict(exclude_unset=True)
+            job_submission.job_script_id,
+            _get_override_bucket_name(secure_session=secure_session),
+            **job_submission.execution_parameters.dict(exclude_unset=True),
         )
         new_job_submission_data["execution_parameters"] = job_properties.dict(exclude_unset=True)
     except Exception as e:

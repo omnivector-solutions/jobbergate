@@ -77,6 +77,7 @@ async def test_create_job_submission__with_client_id_in_token(
         assert response.status_code == status.HTTP_201_CREATED
         mocked.assert_called_once_with(
             inserted_job_script_id,
+            None,
             **create_data["execution_parameters"],
         )
 
@@ -164,7 +165,7 @@ async def test_create_job_submission__without_execution_parameters(
         mocked.return_value = JobProperties()
         with time_frame() as window:
             response = await client.post("/jobbergate/job-submissions/", json=create_data)
-        mocked.assert_called_once_with(inserted_job_script_id)
+        mocked.assert_called_once_with(inserted_job_script_id, None)
 
     assert response.status_code == status.HTTP_201_CREATED
 
@@ -334,6 +335,7 @@ async def test_create_job_submission__with_execution_directory(
             response = await client.post("/jobbergate/job-submissions/", json=create_data)
         mocked.assert_called_once_with(
             inserted_job_script_id,
+            None,
             **create_data["execution_parameters"],
         )
 
