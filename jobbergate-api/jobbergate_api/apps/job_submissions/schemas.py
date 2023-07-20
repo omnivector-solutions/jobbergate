@@ -362,7 +362,7 @@ class PendingJobSubmission(BaseModel):
         schema_extra = job_submission_meta_mapper
 
 
-class ActiveJobSubmission(BaseModel, extra=Extra.ignore):
+class ActiveJobSubmission(BaseModel):
     """
     Specialized model for the cluster-agent to pull an active job_submission.
     """
@@ -370,3 +370,7 @@ class ActiveJobSubmission(BaseModel, extra=Extra.ignore):
     id: int
     name: str
     slurm_job_id: int
+
+    class Config:
+        orm_mode = True
+        extra = Extra.ignore

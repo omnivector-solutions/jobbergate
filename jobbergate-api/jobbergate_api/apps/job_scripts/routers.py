@@ -1,21 +1,19 @@
 """Router for the Job Script Template resource."""
-from typing import Optional
+from typing import cast
 
-from armasec import TokenPayload
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Path, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
 from fastapi.responses import StreamingResponse
 from fastapi_pagination import Page
 from loguru import logger
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.dependecies import db_session, s3_bucket
+from jobbergate_api.apps.dependecies import file_services, s3_bucket, secure_services
 from jobbergate_api.apps.garbage_collector import garbage_collect
-from jobbergate_api.apps.job_script_templates.dependecies import template_files_service, template_service
-from jobbergate_api.apps.job_scripts.dependecies import job_script_files_service, job_script_service
-from jobbergate_api.apps.job_scripts.tools import inject_sbatch_params, render_template_file
+from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate
+from jobbergate_api.apps.job_script_templates.services import crud_service as template_crud_service
+from jobbergate_api.apps.job_script_templates.services import template_file_service
 from jobbergate_api.apps.job_scripts.models import JobScriptFile
 from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptCreateRequest,
@@ -23,9 +21,10 @@ from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptUpdateRequest,
     RenderFromTemplateRequest,
 )
+from jobbergate_api.apps.job_scripts.services import crud_service, file_service
+from jobbergate_api.apps.job_scripts.tools import inject_sbatch_params
 from jobbergate_api.apps.permissions import Permissions
-from jobbergate_api.apps.services import FileService, TableService
-from jobbergate_api.security import IdentityClaims, guard
+from jobbergate_api.storage import SecureSession, secure_session
 
 router = APIRouter(prefix="/job-scripts", tags=["Job Scripts"])
 
@@ -38,21 +37,22 @@ router = APIRouter(prefix="/job-scripts", tags=["Job Scripts"])
 )
 async def job_script_create(
     create_request: JobScriptCreateRequest,
-    service: TableService = Depends(job_script_service),
-    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT)),
+    secure_session: SecureSession = Depends(
+        secure_services(Permissions.JOB_SCRIPTS_EDIT, services=[crud_service])
+    ),
 ):
     """Create a stand alone job script."""
     logger.info(f"Creating a new job script with {create_request=}")
 
-    identity_claims = IdentityClaims.from_token_payload(token_payload)
-    if identity_claims.email is None:
+    if secure_session.identity_payload.email is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The token payload does not contain an email",
         )
 
-    new_job_script = await service.create(
-        **create_request.dict(exclude_unset=True), owner_email=identity_claims.email
+    new_job_script = await crud_service.create(
+        owner_email=secure_session.identity_payload.email,
+        **create_request.dict(exclude_unset=True),
     )
 
     return new_job_script
@@ -63,82 +63,77 @@ async def job_script_create(
     status_code=status.HTTP_201_CREATED,
     response_model=JobScriptResponse,
     description="Endpoint for job script creation",
+    dependencies=[Depends(file_services(file_service, template_file_service))],
 )
 async def job_script_create_from_template(
     create_request: JobScriptCreateRequest,
     render_request: RenderFromTemplateRequest,
     id_or_identifier: int | str = Path(...),
-    session: AsyncSession = Depends(db_session),
-    job_script_service: TableService = Depends(job_script_service),
-    job_script_file_service: FileService = Depends(job_script_files_service),
-    template_service: TableService = Depends(template_service),
-    template_file_service: FileService = Depends(template_files_service),
-    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT)),
+    secure_session: SecureSession = Depends(
+        secure_services(
+            Permissions.JOB_SCRIPTS_EDIT,
+            services=[crud_service, template_crud_service, file_service, template_file_service],
+        )
+    ),
 ):
     """Create a new job script from a job script template."""
     logger.info(f"Creating a new job script from {id_or_identifier=} with {create_request=}")
 
-    identity_claims = IdentityClaims.from_token_payload(token_payload)
-    if identity_claims.email is None:
+    if secure_session.identity_payload.email is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The token payload does not contain an email",
         )
 
-    if not render_request.template_output_name_mapping:
+    base_template = cast(JobScriptTemplate, await template_crud_service.get(id_or_identifier))
+
+    required_map = render_request.template_output_name_mapping
+    entrypoint_key = list(required_map.values())[0]
+    mapped_template_files = {}
+    for template_file in base_template.template_files:
+        new_filename = required_map.pop(template_file.filename, None)
+        if new_filename is None:
+            continue
+        mapped_template_files[new_filename] = template_file
+    if len(required_map) > 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No template was selected for rendering, template_output_name_mapping is empty.",
+            detail=f"The template files are missing required files: {required_map.keys()} for {id_or_identifier}",
         )
 
-    base_template = await template_service.get(id_or_identifier)
-
-    if not set(render_request.template_output_name_mapping.keys()).issubset(
-        base_template.template_files.keys()
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The required template files {} are not a subset of the template files for {}".format(
-                render_request.template_output_name_mapping.keys(), id_or_identifier
-            ),
-        )
-
-    job_script = await job_script_service.create(
-        **create_request.dict(exclude_unset=True),
-        owner_email=identity_claims.email,
+    job_script = await crud_service.create(
+        owner_email=secure_session.identity_payload.email,
         parent_template_id=base_template.id,
+        **create_request.dict(exclude_unset=True),
     )
 
-    for i, (template_name, output_name) in enumerate(render_request.template_output_name_mapping.items()):
-        file_content = await render_template_file(
-            template_file_service,
-            base_template.template_files[template_name],
+    for (new_filename, template_file) in mapped_template_files.items():
+        file_content = await template_file_service.render(
+            template_file,
             render_request.param_dict,
         )
 
-        if i == 0:
+        if new_filename == entrypoint_key:
             file_type = FileType.ENTRYPOINT
             if render_request.sbatch_params:
                 file_content = inject_sbatch_params(file_content, render_request.sbatch_params)
         else:
             file_type = FileType.SUPPORT
 
-        if base_template.template_files[template_name].file_type != file_type:
+        if template_file.file_type != file_type:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="The file type {} of {} does not match the expected file type {}".format(
-                    base_template.template_files[template_name].file_type, template_name, file_type
-                ),
+                detail=f"The file type {template_file} does not match the expected file type {file_type}",
             )
 
-        await job_script_file_service.upsert(
-            id=job_script.id,
+        await file_service.upsert(
+            parent_id=job_script.id,
+            filename=new_filename,
             upload_content=file_content,
             file_type=file_type,
-            filename=output_name,
         )
 
-    await session.refresh(job_script)
+    await secure_session.session.refresh(job_script)
     return job_script
 
 
@@ -146,16 +141,12 @@ async def job_script_create_from_template(
     "/{id}",
     description="Endpoint to return a job script by its id",
     response_model=JobScriptResponse,
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW))],
+    dependencies=[Depends(secure_services(Permissions.JOB_SCRIPTS_VIEW, services=[crud_service]))],
 )
-async def job_script_get(
-    id: int = Path(),
-    service: TableService = Depends(job_script_service),
-):
+async def job_script_get(id: int = Path()):
     """Get a job script by id."""
     logger.info(f"Getting job script {id=}")
-
-    return await service.get(id)
+    return await crud_service.get(id)
 
 
 @router.get(
@@ -165,20 +156,20 @@ async def job_script_get(
 )
 async def job_script_get_list(
     user_only: bool = Query(False),
-    search: Optional[str] = Query(None),
-    sort_field: Optional[str] = Query(None),
+    search: str | None = Query(None),
+    sort_field: str | None = Query(None),
     sort_ascending: bool = Query(True),
-    from_job_script_template_id: Optional[int] = Query(
+    from_job_script_template_id: int
+    | None = Query(
         None,
         description="Filter job-scripts by the job-script-template-id they were created from.",
     ),
-    token_payload: TokenPayload = Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW)),
-    service: TableService = Depends(job_script_service),
+    secure_session: SecureSession = Depends(
+        secure_services(Permissions.JOB_SCRIPTS_VIEW, services=[crud_service])
+    ),
 ):
     """Get a list of job scripts."""
     logger.debug("Preparing to list job scripts")
-
-    identity_claims = IdentityClaims.from_token_payload(token_payload)
 
     list_kwargs = dict(
         search=search,
@@ -187,11 +178,11 @@ async def job_script_get_list(
     )
 
     if user_only:
-        list_kwargs["owner_email"] = identity_claims.email
+        list_kwargs["owner_email"] = secure_session.identity_payload.email
     if from_job_script_template_id:
         list_kwargs["parent_template_id"] = from_job_script_template_id
 
-    return await service.list(**list_kwargs)
+    return await crud_service.paginated_list(**list_kwargs)
 
 
 @router.put(
@@ -199,45 +190,43 @@ async def job_script_get_list(
     status_code=status.HTTP_200_OK,
     description="Endpoint to update a job script by id",
     response_model=JobScriptResponse,
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
+    dependencies=[Depends(secure_services(Permissions.JOB_SCRIPTS_EDIT, services=[crud_service]))],
 )
 async def job_script_update(
     update_params: JobScriptUpdateRequest,
     id: int = Path(),
-    service: TableService = Depends(job_script_service),
 ):
     """Update a job script template by id or identifier."""
     logger.info(f"Updating job script {id=} with {update_params=}")
-    await service.update(id, **update_params.dict(exclude_unset=True))
-    return await service.get(id)
+    return await crud_service.update(id, **update_params.dict(exclude_unset=True))
 
 
 @router.delete(
     "/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete a job script by id",
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
+    dependencies=[Depends(secure_services(Permissions.JOB_SCRIPTS_EDIT, services=[crud_service]))],
 )
 async def job_script_delete(
     id: int = Path(...),
-    service: TableService = Depends(job_script_service),
 ):
     """Delete a job script template by id or identifier."""
     logger.info(f"Deleting job script {id=}")
-    await service.delete(id)
+    await crud_service.delete(id)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get(
     "/{id}/upload/{file_name:path}",
     description="Endpoint to get a file from a job script",
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_VIEW))],
+    dependencies=[
+        Depends(secure_services(Permissions.JOB_SCRIPTS_VIEW, services=[crud_service, file_service])),
+        Depends(file_services(file_service)),
+    ],
 )
 async def job_script_get_file(
     id: int = Path(...),
     file_name: str = Path(...),
-    service: TableService = Depends(job_script_service),
-    file_service: FileService = Depends(job_script_files_service),
 ):
     """
     Get a job script file.
@@ -245,17 +234,10 @@ async def job_script_get_file(
     Note:
         See https://fastapi.tiangolo.com/advanced/custom-response/#streamingresponse
     """
-    job_script = await service.get(id)
-
-    job_script_file = job_script.files.get(file_name)
-    if not job_script_file:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Job script file {file_name=} was not found",
-        )
-
+    job_script = await crud_service.get(id)
+    job_script_file = await file_service.get(job_script.id, file_name)
     return StreamingResponse(
-        content=file_service.file_content_generator(job_script_file),
+        content=await file_service.stream_file_content(job_script_file),
         media_type="text/plain",
         headers={"filename": job_script_file.filename},
     )
@@ -265,22 +247,23 @@ async def job_script_get_file(
     "/{id}/upload/{file_type}",
     status_code=status.HTTP_200_OK,
     description="Endpoint to upload a file to a job script file",
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
+    dependencies=[
+        Depends(secure_services(Permissions.JOB_SCRIPTS_EDIT, services=[crud_service, file_service])),
+        Depends(file_services(file_service)),
+    ],
 )
 async def job_script_upload_file(
     id: int = Path(...),
     file_type: FileType = Path(...),
     upload_file: UploadFile = File(..., description="File to upload"),
-    service: TableService = Depends(job_script_service),
-    file_service: FileService = Depends(job_script_files_service),
 ):
     """Upload a file to a job script."""
     logger.debug(f"Uploading file {upload_file.filename} to job script {id=}")
-    job_script = await service.get(id)
+    job_script = await crud_service.get(id)
     await file_service.upsert(
-        id=job_script.id,
-        upload_content=upload_file,
+        parent_id=job_script.id,
         filename=upload_file.filename,
+        upload_content=upload_file,
         file_type=file_type,
     )
 
@@ -289,24 +272,18 @@ async def job_script_upload_file(
     "/{id}/upload/{file_name}",
     status_code=status.HTTP_200_OK,
     description="Endpoint to delete a file from a job script",
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
+    dependencies=[
+        Depends(secure_services(Permissions.JOB_SCRIPTS_EDIT, services=[crud_service, file_service])),
+        Depends(file_services(file_service)),
+    ],
 )
 async def job_script_delete_file(
     id: int = Path(...),
     file_name: str = Path(...),
-    service: TableService = Depends(job_script_service),
-    file_service: FileService = Depends(job_script_files_service),
 ):
     """Delete a file from a job script template by id or identifier."""
-    job_script = await service.get(id)
-
-    job_script_file = job_script.files.get(file_name)
-    if job_script_file is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Job script file {file_name=} was not found",
-        )
-
+    job_script = await crud_service.get(id)
+    job_script_file = await file_service.get(job_script.id, file_name)
     await file_service.delete(job_script_file)
 
 
@@ -314,19 +291,18 @@ async def job_script_delete_file(
     "/upload/garbage-collector",
     status_code=status.HTTP_202_ACCEPTED,
     description="Endpoint to delete all unused files from the job script file storage",
-    dependencies=[Depends(guard.lockdown(Permissions.JOB_SCRIPTS_EDIT))],
     tags=["Garbage collector"],
 )
 async def job_script_template_garbage_collector(
     background_tasks: BackgroundTasks,
-    session: AsyncSession = Depends(db_session),
+    secure_session: SecureSession = Depends(secure_session(Permissions.JOB_SCRIPTS_EDIT)),
     bucket=Depends(s3_bucket),
 ):
     """Delete all unused files from job scripts on the file storage."""
     logger.info("Starting garbage collection from jobbergate file storage")
     background_tasks.add_task(
         garbage_collect,
-        session,
+        secure_session.session,
         bucket,
         [JobScriptFile],
         background_tasks,

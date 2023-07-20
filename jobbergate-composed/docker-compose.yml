@@ -99,19 +99,21 @@ services:
       - POSTGRES_DB=compose-db-name
     ports:
       - 5432:5432
-  
+
   test-db:
     image: postgres
     restart: always
     networks:
       - jobbergate-net
+    volumes:
+      - ./etc/docker-postgres-multiple-databases:/docker-entrypoint-initdb.d
     environment:
       - POSTGRES_PASSWORD=test-pswd
       - POSTGRES_USER=test-user
-      - POSTGRES_DB=test-db
+      - POSTGRES_MULTIPLE_DATABASES="test-db","alt-test-db"
     ports:
       - 5433:5432
-  
+
   minio:
     image: minio/minio
     networks:

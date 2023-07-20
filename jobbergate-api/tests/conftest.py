@@ -8,15 +8,16 @@ import string
 import typing
 from textwrap import dedent
 from unittest.mock import patch
-from aioboto3.session import Session
 
 import pytest
-from httpx import AsyncClient
+from aioboto3.session import Session as Boto3Session
+from fastapi import status
+from httpx import AsyncClient, Response
 
 from jobbergate_api.apps.models import Base
 from jobbergate_api.config import settings
-from jobbergate_api.database import SessionLocal, engine
 from jobbergate_api.main import app
+from jobbergate_api.storage import engine_factory
 
 # Charset for producing random strings
 CHARSET = string.ascii_letters + string.digits + string.punctuation
@@ -45,14 +46,15 @@ async def synth_engine():
     """
     Provide a fixture to prepare the test database.
     """
+    engine = engine_factory.get_engine()
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all, checkfirst=True)
     try:
         yield engine
     finally:
         async with engine.begin() as connection:
-            for table in reversed(Base.metadata.sorted_tables):
-                await connection.execute(table.delete())
+            await connection.run_sync(Base.metadata.drop_all)
+        await engine_factory.cleanup()
 
 
 @pytest.fixture(scope="function")
@@ -64,13 +66,20 @@ async def synth_session():
     the dependency injection for the router code. Otherwise, changes made in the router's session would not
     be visible in the test code. Not that changes made in this synthesized session are always rolled back
     and never committed.
-    """
 
-    async with SessionLocal() as session:
+    NOTE:
+        Any router tests that interact with endpoints that use the database MUST use this fixture or the
+        session they get will not be the same session used across different routes or by the locally bound
+        services.
+    """
+    session = engine_factory.get_session()
+    with patch("jobbergate_api.storage.engine_factory.get_session", return_value=session):
         await session.begin_nested()
-        with patch("jobbergate_api.apps.dependecies.db_session", return_value=session):
+        try:
             yield session
-        await session.rollback()
+        finally:
+            await session.rollback()
+            await session.close()
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -78,7 +87,7 @@ async def synth_s3_bucket_session():
     if settings.S3_ENDPOINT_URL != "http://localhost:9000" or not settings.S3_BUCKET_NAME.startswith("test-"):
         raise ValueError("Check test credentials for s3")
 
-    session = Session()
+    session = Boto3Session()
 
     async with session.resource("s3", endpoint_url=settings.S3_ENDPOINT_URL) as s3:
         bucket = await s3.Bucket(settings.S3_BUCKET_NAME)
@@ -91,6 +100,7 @@ async def synth_s3_bucket_session():
             try:
                 yield bucket
             finally:
+                await bucket.objects.all().delete()
                 await bucket.delete()
 
 
@@ -128,7 +138,7 @@ async def client():
 
 
 @pytest.fixture
-async def inject_security_header(client, build_rs256_token):
+def inject_security_header(client, build_rs256_token):
     """
     Provide a helper method that will inject a security token into the requests for a test client.
 
@@ -141,11 +151,13 @@ async def inject_security_header(client, build_rs256_token):
         owner_email: str,
         *permissions: typing.List[str],
         client_id: typing.Optional[str] = None,
+        organization_id: typing.Optional[str] = None,
     ):
         claim_overrides = dict(
             email=owner_email,
             client_id=client_id,
             permissions=permissions,
+            organization={organization_id: dict()},
         )
         token = build_rs256_token(claim_overrides=claim_overrides)
         client.headers.update({"Authorization": f"Bearer {token}"})
@@ -355,5 +367,48 @@ def make_files_param():
                 )
                 for path in file_paths
             ]
+
+    return _helper
+
+
+@pytest.fixture
+def unpack_response():
+    """
+    Provide a callable fixture that unpacks a paginated response.
+
+    This fixture is mostly useful for checking the response from list endpoints.
+
+    Also:
+     * assert that the response has the expected status
+     * optionally extract just the value for a given key
+     * optionally sort the final item list
+    """
+
+    def _helper(
+        response: Response,
+        expected_status_code=status.HTTP_200_OK,
+        key: str | None = None,
+        sort: bool = False,
+        check_total: int | None = None,
+        check_page: int | None = None,
+        check_size: int | None = None,
+        check_pages: int | None = None,
+    ):
+        assert response.status_code == expected_status_code, f"Request failed: {response.text}"
+        response_data = response.json()
+        items: list[typing.Any] = response_data.get("items", [])
+        if key is not None:
+            items = [i[key] for i in items]
+        if sort:
+            items = sorted(items)
+        if check_total:
+            assert response_data["total"] == check_total
+        if check_page:
+            assert response_data["page"] == check_page
+        if check_size:
+            assert response_data["size"] == check_size
+        if check_pages:
+            assert response_data["pages"] == check_pages
+        return items
 
     return _helper

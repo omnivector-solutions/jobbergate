@@ -1,14 +1,12 @@
 """
 Test the properties parser module.
 """
-import contextlib
 import inspect
 from argparse import ArgumentParser
-from pathlib import Path
 from typing import MutableMapping
-from unittest import mock
 
 import pytest
+import snick
 from bidict import bidict
 from pydantic import ValidationError
 
@@ -415,28 +413,6 @@ def test_get_job_parameters(dummy_slurm_script):
     assert desired_dict == actual_dict
 
 
-@pytest.fixture
-def mock_job_script_files():
-    """
-    Create a dummy job script file with the given content and mock JobScriptFiles.get_from_s3.
-    """
-
-    @contextlib.contextmanager
-    def _helper(main_file_content):
-        main_file_name = Path("jobbergate.sh")
-        job_script_files = JobScriptFiles(
-            main_file_path=main_file_name,
-            files={main_file_name: main_file_content},
-        )
-        with mock.patch(
-            "jobbergate_api.apps.job_submissions.properties_parser.JobScriptFiles.get_from_s3"
-        ) as mocked:
-            mocked.return_value = job_script_files
-            yield mocked
-
-    return _helper
-
-
 class TestGetJobPropertiesFromJobScript:
     """
     Test the get_job_properties_from_job_script function.
@@ -444,80 +420,68 @@ class TestGetJobPropertiesFromJobScript:
     It covers job properties obtained from the job script and from the users when creating a job submission.
     """
 
-    def test_base_case(self, mock_job_script_files):
+    def test_base_case(self):
         """
         Base case, not SBATCH parameters on the job script and no extra parameters.
         """
-        job_script_id = 1
+        script_contents = "almost-empty-file"
         desired_job_properties = JobProperties()
-
-        with mock_job_script_files("almost-empty-file") as mocked:
-            actual_job_properties = get_job_properties_from_job_script(job_script_id)
-            mocked.assert_called_once_with(job_script_id)
-
+        actual_job_properties = get_job_properties_from_job_script(script_contents)
         assert actual_job_properties == desired_job_properties
 
-    def test_properties_only_from_file(self, mock_job_script_files):
+    def test_properties_only_from_file(self):
         """
         Job properties are obtained only from the job script.
         """
-        job_script_id = 1
+        script_contents = snick.dedent(
+            """
+            #SBATCH --exclusive
+            #SBATCH -J test-test
+            """
+        )
         desired_job_properties = JobProperties(exclusive="exclusive", name="test-test")
-
-        with mock_job_script_files("#SBATCH --exclusive\n#SBATCH -J test-test") as mocked:
-            actual_job_properties = get_job_properties_from_job_script(job_script_id)
-            mocked.assert_called_once_with(job_script_id)
-
+        actual_job_properties = get_job_properties_from_job_script(script_contents)
         assert actual_job_properties == desired_job_properties
 
-    def test_properties_only_from_arguments(self, mock_job_script_files):
+    def test_properties_only_from_arguments(self):
         """
         Job properties are obtained only from the extra arguments.
         """
-        job_script_id = 1
-
+        script_contents = "almost-empty-file"
         job_properties = dict(exclusive="exclusive", name="test-test")
         desired_job_properties = JobProperties.parse_obj(job_properties)
-
-        with mock_job_script_files("almost-empty-file") as mocked:
-            actual_job_properties = get_job_properties_from_job_script(
-                job_script_id,
-                **job_properties,
-            )
-            mocked.assert_called_once_with(job_script_id)
-
+        actual_job_properties = get_job_properties_from_job_script(
+            script_contents,
+            **job_properties,
+        )
         assert actual_job_properties == desired_job_properties
 
-    def test_properties_priority_when_both_are_provided(self, mock_job_script_files):
+    def test_properties_priority_when_both_are_provided(self):
         """
         Job properties are obtained from the job script and from the extra arguments.
 
         The ones from the extra arguments have priority over the ones from the job script.
         """
-        job_script_id = 1
-
+        script_contents = snick.dedent(
+            """
+            #SBATCH --exclusive
+            #SBATCH -J test-test
+            """
+        )
         job_properties = dict(exclusive="exclusive", name="high-priority-test")
         desired_job_properties = JobProperties.parse_obj(job_properties)
-
-        with mock_job_script_files("#SBATCH --exclusive\n#SBATCH -J test-test") as mocked:
-            actual_job_properties = get_job_properties_from_job_script(
-                job_script_id,
-                **job_properties,
-            )
-            mocked.assert_called_once_with(job_script_id)
-
+        actual_job_properties = get_job_properties_from_job_script(
+            script_contents,
+            **job_properties,
+        )
         assert actual_job_properties == desired_job_properties
 
-    def test_properties_fails_with_unknown_field(self, mock_job_script_files):
+    def test_properties_fails_with_unknown_field(self):
         """
         The function fails when the extra arguments contain unknown fields.
         """
-        job_script_id = 1
-
-        with mock_job_script_files("almost-empty-file") as mocked:
-            with pytest.raises(ValidationError, match="1 validation error for JobProperties"):
-                get_job_properties_from_job_script(job_script_id, foo="bar")
-            mocked.assert_called_once_with(job_script_id)
+        with pytest.raises(ValidationError, match="1 validation error for JobProperties"):
+            get_job_properties_from_job_script("almost-empty-file", foo="bar")
 
 
 class TestBidictMapping:

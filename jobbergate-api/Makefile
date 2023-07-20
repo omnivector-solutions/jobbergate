@@ -29,6 +29,8 @@ qa: test mypy lint
 format: install
 	poetry run black ${PACKAGE_NAME}
 	poetry run isort ${PACKAGE_NAME}
+	poetry run black tests
+	poetry run isort tests
 
 .PHONY: local
 local: install

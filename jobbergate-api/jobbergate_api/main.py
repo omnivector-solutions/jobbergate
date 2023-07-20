@@ -3,6 +3,7 @@ Main file to startup the fastapi server.
 """
 import sys
 import typing
+from contextlib import asynccontextmanager
 
 import asyncpg
 import sentry_sdk
@@ -18,7 +19,7 @@ from jobbergate_api.apps.job_script_templates.routers import router as job_scrip
 from jobbergate_api.apps.job_scripts.routers import router as job_scripts_router
 from jobbergate_api.apps.job_submissions.routers import router as job_submissions_router
 from jobbergate_api.config import settings
-from jobbergate_api.storage import handle_fk_error
+from jobbergate_api.storage import engine_factory, handle_fk_error
 
 subapp = FastAPI(
     title="Jobbergate-API",
@@ -74,18 +75,29 @@ async def health_check():
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-app = FastAPI()
-app.mount("/jobbergate", subapp)
-
-
-@app.on_event("startup")
-def init_logger():
+@asynccontextmanager
+async def lifespan(_: FastAPI):
     """
-    Initialize logging.
+    Provide a lifespan context for the app.
+
+    Will set up logging and cleanup database engines when the app is shut down.
+
+    This is the preferred method of handling lifespan events in FastAPI.
+    For mor details, see: https://fastapi.tiangolo.com/advanced/events/
     """
     logger.remove()
     logger.add(sys.stderr, level=settings.LOG_LEVEL)
     logger.info(f"Logging configured 📝 Level: {settings.LOG_LEVEL}")
+
+    yield
+
+    # Skip cleanup if in test mode so that model instances can be used after processing http requests.
+    if settings.DEPLOY_ENV.lower() != "test":
+        await engine_factory.cleanup()
+
+
+app = FastAPI(lifespan=lifespan)
+app.mount("/jobbergate", subapp)
 
 
 @app.exception_handler(RequestValidationError)

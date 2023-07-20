@@ -1,11 +1,10 @@
 """
 JobScript resource schema.
 """
-import urllib.parse
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
@@ -67,7 +66,7 @@ class JobScriptCreateRequest(BaseModel):
     """
 
     name: str
-    description: Optional[str]
+    description: str | None
 
     class Config:
         schema_extra = job_script_meta_mapper
@@ -77,7 +76,7 @@ class RenderFromTemplateRequest(BaseModel):
     """Request model for creating a JobScript entry from a template."""
 
     template_output_name_mapping: dict[str, str]
-    sbatch_params: Optional[list[str]]
+    sbatch_params: list[str] | None
     param_dict: dict[str, Any]
 
     class Config:
@@ -96,22 +95,11 @@ class JobScriptUpdateRequest(JobScriptCreateRequest):
 class JobScriptFile(BaseModel):
     """Model for the job_script_files field of the JobScript resource."""
 
-    id: int
+    parent_id: int
     filename: str
     file_type: FileType
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-
-    path: Optional[str]
-
-    @root_validator
-    def _compute_path(cls, values):
-        values["path"] = "/jobbergate/job-scripts/{}/upload/{}".format(
-            values["id"],
-            urllib.parse.quote(values["filename"], safe=""),
-        )
-
-        return values
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     class Config:
         orm_mode = True
@@ -121,14 +109,14 @@ class JobScriptFile(BaseModel):
 class JobScriptResponse(BaseModel):
     """Model to match database for the JobScript resource."""
 
-    id: Optional[int]
-    name: Optional[str]
-    owner_email: Optional[str]
-    files: Optional[dict[str, JobScriptFile]]
-    description: Optional[str]
-    created_at: Optional[datetime]
-    updated_at: Optional[datetime]
-    parent_template_id: Optional[int]
+    id: int
+    name: str
+    owner_email: str
+    files: list[JobScriptFile]
+    description: str
+    created_at: datetime
+    updated_at: datetime
+    parent_template_id: int | None
 
     class Config:
         orm_mode = True

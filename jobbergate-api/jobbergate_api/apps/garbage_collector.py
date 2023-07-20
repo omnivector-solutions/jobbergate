@@ -12,8 +12,9 @@ async def get_set_of_files_from_database(session, table) -> set[str]:
     return result
 
 
-async def get_set_of_files_from_bucket(bucket, prefix) -> set[str]:
+async def get_set_of_files_from_bucket(bucket, table) -> set[str]:
     """Get a set of files from the bucket."""
+    prefix = table.__tablename__
     result = {obj.key async for obj in bucket.objects.filter(Prefix=prefix)}
     logger.debug(f"Total of files found in the bucket {bucket.name} with prefix {prefix}: {len(result)}")
     return result
@@ -22,7 +23,9 @@ async def get_set_of_files_from_bucket(bucket, prefix) -> set[str]:
 async def get_files_to_delete(session, table, bucket) -> set[str]:
     """Get a set of files to delete."""
     files_in_database = await get_set_of_files_from_database(session, table)
-    files_in_bucket = await get_set_of_files_from_bucket(bucket, table.__tablename__)
+    print("FILES IN DB: ", files_in_database)
+    files_in_bucket = await get_set_of_files_from_bucket(bucket, table)
+    print("FILES IN BUCKET: ", files_in_bucket)
     result = files_in_bucket - files_in_database
     logger.debug(f"Total of files to be garbage collected: {len(result)}")
     return result
@@ -31,12 +34,9 @@ async def get_files_to_delete(session, table, bucket) -> set[str]:
 async def delete_files_from_bucket(bucket, files_to_delete: set[str]) -> None:
     """Delete files from the bucket."""
     for file_to_delete in files_to_delete:
-        try:
-            file = await bucket.Object(file_to_delete)
-            await file.delete()
-            logger.debug(f"Deleted file {file_to_delete} from bucket {bucket.name}")
-        except Exception as e:
-            logger.error(f"Failed to delete file {file_to_delete} from bucket {bucket.name}: {e}")
+        file = await bucket.Object(file_to_delete)
+        await file.delete()
+        logger.debug(f"Deleted file {file_to_delete} from bucket {bucket.name}")
 
 
 async def garbage_collect(session, bucket, list_of_tables, background_tasks: BackgroundTasks) -> None:

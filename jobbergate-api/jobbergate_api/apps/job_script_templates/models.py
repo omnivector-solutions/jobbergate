@@ -1,34 +1,26 @@
 """Database models for the job_script_templates resource."""
-from datetime import datetime
 from typing import Any, Optional
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, text
+from sqlalchemy import Enum, ForeignKey, Integer, String, text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, attribute_keyed_dict, mapped_column, relationship
-from sqlalchemy.sql import functions
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
-from jobbergate_api.apps.models import Base, BaseFieldsMixin, Mapped, mapped_column
+from jobbergate_api.apps.models import Base, CrudMixin, FileMixin
 
 
-class JobScriptTemplate(Base):
+class JobScriptTemplate(CrudMixin, Base):
     """
     Job script template table definition.
 
     Attributes:
-        id: The id of the job script template.
         identifier: The identifier of the job script template.
-        name: The name of the job script template.
-        description: The description of the job script template.
-        owner_email: The email of the owner of the job script template.
         template_vars: The template variables of the job script template.
-        created_at: The date and time when the job script template was created.
-        updated_at: The date and time when the job script template was updated.
+
+    See Mixin class definitions for other columns
     """
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     identifier: Mapped[Optional[str]] = mapped_column(String, unique=True, index=True)
     template_vars: Mapped[dict[str, Any]] = mapped_column(
         "template_vars",
@@ -37,74 +29,75 @@ class JobScriptTemplate(Base):
         default=text("'{}'::jsonb"),
         server_default=text("'{}'::jsonb"),
     )
-    name: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    description: Mapped[Optional[str]] = mapped_column(String, default="")
-    owner_email: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=functions.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        nullable=False,
-        default=functions.now(),
-        onupdate=functions.current_timestamp(),
-    )
 
-    template_files: Mapped[dict[str, "JobScriptTemplateFile"]] = relationship(
+    template_files: Mapped[list["JobScriptTemplateFile"]] = relationship(
         "JobScriptTemplateFile",
-        lazy="subquery",
-        collection_class=attribute_keyed_dict("filename"),
+        back_populates="parent",
+        lazy="selectin",
+        uselist=True,
         cascade="all, delete-orphan",
     )
-    workflow_file: Mapped["WorkflowFile"] = relationship(
+    workflow_files: Mapped[list["WorkflowFile"]] = relationship(
         "WorkflowFile",
-        lazy="subquery",
+        back_populates="parent",
+        lazy="selectin",
+        uselist=True,
         cascade="all, delete-orphan",
     )
 
-    searchable_fields = [
-        description,
-        id,
-        identifier,
-        name,
-        owner_email,
-    ]
-    sortable_fields = [
-        id,
-        name,
-        identifier,
-        owner_email,
-        created_at,
-        updated_at,
-    ]
+    @classmethod
+    def searchable_fields(cls):
+        """
+        Add identifier as a searchable field.
+        """
+        return [cls.identifier, *super().searchable_fields()]
+
+    @classmethod
+    def sortable_fields(cls):
+        """
+        Add identifier as a sortable field.
+        """
+        return [cls.identifier, *super().sortable_fields()]
 
 
-class JobScriptTemplateFile(Base, BaseFieldsMixin):
-    """Job script template files table definition."""
+class JobScriptTemplateFile(FileMixin, Base):
+    """
+    Job script template files table definition.
 
-    id: Mapped[int] = mapped_column(
+    Attributes:
+        parent_id: A foreign key to the parent job script template row.
+        file_type: The type of the file.
+
+    See Mixin class definitions for other columns
+    """
+
+    parent_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey(JobScriptTemplate.id, ondelete="CASCADE"),
         primary_key=True,
+        nullable=False,
     )
-    filename: Mapped[str] = mapped_column(String, primary_key=True)
-    file_type: Mapped[FileType] = mapped_column(Enum(FileType), nullable=False)
+    file_type: Mapped[FileType] = mapped_column(Enum(FileType, native_enum=False), nullable=False)
 
-    @hybrid_property
-    def file_key(self) -> str:
-        return f"{self.__tablename__}/{self.id}/{self.filename}"
+    parent: Mapped["JobScriptTemplate"] = relationship(
+        "JobScriptTemplate",
+        back_populates="template_files",
+        lazy="selectin",
+    )
 
 
-class WorkflowFile(Base, BaseFieldsMixin):
+class WorkflowFile(FileMixin, Base):
     """
     Workflow file table definition.
 
     Attributes:
-        id: The id of the workflow (foreign key from job-script-template).
+        parent_id:      A foreign key to the parent job script template row.
         runtime_config: The runtime configuration of the workflow.
-        created_at: The date and time when the workflow was created.
-        updated_at: The date and time when the workflow was updated.
+
+    See Mixin class definitions for other columns
     """
 
-    id: Mapped[int] = mapped_column(
+    parent_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey(JobScriptTemplate.id, ondelete="CASCADE"),
         primary_key=True,
@@ -117,7 +110,8 @@ class WorkflowFile(Base, BaseFieldsMixin):
         server_default=text("'{}'::jsonb"),
     )
 
-    @property
-    def file_key(self) -> str:
-        """Return the file key for the workflow file."""
-        return f"{self.__tablename__}/{self.id}/{WORKFLOW_FILE_NAME}"
+    parent: Mapped["JobScriptTemplate"] = relationship(
+        "JobScriptTemplate",
+        back_populates="workflow_files",
+        lazy="selectin",
+    )

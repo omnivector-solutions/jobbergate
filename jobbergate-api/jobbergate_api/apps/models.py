@@ -1,46 +1,68 @@
 """Functionalities to be shared by all models."""
-from datetime import datetime
-from typing import Optional
 
-import inflection
-from sqlalchemy import DateTime, String
-from sqlalchemy.orm import Mapped, mapped_column, registry
-from sqlalchemy.orm.decl_api import DeclarativeMeta, declarative_mixin, declared_attr
+from __future__ import annotations
+
+from datetime import datetime
+
+from inflection import tableize
+from snick import conjoin
+from sqlalchemy import DateTime, Integer, String
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.inspection import inspect
+from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 from sqlalchemy.sql import functions
 
-mapper_registry = registry()
 
-
-class Base(metaclass=DeclarativeMeta):
+class Base(DeclarativeBase):
     """
     Base class for all models.
 
     References:
-        https://docs.sqlalchemy.org/en/14/orm/declarative_styles.html#creating-an-explicit-base-non-dynamically-for-use-with-mypy-similar
+        https://docs.sqlalchemy.org/en/20/orm/declarative_mixins.html
     """
 
-    __abstract__ = True
 
-    registry = mapper_registry
-    metadata = mapper_registry.metadata
-
-    __init__ = mapper_registry.constructor
-
-    @declared_attr
-    def __tablename__(cls):
-        return inflection.tableize(cls.__name__)
-
-
-@declarative_mixin
-class BaseFieldsMixin:
+class CommonMixin:
     """
-    Common resources between all tables.
+    Provide a dynamic table and helper methods for displaying instances.
+    """
 
-    The attributes define rows and the methods API-level resources.
+    @declared_attr.directive
+    def __tablename__(cls) -> str:
+        return tableize(cls.__name__)
+
+    def _iter_cols(self):
+        for col in inspect(self.__class__).columns.keys():
+            yield (col, getattr(self, col))
+
+    def __str__(self):
+        primary_keys = [pk.name for pk in inspect(self.__class__).primary_key]
+        primary_key_str = ", ".join([f"{pk}: {getattr(self, pk)}" for pk in primary_keys])
+        return conjoin(
+            f"{self.__class__.__name__}: ({primary_key_str})",
+            *[f"{k}: {v}" for (k, v) in self._iter_cols() if k not in primary_keys],
+            join_str="\n  ",
+        )
+
+
+class IdMixin:
+    """
+    Provide an id primary_key column.
 
     Attributes:
-        created_at: The date and time when the row was created.
-        updated_at: The date and time when the row was updated.
+        id: The id of the job script template.
+    """
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+
+class TimestampMixin:
+    """
+    Add timestamp columns to a table.
+
+    Attributes:
+        created_at: The date and time when the job script template was created.
+        updated_at: The date and time when the job script template was updated.
     """
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=functions.now())
@@ -52,19 +74,70 @@ class BaseFieldsMixin:
     )
 
 
-@declarative_mixin
-class ExtraFieldsMixin:
+class OwnerMixin:
     """
-    Common resources between all tables.
-
-    The attributes define rows and the methods API-level resources.
+    Add an owner email columns to a table.
 
     Attributes:
-        name: The name of the resource.
-        description: The description of the resource.
-        owner_email: The email of the owner of the resource.
+        owner_email: The email of the owner of the job script template.
+    """
+
+    owner_email: Mapped[str] = mapped_column(String, nullable=False, index=True)
+
+
+class NameMixin:
+    """
+    Add name and description columns to a table
+
+    Attributes:
+        name: The name of the job script template.
+        description: The description of the job script template.
     """
 
     name: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    description: Mapped[Optional[str]] = mapped_column(String, default="")
-    owner_email: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    description: Mapped[str | None] = mapped_column(String, default="")
+
+
+class CrudMixin(CommonMixin, IdMixin, TimestampMixin, OwnerMixin, NameMixin):
+    """
+    Add needed columns and declared attributes for all models that support a CrudService.
+    """
+
+    @classmethod
+    def searchable_fields(cls):
+        return [
+            cls.name,
+            cls.description,
+            cls.owner_email,
+        ]
+
+    @classmethod
+    def sortable_fields(cls):
+        return [
+            cls.id,
+            cls.name,
+            cls.owner_email,
+            cls.created_at,
+            cls.updated_at,
+        ]
+
+
+class FileMixin(CommonMixin, TimestampMixin):
+    """
+    Add needed columns and declared attributes for all models that support a FileService.
+
+    Attributes:
+        parent_id:   The id of the parent row in another table.
+                     Note: Derived classes should override this attribute to make it a foreign key as well.
+        description: The description of the job script template.
+    """
+
+    parent_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    filename: Mapped[str] = mapped_column(String, primary_key=True)
+
+    @hybrid_property
+    def file_key(self) -> str:
+        """
+        Dynamically define the s3 key for the file.
+        """
+        return f"{self.__tablename__}/{self.parent_id}/{self.filename}"
