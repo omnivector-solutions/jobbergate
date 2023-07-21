@@ -288,6 +288,29 @@ def dummy_application_config() -> str:
 
 
 @pytest.fixture
+def job_script_data_as_string():
+    """
+    Provide a fixture that returns an example of a default application script.
+    """
+    content = dedent(
+        """
+                #!/bin/bash
+
+                #SBATCH --job-name=rats
+                #SBATCH --partition=debug
+                #SBATCH --time=00:30:00
+                #SBATCH --partition=debug
+                #SBATCH --output=sample-%j.out
+
+
+                echo $SLURM_TASKS_PER_NODE
+                echo $SLURM_SUBMIT_DIR
+                """
+    ).strip()
+    return content
+
+
+@pytest.fixture
 def make_dummy_file(tmp_path):
     """
     Provide a fixture that will generate a temporary file with ``size`` random bytes of text data.

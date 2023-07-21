@@ -133,7 +133,7 @@ def template_service(synth_session):
 
 @fixture(scope="function")
 def template_file_service(synth_session, synth_bucket):
-    """Fixture to return a job_script_templates service."""
+    """Fixture to return a template_files_service service."""
     from jobbergate_api.apps.job_script_templates.dependecies import template_files_service
 
     yield template_files_service(synth_session, synth_bucket)
@@ -141,7 +141,7 @@ def template_file_service(synth_session, synth_bucket):
 
 @fixture(scope="function")
 def job_script_service(synth_session):
-    """Fixture to return a job_script_templates service."""
+    """Fixture to return a job_script_service service."""
     from jobbergate_api.apps.job_scripts.dependecies import job_script_service
 
     yield job_script_service(synth_session)
@@ -153,3 +153,11 @@ def job_script_files_service(synth_session, synth_bucket):
     from jobbergate_api.apps.job_scripts.dependecies import job_script_files_service
 
     yield job_script_files_service(synth_session, synth_bucket)
+
+
+@fixture(scope="function")
+def job_submission_service(synth_session):
+    """Fixture to return a job_submission_service service."""
+    from jobbergate_api.apps.job_submissions.dependecies import job_submission_service
+
+    yield job_submission_service(synth_session)

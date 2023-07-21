@@ -5,11 +5,11 @@ import io
 from typing import Any, AsyncGenerator, Type
 
 from buzz import require_condition
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
+from loguru import logger
 from sqlalchemy import delete, func, select, update
-from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jobbergate_api.apps.models import Base
@@ -43,7 +43,7 @@ class TableService:
         result = await self.db_session.execute(query)
         row = result.scalar_one_or_none()
         if row is None:
-            raise NoResultFound(f"{self.base_table.__tablename__} with {id_or_identifier=} was not found")
+            self._handle_not_found(id_or_identifier)
         return row
 
     async def delete(self, id_or_identifier: int | str) -> None:
@@ -51,8 +51,8 @@ class TableService:
         query = delete(self.base_table)
         query = self._locate_by_id_or_identifier(id_or_identifier, query)
         result = await self.db_session.execute(query)
-        if result.rowcount == 0:
-            raise NoResultFound(f"{self.base_table.__tablename__} with {id_or_identifier=} was not found")
+        if result.rowcount != 1:
+            self._handle_not_found(id_or_identifier)
 
     async def update(self, id_or_identifier: int | str, **incoming_data) -> Base:
         """Update an entry by id."""
@@ -62,7 +62,7 @@ class TableService:
         result = await self.db_session.execute(query)
         row = result.scalar_one_or_none()
         if row is None:
-            raise NoResultFound(f"{self.base_table.__tablename__} with {id_or_identifier=} was not found")
+            self._handle_not_found(id_or_identifier)
         return row
 
     async def list(
@@ -85,13 +85,14 @@ class TableService:
             query = query.order_by(sort_clause(sort_field, self.base_table.sortable_fields, sort_ascending))
         return await paginate(self.db_session, query)
 
+    def _handle_not_found(self, id_or_identifier):
+        target_column = self._get_target_column(id_or_identifier)
+        details = f"{self.base_table.__tablename__} with {target_column}={id_or_identifier} was not found"
+        logger.debug(details)
+        raise HTTPException(status_code=404, detail=details)
+
     def _locate_by_id_or_identifier(self, id_or_identifier: int | str, query):
-        if isinstance(id_or_identifier, int):
-            target_column = "id"
-        elif isinstance(id_or_identifier, str):
-            target_column = "identifier"
-        else:
-            raise TypeError(f"id_or_identifier must be a string or integer, not {type(id_or_identifier)}")
+        target_column = self._get_target_column(id_or_identifier)
 
         column = getattr(self.base_table, target_column)
 
@@ -102,6 +103,15 @@ class TableService:
         )
 
         return query.where(column == id_or_identifier)
+
+    def _get_target_column(self, id_or_identifier):
+        if isinstance(id_or_identifier, int):
+            return "id"
+        elif isinstance(id_or_identifier, str):
+            return "identifier"
+        message = f"id_or_identifier must be a string or integer, got {type(id_or_identifier)}"
+        logger.error(message)
+        raise TypeError(message)
 
 
 @dataclasses.dataclass

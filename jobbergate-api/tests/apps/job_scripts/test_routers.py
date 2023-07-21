@@ -1,35 +1,9 @@
 """Tests for the /job-scripts/ endpoint."""
-import json
-from textwrap import dedent
-
 import pytest
 from fastapi import status
 
 from jobbergate_api.apps.job_scripts.schemas import JobScriptResponse
 from jobbergate_api.apps.permissions import Permissions
-
-
-@pytest.fixture
-def job_script_data_as_string():
-    """
-    Provide a fixture that returns an example of a default application script.
-    """
-    content = dedent(
-        """
-                #!/bin/bash
-
-                #SBATCH --job-name=rats
-                #SBATCH --partition=debug
-                #SBATCH --time=00:30:00
-                #SBATCH --partition=debug
-                #SBATCH --output=sample-%j.out
-
-
-                echo $SLURM_TASKS_PER_NODE
-                echo $SLURM_SUBMIT_DIR
-                """
-    ).strip()
-    return content
 
 
 @pytest.mark.asyncio
@@ -92,7 +66,7 @@ async def test_render_job_script_from_template(
     base_template = await template_service.create(**fill_job_template_data())
     template_name = "entrypoint.py.j2"
     job_script_name = template_name.removesuffix(".j2")
-    template_file = await template_file_service.upsert(
+    await template_file_service.upsert(
         id=base_template.id,
         file_type="ENTRYPOINT",
         filename=template_name,

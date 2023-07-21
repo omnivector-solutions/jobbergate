@@ -34,11 +34,9 @@ class JobSubmission(Base):
         updated_at: The date and time when the job submission was updated.
     """
 
-    __tablename__ = "job_submissions"
-
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    job_script_id: Mapped[int] = mapped_column(Integer, ForeignKey("job_scripts.id"), nullable=False)
-    execution_directory: Mapped[str] = mapped_column(String)
+    job_script_id: Mapped[int] = mapped_column(Integer, ForeignKey("job_scripts.id"), nullable=True)
+    execution_directory: Mapped[str] = mapped_column(String, default=None, nullable=True)
     slurm_job_id: Mapped[int] = mapped_column(Integer, default=None, nullable=True)
     client_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
     status: Mapped[JobSubmissionStatus] = mapped_column(Enum(JobSubmissionStatus), nullable=False, index=True)

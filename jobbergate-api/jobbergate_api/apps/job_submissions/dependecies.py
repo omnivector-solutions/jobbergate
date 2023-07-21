@@ -8,14 +8,10 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jobbergate_api.apps.dependecies import db_session
-from jobbergate_api.apps.job_submissions.service import JobSubmissionService
+from jobbergate_api.apps.job_submissions.models import JobSubmission
+from jobbergate_api.apps.services import TableService
 
 
-async def job_submission_service(session: AsyncSession = Depends(db_session)) -> JobSubmissionService:
-    """
-    Dependency to get the job_submission service.
-
-    Returns:
-        JobSubmissionService: The job_submission service.
-    """
-    return JobSubmissionService(session=session)
+def job_submission_service(session: AsyncSession = Depends(db_session)) -> TableService:
+    """Dependency to get the job_submission service."""
+    return TableService(db_session=session, base_table=JobSubmission)

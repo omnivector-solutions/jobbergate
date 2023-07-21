@@ -327,7 +327,7 @@ class JobSubmissionResponse(BaseModel):
     name: str
     description: Optional[str]
     owner_email: str
-    job_script_id: int
+    job_script_id: Optional[int]
     execution_directory: Optional[Path]
     slurm_job_id: Optional[int]
     client_id: str
@@ -354,7 +354,7 @@ class PendingJobSubmission(BaseModel):
     owner_email: str
     execution_directory: Optional[Path]
     execution_parameters: dict = Field(default_factory=dict)
-    job_script: JobScriptResponse
+    job_script: Optional[JobScriptResponse]
 
     class Config:
         orm_mode = True

@@ -1,5 +1,5 @@
 """Router for the Job Script Template resource."""
-from typing import Optional
+from typing import Any, Optional
 
 from armasec import TokenPayload
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, HTTPException, Path, Query
@@ -104,7 +104,7 @@ async def job_script_template_get_list(
 
     identity_claims = IdentityClaims.from_token_payload(token_payload)
 
-    list_kwargs = dict(
+    list_kwargs: dict[str, Any] = dict(
         search=search,
         sort_field=sort_field,
         sort_ascending=sort_ascending,
@@ -292,7 +292,7 @@ async def job_script_workflow_upload_file(
 
     await file_service.upsert(
         id=job_script_template.id,
-        upload_file=upload_file,
+        upload_content=upload_file,
         runtime_config=runtime_config.dict(),
     )
 

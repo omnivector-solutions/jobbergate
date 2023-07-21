@@ -94,8 +94,8 @@ def upgrade():
     op.create_table(
         "job_submissions",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("job_script_id", sa.Integer(), nullable=False),
-        sa.Column("execution_directory", sa.String(), nullable=False),
+        sa.Column("job_script_id", sa.Integer(), nullable=True),
+        sa.Column("execution_directory", sa.String(), nullable=True),
         sa.Column("slurm_job_id", sa.Integer(), nullable=True),
         sa.Column("client_id", sa.String(), nullable=False),
         sa.Column(
