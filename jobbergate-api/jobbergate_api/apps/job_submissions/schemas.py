@@ -24,15 +24,15 @@ job_submission_meta_mapper = MetaMapper(
         description="The timestamp for when the instance was last updated",
         example="2021-12-28 23:52:00",
     ),
-    job_submission_name=MetaField(
+    name=MetaField(
         description="The unique name of the job submission",
         example="test-job-submission-77",
     ),
-    job_submission_description=MetaField(
+    description=MetaField(
         description="A text field providing a human-friendly description of the job_submission",
         example="Submission for the Foo job on sample 99 using the bar variant",
     ),
-    job_submission_owner_email=MetaField(
+    owner_email=MetaField(
         description="The email of the owner/creator of the instance",
         example="tucker@omnivector.solutions",
     ),
