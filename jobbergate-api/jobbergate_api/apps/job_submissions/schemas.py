@@ -1,7 +1,6 @@
 """
 JobSubmission resource schema.
 """
-from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Literal, Optional
 
@@ -9,6 +8,7 @@ from pydantic import BaseModel, Extra, Field
 
 from jobbergate_api.apps.job_scripts.schemas import JobScriptResponse
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
+from jobbergate_api.apps.schemas import TableResource
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
 job_submission_meta_mapper = MetaMapper(
@@ -316,17 +316,11 @@ class JobSubmissionAgentUpdateRequest(BaseModel):
         schema_extra = job_submission_meta_mapper
 
 
-class JobSubmissionResponse(BaseModel):
+class JobSubmissionResponse(TableResource):
     """
     Complete model to match the database for the JobSubmission resource.
     """
 
-    id: int
-    created_at: Optional[datetime]
-    updated_at: Optional[datetime]
-    name: str
-    description: Optional[str]
-    owner_email: str
     job_script_id: Optional[int]
     execution_directory: Optional[Path]
     slurm_job_id: Optional[int]

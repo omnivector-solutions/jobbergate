@@ -12,7 +12,7 @@ from fastapi import HTTPException, UploadFile, status
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from jinja2 import Template
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, not_, select, update
 from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped
@@ -102,6 +102,7 @@ class CrudModelProto(Protocol):
 
     id: Mapped[int]
     owner_email: Mapped[str]
+    is_archived: Mapped[bool]
 
     def __init__(self, **kwargs):
         """
@@ -235,6 +236,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         user_email: str | None = None,
         search: str | None = None,
         sort_field: str | None = None,
+        include_archived: bool = True,
         **additional_filters,
     ) -> Select:
         """
@@ -248,6 +250,8 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
             query = query.where(getattr(self.model_type, key) == value)
         if user_email:
             query = query.where(self.model_type.owner_email == user_email)
+        if not include_archived:
+            query = query.where(not_(self.model_type.is_archived))
         if search:
             require_condition(
                 hasattr(self.model_type, "searchable_fields"),

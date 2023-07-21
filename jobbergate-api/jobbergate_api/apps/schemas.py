@@ -15,4 +15,5 @@ class TableResource(BaseModel):
     owner_email: str
     created_at: datetime
     updated_at: datetime
+    is_archived: bool
     description: str | None

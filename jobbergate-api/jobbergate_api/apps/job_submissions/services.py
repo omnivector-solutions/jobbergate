@@ -30,6 +30,7 @@ class JobSubmissionService(CrudService):
             user_email=user_email,
             search=search,
             sort_field=sort_field,
+            include_archived=True,
             **additional_filters,
         )
         if filter_slurm_job_ids:

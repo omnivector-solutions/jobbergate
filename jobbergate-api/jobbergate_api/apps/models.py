@@ -4,7 +4,7 @@ from datetime import datetime
 
 from inflection import tableize
 from snick import conjoin
-from sqlalchemy import DateTime, Integer, String
+from sqlalchemy import Boolean, DateTime, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
@@ -106,7 +106,18 @@ class NameMixin:
     description: Mapped[str | None] = mapped_column(String, default="")
 
 
-class CrudMixin(CommonMixin, IdMixin, TimestampMixin, OwnerMixin, NameMixin):
+class ArchiveMixin:
+    """
+    Add is_archived column to a table.
+
+    Attributes:
+        is_archived: Specify is a row is considered archived, hidden it by default when listing rows.
+    """
+
+    is_archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+
+class CrudMixin(CommonMixin, IdMixin, TimestampMixin, OwnerMixin, NameMixin, ArchiveMixin):
     """
     Add needed columns and declared attributes for all models that support a CrudService.
     """

@@ -68,6 +68,10 @@ job_template_meta_mapper = MetaMapper(
     workflow_file=MetaField(
         description="The workflow file attached to a job script template",
     ),
+    is_archived=MetaField(
+        description="Indicates if the job script template has been archived.",
+        example=False,
+    ),
 )
 
 
@@ -120,6 +124,7 @@ class JobTemplateUpdateRequest(BaseModel):
     identifier: Optional[str]
     description: Optional[str]
     template_vars: Optional[dict[str, Any]]
+    is_archived: Optional[bool]
 
     class Config:
         orm_mode = True

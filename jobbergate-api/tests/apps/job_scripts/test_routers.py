@@ -4,7 +4,6 @@ from fastapi import HTTPException, status
 
 from jobbergate_api.apps.job_script_templates.services import crud_service as template_crud_service
 from jobbergate_api.apps.job_script_templates.services import template_file_service
-from jobbergate_api.apps.job_scripts.schemas import JobScriptResponse
 from jobbergate_api.apps.job_scripts.services import crud_service, file_service
 from jobbergate_api.apps.permissions import Permissions
 
@@ -324,6 +323,12 @@ class TestListJobScripts:
                 "description": "desc-4",
                 "owner_email": "test-test@pytest.com",
             },
+            {
+                "name": "name-5",
+                "description": "desc-5",
+                "owner_email": "test-test@pytest.com",
+                "is_archived": True,
+            },
         )
         with crud_service.bound_session(synth_session):
             for item in data:
@@ -338,20 +343,40 @@ class TestListJobScripts:
         job_scripts_list,
     ):
         inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+        response = await client.get("jobbergate/job-scripts?include_archived=True")
+        assert response.status_code == 200, f"Get failed: {response.text}"
+
+        response_data = response.json()
+        assert response_data["total"] == len(job_scripts_list)
+        assert response_data["page"] == 1
+        assert response_data["size"] == 50
+        assert response_data["pages"] == 1
+
+        for response_item, expected_item in zip(response_data["items"], job_scripts_list):
+            assert response_item["name"] == expected_item["name"]
+            assert response_item["description"] == expected_item["description"]
+            assert response_item["owner_email"] == expected_item["owner_email"]
+            assert response_item["is_archived"] == expected_item["is_archived"]
+            assert response_item["files"] == []
+
+    async def test_list_job_scripts__ignore_archived(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_scripts_list,
+    ):
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
         response = await client.get("jobbergate/job-scripts")
         assert response.status_code == 200, f"Get failed: {response.text}"
 
-        actual_data = response.json()
-        assert actual_data["total"] == len(job_scripts_list)
-        assert actual_data["page"] == 1
-        assert actual_data["size"] == 50
-        assert actual_data["pages"] == 1
+        response_data = response.json()
 
-        for actual_item, expected_item in zip(actual_data["items"], job_scripts_list):
-            assert actual_item["name"] == expected_item["name"]
-            assert actual_item["description"] == expected_item["description"]
-            assert actual_item["owner_email"] == expected_item["owner_email"]
-            assert actual_item["files"] == []
+        expected_names = {i["name"] for i in job_scripts_list if i["is_archived"] is False}
+        response_names = {i["name"] for i in response_data["items"]}
+
+        assert response_data["total"] == len(expected_names)
+        assert expected_names == response_names
 
     async def test_list_job_scripts__user_only(
         self,
@@ -361,14 +386,15 @@ class TestListJobScripts:
         job_scripts_list,
     ):
         inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
-        response = await client.get("jobbergate/job-scripts?user_only=True")
+        response = await client.get("jobbergate/job-scripts?user_only=True&include_archived=True")
         assert response.status_code == 200, f"Get failed: {response.text}"
 
-        actual_data = response.json()
-        assert actual_data["total"] == 3
+        response_data = response.json()
 
         expected_names = {i["name"] for i in job_scripts_list if i["owner_email"] == tester_email}
-        actual_names = {i["name"] for i in actual_data["items"]}
+        actual_names = {i["name"] for i in response_data["items"]}
+
+        assert response_data["total"] == len(expected_names)
         assert expected_names == actual_names
 
 

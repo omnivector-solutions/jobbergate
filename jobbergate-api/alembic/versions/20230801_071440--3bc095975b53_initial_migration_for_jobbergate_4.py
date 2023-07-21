@@ -34,6 +34,7 @@ def upgrade():
         sa.Column("owner_email", sa.String(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=True),
+        sa.Column("is_archived", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
@@ -64,6 +65,7 @@ def upgrade():
         sa.Column("owner_email", sa.String(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=True),
+        sa.Column("is_archived", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.ForeignKeyConstraint(["parent_template_id"], ["job_script_templates.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -129,6 +131,7 @@ def upgrade():
         sa.Column("owner_email", sa.String(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=True),
+        sa.Column("is_archived", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.ForeignKeyConstraint(
             ["job_script_id"],
             ["job_scripts.id"],

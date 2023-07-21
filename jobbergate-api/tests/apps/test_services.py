@@ -214,6 +214,52 @@ class TestCrudService:
         all_fetched_instances = await dummy_crud_service.list()
         assert ["one", "two", "three"] == [i.name for i in all_fetched_instances]
 
+    async def test_list__include_archived(
+        self,
+        dummy_crud_service,
+    ):
+        """
+        Test that the ``list()`` method returns all instances of the served model when including archived.
+
+        Notice this is the default behavior.
+        """
+        await dummy_crud_service.create(
+            name="one",
+            description="the first",
+            owner_email="1@test.com",
+            is_archived=False,
+        )
+        await dummy_crud_service.create(
+            name="two",
+            description="second",
+            owner_email="2@test.com",
+            is_archived=True,
+        )
+        all_fetched_instances = await dummy_crud_service.list()
+        assert ["one", "two"] == [i.name for i in all_fetched_instances]
+
+    async def test_list__not_include_archived(
+        self,
+        dummy_crud_service,
+    ):
+        """
+        Test that the ``list()`` method don not include archived instances.
+        """
+        await dummy_crud_service.create(
+            name="one",
+            description="the first",
+            owner_email="1@test.com",
+            is_archived=False,
+        )
+        await dummy_crud_service.create(
+            name="two",
+            description="second",
+            owner_email="2@test.com",
+            is_archived=True,
+        )
+        all_fetched_instances = await dummy_crud_service.list(include_archived=False)
+        assert ["one"] == [i.name for i in all_fetched_instances]
+
     async def test_list__with_search(
         self,
         dummy_crud_service,

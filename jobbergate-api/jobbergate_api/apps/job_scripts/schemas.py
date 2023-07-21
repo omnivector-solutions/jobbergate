@@ -8,6 +8,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from jobbergate_api.apps.constants import FileType
+from jobbergate_api.apps.schemas import TableResource
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
 job_script_meta_mapper = MetaMapper(
@@ -68,6 +69,10 @@ job_script_meta_mapper = MetaMapper(
         description="The type of the file",
         example=FileType.ENTRYPOINT.value,
     ),
+    is_archived=MetaField(
+        description="Indicates if the job script has been archived.",
+        example=False,
+    ),
 )
 
 
@@ -99,6 +104,8 @@ class JobScriptUpdateRequest(JobScriptCreateRequest):
     Request model for updating JobScript instances.
     """
 
+    is_archived: bool | None
+
     class Config:
         schema_extra = job_script_meta_mapper
 
@@ -117,16 +124,10 @@ class JobScriptFile(BaseModel):
         schema_extra = job_script_meta_mapper
 
 
-class JobScriptResponse(BaseModel):
+class JobScriptResponse(TableResource):
     """Model to match database for the JobScript resource."""
 
-    id: int
-    name: str
-    owner_email: str
     files: list[JobScriptFile]
-    description: str
-    created_at: datetime
-    updated_at: datetime
     parent_template_id: int | None
 
     class Config:

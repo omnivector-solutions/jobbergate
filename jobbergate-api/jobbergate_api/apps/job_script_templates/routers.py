@@ -87,6 +87,7 @@ async def job_script_template_get(id_or_identifier: int | str = Path()):
 async def job_script_template_get_list(
     user_only: bool = Query(False),
     include_null_identifier: bool = Query(False),
+    include_archived: bool = Query(False),
     search: str | None = Query(None),
     sort_field: str | None = Query(None),
     sort_ascending: bool = Query(True),
@@ -103,6 +104,7 @@ async def job_script_template_get_list(
         search=search,
         sort_field=sort_field,
         sort_ascending=sort_ascending,
+        include_archived=include_archived,
     )
 
 

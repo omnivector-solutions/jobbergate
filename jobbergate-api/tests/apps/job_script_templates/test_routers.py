@@ -281,6 +281,12 @@ class TestListJobTemplates:
                 "template_vars": {"foo-1": "bar-4"},
                 "owner_email": "test-test@pytest.com",
             },
+            {
+                "name": "name-5",
+                "description": "desc-5",
+                "template_vars": {"foo-1": "bar-5"},
+                "is_archived": True,
+            },
         )
         with crud_service.bound_session(synth_session):
             for item in data:
@@ -295,7 +301,9 @@ class TestListJobTemplates:
         job_templates_list,
     ):
         inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
-        response = await client.get("jobbergate/job-script-templates?include_null_identifier=True")
+        response = await client.get(
+            "jobbergate/job-script-templates?include_null_identifier=True&include_archived=True"
+        )
         assert response.status_code == 200, f"List failed: {response.text}"
 
         response_data = response.json()
@@ -310,8 +318,28 @@ class TestListJobTemplates:
             assert response_item["description"] == expected_item["description"]
             assert response_item["template_vars"] == expected_item["template_vars"]
             assert response_item["owner_email"] == expected_item["owner_email"]
+            assert response_item["is_archived"] == expected_item["is_archived"]
             assert response_item["template_files"] == []
             assert response_item["workflow_files"] == []
+
+    async def test_list_job_templates__ignore_archived(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_templates_list,
+    ):
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
+        response = await client.get("jobbergate/job-script-templates?include_null_identifier=True")
+        assert response.status_code == 200, f"List failed: {response.text}"
+
+        response_data = response.json()
+
+        expected_names = {i["name"] for i in job_templates_list if i["is_archived"] is False}
+        response_names = {i["name"] for i in response_data["items"]}
+
+        assert response_data["total"] == len(expected_names)
+        assert expected_names == response_names
 
     async def test_list_job_templates__user_only(
         self,
@@ -322,16 +350,16 @@ class TestListJobTemplates:
     ):
         inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
         response = await client.get(
-            "jobbergate/job-script-templates?user_only=True&include_null_identifier=True"
+            "jobbergate/job-script-templates?user_only=True&include_null_identifier=True&include_archived=True"
         )
         assert response.status_code == 200, f"List failed: {response.text}"
 
         response_data = response.json()
-        assert response_data["total"] == 3
 
         expected_names = {i["name"] for i in job_templates_list if i["owner_email"] == tester_email}
         response_names = {i["name"] for i in response_data["items"]}
 
+        assert response_data["total"] == len(expected_names)
         assert expected_names == response_names
 
 
