@@ -1,18 +1,23 @@
 """
 JobScript resource schema.
 """
-
 from datetime import datetime
+from textwrap import dedent
 from typing import Any
 
 from pydantic import BaseModel
 
 from jobbergate_api.apps.constants import FileType
+from jobbergate_api.apps.schemas import TableResource
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
 job_script_meta_mapper = MetaMapper(
     id=MetaField(
         description="The unique database identifier for the instance",
+        example=101,
+    ),
+    parent_id=MetaField(
+        description="The unique database identifier for the parent of this instance",
         example=101,
     ),
     created_at=MetaField(
@@ -23,31 +28,20 @@ job_script_meta_mapper = MetaMapper(
         description="The timestamp for when the instance was last updated",
         example="2021-12-28 23:52:00",
     ),
-    job_script_name=MetaField(
+    name=MetaField(
         description="The unique name of the instance",
         example="test-job-script-88",
     ),
-    job_script_description=MetaField(
+    description=MetaField(
         description="A text field providing a human-friendly description of the job_script",
         example="This job_scripts runs an Foo job using the bar variant",
     ),
-    job_script_data_as_string=MetaField(
-        description="The job_script itself. This is base64 encoded. Example below is decoded for clarity.",
-        example=" ".join(
-            [
-                '{"application.sh": "#!/bin/bash\n\n#SBATCH --job-name=rats\n#SBATCH',
-                "--partition=partition1\n#SBATCH --output=sample-%j.out\n\n\nsource",
-                "/opt/openfoam8/etc/bashrc\n\nexport",
-                'PATH=$PATH:/opt/openfoam8/platforms/linux64GccDPInt32Opt/bin\n\n\nblockMesh\nsimpleFoam"}',
-            ]
-        ),
-    ),
-    job_script_owner_email=MetaField(
+    owner_email=MetaField(
         description="The email of the owner/creator of the instance",
         example="tucker@omnivector.solutions",
     ),
-    application_id=MetaField(
-        description="The foreign-key to the application from which this instance was created",
+    parent_template_id=MetaField(
+        description="The foreign-key to the job script template from which this instance was created",
         example=71,
     ),
     sbatch_params=MetaField(
@@ -57,6 +51,23 @@ job_script_meta_mapper = MetaMapper(
     param_dict=MetaField(
         description="Parameters to use when rendering the job_script jinja2 template",
         example={"param1": 7, "param2": 13},
+    ),
+    template_output_name_mapping=MetaField(
+        description=dedent(
+            """
+            A mapping of template names to file names.
+            The first element is the entrypoint, the others are optional support files.
+            """
+        ).strip(),
+        example={"template.py.jinja2": "template.py", "support.json.jinja2": "support.json"},
+    ),
+    filename=MetaField(
+        description="The name of the file",
+        example="job-script.py",
+    ),
+    file_type=MetaField(
+        description="The type of the file",
+        example=FileType.ENTRYPOINT.value,
     ),
 )
 
