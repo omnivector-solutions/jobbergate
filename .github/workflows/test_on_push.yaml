@@ -42,7 +42,7 @@ jobs:
         run: pipx install poetry==1.4.2
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: "3.10"
           architecture: "x64"
           cache: "poetry"
           cache-dependency-path: |
@@ -57,7 +57,7 @@ jobs:
           TEST_DATABASE_PSWD: test-pswd
           TEST_DATABASE_NAME: test-jobbergate
         run: |
-          poetry env use 3.8
+          poetry env use 3.10
           make qa
 
   cli-tests:
