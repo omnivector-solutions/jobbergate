@@ -1,12 +1,14 @@
 """
 Database model for the JobScript resource.
 """
+from __future__ import annotations
 
 from sqlalchemy import Enum, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.models import Base, CrudMixin, FileMixin
+from jobbergate_api.safe_types import JobSubmission
 
 
 class JobScript(CrudMixin, Base):
@@ -25,12 +27,19 @@ class JobScript(CrudMixin, Base):
         nullable=True,
     )
 
-    files: Mapped[list["JobScriptFile"]] = relationship(
+    files: Mapped[list[JobScriptFile]] = relationship(
         "JobScriptFile",
         back_populates="parent",
         lazy="selectin",
         uselist=True,
         cascade="all, delete-orphan",
+    )
+
+    submissions: Mapped[list[JobSubmission]] = relationship(
+        "JobSubmission",
+        back_populates="job_script",
+        lazy="selectin",
+        uselist=True,
     )
 
     @classmethod
@@ -53,7 +62,10 @@ class JobScriptFile(FileMixin, Base):
     Job script files table definition.
 
     Attributes:
+        parent_template_id: The id of the parent template.
+        file_type: The type of the file.
 
+    See Mixin class definitions for other columns
     """
 
     parent_id: Mapped[int] = mapped_column(

@@ -28,14 +28,24 @@ class CommonMixin:
     """
 
     @declared_attr.directive
+    @classmethod
     def __tablename__(cls) -> str:
+        """
+        Dynamically create table name based on the class name.
+        """
         return tableize(cls.__name__)
 
     def _iter_cols(self):
+        """
+        Iterate over the columns of the class.
+        """
         for col in inspect(self.__class__).columns.keys():
             yield (col, getattr(self, col))
 
     def __str__(self):
+        """
+        Produce a pretty string representation of the class instance.
+        """
         primary_keys = [pk.name for pk in inspect(self.__class__).primary_key]
         primary_key_str = ", ".join([f"{pk}: {getattr(self, pk)}" for pk in primary_keys])
         return conjoin(
@@ -87,7 +97,7 @@ class OwnerMixin:
 
 class NameMixin:
     """
-    Add name and description columns to a table
+    Add name and description columns to a table.
 
     Attributes:
         name: The name of the job script template.
@@ -105,6 +115,9 @@ class CrudMixin(CommonMixin, IdMixin, TimestampMixin, OwnerMixin, NameMixin):
 
     @classmethod
     def searchable_fields(cls):
+        """
+        Describe the fields that may be used in search queries.
+        """
         return [
             cls.name,
             cls.description,
@@ -113,6 +126,9 @@ class CrudMixin(CommonMixin, IdMixin, TimestampMixin, OwnerMixin, NameMixin):
 
     @classmethod
     def sortable_fields(cls):
+        """
+        Describe the fields that may be used for sorting queries.
+        """
         return [
             cls.id,
             cls.name,

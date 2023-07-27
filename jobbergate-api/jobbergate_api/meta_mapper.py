@@ -83,7 +83,7 @@ class MetaMapper:
         MetaField will be accepted.
         """
         required_fields = (f.name for f in fields(MetaField))
-        for (key, value) in kwargs.items():
+        for key, value in kwargs.items():
             for field in required_fields:
                 if not hasattr(value, field):
                     raise ValueError(
@@ -98,7 +98,7 @@ class MetaMapper:
 
         Should be used in a pydantic Model's Config class.
         """
-        for (key, old_metadata) in schema["properties"].items():
+        for key, old_metadata in schema["properties"].items():
             new_metadata = self.field_dict.get(key)
             if new_metadata is None:
                 continue

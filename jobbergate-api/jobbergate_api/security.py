@@ -3,8 +3,6 @@ Instantiates armasec resources for auth on api endpoints using project settings.
 
 Also provides a factory function for TokenSecurity to reduce boilerplate.
 """
-from typing import List, Optional
-
 from armasec import Armasec, TokenPayload
 from armasec.schemas import DomainConfig
 from armasec.token_security import PermissionMode
@@ -15,10 +13,13 @@ from pydantic import EmailStr, root_validator
 from jobbergate_api.config import settings
 
 
-def get_domain_configs() -> List[DomainConfig]:
+def get_domain_configs() -> list[DomainConfig]:
     """
     Return a list of DomainConfig objects based on the input variables for the Settings class.
     """
+    # make type checkers happy
+    assert settings.ARMASEC_DOMAIN is not None
+
     domain_configs = [
         DomainConfig(
             domain=settings.ARMASEC_DOMAIN,
@@ -34,6 +35,11 @@ def get_domain_configs() -> List[DomainConfig]:
             settings.ARMASEC_ADMIN_MATCH_VALUE,
         ]
     ):
+        # make type checkers happy
+        assert settings.ARMASEC_ADMIN_DOMAIN is not None
+        assert settings.ARMASEC_ADMIN_MATCH_KEY is not None
+        assert settings.ARMASEC_ADMIN_MATCH_VALUE is not None
+
         domain_configs.append(
             DomainConfig(
                 domain=settings.ARMASEC_ADMIN_DOMAIN,
@@ -56,8 +62,8 @@ class IdentityPayload(TokenPayload):
     Provide an extension of TokenPayload that includes the user's identity.
     """
 
-    email: Optional[EmailStr] = None
-    organization_id: Optional[str] = None
+    email: EmailStr | None = None
+    organization_id: str | None = None
 
     @root_validator(pre=True)
     def extract_organization(cls, values):

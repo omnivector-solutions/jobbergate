@@ -5,9 +5,15 @@ from unittest.mock import patch
 import pytest
 from fastapi import BackgroundTasks
 
-from jobbergate_api.apps.job_script_templates.services import crud_service, template_file_service
+from jobbergate_api.apps.garbage_collector import (
+    delete_files_from_bucket,
+    garbage_collect,
+    get_files_to_delete,
+    get_set_of_files_from_bucket,
+    get_set_of_files_from_database,
+)
 from jobbergate_api.apps.job_script_templates.models import JobScriptTemplateFile
-from jobbergate_api.apps.garbage_collector import delete_files_from_bucket, get_set_of_files_from_database, get_set_of_files_from_bucket, get_files_to_delete, garbage_collect
+from jobbergate_api.apps.job_script_templates.services import crud_service, template_file_service
 
 
 @pytest.fixture
@@ -46,11 +52,13 @@ async def test_get_set_of_files_from_database(synth_session, insert_file):
     file3 = await insert_file(filename="three.txt")
 
     db_files = await get_set_of_files_from_database(synth_session, JobScriptTemplateFile)
-    assert sorted(db_files) == sorted([
-        file1.file_key,
-        file2.file_key,
-        file3.file_key,
-    ])
+    assert sorted(db_files) == sorted(
+        [
+            file1.file_key,
+            file2.file_key,
+            file3.file_key,
+        ]
+    )
 
 
 async def test_get_set_of_files_from_bucket(synth_session, synth_bucket, insert_file):
@@ -59,11 +67,13 @@ async def test_get_set_of_files_from_bucket(synth_session, synth_bucket, insert_
     file3 = await insert_file(filename="three.txt")
 
     bucket_files = await get_set_of_files_from_bucket(synth_bucket, JobScriptTemplateFile)
-    assert sorted(bucket_files) == sorted([
-        file1.file_key,
-        file2.file_key,
-        file3.file_key,
-    ])
+    assert sorted(bucket_files) == sorted(
+        [
+            file1.file_key,
+            file2.file_key,
+            file3.file_key,
+        ]
+    )
 
 
 async def test_get_files_to_delete(synth_session, synth_bucket, insert_file):
@@ -89,10 +99,12 @@ async def test_delete_files_from_bucket(synth_session, synth_bucket, insert_file
     await delete_files_from_bucket(synth_bucket, {file2_key})
 
     bucket_files = await get_set_of_files_from_bucket(synth_bucket, JobScriptTemplateFile)
-    assert sorted(bucket_files) == sorted([
-        file1.file_key,
-        file3.file_key,
-    ])
+    assert sorted(bucket_files) == sorted(
+        [
+            file1.file_key,
+            file3.file_key,
+        ]
+    )
 
 
 async def test_garbage_collect(synth_session, synth_bucket, insert_file):
@@ -107,7 +119,9 @@ async def test_garbage_collect(synth_session, synth_bucket, insert_file):
     await bg_tasks()
 
     bucket_files = await get_set_of_files_from_bucket(synth_bucket, JobScriptTemplateFile)
-    assert sorted(bucket_files) == sorted([
-        file1.file_key,
-        file3.file_key,
-    ])
+    assert sorted(bucket_files) == sorted(
+        [
+            file1.file_key,
+            file3.file_key,
+        ]
+    )

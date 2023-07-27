@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import io
 from contextlib import contextmanager
-from typing import Any, Protocol
+from typing import Any, Generic, Protocol, TypeVar
 
 from botocore.response import StreamingBody
 from buzz import enforce_defined, handle_errors, require_condition
@@ -12,13 +12,13 @@ from fastapi import HTTPException, UploadFile, status
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from jinja2 import Template
-from mypy_boto3_s3.service_resource import Bucket
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped
 from sqlalchemy.sql.expression import Select
 
+from jobbergate_api.safe_types import Bucket
 from jobbergate_api.storage import search_clause, sort_clause
 
 
@@ -30,6 +30,9 @@ class ServiceError(HTTPException):
     """
 
     def __init__(self, message, status_code=status.HTTP_400_BAD_REQUEST, **kwargs):
+        """
+        Instantiate the HTTPException super class by setting detail to the message provided.
+        """
         super().__init__(status_code=status_code, detail=message, **kwargs)
 
 
@@ -41,16 +44,28 @@ class DatabaseBoundService:
     _session: AsyncSession | None
 
     def __init__(self):
+        """
+        Instantiate the service with a null session.
+        """
         self._session = None
 
     def bind_session(self, session: AsyncSession):
+        """
+        Bind the service to a session.
+        """
         self._session = session
 
     def unbind_session(self):
+        """
+        Unbind the service from a session.
+        """
         self._session = None
 
     @contextmanager
     def bound_session(self, session: AsyncSession):
+        """
+        Provide a context within which the service is bound to a session.
+        """
         self.bind_session(session)
         try:
             yield self
@@ -59,6 +74,11 @@ class DatabaseBoundService:
 
     @property
     def session(self) -> AsyncSession:
+        """
+        Fetch the currently bound session.
+
+        Raise an exception if the service is not bound to a session.
+        """
         return enforce_defined(
             self._session,
             "Service is not bound to a database session",
@@ -84,32 +104,54 @@ class CrudModelProto(Protocol):
     owner_email: Mapped[str]
 
     def __init__(self, **kwargs):
+        """
+        Declare that the protocol can be instantiated.
+        """
         ...
 
     def __tablename__(self) -> str:
+        """
+        Declare that the protocol has a method to dynamically produce the table name.
+        """
         ...
 
     @classmethod
     def searchable_fields(cls) -> list[str]:
+        """
+        Declare that the protocol has searchable fields.
+        """
         ...
 
     @classmethod
     def sortable_fields(cls) -> list[str]:
+        """
+        Declare that the protocol has sortable fields.
+        """
         ...
 
 
-class CrudService(DatabaseBoundService):
-    model_type: type[CrudModelProto]
+CrudModel = TypeVar("CrudModel", bound=CrudModelProto)
 
-    def __init__(self, model_type: type[CrudModelProto]):
+
+class CrudService(DatabaseBoundService, Generic[CrudModel]):
+    """
+    Provide a service that can perform various crud operations using a supplied ORM model type.
+    """
+
+    model_type: type[CrudModel]
+
+    def __init__(self, model_type: type[CrudModel]):
+        """
+        Initialize the instance with an ORM model type.
+        """
         super().__init__()
         self.model_type = model_type
 
-    async def create(self, **incoming_data) -> CrudModelProto:
+    async def create(self, **incoming_data) -> CrudModel:
         """
         Add a new row for the model to the database.
         """
-        instance: CrudModelProto = self.model_type(**incoming_data)
+        instance: CrudModel = self.model_type(**incoming_data)
 
         self.session.add(instance)
         # I think this flush is not necessary
@@ -118,11 +160,13 @@ class CrudService(DatabaseBoundService):
         return instance
 
     async def count(self) -> int:
-        """Count the number of rows in the table on the database."""
+        """
+        Count the number of rows in the table on the database.
+        """
         result: Result = await self.session.execute(select(func.count(self.model_type.id)))
         return result.scalar_one()
 
-    async def get(self, locator: Any) -> CrudModelProto:
+    async def get(self, locator: Any) -> CrudModel:
         """
         Get a row by locator.
 
@@ -130,7 +174,7 @@ class CrudService(DatabaseBoundService):
         """
         query = select(self.model_type).where(self.locate_where_clause(locator))
         result: Result = await self.session.execute(query)
-        instance: CrudModelProto = enforce_defined(
+        instance: CrudModel = enforce_defined(
             result.scalar_one_or_none(),
             f"{self.model_type.__tablename__} row not found by {locator}",
             raise_exc_class=ServiceError,
@@ -155,7 +199,7 @@ class CrudService(DatabaseBoundService):
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
 
-    async def update(self, locator: Any, **incoming_data) -> CrudModelProto:
+    async def update(self, locator: Any, **incoming_data) -> CrudModel:
         """
         Update a row by locator with supplied data.
 
@@ -224,7 +268,7 @@ class CrudService(DatabaseBoundService):
             query = query.order_by(sort_clause(sort_field, self.model_type.sortable_fields(), sort_ascending))
         return query
 
-    async def paginated_list(self, **filter_kwargs) -> Page[CrudModelProto]:
+    async def paginated_list(self, **filter_kwargs) -> Page[CrudModel]:
         """
         List all crud rows matching specified filters with pagination.
 
@@ -232,7 +276,7 @@ class CrudService(DatabaseBoundService):
         """
         return await paginate(self.session, self.build_list_query(**filter_kwargs))
 
-    async def list(self, **filter_kwargs) -> list[CrudModelProto]:
+    async def list(self, **filter_kwargs) -> list[CrudModel]:
         """
         List all crud rows matching specified filters.
 
@@ -250,16 +294,28 @@ class BucketBoundService:
     _bucket: Bucket | None
 
     def __init__(self):
+        """
+        Initialize the service with a null bucket.
+        """
         self._bucket = None
 
     def bind_bucket(self, bucket: Bucket):
+        """
+        Bind the service to a bucket.
+        """
         self._bucket = bucket
 
     def unbind_bucket(self):
+        """
+        Unbind the service from a bucket.
+        """
         self._bucket = None
 
     @contextmanager
     def bound_bucket(self, bucket: Bucket):
+        """
+        Provide a context within which the service is bound to a bucket.
+        """
         self.bind_bucket(bucket)
         try:
             yield self
@@ -268,6 +324,11 @@ class BucketBoundService:
 
     @property
     def bucket(self) -> Bucket:
+        """
+        Fetch the currently bound bucket.
+
+        Raise an exception if the service is not bound to a bucket.
+        """
         return enforce_defined(
             self._bucket,
             "Service is not bound to file storage",
@@ -294,20 +355,36 @@ class FileModelProto(Protocol):
     file_key: str
 
     def __init__(self, **kwargs):
+        """
+        Declare that the protocol can be instantiated.
+        """
         ...
 
     def __tablename__(self) -> str:
+        """
+        Declare that the protocol has a method to dynamically produce the table name.
+        """
         ...
 
 
-class FileService(DatabaseBoundService, BucketBoundService):
-    model_type: type[FileModelProto]
+FileModel = TypeVar("FileModel", bound=FileModelProto)
 
-    def __init__(self, model_type: type[FileModelProto]):
+
+class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
+    """
+    Proide a service that can perform various file management operations using a supplied ORM model type.
+    """
+
+    model_type: type[FileModel]
+
+    def __init__(self, model_type: type[FileModel]):
+        """
+        Initialize the instance with an ORM model type.
+        """
         super().__init__()
         self.model_type = model_type
 
-    async def get(self, parent_id: int, filename: str | None = None) -> FileModelProto:
+    async def get(self, parent_id: int, filename: str | None = None) -> FileModel:
         """
         Get a single instances by its parent id and filename (primary keys).
 
@@ -326,7 +403,7 @@ class FileService(DatabaseBoundService, BucketBoundService):
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
 
-    async def find_children(self, parent_id: int) -> list[FileModelProto]:
+    async def find_children(self, parent_id: int) -> list[FileModel]:
         """
         Find matching instances by parent_id.
         """
@@ -335,7 +412,7 @@ class FileService(DatabaseBoundService, BucketBoundService):
         result: Result = await self.session.execute(query)
         return list(result.scalars())
 
-    async def stream_file_content(self, instance: FileModelProto) -> StreamingBody:
+    async def stream_file_content(self, instance: FileModel) -> StreamingBody:
         """
         Stream the content of a file using a boto3 StreamingBody.
 
@@ -348,10 +425,13 @@ class FileService(DatabaseBoundService, BucketBoundService):
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         ):
             # Mypy doesn't like using this approach to getting the object
-            file_object = await self.bucket.meta.client.get_object(Bucket=self.bucket.name, Key=instance.file_key)  # type: ignore
+            file_object = await self.bucket.meta.client.get_object(
+                Bucket=self.bucket.name,
+                Key=instance.file_key,
+            )  # type: ignore
         return file_object["Body"]
 
-    async def get_file_content(self, instance: FileModelProto) -> bytes:
+    async def get_file_content(self, instance: FileModel) -> bytes:
         """
         Get the full contents for a file entry.
         """
@@ -366,11 +446,11 @@ class FileService(DatabaseBoundService, BucketBoundService):
         filename: str,
         upload_content: str | bytes | UploadFile,
         **upsert_kwargs,
-    ) -> FileModelProto:
+    ) -> FileModel:
         """
         Upsert a file instance.
         """
-        instance: FileModelProto = self.model_type(
+        instance: FileModel = self.model_type(
             parent_id=parent_id,
             filename=filename,
             **upsert_kwargs,
@@ -393,15 +473,19 @@ class FileService(DatabaseBoundService, BucketBoundService):
         await self.bucket.upload_fileobj(Fileobj=file_obj, Key=instance.file_key)  # type: ignore
         return instance
 
-    async def delete(self, instance: FileModelProto) -> None:
-        """Delete a file from s3 and from the corresponding table."""
+    async def delete(self, instance: FileModel) -> None:
+        """
+        Delete a file from s3 and from the corresponding table.
+        """
         await self.session.delete(instance)
         # Mypy doesn't like aioboto3 much
         s3_object = await self.bucket.Object(instance.file_key)  # type: ignore
         await s3_object.delete()
         await self.session.flush()
 
-    async def render(self, instance: FileModelProto, parameters: dict[str, Any]) -> str:
-        """Render the file using Jinja2."""
+    async def render(self, instance: FileModel, parameters: dict[str, Any]) -> str:
+        """
+        Render the file using Jinja2.
+        """
         file_content = await self.get_file_content(instance)
         return Template(file_content.decode("utf-8")).render(**parameters)

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.models import Base, CrudMixin
+from jobbergate_api.safe_types import JobScript
 
 
 class JobSubmission(CrudMixin, Base):
@@ -43,9 +44,9 @@ class JobSubmission(CrudMixin, Base):
         server_default=text("'{}'::jsonb"),
     )
 
-    job_script: Mapped["JobScript"] = relationship(
+    job_script: Mapped[JobScript] = relationship(
         "JobScript",
-        backref="submissions",
+        back_populates="submissions",
         lazy="select",
         innerjoin=True,
     )

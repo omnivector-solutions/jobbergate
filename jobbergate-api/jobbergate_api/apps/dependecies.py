@@ -8,10 +8,10 @@ from typing import AsyncIterator
 
 from aioboto3.session import Session
 from fastapi import Depends
-from mypy_boto3_s3.service_resource import Bucket
 
 from jobbergate_api.apps.services import BucketBoundService, DatabaseBoundService
 from jobbergate_api.config import settings
+from jobbergate_api.safe_types import Bucket
 from jobbergate_api.security import PermissionMode
 from jobbergate_api.storage import SecureSession, secure_session
 
@@ -67,6 +67,9 @@ def secure_services(
         """
         Bind each service to the secure session and then return the session.
         """
+        # Make type checkers happy
+        assert services is not None
+
         try:
             [service.bind_session(secure_session.session) for service in services]
             yield secure_session

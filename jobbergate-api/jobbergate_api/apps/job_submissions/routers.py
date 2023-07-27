@@ -3,7 +3,6 @@ Router for the JobSubmission resource.
 """
 from typing import Any
 
-from armasec import TokenPayload
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import status
@@ -11,7 +10,7 @@ from fastapi_pagination import Page
 from loguru import logger
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.dependecies import file_services, s3_bucket, secure_services
+from jobbergate_api.apps.dependecies import file_services, secure_services
 from jobbergate_api.apps.job_scripts.services import crud_service as script_crud_service
 from jobbergate_api.apps.job_scripts.services import file_service as script_file_service
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus

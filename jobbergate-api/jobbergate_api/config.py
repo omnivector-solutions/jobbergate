@@ -95,7 +95,7 @@ class Settings(BaseSettings):
         environment variable to a blank string.
         """
         clean_values = dict()
-        for (key, value) in values.items():
+        for key, value in values.items():
             if isinstance(value, str):
                 if value.strip():
                     clean_values[key] = value

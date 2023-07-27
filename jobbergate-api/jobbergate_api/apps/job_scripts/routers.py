@@ -1,5 +1,5 @@
 """Router for the Job Script Template resource."""
-from typing import cast
+from typing import Any, cast
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Path, Query
 from fastapi import Response as FastAPIResponse
@@ -98,7 +98,10 @@ async def job_script_create_from_template(
     if len(required_map) > 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"The template files are missing required files: {required_map.keys()} for {id_or_identifier}",
+            detail=(
+                f"The template files are missing required files: "
+                f"{required_map.keys()} for {id_or_identifier}"
+            ),
         )
 
     job_script = await crud_service.create(
@@ -107,7 +110,7 @@ async def job_script_create_from_template(
         **create_request.dict(exclude_unset=True),
     )
 
-    for (new_filename, template_file) in mapped_template_files.items():
+    for new_filename, template_file in mapped_template_files.items():
         file_content = await template_file_service.render(
             template_file,
             render_request.param_dict,
@@ -171,7 +174,7 @@ async def job_script_get_list(
     """Get a list of job scripts."""
     logger.debug("Preparing to list job scripts")
 
-    list_kwargs = dict(
+    list_kwargs: dict[str, Any] = dict(
         search=search,
         sort_field=sort_field,
         sort_ascending=sort_ascending,
@@ -258,6 +261,12 @@ async def job_script_upload_file(
     upload_file: UploadFile = File(..., description="File to upload"),
 ):
     """Upload a file to a job script."""
+    if upload_file.filename is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The upload file has no filename",
+        )
+
     logger.debug(f"Uploading file {upload_file.filename} to job script {id=}")
     job_script = await crud_service.get(id)
     await file_service.upsert(

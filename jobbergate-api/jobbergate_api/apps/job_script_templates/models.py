@@ -3,10 +3,9 @@ from typing import Any, Optional
 
 from sqlalchemy import Enum, ForeignKey, Integer, String, text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, attribute_keyed_dict, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
 from jobbergate_api.apps.models import Base, CrudMixin, FileMixin
 
 

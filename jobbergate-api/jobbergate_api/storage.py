@@ -6,6 +6,7 @@ from __future__ import annotations
 import re
 import typing
 from dataclasses import dataclass
+from itertools import product
 
 import asyncpg
 import fastapi
@@ -16,7 +17,7 @@ from loguru import logger
 from sqlalchemy import Column, Enum, or_
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import Mapped
-from sqlalchemy.sql.expression import BooleanClauseList, Case, UnaryExpression
+from sqlalchemy.sql.expression import Case, ColumnElement, UnaryExpression
 from starlette import status
 from yarl import URL
 
@@ -184,11 +185,17 @@ def render_sql(session: AsyncSession, query) -> str:
 def search_clause(
     search_terms: str,
     searchable_fields: list,
-) -> BooleanClauseList:
+) -> ColumnElement[bool]:
     """
     Create search clause across searchable fields with search terms.
+
+    Regarding the False first argument to or_():
+        The or_() function must have one fixed positional argument.
+        See: https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.or_
     """
-    return or_(*[field.ilike(f"%{term}%") for field in searchable_fields for term in search_terms.split()])
+    search_pairs = product(searchable_fields, search_terms.split())
+    search_expressions = (field.ilike(f"%{term}%") for (field, term) in search_pairs)
+    return or_(False, *search_expressions)
 
 
 def _build_enum_sort_clause(sort_column: Column, sort_ascending: bool) -> Case:
@@ -207,8 +214,7 @@ def _build_enum_sort_clause(sort_column: Column, sort_ascending: bool) -> Case:
 
     To understand this more fully, start with this SO question: https://stackoverflow.com/a/23618085/642511
 
-    Note:
-
+    Note::
         For sorting to work on sqlalchemy.Enum types, the enum _must_ be specified with ``native_enum=False``
 
         ```
@@ -226,7 +232,7 @@ def sort_clause(
     sort_field: str,
     sortable_fields: list,
     sort_ascending: bool,
-) -> typing.Union[Column, UnaryExpression, Case]:
+) -> typing.Union[Mapped, UnaryExpression, Case]:
     """
     Create a sort clause given a sort field, the list of sortable fields, and a sort_ascending flag.
     """

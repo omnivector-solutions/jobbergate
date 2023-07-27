@@ -84,7 +84,6 @@ async def test_render_job_script_from_template(
 
     with template_file_service.bound_session(synth_session):
         with template_file_service.bound_bucket(synth_bucket):
-
             template_name = "entrypoint.py.j2"
             job_script_name = template_name.removesuffix(".j2")
             await template_file_service.upsert(

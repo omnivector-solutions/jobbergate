@@ -185,6 +185,12 @@ async def job_script_template_upload_file(
     upload_file: UploadFile = File(..., description="File to upload"),
 ):
     """Upload a file to a job script template by id or identifier."""
+    if upload_file.filename is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The upload file has no filename",
+        )
+
     logger.debug(f"Uploading file {upload_file.filename} to job script template {id_or_identifier=}")
     job_script_template = await crud_service.get(id_or_identifier)
     return await template_file_service.upsert(

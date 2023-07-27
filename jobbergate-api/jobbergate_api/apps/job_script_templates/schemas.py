@@ -1,10 +1,13 @@
+"""
+Provide schemas for the job script templates component.
+"""
+
 import json
-import urllib.parse
 from datetime import datetime
 from typing import Any, Optional
 
 import pydantic
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel
 
 from jobbergate_api.apps.schemas import TableResource
 
@@ -14,10 +17,16 @@ class RunTimeConfig(BaseModel, extra=pydantic.Extra.allow):
 
     @classmethod
     def __get_validators__(cls):
+        """
+        Get the validators.
+        """
         yield cls.validate_to_json
 
     @classmethod
     def validate_to_json(cls, value):
+        """
+        Validate the produced json.
+        """
         if isinstance(value, str):
             return cls(**json.loads(value))
         return value
@@ -48,6 +57,8 @@ class JobTemplateUpdateRequest(BaseModel):
 
 
 class TemplateFileResponse(BaseModel):
+    """Schema for the response to get a template file."""
+
     parent_id: int
     filename: str
     file_type: str
@@ -59,6 +70,8 @@ class TemplateFileResponse(BaseModel):
 
 
 class WorkflowFileResponse(BaseModel):
+    """Schema for the response to get a workflow file."""
+
     parent_id: int
     filename: str
     runtime_config: Optional[dict[str, Any]] = {}

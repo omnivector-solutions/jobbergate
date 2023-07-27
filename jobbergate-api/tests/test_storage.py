@@ -2,8 +2,8 @@
 Test the storage module.
 """
 
-import json
 import enum
+import json
 
 import asyncpg
 import pytest
@@ -11,7 +11,7 @@ from sqlalchemy import Enum, select
 from sqlalchemy.orm import Mapped, mapped_column
 
 from jobbergate_api.apps.models import Base, CommonMixin, IdMixin
-from jobbergate_api.storage import build_db_url, sort_clause, handle_fk_error
+from jobbergate_api.storage import build_db_url, handle_fk_error, sort_clause
 
 
 class DummyStatusEnum(str, enum.Enum):
@@ -156,7 +156,9 @@ async def test_handle_fk_error():
     """
     Provide a test for the ``handle_fk_error()`` fastapi error handler.
     """
-    fk_error = asyncpg.exceptions.ForeignKeyViolationError('''DETAIL:  Key (id)=(13) is still referenced from table "blah"''')
+    fk_error = asyncpg.exceptions.ForeignKeyViolationError(
+        '''DETAIL:  Key (id)=(13) is still referenced from table "blah"'''
+    )
     response = handle_fk_error(None, fk_error)
     response_data = json.loads(response.body.decode())
     assert response_data["detail"]["message"] == "Delete failed due to foreign-key constraint"
