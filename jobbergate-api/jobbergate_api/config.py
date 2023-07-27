@@ -59,6 +59,10 @@ class Settings(BaseSettings):
     S3_BUCKET_NAME: str = Field("jobbergate-staging-eu-north-1-resources")
     S3_ENDPOINT_URL: Optional[str]
 
+    # Test S3 configuration
+    TEST_S3_BUCKET_NAME: str = Field("test-jobbergate-resources")
+    TEST_S3_ENDPOINT_URL: str = Field("http://localhost:9000")
+
     # Security Settings. For details, see https://github.com/omnivector-solutions/armasec
     ARMASEC_DOMAIN: str
     ARMASEC_USE_HTTPS: bool = Field(True)

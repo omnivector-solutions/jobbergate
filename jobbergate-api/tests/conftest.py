@@ -84,13 +84,10 @@ async def synth_session():
 
 @pytest.fixture(autouse=True, scope="session")
 async def synth_s3_bucket_session():
-    if settings.S3_ENDPOINT_URL != "http://localhost:9000" or not settings.S3_BUCKET_NAME.startswith("test-"):
-        raise ValueError("Check test credentials for s3")
-
     session = Boto3Session()
 
-    async with session.resource("s3", endpoint_url=settings.S3_ENDPOINT_URL) as s3:
-        bucket = await s3.Bucket(settings.S3_BUCKET_NAME)
+    async with session.resource("s3", endpoint_url=settings.TEST_S3_ENDPOINT_URL) as s3:
+        bucket = await s3.Bucket(settings.TEST_S3_BUCKET_NAME)
         try:
             await bucket.create()
         except bucket.meta.client.exceptions.BucketAlreadyOwnedByYou:

@@ -107,8 +107,6 @@ env = [
     "ARMASEC_DEBUG = False",  # Set this to True to debug armasec issues by seeing verbose logging
     "SENDGRID_FROM_EMAIL = info@pytesting.com",
     "SENDGRID_API_KEY = test-api-key",
-    "S3_BUCKET_NAME = test-jobbergate-resources",
-    "S3_ENDPOINT_URL = http://localhost:9000",
     "AWS_ACCESS_KEY_ID = compose-s3-key",
     "AWS_SECRET_ACCESS_KEY = compose-s3-secret",
 ]

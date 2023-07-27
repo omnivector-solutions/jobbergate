@@ -56,6 +56,7 @@ jobs:
           TEST_DATABASE_USER: test
           TEST_DATABASE_PSWD: test-pswd
           TEST_DATABASE_NAME: test-jobbergate
+          TEST_S3_ENDPOINT_URL: http://test-s3:9000
         run: |
           poetry env use 3.10
           make qa

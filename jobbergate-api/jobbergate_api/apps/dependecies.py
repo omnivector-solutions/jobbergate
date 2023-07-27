@@ -25,8 +25,14 @@ async def s3_bucket():
         on how to use aioboto3.
     """
     session = Session()
-    async with session.resource("s3", endpoint_url=settings.S3_ENDPOINT_URL) as s3:
-        bucket = await s3.Bucket(settings.S3_BUCKET_NAME)
+    if settings.DEPLOY_ENV.lower() == "test":
+        s3_url = settings.TEST_S3_ENDPOINT_URL
+        bucket_name = settings.TEST_S3_BUCKET_NAME
+    else:
+        s3_url = settings.S3_ENDPOINT_URL
+        bucket_name = settings.S3_BUCKET_NAME
+    async with session.resource("s3", endpoint_url=s3_url) as s3:
+        bucket = await s3.Bucket(bucket_name)
         yield bucket
 
 
