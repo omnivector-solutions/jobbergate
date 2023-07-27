@@ -24,6 +24,7 @@ jobs:
           --health-retries 5
         ports:
           - 5433:5432
+
       test-s3:
         image: minio/minio
         env:
@@ -34,7 +35,7 @@ jobs:
           - 9001:9001
         volumes:
           - ${{ github.workspace }}/data:/data
-        options: --compat /data
+
     steps:
       - uses: actions/checkout@v3
       - name: Install poetry
