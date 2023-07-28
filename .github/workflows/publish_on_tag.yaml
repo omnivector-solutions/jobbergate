@@ -8,15 +8,16 @@ name: Publish on Tag
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+'
-      - '[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
 
 jobs:
   build-publish:
     runs-on: ubuntu-latest
     strategy:
-      matrix: { sub_project: ['jobbergate-api', 'jobbergate-cli']}
+      matrix:
+        { sub_project: ["jobbergate-api", "jobbergate-cli", "jobbergate-core"] }
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -24,7 +25,7 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: 3.8
-  
+
       - uses: Gr1N/setup-poetry@v7
         with:
           poetry-version: 1.1.14
