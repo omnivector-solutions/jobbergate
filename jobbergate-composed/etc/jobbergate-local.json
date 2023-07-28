@@ -549,7 +549,7 @@
       "emailVerified": false,
       "firstName": "Local",
       "lastName": "User",
-      "email": "local-user@jobbergate.local",
+      "email": "local-user@jobbergate.local-mail",
       "credentials": [
         {
           "id": "0c536f60-f90b-47f3-bef4-0f48ec9c0335",

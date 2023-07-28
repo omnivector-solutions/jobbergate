@@ -33,6 +33,11 @@ services:
       interval: 5s
       retries: 10
       timeout: 5s
+    depends_on:
+      db:
+        condition: service_healthy
+      keycloak.local:
+        condition: service_healthy
 
   jobbergate-cli:
     build:
@@ -99,6 +104,11 @@ services:
       - POSTGRES_DB=compose-db-name
     ports:
       - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   test-db:
     image: postgres
@@ -113,6 +123,11 @@ services:
       - POSTGRES_MULTIPLE_DATABASES="test-db","alt-test-db"
     ports:
       - 5433:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   minio:
     image: minio/minio
@@ -150,11 +165,17 @@ services:
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HEALTH_ENABLED=true
     command:
       - "start-dev"
       - "--import-realm"
     ports:
       - 8080:8080
+    healthcheck:
+      test: curl --fail http://localhost:8080/health/ready || exit 1
+      interval: 5s
+      retries: 10
+      timeout: 5s
 
   mysql:
     image: mysql:5.7
