@@ -1,6 +1,7 @@
 """
 Database model for the JobScript resource.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import Enum, ForeignKey, Integer
@@ -47,14 +48,14 @@ class JobScript(CrudMixin, Base):
         """
         Add parent_template_id as a searchable field.
         """
-        return [cls.parent_template_id, *super().searchable_fields()]
+        return {cls.parent_template_id, *super().searchable_fields()}
 
     @classmethod
     def sortable_fields(cls):
         """
         Add parent_template_id as a sortable field.
         """
-        return [cls.parent_template_id, *super().sortable_fields()]
+        return {cls.parent_template_id, *super().sortable_fields()}
 
 
 class JobScriptFile(FileMixin, Base):

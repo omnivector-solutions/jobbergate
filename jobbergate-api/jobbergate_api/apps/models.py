@@ -1,7 +1,5 @@
 """Functionalities to be shared by all models."""
 
-from __future__ import annotations
-
 from datetime import datetime
 
 from inflection import tableize
@@ -118,24 +116,24 @@ class CrudMixin(CommonMixin, IdMixin, TimestampMixin, OwnerMixin, NameMixin):
         """
         Describe the fields that may be used in search queries.
         """
-        return [
+        return {
             cls.name,
             cls.description,
             cls.owner_email,
-        ]
+        }
 
     @classmethod
     def sortable_fields(cls):
         """
         Describe the fields that may be used for sorting queries.
         """
-        return [
+        return {
             cls.id,
             cls.name,
             cls.owner_email,
             cls.created_at,
             cls.updated_at,
-        ]
+        }
 
 
 class FileMixin(CommonMixin, TimestampMixin):

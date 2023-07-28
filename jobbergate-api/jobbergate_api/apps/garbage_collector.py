@@ -23,9 +23,7 @@ async def get_set_of_files_from_bucket(bucket, table) -> set[str]:
 async def get_files_to_delete(session, table, bucket) -> set[str]:
     """Get a set of files to delete."""
     files_in_database = await get_set_of_files_from_database(session, table)
-    print("FILES IN DB: ", files_in_database)
     files_in_bucket = await get_set_of_files_from_bucket(bucket, table)
-    print("FILES IN BUCKET: ", files_in_bucket)
     result = files_in_bucket - files_in_database
     logger.debug(f"Total of files to be garbage collected: {len(result)}")
     return result

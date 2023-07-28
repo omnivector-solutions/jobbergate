@@ -1,6 +1,7 @@
 """
 JobScript resource schema.
 """
+
 from datetime import datetime
 from typing import Any
 

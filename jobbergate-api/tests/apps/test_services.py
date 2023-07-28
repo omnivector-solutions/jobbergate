@@ -451,6 +451,22 @@ class TestFileService:
         buff.seek(0)
         assert buff.read() == "dummy string content".encode()
 
+    async def test_stream_file_content__raises_500_if_file_is_missing(self, dummy_file_service, synth_bucket):
+        """
+        Test that the ``get()`` method raises a 500 error if the file is missing in s3.
+        """
+        upserted_instance = await dummy_file_service.upsert(
+            13,
+            "file-one.txt",
+            "dummy string content",
+        )
+        s3_object = await synth_bucket.Object(upserted_instance.file_key)
+        await s3_object.delete()
+        with pytest.raises(HTTPException) as exc_info:
+            await dummy_file_service.stream_file_content(upserted_instance)
+        assert exc_info.value.status_code == 500
+        assert "file content not found" in exc_info.value.detail
+
     async def test_upsert__success(self, make_upload_file, dummy_file_service):
         """
         Test that the ``upsert()`` method correctly creates a database entry and file in the s3 store.
@@ -514,7 +530,7 @@ class TestFileService:
         assert await dummy_file_service.find_children(13) == []
         with pytest.raises(HTTPException) as exc_info:
             await dummy_file_service.get_file_content(upserted_instance)
-        assert exc_info.value.status_code == 404
+        assert exc_info.value.status_code == 500
 
     async def test_render__success(self, make_upload_file, dummy_file_service):
         """

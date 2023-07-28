@@ -43,7 +43,7 @@ def file_services(*services: BucketBoundService):
 
     async def dependency(
         bucket: Bucket = Depends(s3_bucket),
-    ) -> AsyncIterator[SecureSession]:
+    ) -> AsyncIterator[Bucket]:
         """
         Bind each service to the secure session and then return the session.
         """

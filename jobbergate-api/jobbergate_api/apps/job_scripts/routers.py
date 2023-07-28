@@ -89,20 +89,21 @@ async def job_script_create_from_template(
 
     required_map = render_request.template_output_name_mapping
     entrypoint_key = list(required_map.values())[0]
-    mapped_template_files = {}
-    for template_file in base_template.template_files:
-        new_filename = required_map.pop(template_file.filename, None)
-        if new_filename is None:
-            continue
-        mapped_template_files[new_filename] = template_file
-    if len(required_map) > 0:
+
+    required_keys = set(required_map.keys())
+    provided_keys = set(f.filename for f in base_template.template_files)
+    missing_keys = required_keys - provided_keys
+    if len(missing_keys) > 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                f"The template files are missing required files: "
-                f"{required_map.keys()} for {id_or_identifier}"
-            ),
+            detail=(f"The template files are missing required files: {missing_keys} for {id_or_identifier}"),
         )
+
+    mapped_template_files = {
+        new_filename: file
+        for file in base_template.template_files
+        if (new_filename := required_map.get(file.filename, None))
+    }
 
     job_script = await crud_service.create(
         owner_email=secure_session.identity_payload.email,

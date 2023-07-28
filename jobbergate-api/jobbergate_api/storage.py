@@ -1,7 +1,6 @@
 """
 Provide functions to interact with persistent data storage.
 """
-from __future__ import annotations
 
 import re
 import typing
@@ -150,12 +149,9 @@ def secure_session(*scopes: str, permission_mode: PermissionMode = PermissionMod
                 identity_payload=identity_payload,
                 session=session,
             )
-            # # In test mode, we should not commit to the database. Instead, just flush to the session
-            # In test mode, we should not commit to the database. Instead, just commit the nested transaction.
+            # In test mode, we should not commit the entire transaction.
+            # Instead, we just commit on the nested transaction which releases savepoint and flushes.
             if is_test:
-                # logger.debug("Flushing session due to test mode")
-                # await session.flush()
-                # session.expire_all()
                 logger.debug("Committing nested transaction due to test mode")
                 await nested_transaction.commit()
             else:
@@ -184,7 +180,7 @@ def render_sql(session: AsyncSession, query) -> str:
 
 def search_clause(
     search_terms: str,
-    searchable_fields: list,
+    searchable_fields: set,
 ) -> ColumnElement[bool]:
     """
     Create search clause across searchable fields with search terms.
@@ -230,21 +226,24 @@ def _build_enum_sort_clause(sort_column: Column, sort_ascending: bool) -> Case:
 
 def sort_clause(
     sort_field: str,
-    sortable_fields: list,
+    sortable_fields: set,
     sort_ascending: bool,
 ) -> typing.Union[Mapped, UnaryExpression, Case]:
     """
     Create a sort clause given a sort field, the list of sortable fields, and a sort_ascending flag.
     """
-    sort_field_names = [f.name for f in sortable_fields]
-    try:
-        index = sort_field_names.index(sort_field)
-    except ValueError:
+    sort_column: Mapped[typing.Any] | UnaryExpression | Case | None = None
+    for sortable_field in sortable_fields:
+        if sortable_field.name == sort_field:
+            sort_column = sortable_field
+            break
+
+    if sort_column is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid sorting column requested: {sort_field}. Must be one of {sort_field_names}",
+            detail=f"Invalid sorting column requested: {sort_field}. Must be one of {sortable_fields}",
         )
-    sort_column: Mapped[typing.Any] | UnaryExpression | Case = sortable_fields[index]
+
     if isinstance(sort_column, Column) and isinstance(sort_column.type, sqlalchemy.Enum):
         sort_column = _build_enum_sort_clause(sort_column, sort_ascending)
     elif not sort_ascending:

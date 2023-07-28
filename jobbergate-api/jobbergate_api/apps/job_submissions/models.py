@@ -1,6 +1,9 @@
 """
 Database model for the JobSubmission resource.
 """
+
+from __future__ import annotations
+
 from typing import Any
 
 from sqlalchemy import Enum, ForeignKey, Integer, String, text
@@ -56,17 +59,17 @@ class JobSubmission(CrudMixin, Base):
         """
         Add client_id as a searchable field.
         """
-        return [cls.client_id, *super().searchable_fields()]
+        return {cls.client_id, *super().searchable_fields()}
 
     @classmethod
     def sortable_fields(cls):
         """
         Add additional sortable fields.
         """
-        return [
+        return {
             cls.job_script_id,
             cls.slurm_job_id,
             cls.client_id,
             cls.status,
             *super().sortable_fields(),
-        ]
+        }

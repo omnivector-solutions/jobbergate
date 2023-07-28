@@ -116,14 +116,14 @@ class CrudModelProto(Protocol):
         ...
 
     @classmethod
-    def searchable_fields(cls) -> list[str]:
+    def searchable_fields(cls) -> set[str]:
         """
         Declare that the protocol has searchable fields.
         """
         ...
 
     @classmethod
-    def sortable_fields(cls) -> list[str]:
+    def sortable_fields(cls) -> set[str]:
         """
         Declare that the protocol has sortable fields.
         """
@@ -154,7 +154,6 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         instance: CrudModel = self.model_type(**incoming_data)
 
         self.session.add(instance)
-        # I think this flush is not necessary
         await self.session.flush()
         await self.session.refresh(instance)
         return instance
@@ -245,7 +244,6 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         additional logic into the query.
         """
         query = select(self.model_type)
-        # I'm not sure if this is actually a good idea, but it's cool
         for key, value in additional_filters.items():
             query = query.where(getattr(self.model_type, key) == value)
         if user_email:
@@ -384,7 +382,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         super().__init__()
         self.model_type = model_type
 
-    async def get(self, parent_id: int, filename: str | None = None) -> FileModel:
+    async def get(self, parent_id: int, filename: str) -> FileModel:
         """
         Get a single instances by its parent id and filename (primary keys).
 
@@ -422,13 +420,11 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             f"{self.model_type.__tablename__} file content not found for {instance=}",
             handle_exc_class=self.bucket.meta.client.exceptions.NoSuchKey,
             raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
+            raise_kwargs=dict(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR),
         ):
-            # Mypy doesn't like using this approach to getting the object
-            file_object = await self.bucket.meta.client.get_object(
-                Bucket=self.bucket.name,
-                Key=instance.file_key,
-            )  # type: ignore
+            # Mypy doesn't like aioboto3 much
+            s3_object = await self.bucket.Object(instance.file_key)  # type: ignore
+            file_object = await s3_object.get()
         return file_object["Body"]
 
     async def get_file_content(self, instance: FileModel) -> bytes:

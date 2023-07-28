@@ -1,4 +1,7 @@
 """Database models for the job_script_templates resource."""
+
+from __future__ import annotations
+
 from typing import Any, Optional
 
 from sqlalchemy import Enum, ForeignKey, Integer, String, text
@@ -49,14 +52,14 @@ class JobScriptTemplate(CrudMixin, Base):
         """
         Add identifier as a searchable field.
         """
-        return [cls.identifier, *super().searchable_fields()]
+        return {cls.identifier, *super().searchable_fields()}
 
     @classmethod
     def sortable_fields(cls):
         """
         Add identifier as a sortable field.
         """
-        return [cls.identifier, *super().sortable_fields()]
+        return {cls.identifier, *super().sortable_fields()}
 
 
 class JobScriptTemplateFile(FileMixin, Base):
