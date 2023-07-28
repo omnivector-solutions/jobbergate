@@ -11,7 +11,12 @@ def base_data(tester_email):
     """
     Provide a fixture that supplies test application data.
     """
-    return {"name": "test_name", "description": "test_description", "owner_email": tester_email}
+    return {
+        "name": "test_name",
+        "description": "test_description",
+        "owner_email": tester_email,
+        "is_archived": False,
+    }
 
 
 @fixture
