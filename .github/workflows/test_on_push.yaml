@@ -10,56 +10,11 @@ jobs:
   api-tests:
     name: "jobbergate-api tests"
     runs-on: "ubuntu-20.04"
-    services:
-      test-db:
-        image: postgres
-        env:
-          POSTGRES_PASSWORD: test-pswd
-          POSTGRES_USER: test
-          POSTGRES_DB: test-jobbergate
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5433:5432
-
-      test-s3:
-        image: minio/minio
-        env:
-          MINIO_ROOT_USER: compose-s3-key
-          MINIO_ROOT_PASSWORD: compose-s3-secret
-        ports:
-          - 9000:9000
-          - 9001:9001
-        volumes:
-          - ${{ github.workspace }}/data:/data
-
     steps:
       - uses: actions/checkout@v3
-      - name: Install poetry
-        run: pipx install poetry==1.4.2
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-          architecture: "x64"
-          cache: "poetry"
-          cache-dependency-path: |
-            jobbergate-api/poetry.lock
-            jobbergate-api/pyproject.toml
-      - name: "run quality control checks"
-        working-directory: jobbergate-api
-        env:
-          DEPLOY_ENV: TEST
-          TEST_DATABASE_HOST: localhost
-          TEST_DATABASE_USER: test
-          TEST_DATABASE_PSWD: test-pswd
-          TEST_DATABASE_NAME: test-jobbergate
-          TEST_S3_ENDPOINT_URL: http://test-s3:9000
-        run: |
-          poetry env use 3.10
-          make qa
+      - name: Run QA
+        working-directory: ./jobbergate-composed
+        run: docker-compose build jobbergate-api-qa && docker-compose run --rm jobbergate-api-qa
 
   cli-tests:
     name: "jobbergate-cli tests"

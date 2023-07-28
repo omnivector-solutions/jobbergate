@@ -39,6 +39,29 @@ services:
       keycloak.local:
         condition: service_healthy
 
+  jobbergate-api-qa:
+    build:
+      context: ../jobbergate-api
+      dockerfile: Dockerfile-dev
+    networks:
+      - jobbergate-net
+    environment:
+      - TEST_DATABASE_HOST=test-db
+      - TEST_DATABASE_PORT=5432
+      - TEST_S3_ENDPOINT_URL=http://minio:9000
+      - TEST_LOG_LEVEL=CRITICAL
+    volumes:
+      - ../jobbergate-api/jobbergate_api/:/app/jobbergate_api/
+      - ../jobbergate-api/dev_tools/:/app/dev_tools/
+      - ../jobbergate-api/tests/:/app/tests/
+    entrypoint: ""
+    command: make qa
+    depends_on:
+      test-db:
+        condition: service_healthy
+      minio-create-bucket:
+        condition: service_completed_successfully
+
   jobbergate-cli:
     build:
       context: ../jobbergate-cli
@@ -63,33 +86,36 @@ services:
 
   # When the jobbegate-agent is completed, it will be included here and not rely on a
   # relative path outside of the jobbergate git repo
-  cluster-agent:
-    build:
-      context: ../../cluster-agent/
-      dockerfile: Dockerfile.dev
-    networks:
-      - jobbergate-net
-    volumes:
-      - ../../cluster-agent/cluster_agent/:/agent/cluster_agent
-      - cluster-agent-cache:/cache/
-      - ./slurm-work-dir:/slurm-work-dir/
-    entrypoint: /agent/entrypoint.sh
-    environment:
-      CLUSTER_AGENT_BASE_SLURMRESTD_URL: http://slurmrestd:6820
-      CLUSTER_AGENT_X_SLURM_USER_NAME: local-user
-      CLUSTER_AGENT_DEFAULT_SLURM_WORK_DIR: /slurm-work-dir
-      CLUSTER_AGENT_BASE_API_URL: http://jobbergate-api:80
-      CLUSTER_AGENT_SENTRY_DSN:
-      CLUSTER_AGENT_OIDC_DOMAIN: keycloak.local:8080/realms/jobbergate-local
-      CLUSTER_AGENT_OIDC_AUDIENCE: https://local.omnivector.solutions
-      CLUSTER_AGENT_OIDC_CLIENT_ID: local-slurm
-      CLUSTER_AGENT_OIDC_CLIENT_SECRET: SVkaJ2f9xeYfOVzQPHXYyiwr12za4xGF
-      CLUSTER_AGENT_OIDC_USE_HTTPS: false
-      CLUSTER_AGENT_CACHE_DIR: /cache
-      CLUSTER_AGENT_SLURMRESTD_JWT_KEY_STRING: ${JWT_SECRET:-supersecret}
-    depends_on:
-      jobbergate-api:
-        condition: service_healthy
+  # Note:
+  #   this section has been commented out so that the compose file can be used in the
+  #   gituhub CI/CD pipelines which do not have a relative path to cluster-agent
+  # cluster-agent:
+  #   build:
+  #     context: ../../cluster-agent/
+  #     dockerfile: Dockerfile.dev
+  #   networks:
+  #     - jobbergate-net
+  #   volumes:
+  #     - ../../cluster-agent/cluster_agent/:/agent/cluster_agent
+  #     - cluster-agent-cache:/cache/
+  #     - ./slurm-work-dir:/slurm-work-dir/
+  #   entrypoint: /agent/entrypoint.sh
+  #   environment:
+  #     - CLUSTER_AGENT_BASE_SLURMRESTD_URL=http://slurmrestd:6820
+  #     - CLUSTER_AGENT_X_SLURM_USER_NAME=local-user
+  #     - CLUSTER_AGENT_DEFAULT_SLURM_WORK_DIR=/slurm-work-dir
+  #     - CLUSTER_AGENT_BASE_API_URL=http://jobbergate-api:80
+  #     - CLUSTER_AGENT_SENTRY_DSN=
+  #     - CLUSTER_AGENT_OIDC_DOMAIN=keycloak.local:8080/realms/jobbergate-local
+  #     - CLUSTER_AGENT_OIDC_AUDIENCE=https://local.omnivector.solutions
+  #     - CLUSTER_AGENT_OIDC_CLIENT_ID=local-slurm
+  #     - CLUSTER_AGENT_OIDC_CLIENT_SECRET=SVkaJ2f9xeYfOVzQPHXYyiwr12za4xGF
+  #     - CLUSTER_AGENT_OIDC_USE_HTTPS=false
+  #     - CLUSTER_AGENT_CACHE_DIR=/cache
+  #     - CLUSTER_AGENT_SLURMRESTD_JWT_KEY_STRING=${JWT_SECRET:-supersecret}
+  #   depends_on:
+  #     jobbergate-api:
+  #       condition: service_healthy
 
   db:
     image: postgres
@@ -142,17 +168,23 @@ services:
     environment:
       - MINIO_ROOT_USER=compose-s3-key
       - MINIO_ROOT_PASSWORD=compose-s3-secret
+    healthcheck:
+      test: curl --fail http://localhost:9000/minio/health/live || exit 1
+      interval: 5s
+      retries: 10
+      timeout: 5s
     command: ["server", "--compat", "--console-address", ':9001', "/data"]
 
   minio-create-bucket:
     image: minio/mc
     networks:
       - jobbergate-net
-    depends_on:
-      - minio
     volumes:
       - ./etc/create-bucket.sh:/create-bucket.sh
     entrypoint: /create-bucket.sh
+    depends_on:
+      minio:
+        condition: service_healthy
 
   keycloak.local:
     image: keycloak/keycloak:18.0.0
@@ -184,10 +216,10 @@ services:
     hostname: mysql
     container_name: mysql
     environment:
-      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
-      MYSQL_DATABASE: slurm_acct_db
-      MYSQL_USER: slurm
-      MYSQL_PASSWORD: password
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+      - MYSQL_DATABASE=slurm_acct_db
+      - MYSQL_USER=slurm
+      - MYSQL_PASSWORD=password
     volumes:
       - var_lib_mysql:/var/lib/mysql
 
@@ -249,7 +281,7 @@ services:
       - ./slurm-fake-nfs:/nfs
       - ./slurm-work-dir:/slurm-work-dir
     environment:
-      LD_LIBRARY_PATH: "/lib:/lib64:/usr/local/lib"
+      - LD_LIBRARY_PATH=/lib:/lib64:/usr/local/lib
     expose:
       - "6818"
     depends_on:
@@ -272,7 +304,7 @@ services:
       - ./slurm-fake-nfs:/nfs
       - ./slurm-work-dir:/slurm-work-dir
     environment:
-      LD_LIBRARY_PATH: "/lib:/lib64:/usr/local/lib"
+      - LD_LIBRARY_PATH=/lib:/lib64:/usr/local/lib
     expose:
       - "6818"
     depends_on:
