@@ -2,6 +2,7 @@
 Configuration of pytest.
 """
 
+import asyncio
 import contextlib
 import dataclasses
 import datetime
@@ -12,57 +13,70 @@ from textwrap import dedent
 from unittest.mock import patch
 
 import pytest
-import sqlalchemy
-from asgi_lifespan import LifespanManager
 from file_storehouse.engine import EngineLocal
 from httpx import AsyncClient
 
-from jobbergate_api.apps.applications.models import applications_table
-from jobbergate_api.apps.job_scripts.models import job_scripts_table
-from jobbergate_api.apps.job_submissions.models import job_submissions_table
 from jobbergate_api.config import settings
 from jobbergate_api.main import app
 from jobbergate_api.metadata import metadata
 from jobbergate_api.s3_manager import file_manager_factory
-from jobbergate_api.storage import build_db_url, database
+from jobbergate_api.storage import engine_factory
 
 # Charset for producing random strings
 CHARSET = string.ascii_letters + string.digits + string.punctuation
 
 
-@pytest.fixture(autouse=True, scope="session")
-async def database_engine():
+@pytest.fixture(scope="session", autouse=True)
+def event_loop():
     """
-    Provide a fixture to get access to the database engine with a fixture.
+    Create an instance of the default event loop for each test case.
+
+    This fixture is used to run each test in a different async loop. Running all
+    in the same loop causes errors with SQLAlchemy. See the following two issues:
+
+    1. https://github.com/tiangolo/fastapi/issues/5692
+    2. https://github.com/encode/starlette/issues/1315
+
+    [Reference](https://tonybaloney.github.io/posts/async-test-patterns-for-pytest-and-unittest.html)
     """
-    engine = sqlalchemy.create_engine(build_db_url())
-    yield engine
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest.fixture(autouse=True, scope="session")
-async def enforce_empty_database(database_engine):
+async def synth_engine():
     """
-    Make sure our database is empty at the end of each test.
+    Provide a fixture to prepare the test database.
     """
-    metadata.create_all(database_engine)
-    yield
+    engine = engine_factory.get_engine()
+    async with engine.begin() as connection:
+        await connection.run_sync(metadata.create_all, checkfirst=True)
+    try:
+        yield engine
+    finally:
+        async with engine.begin() as connection:
+            for table in reversed(metadata.sorted_tables):
+                await connection.execute(table.delete())
+        await engine_factory.cleanup()
 
-    await database.connect()
-    for table in (applications_table, job_scripts_table, job_submissions_table):
-        count = await database.execute(sqlalchemy.select([sqlalchemy.func.count()]).select_from(table))
-        assert count == 0
-    await database.disconnect()
 
-    metadata.drop_all(database_engine)
-
-
-@pytest.fixture()
-async def startup_event_force():
+@pytest.fixture(scope="function")
+async def synth_session():
     """
-    Force the async event loop to begin.
+    Get a session from the engine_factory for the current test function.
+
+    This is necessary to make sure that the test code uses the same session as the one returned by
+    the dependency injection for the router code. Otherwise, changes made in the router's session would not
+    be visible in the test code. Not that changes made in this synthesized session are always rolled back
+    and never committed.
     """
-    async with LifespanManager(app):
-        yield
+    session = engine_factory.get_session()
+    with patch("jobbergate_api.storage.engine_factory.get_session", return_value=session):
+        await session.begin_nested()
+        yield session
+        await session.rollback()
+        await session.close()
 
 
 @pytest.fixture(autouse=True)
@@ -98,11 +112,13 @@ async def inject_security_header(client, build_rs256_token):
         owner_email: str,
         *permissions: typing.List[str],
         client_id: typing.Optional[str] = None,
+        organization_id: typing.Optional[str] = None,
     ):
-        claim_overrides = dict(
+        claim_overrides: typing.Dict = dict(
             email=owner_email,
             client_id=client_id,
             permissions=permissions,
+            organization={organization_id: dict()},
         )
         token = build_rs256_token(claim_overrides=claim_overrides)
         client.headers.update({"Authorization": f"Bearer {token}"})

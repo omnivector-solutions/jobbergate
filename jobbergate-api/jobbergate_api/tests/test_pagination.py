@@ -10,11 +10,6 @@ from pydantic import ValidationError
 from jobbergate_api.apps.applications.models import applications_table
 from jobbergate_api.apps.applications.schemas import ApplicationResponse
 from jobbergate_api.pagination import Pagination, Response, package_response
-from jobbergate_api.storage import database
-
-# Force the async event loop at the app to begin.
-# Since this is a time consuming fixture, it is just used where strict necessary.
-pytestmark = pytest.mark.usefixtures("startup_event_force")
 
 
 def test_init_fails_on_invalid_parameters():
@@ -49,14 +44,13 @@ def test_dict():
 
 
 @pytest.mark.asyncio
-@database.transaction(force_rollback=True)
-async def test_package_response__without_pagination():
+async def test_package_response__without_pagination(synth_session):
     """
     Test the package_response method without pagination.
     """
-    await database.execute_many(
-        query=applications_table.insert(),
-        values=[
+    await synth_session.execute(
+        applications_table.insert(),
+        [
             dict(
                 application_owner_email=f"owner{i}@org.com",
                 application_name=f"app{i}",
@@ -67,7 +61,7 @@ async def test_package_response__without_pagination():
 
     query = applications_table.select()
     pagination = Pagination()
-    raw_response = await package_response(ApplicationResponse, query, pagination)
+    raw_response = await package_response(synth_session, ApplicationResponse, query, pagination)
     response = Response[ApplicationResponse].parse_obj(json.loads(raw_response.body))
 
     results = response.results
@@ -86,16 +80,15 @@ async def test_package_response__without_pagination():
     "start,limit,total",
     [(0, 1, 1), (6, 2, 13), (2, 3, 10), (7, 2, 13)],
 )
-@database.transaction(force_rollback=True)
-async def test_package_response__with_pagination(start, limit, total):
+async def test_package_response__with_pagination(start, limit, total, synth_session):
     """
     Test the package_response method with pagination.
 
     Parameters test pagination at upper bound and lower bound of total
     """
-    await database.execute_many(
-        query=applications_table.insert(),
-        values=[
+    await synth_session.execute(
+        applications_table.insert(),
+        [
             dict(
                 id=i,
                 application_owner_email=f"owner{i}@org.com",
@@ -107,7 +100,7 @@ async def test_package_response__with_pagination(start, limit, total):
 
     query = applications_table.select()
     pagination = Pagination(start=start, limit=limit)
-    raw_response = await package_response(ApplicationResponse, query, pagination)
+    raw_response = await package_response(synth_session, ApplicationResponse, query, pagination)
     response = Response[ApplicationResponse].parse_obj(json.loads(raw_response.body))
 
     results = response.results

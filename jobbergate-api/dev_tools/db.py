@@ -18,11 +18,14 @@ app = typer.Typer()
 
 
 @app.command()
-def login(test: bool = typer.Option(False, help="Log into the test database.")):
+def login(
+    test: bool = typer.Option(False, help="Log into the test database."),
+    override_db_name: str = typer.Option(None, help="Overrided the database name to log into")
+):
     """
     Log into a local database.
     """
-    url = build_db_url(force_test=test)
+    url = build_db_url(force_test=test, asynchronous=False, override_db_name=override_db_name)
     logger.debug(f"Logging into database: {url}")
     subprocess.run(["pgcli", url])
 

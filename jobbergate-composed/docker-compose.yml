@@ -105,10 +105,12 @@ services:
     restart: always
     networks:
       - jobbergate-net
+    volumes:
+      - ./etc/docker-postgres-multiple-databases:/docker-entrypoint-initdb.d
     environment:
       - POSTGRES_PASSWORD=test-pswd
       - POSTGRES_USER=test-user
-      - POSTGRES_DB=test-db
+      - POSTGRES_MULTIPLE_DATABASES="test-db","alt-test-db"
     ports:
       - 5433:5432
 

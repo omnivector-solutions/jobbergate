@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 from dataclasses import dataclass, field
 from itertools import chain
 from shlex import split
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from bidict import bidict
 from loguru import logger
@@ -290,14 +290,16 @@ def get_job_parameters(jobscript: str) -> Dict[str, Any]:
     return convert_sbatch_to_slurm_api(jobscript_to_dict(jobscript))
 
 
-def get_job_properties_from_job_script(job_script_id: int, **kwargs) -> JobProperties:
+def get_job_properties_from_job_script(
+    job_script_id: int, bucket_name: Optional[str] = None, **kwargs
+) -> JobProperties:
     """
     Get the job properties for Slurm REST API from a job script file, given its id.
 
     Extra keyword arguments can be used to overwrite any parameter from the
     job script, like name or current_working_directory.
     """
-    job_script_files = JobScriptFiles.get_from_s3(job_script_id)
+    job_script_files = JobScriptFiles.get_from_s3(job_script_id, override_bucket_name=bucket_name)
     slurm_parameters = get_job_parameters(job_script_files.main_file)
     merged_parameters = {**slurm_parameters, **kwargs}
     return JobProperties.parse_obj(merged_parameters)

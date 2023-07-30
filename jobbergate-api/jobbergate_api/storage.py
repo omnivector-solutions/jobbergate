@@ -3,56 +3,178 @@ Provide functions to interact with persistent data storage.
 """
 import re
 import typing
+from dataclasses import dataclass
+from typing import AsyncIterator, Dict
 
 import asyncpg
-import databases
-import databases.core
 import fastapi
 import pydantic
-import sqlalchemy
+from armasec.token_security import PermissionMode
 from asyncpg.exceptions import UniqueViolationError
+from fastapi import Depends
 from fastapi.exceptions import HTTPException
 from loguru import logger
-from sqlalchemy import Column, Enum, or_
+from sqlalchemy import Column, Enum, String, Table, case, cast, func, or_, select
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.sql.expression import BooleanClauseList, Case, UnaryExpression
 from starlette import status
 from yarl import URL
 
 from jobbergate_api.config import settings
+from jobbergate_api.security import IdentityPayload, lockdown_with_identity
 
 INTEGRITY_CHECK_EXCEPTIONS = (UniqueViolationError,)
 
 
-def build_db_url(force_test: bool = False) -> str:
+def build_db_url(
+    override_db_name: typing.Optional[str] = None,
+    force_test: bool = False,
+    asynchronous: bool = True,
+) -> str:
     """
     Build a database url based on settings.
 
-    If the ``DEPLOY_ENV`` setting is "TEST" or if the ``force_test`` is passed, build from the test database
-    settings.
+    If ``force_test`` is set, build from the test database settings.
+    If ``asynchronous`` is set, use asyncpg.
+    If ``override_db_name`` replace the database name in the settings with the supplied value.
     """
-    is_test = force_test or settings.DEPLOY_ENV.lower() == "test"
-    prefix = "TEST_" if is_test else ""
+    prefix = "TEST_" if force_test else ""
+    db_user = getattr(settings, f"{prefix}DATABASE_USER")
+    db_password = getattr(settings, f"{prefix}DATABASE_PSWD")
+    db_host = getattr(settings, f"{prefix}DATABASE_HOST")
+    db_port = getattr(settings, f"{prefix}DATABASE_PORT")
+    db_name = getattr(settings, f"{prefix}DATABASE_NAME") if override_db_name is None else override_db_name
+    db_path = "/{}".format(db_name)
+    db_scheme = "postgresql+asyncpg" if asynchronous else "postgresql"
 
     return str(
         URL.build(
-            scheme="postgresql",
-            user=getattr(settings, f"{prefix}DATABASE_USER"),
-            password=getattr(settings, f"{prefix}DATABASE_PSWD"),
-            host=getattr(settings, f"{prefix}DATABASE_HOST"),
-            port=getattr(settings, f"{prefix}DATABASE_PORT"),
-            path="/{}".format(getattr(settings, f"{prefix}DATABASE_NAME")),
+            scheme=db_scheme,
+            user=db_user,
+            password=db_password,
+            host=db_host,
+            port=db_port,
+            path=db_path,
         )
     )
 
 
-database = databases.Database(build_db_url(), force_rollback=settings.DEPLOY_ENV.lower() == "test")
+class EngineFactory:
+    """
+    Provide a factory class that creates engines and keeps track of them in an engine mapping.
+
+    This is used for multi-tenancy and database URL creation at request time.
+    """
+
+    engine_map: Dict[str, AsyncEngine]
+
+    def __init__(self):
+        """
+        Initialize the EngineFactory.
+        """
+        self.engine_map = dict()
+
+    async def cleanup(self):
+        """
+        Close all engines stored in the engine map and clears the engine_map.
+        """
+        for engine in self.engine_map.values():
+            await engine.dispose()
+        self.engine_map = dict()
+
+    def get_engine(self, override_db_name: typing.Optional[str] = None) -> AsyncEngine:
+        """
+        Get a database engine.
+
+        If the database url is already in the engine map, return the engine stored there. Otherwise, build
+        a new one, store it, and return the new engine.
+        """
+        db_url = build_db_url(
+            override_db_name=override_db_name,
+            force_test=settings.DEPLOY_ENV.lower() == "test",
+        )
+        if db_url not in self.engine_map:
+            self.engine_map[db_url] = create_async_engine(db_url, pool_pre_ping=True)
+        return self.engine_map[db_url]
+
+    def get_session(self, override_db_name: typing.Optional[str] = None) -> AsyncSession:
+        """
+        Get an asynchronous database session.
+
+        Gets a new session from the correct engine in the engine map.
+        """
+        engine = self.get_engine(override_db_name=override_db_name)
+        return AsyncSession(engine)
 
 
-def render_sql(query) -> str:
+engine_factory = EngineFactory()
+
+
+@dataclass
+class SecureSession:
+    """
+    Provide a container class for an IdentityPayload and AsyncSesson for the current request.
+    """
+
+    identity_payload: IdentityPayload
+    session: AsyncSession
+
+
+def secure_session(*scopes: str, permission_mode: PermissionMode = PermissionMode.ALL):
+    """
+    Provide an injectable for FastAPI that checks permissions and returns a database session for this request.
+
+    This should be used for all secured routes that need access to the database. It will commit the
+    transaction upon completion of the request. If an exception occurs, it will rollback the transaction.
+    If multi-tenancy is enabled, it will retrieve a database session for the database associated with the
+    client_id found in the requesting user's auth token.
+
+    If testing mode is enabled, it will flush the session instead of committing changes to the database.
+
+    Note that the session should NEVER be explicitly committed anywhere else in the source code.
+    """
+
+    async def dependency(
+        identity_payload: IdentityPayload = Depends(
+            lockdown_with_identity(*scopes, permission_mode=permission_mode)
+        )
+    ) -> AsyncIterator[SecureSession]:
+
+        override_db_name = identity_payload.organization_id if settings.MULTI_TENANCY_ENABLED else None
+        session = engine_factory.get_session(override_db_name=override_db_name)
+        await session.begin_nested()
+        try:
+            yield SecureSession(
+                identity_payload=identity_payload,
+                session=session,
+            )
+            # In test mode, we should not commit to the database. Instead, just flush to the session
+            if settings.DEPLOY_ENV.lower() == "test":
+                logger.debug("Flushing session due to test mode")
+                await session.flush()
+                session.expire_all()
+            else:
+                logger.debug("Committing session")
+                await session.commit()
+        except Exception as err:
+            logger.warning(f"Rolling back session due to error: {err}")
+            await session.rollback()
+            raise err
+        finally:
+            # In test mode, we should not close the session so that assertions can be made about the state
+            # of the db session in the test functions after calling the application logic
+            if settings.DEPLOY_ENV.lower() != "test":
+                logger.debug("Closing session")
+                await session.close()
+
+    return dependency
+
+
+def render_sql(session: AsyncSession, query) -> str:
     """
     Render a sqlalchemy query into a string for debugging.
     """
-    return query.compile(dialect=database._backend._dialect, compile_kwargs={"literal_binds": True})
+    return query.compile(dialect=session.bind.dialect, compile_kwargs={"literal_binds": True})
 
 
 def search_clause(
@@ -84,7 +206,7 @@ def _build_enum_sort_clause(sort_column: Column, sort_ascending: bool) -> Case:
     assert isinstance(sort_column.type, Enum)
     sorted_values = sorted(sort_column.type.enums)
     sort_tuple = zip(sorted_values, sorted_values if sort_ascending else reversed(sorted_values))
-    return sqlalchemy.case(dict(sort_tuple), value=sort_column)
+    return case(dict(sort_tuple), value=cast(sort_column, String))
 
 
 def sort_clause(
@@ -104,7 +226,7 @@ def sort_clause(
             detail=f"Invalid sorting column requested: {sort_field}. Must be one of {sort_field_names}",
         )
     sort_column: typing.Union[Column, UnaryExpression, Case] = sortable_fields[index]
-    if isinstance(sort_column, Column) and isinstance(sort_column.type, sqlalchemy.Enum):
+    if isinstance(sort_column, Column) and isinstance(sort_column.type, Enum):
         sort_column = _build_enum_sort_clause(sort_column, sort_ascending)
     elif not sort_ascending:
         sort_column = sort_column.desc()
@@ -142,12 +264,103 @@ def handle_fk_error(
 T = typing.TypeVar("T", bound=pydantic.BaseModel)
 
 
-async def fetch_instance(id: int, table: sqlalchemy.Table, model: typing.Type[T]) -> T:
+async def insert_data(
+    session: AsyncSession,
+    table: Table,
+    data: Dict,
+    trace_query: bool = False,
+) -> int:
     """
-    Fetch a single frow from a table by its id and unpack it into a response model.
+    Provide a helper method for inserting data into a database table.
     """
-    query = table.select(table.c.id == id)
-    result = await database.fetch_one(query)
+    query = table.insert().values(data)
+    if trace_query:
+        logger.trace(f"insert_query = {render_sql(session, query)}")
+
+    raw_result = await session.execute(query)
+
+    # SQLAlchemy returns a tuple since primary keys can be composite. We only want the single pk
+    # See: https://docs.sqlalchemy.org/en/20/tutorial/data_insert.html#executing-the-statement
+    return raw_result.inserted_primary_key[0]
+
+
+async def insert_instance(
+    session: AsyncSession,
+    table: Table,
+    data: Dict,
+    response_model: typing.Type[T],
+    trace_query: bool = False,
+) -> T:
+    """
+    Provide a helper method for inserting data and returning the result in a pydantic model.
+    """
+    query = table.insert().values(data).returning(table)
+    if trace_query:
+        logger.trace(f"insert_query = {render_sql(session, query)}")
+
+    raw_result = await session.execute(query)
+    return response_model.from_orm(raw_result.one())
+
+
+async def fetch_all(
+    session: AsyncSession,
+    table: Table,
+    response_model: typing.Type[T],
+    where_clause=None,
+) -> typing.List[T]:
+    """
+    Provide a helper method for retrieving all rows from a table that match an optional where clause.
+    """
+    query = table.select()
+    if where_clause is not None:
+        query = query.where(where_clause)
+    raw_result = await session.execute(query)
+    return [response_model.from_orm(r) for r in raw_result.fetchall()]
+
+
+async def fetch_count(
+    session: AsyncSession,
+    table: Table,
+    where_clause=None,
+) -> int:
+    """
+    Provide a helper method for retrieving the count of all rows from a table (with an optional where clause).
+    """
+    query = select(func.count(table.c.id))
+    if where_clause is not None:
+        query = query.where(where_clause)
+    raw_result = await session.execute(query)
+    return raw_result.scalar()
+
+
+async def fetch_data(
+    session: AsyncSession,
+    id: int,
+    table: Table,
+    trace_query: bool = False,
+):
+    """
+    Provide a helper method for retrieving a single row from the database with the provided id (Private Key).
+
+    Note: no return type is specified because SQLAlchemy typehints don't register sqlalchemy.engine.Row
+    """
+    query = table.select().where(table.c.id == id)
+    if trace_query:
+        logger.trace(f"select_query = {render_sql(session, query)}")
+    raw_result = await session.execute(query)
+    result = raw_result.one_or_none()
+    message = f"Could not find {table.name} instance with id {id}"
     if result is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Could not find {table.name} instance with id {id}")
-    return model.parse_obj(result)
+        logger.error(message)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, message)
+    return result
+
+
+async def fetch_instance(
+    session: AsyncSession, id: int, table: Table, response_model: typing.Type[T], trace_query: bool = False
+) -> T:
+    """
+    Provide a helper method for retrieving a single row and unpacking it into a pydantic model instance.
+    """
+    result = await fetch_data(session, id, table, trace_query=trace_query)
+    return response_model.from_orm(result)

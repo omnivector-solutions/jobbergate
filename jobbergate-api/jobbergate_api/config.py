@@ -83,6 +83,9 @@ class Settings(BaseSettings):
     SENDGRID_FROM_EMAIL: Optional[str]
     SENDGRID_API_KEY: Optional[str]
 
+    # Enable multi-tenancy so that the database is determined by the client_id in the auth token
+    MULTI_TENANCY_ENABLED: bool = Field(False)
+
     @root_validator(pre=True)
     def remove_blank_env(cls, values):
         """

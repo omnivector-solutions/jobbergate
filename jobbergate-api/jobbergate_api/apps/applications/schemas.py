@@ -176,7 +176,7 @@ class ApplicationCreateRequest(BaseModel):
 
     application_name: str
     application_identifier: Optional[str]
-    application_description: Optional[str] = None
+    application_description: Optional[str]
 
     class Config:
         schema_extra = application_meta_mapper

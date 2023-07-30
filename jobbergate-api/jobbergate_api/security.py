@@ -7,8 +7,10 @@ from typing import List, Optional
 
 from armasec import Armasec, TokenPayload
 from armasec.schemas import DomainConfig
+from armasec.token_security import PermissionMode
+from fastapi import Depends
 from loguru import logger
-from pydantic import BaseModel, EmailStr
+from pydantic import EmailStr, root_validator
 
 from jobbergate_api.config import settings
 
@@ -49,25 +51,51 @@ guard = Armasec(
 )
 
 
-class IdentityClaims(BaseModel):
+class IdentityPayload(TokenPayload):
     """
-    Provide a pydantic data model containing user data extracted from an access token.
+    Provide an extension of TokenPayload that includes the user's identity.
     """
 
-    email: Optional[EmailStr]
-    client_id: Optional[str]
+    email: Optional[EmailStr] = None
+    organization_id: Optional[str] = None
 
-    @classmethod
-    def from_token_payload(cls, payload: TokenPayload) -> "IdentityClaims":
+    @root_validator(pre=True)
+    def extract_organization(cls, values):
         """
-        Create an instance from a Token payload.
+        Extract the organization_id from the organization payload.
 
-        Automatically validates that the email is an email address if it is provided.
+        The payload is expected to look like:
+        {
+            ...,
+            "organization": {
+                "adf99e01-5cd5-41ac-a1af-191381ad7780": {
+                    ...
+                }
+            }
+        }
         """
-        init_kwargs = dict(
-            client_id=payload.client_id,
-        )
-        email = getattr(payload, "email", None)
-        if email is not None:
-            init_kwargs.update(email=email)
-        return cls(**init_kwargs)
+        organization_dict = values.pop("organization", None)
+        if organization_dict is None:
+            return values
+
+        if not isinstance(organization_dict, dict):
+            raise ValueError(f"Invalid organization payload: {organization_dict}")
+        elif len(organization_dict) != 1:
+            raise ValueError(f"Organization payload did not include exactly one value: {organization_dict}")
+        return {**values, "organization_id": next(iter(organization_dict))}
+
+
+def lockdown_with_identity(*scopes: str, permission_mode: PermissionMode = PermissionMode.ALL):
+    """
+    Provide a wrapper to be used with dependency injection to extract identity on a secured route.
+    """
+
+    def dependency(
+        token_payload: TokenPayload = Depends(guard.lockdown(*scopes, permission_mode=permission_mode))
+    ) -> IdentityPayload:
+        """
+        Provide an injectable function to lockdown a route and extract the identity payload.
+        """
+        return IdentityPayload.parse_obj(token_payload)
+
+    return dependency

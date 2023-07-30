@@ -42,7 +42,7 @@ def run_migrations_offline():
 
     """
     context.configure(
-        url=build_db_url(),
+        url=build_db_url(asynchronous=False),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -60,7 +60,7 @@ def run_migrations_online():
 
     """
     ini_section = config.get_section(config.config_ini_section)
-    ini_section["sqlalchemy.url"] = build_db_url()
+    ini_section["sqlalchemy.url"] = build_db_url(asynchronous=False)
     connectable = engine_from_config(
         ini_section,
         prefix="sqlalchemy.",
