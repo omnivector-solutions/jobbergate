@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+3.6.0 -- 2023-07-30
+-------------------
 - Added support for multi-tenancy
 
 3.5.0 -- 2023-07-03
