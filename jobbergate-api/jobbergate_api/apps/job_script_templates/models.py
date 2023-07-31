@@ -10,6 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.models import Base, CrudMixin, FileMixin
+from jobbergate_api.safe_types import JobScript
 
 
 class JobScriptTemplate(CrudMixin, Base):
@@ -45,6 +46,13 @@ class JobScriptTemplate(CrudMixin, Base):
         lazy="selectin",
         uselist=True,
         cascade="all, delete-orphan",
+    )
+
+    scripts: Mapped[list[JobScript]] = relationship(
+        "JobScript",
+        back_populates="template",
+        lazy="selectin",
+        uselist=True,
     )
 
     @classmethod

@@ -51,7 +51,6 @@ class JobSubmission(CrudMixin, Base):
         "JobScript",
         back_populates="submissions",
         lazy="select",
-        innerjoin=True,
     )
 
     @classmethod

@@ -16,7 +16,7 @@ from pydantic import EmailStr
 from sqlalchemy import delete, func, not_, select, update
 from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import Mapped, joinedload
 from sqlalchemy.sql.expression import Select
 
 from jobbergate_api.safe_types import Bucket
@@ -25,7 +25,7 @@ from jobbergate_api.storage import search_clause, sort_clause
 
 class ServiceError(HTTPException):
     """
-    Make HTTPException more friendly by chaning the default behavior so that the first arg is a message.
+    Make HTTPException more friendly by changing the default behavior so that the first arg is a message.
 
     Also needed to play nice with py-buzz methods.
     """
@@ -141,13 +141,15 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
     """
 
     model_type: type[CrudModel]
+    parent_model_link: Mapped | None
 
-    def __init__(self, model_type: type[CrudModel]):
+    def __init__(self, model_type: type[CrudModel], parent_model_link: Mapped | None = None):
         """
         Initialize the instance with an ORM model type.
         """
         super().__init__()
         self.model_type = model_type
+        self.parent_model_link = parent_model_link
 
     async def create(self, **incoming_data) -> CrudModel:
         """
@@ -264,6 +266,8 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         search: str | None = None,
         sort_field: str | None = None,
         include_archived: bool = True,
+        eager_join: bool = False,
+        innerjoin: bool = False,
         **additional_filters,
     ) -> Select:
         """
@@ -295,6 +299,8 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
                 raise_kwargs=dict(status_code=status.HTTP_405_METHOD_NOT_ALLOWED),
             )
             query = query.order_by(sort_clause(sort_field, self.model_type.sortable_fields(), sort_ascending))
+        if eager_join and self.parent_model_link is not None:
+            query.options(joinedload(self.parent_model_link, innerjoin=innerjoin))
         return query
 
     async def paginated_list(self, **filter_kwargs) -> Page[CrudModel]:

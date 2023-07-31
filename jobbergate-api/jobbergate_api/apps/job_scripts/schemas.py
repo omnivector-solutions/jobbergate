@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.schemas import TableResource
+from jobbergate_api.apps.job_script_templates.schemas import JobTemplateResponse
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
 job_script_meta_mapper = MetaMapper(
@@ -129,6 +130,8 @@ class JobScriptResponse(TableResource):
 
     files: list[JobScriptFile]
     parent_template_id: int | None
+
+    template: JobTemplateResponse | None
 
     class Config:
         orm_mode = True

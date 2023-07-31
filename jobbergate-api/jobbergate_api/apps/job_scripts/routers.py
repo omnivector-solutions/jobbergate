@@ -164,6 +164,8 @@ async def job_script_get_list(
     search: str | None = Query(None),
     sort_field: str | None = Query(None),
     sort_ascending: bool = Query(True),
+    eager_join: bool | None = Query(False),
+    innerjoin: bool | None = Query(False),
     from_job_script_template_id: int
     | None = Query(
         None,
@@ -181,6 +183,8 @@ async def job_script_get_list(
         sort_field=sort_field,
         sort_ascending=sort_ascending,
         include_archived=include_archived,
+        eager_join=eager_join,
+        innerjoin=innerjoin,
     )
 
     if user_only:

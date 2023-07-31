@@ -358,6 +358,7 @@ class TestListJobScripts:
             assert response_item["owner_email"] == expected_item["owner_email"]
             assert response_item["is_archived"] == expected_item["is_archived"]
             assert response_item["files"] == []
+            assert response_item["template"] is None
 
     async def test_list_job_scripts__ignore_archived(
         self,
@@ -396,6 +397,75 @@ class TestListJobScripts:
 
         assert response_data["total"] == len(expected_names)
         assert expected_names == actual_names
+
+    async def test_list_job_scripts__include_parent_data_outer_join(
+        self,
+        client,
+        tester_email,
+        synth_session,
+        inject_security_header,
+        fill_job_template_data,
+        fill_all_job_script_data,
+    ):
+        with template_crud_service.bound_session(synth_session):
+            base_template = await template_crud_service.create(**fill_job_template_data())
+
+        data = fill_all_job_script_data(
+            {"name": "name-1", "parent_template_id": base_template.id},
+            {"name": "name-2"},
+        )
+        with crud_service.bound_session(synth_session):
+            for item in data:
+                await crud_service.create(**item)
+
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+        response = await client.get("jobbergate/job-scripts", params={"eager_join": True})
+        assert response.status_code == 200, f"Get failed: {response.text}"
+
+        response_data = response.json()
+
+        expected_names = {i["name"] for i in data}
+        actual_names = {i["name"] for i in response_data["items"]}
+
+        assert response_data["total"] == len(expected_names)
+        assert expected_names == actual_names
+
+        assert response_data["items"][0]["template"]["name"] == base_template.name
+        assert response_data["items"][1]["template"] is None
+
+    async def test_list_job_scripts__include_parent_data_inner_join(
+        self,
+        client,
+        tester_email,
+        synth_session,
+        inject_security_header,
+        fill_job_template_data,
+        fill_all_job_script_data,
+    ):
+        with template_crud_service.bound_session(synth_session):
+            base_template = await template_crud_service.create(**fill_job_template_data())
+
+        data = fill_all_job_script_data(
+            {"name": "name-1", "parent_template_id": base_template.id},
+            {"name": "name-2"},
+        )
+        with crud_service.bound_session(synth_session):
+            for item in data:
+                await crud_service.create(**item)
+
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+        response = await client.get("jobbergate/job-scripts", params={"eager_join": False, "innerjoin": True})
+        assert response.status_code == 200, f"Get failed: {response.text}"
+
+        response_data = response.json()
+
+        expected_names = {"name-1"}
+        actual_names = {i["name"] for i in response_data["items"]}
+
+        assert response_data["total"] == len(expected_names)
+        assert expected_names == actual_names
+
+        assert response_data["items"][0]["template"]["name"] == base_template.name
 
 
 class TestJobScriptFiles:

@@ -4,7 +4,6 @@ from typing import Any
 
 from buzz import enforce_defined, require_condition
 from fastapi import status
-from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.expression import Select
 
 from jobbergate_api.apps.job_submissions.models import JobSubmission
@@ -24,6 +23,7 @@ class JobSubmissionService(CrudService):
         sort_field: str | None = None,
         include_archived: bool = True,
         eager_join: bool = False,
+        innerjoin: bool = False,
         filter_slurm_job_ids: list[int] | None = None,
         **additional_filters,
     ) -> Select:
@@ -36,12 +36,12 @@ class JobSubmissionService(CrudService):
             search=search,
             sort_field=sort_field,
             include_archived=True,
+            eager_join=eager_join,
+            innerjoin=innerjoin,
             **additional_filters,
         )
         if filter_slurm_job_ids:
             query = query.where(JobSubmission.slurm_job_id.in_(filter_slurm_job_ids))
-        if eager_join:
-            query.options(joinedload(JobSubmission.job_script))
         return query
 
     async def get_ensure_client_id(self, locator: Any, requester_client_id: str | None) -> CrudModel:
@@ -67,4 +67,4 @@ class JobSubmissionService(CrudService):
         return entity
 
 
-crud_service = JobSubmissionService(model_type=JobSubmission)
+crud_service = JobSubmissionService(model_type=JobSubmission, parent_model_link=JobSubmission.job_script)

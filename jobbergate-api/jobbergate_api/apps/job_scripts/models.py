@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.models import Base, CrudMixin, FileMixin
-from jobbergate_api.safe_types import JobSubmission
+from jobbergate_api.safe_types import JobScriptTemplate, JobSubmission
 
 
 class JobScript(CrudMixin, Base):
@@ -36,6 +36,11 @@ class JobScript(CrudMixin, Base):
         cascade="all, delete-orphan",
     )
 
+    template: Mapped[JobScriptTemplate] = relationship(
+        "JobScriptTemplate",
+        back_populates="scripts",
+        lazy="select",
+    )
     submissions: Mapped[list[JobSubmission]] = relationship(
         "JobSubmission",
         back_populates="job_script",

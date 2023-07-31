@@ -18,9 +18,11 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from mypy_boto3_s3.service_resource import Bucket
 
+    from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate
     from jobbergate_api.apps.job_scripts.models import JobScript
     from jobbergate_api.apps.job_submissions.models import JobSubmission
 else:
     Bucket = Any
+    JobScriptTemplate = Any
     JobScript = Any
     JobSubmission = Any
