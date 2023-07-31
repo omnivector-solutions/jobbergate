@@ -8,7 +8,6 @@ from typing import Any
 from pydantic import BaseModel
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.schemas import TableResource
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
 job_script_meta_mapper = MetaMapper(
