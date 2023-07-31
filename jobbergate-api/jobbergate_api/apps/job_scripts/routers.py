@@ -196,14 +196,17 @@ async def job_script_get_list(
     status_code=status.HTTP_200_OK,
     description="Endpoint to update a job script by id",
     response_model=JobScriptResponse,
-    dependencies=[Depends(secure_services(Permissions.JOB_SCRIPTS_EDIT, services=[crud_service]))],
 )
 async def job_script_update(
     update_params: JobScriptUpdateRequest,
     id: int = Path(),
+    secure_session: SecureSession = Depends(
+        secure_services(Permissions.JOB_SCRIPTS_EDIT, services=[crud_service])
+    ),
 ):
     """Update a job script template by id or identifier."""
     logger.info(f"Updating job script {id=} with {update_params=}")
+    await crud_service.get_ensure_ownership(id, secure_session.identity_payload.email)
     return await crud_service.update(id, **update_params.dict(exclude_unset=True))
 
 
@@ -211,13 +214,16 @@ async def job_script_update(
     "/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete a job script by id",
-    dependencies=[Depends(secure_services(Permissions.JOB_SCRIPTS_EDIT, services=[crud_service]))],
 )
 async def job_script_delete(
     id: int = Path(...),
+    secure_session: SecureSession = Depends(
+        secure_services(Permissions.JOB_SCRIPTS_EDIT, services=[crud_service])
+    ),
 ):
     """Delete a job script template by id or identifier."""
     logger.info(f"Deleting job script {id=}")
+    await crud_service.get_ensure_ownership(id, secure_session.identity_payload.email)
     await crud_service.delete(id)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -253,15 +259,15 @@ async def job_script_get_file(
     "/{id}/upload/{file_type}",
     status_code=status.HTTP_200_OK,
     description="Endpoint to upload a file to a job script file",
-    dependencies=[
-        Depends(secure_services(Permissions.JOB_SCRIPTS_EDIT, services=[crud_service, file_service])),
-        Depends(file_services(file_service)),
-    ],
+    dependencies=[Depends(file_services(file_service))],
 )
 async def job_script_upload_file(
     id: int = Path(...),
     file_type: FileType = Path(...),
     upload_file: UploadFile = File(..., description="File to upload"),
+    secure_session: SecureSession = Depends(
+        secure_services(Permissions.JOB_SCRIPTS_EDIT, services=[crud_service, file_service])
+    ),
 ):
     """Upload a file to a job script."""
     if upload_file.filename is None:
@@ -271,7 +277,7 @@ async def job_script_upload_file(
         )
 
     logger.debug(f"Uploading file {upload_file.filename} to job script {id=}")
-    job_script = await crud_service.get(id)
+    job_script = await crud_service.get_ensure_ownership(id, secure_session.identity_payload.email)
     await file_service.upsert(
         parent_id=job_script.id,
         filename=upload_file.filename,
@@ -284,17 +290,17 @@ async def job_script_upload_file(
     "/{id}/upload/{file_name}",
     status_code=status.HTTP_200_OK,
     description="Endpoint to delete a file from a job script",
-    dependencies=[
-        Depends(secure_services(Permissions.JOB_SCRIPTS_EDIT, services=[crud_service, file_service])),
-        Depends(file_services(file_service)),
-    ],
+    dependencies=[Depends(file_services(file_service))],
 )
 async def job_script_delete_file(
     id: int = Path(...),
     file_name: str = Path(...),
+    secure_session: SecureSession = Depends(
+        secure_services(Permissions.JOB_SCRIPTS_EDIT, services=[crud_service, file_service])
+    ),
 ):
     """Delete a file from a job script template by id or identifier."""
-    job_script = await crud_service.get(id)
+    job_script = await crud_service.get_ensure_ownership(id, secure_session.identity_payload.email)
     job_script_file = await file_service.get(job_script.id, file_name)
     await file_service.delete(job_script_file)
 

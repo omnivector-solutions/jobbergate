@@ -162,6 +162,19 @@ def make_request(
                 subject=abort_subject,
                 log_message=f"Could not delete due to foreign-key constraint: {response.text}",
             )
+        elif method in ("PATCH", "PUT", "DELETE") and response.status_code == 403 and "does not own" in response.text:
+            details = response.json()["detail"]
+            raise Abort(
+                dedent(
+                    f"""
+                     {abort_message}:
+                     [red]You do not own this resource.[/red]
+                     Please contact the owner if you need it to be modified.
+                     """,
+                ),
+                subject=abort_subject,
+                log_message=f"Resource could not be modified by non-owner: {response.text}",
+            )
         else:
             raise Abort(
                 unwrap(

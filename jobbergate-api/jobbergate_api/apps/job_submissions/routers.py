@@ -167,15 +167,16 @@ async def job_submission_get_list(
     "/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete job submission",
-    dependencies=[
-        Depends(secure_services(Permissions.JOB_SUBMISSIONS_EDIT, services=[crud_service])),
-    ],
 )
 async def job_submission_delete(
     id: int = Path(..., description="id of the job submission to delete"),
+    secure_session: SecureSession = Depends(
+        secure_services(Permissions.JOB_SUBMISSIONS_EDIT, services=[crud_service])
+    ),
 ):
     """Delete job_submission given its id."""
     logger.info(f"Deleting job submission {id=}")
+    await crud_service.get_ensure_ownership(id, secure_session.identity_payload.email)
     await crud_service.delete(id)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -185,16 +186,17 @@ async def job_submission_delete(
     status_code=status.HTTP_200_OK,
     description="Endpoint to update a job_submission given the id",
     response_model=JobSubmissionResponse,
-    dependencies=[
-        Depends(secure_services(Permissions.JOB_SUBMISSIONS_EDIT, services=[crud_service])),
-    ],
 )
 async def job_submission_update(
     update_params: JobSubmissionUpdateRequest,
     id: int = Path(),
+    secure_session: SecureSession = Depends(
+        secure_services(Permissions.JOB_SUBMISSIONS_EDIT, services=[crud_service])
+    ),
 ):
     """Update a job_submission given its id."""
     logger.debug(f"Updating {id=} with {update_params=}")
+    await crud_service.get_ensure_ownership(id, secure_session.identity_payload.email)
     return await crud_service.update(id, **update_params.dict(exclude_unset=True))
 
 
@@ -220,18 +222,12 @@ async def job_submission_agent_update(
     """
     logger.debug(f"Agent is requesting to update {id=}")
 
-    client_id = secure_session.identity_payload.client_id
-    if client_id is None:
-        logger.error("Access token does not contain a client_id")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Access token does not contain a `client_id`. Cannot update job_submission",
-        )
+    await crud_service.get_ensure_client_id(id, secure_session.identity_payload.client_id)
 
     logger.info(
         f"Setting status to: {update_params.status} "
         f"for job_submission: {id} "
-        f"on client_id: {client_id}"
+        f"on client_id: {secure_session.identity_payload.client_id}"
     )
 
     job_submission = await crud_service.update(id, **update_params.dict(exclude_unset=True))
@@ -259,7 +255,7 @@ async def job_submissions_agent_pending(
 
     client_id = secure_session.identity_payload.client_id
     if client_id is None:
-        message = "Access token does not contain a `client_id`. Cannot fetch pending submissions"
+        message = "Access token does not contain a client_id. Cannot fetch pending submissions"
         logger.warning(message)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
 
@@ -291,7 +287,7 @@ async def job_submissions_agent_active(
         logger.error("Access token does not contain a client_id")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Access token does not contain a `client_id`. Cannot fetch pending submissions",
+            detail="Access token does not contain a client_id. Cannot fetch pending submissions",
         )
 
     logger.info(f"Fetching active job_submissions for client_id: {client_id}")

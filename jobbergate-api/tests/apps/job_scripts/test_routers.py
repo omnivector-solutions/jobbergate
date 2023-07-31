@@ -442,6 +442,31 @@ class TestJobScriptFiles:
                 file_content = await file_service.get_file_content(job_script_file)
                 assert file_content.decode() == job_script_data_as_string
 
+    async def test_create__fail_forbidden(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_script_data,
+        job_script_data_as_string,
+        make_dummy_file,
+    ):
+        id = job_script_data.id
+        file_type = "ENTRYPOINT"
+        dummy_file_path = make_dummy_file("test_template.py", content=job_script_data_as_string)
+
+        owner_email = tester_email
+        requester_email = "another_" + owner_email
+
+        inject_security_header(requester_email, Permissions.JOB_SCRIPTS_EDIT)
+        with open(dummy_file_path, mode="rb") as file:
+            response = await client.put(
+                f"jobbergate/job-scripts/{id}/upload/{file_type}",
+                files={"upload_file": (dummy_file_path.name, file, "text/plain")},
+            )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
     async def test_get__success(
         self,
         client,
@@ -501,3 +526,33 @@ class TestJobScriptFiles:
         s3_object = await synth_bucket.Object(upserted_instance.file_key)
         with pytest.raises(synth_bucket.meta.client.exceptions.NoSuchKey):
             await s3_object.get()
+
+    async def test_delete__fail_forbidden(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_script_data,
+        job_script_data_as_string,
+        synth_session,
+        synth_bucket,
+    ):
+        parent_id = job_script_data.id
+        file_type = "ENTRYPOINT"
+        job_script_filename = "entrypoint.py"
+
+        with file_service.bound_session(synth_session):
+            with file_service.bound_bucket(synth_bucket):
+                await file_service.upsert(
+                    parent_id=parent_id,
+                    filename=job_script_filename,
+                    upload_content=job_script_data_as_string,
+                    file_type=file_type,
+                )
+
+        owner_email = tester_email
+        requester_email = "another_" + owner_email
+
+        inject_security_header(requester_email, Permissions.JOB_SCRIPTS_EDIT)
+        response = await client.delete(f"jobbergate/job-scripts/{parent_id}/upload/{job_script_filename}")
+        assert response.status_code == status.HTTP_403_FORBIDDEN

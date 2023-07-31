@@ -23,6 +23,7 @@ class JobScriptTemplateService(CrudService):
         user_email: str | None = None,
         search: str | None = None,
         sort_field: str | None = None,
+        include_archived: bool = True,
         include_null_identifier: bool = True,
         **additional_filters,
     ) -> Select:
@@ -32,6 +33,7 @@ class JobScriptTemplateService(CrudService):
             user_email=user_email,
             search=search,
             sort_field=sort_field,
+            include_archived=include_archived,
             **additional_filters,
         )
         if not include_null_identifier:

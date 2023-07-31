@@ -113,14 +113,17 @@ async def job_script_template_get_list(
     status_code=status.HTTP_200_OK,
     description="Endpoint to update a job script template by id or identifier",
     response_model=JobTemplateResponse,
-    dependencies=[Depends(secure_services(Permissions.JOB_TEMPLATES_EDIT, services=[crud_service]))],
 )
 async def job_script_template_update(
     update_request: JobTemplateUpdateRequest,
     id_or_identifier: int | str = Path(),
+    secure_session: SecureSession = Depends(
+        secure_services(Permissions.JOB_TEMPLATES_EDIT, services=[crud_service])
+    ),
 ):
     """Update a job script template by id or identifier."""
     logger.info(f"Updating job script template {id_or_identifier=} with {update_request=}")
+    await crud_service.get_ensure_ownership(id_or_identifier, secure_session.identity_payload.email)
     return await crud_service.update(id_or_identifier, **update_request.dict(exclude_unset=True))
 
 
@@ -128,13 +131,16 @@ async def job_script_template_update(
     "/{id_or_identifier}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete a job script template by id or identifier",
-    dependencies=[Depends(secure_services(Permissions.JOB_TEMPLATES_EDIT, services=[crud_service]))],
 )
 async def job_script_template_delete(
     id_or_identifier: int | str = Path(),
+    secure_session: SecureSession = Depends(
+        secure_services(Permissions.JOB_TEMPLATES_EDIT, services=[crud_service])
+    ),
 ):
     """Delete a job script template by id or identifier."""
     logger.info(f"Deleting job script template with {id_or_identifier=}")
+    await crud_service.get_ensure_ownership(id_or_identifier, secure_session.identity_payload.email)
     await crud_service.delete(id_or_identifier)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -174,17 +180,15 @@ async def job_script_template_get_file(
     status_code=status.HTTP_200_OK,
     description="Endpoint to upload a file to a job script template by id or identifier",
     response_model=TemplateFileResponse,
-    dependencies=[
-        Depends(
-            secure_services(Permissions.JOB_TEMPLATES_EDIT, services=[crud_service, template_file_service])
-        ),
-        Depends(file_services(template_file_service)),
-    ],
+    dependencies=[Depends(file_services(template_file_service))],
 )
 async def job_script_template_upload_file(
     id_or_identifier: int | str = Path(),
     file_type: FileType = Path(),
     upload_file: UploadFile = File(..., description="File to upload"),
+    secure_session: SecureSession = Depends(
+        secure_services(Permissions.JOB_TEMPLATES_EDIT, services=[crud_service, template_file_service])
+    ),
 ):
     """Upload a file to a job script template by id or identifier."""
     if upload_file.filename is None:
@@ -194,7 +198,9 @@ async def job_script_template_upload_file(
         )
 
     logger.debug(f"Uploading file {upload_file.filename} to job script template {id_or_identifier=}")
-    job_script_template = await crud_service.get(id_or_identifier)
+    job_script_template = await crud_service.get_ensure_ownership(
+        id_or_identifier, secure_session.identity_payload.email
+    )
     return await template_file_service.upsert(
         parent_id=job_script_template.id,
         filename=upload_file.filename,
@@ -207,19 +213,19 @@ async def job_script_template_upload_file(
     "/{id_or_identifier}/upload/template/{file_name:path}",
     status_code=status.HTTP_200_OK,
     description="Endpoint to delete a file to a job script template by id or identifier",
-    dependencies=[
-        Depends(
-            secure_services(Permissions.JOB_TEMPLATES_EDIT, services=[crud_service, template_file_service])
-        ),
-        Depends(file_services(template_file_service)),
-    ],
+    dependencies=[Depends(file_services(template_file_service))],
 )
 async def job_script_template_delete_file(
     id_or_identifier: int | str = Path(),
     file_name: str = Path(),
+    secure_session: SecureSession = Depends(
+        secure_services(Permissions.JOB_TEMPLATES_EDIT, services=[crud_service, template_file_service])
+    ),
 ):
     """Delete a file from a job script template by id or identifier."""
-    job_script_template = await crud_service.get(id_or_identifier)
+    job_script_template = await crud_service.get_ensure_ownership(
+        id_or_identifier, secure_session.identity_payload.email
+    )
     job_script_template_file = await template_file_service.get(job_script_template.id, file_name)
     await template_file_service.delete(job_script_template_file)
 
@@ -256,21 +262,21 @@ async def job_script_workflow_get_file(id_or_identifier: int | str = Path()):
     status_code=status.HTTP_200_OK,
     description="Endpoint to upload a file to a job script template by id or identifier",
     response_model=WorkflowFileResponse,
-    dependencies=[
-        Depends(
-            secure_services(Permissions.JOB_TEMPLATES_EDIT, services=[crud_service, workflow_file_service])
-        ),
-        Depends(file_services(workflow_file_service)),
-    ],
+    dependencies=[Depends(file_services(workflow_file_service))],
 )
 async def job_script_workflow_upload_file(
     id_or_identifier: int | str = Path(),
     runtime_config: RunTimeConfig = Body(),
     upload_file: UploadFile = File(..., description="File to upload"),
+    secure_session: SecureSession = Depends(
+        secure_services(Permissions.JOB_TEMPLATES_EDIT, services=[crud_service, workflow_file_service])
+    ),
 ):
     """Upload a file to a job script workflow by id or identifier."""
     logger.debug(f"Uploading workflow file to job script template {id_or_identifier=}: {runtime_config}")
-    job_script_template = await crud_service.get(id_or_identifier)
+    job_script_template = await crud_service.get_ensure_ownership(
+        id_or_identifier, secure_session.identity_payload.email
+    )
     return await workflow_file_service.upsert(
         parent_id=job_script_template.id,
         filename=WORKFLOW_FILE_NAME,
@@ -283,16 +289,19 @@ async def job_script_workflow_upload_file(
     "/{id_or_identifier}/upload/workflow",
     status_code=status.HTTP_200_OK,
     description="Endpoint to delete a workflow file from a job script template by id or identifier",
-    dependencies=[
-        Depends(
-            secure_services(Permissions.JOB_TEMPLATES_EDIT, services=[crud_service, workflow_file_service])
-        ),
-        Depends(file_services(workflow_file_service)),
-    ],
+    dependencies=[Depends(file_services(workflow_file_service))],
 )
-async def job_script_workflow_delete_file(id_or_identifier: int | str = Path()):
+async def job_script_workflow_delete_file(
+    id_or_identifier: int | str = Path(),
+    secure_session: SecureSession = Depends(
+        secure_services(Permissions.JOB_TEMPLATES_EDIT, services=[crud_service, workflow_file_service])
+    ),
+):
     """Delete a workflow file from a job script template by id or identifier."""
-    job_script_template = await crud_service.get(id_or_identifier)
+    logger.debug(f"Deleting workflow file from job script template {id_or_identifier=}")
+    job_script_template = await crud_service.get_ensure_ownership(
+        id_or_identifier, secure_session.identity_payload.email
+    )
     workflow_file = await workflow_file_service.get(job_script_template.id, WORKFLOW_FILE_NAME)
     await workflow_file_service.delete(workflow_file)
 

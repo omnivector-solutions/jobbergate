@@ -1124,6 +1124,44 @@ async def test_update_job_submission_bad_permission(
         assert instance.name == "old name"
 
 
+async def test_update_job_submission_forbidden(
+    client,
+    fill_job_script_data,
+    fill_job_submission_data,
+    tester_email,
+    inject_security_header,
+    synth_session,
+):
+    """
+    Test that it is not possible to update a job_submission from another person.
+    """
+    with scripts_crud_service.bound_session(synth_session):
+        base_job_script = await scripts_crud_service.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    with crud_service.bound_session(synth_session):
+        inserted_submission = await crud_service.create(
+            job_script_id=inserted_job_script_id, **fill_job_submission_data(name="old name")
+        )
+    inserted_job_submission_id = inserted_submission.id
+
+    owner_email = tester_email
+    requester_email = "another_" + owner_email
+
+    inject_security_header(requester_email, "INVALID_PERMISSION")
+    response = await client.put(
+        f"/jobbergate/job-submissions/{inserted_job_submission_id}",
+        json=dict(name="new name"),
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    with crud_service.bound_session(synth_session):
+        instance = await crud_service.get(inserted_job_submission_id)
+        assert instance.name == "old name"
+
+
 async def test_delete_job_submission(
     client,
     fill_job_script_data,
@@ -1199,6 +1237,37 @@ async def test_delete_job_submission_bad_permission(
     inserted_job_submission_id = inserted_submission.id
 
     inject_security_header(tester_email, "INVALID_PERMISSION")
+    response = await client.delete(f"/jobbergate/job-submissions/{inserted_job_submission_id}")
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+async def test_delete_job_submission_forbidden(
+    client,
+    tester_email,
+    fill_job_script_data,
+    fill_job_submission_data,
+    inject_security_header,
+    synth_session,
+):
+    """
+    Test that it is not possible to delete a job_submission from another person.
+    """
+    with scripts_crud_service.bound_session(synth_session):
+        base_job_script = await scripts_crud_service.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    with crud_service.bound_session(synth_session):
+        inserted_submission = await crud_service.create(
+            job_script_id=inserted_job_script_id, **fill_job_submission_data()
+        )
+    inserted_job_submission_id = inserted_submission.id
+
+    owner_email = tester_email
+    requester_email = "another_" + owner_email
+
+    inject_security_header(requester_email, "INVALID_PERMISSION")
     response = await client.delete(f"/jobbergate/job-submissions/{inserted_job_submission_id}")
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -1322,7 +1391,7 @@ async def test_job_submissions_agent_pending__returns_400_if_token_does_not_carr
     )
     response = await client.get("/jobbergate/job-submissions/agent/pending")
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "token does not contain a `client_id`" in response.text
+    assert "Access token does not contain a client_id" in response.text
 
 
 async def test_job_submissions_agent_update__success(
@@ -1347,7 +1416,7 @@ async def test_job_submissions_agent_update__success(
 
     with crud_service.bound_session(synth_session):
         inserted_submission = await crud_service.create(
-            job_script_id=inserted_job_script_id, **fill_job_submission_data()
+            job_script_id=inserted_job_script_id, **fill_job_submission_data(client_id="dummy-client")
         )
     inserted_job_submission_id = inserted_submission.id
 
@@ -1393,7 +1462,7 @@ async def test_job_submissions_agent_update__job_rejected(
 
     with crud_service.bound_session(synth_session):
         inserted_submission = await crud_service.create(
-            job_script_id=inserted_job_script_id, **fill_job_submission_data()
+            job_script_id=inserted_job_script_id, **fill_job_submission_data(client_id="dummy-client")
         )
     inserted_job_submission_id = inserted_submission.id
 
@@ -1438,7 +1507,44 @@ async def test_job_submissions_agent_update__returns_400_if_token_does_not_carry
         json=dict(status=JobSubmissionStatus.SUBMITTED, slurm_job_id=111),
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "token does not contain a `client_id`" in response.text
+    assert "Access token does not contain a client_id" in response.text
+
+
+async def test_job_submissions_agent_update__returns_403_if_client_id_differs(
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_session,
+):
+    """
+    Test PUT /job-submissions/agent/{job_submission_id} returns 403 if client_id does not match the database.
+    """
+    original_client_id = "dummy-client"
+    requester_client_id = "another_" + original_client_id
+
+    with scripts_crud_service.bound_session(synth_session):
+        base_job_script = await scripts_crud_service.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    with crud_service.bound_session(synth_session):
+        inserted_submission = await crud_service.create(
+            job_script_id=inserted_job_script_id, **fill_job_submission_data(client_id=original_client_id)
+        )
+    inserted_job_submission_id = inserted_submission.id
+
+    payload = dict(
+        status=JobSubmissionStatus.REJECTED.value,
+        report_message="Job rejected by the system due to test-test",
+    )
+
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id=requester_client_id)
+    response = await client.put(
+        f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}", json=payload
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 async def test_job_submissions_agent_active__success(
@@ -1517,4 +1623,4 @@ async def test_job_submissions_agent_active__returns_400_if_token_does_not_carry
     )
     response = await client.get("/jobbergate/job-submissions/agent/active")
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "token does not contain a `client_id`" in response.text
+    assert "Access token does not contain a client_id" in response.text

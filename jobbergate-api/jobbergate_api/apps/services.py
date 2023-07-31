@@ -12,6 +12,7 @@ from fastapi import HTTPException, UploadFile, status
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from jinja2 import Template
+from pydantic import EmailStr
 from sqlalchemy import delete, func, not_, select, update
 from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -176,7 +177,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         result: Result = await self.session.execute(query)
         instance: CrudModel = enforce_defined(
             result.scalar_one_or_none(),
-            f"{self.model_type.__tablename__} row not found by {locator}",
+            f"{self.name} row not found by {locator}",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
@@ -194,7 +195,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         deleted = list(result.scalars())
         require_condition(
             len(deleted) == 1,
-            f"{self.model_type.__tablename__} row not found by {locator}",
+            f"{self.name} row not found by {locator}",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
@@ -215,10 +216,36 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         result: Result = await self.session.execute(query)
         return enforce_defined(
             result.scalar_one_or_none(),
-            f"{self.model_type.__tablename__} row not found by {locator}",
+            f"{self.name} row not found by {locator}",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
+
+    async def get_ensure_ownership(self, locator: Any, requester_email: str | EmailStr | None) -> CrudModel:
+        """
+        Assert ownership of an entity and raise 403 exception with message on failure.
+        """
+        enforce_defined(
+            requester_email,
+            "The token payload does not contain an email",
+            raise_exc_class=ServiceError,
+            raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
+        )
+
+        entity = await self.get(locator)
+
+        require_condition(
+            entity.owner_email == requester_email,
+            (
+                f"User {requester_email} does not own {self.name} by {locator}. "
+                f"Only the {self.name} owner ({entity.owner_email}) "
+                f"can modify this {self.name}."
+            ),
+            raise_exc_class=ServiceError,
+            raise_kwargs=dict(status_code=status.HTTP_403_FORBIDDEN),
+        )
+
+        return entity
 
     def locate_where_clause(self, locator: Any) -> Any:
         """
@@ -255,7 +282,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         if search:
             require_condition(
                 hasattr(self.model_type, "searchable_fields"),
-                f"{self.model_type.__tablename__} does not support search",
+                f"{self.name} does not support search",
                 raise_exc_class=ServiceError,
                 raise_kwargs=dict(status_code=status.HTTP_405_METHOD_NOT_ALLOWED),
             )
@@ -263,7 +290,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         if sort_field:
             require_condition(
                 hasattr(self.model_type, "sortable_fields"),
-                f"{self.model_type.__tablename__} does not support sort",
+                f"{self.name} does not support sort",
                 raise_exc_class=ServiceError,
                 raise_kwargs=dict(status_code=status.HTTP_405_METHOD_NOT_ALLOWED),
             )
@@ -286,6 +313,13 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         """
         result: Result = await self.session.execute(self.build_list_query(**filter_kwargs))
         return list(result.scalars())
+
+    @property
+    def name(self):
+        """
+        Helper property to recover the name of the table.
+        """
+        return self.model_type.__tablename__
 
 
 class BucketBoundService:

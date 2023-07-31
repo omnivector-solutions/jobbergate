@@ -53,6 +53,13 @@ def paginated():
     return _helper
 
 
+def test_property__name(dummy_crud_service):
+    """
+    Test the name property.
+    """
+    assert dummy_crud_service.name == "dummy_cruds"
+
+
 class TestCrudService:
     """
     Group tests for the CrudService.
@@ -387,6 +394,68 @@ class TestCrudService:
         assert page.size == 1
         assert page.total == 3
         assert ["two"] == [i.name for i in page.items]
+
+    async def test_get_ensure_ownership__success(
+        self,
+        dummy_crud_service,
+        tester_email,
+    ):
+        """
+        Test that the ``get_ensure_ownership()`` method successfully retrieves an instance of the served model.
+        """
+        created_instance = await dummy_crud_service.create(
+            name="test-name",
+            description="test-description",
+            owner_email=tester_email,
+        )
+        fetched_instance = await dummy_crud_service.get_ensure_ownership(created_instance.id, tester_email)
+        assert created_instance == fetched_instance
+
+    async def test_get_ensure_ownership__bad_request(
+        self,
+        dummy_crud_service,
+        tester_email,
+    ):
+        """
+        Test that the ``get_ensure_ownership()`` returns 400 when the email provided is None.
+        """
+        created_instance = await dummy_crud_service.create(
+            name="test-name",
+            description="test-description",
+            owner_email=tester_email,
+        )
+        with pytest.raises(HTTPException) as exc_info:
+            await dummy_crud_service.get_ensure_ownership(created_instance.id, None)
+        assert exc_info.value.status_code == 400
+
+    async def test_get_ensure_ownership__not_found(
+        self,
+        dummy_crud_service,
+        tester_email,
+    ):
+        """
+        Test that the ``get_ensure_ownership()`` returns 40f when the entry is not found.
+        """
+        with pytest.raises(HTTPException) as exc_info:
+            await dummy_crud_service.get_ensure_ownership(0, tester_email)
+        assert exc_info.value.status_code == 404
+
+    async def test_get_ensure_ownership__forbidden(
+        self,
+        dummy_crud_service,
+        tester_email,
+    ):
+        """
+        Test that the ``get_ensure_ownership()`` returns 403 when emails do not match.
+        """
+        created_instance = await dummy_crud_service.create(
+            name="test-name",
+            description="test-description",
+            owner_email=tester_email,
+        )
+        with pytest.raises(HTTPException) as exc_info:
+            await dummy_crud_service.get_ensure_ownership(created_instance.id, "another_" + tester_email)
+        assert exc_info.value.status_code == 403
 
 
 class DummyFile(FileMixin, Base):
