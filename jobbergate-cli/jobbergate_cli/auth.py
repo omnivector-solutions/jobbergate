@@ -131,10 +131,12 @@ def save_tokens_to_cache(token_set: TokenSet):
 
     logger.debug(f"Caching access token at {settings.JOBBERGATE_ACCESS_TOKEN_PATH}")
     settings.JOBBERGATE_ACCESS_TOKEN_PATH.write_text(token_set.access_token)
+    settings.JOBBERGATE_ACCESS_TOKEN_PATH.chmod(0o600)
 
     if token_set.refresh_token is not None:
         logger.debug(f"Caching refresh token at {settings.JOBBERGATE_REFRESH_TOKEN_PATH}")
         settings.JOBBERGATE_REFRESH_TOKEN_PATH.write_text(token_set.refresh_token)
+        settings.JOBBERGATE_REFRESH_TOKEN_PATH.chmod(0o600)
 
 
 def clear_token_cache():

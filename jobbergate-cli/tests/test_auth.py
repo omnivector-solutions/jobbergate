@@ -206,9 +206,11 @@ def test_save_tokens_to_cache__success(make_token, tmp_path, mocker):
 
     assert access_token_path.exists()
     assert access_token_path.read_text() == access_token
+    assert access_token_path.stat().st_mode & 0o777 == 0o600
 
     assert refresh_token_path.exists()
     assert refresh_token_path.read_text() == refresh_token
+    assert access_token_path.stat().st_mode & 0o777 == 0o600
 
 
 def test_save_tokens_to_cache__only_saves_access_token_if_refresh_token_is_not_defined(make_token, tmp_path, mocker):
