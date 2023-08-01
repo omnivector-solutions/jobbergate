@@ -69,7 +69,7 @@ def migrate(
 
         legacy_applications = pull_applications(legacy_db)
         migrate_applications(nextgen_db, legacy_applications, user_map)
-        reset_id_seq(nextgen_db, "applications")
+        reset_id_seq(nextgen_db, "job_script_templates")
 
         legacy_job_scripts = pull_job_scripts(legacy_db)
         migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map)
@@ -80,10 +80,8 @@ def migrate(
             migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map)
             reset_id_seq(nextgen_db, "job_submissions")
 
-    transferred_ids = asyncio.run(transfer_application_files(legacy_applications))
-    with db(is_legacy=False) as nextgen_db:
-        mark_uploaded(nextgen_db, transferred_ids)
+    asyncio.run(transfer_application_files(legacy_applications, db))
 
-    asyncio.run(transfer_job_script_files(legacy_job_scripts))
+    asyncio.run(transfer_job_script_files(legacy_job_scripts, db))
 
     logger.success("Finished migration!")

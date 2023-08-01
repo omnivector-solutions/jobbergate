@@ -8,6 +8,7 @@ import json
 import re
 import tarfile
 import tempfile
+from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, List
@@ -190,50 +191,62 @@ async def transfer_application_files(legacy_applications, db) -> List[int]:
                         insert into workflow_files (
                             parent_id,
                             runtime_config,
-                            filename
+                            filename,
+                            created_at,
+                            updated_at
                         )
-                        values (%s, %s, %s)
+                        values (%s, %s, %s, %s, %s)
                         """,
                         (
                             id,
                             json.dumps(application_config.jobbergate_config),
                             APPLICATION_SOURCE_FILE_NAME,
+                            datetime.now(timezone.utc),
+                            datetime.now(timezone.utc),
                         ),
                     )
 
-                    # await nextgen_bucket.upload_file(
-                    #     work_dir / APPLICATION_SOURCE_FILE_NAME,
-                    #     get_key("workflow_files", id, APPLICATION_SOURCE_FILE_NAME),
-                    # )
+                    await nextgen_bucket.upload_file(
+                        work_dir / APPLICATION_SOURCE_FILE_NAME,
+                        get_key("workflow_files", id, APPLICATION_SOURCE_FILE_NAME),
+                    )
 
-                    # supporting_files = application_config.jobbergate_config.get("supporting_files", [])
+                    supporting_files = application_config.jobbergate_config.get("supporting_files", [])
 
-                    # for complete_template_path in itertools.chain(
-                    #     work_dir.rglob("*.j2"), work_dir.rglob("*.jinja2")
-                    # ):
-                    #     relative_template_path = complete_template_path.relative_to(work_dir)
+                    for complete_template_path in itertools.chain(
+                        work_dir.rglob("*.j2"), work_dir.rglob("*.jinja2")
+                    ):
+                        relative_template_path = complete_template_path.relative_to(work_dir)
 
-                    #     if relative_template_path.as_posix() in supporting_files:
-                    #         file_type = "SUPPORT"
-                    #     else:
-                    #         file_type = "ENTRYPOINT"
+                        if relative_template_path.as_posix() in supporting_files:
+                            file_type = "SUPPORT"
+                        else:
+                            file_type = "ENTRYPOINT"
 
-                    #     nextgen_db.execute(
-                    #         """
-                    #         insert into job_script_templates (
-                    #         parent_id,
-                    #         file_type,
-                    #         filename,
-                    #         )
-                    #         values (%s, %s, %s)
-                    #         """,
-                    #         (id, file_type, relative_template_path.as_posix()),
-                    #     )
+                        nextgen_db.execute(
+                            """
+                            insert into job_script_template_files (
+                            parent_id,
+                            file_type,
+                            filename,
+                            created_at,
+                            updated_at
+                            )
+                            values (%s, %s, %s, %s, %s)
+                            """,
+                            (
+                                id,
+                                file_type,
+                                relative_template_path.as_posix(),
+                                datetime.now(timezone.utc),
+                                datetime.now(timezone.utc),
+                            ),
+                        )
 
-                    # await nextgen_bucket.upload_file(
-                    #     complete_template_path,
-                    #     get_key("job_script_templates", id, relative_template_path.as_posix()),
-                    # )
+                        await nextgen_bucket.upload_file(
+                            complete_template_path,
+                            get_key("job_script_templates", id, relative_template_path.as_posix()),
+                        )
 
             return id
 
@@ -258,5 +271,8 @@ async def transfer_application_files(legacy_applications, db) -> List[int]:
             logger.error("Unexpected result: {} {}".format(type(r), r))
 
     logger.success(f"Finished migrating {len(transferred_ids)} applications to s3")
+    missing_ids = legacy_application_ids - transferred_ids
+    if missing_ids:
+        logger.warning(f"Missing files for application ids (total={len(missing_ids)}): {missing_ids}")
 
     return list(transferred_ids)
