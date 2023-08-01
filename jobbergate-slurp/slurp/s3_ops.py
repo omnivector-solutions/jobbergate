@@ -4,14 +4,18 @@ Provides a convenience class for managing calls to S3.
 import asyncio
 import contextlib
 import itertools
+import json
 import re
 import tarfile
 import tempfile
+from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
-from typing import List
+from typing import Any, Dict, List
 
 import aioboto3
+import pydantic
+import yaml
 from buzz import check_expressions, handle_errors, require_condition
 from loguru import logger
 
@@ -113,7 +117,32 @@ def check_application_files(work_dir: Path):
         check(len(list(template_files)) >= 1, "No template file was found")
 
 
-async def transfer_application_files(legacy_applications) -> List[int]:
+class JobbergateApplicationConfig(pydantic.BaseModel):
+    """
+    A data object describing the config data needed to instantiate a JobbergateApplication class.
+    """
+
+    application_config: Dict[str, Any]
+    jobbergate_config: Dict[str, Any]
+
+
+def load_application_config_from_source(config_source_path: Path) -> JobbergateApplicationConfig:
+    """
+    Load the JobbergateApplicationConfig from a text string containing the config as YAML.
+
+    :param: config_source: The YAML containing the config
+    :returns: A JobbergateApplicationConfig instance with the config values
+    """
+    config_data = yaml.safe_load(config_source_path.read_text())
+    config = JobbergateApplicationConfig(**config_data)
+    return config
+
+
+def get_key(table_name: str, parent_id: int, filename: str) -> str:
+    return f"{table_name}/{parent_id}/{filename}"
+
+
+async def transfer_application_files(legacy_applications, db) -> List[int]:
     """
     Transfer the application files from the legacy bucket to the nextgen bucket.
     """
@@ -133,35 +162,96 @@ async def transfer_application_files(legacy_applications) -> List[int]:
         )
 
         with handle_errors(f"Error retrieving object from legacy bucket: {s3_object.key}"):
-
             s3_legacy_object = await s3_object.get()
             s3_legacy_content = await s3_legacy_object["Body"].read()
 
-        key = f"{APPLICATIONS_WORK_DIR}/{id}/"
-
         with handle_errors(f"Error manipulating the files from: {s3_object.key}"):
-
             with extract_tarball(s3_legacy_content) as work_dir:
-
                 check_application_files(work_dir)
 
-                for file in [APPLICATION_CONFIG_FILE_NAME, APPLICATION_SOURCE_FILE_NAME]:
-                    await nextgen_bucket.upload_file(work_dir / file, key + file)
+                application_config = load_application_config_from_source(
+                    work_dir / APPLICATION_CONFIG_FILE_NAME
+                )
 
-                for template in itertools.chain(
-                    work_dir.rglob("*.j2"),
-                    work_dir.rglob("*.jinja2"),
-                ):
-                    await nextgen_bucket.upload_file(
-                        template,
-                        f"{key}{APPLICATION_TEMPLATE_FOLDER}/{template.name}",
+                with db(is_legacy=False) as nextgen_db:
+                    nextgen_db.execute(
+                        """
+                        update job_script_templates
+                        set template_vars = %s
+                        where id = %s
+                        """,
+                        (
+                            json.dumps(application_config.application_config),
+                            id,
+                        ),
                     )
+
+                    nextgen_db.execute(
+                        """
+                        insert into workflow_files (
+                            parent_id,
+                            runtime_config,
+                            filename,
+                            created_at,
+                            updated_at
+                        )
+                        values (%s, %s, %s, %s, %s)
+                        """,
+                        (
+                            id,
+                            json.dumps(application_config.jobbergate_config),
+                            APPLICATION_SOURCE_FILE_NAME,
+                            datetime.now(timezone.utc),
+                            datetime.now(timezone.utc),
+                        ),
+                    )
+
+                    await nextgen_bucket.upload_file(
+                        work_dir / APPLICATION_SOURCE_FILE_NAME,
+                        get_key("workflow_files", id, APPLICATION_SOURCE_FILE_NAME),
+                    )
+
+                    supporting_files = application_config.jobbergate_config.get("supporting_files", [])
+
+                    for complete_template_path in itertools.chain(
+                        work_dir.rglob("*.j2"), work_dir.rglob("*.jinja2")
+                    ):
+                        relative_template_path = complete_template_path.relative_to(work_dir)
+
+                        if relative_template_path.as_posix() in supporting_files:
+                            file_type = "SUPPORT"
+                        else:
+                            file_type = "ENTRYPOINT"
+
+                        nextgen_db.execute(
+                            """
+                            insert into job_script_template_files (
+                            parent_id,
+                            file_type,
+                            filename,
+                            created_at,
+                            updated_at
+                            )
+                            values (%s, %s, %s, %s, %s)
+                            """,
+                            (
+                                id,
+                                file_type,
+                                relative_template_path.as_posix(),
+                                datetime.now(timezone.utc),
+                                datetime.now(timezone.utc),
+                            ),
+                        )
+
+                        await nextgen_bucket.upload_file(
+                            complete_template_path,
+                            get_key("job_script_templates", id, relative_template_path.as_posix()),
+                        )
 
             return id
 
     async with s3_bucket(is_legacy=True) as legacy_bucket:
         async with s3_bucket(is_legacy=False) as nextgen_bucket:
-
             prefix = "jobbergate-resources/"
 
             tasks = [
@@ -181,5 +271,8 @@ async def transfer_application_files(legacy_applications) -> List[int]:
             logger.error("Unexpected result: {} {}".format(type(r), r))
 
     logger.success(f"Finished migrating {len(transferred_ids)} applications to s3")
+    missing_ids = legacy_application_ids - transferred_ids
+    if missing_ids:
+        logger.warning(f"Missing files for application ids (total={len(missing_ids)}): {missing_ids}")
 
     return list(transferred_ids)

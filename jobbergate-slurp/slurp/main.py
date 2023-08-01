@@ -35,16 +35,18 @@ def clear_nextgen_db():
     """
     logger.info("Clearing out nextgen database")
     with db(is_legacy=False) as nextgen_db:
-        logger.info("Truncating job_submissions")
-        nextgen_db.execute("truncate job_submissions cascade")
+        for table in (
+            "job_submissions",
+            "job_script_files",
+            "job_scripts",
+            "job_script_template_files",
+            "workflow_files",
+            "job_script_templates",
+        ):
+            logger.info(f"Truncating {table}")
+            nextgen_db.execute(f"truncate {table} cascade")
 
-        logger.info("Truncating job_scripts")
-        nextgen_db.execute("truncate job_scripts cascade")
-
-        logger.info("Truncating applications")
-        nextgen_db.execute("truncate applications cascade")
-
-        logger.info("Remember to clean S3 objects manually, if necessary")
+    logger.info("Remember to clean S3 objects manually, if necessary")
     logger.success("Finished clearing!")
 
 
@@ -67,7 +69,7 @@ def migrate(
 
         legacy_applications = pull_applications(legacy_db)
         migrate_applications(nextgen_db, legacy_applications, user_map)
-        reset_id_seq(nextgen_db, "applications")
+        reset_id_seq(nextgen_db, "job_script_templates")
 
         legacy_job_scripts = pull_job_scripts(legacy_db)
         migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map)
@@ -78,10 +80,8 @@ def migrate(
             migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map)
             reset_id_seq(nextgen_db, "job_submissions")
 
-    transferred_ids = asyncio.run(transfer_application_files(legacy_applications))
-    with db(is_legacy=False) as nextgen_db:
-        mark_uploaded(nextgen_db, transferred_ids)
+    asyncio.run(transfer_application_files(legacy_applications, db))
 
-    asyncio.run(transfer_job_script_files(legacy_job_scripts))
+    asyncio.run(transfer_job_script_files(legacy_job_scripts, db))
 
     logger.success("Finished migration!")
