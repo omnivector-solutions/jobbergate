@@ -20,15 +20,15 @@ jobs:
         { sub_project: ["jobbergate-api", "jobbergate-cli", "jobbergate-core"] }
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
-      - uses: Gr1N/setup-poetry@v7
+      - uses: Gr1N/setup-poetry@v8
         with:
-          poetry-version: 1.1.14
+          poetry-version: 1.5.1
 
       - id: poetry-package-version
         name: Get project's version

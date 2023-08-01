@@ -12,8 +12,9 @@ jobs:
     runs-on: "ubuntu-20.04"
     steps:
       - uses: actions/checkout@v3
-      - name: Install poetry
-        run: pipx install poetry==1.1.14
+      - uses: Gr1N/setup-poetry@v8
+        with:
+          poetry-version: 1.5.1
       - uses: actions/setup-python@v4
         with:
           python-version: "3.8"
@@ -42,8 +43,9 @@ jobs:
     runs-on: "ubuntu-20.04"
     steps:
       - uses: actions/checkout@v3
-      - name: Install poetry
-        run: pipx install poetry==1.4.2
+      - uses: Gr1N/setup-poetry@v8
+        with:
+          poetry-version: 1.5.1
       - uses: actions/setup-python@v4
         with:
           python-version: "3.6"
