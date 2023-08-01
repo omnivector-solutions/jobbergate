@@ -15,7 +15,6 @@ def migrate_applications(nextgen_db, legacy_applications, user_map, batch_size=1
     """
     logger.info("Inserting applications to nextgen database")
     for application_batch in batch(legacy_applications, batch_size):
-
         mogrified_params = ",".join(
             [
                 nextgen_db.mogrify(
@@ -26,7 +25,6 @@ def migrate_applications(nextgen_db, legacy_applications, user_map, batch_size=1
                         %(identifier)s,
                         %(description)s,
                         %(owner_email)s,
-                        false,
                         %(created)s,
                         %(updated)s
                             )
@@ -47,18 +45,19 @@ def migrate_applications(nextgen_db, legacy_applications, user_map, batch_size=1
 
         nextgen_db.execute(
             """
-            insert into applications (
+            insert into job_script_templates (
                 id,
-                application_name,
-                application_identifier,
-                application_description,
-                application_owner_email,
-                application_uploaded,
+                name,
+                identifier,
+                description,
+                owner_email,
                 created_at,
                 updated_at
             )
             values {}
-            """.format(mogrified_params),
+            """.format(
+                mogrified_params
+            ),
         )
         logger.success(f"Finished batch of {batch_size}")
 

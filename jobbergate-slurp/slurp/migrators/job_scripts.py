@@ -23,7 +23,6 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, batch_size=100
     logger.info("Migrating job_scripts to nextgen database")
 
     for job_script_batch in batch(legacy_job_scripts, batch_size):
-
         mogrified_params = ",".join(
             [
                 nextgen_db.mogrify(
@@ -56,10 +55,10 @@ def migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map, batch_size=100
             """
             insert into job_scripts (
                 id,
-                job_script_name,
-                job_script_description,
-                job_script_owner_email,
-                application_id,
+                name,
+                description,
+                owner_email,
+                parent_template_id,
                 created_at,
                 updated_at
             )
@@ -102,9 +101,7 @@ async def transfer_job_script_files(legacy_job_scripts, batch_size=400):
 
     transferred_ids = set()
     async with s3_bucket(is_legacy=False) as bucket:
-
         for job_script_batch in batch(legacy_job_scripts, batch_size):
-
             tasks = (
                 asyncio.create_task(
                     transfer_helper(bucket, job_script["job_script_data_as_string"], job_script["id"])

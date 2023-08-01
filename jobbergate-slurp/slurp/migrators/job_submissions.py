@@ -25,7 +25,6 @@ def migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map, batch_
             return None
 
     for job_submission_batch in batch(legacy_job_submissions, batch_size):
-
         mogrified_params = ",".join(
             [
                 nextgen_db.mogrify(
@@ -64,9 +63,9 @@ def migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map, batch_
             """
             insert into job_submissions (
                 id,
-                job_submission_name,
-                job_submission_description,
-                job_submission_owner_email,
+                name,
+                description,
+                owner_email,
                 job_script_id,
                 slurm_job_id,
                 created_at,
@@ -75,7 +74,9 @@ def migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map, batch_
                 client_id
             )
             values {}
-            """.format(mogrified_params)
+            """.format(
+                mogrified_params
+            )
         )
 
     logger.success("Finished migrating job_submissions")
