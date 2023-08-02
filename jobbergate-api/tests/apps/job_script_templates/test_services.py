@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 from fastapi import HTTPException
-
+from sqlalchemy import inspect
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
 from jobbergate_api.apps.job_script_templates.services import (
@@ -186,3 +186,123 @@ class TestWorkflowFilesService:
             await crud_service.get(template_instance.id)
         assert exc_info.value.status_code == 404
         assert await workflow_file_service.find_children(template_instance.id) == []
+
+
+class TestIntegration:
+    @pytest.fixture(autouse=True)
+    async def setup(self, synth_session, synth_bucket):
+        """
+        Ensure that the services are bound for each method in this test class.
+        """
+        with (
+            crud_service.bound_session(synth_session),
+            workflow_file_service.bound_session(synth_session),
+            workflow_file_service.bound_bucket(synth_bucket),
+            template_file_service.bound_session(synth_session),
+            template_file_service.bound_bucket(synth_bucket),
+        ):
+            yield
+
+    async def test_get_template_includes_all_files(self, template_test_data):
+        template_instance = await crud_service.create(**template_test_data)
+
+        workflow_file = await workflow_file_service.upsert(
+            template_instance.id,
+            WORKFLOW_FILE_NAME,
+            "test file content",
+            runtime_config=dict(foo="bar"),
+        )
+
+        template_file = await template_file_service.upsert(
+            template_instance.id,
+            "test.txt",
+            "test file content",
+            file_type=FileType.ENTRYPOINT,
+        )
+
+        result = await crud_service.get(template_instance.id, include_files=True)
+
+        assert {"workflow_files", "template_files"} not in inspect(result).unloaded
+
+        assert result.workflow_files == [workflow_file]
+        assert result.template_files == [template_file]
+
+    async def test_list_template_includes_all_files(self, template_test_data, synth_session):
+        template_instance = await crud_service.create(**template_test_data)
+
+        workflow_file = await workflow_file_service.upsert(
+            template_instance.id,
+            WORKFLOW_FILE_NAME,
+            "test file content",
+            runtime_config=dict(foo="bar"),
+        )
+
+        template_file = await template_file_service.upsert(
+            template_instance.id,
+            "test.txt",
+            "test file content",
+            file_type=FileType.ENTRYPOINT,
+        )
+
+        await synth_session.refresh(template_instance)
+
+        actual_result = await crud_service.list(include_files=True)
+
+        assert actual_result == [template_instance]
+        assert actual_result[0].workflow_files == [workflow_file]
+        assert actual_result[0].template_files == [template_file]
+
+    async def test_update_template_includes_no_files(self, template_test_data):
+        template_instance = await crud_service.create(**template_test_data)
+
+        workflow_file = await workflow_file_service.upsert(
+            template_instance.id,
+            WORKFLOW_FILE_NAME,
+            "test file content",
+            runtime_config=dict(foo="bar"),
+        )
+
+        template_file = await template_file_service.upsert(
+            template_instance.id,
+            "test.txt",
+            "test file content",
+            file_type=FileType.ENTRYPOINT,
+        )
+
+        result = await crud_service.update(template_instance.id, name="new-name")
+
+        actual_unloaded = inspect(result).unloaded
+        expected_unloaded = {"workflow_files", "scripts", "template_files"}
+
+        assert actual_unloaded == expected_unloaded
+
+    async def test_delete_cascades_to_files(self, template_test_data):
+        template_instance = await crud_service.create(**template_test_data)
+
+        workflow_file = await workflow_file_service.upsert(
+            template_instance.id,
+            WORKFLOW_FILE_NAME,
+            "test file content",
+            runtime_config=dict(foo="bar"),
+        )
+
+        template_file = await template_file_service.upsert(
+            template_instance.id,
+            "test.txt",
+            "test file content",
+            file_type=FileType.ENTRYPOINT,
+        )
+
+        await crud_service.delete(template_instance.id)
+
+        with pytest.raises(HTTPException) as exc_info:
+            await crud_service.get(template_instance.id)
+        assert exc_info.value.status_code == 404
+
+        with pytest.raises(HTTPException) as exc_info:
+            await workflow_file_service.get(workflow_file.parent_id, workflow_file.filename)
+        assert exc_info.value.status_code == 404
+
+        with pytest.raises(HTTPException) as exc_info:
+            await template_file_service.get(template_file.parent_id, template_file.filename)
+        assert exc_info.value.status_code == 404

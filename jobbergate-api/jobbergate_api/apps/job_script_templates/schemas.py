@@ -108,30 +108,28 @@ class JobTemplateCreateRequest(BaseModel):
     """Schema for the request to create a job template."""
 
     name: str
-    identifier: Optional[str]
-    description: Optional[str]
-    template_vars: Optional[dict[str, Any]]
+    identifier: str | None
+    description: str | None
+    template_vars: dict[str, Any] | None
 
     class Config:
-        orm_mode = True
         schema_extra = job_template_meta_mapper
 
 
 class JobTemplateUpdateRequest(BaseModel):
     """Schema for the request to update a job template."""
 
-    name: Optional[str]
-    identifier: Optional[str]
-    description: Optional[str]
-    template_vars: Optional[dict[str, Any]]
-    is_archived: Optional[bool]
+    name: str | None
+    identifier: str | None
+    description: str | None
+    template_vars: dict[str, Any] | None
+    is_archived: bool | None
 
     class Config:
-        orm_mode = True
         schema_extra = job_template_meta_mapper
 
 
-class TemplateFileResponse(BaseModel):
+class TemplateFileDetailedView(BaseModel):
     """Schema for the response to get a template file."""
 
     parent_id: int
@@ -145,7 +143,7 @@ class TemplateFileResponse(BaseModel):
         schema_extra = job_template_meta_mapper
 
 
-class WorkflowFileResponse(BaseModel):
+class WorkflowFileDetailedView(BaseModel):
     """Schema for the response to get a workflow file."""
 
     parent_id: int
@@ -159,15 +157,24 @@ class WorkflowFileResponse(BaseModel):
         schema_extra = job_template_meta_mapper
 
 
-class JobTemplateResponse(TableResource):
-    """Schema for the request to create a job template."""
+class JobTemplateListView(TableResource):
+    """Schema for the response to get a list of entries."""
 
     identifier: Optional[str]
-    template_vars: Optional[dict[str, Any]] = {}
-
-    template_files: list[TemplateFileResponse] = []
-    workflow_files: list[WorkflowFileResponse] = []
 
     class Config:
-        orm_mode = True
         schema_extra = job_template_meta_mapper
+
+
+class JobTemplateDetailedView(JobTemplateListView):
+    """
+    Schema for the request to an entry.
+
+    Notice the files default to None, as they are not always requested, to differentiate between
+    an empty list when they are requested, but no file is found.
+    """
+
+    template_vars: Optional[dict[str, Any]] = {}
+
+    template_files: list[TemplateFileDetailedView] | None
+    workflow_files: list[WorkflowFileDetailedView] | None

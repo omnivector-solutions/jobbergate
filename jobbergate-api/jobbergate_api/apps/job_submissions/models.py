@@ -8,8 +8,10 @@ from typing import Any
 
 from sqlalchemy import Enum, ForeignKey, Integer, String, text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
+from sqlalchemy.sql.expression import Select
 
+from jobbergate_api.apps.job_scripts.models import JobScript as JobScriptModel
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.models import Base, CrudMixin
 from jobbergate_api.safe_types import JobScript
@@ -18,6 +20,10 @@ from jobbergate_api.safe_types import JobScript
 class JobSubmission(CrudMixin, Base):
     """
     Job submission table definition.
+
+    Notice all relationships are lazy="raise" to prevent n+1 implicit queries.
+    This means that the relationships must be explicitly eager loaded using
+    helper functions in the class.
 
     Attributes:
         job_script_id: Id number of the job scrip this submissions is based on.
@@ -50,7 +56,7 @@ class JobSubmission(CrudMixin, Base):
     job_script: Mapped[JobScript] = relationship(
         "JobScript",
         back_populates="submissions",
-        lazy="select",
+        lazy="raise",
     )
 
     @classmethod
@@ -72,3 +78,17 @@ class JobSubmission(CrudMixin, Base):
             cls.status,
             *super().sortable_fields(),
         }
+
+    @classmethod
+    def include_files(cls, query: Select) -> Select:
+        """
+        Include custom options on a query to eager load files.
+        """
+        return query.options(selectinload(cls.job_script).options(selectinload(JobScriptModel.files)))
+
+    @classmethod
+    def include_parent(cls, query: Select) -> Select:
+        """
+        Include custom options on a query to eager load parent data.
+        """
+        return query.options(selectinload(cls.job_script).load_only(JobScriptModel.id, JobScriptModel.name))

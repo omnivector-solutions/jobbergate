@@ -1,7 +1,7 @@
 """Tests for the /job-scripts/ endpoint."""
 import pytest
 from fastapi import HTTPException, status
-
+from loguru import logger
 from jobbergate_api.apps.job_script_templates.services import crud_service as template_crud_service
 from jobbergate_api.apps.job_script_templates.services import template_file_service
 from jobbergate_api.apps.job_scripts.services import crud_service, file_service
@@ -27,7 +27,7 @@ async def test_create_stand_alone_job_script(
     assert response_data["name"] == payload["name"]
     assert response_data["description"] == payload["description"]
     assert response_data["owner_email"] == tester_email
-    assert response_data["files"] == []
+    assert response_data["files"] is None
     assert response_data["parent_template_id"] is None
 
     created_id = response_data["id"]
@@ -357,7 +357,6 @@ class TestListJobScripts:
             assert response_item["description"] == expected_item["description"]
             assert response_item["owner_email"] == expected_item["owner_email"]
             assert response_item["is_archived"] == expected_item["is_archived"]
-            assert response_item["files"] == []
             assert response_item["template"] is None
 
     async def test_list_job_scripts__ignore_archived(
@@ -398,7 +397,58 @@ class TestListJobScripts:
         assert response_data["total"] == len(expected_names)
         assert expected_names == actual_names
 
-    async def test_list_job_scripts__include_parent_data_outer_join(
+    async def test_list_job_scripts__include_parent(
+        self,
+        client,
+        tester_email,
+        synth_session,
+        inject_security_header,
+        fill_job_template_data,
+        fill_all_job_script_data,
+        synth_bucket,
+        job_script_data_as_string,
+    ):
+        with template_crud_service.bound_session(synth_session):
+            base_template = await template_crud_service.create(**fill_job_template_data())
+
+        data = fill_all_job_script_data(
+            {"name": "name-1", "parent_template_id": base_template.id},
+            {"name": "name-2"},
+        )
+        with crud_service.bound_session(synth_session):
+            for item in data:
+                job_script_data = await crud_service.create(**item)
+
+                id = job_script_data.id
+                file_type = "ENTRYPOINT"
+                job_script_filename = "entrypoint.py"
+
+                with file_service.bound_session(synth_session):
+                    with file_service.bound_bucket(synth_bucket):
+                        await file_service.upsert(
+                            parent_id=id,
+                            filename=job_script_filename,
+                            upload_content=job_script_data_as_string,
+                            file_type=file_type,
+                        )
+
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+        response = await client.get("jobbergate/job-scripts", params={"include_parent": True})
+        assert response.status_code == 200, f"Get failed: {response.text}"
+
+        response_data = response.json()
+
+        expected_names = {i["name"] for i in data}
+        actual_names = {i["name"] for i in response_data["items"]}
+
+        assert response_data["total"] == len(expected_names)
+        assert expected_names == actual_names
+
+        assert response_data["items"][0]["template"] is not None
+        assert response_data["items"][0]["template"]["name"] == base_template.name
+        assert response_data["items"][1]["template"] is None
+
+    async def test_list_job_scripts__not_include_parent(
         self,
         client,
         tester_email,
@@ -419,10 +469,12 @@ class TestListJobScripts:
                 await crud_service.create(**item)
 
         inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
-        response = await client.get("jobbergate/job-scripts", params={"eager_join": True})
+        response = await client.get("jobbergate/job-scripts", params={"include_parent": False})
         assert response.status_code == 200, f"Get failed: {response.text}"
 
         response_data = response.json()
+
+        logger.info(f"{response_data=}")
 
         expected_names = {i["name"] for i in data}
         actual_names = {i["name"] for i in response_data["items"]}
@@ -430,42 +482,8 @@ class TestListJobScripts:
         assert response_data["total"] == len(expected_names)
         assert expected_names == actual_names
 
-        assert response_data["items"][0]["template"]["name"] == base_template.name
+        assert response_data["items"][0]["template"] is None
         assert response_data["items"][1]["template"] is None
-
-    # async def test_list_job_scripts__include_parent_data_inner_join(
-    #     self,
-    #     client,
-    #     tester_email,
-    #     synth_session,
-    #     inject_security_header,
-    #     fill_job_template_data,
-    #     fill_all_job_script_data,
-    # ):
-    #     with template_crud_service.bound_session(synth_session):
-    #         base_template = await template_crud_service.create(**fill_job_template_data())
-
-    #     data = fill_all_job_script_data(
-    #         {"name": "name-1", "parent_template_id": base_template.id},
-    #         {"name": "name-2"},
-    #     )
-    #     with crud_service.bound_session(synth_session):
-    #         for item in data:
-    #             await crud_service.create(**item)
-
-    #     inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
-    #     response = await client.get("jobbergate/job-scripts", params={"eager_join": False, "innerjoin": True})
-    #     assert response.status_code == 200, f"Get failed: {response.text}"
-
-    #     response_data = response.json()
-
-    #     expected_names = {"name-1"}
-    #     actual_names = {i["name"] for i in response_data["items"]}
-
-    #     assert response_data["total"] == len(expected_names)
-    #     assert expected_names == actual_names
-
-    #     assert response_data["items"][0]["template"]["name"] == base_template.name
 
 
 class TestJobScriptFiles:

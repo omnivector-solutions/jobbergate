@@ -9,6 +9,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 from sqlalchemy.sql import functions
+from sqlalchemy.sql.expression import Select
 
 
 class Base(DeclarativeBase):
@@ -145,6 +146,28 @@ class CrudMixin(CommonMixin, IdMixin, TimestampMixin, OwnerMixin, NameMixin, Arc
             cls.created_at,
             cls.updated_at,
         }
+
+    @classmethod
+    def include_files(cls, query: Select) -> Select:
+        """
+        Include custom options on a query to eager load files.
+
+        This should be overridden by derived classes.
+        """
+        raise NotImplementedError(
+            f"Derived classes should override include_files. {cls.__tablename__} does not include it."
+        )
+
+    @classmethod
+    def include_parent(cls, query: Select) -> Select:
+        """
+        Include custom options on a query to eager load parent data.
+
+        This should be overridden by derived classes.
+        """
+        raise NotImplementedError(
+            f"Derived classes should override include_parent. {cls.__tablename__} does not include it."
+        )
 
 
 class FileMixin(CommonMixin, TimestampMixin):

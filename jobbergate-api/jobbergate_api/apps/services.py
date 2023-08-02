@@ -3,24 +3,24 @@
 from __future__ import annotations
 
 import io
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
 from typing import Any, Generic, Protocol, TypeVar
 
 from botocore.response import StreamingBody
-from buzz import enforce_defined, handle_errors, require_condition
+from buzz import check_expressions, enforce_defined, handle_errors, require_condition
 from fastapi import HTTPException, UploadFile, status
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from jinja2 import Template
-from pydantic import EmailStr
+from loguru import logger
 from sqlalchemy import delete, func, not_, select, update
 from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapped, joinedload
+from sqlalchemy.orm import Mapped
 from sqlalchemy.sql.expression import Select
 
 from jobbergate_api.safe_types import Bucket
-from jobbergate_api.storage import search_clause, sort_clause
+from jobbergate_api.storage import render_sql, search_clause, sort_clause
 
 
 class ServiceError(HTTPException):
@@ -131,6 +131,20 @@ class CrudModelProto(Protocol):
         """
         ...
 
+    @classmethod
+    def include_files(cls, query: Select) -> Select:
+        """
+        Declare that the protocol has a method to include files in a query.
+        """
+        ...
+
+    @classmethod
+    def include_parent(cls, query: Select) -> Select:
+        """
+        Declare that the protocol has a method to include details about the parent entry in a query.
+        """
+        ...
+
 
 CrudModel = TypeVar("CrudModel", bound=CrudModelProto)
 
@@ -141,15 +155,13 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
     """
 
     model_type: type[CrudModel]
-    parent_model_link: Mapped | None
 
-    def __init__(self, model_type: type[CrudModel], parent_model_link: Mapped | None = None):
+    def __init__(self, model_type: type[CrudModel]):
         """
         Initialize the instance with an ORM model type.
         """
         super().__init__()
         self.model_type = model_type
-        self.parent_model_link = parent_model_link
 
     async def create(self, **incoming_data) -> CrudModel:
         """
@@ -169,21 +181,24 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         result: Result = await self.session.execute(select(func.count(self.model_type.id)))
         return result.scalar_one()
 
-    async def get(self, locator: Any) -> CrudModel:
+    async def get(self, locator: Any, include_files: bool = False, include_parent: bool = False) -> CrudModel:
         """
         Get a row by locator.
 
         In almost all cases, the locator will just be an ``id`` value.
         """
         query = select(self.model_type).where(self.locate_where_clause(locator))
+        if include_parent:
+            query = self.model_type.include_parent(query)
+        if include_files:
+            query = self.model_type.include_files(query)
         result: Result = await self.session.execute(query)
         instance: CrudModel = enforce_defined(
-            result.scalar_one_or_none(),
+            result.unique().scalar_one_or_none(),  # type: ignore
             f"{self.name} row not found by {locator}",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
-        await self.session.refresh(instance)
         return instance
 
     async def delete(self, locator: Any) -> None:
@@ -197,7 +212,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         deleted = list(result.scalars())
         require_condition(
             len(deleted) == 1,
-            f"{self.name} row not found by {locator}",
+            f"{self.name} row not found by {locator=}",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
@@ -218,36 +233,10 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         result: Result = await self.session.execute(query)
         return enforce_defined(
             result.scalar_one_or_none(),
-            f"{self.name} row not found by {locator}",
+            f"{self.name} row not found by {locator=}",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
-
-    async def get_ensure_ownership(self, locator: Any, requester_email: str | EmailStr | None) -> CrudModel:
-        """
-        Assert ownership of an entity and raise 403 exception with message on failure.
-        """
-        enforce_defined(
-            requester_email,
-            "The token payload does not contain an email",
-            raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
-        )
-
-        entity = await self.get(locator)
-
-        require_condition(
-            entity.owner_email == requester_email,
-            (
-                f"User {requester_email} does not own {self.name} by {locator}. "
-                f"Only the {self.name} owner ({entity.owner_email}) "
-                f"can modify this {self.name}."
-            ),
-            raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_403_FORBIDDEN),
-        )
-
-        return entity
 
     def locate_where_clause(self, locator: Any) -> Any:
         """
@@ -262,12 +251,11 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
     def build_list_query(
         self,
         sort_ascending: bool = True,
-        user_email: str | None = None,
         search: str | None = None,
         sort_field: str | None = None,
         include_archived: bool = True,
-        eager_join: bool = False,
-        innerjoin: bool = False,
+        include_files: bool = False,
+        include_parent: bool = False,
         **additional_filters,
     ) -> Select:
         """
@@ -278,9 +266,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         """
         query = select(self.model_type)
         for key, value in additional_filters.items():
-            query = query.where(getattr(self.model_type, key) == value)
-        if user_email:
-            query = query.where(self.model_type.owner_email == user_email)
+            query = query.where(self.model_type.__table__.c[key] == value)  # type: ignore
         if not include_archived:
             query = query.where(not_(self.model_type.is_archived))
         if search:
@@ -299,8 +285,11 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
                 raise_kwargs=dict(status_code=status.HTTP_405_METHOD_NOT_ALLOWED),
             )
             query = query.order_by(sort_clause(sort_field, self.model_type.sortable_fields(), sort_ascending))
-        if eager_join and self.parent_model_link is not None:
-            query.options(joinedload(self.parent_model_link, innerjoin=innerjoin))
+        if include_parent:
+            query = self.model_type.include_parent(query)
+        if include_files:
+            query = self.model_type.include_files(query)
+        logger.trace(f"Query: {render_sql(self.session, query)}")
         return query
 
     async def paginated_list(self, **filter_kwargs) -> Page[CrudModel]:
@@ -318,7 +307,35 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         For details on the supported filters, see the ``build_list_query()`` method.
         """
         result: Result = await self.session.execute(self.build_list_query(**filter_kwargs))
-        return list(result.scalars())
+        return list(result.unique().scalars())  # type: ignore
+
+    @asynccontextmanager
+    async def ensure_attribute(self, locator: Any, **attributes):
+        """
+        Context manager to ensure that a row has the specified attributes.
+
+        This is useful to assert email ownership of a row before modifying it, besides any other attribute.
+        """
+        selected_columns = [self.model_type.__table__.c[key] for key in attributes.keys()]  # type: ignore
+        query = select(*selected_columns).where(self.locate_where_clause(locator))
+        result: Result = await self.session.execute(query)
+
+        requested_values: tuple[Any] = enforce_defined(
+            result.first(),  # type: ignore
+            f"{self.name} row not found by {locator=}",
+            raise_exc_class=ServiceError,
+            raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
+        )
+
+        with check_expressions(
+            main_message=f"Request not allowed on {self.name} by {locator=} due to mismatch on attribute(s)",
+            raise_exc_class=ServiceError,
+            raise_kwargs=dict(status_code=status.HTTP_403_FORBIDDEN),
+        ) as check:
+            for actual_value, (attr_name, expected_value) in zip(requested_values, attributes.items()):
+                check(actual_value == expected_value, message=attr_name)
+
+        yield self
 
     @property
     def name(self):

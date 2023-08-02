@@ -1507,7 +1507,7 @@ async def test_job_submissions_agent_update__returns_400_if_token_does_not_carry
         json=dict(status=JobSubmissionStatus.SUBMITTED, slurm_job_id=111),
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "Access token does not contain a client_id" in response.text
+    assert "Checked expressions failed: Access token does not contain\\n  1: client_id" in response.text
 
 
 async def test_job_submissions_agent_update__returns_403_if_client_id_differs(

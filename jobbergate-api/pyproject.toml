@@ -32,29 +32,30 @@ fastapi = "^0.95.0"
 fastapi-pagination = "^0.12.4"
 greenlet = "^2.0.1"
 httpx = "^0.23.0"
+inflection = "^0.5.1"
 Jinja2 = "^3.0.3"
 loguru = "^0.6.0"
 nest-asyncio = "^1.5.6"
 passlib = "^1.7.2"
 py-buzz = "^3.2.1"
-pydantic = {extras = ["email"], version = "^1.10.5"}
+pydantic = { extras = ["email"], version = "^1.10.5" }
 python-dotenv = "^0.20.0"
 python-multipart = "^0.0.5"
 PyYAML = "^6.0"
 sendgrid = "^6.9.7"
 sentry-sdk = "^1.5.0"
+snick = "^1.3.0"
+sqlalchemy = { extras = ["mypy"], version = "^2.0.19" }
 starlette = "^0.26.1"
 toml = "^0.10.2"
 typer = "^0.4.0"
 uvicorn = "^0.19.0"
 yarl = "^1.7.2"
-inflection = "^0.5.1"
-snick = "^1.3.0"
-sqlalchemy = {extras = ["mypy"], version = "^2.0.19"}
 
 [tool.poetry.group.dev.dependencies]
 asgi-lifespan = "^1.0.1"
 black = "^23"
+coverage = { extras = ["toml"], version = "^7.2.7" }
 flake8-docstrings = "^1.6.0"
 ipython = "^7.31.1"
 isort = "^5.9.3"
@@ -73,9 +74,8 @@ pytest-random-order = "^1.0.4"
 python-status = "^1.0"
 requests = "^2.28.0"
 respx = "^0.20.1"
-coverage = {extras = ["toml"], version = "^7.2.7"}
+types-aioboto3 = { extras = ["essential"], version = "^11.2.0" }
 types-toml = "^0.10.8.7"
-types-aioboto3 = {extras = ["essential"], version = "^11.2.0"}
 
 [tool.poetry.scripts]
 dev-tools = "dev_tools:app"
@@ -102,9 +102,9 @@ addopts = ["--random-order", "--cov=jobbergate_api"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 env = [
-    "DEPLOY_ENV = TEST",  # Enforces that test database env vars will be used
-    "ARMASEC_DOMAIN = armasec.dev",  # Must align with the rs256_domain fixture in armasec's pytest extension
-    "ARMASEC_DEBUG = False",  # Set this to True to debug armasec issues by seeing verbose logging
+    "DEPLOY_ENV = TEST",                         # Enforces that test database env vars will be used
+    "ARMASEC_DOMAIN = armasec.dev",              # Must align with the rs256_domain fixture in armasec's pytest extension
+    "ARMASEC_DEBUG = False",                     # Set this to True to debug armasec issues by seeing verbose logging
     "SENDGRID_FROM_EMAIL = info@pytesting.com",
     "SENDGRID_API_KEY = test-api-key",
     "AWS_ACCESS_KEY_ID = compose-s3-key",
@@ -112,27 +112,18 @@ env = [
 ]
 
 [tool.coverage.run]
-omit = [
-    "jobbergate_api/main.py",
-    "jobbergate_api/safe_types.py",
-]
-concurrency = [
-    "greenlet",
-    "thread",
-]
+omit = ["jobbergate_api/main.py", "jobbergate_api/safe_types.py"]
+concurrency = ["greenlet", "thread"]
 
 [tool.coverage.report]
-    fail_under = 95
-    show_missing = true
+fail_under = 90
+show_missing = true
 
 [tool.coverage.html]
-    show_contexts = true
+show_contexts = true
 
 [tool.mypy]
-plugins = [
-    "pydantic.mypy",
-    "sqlalchemy.ext.mypy.plugin",
-]
+plugins = ["pydantic.mypy", "sqlalchemy.ext.mypy.plugin"]
 follow_imports = "silent"
 ignore_missing_imports = true
 

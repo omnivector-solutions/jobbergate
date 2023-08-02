@@ -6,7 +6,8 @@ Also provides a factory function for TokenSecurity to reduce boilerplate.
 from armasec import Armasec, TokenPayload
 from armasec.schemas import DomainConfig
 from armasec.token_security import PermissionMode
-from fastapi import Depends
+from buzz import check_expressions
+from fastapi import Depends, HTTPException, status
 from loguru import logger
 from pydantic import EmailStr, root_validator
 
@@ -91,7 +92,13 @@ class IdentityPayload(TokenPayload):
         return {**values, "organization_id": next(iter(organization_dict))}
 
 
-def lockdown_with_identity(*scopes: str, permission_mode: PermissionMode = PermissionMode.ALL):
+def lockdown_with_identity(
+    *scopes: str,
+    permission_mode: PermissionMode = PermissionMode.ALL,
+    ensure_email: bool = False,
+    ensure_organization: bool = False,
+    ensure_client_id: bool = False,
+):
     """
     Provide a wrapper to be used with dependency injection to extract identity on a secured route.
     """
@@ -102,6 +109,22 @@ def lockdown_with_identity(*scopes: str, permission_mode: PermissionMode = Permi
         """
         Provide an injectable function to lockdown a route and extract the identity payload.
         """
+        identity_payload = IdentityPayload.parse_obj(token_payload)
+
+        with check_expressions(
+            main_message="Access token does not contain",
+            raise_exc_class=HTTPException,
+            exc_builder=lambda exc_class, msg: exc_class(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=msg,
+            ),
+        ) as check:
+            for ensure, name in zip(
+                (ensure_email, ensure_organization, ensure_client_id), ("email", "organization", "client_id")
+            ):
+                if ensure:
+                    check(getattr(identity_payload, name, None) is not None, message=name)
+
         return IdentityPayload.parse_obj(token_payload)
 
     return dependency

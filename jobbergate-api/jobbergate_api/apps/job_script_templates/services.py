@@ -20,20 +20,22 @@ class JobScriptTemplateService(CrudService):
     def build_list_query(
         self,
         sort_ascending: bool = True,
-        user_email: str | None = None,
         search: str | None = None,
         sort_field: str | None = None,
         include_archived: bool = True,
+        include_files: bool = False,
+        include_parent: bool = False,
         include_null_identifier: bool = True,
         **additional_filters,
     ) -> Select:
         """List all job_script_templates."""
         query: Select = super().build_list_query(
             sort_ascending=sort_ascending,
-            user_email=user_email,
             search=search,
             sort_field=sort_field,
             include_archived=include_archived,
+            include_files=include_files,
+            include_parent=include_parent,
             **additional_filters,
         )
         if not include_null_identifier:

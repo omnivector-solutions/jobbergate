@@ -22,5 +22,5 @@ class JobScriptFileService(FileService):
     """
 
 
-crud_service = JobScriptCrudService(model_type=JobScript, parent_model_link=JobScript.template)
+crud_service = JobScriptCrudService(model_type=JobScript)
 file_service = JobScriptFileService(model_type=JobScriptFile)
