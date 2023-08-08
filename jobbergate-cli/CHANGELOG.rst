@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-cli
 
 Unreleased
 ----------
+
+3.5.1a0 -- 2023-08-08
+---------------------
 - Bumped PyYAML version to 6.0.
 
 3.5.0 -- 2023-07-03

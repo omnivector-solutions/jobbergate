@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 
+3.5.1a0 -- 2023-08-08
+---------------------
+
 3.5.0 -- 2023-07-03
 -------------------
 - Modified API to restrict modifications to resource owners
