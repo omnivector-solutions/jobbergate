@@ -6,7 +6,7 @@ name: Prepare for release
 #   - Use Poetry to bump up the versions;
 #   - Create a new header for the new version at the changelogs;
 #   - Check if all sub-projects share the same version number;
-#   - Create a new branch named release/<new_version>;
+#   - Create a new branch named prepare-release/<new_version>;
 #   - Open a draft PR to the main branch, so all the changes above can be reviewed by the team before merging.
 
 on:
@@ -80,9 +80,8 @@ jobs:
         with:
           token: ${{ secrets.TOKEN }}
           commit-message: "Prepared release ${{ steps.api-package.outputs.version }}"
-          branch: "release/${{ steps.api-package.outputs.version }}"
+          branch: "prepare-release/${{ steps.api-package.outputs.version }}"
           title: "Release ${{ steps.api-package.outputs.version }}"
-          base: "main"
           draft: true
           delete-branch: true
           body: "Automated changes by [prepare_release](https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/prepare_release.yaml) GitHub action."
