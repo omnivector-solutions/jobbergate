@@ -82,7 +82,6 @@ jobs:
           commit-message: "Prepared release ${{ steps.api-package.outputs.version }}"
           branch: "release/${{ steps.api-package.outputs.version }}"
           title: "Release ${{ steps.api-package.outputs.version }}"
-          base: "main"
           draft: true
           delete-branch: true
           body: "Automated changes by [prepare_release](https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/prepare_release.yaml) GitHub action."
