@@ -174,7 +174,7 @@ class JobTemplateDetailedView(JobTemplateListView):
     an empty list when they are requested, but no file is found.
     """
 
-    template_vars: Optional[dict[str, Any]] = {}
+    template_vars: dict[str, Any] | None
 
     template_files: list[TemplateFileDetailedView] | None
     workflow_files: list[WorkflowFileDetailedView] | None
