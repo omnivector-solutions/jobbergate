@@ -6,21 +6,27 @@ from typing import Any, Optional
 
 from sqlalchemy import Enum, ForeignKey, Integer, String, text
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
+from sqlalchemy.sql.expression import Select
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.models import Base, CrudMixin, FileMixin
+from jobbergate_api.safe_types import JobScript
 
 
 class JobScriptTemplate(CrudMixin, Base):
     """
     Job script template table definition.
 
+    Notice all relationships are lazy="raise" to prevent n+1 implicit queries.
+    This means that the relationships must be explicitly eager loaded using
+    helper functions in the class.
+
     Attributes:
         identifier: The identifier of the job script template.
         template_vars: The template variables of the job script template.
 
-    See Mixin class definitions for other columns
+    See Mixin class definitions for other columns.
     """
 
     identifier: Mapped[Optional[str]] = mapped_column(String, unique=True, index=True)
@@ -35,16 +41,23 @@ class JobScriptTemplate(CrudMixin, Base):
     template_files: Mapped[list["JobScriptTemplateFile"]] = relationship(
         "JobScriptTemplateFile",
         back_populates="parent",
-        lazy="selectin",
+        lazy="raise",
         uselist=True,
         cascade="all, delete-orphan",
     )
     workflow_files: Mapped[list["WorkflowFile"]] = relationship(
         "WorkflowFile",
         back_populates="parent",
-        lazy="selectin",
+        lazy="raise",
         uselist=True,
         cascade="all, delete-orphan",
+    )
+
+    scripts: Mapped[list[JobScript]] = relationship(
+        "JobScript",
+        back_populates="template",
+        lazy="raise",
+        uselist=True,
     )
 
     @classmethod
@@ -60,6 +73,13 @@ class JobScriptTemplate(CrudMixin, Base):
         Add identifier as a sortable field.
         """
         return {cls.identifier, *super().sortable_fields()}
+
+    @classmethod
+    def include_files(cls, query: Select) -> Select:
+        """
+        Include custom options on a query to eager load files.
+        """
+        return query.options(selectinload(cls.template_files), selectinload(cls.workflow_files))
 
 
 class JobScriptTemplateFile(FileMixin, Base):

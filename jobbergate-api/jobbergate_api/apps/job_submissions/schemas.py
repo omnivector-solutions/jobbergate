@@ -1,14 +1,14 @@
 """
 JobSubmission resource schema.
 """
-from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Extra, Field
 
-from jobbergate_api.apps.job_scripts.schemas import JobScriptResponse
+from jobbergate_api.apps.job_scripts.schemas import JobScriptListView
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
+from jobbergate_api.apps.schemas import TableResource
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
 job_submission_meta_mapper = MetaMapper(
@@ -316,30 +316,30 @@ class JobSubmissionAgentUpdateRequest(BaseModel):
         schema_extra = job_submission_meta_mapper
 
 
-class JobSubmissionResponse(BaseModel):
+class JobSubmissionListView(TableResource):
+    """
+    Partial model to match the database for the JobSubmission resource.
+    """
+
+    job_script_id: Optional[int]
+    slurm_job_id: Optional[int]
+    client_id: str
+    status: JobSubmissionStatus
+
+    job_script: Optional[JobScriptListView]
+
+    class Config:
+        schema_extra = job_submission_meta_mapper
+
+
+class JobSubmissionDetailedView(JobSubmissionListView):
     """
     Complete model to match the database for the JobSubmission resource.
     """
 
-    id: int
-    created_at: Optional[datetime]
-    updated_at: Optional[datetime]
-    name: str
-    description: Optional[str]
-    owner_email: str
-    job_script_id: Optional[int]
     execution_directory: Optional[Path]
-    slurm_job_id: Optional[int]
-    client_id: str
-    status: JobSubmissionStatus
     report_message: Optional[str]
     execution_parameters: Optional[JobProperties]
-
-    job_script: Optional[JobScriptResponse]
-
-    class Config:
-        orm_mode = True
-        schema_extra = job_submission_meta_mapper
 
 
 class PendingJobSubmission(BaseModel):
@@ -354,7 +354,7 @@ class PendingJobSubmission(BaseModel):
     owner_email: str
     execution_directory: Optional[Path]
     execution_parameters: dict = Field(default_factory=dict)
-    job_script: Optional[JobScriptResponse]
+    job_script: Optional[JobScriptListView]
 
     class Config:
         orm_mode = True

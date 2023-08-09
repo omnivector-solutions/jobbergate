@@ -5,19 +5,18 @@ on:
     inputs:
       repository:
         description: Repository environment name
-        default: 'jobbergate-api-staging'
+        default: "jobbergate-api-staging"
         required: true
       region:
         description: AWS region to which upload the package
         required: true
-        default: 'us-west-2'
+        default: "us-west-2"
 
 jobs:
   publish:
     name: Publish to ECR
     runs-on: ubuntu-latest
     steps:
-
       - name: Fail if ref is not a tag
         if: github.ref_type != 'tag'
         run: |
@@ -27,13 +26,13 @@ jobs:
 
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
-      - uses: Gr1N/setup-poetry@v7
+      - uses: Gr1N/setup-poetry@v8
         with:
-          poetry-version: 1.1.14
+          poetry-version: 1.5.1
 
       - id: poetry-package-version
         name: Get version of project from poetry
@@ -52,9 +51,9 @@ jobs:
       - name: Setup AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id    : ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_ID }}
-          aws-region           : ${{ github.event.inputs.region }}
+          aws-region: ${{ github.event.inputs.region }}
 
       - name: Login to Amazon ECR
         id: login-ecr

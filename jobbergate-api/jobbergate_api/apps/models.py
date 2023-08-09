@@ -4,11 +4,12 @@ from datetime import datetime
 
 from inflection import tableize
 from snick import conjoin
-from sqlalchemy import DateTime, Integer, String
+from sqlalchemy import Boolean, DateTime, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 from sqlalchemy.sql import functions
+from sqlalchemy.sql.expression import Select
 
 
 class Base(DeclarativeBase):
@@ -106,7 +107,18 @@ class NameMixin:
     description: Mapped[str | None] = mapped_column(String, default="")
 
 
-class CrudMixin(CommonMixin, IdMixin, TimestampMixin, OwnerMixin, NameMixin):
+class ArchiveMixin:
+    """
+    Add is_archived column to a table.
+
+    Attributes:
+        is_archived: Specify is a row is considered archived, hidden it by default when listing rows.
+    """
+
+    is_archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+
+class CrudMixin(CommonMixin, IdMixin, TimestampMixin, OwnerMixin, NameMixin, ArchiveMixin):
     """
     Add needed columns and declared attributes for all models that support a CrudService.
     """
@@ -134,6 +146,28 @@ class CrudMixin(CommonMixin, IdMixin, TimestampMixin, OwnerMixin, NameMixin):
             cls.created_at,
             cls.updated_at,
         }
+
+    @classmethod
+    def include_files(cls, query: Select) -> Select:
+        """
+        Include custom options on a query to eager load files.
+
+        This should be overridden by derived classes.
+        """
+        raise NotImplementedError(
+            f"Derived classes should override include_files. {cls.__tablename__} does not include it."
+        )
+
+    @classmethod
+    def include_parent(cls, query: Select) -> Select:
+        """
+        Include custom options on a query to eager load parent data.
+
+        This should be overridden by derived classes.
+        """
+        raise NotImplementedError(
+            f"Derived classes should override include_parent. {cls.__tablename__} does not include it."
+        )
 
 
 class FileMixin(CommonMixin, TimestampMixin):

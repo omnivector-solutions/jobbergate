@@ -5,7 +5,7 @@ import pytest
 from fastapi import HTTPException, status
 
 from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
-from jobbergate_api.apps.job_script_templates.schemas import JobTemplateResponse
+from jobbergate_api.apps.job_script_templates.schemas import JobTemplateDetailedView, JobTemplateListView
 from jobbergate_api.apps.job_script_templates.services import (
     crud_service,
     template_file_service,
@@ -43,8 +43,8 @@ async def test_create_job_template__success(
     assert response_data["identifier"] == payload["identifier"]
     assert response_data["template_vars"] == payload["template_vars"]
     assert response_data["owner_email"] == tester_email
-    assert response_data["template_files"] == []
-    assert response_data["workflow_files"] == []
+    assert response_data["template_files"] is None
+    assert response_data["workflow_files"] is None
 
     # Make sure that the crud service has no bound session after the request is complete
     with pytest.raises(HTTPException) as exc_info:
@@ -187,6 +187,35 @@ async def test_update_job_template__fail_unauthorized(client):
     assert response.status_code == 401
 
 
+async def test_update_job_template__forbidden(
+    client,
+    fill_job_template_data,
+    inject_security_header,
+    tester_email,
+    synth_session,
+):
+    with crud_service.bound_session(synth_session):
+        instance = await crud_service.create(**fill_job_template_data())
+
+    owner_email = tester_email
+    requester_email = "another_" + owner_email
+
+    payload = dict(
+        name="new-name",
+        identifier="new-identifier",
+        description="new-description",
+        template_vars={"new": "value"},
+    )
+
+    inject_security_header(requester_email, Permissions.JOB_TEMPLATES_EDIT)
+    response = await client.put(
+        f"jobbergate/job-script-templates/{instance.id}",
+        json=payload,
+    )
+
+    assert response.status_code == 403
+
+
 @pytest.mark.parametrize("identification_field", ("id", "identifier"))
 async def test_get_job_template__success(
     identification_field,
@@ -252,6 +281,34 @@ async def test_delete_job_template__fail_not_found(
     assert response.status_code == 404
 
 
+@pytest.mark.parametrize("identification_field", ("id", "identifier"))
+async def test_delete_job_template__forbidden(
+    identification_field,
+    client,
+    tester_email,
+    inject_security_header,
+    fill_job_template_data,
+    synth_session,
+):
+    owner_email = tester_email
+    requester_email = "another_" + owner_email
+
+    payload = fill_job_template_data(
+        identifier=f"delete-template-forbidden-{identification_field}",
+        template_vars={"foo": "bar"},
+    )
+    with crud_service.bound_session(synth_session):
+        instance = await crud_service.create(**payload)
+
+    inject_security_header(requester_email, Permissions.JOB_TEMPLATES_EDIT)
+    identification = getattr(instance, identification_field)
+    response = await client.delete(f"jobbergate/job-script-templates/{identification}")
+    assert response.status_code == 403
+
+    with crud_service.bound_session(synth_session):
+        assert (await crud_service.count()) == 1
+
+
 class TestListJobTemplates:
     """Test the list endpoint."""
 
@@ -281,6 +338,12 @@ class TestListJobTemplates:
                 "template_vars": {"foo-1": "bar-4"},
                 "owner_email": "test-test@pytest.com",
             },
+            {
+                "name": "name-5",
+                "description": "desc-5",
+                "template_vars": {"foo-1": "bar-5"},
+                "is_archived": True,
+            },
         )
         with crud_service.bound_session(synth_session):
             for item in data:
@@ -295,7 +358,10 @@ class TestListJobTemplates:
         job_templates_list,
     ):
         inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
-        response = await client.get("jobbergate/job-script-templates?include_null_identifier=True")
+        response = await client.get(
+            "jobbergate/job-script-templates",
+            params=dict(include_null_identifier=True, include_archived=True),
+        )
         assert response.status_code == 200, f"List failed: {response.text}"
 
         response_data = response.json()
@@ -308,10 +374,27 @@ class TestListJobTemplates:
             assert response_item.get("identifier") == expected_item.get("identifier")
             assert response_item["name"] == expected_item["name"]
             assert response_item["description"] == expected_item["description"]
-            assert response_item["template_vars"] == expected_item["template_vars"]
             assert response_item["owner_email"] == expected_item["owner_email"]
-            assert response_item["template_files"] == []
-            assert response_item["workflow_files"] == []
+            assert response_item["is_archived"] == expected_item["is_archived"]
+
+    async def test_list_job_templates__ignore_archived(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_templates_list,
+    ):
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
+        response = await client.get("jobbergate/job-script-templates?include_null_identifier=True")
+        assert response.status_code == 200, f"List failed: {response.text}"
+
+        response_data = response.json()
+
+        expected_names = {i["name"] for i in job_templates_list if i["is_archived"] is False}
+        response_names = {i["name"] for i in response_data["items"]}
+
+        assert response_data["total"] == len(expected_names)
+        assert expected_names == response_names
 
     async def test_list_job_templates__user_only(
         self,
@@ -322,16 +405,16 @@ class TestListJobTemplates:
     ):
         inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
         response = await client.get(
-            "jobbergate/job-script-templates?user_only=True&include_null_identifier=True"
+            "jobbergate/job-script-templates?user_only=True&include_null_identifier=True&include_archived=True"
         )
         assert response.status_code == 200, f"List failed: {response.text}"
 
         response_data = response.json()
-        assert response_data["total"] == 3
 
         expected_names = {i["name"] for i in job_templates_list if i["owner_email"] == tester_email}
         response_names = {i["name"] for i in response_data["items"]}
 
+        assert response_data["total"] == len(expected_names)
         assert expected_names == response_names
 
 
@@ -340,7 +423,7 @@ class TestJobTemplateFiles:
     async def job_template_data(self, fill_job_template_data, synth_session):
         with crud_service.bound_session(synth_session):
             raw_db_data = await crud_service.create(**fill_job_template_data())
-        yield JobTemplateResponse.from_orm(raw_db_data)
+        yield JobTemplateDetailedView.from_orm(raw_db_data)
 
     async def test_create__success(
         self,
@@ -390,6 +473,31 @@ class TestJobTemplateFiles:
         assert template_file["parent_id"] == parent_id
         assert template_file["filename"] == dummy_file_path.name
         assert template_file["file_type"] == file_type
+
+    async def test_create__fail_forbidden(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_template_data,
+        dummy_template,
+        make_dummy_file,
+    ):
+        parent_id = job_template_data.id
+        file_type = "ENTRYPOINT"
+        dummy_file_path = make_dummy_file("test_template.py.j2", content=dummy_template)
+
+        owner_email = tester_email
+        requester_email = "another_" + owner_email
+
+        inject_security_header(requester_email, Permissions.JOB_TEMPLATES_EDIT)
+        with open(dummy_file_path, mode="rb") as template_file:
+            response = await client.put(
+                f"jobbergate/job-script-templates/{parent_id}/upload/template/{file_type}",
+                files={"upload_file": (dummy_file_path.name, template_file, "text/plain")},
+            )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
     async def test_get__success(
         self,
@@ -441,11 +549,39 @@ class TestJobTemplateFiles:
         response = await client.delete(
             f"jobbergate/job-script-templates/{parent_id}/upload/template/test_template.py.j2"
         )
-        assert response.status_code == status.HTTP_200_OK, "Delete failed: {response.text}"
+        assert response.status_code == status.HTTP_200_OK, f"Delete failed: {response.text}"
 
         s3_object = await synth_bucket.Object(f"job_script_template_files/{parent_id}/test_template.py.j2")
         with pytest.raises(synth_bucket.meta.client.exceptions.NoSuchKey):
             await s3_object.get()
+
+    async def test_delete__fail_forbidden(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_template_data,
+        synth_session,
+        synth_bucket,
+    ):
+        parent_id = job_template_data.id
+        with template_file_service.bound_bucket(synth_bucket):
+            with template_file_service.bound_session(synth_session):
+                await template_file_service.upsert(
+                    parent_id=parent_id,
+                    filename="test_template.py.j2",
+                    upload_content="dummy file data",
+                    file_type="ENTRYPOINT",
+                )
+
+        owner_email = tester_email
+        requester_email = "another_" + owner_email
+
+        inject_security_header(requester_email, Permissions.JOB_TEMPLATES_EDIT)
+        response = await client.delete(
+            f"jobbergate/job-script-templates/{parent_id}/upload/template/test_template.py.j2"
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 class TestJobTemplateWorkflowFile:
@@ -453,7 +589,7 @@ class TestJobTemplateWorkflowFile:
     async def job_template_data(self, fill_job_template_data, synth_session):
         with crud_service.bound_session(synth_session):
             raw_db_data = await crud_service.create(**fill_job_template_data())
-        yield JobTemplateResponse.from_orm(raw_db_data)
+        yield JobTemplateListView.from_orm(raw_db_data)
 
     async def test_create__success(
         self,
@@ -504,6 +640,33 @@ class TestJobTemplateWorkflowFile:
         assert workflow_file["parent_id"] == parent_id
         assert workflow_file["filename"] == WORKFLOW_FILE_NAME
         assert workflow_file["runtime_config"] == runtime_config
+
+    async def test_create__fail_forbidden(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_template_data,
+        dummy_application_source_file,
+        make_dummy_file,
+    ):
+        parent_id = job_template_data.id
+        dummy_file_path = make_dummy_file("test_template.py.j2", content=dummy_application_source_file)
+        runtime_config = {"foo": "bar"}
+
+        owner_email = tester_email
+        requester_email = "another_" + owner_email
+
+        inject_security_header(requester_email, Permissions.JOB_TEMPLATES_EDIT)
+        with open(dummy_file_path, mode="rb") as workflow_file:
+            response = await client.put(
+                f"jobbergate/job-script-templates/{parent_id}/upload/workflow",
+                files={"upload_file": (dummy_file_path.name, workflow_file, "text/plain")},
+                data={"runtime_config": json.dumps(runtime_config)},
+            )
+
+        # First, check the response from the upload endpoint
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
     async def test_get__success(
         self, client, tester_email, inject_security_header, job_template_data, synth_bucket, synth_session

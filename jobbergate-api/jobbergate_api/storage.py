@@ -120,7 +120,13 @@ class SecureSession:
     session: AsyncSession
 
 
-def secure_session(*scopes: str, permission_mode: PermissionMode = PermissionMode.ALL):
+def secure_session(
+    *scopes: str,
+    permission_mode: PermissionMode = PermissionMode.ALL,
+    ensure_email: bool = False,
+    ensure_organization: bool = False,
+    ensure_client_id: bool = False,
+):
     """
     Provide an injectable for FastAPI that checks permissions and returns a database session for this request.
 
@@ -136,7 +142,13 @@ def secure_session(*scopes: str, permission_mode: PermissionMode = PermissionMod
 
     async def dependency(
         identity_payload: IdentityPayload = fastapi.Depends(
-            lockdown_with_identity(*scopes, permission_mode=permission_mode)
+            lockdown_with_identity(
+                *scopes,
+                permission_mode=permission_mode,
+                ensure_email=ensure_email,
+                ensure_organization=ensure_organization,
+                ensure_client_id=ensure_client_id,
+            )
         )
     ) -> typing.AsyncIterator[SecureSession]:
         is_test = settings.DEPLOY_ENV.lower() == "test"

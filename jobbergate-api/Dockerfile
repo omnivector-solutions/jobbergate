@@ -3,7 +3,7 @@ FROM python:3.10-slim-buster
 RUN apt update && apt install -y curl libpq-dev gcc
 
 RUN curl -sSL https://install.python-poetry.org | \
-    POETRY_HOME=/opt/poetry POETRY_VERSION=1.4.2 python && \
+    POETRY_HOME=/opt/poetry POETRY_VERSION=1.5.1 python && \
     cd /usr/local/bin && \
     ln -s /opt/poetry/bin/poetry && \
     poetry config virtualenvs.create false

@@ -30,11 +30,18 @@ smartquotes = False
 pygments_style = "rainbow_dash"
 exclude_patterns = []
 extensions = [
-    "sphinx.ext.githubpages",
+    "sphinx_copybutton",
+    "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
+    "sphinx.ext.githubpages",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.napoleon",
     "sphinxcontrib.httpdomain",
 ]
 
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None,),
+}
 
 # -- Options for HTML output -------------------------------------------------
 

@@ -53,6 +53,13 @@ def paginated():
     return _helper
 
 
+def test_property__name(dummy_crud_service):
+    """
+    Test the name property.
+    """
+    assert dummy_crud_service.name == "dummy_cruds"
+
+
 class TestCrudService:
     """
     Group tests for the CrudService.
@@ -122,6 +129,29 @@ class TestCrudService:
         with pytest.raises(HTTPException) as exc_info:
             await dummy_crud_service.get(0)
         assert exc_info.value.status_code == 404
+
+    async def test_get__enforces_attributes(
+        self,
+        dummy_crud_service,
+        tester_email,
+    ):
+        """
+        Test that the ``get()`` calls ``ensure_attribute()`` with the given attributes.
+
+        Different scenarios are tested directly on the ``ensure_attribute()`` method.
+        """
+        test_name = "test-name"
+        created_instance = await dummy_crud_service.create(
+            name=test_name,
+            owner_email=tester_email,
+        )
+        with mock.patch.object(dummy_crud_service, "ensure_attribute") as ensure_attribute:
+            fetched_instance = await dummy_crud_service.get(
+                created_instance.id, ensure_attributes=dict(owner_email=tester_email, name=test_name)
+            )
+        ensure_attribute.assert_called_once_with(created_instance, owner_email=tester_email, name=test_name)
+
+        assert created_instance == fetched_instance
 
     async def test_delete__success_by_id(
         self,
@@ -214,6 +244,52 @@ class TestCrudService:
         all_fetched_instances = await dummy_crud_service.list()
         assert ["one", "two", "three"] == [i.name for i in all_fetched_instances]
 
+    async def test_list__include_archived(
+        self,
+        dummy_crud_service,
+    ):
+        """
+        Test that the ``list()`` method returns all instances of the served model when including archived.
+
+        Notice this is the default behavior.
+        """
+        await dummy_crud_service.create(
+            name="one",
+            description="the first",
+            owner_email="1@test.com",
+            is_archived=False,
+        )
+        await dummy_crud_service.create(
+            name="two",
+            description="second",
+            owner_email="2@test.com",
+            is_archived=True,
+        )
+        all_fetched_instances = await dummy_crud_service.list()
+        assert ["one", "two"] == [i.name for i in all_fetched_instances]
+
+    async def test_list__not_include_archived(
+        self,
+        dummy_crud_service,
+    ):
+        """
+        Test that the ``list()`` method don not include archived instances.
+        """
+        await dummy_crud_service.create(
+            name="one",
+            description="the first",
+            owner_email="1@test.com",
+            is_archived=False,
+        )
+        await dummy_crud_service.create(
+            name="two",
+            description="second",
+            owner_email="2@test.com",
+            is_archived=True,
+        )
+        all_fetched_instances = await dummy_crud_service.list(include_archived=False)
+        assert ["one"] == [i.name for i in all_fetched_instances]
+
     async def test_list__with_search(
         self,
         dummy_crud_service,
@@ -281,20 +357,11 @@ class TestCrudService:
         """
         Test that the ``list()`` restricts instances of the served model to those owned by the user.
         """
-        await dummy_crud_service.create(
-            name="one",
-            owner_email="user1@test.com",
-        )
-        await dummy_crud_service.create(
-            name="two",
-            owner_email="user2@test.com",
-        )
-        await dummy_crud_service.create(
-            name="three",
-            owner_email="user1@test.com",
-        )
+        await dummy_crud_service.create(name="one", owner_email="user1@test.com")
+        await dummy_crud_service.create(name="two", owner_email="user2@test.com")
+        await dummy_crud_service.create(name="three", owner_email="user1@test.com")
 
-        all_fetched_instances = await dummy_crud_service.list(user_email="user1@test.com")
+        all_fetched_instances = await dummy_crud_service.list(owner_email="user1@test.com")
         assert ["one", "three"] == [i.name for i in all_fetched_instances]
 
     async def test_paginated_list(
@@ -341,6 +408,78 @@ class TestCrudService:
         assert page.size == 1
         assert page.total == 3
         assert ["two"] == [i.name for i in page.items]
+
+    async def test_get_ensure_ownership__success(
+        self,
+        dummy_crud_service,
+        tester_email,
+    ):
+        """
+        Test that the ``ensure_attribute()`` works when the entry is found and the emails match.
+        """
+        created_instance = await dummy_crud_service.create(
+            name="test-name",
+            description="test-description",
+            owner_email=tester_email,
+        )
+        dummy_crud_service.ensure_attribute(created_instance, owner_email=tester_email)
+
+    async def test_get_ensure_attribute_multiple_arguments(
+        self,
+        dummy_crud_service,
+        tester_email,
+    ):
+        """
+        Test that the ``ensure_attribute()`` method works with multiple arguments.
+        """
+        name = "test-name"
+        created_instance = await dummy_crud_service.create(
+            name=name,
+            description="test-description",
+            owner_email=tester_email,
+        )
+        dummy_crud_service.ensure_attribute(created_instance, owner_email=tester_email, name=name)
+
+    async def test_get_ensure_ownership__bad_request(
+        self,
+        dummy_crud_service,
+        tester_email,
+    ):
+        """
+        Test that the ``ensure_attribute()`` raises AttributeError when a column is not found.
+
+        This is a sanity check, error handling may be improved in the future.
+        """
+        created_instance = await dummy_crud_service.create(
+            name="test-name",
+            description="test-description",
+            owner_email=tester_email,
+        )
+        with pytest.raises(AttributeError):
+            dummy_crud_service.ensure_attribute(created_instance, not_a_column="any-value")
+
+    async def test_get_ensure_ownership__forbidden(
+        self,
+        dummy_crud_service,
+        tester_email,
+    ):
+        """
+        Test that the ``ensure_attribute()`` returns 403 when emails do not match.
+
+        Also makes sure the context manager does not delete the entry.
+        """
+        owner_email = tester_email
+        requester_email = "another_" + tester_email
+
+        created_instance = await dummy_crud_service.create(
+            name="test-name",
+            description="test-description",
+            owner_email=owner_email,
+        )
+
+        with pytest.raises(HTTPException) as exc_info:
+            dummy_crud_service.ensure_attribute(created_instance, owner_email=requester_email)
+        assert exc_info.value.status_code == 403
 
 
 class DummyFile(FileMixin, Base):

@@ -1,10 +1,9 @@
 """Tests for the /job-scripts/ endpoint."""
 import pytest
 from fastapi import HTTPException, status
-
+from loguru import logger
 from jobbergate_api.apps.job_script_templates.services import crud_service as template_crud_service
 from jobbergate_api.apps.job_script_templates.services import template_file_service
-from jobbergate_api.apps.job_scripts.schemas import JobScriptResponse
 from jobbergate_api.apps.job_scripts.services import crud_service, file_service
 from jobbergate_api.apps.permissions import Permissions
 
@@ -28,7 +27,7 @@ async def test_create_stand_alone_job_script(
     assert response_data["name"] == payload["name"]
     assert response_data["description"] == payload["description"]
     assert response_data["owner_email"] == tester_email
-    assert response_data["files"] == []
+    assert response_data["files"] is None
     assert response_data["parent_template_id"] is None
 
     created_id = response_data["id"]
@@ -324,6 +323,12 @@ class TestListJobScripts:
                 "description": "desc-4",
                 "owner_email": "test-test@pytest.com",
             },
+            {
+                "name": "name-5",
+                "description": "desc-5",
+                "owner_email": "test-test@pytest.com",
+                "is_archived": True,
+            },
         )
         with crud_service.bound_session(synth_session):
             for item in data:
@@ -338,20 +343,40 @@ class TestListJobScripts:
         job_scripts_list,
     ):
         inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+        response = await client.get("jobbergate/job-scripts?include_archived=True")
+        assert response.status_code == 200, f"Get failed: {response.text}"
+
+        response_data = response.json()
+        assert response_data["total"] == len(job_scripts_list)
+        assert response_data["page"] == 1
+        assert response_data["size"] == 50
+        assert response_data["pages"] == 1
+
+        for response_item, expected_item in zip(response_data["items"], job_scripts_list):
+            assert response_item["name"] == expected_item["name"]
+            assert response_item["description"] == expected_item["description"]
+            assert response_item["owner_email"] == expected_item["owner_email"]
+            assert response_item["is_archived"] == expected_item["is_archived"]
+            assert response_item["template"] is None
+
+    async def test_list_job_scripts__ignore_archived(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_scripts_list,
+    ):
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
         response = await client.get("jobbergate/job-scripts")
         assert response.status_code == 200, f"Get failed: {response.text}"
 
-        actual_data = response.json()
-        assert actual_data["total"] == len(job_scripts_list)
-        assert actual_data["page"] == 1
-        assert actual_data["size"] == 50
-        assert actual_data["pages"] == 1
+        response_data = response.json()
 
-        for actual_item, expected_item in zip(actual_data["items"], job_scripts_list):
-            assert actual_item["name"] == expected_item["name"]
-            assert actual_item["description"] == expected_item["description"]
-            assert actual_item["owner_email"] == expected_item["owner_email"]
-            assert actual_item["files"] == []
+        expected_names = {i["name"] for i in job_scripts_list if i["is_archived"] is False}
+        response_names = {i["name"] for i in response_data["items"]}
+
+        assert response_data["total"] == len(expected_names)
+        assert expected_names == response_names
 
     async def test_list_job_scripts__user_only(
         self,
@@ -361,15 +386,104 @@ class TestListJobScripts:
         job_scripts_list,
     ):
         inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
-        response = await client.get("jobbergate/job-scripts?user_only=True")
+        response = await client.get("jobbergate/job-scripts?user_only=True&include_archived=True")
         assert response.status_code == 200, f"Get failed: {response.text}"
 
-        actual_data = response.json()
-        assert actual_data["total"] == 3
+        response_data = response.json()
 
         expected_names = {i["name"] for i in job_scripts_list if i["owner_email"] == tester_email}
-        actual_names = {i["name"] for i in actual_data["items"]}
+        actual_names = {i["name"] for i in response_data["items"]}
+
+        assert response_data["total"] == len(expected_names)
         assert expected_names == actual_names
+
+    async def test_list_job_scripts__include_parent(
+        self,
+        client,
+        tester_email,
+        synth_session,
+        inject_security_header,
+        fill_job_template_data,
+        fill_all_job_script_data,
+        synth_bucket,
+        job_script_data_as_string,
+    ):
+        with template_crud_service.bound_session(synth_session):
+            base_template = await template_crud_service.create(**fill_job_template_data())
+
+        data = fill_all_job_script_data(
+            {"name": "name-1", "parent_template_id": base_template.id},
+            {"name": "name-2"},
+        )
+        with crud_service.bound_session(synth_session):
+            for item in data:
+                job_script_data = await crud_service.create(**item)
+
+                id = job_script_data.id
+                file_type = "ENTRYPOINT"
+                job_script_filename = "entrypoint.py"
+
+                with file_service.bound_session(synth_session):
+                    with file_service.bound_bucket(synth_bucket):
+                        await file_service.upsert(
+                            parent_id=id,
+                            filename=job_script_filename,
+                            upload_content=job_script_data_as_string,
+                            file_type=file_type,
+                        )
+
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+        response = await client.get("jobbergate/job-scripts", params={"include_parent": True})
+        assert response.status_code == 200, f"Get failed: {response.text}"
+
+        response_data = response.json()
+
+        expected_names = {i["name"] for i in data}
+        actual_names = {i["name"] for i in response_data["items"]}
+
+        assert response_data["total"] == len(expected_names)
+        assert expected_names == actual_names
+
+        assert response_data["items"][0]["template"] is not None
+        assert response_data["items"][0]["template"]["name"] == base_template.name
+        assert response_data["items"][1]["template"] is None
+
+    async def test_list_job_scripts__not_include_parent(
+        self,
+        client,
+        tester_email,
+        synth_session,
+        inject_security_header,
+        fill_job_template_data,
+        fill_all_job_script_data,
+    ):
+        with template_crud_service.bound_session(synth_session):
+            base_template = await template_crud_service.create(**fill_job_template_data())
+
+        data = fill_all_job_script_data(
+            {"name": "name-1", "parent_template_id": base_template.id},
+            {"name": "name-2"},
+        )
+        with crud_service.bound_session(synth_session):
+            for item in data:
+                await crud_service.create(**item)
+
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+        response = await client.get("jobbergate/job-scripts", params={"include_parent": False})
+        assert response.status_code == 200, f"Get failed: {response.text}"
+
+        response_data = response.json()
+
+        logger.info(f"{response_data=}")
+
+        expected_names = {i["name"] for i in data}
+        actual_names = {i["name"] for i in response_data["items"]}
+
+        assert response_data["total"] == len(expected_names)
+        assert expected_names == actual_names
+
+        assert response_data["items"][0]["template"] is None
+        assert response_data["items"][1]["template"] is None
 
 
 class TestJobScriptFiles:
@@ -415,6 +529,31 @@ class TestJobScriptFiles:
 
                 file_content = await file_service.get_file_content(job_script_file)
                 assert file_content.decode() == job_script_data_as_string
+
+    async def test_create__fail_forbidden(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_script_data,
+        job_script_data_as_string,
+        make_dummy_file,
+    ):
+        id = job_script_data.id
+        file_type = "ENTRYPOINT"
+        dummy_file_path = make_dummy_file("test_template.py", content=job_script_data_as_string)
+
+        owner_email = tester_email
+        requester_email = "another_" + owner_email
+
+        inject_security_header(requester_email, Permissions.JOB_SCRIPTS_EDIT)
+        with open(dummy_file_path, mode="rb") as file:
+            response = await client.put(
+                f"jobbergate/job-scripts/{id}/upload/{file_type}",
+                files={"upload_file": (dummy_file_path.name, file, "text/plain")},
+            )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
     async def test_get__success(
         self,
@@ -475,3 +614,33 @@ class TestJobScriptFiles:
         s3_object = await synth_bucket.Object(upserted_instance.file_key)
         with pytest.raises(synth_bucket.meta.client.exceptions.NoSuchKey):
             await s3_object.get()
+
+    async def test_delete__fail_forbidden(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_script_data,
+        job_script_data_as_string,
+        synth_session,
+        synth_bucket,
+    ):
+        parent_id = job_script_data.id
+        file_type = "ENTRYPOINT"
+        job_script_filename = "entrypoint.py"
+
+        with file_service.bound_session(synth_session):
+            with file_service.bound_bucket(synth_bucket):
+                await file_service.upsert(
+                    parent_id=parent_id,
+                    filename=job_script_filename,
+                    upload_content=job_script_data_as_string,
+                    file_type=file_type,
+                )
+
+        owner_email = tester_email
+        requester_email = "another_" + owner_email
+
+        inject_security_header(requester_email, Permissions.JOB_SCRIPTS_EDIT)
+        response = await client.delete(f"jobbergate/job-scripts/{parent_id}/upload/{job_script_filename}")
+        assert response.status_code == status.HTTP_403_FORBIDDEN

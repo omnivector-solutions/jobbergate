@@ -7,24 +7,25 @@ from contextlib import contextmanager
 from typing import Any, Generic, Protocol, TypeVar
 
 from botocore.response import StreamingBody
-from buzz import enforce_defined, handle_errors, require_condition
+from buzz import check_expressions, enforce_defined, handle_errors, require_condition
 from fastapi import HTTPException, UploadFile, status
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from jinja2 import Template
-from sqlalchemy import delete, func, select, update
+from loguru import logger
+from sqlalchemy import delete, func, not_, select, update
 from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped
 from sqlalchemy.sql.expression import Select
 
 from jobbergate_api.safe_types import Bucket
-from jobbergate_api.storage import search_clause, sort_clause
+from jobbergate_api.storage import render_sql, search_clause, sort_clause
 
 
 class ServiceError(HTTPException):
     """
-    Make HTTPException more friendly by chaning the default behavior so that the first arg is a message.
+    Make HTTPException more friendly by changing the default behavior so that the first arg is a message.
 
     Also needed to play nice with py-buzz methods.
     """
@@ -102,6 +103,7 @@ class CrudModelProto(Protocol):
 
     id: Mapped[int]
     owner_email: Mapped[str]
+    is_archived: Mapped[bool]
 
     def __init__(self, **kwargs):
         """
@@ -126,6 +128,20 @@ class CrudModelProto(Protocol):
     def sortable_fields(cls) -> set[str]:
         """
         Declare that the protocol has sortable fields.
+        """
+        ...
+
+    @classmethod
+    def include_files(cls, query: Select) -> Select:
+        """
+        Declare that the protocol has a method to include files in a query.
+        """
+        ...
+
+    @classmethod
+    def include_parent(cls, query: Select) -> Select:
+        """
+        Declare that the protocol has a method to include details about the parent entry in a query.
         """
         ...
 
@@ -165,21 +181,36 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         result: Result = await self.session.execute(select(func.count(self.model_type.id)))
         return result.scalar_one()
 
-    async def get(self, locator: Any) -> CrudModel:
+    async def get(
+        self,
+        locator: Any,
+        include_files: bool = False,
+        include_parent: bool = False,
+        ensure_attributes: dict[str, Any] | None = None,
+    ) -> CrudModel:
         """
         Get a row by locator.
 
         In almost all cases, the locator will just be an ``id`` value.
+
+        Key value pairs can be provided as ``ensure_attributes`` to assert that the
+        key fields have the specified values. This is useful to assert email ownership
+        of a row before modifying it, besides any other attribute.
         """
         query = select(self.model_type).where(self.locate_where_clause(locator))
+        if include_parent:
+            query = self.model_type.include_parent(query)
+        if include_files:
+            query = self.model_type.include_files(query)
         result: Result = await self.session.execute(query)
         instance: CrudModel = enforce_defined(
-            result.scalar_one_or_none(),
-            f"{self.model_type.__tablename__} row not found by {locator}",
+            result.unique().scalar_one_or_none(),  # type: ignore
+            f"{self.name} row not found by {locator}",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
-        await self.session.refresh(instance)
+        if ensure_attributes:
+            self.ensure_attribute(instance, **ensure_attributes)
         return instance
 
     async def delete(self, locator: Any) -> None:
@@ -193,7 +224,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         deleted = list(result.scalars())
         require_condition(
             len(deleted) == 1,
-            f"{self.model_type.__tablename__} row not found by {locator}",
+            f"{self.name} row not found by {locator=}",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
@@ -214,7 +245,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         result: Result = await self.session.execute(query)
         return enforce_defined(
             result.scalar_one_or_none(),
-            f"{self.model_type.__tablename__} row not found by {locator}",
+            f"{self.name} row not found by {locator=}",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
@@ -232,9 +263,11 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
     def build_list_query(
         self,
         sort_ascending: bool = True,
-        user_email: str | None = None,
         search: str | None = None,
         sort_field: str | None = None,
+        include_archived: bool = True,
+        include_files: bool = False,
+        include_parent: bool = False,
         **additional_filters,
     ) -> Select:
         """
@@ -245,13 +278,13 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         """
         query = select(self.model_type)
         for key, value in additional_filters.items():
-            query = query.where(getattr(self.model_type, key) == value)
-        if user_email:
-            query = query.where(self.model_type.owner_email == user_email)
+            query = query.where(self.model_type.__table__.c[key] == value)  # type: ignore
+        if not include_archived:
+            query = query.where(not_(self.model_type.is_archived))
         if search:
             require_condition(
                 hasattr(self.model_type, "searchable_fields"),
-                f"{self.model_type.__tablename__} does not support search",
+                f"{self.name} does not support search",
                 raise_exc_class=ServiceError,
                 raise_kwargs=dict(status_code=status.HTTP_405_METHOD_NOT_ALLOWED),
             )
@@ -259,11 +292,16 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         if sort_field:
             require_condition(
                 hasattr(self.model_type, "sortable_fields"),
-                f"{self.model_type.__tablename__} does not support sort",
+                f"{self.name} does not support sort",
                 raise_exc_class=ServiceError,
                 raise_kwargs=dict(status_code=status.HTTP_405_METHOD_NOT_ALLOWED),
             )
             query = query.order_by(sort_clause(sort_field, self.model_type.sortable_fields(), sort_ascending))
+        if include_parent:
+            query = self.model_type.include_parent(query)
+        if include_files:
+            query = self.model_type.include_files(query)
+        logger.trace(f"Query: {render_sql(self.session, query)}")
         return query
 
     async def paginated_list(self, **filter_kwargs) -> Page[CrudModel]:
@@ -281,7 +319,31 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         For details on the supported filters, see the ``build_list_query()`` method.
         """
         result: Result = await self.session.execute(self.build_list_query(**filter_kwargs))
-        return list(result.scalars())
+        return list(result.unique().scalars())  # type: ignore
+
+    def ensure_attribute(self, instance: CrudModel, **attributes) -> None:
+        """
+        Ensure that a model instance has the specified values on key attributes.
+
+        Raises HTTPException if the instance does not have the specified values.
+        """
+        with check_expressions(
+            main_message="Request not allowed on {} by id={} due to mismatch on attribute(s)".format(
+                self.name, instance.id
+            ),
+            raise_exc_class=ServiceError,
+            raise_kwargs=dict(status_code=status.HTTP_403_FORBIDDEN),
+        ) as check:
+            for attr_name, expected_value in attributes.items():
+                actual_value = getattr(instance, attr_name)
+                check(actual_value == expected_value, message=attr_name)
+
+    @property
+    def name(self):
+        """
+        Helper property to recover the name of the table.
+        """
+        return self.model_type.__tablename__
 
 
 class BucketBoundService:

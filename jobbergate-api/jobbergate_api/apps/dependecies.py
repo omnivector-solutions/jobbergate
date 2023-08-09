@@ -60,6 +60,9 @@ def secure_services(
     *scopes: str,
     permission_mode: PermissionMode = PermissionMode.ALL,
     services: list[DatabaseBoundService] | None = None,
+    ensure_email: bool = False,
+    ensure_organization: bool = False,
+    ensure_client_id: bool = False,
 ):
     """
     Dependency to bind database services to a secure session.
@@ -68,7 +71,15 @@ def secure_services(
         services = []
 
     async def dependency(
-        secure_session: SecureSession = Depends(secure_session(*scopes, permission_mode=permission_mode)),
+        secure_session: SecureSession = Depends(
+            secure_session(
+                *scopes,
+                permission_mode=permission_mode,
+                ensure_email=ensure_email,
+                ensure_organization=ensure_organization,
+                ensure_client_id=ensure_client_id,
+            )
+        ),
     ) -> AsyncIterator[SecureSession]:
         """
         Bind each service to the secure session and then return the session.

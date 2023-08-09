@@ -16,27 +16,27 @@ on:
         type: choice
         description: Bump version rule for Poetry
         options:
-        - patch
-        - minor
-        - major
-        - prepatch
-        - preminor
-        - premajor
-        - prerelease
+          - patch
+          - minor
+          - major
+          - prepatch
+          - preminor
+          - premajor
+          - prerelease
 
 jobs:
   bump-version:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
-      - uses: Gr1N/setup-poetry@v7
+      - uses: Gr1N/setup-poetry@v8
         with:
-          poetry-version: 1.1.14
+          poetry-version: 1.5.1
 
       - id: api-package
         name: Bump version on the API
@@ -54,6 +54,14 @@ jobs:
           echo "Poetry version is: $(poetry version --short)"
           echo "::set-output name=version::$(poetry version --short)"
 
+      - id: core-package
+        name: Bump version on the Core
+        working-directory: jobbergate-core
+        run: |
+          ../release-scripts/prepare-release.sh ${{ github.event.inputs.bump_rule }}
+          echo "Poetry version is: $(poetry version --short)"
+          echo "::set-output name=version::$(poetry version --short)"
+
       - id: docs
         name: Bump version on the Documentation
         working-directory: jobbergate-docs
@@ -63,7 +71,7 @@ jobs:
           echo "::set-output name=version::$(poetry version --short)"
 
       - name: Fail if poetry packages version don't match
-        if: ${{ steps.api-package.outputs.version != steps.cli-package.outputs.version != steps.docs.outputs.version}}
+        if: ${{ steps.api-package.outputs.version != steps.core-package.outputs.version != steps.cli-package.outputs.version != steps.docs.outputs.version}}
         run: echo "Poetry packages version don't match!"
 
       - uses: peter-evans/create-pull-request@v4

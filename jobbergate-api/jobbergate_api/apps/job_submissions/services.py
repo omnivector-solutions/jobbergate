@@ -1,6 +1,5 @@
 """Services for the job_submissions resource, including module specific business logic."""
 
-from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.expression import Select
 
 from jobbergate_api.apps.job_submissions.models import JobSubmission
@@ -15,10 +14,11 @@ class JobSubmissionService(CrudService):
     def build_list_query(
         self,
         sort_ascending: bool = True,
-        user_email: str | None = None,
         search: str | None = None,
         sort_field: str | None = None,
-        eager_join: bool = False,
+        include_archived: bool = True,
+        include_files: bool = False,
+        include_parent: bool = False,
         filter_slurm_job_ids: list[int] | None = None,
         **additional_filters,
     ) -> Select:
@@ -27,15 +27,15 @@ class JobSubmissionService(CrudService):
         """
         query: Select = super().build_list_query(
             sort_ascending=sort_ascending,
-            user_email=user_email,
             search=search,
             sort_field=sort_field,
+            include_archived=include_archived,
+            include_files=include_files,
+            include_parent=include_parent,
             **additional_filters,
         )
         if filter_slurm_job_ids:
             query = query.where(JobSubmission.slurm_job_id.in_(filter_slurm_job_ids))
-        if eager_join:
-            query.options(joinedload(JobSubmission.job_script))
         return query
 
 

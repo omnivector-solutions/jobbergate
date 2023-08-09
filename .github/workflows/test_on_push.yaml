@@ -7,6 +7,28 @@ on:
   pull_request:
 
 jobs:
+  core-tests:
+    name: "jobbergate-core tests"
+    runs-on: "ubuntu-20.04"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: Gr1N/setup-poetry@v8
+        with:
+          poetry-version: 1.5.1
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
+          architecture: "x64"
+          cache: "poetry"
+          cache-dependency-path: |
+            jobbergate-core/poetry.lock
+            jobbergate-core/pyproject.toml
+      - name: "run quality control checks"
+        working-directory: jobbergate-core
+        run: |
+          poetry env use "3.8"
+          make qa
+
   api-tests:
     name: "jobbergate-api tests"
     runs-on: "ubuntu-20.04"
@@ -21,8 +43,9 @@ jobs:
     runs-on: "ubuntu-20.04"
     steps:
       - uses: actions/checkout@v3
-      - name: Install poetry
-        run: pipx install poetry==1.4.2
+      - uses: Gr1N/setup-poetry@v8
+        with:
+          poetry-version: 1.5.1
       - uses: actions/setup-python@v4
         with:
           python-version: "3.6"

@@ -5,21 +5,27 @@ Database model for the JobScript resource.
 from __future__ import annotations
 
 from sqlalchemy import Enum, ForeignKey, Integer
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
+from sqlalchemy.sql.expression import Select
 
 from jobbergate_api.apps.constants import FileType
+from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate as JobScriptTemplateModel
 from jobbergate_api.apps.models import Base, CrudMixin, FileMixin
-from jobbergate_api.safe_types import JobSubmission
+from jobbergate_api.safe_types import JobScriptTemplate, JobSubmission
 
 
 class JobScript(CrudMixin, Base):
     """
     Job script table definition.
 
+    Notice all relationships are lazy="raise" to prevent n+1 implicit queries.
+    This means that the relationships must be explicitly eager loaded using
+    helper functions in the class.
+
     Attributes:
         parent_template_id: The id of the parent template.
 
-    See Mixin class definitions for other columns
+    See Mixin class definitions for other columns.
     """
 
     parent_template_id: Mapped[int] = mapped_column(
@@ -31,15 +37,20 @@ class JobScript(CrudMixin, Base):
     files: Mapped[list[JobScriptFile]] = relationship(
         "JobScriptFile",
         back_populates="parent",
-        lazy="selectin",
+        lazy="raise",
         uselist=True,
         cascade="all, delete-orphan",
     )
 
+    template: Mapped[JobScriptTemplate] = relationship(
+        "JobScriptTemplate",
+        back_populates="scripts",
+        lazy="raise",
+    )
     submissions: Mapped[list[JobSubmission]] = relationship(
         "JobSubmission",
         back_populates="job_script",
-        lazy="selectin",
+        lazy="raise",
         uselist=True,
     )
 
@@ -56,6 +67,24 @@ class JobScript(CrudMixin, Base):
         Add parent_template_id as a sortable field.
         """
         return {cls.parent_template_id, *super().sortable_fields()}
+
+    @classmethod
+    def include_files(cls, query: Select) -> Select:
+        """
+        Include custom options on a query to eager load files.
+        """
+        return query.options(selectinload(cls.files))
+
+    @classmethod
+    def include_parent(cls, query: Select) -> Select:
+        """
+        Include custom options on a query to eager load parent data.
+        """
+        return query.options(
+            selectinload(cls.template).load_only(
+                JobScriptTemplateModel.id, JobScriptTemplateModel.identifier, JobScriptTemplateModel.name
+            )
+        )
 
 
 class JobScriptFile(FileMixin, Base):
