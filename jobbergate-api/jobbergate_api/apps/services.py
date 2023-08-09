@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import io
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import contextmanager
 from typing import Any, Generic, Protocol, TypeVar
 
 from botocore.response import StreamingBody
@@ -181,11 +181,21 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         result: Result = await self.session.execute(select(func.count(self.model_type.id)))
         return result.scalar_one()
 
-    async def get(self, locator: Any, include_files: bool = False, include_parent: bool = False) -> CrudModel:
+    async def get(
+        self,
+        locator: Any,
+        include_files: bool = False,
+        include_parent: bool = False,
+        ensure_attributes: dict[str, Any] | None = None,
+    ) -> CrudModel:
         """
         Get a row by locator.
 
         In almost all cases, the locator will just be an ``id`` value.
+
+        Key value pairs can be provided as ``ensure_attributes`` to assert that the
+        key fields have the specified values. This is useful to assert email ownership
+        of a row before modifying it, besides any other attribute.
         """
         query = select(self.model_type).where(self.locate_where_clause(locator))
         if include_parent:
@@ -199,6 +209,8 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
+        if ensure_attributes:
+            self.ensure_attribute(instance, **ensure_attributes)
         return instance
 
     async def delete(self, locator: Any) -> None:
@@ -309,33 +321,22 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         result: Result = await self.session.execute(self.build_list_query(**filter_kwargs))
         return list(result.unique().scalars())  # type: ignore
 
-    @asynccontextmanager
-    async def ensure_attribute(self, locator: Any, **attributes):
+    def ensure_attribute(self, instance: CrudModel, **attributes) -> None:
         """
-        Context manager to ensure that a row has the specified attributes.
+        Ensure that a model instance has the specified values on key attributes.
 
-        This is useful to assert email ownership of a row before modifying it, besides any other attribute.
+        Raises HTTPException if the instance does not have the specified values.
         """
-        selected_columns = [self.model_type.__table__.c[key] for key in attributes.keys()]  # type: ignore
-        query = select(*selected_columns).where(self.locate_where_clause(locator))
-        result: Result = await self.session.execute(query)
-
-        requested_values: tuple[Any] = enforce_defined(
-            result.first(),  # type: ignore
-            f"{self.name} row not found by {locator=}",
-            raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
-        )
-
         with check_expressions(
-            main_message=f"Request not allowed on {self.name} by {locator=} due to mismatch on attribute(s)",
+            main_message="Request not allowed on {} by id={} due to mismatch on attribute(s)".format(
+                self.name, instance.id
+            ),
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_403_FORBIDDEN),
         ) as check:
-            for actual_value, (attr_name, expected_value) in zip(requested_values, attributes.items()):
+            for attr_name, expected_value in attributes.items():
+                actual_value = getattr(instance, attr_name)
                 check(actual_value == expected_value, message=attr_name)
-
-        yield self
 
     @property
     def name(self):

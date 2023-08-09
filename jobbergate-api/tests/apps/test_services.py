@@ -130,6 +130,29 @@ class TestCrudService:
             await dummy_crud_service.get(0)
         assert exc_info.value.status_code == 404
 
+    async def test_get__enforces_attributes(
+        self,
+        dummy_crud_service,
+        tester_email,
+    ):
+        """
+        Test that the ``get()`` calls ``ensure_attribute()`` with the given attributes.
+
+        Different scenarios are tested directly on the ``ensure_attribute()`` method.
+        """
+        test_name = "test-name"
+        created_instance = await dummy_crud_service.create(
+            name=test_name,
+            owner_email=tester_email,
+        )
+        with mock.patch.object(dummy_crud_service, "ensure_attribute") as ensure_attribute:
+            fetched_instance = await dummy_crud_service.get(
+                created_instance.id, ensure_attributes=dict(owner_email=tester_email, name=test_name)
+            )
+        ensure_attribute.assert_called_once_with(created_instance, owner_email=tester_email, name=test_name)
+
+        assert created_instance == fetched_instance
+
     async def test_delete__success_by_id(
         self,
         dummy_crud_service,
@@ -399,8 +422,7 @@ class TestCrudService:
             description="test-description",
             owner_email=tester_email,
         )
-        async with dummy_crud_service.ensure_attribute(created_instance.id, owner_email=tester_email):
-            pass
+        dummy_crud_service.ensure_attribute(created_instance, owner_email=tester_email)
 
     async def test_get_ensure_attribute_multiple_arguments(
         self,
@@ -416,10 +438,7 @@ class TestCrudService:
             description="test-description",
             owner_email=tester_email,
         )
-        async with dummy_crud_service.ensure_attribute(
-            created_instance.id, owner_email=tester_email, name=name
-        ):
-            pass
+        dummy_crud_service.ensure_attribute(created_instance, owner_email=tester_email, name=name)
 
     async def test_get_ensure_ownership__bad_request(
         self,
@@ -427,7 +446,7 @@ class TestCrudService:
         tester_email,
     ):
         """
-        Test that the ``ensure_attribute()`` raises KeyError when a column is not found.
+        Test that the ``ensure_attribute()`` raises AttributeError when a column is not found.
 
         This is a sanity check, error handling may be improved in the future.
         """
@@ -436,22 +455,8 @@ class TestCrudService:
             description="test-description",
             owner_email=tester_email,
         )
-        with pytest.raises(KeyError):
-            async with dummy_crud_service.ensure_attribute(created_instance.id, not_a_column="any-value"):
-                pass
-
-    async def test_get_ensure_ownership__not_found(
-        self,
-        dummy_crud_service,
-        tester_email,
-    ):
-        """
-        Test that the ``get_ensure_ownership()`` returns 404 when the entry is not found.
-        """
-        with pytest.raises(HTTPException) as exc_info:
-            async with dummy_crud_service.ensure_attribute(0, owner_email=tester_email):
-                pass
-        assert exc_info.value.status_code == 404
+        with pytest.raises(AttributeError):
+            dummy_crud_service.ensure_attribute(created_instance, not_a_column="any-value")
 
     async def test_get_ensure_ownership__forbidden(
         self,
@@ -472,16 +477,9 @@ class TestCrudService:
             owner_email=owner_email,
         )
 
-        original_count = await dummy_crud_service.count()
-
         with pytest.raises(HTTPException) as exc_info:
-            async with dummy_crud_service.ensure_attribute(
-                created_instance.id, owner_email=requester_email
-            ) as s:
-                s.delete(created_instance.id)
+            dummy_crud_service.ensure_attribute(created_instance, owner_email=requester_email)
         assert exc_info.value.status_code == 403
-
-        assert await dummy_crud_service.count() == original_count
 
 
 class DummyFile(FileMixin, Base):

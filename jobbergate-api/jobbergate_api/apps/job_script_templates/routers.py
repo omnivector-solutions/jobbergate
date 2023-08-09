@@ -121,11 +121,10 @@ async def job_script_template_update(
 ):
     """Update a job script template by id or identifier."""
     logger.info(f"Updating job script template {id_or_identifier=} with {update_request=}")
-    async with crud_service.ensure_attribute(
-        id_or_identifier,
-        owner_email=secure_session.identity_payload.email,
-    ) as s:
-        return await s.update(id_or_identifier, **update_request.dict(exclude_unset=True))
+    await crud_service.get(
+        id_or_identifier, ensure_attributes={"owner_email": secure_session.identity_payload.email}
+    )
+    return await crud_service.update(id_or_identifier, **update_request.dict(exclude_unset=True))
 
 
 @router.delete(
@@ -141,11 +140,10 @@ async def job_script_template_delete(
 ):
     """Delete a job script template by id or identifier."""
     logger.info(f"Deleting job script template with {id_or_identifier=}")
-    async with crud_service.ensure_attribute(
-        id_or_identifier,
-        owner_email=secure_session.identity_payload.email,
-    ) as s:
-        await s.delete(id_or_identifier)
+    await crud_service.get(
+        id_or_identifier, ensure_attributes={"owner_email": secure_session.identity_payload.email}
+    )
+    await crud_service.delete(id_or_identifier)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -204,12 +202,9 @@ async def job_script_template_upload_file(
         )
 
     logger.debug(f"Uploading file {upload_file.filename} to job script template {id_or_identifier=}")
-
-    async with crud_service.ensure_attribute(
-        id_or_identifier,
-        owner_email=secure_session.identity_payload.email,
-    ) as s:
-        job_script_template = await s.get(id_or_identifier)
+    job_script_template = await crud_service.get(
+        id_or_identifier, ensure_attributes={"owner_email": secure_session.identity_payload.email}
+    )
 
     return await template_file_service.upsert(
         parent_id=job_script_template.id,
@@ -235,12 +230,9 @@ async def job_script_template_delete_file(
     ),
 ):
     """Delete a file from a job script template by id or identifier."""
-    async with crud_service.ensure_attribute(
-        id_or_identifier,
-        owner_email=secure_session.identity_payload.email,
-    ) as s:
-        job_script_template = await s.get(id_or_identifier)
-
+    job_script_template = await crud_service.get(
+        id_or_identifier, ensure_attributes={"owner_email": secure_session.identity_payload.email}
+    )
     job_script_template_file = await template_file_service.get(job_script_template.id, file_name)
     await template_file_service.delete(job_script_template_file)
 
@@ -291,12 +283,9 @@ async def job_script_workflow_upload_file(
 ):
     """Upload a file to a job script workflow by id or identifier."""
     logger.debug(f"Uploading workflow file to job script template {id_or_identifier=}: {runtime_config}")
-    async with crud_service.ensure_attribute(
-        id_or_identifier,
-        owner_email=secure_session.identity_payload.email,
-    ) as s:
-        job_script_template = await s.get(id_or_identifier)
-
+    job_script_template = await crud_service.get(
+        id_or_identifier, ensure_attributes={"owner_email": secure_session.identity_payload.email}
+    )
     return await workflow_file_service.upsert(
         parent_id=job_script_template.id,
         filename=WORKFLOW_FILE_NAME,
@@ -321,11 +310,9 @@ async def job_script_workflow_delete_file(
 ):
     """Delete a workflow file from a job script template by id or identifier."""
     logger.debug(f"Deleting workflow file from job script template {id_or_identifier=}")
-    async with crud_service.ensure_attribute(
-        id_or_identifier,
-        owner_email=secure_session.identity_payload.email,
-    ) as s:
-        job_script_template = await s.get(id_or_identifier)
+    job_script_template = await crud_service.get(
+        id_or_identifier, ensure_attributes={"owner_email": secure_session.identity_payload.email}
+    )
     workflow_file = await workflow_file_service.get(job_script_template.id, WORKFLOW_FILE_NAME)
     await workflow_file_service.delete(workflow_file)
 

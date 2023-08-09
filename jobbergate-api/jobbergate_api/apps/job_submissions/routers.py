@@ -171,8 +171,8 @@ async def job_submission_delete(
 ):
     """Delete job_submission given its id."""
     logger.info(f"Deleting job submission {id=}")
-    async with crud_service.ensure_attribute(id, owner_email=secure_session.identity_payload.email) as s:
-        await s.delete(id)
+    await crud_service.get(id, ensure_attributes={"owner_email": secure_session.identity_payload.email})
+    await crud_service.delete(id)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -191,8 +191,8 @@ async def job_submission_update(
 ):
     """Update a job_submission given its id."""
     logger.debug(f"Updating {id=} with {update_params=}")
-    async with crud_service.ensure_attribute(id, owner_email=secure_session.identity_payload.email) as s:
-        return await s.update(id, **update_params.dict(exclude_unset=True))
+    await crud_service.get(id, ensure_attributes={"owner_email": secure_session.identity_payload.email})
+    return await crud_service.update(id, **update_params.dict(exclude_unset=True))
 
 
 # The "agent" routes are used for agents to fetch pending job submissions and update their statuses
@@ -226,9 +226,8 @@ async def job_submission_agent_update(
         f"for job_submission: {id} "
         f"on client_id: {secure_session.identity_payload.client_id}"
     )
-
-    async with crud_service.ensure_attribute(id, client_id=secure_session.identity_payload.client_id) as s:
-        job_submission = await s.update(id, **update_params.dict(exclude_unset=True))
+    await crud_service.get(id, ensure_attributes={"client_id": secure_session.identity_payload.client_id})
+    job_submission = await crud_service.update(id, **update_params.dict(exclude_unset=True))
 
     if update_params.report_message and update_params.status == JobSubmissionStatus.REJECTED:
         notify_submission_rejected(id, update_params.report_message, job_submission.owner_email)

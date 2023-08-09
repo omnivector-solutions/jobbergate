@@ -200,8 +200,8 @@ async def job_script_update(
 ):
     """Update a job script template by id or identifier."""
     logger.info(f"Updating job script {id=} with {update_params=}")
-    async with crud_service.ensure_attribute(id, owner_email=secure_session.identity_payload.email) as s:
-        return await s.update(id, **update_params.dict(exclude_unset=True))
+    await crud_service.get(id, ensure_attributes={"owner_email": secure_session.identity_payload.email})
+    return await crud_service.update(id, **update_params.dict(exclude_unset=True))
 
 
 @router.delete(
@@ -217,8 +217,8 @@ async def job_script_delete(
 ):
     """Delete a job script template by id or identifier."""
     logger.info(f"Deleting job script {id=}")
-    async with crud_service.ensure_attribute(id, owner_email=secure_session.identity_payload.email) as s:
-        await s.delete(id)
+    await crud_service.get(id, ensure_attributes={"owner_email": secure_session.identity_payload.email})
+    await crud_service.delete(id)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -274,8 +274,9 @@ async def job_script_upload_file(
 
     logger.debug(f"Uploading file {upload_file.filename} to job script {id=}")
 
-    async with crud_service.ensure_attribute(id, owner_email=secure_session.identity_payload.email) as s:
-        job_script = await s.get(id)
+    job_script = await crud_service.get(
+        id, ensure_attributes={"owner_email": secure_session.identity_payload.email}
+    )
 
     await file_service.upsert(
         parent_id=job_script.id,
@@ -301,8 +302,9 @@ async def job_script_delete_file(
     ),
 ):
     """Delete a file from a job script template by id or identifier."""
-    async with crud_service.ensure_attribute(id, owner_email=secure_session.identity_payload.email) as s:
-        job_script = await s.get(id)
+    job_script = await crud_service.get(
+        id, ensure_attributes={"owner_email": secure_session.identity_payload.email}
+    )
     job_script_file = await file_service.get(job_script.id, file_name)
     await file_service.delete(job_script_file)
 
