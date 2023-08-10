@@ -316,7 +316,8 @@ def show_files(
         tmp_path = pathlib.Path(tmp_dir)
         file_list = save_job_script_files(jg_ctx, result, tmp_path)
 
-        for (filename, metadata), file_path in zip(result.files.items(), file_list):
+        for metadata, file_path in zip(result.files, file_list):
+            filename = metadata.filename
             file_content = file_path.read_text()
             is_main_file = metadata.file_type.upper() == "ENTRYPOINT"
             if plain or jg_ctx.raw_output:

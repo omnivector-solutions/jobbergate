@@ -56,7 +56,7 @@ def test_fetch_application_data__success__using_id(
 
     result = fetch_application_data(dummy_context, id=app_id)
     assert fetch_route.called
-    assert result == ApplicationResponse(**app_data)
+    assert result == ApplicationResponse.parse_obj(app_data)
 
 
 def test_fetch_application_data__success__using_identifier(
@@ -77,7 +77,7 @@ def test_fetch_application_data__success__using_identifier(
 
     result = fetch_application_data(dummy_context, identifier=app_identifier)
     assert fetch_route.called
-    assert result == ApplicationResponse(**app_data)
+    assert result == ApplicationResponse.parse_obj(app_data)
 
 
 def test_fetch_application_data__fails_with_both_id_or_identifier(dummy_context):
@@ -99,12 +99,15 @@ def test_load_application_data__success(dummy_module_source, dummy_config_source
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
         template_vars=expected_config.application_config,
-        workflow_file=WorkflowFileResponse(
-            runtime_config=expected_config.jobbergate_config.dict(),
-            created_at=datetime.datetime.now(),
-            updated_at=datetime.datetime.now(),
-            path="jobbergate/job-script-templates/1/upload/workflow",
-        ),
+        workflow_files=[
+            WorkflowFileResponse(
+                filename="jobbergate.py",
+                parent_id=1,
+                runtime_config=expected_config.jobbergate_config.dict(),
+                created_at=datetime.datetime.now(),
+                updated_at=datetime.datetime.now(),
+            )
+        ],
     )
 
     actual_config, app_module = load_application_data(application_data, dummy_module_source)
@@ -122,12 +125,15 @@ def test_load_application_data__fails_if_application_module_cannot_be_loaded_fro
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
         template_vars=expected_config.application_config,
-        workflow_file=WorkflowFileResponse(
-            runtime_config=expected_config.jobbergate_config.dict(),
-            created_at=datetime.datetime.now(),
-            updated_at=datetime.datetime.now(),
-            path="jobbergate/job-script-templates/1/upload/workflow",
-        ),
+        workflow_files=[
+            WorkflowFileResponse(
+                filename="jobbergate.py",
+                parent_id=1,
+                runtime_config=expected_config.jobbergate_config.dict(),
+                created_at=datetime.datetime.now(),
+                updated_at=datetime.datetime.now(),
+            )
+        ],
     )
 
     with pytest.raises(Abort, match="The application source fetched from the API is not valid"):
@@ -146,7 +152,7 @@ def test_load_application_data__fails_if_application_config_is_not_valid_YAML(
         created_at=datetime.datetime.now(),
         updated_at=datetime.datetime.now(),
         template_vars=expected_config.application_config,
-        workflow_file=None,
+        workflow_files=[],
     )
 
     with pytest.raises(Abort, match="No workflow file found in application data"):
@@ -358,26 +364,27 @@ class TestDownloadApplicationFiles:
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
             template_vars=application_config.application_config,
-            template_files={
-                "test-job-script.py.j2": TemplateFileResponse(
+            template_files=[
+                TemplateFileResponse(
                     filename="test-job-script.py.j2",
+                    parent_id=1,
                     created_at=datetime.datetime.now(),
                     updated_at=datetime.datetime.now(),
                     file_type="ENTRYPOINT",
-                    path="jobbergate/job-script-templates/1/upload/template/test-job-script.py.j2",
                 )
-            },
-            workflow_file=WorkflowFileResponse(
-                runtime_config=application_config.jobbergate_config.dict(),
-                created_at=datetime.datetime.now(),
-                updated_at=datetime.datetime.now(),
-                path="jobbergate/job-script-templates/1/upload/workflow",
-            ),
+            ],
+            workflow_files=[
+                WorkflowFileResponse(
+                    filename="jobbergate.py",
+                    parent_id=1,
+                    runtime_config=application_config.jobbergate_config.dict(),
+                    created_at=datetime.datetime.now(),
+                    updated_at=datetime.datetime.now(),
+                )
+            ],
         )
 
-        get_template_routes = [
-            respx_mock.get(f"{dummy_domain}/{t.path}") for t in application_data.template_files.values()
-        ]
+        get_template_routes = [respx_mock.get(f"{dummy_domain}{t.path}") for t in application_data.template_files]
         for route in get_template_routes:
             route.mock(
                 return_value=httpx.Response(
@@ -385,7 +392,7 @@ class TestDownloadApplicationFiles:
                     content=dummy_template_source.encode(),
                 ),
             )
-        get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_data.workflow_file.path}")
+        get_workflow_route = respx_mock.get(f"{dummy_domain}{application_data.workflow_files[0].path}")
         get_workflow_route.mock(
             return_value=httpx.Response(
                 httpx.codes.OK,

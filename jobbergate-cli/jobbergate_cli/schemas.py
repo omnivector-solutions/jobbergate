@@ -87,18 +87,27 @@ class JobbergateApplicationConfig(pydantic.BaseModel):
 
 
 class TemplateFileResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+    parent_id: int
     filename: str
     file_type: str
     created_at: datetime
     updated_at: datetime
-    path: str
+
+    @property
+    def path(self) -> str:
+        return f"/jobbergate/job-script-templates/{self.parent_id}/upload/template/{self.filename}"
 
 
 class WorkflowFileResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+    parent_id: int
+    filename: str
     runtime_config: Dict[str, Any] = {}
     created_at: datetime
     updated_at: datetime
-    path: str
+
+    @property
+    def path(self) -> str:
+        return f"/jobbergate/job-script-templates/{self.parent_id}/upload/workflow"
 
 
 class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
@@ -115,8 +124,8 @@ class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     description: Optional[str] = None
     template_vars: Dict[str, Any] = {}
 
-    template_files: Dict[str, TemplateFileResponse] = {}
-    workflow_file: Optional[WorkflowFileResponse] = None
+    template_files: List[TemplateFileResponse] = []
+    workflow_files: List[WorkflowFileResponse] = []
 
 
 class JobScriptFiles(pydantic.BaseModel, extra=pydantic.Extra.ignore):
@@ -124,11 +133,15 @@ class JobScriptFiles(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     Model containing job-script files.
     """
 
+    parent_id: int
     filename: str
     file_type: str
     created_at: datetime
     updated_at: datetime
-    path: str
+
+    @property
+    def path(self) -> str:
+        return f"/jobbergate/job-scripts/{self.parent_id}/upload/{self.filename}"
 
 
 class JobScriptResponse(
@@ -144,10 +157,11 @@ class JobScriptResponse(
     application_id: Optional[int] = pydantic.Field(None, alias="parent_template_id")
     name: str
     description: Optional[str] = None
-    files: Dict[str, JobScriptFiles] = {}
     owner_email: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+    files: List[JobScriptFiles] = []
 
 
 class JobSubmissionResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
@@ -228,13 +242,3 @@ class ClusterCacheData(pydantic.BaseModel):
 
     updated_at: datetime
     client_ids: List[str]
-
-
-class ForeignKeyError(pydantic.BaseModel):
-    """
-    A model describing the structure of a foreign-key constraint error on delete.
-    """
-
-    message: str
-    table: str
-    pk_id: int

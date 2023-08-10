@@ -9,7 +9,6 @@ import pydantic
 from loguru import logger
 
 from jobbergate_cli.exceptions import Abort
-from jobbergate_cli.schemas import ForeignKeyError
 from jobbergate_cli.text_tools import dedent, unwrap
 
 
@@ -149,21 +148,7 @@ def make_request(
         )
 
     if expected_status is not None and response.status_code != expected_status:
-        if method == "DELETE" and response.status_code == 409:
-            details = response.json()["detail"]
-            fk_error = ForeignKeyError(**details)
-            raise Abort(
-                dedent(
-                    f"""
-                    {abort_message}:
-                    There are [red]{fk_error.table}[/red] that reference id [bold yellow]{fk_error.pk_id}[/bold yellow].
-                    """,
-                ),
-                subject=abort_subject,
-                log_message=f"Could not delete due to foreign-key constraint: {response.text}",
-            )
-        elif method in ("PATCH", "PUT", "DELETE") and response.status_code == 403 and "does not own" in response.text:
-            details = response.json()["detail"]
+        if method in ("PATCH", "PUT", "DELETE") and response.status_code == 403 and "does not own" in response.text:
             raise Abort(
                 dedent(
                     f"""
