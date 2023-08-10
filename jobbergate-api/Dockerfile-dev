@@ -1,12 +1,12 @@
-FROM python:3.10-slim-buster
+FROM python:3.11-slim-buster
 
 RUN apt update && apt install -y curl libpq-dev gcc make
 
 RUN curl -sSL https://install.python-poetry.org | \
-    POETRY_HOME=/opt/poetry POETRY_VERSION=1.4.2 python && \
-    cd /usr/local/bin && \
-    ln -s /opt/poetry/bin/poetry && \
-    poetry config virtualenvs.create false
+POETRY_HOME=/opt/poetry POETRY_VERSION=1.5.1 python && \
+cd /usr/local/bin && \
+ln -s /opt/poetry/bin/poetry && \
+poetry config virtualenvs.create false
 
 COPY ./pyproject.toml ./poetry.lock* ./README* ./LICENSE* ./Makefile /app/
 WORKDIR /app
