@@ -37,7 +37,9 @@ class JobSubmission(CrudMixin, Base):
     See Mixin class definitions for other columns
     """
 
-    job_script_id: Mapped[int] = mapped_column(Integer, ForeignKey("job_scripts.id"), nullable=True)
+    job_script_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("job_scripts.id", ondelete="SET NULL"), nullable=True
+    )
     execution_directory: Mapped[str] = mapped_column(String, default=None, nullable=True)
     slurm_job_id: Mapped[int] = mapped_column(Integer, default=None, nullable=True)
     client_id: Mapped[str] = mapped_column(String, nullable=False, index=True)

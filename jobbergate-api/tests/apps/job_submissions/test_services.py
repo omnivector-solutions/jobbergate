@@ -1,8 +1,6 @@
 """Database models for the job scripts resource."""
-from typing import Any
 
 import pytest
-from fastapi import HTTPException
 from sqlalchemy import inspect
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.job_submissions.services import crud_service
