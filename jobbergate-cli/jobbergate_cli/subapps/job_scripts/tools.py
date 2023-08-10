@@ -187,7 +187,7 @@ def create_job_script(
 
     app_data = fetch_application_data(jg_ctx, id=application_id, identifier=application_identifier)
 
-    if not app_data.workflow_file:
+    if not app_data.workflow_files:
         raise Abort(
             f"Application {app_data.id} does not have a workflow file",
             subject="Workflow file not found",
@@ -198,7 +198,7 @@ def create_job_script(
         tmp_file_path = pathlib.Path(fp.name)
         make_request(
             jg_ctx.client,
-            app_data.workflow_file.path,
+            app_data.workflow_files[0].path,
             "GET",
             expected_status=200,
             abort_message="Couldn't retrieve application module file from API",
@@ -253,9 +253,7 @@ def create_job_script(
 def update_template_files_information(app_data: ApplicationResponse, app_config: JobbergateApplicationConfig):
     """Update the information about the template files if not already present in the configuration."""
     if not app_config.jobbergate_config.default_template:
-        list_of_entrypoints = [
-            i.filename for i in app_data.template_files.values() if i.file_type.upper() == "ENTRYPOINT"
-        ]
+        list_of_entrypoints = [i.filename for i in app_data.template_files if i.file_type.upper() == "ENTRYPOINT"]
         if len(list_of_entrypoints) != 1:
             raise Abort(
                 f"Application {app_data.id} does not have one entry point, found {len(list_of_entrypoints)}",
@@ -265,9 +263,7 @@ def update_template_files_information(app_data: ApplicationResponse, app_config:
         app_config.jobbergate_config.default_template = list_of_entrypoints[0]
 
     if not app_config.jobbergate_config.supporting_files:
-        list_of_supporting_files = [
-            i.filename for i in app_data.template_files.values() if i.file_type.upper() == "SUPPORT"
-        ]
+        list_of_supporting_files = [i.filename for i in app_data.template_files if i.file_type.upper() == "SUPPORT"]
         if list_of_supporting_files:
             app_config.jobbergate_config.supporting_files = list_of_supporting_files
 
@@ -286,7 +282,8 @@ def save_job_script_files(
     logger.debug(f"Saving job script files to {destination_path.as_posix()}")
     saved_files: List[pathlib.Path] = []
 
-    for filename, metadata in job_script_data.files.items():
+    for metadata in job_script_data.files:
+        filename = metadata.filename
         file_path = destination_path / filename
         file_path.parent.mkdir(parents=True, exist_ok=True)
         make_request(

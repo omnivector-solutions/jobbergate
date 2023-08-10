@@ -99,7 +99,7 @@ def load_application_data(
     :param: app_data: A dictionary containing the application data
     :returns: A tuple containing the application config and the application module
     """
-    if app_data.workflow_file is None:  # make type checker happy
+    if not app_data.workflow_files:  # make type checker happy
         raise Abort(
             "No workflow file found in application data",
             subject="Invalid application data",
@@ -107,7 +107,7 @@ def load_application_data(
         )
     try:
         app_config = JobbergateApplicationConfig(
-            jobbergate_config=JobbergateConfig(**app_data.workflow_file.runtime_config),
+            jobbergate_config=JobbergateConfig(**app_data.workflow_files[0].runtime_config),
             application_config=app_data.template_vars,
         )
     except Exception as err:
@@ -267,10 +267,10 @@ def save_application_files(
     logger.debug(f"Saving application files to {destination_path.as_posix()}")
     saved_files: List[pathlib.Path] = []
 
-    if application_data.workflow_file is not None:
+    if application_data.workflow_files:
         application_config = JobbergateApplicationConfig(
             application_config=application_data.template_vars,
-            jobbergate_config=JobbergateConfig(**application_data.workflow_file.runtime_config),
+            jobbergate_config=JobbergateConfig(**application_data.workflow_files[0].runtime_config),
         )
         config_path = destination_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
         config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -287,7 +287,7 @@ def save_application_files(
         )
         saved_files.append(config_path)
 
-    for template_file in application_data.template_files.values():
+    for template_file in application_data.template_files:
         template_path = destination_path / "templates" / template_file.filename
         make_request(
             jg_ctx.client,
@@ -299,11 +299,11 @@ def save_application_files(
         )
         saved_files.append(template_path)
 
-    if application_data.workflow_file is not None:
+    if application_data.workflow_files:
         workflow_path = destination_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
         make_request(
             jg_ctx.client,
-            application_data.workflow_file.path,
+            application_data.workflow_files[0].path,
             "GET",
             expected_status=200,
             abort_message="Couldn't retrieve application module file from API",

@@ -53,7 +53,7 @@ def test_fetch_job_script_data__success(
         ),
     )
     job_script = fetch_job_script_data(dummy_context, 1)
-    assert job_script == JobScriptResponse(**dummy_job_script_data[0])
+    assert job_script == JobScriptResponse.parse_obj(dummy_job_script_data[0])
 
 
 def test_create_job_script__providing_a_name(
@@ -77,8 +77,8 @@ def test_create_job_script__providing_a_name(
         "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
         return_value=application_response,
     )
-    assert application_response.workflow_file is not None
-    get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_response.workflow_file.path}")
+    assert application_response.workflow_files is not None
+    get_workflow_route = respx_mock.get(f"{dummy_domain}{application_response.workflow_files[0].path}")
     get_workflow_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -148,8 +148,8 @@ def test_create_job_script__without_a_name(
         "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
         return_value=application_response,
     )
-    assert application_response.workflow_file is not None
-    get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_response.workflow_file.path}")
+    assert application_response.workflow_files is not None
+    get_workflow_route = respx_mock.get(f"{dummy_domain}{application_response.workflow_files[0].path}")
     get_workflow_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -216,7 +216,7 @@ class TestSaveJobScriptFiles:
         """
         job_script_data = JobScriptResponse.parse_obj(dummy_job_script_data[0])
 
-        get_file_routes = [respx_mock.get(f"{dummy_domain}/{f.path}") for f in job_script_data.files.values()]
+        get_file_routes = [respx_mock.get(f"{dummy_domain}{f.path}") for f in job_script_data.files]
         for route in get_file_routes:
             route.mock(
                 return_value=httpx.Response(
@@ -224,7 +224,7 @@ class TestSaveJobScriptFiles:
                     content=dummy_template_source.encode(),
                 ),
             )
-        desired_list_of_files = [tmp_path / f.filename for f in job_script_data.files.values()]
+        desired_list_of_files = [tmp_path / f.filename for f in job_script_data.files]
 
         assert len(desired_list_of_files) >= 1
 

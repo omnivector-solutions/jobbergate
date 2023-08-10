@@ -77,20 +77,23 @@ def dummy_application_data():
             owner_email="tucker.beck@omnivector.solutions",
             created_at="2022-03-01 17:31:00",
             updated_at="2022-03-01 17:31:00",
-            template_files={
-                "test-job-script.py.j2": {
+            template_files=[
+                {
                     "filename": "test-job-script.py.j2",
+                    "parent_id": 1,
                     "created_at": "2022-03-01 17:31:00",
                     "updated_at": "2022-03-01 17:31:00",
                     "file_type": "ENTRYPOINT",
-                    "path": "jobbergate/job-script-templates/1/upload/template/test-job-script.py.j2",
                 }
-            },
-            workflow_file={
-                "created_at": "2022-03-01 17:31:00",
-                "updated_at": "2022-03-01 17:31:00",
-                "path": "jobbergate/job-script-templates/1/upload/workflow",
-            },
+            ],
+            workflow_files=[
+                {
+                    "filename": "jobbergate.py",
+                    "parent_id": 1,
+                    "created_at": "2022-03-01 17:31:00",
+                    "updated_at": "2022-03-01 17:31:00",
+                },
+            ],
         ),
         dict(
             id=2,
@@ -114,20 +117,17 @@ def dummy_application_data():
 
 
 @pytest.fixture
-def dummy_job_script_files():
+def dummy_job_script_file():
     return {
-        "application.sh": {
-            "filename": "application.sh",
-            "file_type": "ENTRYPOINT",
-            "created_at": "2022-03-01 17:31:00",
-            "updated_at": "2022-03-01 17:31:00",
-            "path": "jobbergate/job-scripts/1/upload/application.sh",
-        }
+        "filename": "application.sh",
+        "file_type": "ENTRYPOINT",
+        "created_at": "2022-03-01 17:31:00",
+        "updated_at": "2022-03-01 17:31:00",
     }
 
 
 @pytest.fixture
-def dummy_job_script_data(dummy_application_data, dummy_job_script_files):
+def dummy_job_script_data(dummy_application_data, dummy_job_script_file):
     return [
         dict(
             id=1,
@@ -137,7 +137,7 @@ def dummy_job_script_data(dummy_application_data, dummy_job_script_files):
             description="Job Script 1",
             owner_email="tucker@omnivector.solutions",
             application_id=dummy_application_data[0]["id"],
-            files=dummy_job_script_files,
+            files=[dict(parent_id=1, **dummy_job_script_file)],
         ),
         dict(
             id=2,
@@ -147,7 +147,7 @@ def dummy_job_script_data(dummy_application_data, dummy_job_script_files):
             description="Job Script 2",
             owner_email="tucker@omnivector.solutions",
             application_id=1,
-            files=dummy_job_script_files,
+            files=[dict(parent_id=2, **dummy_job_script_file)],
         ),
         dict(
             id=3,
@@ -157,7 +157,7 @@ def dummy_job_script_data(dummy_application_data, dummy_job_script_files):
             description="Job Script 3",
             owner_email="james@omnivector.solutions",
             application_id=1,
-            files=dummy_job_script_files,
+            files=[dict(parent_id=3, **dummy_job_script_file)],
         ),
     ]
 

@@ -20,7 +20,7 @@ from jobbergate_cli.subapps.applications.tools import fetch_application_data, sa
 HIDDEN_FIELDS = [
     "template_vars",
     "template_files",
-    "workflow_file",
+    "workflow_files",
     "created_at",
     "updated_at",
 ]

@@ -6,7 +6,13 @@ from unittest import mock
 import httpx
 import pytest
 
-from jobbergate_cli.schemas import ApplicationResponse, JobScriptResponse, JobSubmissionResponse, ListResponseEnvelope
+from jobbergate_cli.schemas import (
+    ApplicationResponse,
+    JobScriptFiles,
+    JobScriptResponse,
+    JobSubmissionResponse,
+    ListResponseEnvelope,
+)
 from jobbergate_cli.subapps.job_scripts.app import (
     HIDDEN_FIELDS,
     JOB_SUBMISSION_HIDDEN_FIELDS,
@@ -141,8 +147,8 @@ def test_create__non_fast_mode_and_job_submission(
         "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
         return_value=application_response,
     )
-    assert application_response.workflow_file is not None
-    get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_response.workflow_file.path}")
+    assert len(application_response.workflow_files) >= 1
+    get_workflow_route = respx_mock.get(f"{dummy_domain}{application_response.workflow_files[0].path}")
     get_workflow_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -272,8 +278,8 @@ def test_create__with_fast_mode_and_no_job_submission(
         "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
         return_value=application_response,
     )
-    assert application_response.workflow_file is not None
-    get_workflow_route = respx_mock.get(f"{dummy_domain}/{application_response.workflow_file.path}")
+    assert len(application_response.workflow_files) >= 1
+    get_workflow_route = respx_mock.get(f"{dummy_domain}{application_response.workflow_files[0].path}")
     get_workflow_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -413,7 +419,9 @@ def test_show_files__success(
         ),
     )
 
-    get_file_routes = [respx_mock.get(f"{dummy_domain}/{f['path']}") for f in job_script_data["files"].values()]
+    get_file_routes = [
+        respx_mock.get(f"{dummy_domain}{JobScriptFiles.parse_obj(f).path}") for f in job_script_data["files"]
+    ]
     for route in get_file_routes:
         route.mock(
             return_value=httpx.Response(
@@ -473,7 +481,7 @@ class TestDownloadJobScriptFiles:
         with mock.patch.object(pathlib.Path, "cwd", return_value=tmp_path):
             with mock.patch(
                 "jobbergate_cli.subapps.job_scripts.tools.save_job_script_files",
-                return_value=list(job_script_data["files"].keys()),
+                return_value=list(f["filename"] for f in job_script_data["files"]),
             ) as mocked_save_job_script_files:
                 result = cli_runner.invoke(test_app, shlex.split("download --id=1"))
 
