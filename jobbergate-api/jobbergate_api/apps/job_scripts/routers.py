@@ -52,12 +52,10 @@ async def job_script_create(
             detail="The token payload does not contain an email",
         )
 
-    new_job_script = await crud_service.create(
+    return await crud_service.create(
         owner_email=secure_session.identity_payload.email,
         **create_request.dict(exclude_unset=True),
     )
-
-    return new_job_script
 
 
 @router.post(

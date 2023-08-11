@@ -56,7 +56,7 @@ async def job_script_template_create(
         )
 
     try:
-        new_job_template = await crud_service.create(
+        return await crud_service.create(
             owner_email=secure_session.identity_payload.email,
             **create_request.dict(exclude_unset=True),
         )
@@ -64,8 +64,6 @@ async def job_script_template_create(
         message = f"Job script template with the {create_request.identifier=} already exists"
         logger.error(message)
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=message)
-
-    return new_job_template
 
 
 @router.get(

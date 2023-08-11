@@ -42,6 +42,22 @@ class TestJobScriptTemplateCrudService:
         locator = getattr(instance, locator_attribute)
         assert await crud_service.get(locator) == instance
 
+    @pytest.mark.parametrize("identifier", ("", " ", "10"))
+    async def test_create__invalid_identifier(self, identifier, template_test_data):
+        """Test that the template is not created with an invalid identifier."""
+        template_test_data["identifier"] = identifier
+        with pytest.raises(HTTPException) as exc_info:
+            await crud_service.create(**template_test_data)
+        assert exc_info.value.status_code == 422
+
+    @pytest.mark.parametrize("identifier", ("", " ", "10"))
+    async def test_update__invalid_identifier(self, identifier, template_test_data):
+        """Test that the template is not updated with an invalid identifier."""
+        instance = await crud_service.create(**template_test_data)
+        with pytest.raises(HTTPException) as exc_info:
+            await crud_service.update(instance.id, identifier=identifier)
+        assert exc_info.value.status_code == 422
+
     @pytest.mark.parametrize("locator_attribute", ("id", "identifier"))
     async def test_delete__success(
         self,
