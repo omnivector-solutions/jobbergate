@@ -31,7 +31,6 @@ def test_find_templates(tmp_path):
 
 
 def test_get_template_files(temp_cd, tmp_path):
-
     templates_path = tmp_path / "templates"
     templates_path.mkdir()
     template1 = templates_path / "template1.j2"

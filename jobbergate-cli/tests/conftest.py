@@ -44,11 +44,11 @@ def tweak_settings():
         Context manager for tweaking app settings temporarily.
         """
         previous_values = {}
-        for (key, value) in kwargs.items():
+        for key, value in kwargs.items():
             previous_values[key] = getattr(settings, key)
             setattr(settings, key, value)
         yield
-        for (key, value) in previous_values.items():
+        for key, value in previous_values.items():
             setattr(settings, key, value)
 
     return _helper

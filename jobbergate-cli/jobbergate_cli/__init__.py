@@ -5,9 +5,6 @@ Jobbergate command-line interface and app library
 import importlib
 import warnings
 
-# This is a backport of PEP-562 for python3.6
-from pep562 import pep562
-
 from jobbergate_cli.config import settings
 
 
@@ -24,6 +21,3 @@ def __getattr__(name: str):
 
     else:
         raise AttributeError(f"module {__name__} has no attribute {name}")
-
-
-pep562(__name__)

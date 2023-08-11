@@ -13,7 +13,6 @@ from jobbergate_cli.text_tools import dedent, unwrap
 
 
 if settings.JOBBERGATE_COMPATIBILITY_MODE:
-
     from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase  # noqa
 
     warnings.warn(

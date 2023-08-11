@@ -15,7 +15,7 @@ test: install
 lint: install
 	poetry run black --check ${PACKAGE_NAME} tests
 	poetry run isort --check ${PACKAGE_NAME} tests
-	poetry run pflake8 ${PACKAGE_NAME} tests
+	poetry run flake8 ${PACKAGE_NAME} tests
 
 .PHONY: mypy
 mypy: install
