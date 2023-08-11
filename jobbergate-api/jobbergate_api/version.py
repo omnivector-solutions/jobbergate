@@ -4,7 +4,7 @@ Provide the version of the package.
 
 from importlib import metadata
 
-import toml
+import tomllib
 
 
 def get_version_from_metadata() -> str:
@@ -24,7 +24,8 @@ def get_version_from_poetry() -> str:
     This is a fallback method if the package is not installed, but just copied
     and accessed locally, like in a Docker image.
     """
-    return toml.load("pyproject.toml")["tool"]["poetry"]["version"]
+    with open("pyproject.toml", "rb") as file:
+        return tomllib.load(file)["tool"]["poetry"]["version"]
 
 
 def get_version() -> str:

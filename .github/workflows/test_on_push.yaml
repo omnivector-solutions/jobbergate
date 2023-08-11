@@ -43,19 +43,17 @@ jobs:
     runs-on: "ubuntu-20.04"
     steps:
       - uses: actions/checkout@v3
-      - uses: Gr1N/setup-poetry@v8
-        with:
-          poetry-version: 1.5.1
       - uses: actions/setup-python@v4
+        id: cp36
         with:
           python-version: "3.6"
           architecture: "x64"
-          cache: "poetry"
-          cache-dependency-path: |
-            jobbergate-cli/poetry.lock
-            jobbergate-cli/pyproject.toml
       - name: "run quality control checks"
         working-directory: jobbergate-cli
+        # This workaround is required to ensure poetry is installed on 3.6
         run: |
-          poetry env use 3.6
+          ${{ steps.cp36.outputs.python-path }} -m venv .venv
+          source .venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install poetry==1.1.14
           make qa

@@ -733,7 +733,9 @@ async def test_get_job_submissions__with_status_param(
         )
 
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
-    response = await client.get(f"/jobbergate/job-submissions?submit_status={JobSubmissionStatus.CREATED}")
+    response = await client.get(
+        "/jobbergate/job-submissions", params=dict(submit_status=JobSubmissionStatus.CREATED.value)
+    )
     assert unpack_response(response, key="name", sort=True) == ["sub1", "sub2"]
 
 
