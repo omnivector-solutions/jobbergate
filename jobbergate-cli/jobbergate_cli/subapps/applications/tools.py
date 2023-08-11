@@ -209,7 +209,7 @@ def upload_application(
         relative_template_path = complete_template_path.relative_to(application_path)
         logger.debug(f"Preparing to upload {relative_template_path}")
 
-        with open(complete_template_path, "r", newline="") as template_file:
+        with open(complete_template_path, "rb") as template_file:
             if relative_template_path.as_posix() in supporting_files:
                 file_type = FileType.SUPPORT
             else:
@@ -231,7 +231,7 @@ def upload_application(
                 return False
 
     logger.debug(f"Preparing to upload {JOBBERGATE_APPLICATION_MODULE_FILE_NAME}")
-    with open(module_file_path, "r", newline="") as module_file:
+    with open(module_file_path, "rb") as module_file:
         response_code = cast(
             int,
             make_request(
