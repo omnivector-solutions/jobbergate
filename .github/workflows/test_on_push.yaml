@@ -49,7 +49,9 @@ jobs:
           python-version: "3.6"
           architecture: "x64"
       - name: Install poetry
-        run: pipx install poetry==1.1.14 --python '${{ steps.cp36.outputs.python-path }}'
+        run: pipx install poetry==1.1.14
       - name: "run quality control checks"
         working-directory: jobbergate-cli
-        run: make qa
+        run: |
+          poetry env use ${{ steps.cp36.outputs.python-path }}
+          make qa
