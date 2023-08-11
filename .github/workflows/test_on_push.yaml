@@ -43,19 +43,13 @@ jobs:
     runs-on: "ubuntu-20.04"
     steps:
       - uses: actions/checkout@v3
-      - uses: Gr1N/setup-poetry@v8
-        with:
-          poetry-version: 1.5.1
       - uses: actions/setup-python@v4
+        id: cp36
         with:
           python-version: "3.6"
           architecture: "x64"
-          cache: "poetry"
-          cache-dependency-path: |
-            jobbergate-cli/poetry.lock
-            jobbergate-cli/pyproject.toml
+      - name: Install poetry
+        run: pipx install poetry==1.1.14 --python '${{ steps.cp36.outputs.python-path }}'
       - name: "run quality control checks"
         working-directory: jobbergate-cli
-        run: |
-          poetry env use 3.6
-          make qa
+        run: make qa
