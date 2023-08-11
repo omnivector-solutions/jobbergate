@@ -283,7 +283,6 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
         settings.OIDC_MAX_POLL_TIME,
         message="Waiting for web login",
     ):
-
         response_data = cast(
             Dict,
             make_request(

@@ -49,7 +49,6 @@ def pull_client_ids_from_api(ctx: JobbergateContext) -> List[str]:
 
 
 def save_clusters_to_cache(client_ids: List[str]):
-
     # Make static type checkers happy
     assert settings.JOBBERGATE_CLUSTER_LIST_PATH is not None
 
@@ -63,7 +62,6 @@ def save_clusters_to_cache(client_ids: List[str]):
 
 
 def load_clusters_from_cache() -> Optional[List[str]]:
-
     # Make static type checkers happy
     assert settings.JOBBERGATE_CLUSTER_LIST_PATH is not None
 

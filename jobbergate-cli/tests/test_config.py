@@ -17,7 +17,6 @@ def test_SENTRY_TRACE_RATE__requires_float_in_valid_range():
 
 
 def test_Validation_error__when_parameter_is_missing():
-
     original_value = os.environ.get("OIDC_DOMAIN")
     try:
         if "OIDC_DOMAIN" in os.environ:
