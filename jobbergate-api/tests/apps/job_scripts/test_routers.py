@@ -644,3 +644,10 @@ class TestJobScriptFiles:
         inject_security_header(requester_email, Permissions.JOB_SCRIPTS_EDIT)
         response = await client.delete(f"jobbergate/job-scripts/{parent_id}/upload/{job_script_filename}")
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+async def test_auto_clean_unused_entries(client, tester_email, inject_security_header):
+    """Test that unused job scripts are automatically cleaned."""
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
+    response = await client.delete("jobbergate/job-scripts/clean-unused-entries")
+    assert response.status_code == status.HTTP_202_ACCEPTED

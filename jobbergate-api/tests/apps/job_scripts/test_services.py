@@ -2,6 +2,7 @@
 from itertools import product
 from typing import Any
 
+import pendulum
 import pytest
 from fastapi import HTTPException
 from sqlalchemy import inspect
@@ -175,3 +176,156 @@ class TestIntegration:
         assert [s.job_script_id for s in actual_submissions] == [
             s.get("job_script_id") for s in expected_submissions
         ]
+
+
+class TestAutoCleanUnusedJobScripts:
+    """
+    Test the auto_clean_unused_job_scripts method.
+    """
+
+    DAYS_TO_ARCHIVE = 1
+    DAYS_TO_DELETE = 3
+
+    @pytest.fixture(autouse=True)
+    async def setup(self, synth_session, tweak_settings):
+        """
+        Ensure that the services are bound for each method in this test class.
+        """
+        with (
+            crud_service.bound_session(synth_session),
+            submission_crud_service.bound_session(synth_session),
+        ):
+            yield
+
+    @pytest.fixture
+    def time_now(self):
+        """
+        Test fixture to freeze time for testing
+        """
+        time_now = pendulum.datetime(2023, 1, 1)
+        with pendulum.test(pendulum.datetime(2023, 1, 1)):
+            yield time_now
+
+    @pytest.fixture
+    async def dummy_data(self, fill_job_script_data, fill_job_submission_data, time_now):
+        """
+        Create dummy test data.
+        """
+        result = []
+        for i, is_archived in product([0, 2, 4], [True, False]):
+            data = fill_job_script_data(name=f"name-{i}", is_archived=is_archived)
+            with pendulum.test(time_now.add(days=i)):
+                job_script = await crud_service.create(**data)
+            data["id"] = job_script.id
+            result.append(data)
+
+        return result
+
+    async def test_auto_clean__unset(self, dummy_data, tweak_settings, time_now):
+        """
+        Assert that nothing is deleted or archived when the thresholds are unset.
+        """
+        with (
+            tweak_settings(
+                AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE=None,
+                AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE=None,
+            ),
+        ):
+            result = await crud_service.auto_clean_unused_job_scripts()
+
+        assert result.archived == set()
+        assert result.deleted == set()
+
+        jobs_list = await crud_service.list()
+
+        assert {j.id for j in jobs_list} == {j["id"] for j in dummy_data}
+
+    async def test_auto_clean__day_0(self, dummy_data, tweak_settings, time_now):
+        """
+        Test that nothing is deleted or archived on day 0, because the conditions are not met.
+        """
+        with (
+            tweak_settings(
+                AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE=self.DAYS_TO_ARCHIVE,
+                AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE=self.DAYS_TO_DELETE,
+            ),
+            pendulum.test(time_now),
+        ):
+            result = await crud_service.auto_clean_unused_job_scripts()
+
+        assert result.archived == set()
+        assert result.deleted == set()
+
+        jobs_list = await crud_service.list()
+
+        assert {j.id for j in jobs_list} == {j["id"] for j in dummy_data}
+
+    async def test_auto_clean__day_2(self, dummy_data, tweak_settings, time_now):
+        """
+        Test that not archived job scripts are archived on day 2, but nothing is deleted.
+        """
+        with (
+            tweak_settings(
+                AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE=self.DAYS_TO_ARCHIVE,
+                AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE=self.DAYS_TO_DELETE,
+            ),
+            pendulum.test(time_now.add(days=2)),
+        ):
+            result = await crud_service.auto_clean_unused_job_scripts()
+
+        assert result.archived == set(s["id"] for s in dummy_data if s["is_archived"] is False)
+        assert result.deleted == set()
+
+        jobs_list = await crud_service.list()
+
+        assert {j.id for j in jobs_list} == {j["id"] for j in dummy_data}
+
+    async def test_auto_clean__day_4(self, dummy_data, tweak_settings, time_now):
+        """
+        Test that not archived job script are archived, while archived job scripts are deleted.
+        """
+        with (
+            tweak_settings(
+                AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE=self.DAYS_TO_ARCHIVE,
+                AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE=self.DAYS_TO_DELETE,
+            ),
+            pendulum.test(time_now.add(days=4)),
+        ):
+            result = await crud_service.auto_clean_unused_job_scripts()
+
+        assert result.archived == set(s["id"] for s in dummy_data if s["is_archived"] is False)
+        assert result.deleted == set(s["id"] for s in dummy_data if s["is_archived"] is True)
+
+        jobs_list = await crud_service.list()
+
+        assert {j.id for j in jobs_list} == {j["id"] for j in dummy_data} - result.deleted
+
+    async def test_auto_clean__day_4_recently_used(
+        self, dummy_data, tweak_settings, time_now, fill_job_submission_data
+    ):
+        """
+        Test that nothing is deleted or archived on day 4, because all of them have a recent job submission.
+        """
+        with (
+            tweak_settings(
+                AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE=self.DAYS_TO_ARCHIVE,
+                AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE=self.DAYS_TO_DELETE,
+            ),
+            pendulum.test(time_now.add(days=4)),
+        ):
+            for item in dummy_data:
+                await submission_crud_service.create(
+                    **fill_job_submission_data(
+                        status=JobSubmissionStatus.CREATED,
+                        client_id="test-client-id",
+                        job_script_id=item["id"],
+                    )
+                )
+            result = await crud_service.auto_clean_unused_job_scripts()
+
+        assert result.archived == set()
+        assert result.deleted == set()
+
+        jobs_list = await crud_service.list()
+
+        assert {j.id for j in jobs_list} == {j["id"] for j in dummy_data}

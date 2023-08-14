@@ -313,7 +313,7 @@ async def job_script_delete_file(
     description="Endpoint to delete all unused files from the job script file storage",
     tags=["Garbage collector"],
 )
-async def job_script_template_garbage_collector(
+async def job_script_garbage_collector(
     background_tasks: BackgroundTasks,
     secure_session: SecureSession = Depends(secure_session(Permissions.JOB_SCRIPTS_EDIT)),
     bucket=Depends(s3_bucket),
@@ -328,3 +328,21 @@ async def job_script_template_garbage_collector(
         background_tasks,
     )
     return {"description": "Garbage collection started"}
+
+
+@router.delete(
+    "/clean-unused-entries",
+    status_code=status.HTTP_202_ACCEPTED,
+    description="Endpoint to automatically clean unused job scripts depending on a threshold",
+    tags=["Garbage collector"],
+)
+async def job_script_auto_clean_unused_entries(
+    background_tasks: BackgroundTasks,
+    secure_session: SecureSession = Depends(
+        secure_services(Permissions.JOB_SCRIPTS_EDIT, services=[crud_service])
+    ),
+):
+    """Automatically clean unused job scripts depending on a threshold."""
+    logger.info("Starting automatically cleanup for unused job scripts")
+    # background_tasks.add_task(crud_service.auto_clean_unused_job_scripts)
+    return {"description": "Automatically cleanup started"}
