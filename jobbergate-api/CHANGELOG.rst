@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+4.0.0a1 -- 2023-08-15
+---------------------
 - Added `pendulum` to the requirements
 
 4.0.0a0 -- 2023-08-15
