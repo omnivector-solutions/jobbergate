@@ -20,7 +20,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        { sub_project: ["jobbergate-api", "jobbergate-cli", "jobbergate-core"] }
+        {
+          sub_project:
+            [
+              "jobbergate-api",
+              "jobbergate-cli",
+              "jobbergate-core",
+              "jobbergate-agent",
+            ],
+        }
       fail-fast: false
     steps:
       - uses: actions/checkout@v3

@@ -1,0 +1,96 @@
+[tool.poetry]
+name = "jobbergate-agent"
+version = "4.0.0a1"
+description = "Jobbergate Agent"
+authors = ["Omnivector Solutions <info@omnivector.solutions>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/omnivector-solutions/jobbergate"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Development Status :: 5 - Production/Stable",
+    "Topic :: Scientific/Engineering",
+]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/omnivector-solutions/jobbergate/issues"
+"Changelog" = "https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-agent/CHANGELOG.rst"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+apscheduler = "3.10.3"
+httpx = "0.23.0"
+importlib-metadata = { version = "^6.8.0", python = "<3.10" }
+loguru = "0.6.0"
+py-buzz = "^3.3.0"
+pydantic = "1.8.2"
+pyjwt = "^2.8.0"
+python-dotenv = "0.16.0"
+python-jose = "3.3.0"
+sentry-sdk = "^1.1.0"
+
+[tool.poetry.scripts]
+jg-run = "jobbergate_agent.main:main"
+
+[tool.poetry.plugins.'jobbergate_agent.tasks']
+active-jobs = 'jobbergate_agent.tasks:active_submissions_task'
+pending-jobs = 'jobbergate_agent.tasks:pending_submissions_task'
+garbage-collection = 'jobbergate_agent.tasks:garbage_collection_task'
+
+[tool.poetry.plugins.'jobbergate_agent.user_mapper']
+single-user-mapper = "jobbergate_agent.utils.user_mapper:SingleUserMapper"
+
+[tool.poetry.dev-dependencies]
+asynctest = "^0.13.0"
+black = "^23.1"
+freezegun = "^1.2.2"
+isort = "^5.9.3"
+mypy = "^0.931"
+pyproject-flake8 = "^3.8"
+pytest-asyncio = "^0.18.2"
+pytest-cov = "^3.0.0"
+pytest-env = "^0.6.2"
+pytest-mock = "^3.7.0"
+pytest-random-order = "^1.0.4"
+requests-mock = "^1.10"
+respx = "^0.19.2"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+asyncio_mode = "auto"
+addopts = [
+    "--random-order",
+    "--cov=jobbergate_agent",
+    "--cov-report=term-missing",
+    "--cov-fail-under=90",
+]
+env = [
+    "CLUSTER_AGENT_OIDC_DOMAIN = auth.com",
+    "CLUSTER_AGENT_OIDC_CLIENT_ID = DUMMY-TEST-CLIENT-ID",
+    "CLUSTER_AGENT_OIDC_CLIENT_SECRET = DUMMY-TEST-CLIENT-SECRET",
+    "CLUSTER_AGENT_SLURMRESTD_JWT_KEY_STRING = DUMMY-JWT-SECRET",
+]
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+line_length = 120
+lines_after_imports = "2"
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+
+[tool.flake8]
+max-line-length = 120
+max-complexity = 40
+
+[[tool.mypy.overrides]]
+module = ["dataclasses", "toml", "requests", "jose.*"]
+ignore_missing_imports = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
