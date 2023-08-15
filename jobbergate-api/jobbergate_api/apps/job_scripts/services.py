@@ -143,7 +143,6 @@ class JobScriptFileService(FileService):
         """
         Validate that the entrypoint file is unique.
         """
-
         file_list = await self.find_children(parent_id)
 
         entry_point_names = {file.filename for file in file_list if file.file_type == FileType.ENTRYPOINT}
