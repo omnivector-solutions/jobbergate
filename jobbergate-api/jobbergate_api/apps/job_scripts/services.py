@@ -62,7 +62,10 @@ class JobScriptCrudService(CrudService):
         result = AutoCleanResponse(archived=set(), deleted=set())
 
         subquery = (
-            select(JobSubmission.job_script_id, func.max(JobSubmission.created_at).label("last_used"))  # type: ignore
+            select(
+                JobSubmission.job_script_id,
+                func.max(JobSubmission.created_at).label("last_used"),
+            )  # type: ignore
             .group_by(JobSubmission.job_script_id)
             .subquery()
         )
