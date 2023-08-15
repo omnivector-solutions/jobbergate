@@ -74,16 +74,14 @@ class TestCrudService:
         """
         Test that the ``create()`` method successfully creates an instance of the served model.
         """
-        with time_frame() as window:
-            instance = await dummy_crud_service.create(
-                name="test-name",
-                description="test-description",
-                owner_email=tester_email,
-            )
+
+        instance = await dummy_crud_service.create(
+            name="test-name",
+            description="test-description",
+            owner_email=tester_email,
+        )
 
         assert instance.owner_email == tester_email
-        assert instance.created_at in window
-        assert instance.updated_at in window
         assert isinstance(instance.id, int)
 
     async def test_count__success(

@@ -2,13 +2,13 @@
 
 from datetime import datetime
 
+import pendulum
 from inflection import tableize
 from snick import conjoin
 from sqlalchemy import Boolean, DateTime, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
-from sqlalchemy.sql import functions
 from sqlalchemy.sql.expression import Select
 
 
@@ -74,12 +74,14 @@ class TimestampMixin:
         updated_at: The date and time when the job script template was updated.
     """
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=functions.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=pendulum.now
+    )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
+        DateTime(timezone=True),
         nullable=False,
-        default=functions.now(),
-        onupdate=functions.current_timestamp(),
+        default=pendulum.now,
+        onupdate=pendulum.now,
     )
 
 

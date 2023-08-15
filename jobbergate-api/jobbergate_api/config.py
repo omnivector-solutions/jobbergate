@@ -90,6 +90,10 @@ class Settings(BaseSettings):
     # Enable multi-tenancy so that the database is determined by the client_id in the auth token
     MULTI_TENANCY_ENABLED: bool = Field(False)
 
+    # Automatically clean up unused job scripts
+    AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE: int | None
+    AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE: int | None
+
     @root_validator(pre=True)
     def remove_blank_env(cls, values):
         """

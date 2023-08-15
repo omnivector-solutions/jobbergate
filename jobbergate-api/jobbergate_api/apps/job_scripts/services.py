@@ -1,12 +1,24 @@
 """Services for the job_scripts resource, including module specific business logic."""
-from typing import Any
+from typing import Any, NamedTuple
 
-from sqlalchemy import update
+import pendulum
+from loguru import logger
+from sqlalchemy import delete, func, select, update
 
 from jobbergate_api.apps.job_scripts.models import JobScript, JobScriptFile
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.job_submissions.models import JobSubmission
 from jobbergate_api.apps.services import CrudService, FileService
+from jobbergate_api.config import settings
+
+
+class AutoCleanResponse(NamedTuple):
+    """
+    Named tuple for the response of auto_clean_unused_job_scripts.
+    """
+
+    archived: set[int]
+    deleted: set[int]
 
 
 class JobScriptCrudService(CrudService):
@@ -39,6 +51,61 @@ class JobScriptCrudService(CrudService):
         )
         await self.session.execute(query)
         await super().delete(locator)
+
+    async def auto_clean_unused_job_scripts(self) -> AutoCleanResponse:
+        """
+        Automatically clean unused job scripts depending on a threshold.
+
+        Based on the last time each job script was updated or used to create a job submission,
+        this will archived job scripts that were unarchived and delete jos script that were archived.
+        """
+        result = AutoCleanResponse(archived=set(), deleted=set())
+
+        subquery = (
+            select(
+                JobSubmission.job_script_id,
+                func.max(JobSubmission.created_at).label("last_used"),
+            )  # type: ignore
+            .group_by(JobSubmission.job_script_id)
+            .subquery()
+        )
+        joined_query = (
+            select(self.model_type, subquery)  # type: ignore
+            .join(subquery, subquery.c.job_script_id == self.model_type.id, isouter=True)
+            .subquery()
+        )
+
+        if days_to_delete := settings.AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE:
+            query = (
+                delete(self.model_type)  # type: ignore
+                .where(self.model_type.is_archived.is_(True))
+                .where(
+                    func.greatest(joined_query.c.updated_at, joined_query.c.last_used)
+                    < pendulum.now().subtract(days=days_to_delete)
+                )
+                .returning(self.model_type.id)
+            )
+            deleted = await self.session.execute(query)
+            result.deleted.update(row[0] for row in deleted.all())
+
+        if days_to_archive := settings.AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE:
+            update_query = (
+                update(self.model_type)  # type: ignore
+                .where(self.model_type.is_archived.is_(False))
+                .where(
+                    func.greatest(joined_query.c.updated_at, joined_query.c.last_used)
+                    < pendulum.now().subtract(days=days_to_archive)
+                )
+                .values(is_archived=True)
+                .returning(self.model_type.id)
+            )
+            archived = await self.session.execute(update_query)
+            result.archived.update(row[0] for row in archived.all())
+
+        logger.debug(f"Job scripts marked as archived: {result.archived}")
+        logger.debug(f"Job scripts marked as deleted: {result.deleted}")
+
+        return result
 
 
 class JobScriptFileService(FileService):
