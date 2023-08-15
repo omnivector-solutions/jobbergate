@@ -38,6 +38,30 @@ class TestIntegration:
         ):
             yield
 
+    @pytest.mark.parametrize("file_type", [FileType.ENTRYPOINT, FileType.ENTRYPOINT.value])
+    async def test_file_upsert__guarantee_only_one_entrypoint(self, file_type, script_test_data):
+        """
+        Ensure that only one entrypoint file is allowed.
+        """
+        script_instance = await crud_service.create(**script_test_data)
+
+        script_file = await file_service.upsert(
+            script_instance.id,
+            "test.txt",
+            "test file content",
+            file_type=file_type,
+        )
+
+        with pytest.raises(HTTPException) as exc_info:
+            await file_service.upsert(
+                script_file.parent_id,
+                "another_test.txt",
+                "another test file content",
+                file_type=file_type,
+            )
+        assert exc_info.value.status_code == 422
+        assert "more than one entry point file" in exc_info.value.detail
+
     async def test_get_includes_all_files(self, script_test_data):
         script_instance = await crud_service.create(**script_test_data)
 

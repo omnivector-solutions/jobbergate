@@ -2,13 +2,16 @@
 from typing import Any, NamedTuple
 
 import pendulum
+from buzz import enforce_defined, require_condition
+from fastapi import UploadFile, status
 from loguru import logger
 from sqlalchemy import delete, func, select, update
 
+from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.job_scripts.models import JobScript, JobScriptFile
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.job_submissions.models import JobSubmission
-from jobbergate_api.apps.services import CrudService, FileService
+from jobbergate_api.apps.services import CrudService, FileModel, FileService, ServiceError
 from jobbergate_api.config import settings
 
 
@@ -115,6 +118,49 @@ class JobScriptFileService(FileService):
     Although it doesn't do anything, it fixes an error with mypy:
         error: Value of type variable "FileModel" of "FileService" cannot be "JobScriptFile"
     """
+
+    async def upsert(
+        self,
+        parent_id: int,
+        filename: str,
+        upload_content: str | bytes | UploadFile,
+        **upsert_kwargs,
+    ) -> FileModel:
+        """
+        Upsert a file instance.
+        """
+        file_type: str = enforce_defined(
+            upsert_kwargs.get("file_type", None),
+            "File type must be defined when upserting a file.",
+            raise_exc_class=ServiceError,
+            raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
+        )
+        if file_type == FileType.ENTRYPOINT:
+            await self.validate_entrypoint_file(parent_id, filename)
+        return await super().upsert(parent_id, filename, upload_content, **upsert_kwargs)
+
+    async def validate_entrypoint_file(self, parent_id: int, filename: str):
+        """
+        Validate that the entrypoint file is unique.
+        """
+        file_list = await self.find_children(parent_id)
+
+        entry_point_names = {file.filename for file in file_list if file.file_type == FileType.ENTRYPOINT}
+
+        no_entry_point = len(entry_point_names) == 0
+        replacing_entry_point = filename in entry_point_names
+        sanity_check = len(entry_point_names) <= 1
+
+        require_condition(
+            (no_entry_point or replacing_entry_point) and sanity_check,
+            (
+                "A job script can not have more than one entry point file. "
+                "Consider deleting the existing one first. "
+                "Found: {}".format(",".join(entry_point_names))
+            ),
+            raise_exc_class=ServiceError,
+            raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
+        )
 
 
 crud_service = JobScriptCrudService(model_type=JobScript)
