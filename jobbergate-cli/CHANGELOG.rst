@@ -6,8 +6,11 @@ This file keeps track of all notable changes to jobbergate-cli
 
 Unreleased
 ----------
-- Drop support for Python 3.6
 
+4.0.0a0 -- 2023-08-15
+---------------------
+- Modified internal details to address the new data model on Jobbergate API
+- Drop support for Python 3.6
 
 3.4.3 -- 2023-01-30
 -------------------
