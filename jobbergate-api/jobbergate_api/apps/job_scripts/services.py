@@ -135,15 +135,14 @@ class JobScriptFileService(FileService):
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
         )
-        await self.validate_entrypoint_file(parent_id, filename, file_type)
+        if file_type == FileType.ENTRYPOINT:
+            await self.validate_entrypoint_file(parent_id, filename)
         return await super().upsert(parent_id, filename, upload_content, **upsert_kwargs)
 
-    async def validate_entrypoint_file(self, parent_id: int, filename: str, file_type: FileType | str):
+    async def validate_entrypoint_file(self, parent_id: int, filename: str):
         """
         Validate that the entrypoint file is unique.
         """
-        if file_type != FileType.ENTRYPOINT:
-            return
 
         file_list = await self.find_children(parent_id)
 
