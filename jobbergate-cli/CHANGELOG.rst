@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-cli
 
 Unreleased
 ----------
+
+4.0.0a0 -- 2023-08-15
+---------------------
 - Drop support for Python 3.6
 
 
