@@ -1,7 +1,7 @@
 name: Create tag when released is accepted
 
 # This action:
-#   - Is triggered when a release PR is accepted and merged into main;
+#   - Is triggered when a release PR is accepted and merged into a release branch;
 #   - Get the version number from the tag's name;
 #   - Create a new tag named according to the version number in the PR;
 #   - Push the new tag to GitHub.
@@ -10,11 +10,12 @@ on:
   pull_request:
     branches:
       - main
+      - release/**
     types: [closed]
 
 jobs:
   create-tag:
-    if: (github.event.pull_request.merged && startsWith(github.head_ref, 'release/'))
+    if: (github.event.pull_request.merged && startsWith(github.head_ref, 'prepare-release/'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -26,7 +27,7 @@ jobs:
         id: get-tag
         with:
           _input-text: ${{ github.head_ref }}
-          release/: ""
+          prepare-release/: ""
 
       - name: Show tag name
         run: echo ${{ steps.get-tag.outputs.result }}

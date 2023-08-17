@@ -1,0 +1,35 @@
+name: Backport
+
+# Backport changes to more release branches based on labels on merged PRs.
+# For instance, backport/3.5 or backport/3.6 would create new PRs for review on those branches.
+# Still experimental on Jobbergate.
+# Inspired on Poetry: https://github.com/python-poetry/poetry/blob/master/.github/workflows/backport.yaml
+
+on:
+  pull_request_target:
+    types:
+      - closed
+      - labeled
+
+jobs:
+  backport:
+    name: Backport
+    runs-on: ubuntu-latest
+    # Only react to merged PRs for security reasons.
+    # See https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target.
+    if: >
+      github.event.pull_request.merged
+      && (
+        github.event.action == 'closed'
+        || (
+          github.event.action == 'labeled'
+          && contains(github.event.label.name, 'backport')
+        )
+      )
+    steps:
+      - name: Generate backport
+        uses: tibdex/backport@v2
+        with:
+          github_token: ${{ secrets.TOKEN }}
+          title_template: "[<%= base %>] <%= title %>"
+          label_pattern: "^backport/(?<base>([^ ]+))$"
