@@ -55,13 +55,6 @@ class JobScript(CrudMixin, Base):
     )
 
     @classmethod
-    def searchable_fields(cls):
-        """
-        Add parent_template_id as a searchable field.
-        """
-        return {cls.parent_template_id, *super().searchable_fields()}
-
-    @classmethod
     def sortable_fields(cls):
         """
         Add parent_template_id as a sortable field.
