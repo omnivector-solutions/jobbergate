@@ -96,18 +96,18 @@ services:
       - ./slurm-work-dir:/slurm-work-dir/
     command: ["jg-run"]
     environment:
-      - CLUSTER_AGENT_BASE_SLURMRESTD_URL=http://slurmrestd:6820
-      - CLUSTER_AGENT_X_SLURM_USER_NAME=local-user
-      - CLUSTER_AGENT_DEFAULT_SLURM_WORK_DIR=/slurm-work-dir
-      - CLUSTER_AGENT_BASE_API_URL=http://jobbergate-api:80
-      - CLUSTER_AGENT_OIDC_DOMAIN=keycloak.local:8080/realms/jobbergate-local
-      - CLUSTER_AGENT_OIDC_AUDIENCE=https://local.omnivector.solutions
-      - CLUSTER_AGENT_OIDC_CLIENT_ID=local-slurm
-      - CLUSTER_AGENT_OIDC_CLIENT_SECRET=SVkaJ2f9xeYfOVzQPHXYyiwr12za4xGF
-      - CLUSTER_AGENT_OIDC_USE_HTTPS=false
-      - CLUSTER_AGENT_CACHE_DIR=/cache
-      - CLUSTER_AGENT_SLURMRESTD_JWT_KEY_STRING=${JWT_SECRET:-supersecret}
-      - CLUSTER_AGENT_TASK_JOBS_INTERVAL_SECONDS=15
+      - JOBBERGATE_AGENT_BASE_SLURMRESTD_URL=http://slurmrestd:6820
+      - JOBBERGATE_AGENT_X_SLURM_USER_NAME=local-user
+      - JOBBERGATE_AGENT_DEFAULT_SLURM_WORK_DIR=/slurm-work-dir
+      - JOBBERGATE_AGENT_BASE_API_URL=http://jobbergate-api:80
+      - JOBBERGATE_AGENT_OIDC_DOMAIN=keycloak.local:8080/realms/jobbergate-local
+      - JOBBERGATE_AGENT_OIDC_AUDIENCE=https://local.omnivector.solutions
+      - JOBBERGATE_AGENT_OIDC_CLIENT_ID=local-slurm
+      - JOBBERGATE_AGENT_OIDC_CLIENT_SECRET=SVkaJ2f9xeYfOVzQPHXYyiwr12za4xGF
+      - JOBBERGATE_AGENT_OIDC_USE_HTTPS=false
+      - JOBBERGATE_AGENT_CACHE_DIR=/cache
+      - JOBBERGATE_AGENT_SLURMRESTD_JWT_KEY_STRING=${JWT_SECRET:-supersecret}
+      - JOBBERGATE_AGENT_TASK_JOBS_INTERVAL_SECONDS=15
     depends_on:
       jobbergate-api:
         condition: service_healthy

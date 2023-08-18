@@ -95,7 +95,7 @@ class Settings(BaseSettings):
         Note that we disable use of ``dotenv`` if we are in test mode.
         """
 
-        env_prefix = "CLUSTER_AGENT_"
+        env_prefix = "JOBBERGATE_AGENT_"
 
         _test_mode = "pytest" in sys.modules
         if not _test_mode:
