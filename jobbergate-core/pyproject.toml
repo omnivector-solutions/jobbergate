@@ -20,7 +20,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
-httpx = "^0.22.0"
+httpx = "^0.24.1"
 loguru = "^0.6.0"
 pendulum = "^2.1.2"
 py-buzz = "^3.1.0"
@@ -38,7 +38,7 @@ pytest-freezegun = "^0.4.2"
 pytest-mock = "^3.6.0"
 pytest-random-order = "^1.0.4"
 requests-mock = "^1.10"
-respx = "^0.19.2"
+respx = "^0.20.1"
 toml = "^0.10.2"
 
 [tool.pytest.ini_options]
@@ -65,12 +65,7 @@ max-line-length = 120
 max-complexity = 40
 
 [[tool.mypy.overrides]]
-module = [
-    "dataclasses",
-    "toml",
-    "requests",
-    "jose.*",
-]
+module = ["dataclasses", "toml", "requests", "jose.*"]
 ignore_missing_imports = true
 
 [build-system]
