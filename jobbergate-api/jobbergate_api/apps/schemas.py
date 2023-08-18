@@ -1,9 +1,9 @@
 """Define app-wide, reusable pydantic schemas."""
 
-from datetime import datetime
 from typing import Any
 
 import sqlalchemy
+from pendulum.datetime import DateTime
 from pydantic import BaseModel
 from pydantic.utils import GetterDict
 
@@ -50,8 +50,8 @@ class TableResource(BaseModel):
     id: int
     name: str
     owner_email: str
-    created_at: datetime
-    updated_at: datetime
+    created_at: DateTime
+    updated_at: DateTime
     is_archived: bool
     description: str | None
 

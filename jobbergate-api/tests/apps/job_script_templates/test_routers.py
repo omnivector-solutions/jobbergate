@@ -64,7 +64,7 @@ async def test_create_job_template__success(
 
     # Make sure that the data can be retrieved with a GET request
     inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
-    response = await client.get(f"jobbergate/job-script-templates/create-template")
+    response = await client.get(f"jobbergate/job-script-templates/{instance.id}")
     assert response.status_code == 200
     response_data = response.json()
     assert response_data["identifier"] == "create-template"

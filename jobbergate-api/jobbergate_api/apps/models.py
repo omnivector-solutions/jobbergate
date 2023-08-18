@@ -1,9 +1,7 @@
 """Functionalities to be shared by all models."""
 
-from datetime import datetime
-
-import pendulum
 from inflection import tableize
+from pendulum.datetime import DateTime as PendulumDateTime
 from snick import conjoin
 from sqlalchemy import Boolean, DateTime, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -74,14 +72,14 @@ class TimestampMixin:
         updated_at: The date and time when the job script template was updated.
     """
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=pendulum.now
+    created_at: Mapped[PendulumDateTime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=PendulumDateTime.utcnow
     )
-    updated_at: Mapped[datetime] = mapped_column(
+    updated_at: Mapped[PendulumDateTime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=pendulum.now,
-        onupdate=pendulum.now,
+        default=PendulumDateTime.utcnow,
+        onupdate=PendulumDateTime.utcnow,
     )
 
 

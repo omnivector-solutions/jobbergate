@@ -68,7 +68,6 @@ class TestCrudService:
     async def test_create__success(
         self,
         dummy_crud_service,
-        time_frame,
         tester_email,
     ):
         """

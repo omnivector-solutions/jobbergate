@@ -18,11 +18,11 @@ job_submission_meta_mapper = MetaMapper(
     ),
     created_at=MetaField(
         description="The timestamp for when the instance was created",
-        example="2021-12-28 23:13:00",
+        example="2023-08-18T13:55:37.172285",
     ),
     updated_at=MetaField(
         description="The timestamp for when the instance was last updated",
-        example="2021-12-28 23:52:00",
+        example="2023-08-18T13:55:37.172285",
     ),
     name=MetaField(
         description="The unique name of the job submission",
