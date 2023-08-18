@@ -42,7 +42,7 @@ class Token:
     """
 
     cache_directory: Path
-    label: TokenType
+    label: str
     content: str = ""
     file_path: Path = field(init=False, hash=False, repr=False)
     data: Dict[str, Any] = field(

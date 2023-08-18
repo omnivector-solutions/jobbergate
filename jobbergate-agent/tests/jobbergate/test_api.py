@@ -23,6 +23,7 @@ from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionEr
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_fetch_pending_submissions__success(dummy_job_script_files):
     """
     Test that the ``fetch_pending_submissions()`` function can successfully retrieve
@@ -54,12 +55,6 @@ async def test_fetch_pending_submissions__success(dummy_job_script_files):
         ]
     }
     async with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(access_token="dummy-token"),
-            )
-        )
         respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/pending").mock(
             return_value=httpx.Response(
                 status_code=200,
@@ -74,18 +69,13 @@ async def test_fetch_pending_submissions__success(dummy_job_script_files):
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_fetch_pending_submissions__raises_JobbergateApiError_if_response_is_not_200():  # noqa
     """
     Test that the ``fetch_pending_submissions()`` function will raise a
     JobbergateApiError if the response from the API is not OK (200).
     """
     with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(access_token="dummy-token"),
-            )
-        )
         respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/pending").mock(
             return_value=httpx.Response(status_code=400)
         )
@@ -95,6 +85,7 @@ async def test_fetch_pending_submissions__raises_JobbergateApiError_if_response_
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_fetch_pending_submissions__raises_JobbergateApiError_if_response_cannot_be_deserialized():  # noqa
     """
     Test that the ``fetch_pending_submissions()`` function will raise a
@@ -104,12 +95,6 @@ async def test_fetch_pending_submissions__raises_JobbergateApiError_if_response_
         dict(bad="data"),
     ]
     with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(access_token="dummy-token"),
-            )
-        )
         respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/pending").mock(
             return_value=httpx.Response(
                 status_code=200,
@@ -122,6 +107,7 @@ async def test_fetch_pending_submissions__raises_JobbergateApiError_if_response_
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_fetch_active_submissions__success():
     """
     Test that the ``fetch_active_submissions()`` function can successfully retrieve
@@ -144,12 +130,6 @@ async def test_fetch_active_submissions__success():
         ]
     }
     with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(access_token="dummy-token"),
-            )
-        )
         respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/active").mock(
             return_value=httpx.Response(
                 status_code=200,
@@ -165,18 +145,13 @@ async def test_fetch_active_submissions__success():
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_fetch_active_submissions__raises_JobbergateApiError_if_response_is_not_200():  # noqa
     """
     Test that the ``fetch_active_submissions()`` function will raise a
     JobbergateApiError if the response from the API is not OK (200).
     """
     with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(access_token="dummy-token"),
-            )
-        )
         respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/active").mock(
             return_value=httpx.Response(status_code=400)
         )
@@ -186,6 +161,7 @@ async def test_fetch_active_submissions__raises_JobbergateApiError_if_response_i
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_fetch_active_submissions__raises_JobbergateApiError_if_response_cannot_be_deserialized():  # noqa
     """
     Test that the ``fetch_active_submissions()`` function will raise a
@@ -195,12 +171,6 @@ async def test_fetch_active_submissions__raises_JobbergateApiError_if_response_c
         dict(bad="data"),
     ]
     with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(access_token="dummy-token"),
-            )
-        )
         respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/active").mock(
             return_value=httpx.Response(
                 status_code=200,
@@ -213,18 +183,13 @@ async def test_fetch_active_submissions__raises_JobbergateApiError_if_response_c
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_mark_as_submitted__success():
     """
     Test that the ``mark_as_submitted()`` can successfully update a job submission
     with its ``slurm_job_id`` and a status of ``SUBMITTED``.
     """
     with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(access_token="dummy-token"),
-            )
-        )
         update_route = respx.put(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/1")
         update_route.mock(return_value=httpx.Response(status_code=200))
 
@@ -233,18 +198,13 @@ async def test_mark_as_submitted__success():
 
 
 @pytest.mark.asyncio
-async def test_mark_as_submitted__raises_JobbergateApiError_if_the_response_is_not_200():  # noqa
+@pytest.mark.usefixtures("mock_access_token")
+async def test_mark_as_submitted__raises_JobbergateApiError_if_the_response_is_not_200():
     """
     Test that the ``mark_as_submitted()`` function will raise a JobbergateApiError if
     the response from the API is not OK (200).
     """
     with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(access_token="dummy-token"),
-            )
-        )
         update_route = respx.put(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/1")
         update_route.mock(return_value=httpx.Response(status_code=400))
 
@@ -257,18 +217,13 @@ async def test_mark_as_submitted__raises_JobbergateApiError_if_the_response_is_n
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_update_status__success():
     """
     Test that the ``update_status()`` can successfully update a job submission
     with a ``JobSubmissionStatus``.
     """
     with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(access_token="dummy-token"),
-            )
-        )
         update_route = respx.put(url__regex=rf"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/\d+")
         update_route.mock(return_value=httpx.Response(status_code=200))
 
@@ -286,18 +241,13 @@ async def test_update_status__success():
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_update_status__raises_JobbergateApiError_if_the_response_is_not_200():
     """
     Test that the ``update_status()`` function will raise a JobbergateApiError if
     the response from the API is not OK (200).
     """
     with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(access_token="dummy-token"),
-            )
-        )
         update_route = respx.put(url__regex=rf"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/\d+")
         update_route.mock(return_value=httpx.Response(status_code=400))
 
@@ -310,6 +260,7 @@ async def test_update_status__raises_JobbergateApiError_if_the_response_is_not_2
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_notify_submission_rejected():
     """
     Test that ``notify_submission_rejected`` can send a message to Jobbergate
@@ -327,12 +278,6 @@ async def test_notify_submission_rejected():
     notify_submission_rejected = SubmissionNotifier(job_submission_id, JobSubmissionStatus.REJECTED)
 
     async with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(access_token="dummy-token"),
-            )
-        )
         update_route = respx.put(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/{job_submission_id}")
         update_route.mock(return_value=httpx.Response(status_code=200))
 

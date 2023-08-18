@@ -28,6 +28,7 @@ from jobbergate_agent.utils.user_mapper import SingleUserMapper
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_submit_job_script__success(dummy_pending_job_submission_data, dummy_template_source):
     """
     Test that the ``submit_job_script()`` successfully submits a job.
@@ -82,6 +83,7 @@ async def test_submit_job_script__success(dummy_pending_job_submission_data, dum
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_submit_job_script__with_non_default_execution_directory(
     dummy_pending_job_submission_data,
     dummy_template_source,
@@ -150,6 +152,7 @@ async def test_submit_job_script__with_non_default_execution_directory(
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_submit_job_script__raises_exception_if_no_executable_script_was_found(
     dummy_pending_job_submission_data, mocker
 ):
@@ -180,6 +183,7 @@ async def test_submit_job_script__raises_exception_if_no_executable_script_was_f
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_submit_job_script__raises_exception_if_submit_call_response_is_not_200(
     dummy_pending_job_submission_data, mocker, dummy_template_source
 ):
@@ -238,6 +242,7 @@ async def test_submit_job_script__raises_exception_if_submit_call_response_is_no
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_submit_job_script__raises_exception_if_response_cannot_be_unpacked(
     dummy_pending_job_submission_data,
     mocker,
@@ -288,6 +293,7 @@ async def test_submit_job_script__raises_exception_if_response_cannot_be_unpacke
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_submit_pending_jobs(
     dummy_job_script_files,
     tweak_settings,

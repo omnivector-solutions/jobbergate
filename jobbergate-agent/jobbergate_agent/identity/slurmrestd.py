@@ -4,8 +4,9 @@ import typing
 from datetime import datetime, timedelta
 
 import httpx
+from buzz import enforce_defined
+from jobbergate_core.auth.token import Token, TokenError
 from jose import jwt
-from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
 
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.logging import logger
@@ -14,93 +15,44 @@ from jobbergate_agent.utils.logging import logger
 CACHE_DIR = SETTINGS.CACHE_DIR / "slurmrestd"
 
 
-def _load_token_from_cache(username: str) -> typing.Union[str, None]:
-    """
-    Looks for and returns a token from a cache file (if it exists).
-    Returns None if::
-    * The token does not exist
-    * Can't read the token
-    * The token is expired (or will expire within 10 seconds)
-    * The token has invalid signature
-    * The token has invalid claims
-    """
-    token_path = CACHE_DIR / f"{username}.token"
-    logger.debug(f"Attempting to retrieve token from: {token_path}")
-    if not token_path.exists():
-        logger.debug("Cached token does not exist")
-        return None
-
-    try:
-        token = token_path.read_text().strip()
-        logger.debug(f"Retrieved token from {token_path} as {token}")
-    except Exception:
-        logger.warning(f"Couldn't load token from cache file {token_path}. Will acquire a new one")
-        return None
-
-    if SETTINGS.SLURMRESTD_USE_KEY_PATH:
-        secret_key = open(SETTINGS.SLURMRESTD_JWT_KEY_PATH, "r").read()
-    else:
-        secret_key = SETTINGS.SLURMRESTD_JWT_KEY_STRING
-
-    try:
-        jwt.decode(token, secret_key, options=dict(verify_signature=False, verify_exp=True, leeway=-10))
-    except ExpiredSignatureError:
-        logger.warning("Cached token is expired. Will acquire a new one.")
-        return None
-    except JWTClaimsError:
-        logger.warning("Cached token has the signature invalid in any way. Will acquire a new one.")
-        return None
-    except JWTError:
-        logger.warning("Cached token has invalid claims. Will acquire a new one.")
-        return None
-
-    return token
-
-
-def _write_token_to_cache(token: str, username: str):
-    """
-    Writes the token to the cache.
-    """
-    if not CACHE_DIR.exists():
-        logger.debug("Attempting to create missing cache directory")
-        try:
-            CACHE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
-        except Exception:
-            logger.warning(f"Couldn't create missing cache directory {CACHE_DIR}. Token will not be saved.")  # noqa
-            return
-
-    token_path = CACHE_DIR / f"{username}.token"
-    try:
-        token_path.write_text(token)
-    except Exception:
-        logger.warning(f"Couldn't save token to {token_path}")
-
-
 def acquire_token(username: str) -> str:
     """
     Retrieves a token from Slurmrestd based on the app settings.
     """
     logger.debug("Attempting to use cached token")
-    token = _load_token_from_cache(username)
+    base_token = Token(cache_directory=CACHE_DIR, label=username)
 
-    if token is None:
-        logger.debug("Attempting to generate token for Slurmrestd")
-        if SETTINGS.SLURMRESTD_USE_KEY_PATH:
-            secret_key = open(SETTINGS.SLURMRESTD_JWT_KEY_PATH, "r").read()
-        else:
-            secret_key = SETTINGS.SLURMRESTD_JWT_KEY_STRING
+    try:
+        token = base_token.load_from_cache()
+        if token.is_valid():
+            return token.content
+    except TokenError as e:
+        logger.debug("Failed to load token from cache: {}", e)
 
-        now = datetime.now()
-        payload = {
-            "exp": int(datetime.timestamp(now + timedelta(seconds=SETTINGS.SLURMRESTD_EXP_TIME_IN_SECONDS))),
-            "iat": int(datetime.timestamp(now)),
-            "sun": username,
-        }
-        token = jwt.encode(payload, secret_key, algorithm="HS256")
-        _write_token_to_cache(token, username)
+    logger.debug("Attempting to generate token for Slurmrestd")
+
+    if SETTINGS.SLURMRESTD_USE_KEY_PATH and SETTINGS.SLURMRESTD_JWT_KEY_PATH:
+        secret_key = open(SETTINGS.SLURMRESTD_JWT_KEY_PATH, "r").read()
+    else:
+        secret_key = enforce_defined(
+            SETTINGS.SLURMRESTD_JWT_KEY_STRING,
+            "SLURMRESTD_JWT_KEY_STRING is not defined",
+        )
+
+    now = datetime.now()
+    payload = {
+        "exp": int(datetime.timestamp(now + timedelta(seconds=SETTINGS.SLURMRESTD_EXP_TIME_IN_SECONDS))),
+        "iat": int(datetime.timestamp(now)),
+        "sun": username,
+    }
+    token_content = jwt.encode(payload, secret_key, algorithm="HS256")
+
+    token = base_token.replace(content=token_content)
+    token.cache_directory.mkdir(parents=True, exist_ok=True)
+    token.save_to_cache()
 
     logger.debug("Successfully generated auth token")
-    return token
+    return token.content
 
 
 def inject_token(

@@ -1,11 +1,13 @@
 import contextlib
 import random
 import string
+from datetime import datetime, timezone
 from unittest import mock
 
 import httpx
 import pytest
 import respx
+from jose.jwt import encode
 from loguru import logger
 
 from jobbergate_agent.settings import SETTINGS
@@ -31,14 +33,14 @@ def random_word():
 
 @pytest.fixture(autouse=True)
 def mock_cluster_api_cache_dir(tmp_path):
-    _cache_dir = tmp_path / ".cache/cluster-agent/cluster-api"
+    _cache_dir = tmp_path / ".cache/jobbergate-agent/cluster-api"
     with mock.patch("jobbergate_agent.identity.cluster_api.CACHE_DIR", new=_cache_dir):
         yield _cache_dir
 
 
 @pytest.fixture(autouse=True)
 def mock_slurmrestd_api_cache_dir(tmp_path):
-    _cache_dir = tmp_path / ".cache/cluster-agent/slurmrestd"
+    _cache_dir = tmp_path / ".cache/jobbergate-agent/slurmrestd"
     with mock.patch("jobbergate_agent.identity.slurmrestd.CACHE_DIR", new=_cache_dir):
         yield _cache_dir
 
@@ -62,28 +64,6 @@ def mock_slurmrestd_acquire_token(mocker):
         "jobbergate_agent.identity.slurmrestd.acquire_token",
         return_value="default-dummy-token",
     )
-
-
-@pytest.fixture(autouse=True)
-def mock_cluster_api_acquire_token(mocker):
-    mocker.patch(
-        "jobbergate_agent.identity.cluster_api.acquire_token",
-        return_value="default-dummy-token",
-    )
-
-
-@pytest.fixture
-def respx_mock():
-    """
-    Run a test in the respx context (similar to respx decorator, but it's a fixture).
-
-    Mocks the OIDC route used to secure a token.
-    """
-    with respx.mock as mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(status_code=200, json=dict(access_token="dummy-token"))
-        )
-        yield mock
 
 
 @pytest.fixture
@@ -119,3 +99,24 @@ def tweak_settings():
                 setattr(SETTINGS, key, value)
 
     return _helper
+
+
+@pytest.fixture()
+def token_content() -> str:
+    one_minute_from_now = int(datetime.now(tz=timezone.utc).timestamp()) + 60
+    return encode(dict(exp=one_minute_from_now), key="dummy-key", algorithm="HS256")
+
+
+@pytest.fixture()
+async def mock_access_token(token_content):
+    """
+    Fixture to mock the access token.
+    """
+    async with respx.mock:
+        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
+            return_value=httpx.Response(
+                status_code=200,
+                json=dict(access_token=token_content),
+            )
+        )
+        yield

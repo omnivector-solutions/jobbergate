@@ -19,6 +19,7 @@ from jobbergate_agent.utils.exception import SlurmrestdError
     ),
 )
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_fetch_pending_submissions__success(slurm_status, expected_jobbergate_status):
     """
     Test that the ``fetch_job_status()`` function can successfully retrieve
@@ -28,9 +29,6 @@ async def test_fetch_pending_submissions__success(slurm_status, expected_jobberg
     slurm_state_reason = "NonZeroExitCode" if slurm_status == "FAILED" else None
 
     async with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(status_code=200, json=dict(access_token="dummy-token"))
-        )
         respx.get(f"{SETTINGS.SLURM_RESTD_VERSIONED_URL}/job/{slurm_id}").mock(
             return_value=httpx.Response(
                 status_code=200,
@@ -61,15 +59,13 @@ async def test_fetch_pending_submissions__raises_SlurmrestdError_if_response_is_
     response is not a 200.
     """
     async with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(status_code=200, json=dict(access_token="dummy-token"))
-        )
         respx.get(f"{SETTINGS.SLURM_RESTD_VERSIONED_URL}/job/11").mock(return_value=httpx.Response(status_code=400))
         with pytest.raises(SlurmrestdError, match="Failed to fetch job status from slurm"):
             await fetch_job_status(11)
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_finish_active_jobs():
     """
     Test that the ``finish_active_jobs()`` function can fetch active job submissions,
@@ -87,9 +83,6 @@ async def test_finish_active_jobs():
     }
 
     async with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(status_code=200, json=dict(access_token="dummy-token"))
-        )
         fetch_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/active")
         fetch_route.mock(
             return_value=httpx.Response(

@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     OIDC_CLIENT_ID: str
     OIDC_CLIENT_SECRET: str
 
-    CACHE_DIR = Path.home() / ".cache/cluster-agent"
+    CACHE_DIR = Path.home() / ".cache/jobbergate-agent"
 
     # Type of slurm user mapper to use
     SLURM_USER_MAPPER: Optional[str]
