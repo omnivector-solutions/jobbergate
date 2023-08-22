@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+4.0.0a2 -- 2023-08-22
+---------------------
 - Fix search when listing job-scripts
 - Modified internal timestamps to standardize the use of UTC
 
