@@ -224,7 +224,7 @@ def upload_application(
                     expect_response=False,
                     abort_message="Request to upload application files was not accepted by the API",
                     support=True,
-                    files={"upload_file": (relative_template_path.as_posix(), template_file, "text/plain")},
+                    files={"upload_file": (relative_template_path.name, template_file, "text/plain")},
                 ),
             )
             if response_code != 200:
