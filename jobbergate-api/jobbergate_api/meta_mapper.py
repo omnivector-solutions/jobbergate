@@ -37,7 +37,7 @@ class MetaMapper:
             ),
             created_at=MetaField(
                 description="The timestamp indicating when this Foo was created",
-                example="2021-12-29 11:58:00",
+                example="2023-08-18T13:55:37.172285",
             ),
         )
 
