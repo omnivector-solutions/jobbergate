@@ -485,6 +485,47 @@ class TestListJobScripts:
         assert response_data["items"][0]["template"] is None
         assert response_data["items"][1]["template"] is None
 
+    async def test_list_job_scripts__search(
+        self,
+        client,
+        tester_email,
+        synth_session,
+        inject_security_header,
+        fill_all_job_script_data,
+    ):
+        data = fill_all_job_script_data(
+            dict(
+                name="instance-one",
+                description="the first",
+                owner_email="user1@test.com",
+            ),
+            dict(
+                name="item-two",
+                description="second item",
+                owner_email="user2@test.com",
+            ),
+            dict(
+                name="instance-three",
+                description="a final instance",
+                owner_email="final@test.com",
+            ),
+        )
+        with crud_service.bound_session(synth_session):
+            for item in data:
+                await crud_service.create(**item)
+
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+        response = await client.get("jobbergate/job-scripts", params={"search": "instance"})
+        assert response.status_code == 200, f"Get failed: {response.text}"
+
+        response_data = response.json()
+
+        expected_names = {"instance-one", "instance-three"}
+        actual_names = {i["name"] for i in response_data["items"]}
+
+        assert response_data["total"] == len(expected_names)
+        assert expected_names == actual_names
+
 
 class TestJobScriptFiles:
     @pytest.fixture(scope="function")
