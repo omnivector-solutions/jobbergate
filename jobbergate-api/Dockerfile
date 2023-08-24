@@ -10,7 +10,7 @@ RUN curl -sSL https://install.python-poetry.org | \
 
 COPY ./pyproject.toml ./poetry.lock* /app/
 WORKDIR /app
-RUN poetry install --no-root --no-dev
+RUN poetry install --no-root
 
 COPY ./jobbergate_api /app/jobbergate_api
 
