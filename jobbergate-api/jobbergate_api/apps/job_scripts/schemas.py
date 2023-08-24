@@ -100,11 +100,13 @@ class RenderFromTemplateRequest(BaseModel):
         schema_extra = job_script_meta_mapper
 
 
-class JobScriptUpdateRequest(JobScriptCreateRequest):
+class JobScriptUpdateRequest(BaseModel):
     """
     Request model for updating JobScript instances.
     """
 
+    name: str | None
+    description: str | None
     is_archived: bool | None
 
     class Config:

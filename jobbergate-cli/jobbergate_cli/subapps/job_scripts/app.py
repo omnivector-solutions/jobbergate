@@ -224,7 +224,7 @@ def update(
         ...,
         help="The id of the job script to update",
     ),
-    name: str = typer.Option(
+    name: Optional[str] = typer.Option(
         None,
         help="Optional new name of the job script.",
     ),
