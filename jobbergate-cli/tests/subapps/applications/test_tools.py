@@ -286,8 +286,17 @@ class TestUploadApplicationFiles:
         dummy_context,
         mocked_routes,
     ):
-        with mocked_routes:
+        with mocked_routes as routes:
             result = upload_application(dummy_context, dummy_application_dir, self.application_id)
+
+            # Ensure just the filename is included, nothing extra from path
+            filename_check = b'filename="jobbergate.py"\r\n'
+            assert routes["upload_workflow"].call_count == 1
+            assert filename_check in routes["upload_workflow"].calls[0].request.content
+
+            filename_check = b'filename="job-script-template.py.j2"\r\n'
+            assert routes["upload_template"].call_count == 1
+            assert filename_check in routes["upload_template"].calls[0].request.content
 
         assert result is True
 
