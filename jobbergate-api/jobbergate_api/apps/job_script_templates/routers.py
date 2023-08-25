@@ -9,7 +9,7 @@ from loguru import logger
 from sqlalchemy.exc import IntegrityError
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.dependecies import file_services, s3_bucket, secure_services
+from jobbergate_api.apps.dependecies import SecureService, secure_services
 from jobbergate_api.apps.garbage_collector import garbage_collect
 from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
 from jobbergate_api.apps.job_script_templates.models import JobScriptTemplateFile, WorkflowFile
@@ -29,7 +29,7 @@ from jobbergate_api.apps.job_script_templates.services import (
 )
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.apps.schemas import ListParams
-from jobbergate_api.storage import SecureSession, secure_session
+from jobbergate_api.storage import secure_session
 
 router = APIRouter(prefix="/job-script-templates", tags=["Job Script Templates"])
 
@@ -42,22 +42,16 @@ router = APIRouter(prefix="/job-script-templates", tags=["Job Script Templates"]
 )
 async def job_script_template_create(
     create_request: JobTemplateCreateRequest,
-    secure_session: SecureSession = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_EDIT, services=[crud_service])
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
     ),
 ):
     """Create a new job script template."""
     logger.info(f"Creating a new job script template with {create_request=}")
 
-    if secure_session.identity_payload.email is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The token payload does not contain an email",
-        )
-
     try:
         return await crud_service.create(
-            owner_email=secure_session.identity_payload.email,
+            owner_email=secure_services.identity_payload.email,
             **create_request.dict(exclude_unset=True),
         )
     except IntegrityError:
@@ -70,7 +64,7 @@ async def job_script_template_create(
     "/{id_or_identifier}",
     description="Endpoint to return a job script template by its id or identifier",
     response_model=JobTemplateDetailedView,
-    dependencies=[Depends(secure_services(Permissions.JOB_TEMPLATES_VIEW, services=[crud_service]))],
+    dependencies=[Depends(secure_services(Permissions.JOB_TEMPLATES_VIEW))],
 )
 async def job_script_template_get(id_or_identifier: int | str = Path()):
     """Get a job script template by id or identifier."""
@@ -86,9 +80,7 @@ async def job_script_template_get(id_or_identifier: int | str = Path()):
 async def job_script_template_get_list(
     list_params: ListParams = Depends(),
     include_null_identifier: bool = Query(False),
-    secure_session: SecureSession = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_VIEW, services=[crud_service])
-    ),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_VIEW)),
 ):
     """Get a list of job script templates."""
     logger.debug("Preparing to list job script templates")
@@ -96,7 +88,7 @@ async def job_script_template_get_list(
     list_kwargs = list_params.dict(exclude_unset=True, exclude={"user_only", "include_parent"})
 
     if list_params.user_only:
-        list_kwargs["owner_email"] = secure_session.identity_payload.email
+        list_kwargs["owner_email"] = secure_services.identity_payload.email
 
     return await crud_service.paginated_list(
         **list_kwargs,
@@ -113,14 +105,14 @@ async def job_script_template_get_list(
 async def job_script_template_update(
     update_request: JobTemplateUpdateRequest,
     id_or_identifier: int | str = Path(),
-    secure_session: SecureSession = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_EDIT, services=[crud_service], ensure_email=True)
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
     ),
 ):
     """Update a job script template by id or identifier."""
     logger.info(f"Updating job script template {id_or_identifier=} with {update_request=}")
     await crud_service.get(
-        id_or_identifier, ensure_attributes={"owner_email": secure_session.identity_payload.email}
+        id_or_identifier, ensure_attributes={"owner_email": secure_services.identity_payload.email}
     )
     return await crud_service.update(id_or_identifier, **update_request.dict(exclude_unset=True))
 
@@ -132,14 +124,14 @@ async def job_script_template_update(
 )
 async def job_script_template_delete(
     id_or_identifier: int | str = Path(),
-    secure_session: SecureSession = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_EDIT, services=[crud_service], ensure_email=True)
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
     ),
 ):
     """Delete a job script template by id or identifier."""
     logger.info(f"Deleting job script template with {id_or_identifier=}")
     await crud_service.get(
-        id_or_identifier, ensure_attributes={"owner_email": secure_session.identity_payload.email}
+        id_or_identifier, ensure_attributes={"owner_email": secure_services.identity_payload.email}
     )
     await crud_service.delete(id_or_identifier)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
@@ -148,17 +140,9 @@ async def job_script_template_delete(
 @router.get(
     "/{id_or_identifier}/upload/template/{file_name:path}",
     description="Endpoint to get a file from a job script template by id or identifier",
-    dependencies=[
-        Depends(
-            secure_services(Permissions.JOB_TEMPLATES_VIEW, services=[crud_service, template_file_service])
-        ),
-        Depends(file_services(template_file_service)),
-    ],
+    dependencies=[Depends(secure_services(Permissions.JOB_TEMPLATES_VIEW))],
 )
-async def job_script_template_get_file(
-    id_or_identifier: int | str = Path(),
-    file_name: str = Path(),
-):
+async def job_script_template_get_file(id_or_identifier: int | str = Path(), file_name: str = Path()):
     """
     Get a job script template file by id or identifier.
 
@@ -180,16 +164,13 @@ async def job_script_template_get_file(
     status_code=status.HTTP_200_OK,
     description="Endpoint to upload a file to a job script template by id or identifier",
     response_model=TemplateFileDetailedView,
-    dependencies=[Depends(file_services(template_file_service))],
 )
 async def job_script_template_upload_file(
     id_or_identifier: int | str = Path(),
     file_type: FileType = Path(),
     upload_file: UploadFile = File(..., description="File to upload"),
-    secure_session: SecureSession = Depends(
-        secure_services(
-            Permissions.JOB_TEMPLATES_EDIT, services=[crud_service, template_file_service], ensure_email=True
-        )
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
     ),
 ):
     """Upload a file to a job script template by id or identifier."""
@@ -201,7 +182,7 @@ async def job_script_template_upload_file(
 
     logger.debug(f"Uploading file {upload_file.filename} to job script template {id_or_identifier=}")
     job_script_template = await crud_service.get(
-        id_or_identifier, ensure_attributes={"owner_email": secure_session.identity_payload.email}
+        id_or_identifier, ensure_attributes={"owner_email": secure_services.identity_payload.email}
     )
 
     return await template_file_service.upsert(
@@ -216,20 +197,17 @@ async def job_script_template_upload_file(
     "/{id_or_identifier}/upload/template/{file_name:path}",
     status_code=status.HTTP_200_OK,
     description="Endpoint to delete a file to a job script template by id or identifier",
-    dependencies=[Depends(file_services(template_file_service))],
 )
 async def job_script_template_delete_file(
     id_or_identifier: int | str = Path(),
     file_name: str = Path(),
-    secure_session: SecureSession = Depends(
-        secure_services(
-            Permissions.JOB_TEMPLATES_EDIT, services=[crud_service, template_file_service], ensure_email=True
-        )
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
     ),
 ):
     """Delete a file from a job script template by id or identifier."""
     job_script_template = await crud_service.get(
-        id_or_identifier, ensure_attributes={"owner_email": secure_session.identity_payload.email}
+        id_or_identifier, ensure_attributes={"owner_email": secure_services.identity_payload.email}
     )
     job_script_template_file = await template_file_service.get(job_script_template.id, file_name)
     await template_file_service.delete(job_script_template_file)
@@ -238,12 +216,7 @@ async def job_script_template_delete_file(
 @router.get(
     "/{id_or_identifier}/upload/workflow",
     description="Endpoint to get a workflow file from a job script template by id or identifier",
-    dependencies=[
-        Depends(
-            secure_services(Permissions.JOB_TEMPLATES_VIEW, services=[crud_service, workflow_file_service])
-        ),
-        Depends(file_services(workflow_file_service)),
-    ],
+    dependencies=[Depends(secure_services(Permissions.JOB_TEMPLATES_VIEW))],
 )
 async def job_script_workflow_get_file(id_or_identifier: int | str = Path()):
     """
@@ -267,22 +240,19 @@ async def job_script_workflow_get_file(id_or_identifier: int | str = Path()):
     status_code=status.HTTP_200_OK,
     description="Endpoint to upload a file to a job script template by id or identifier",
     response_model=WorkflowFileDetailedView,
-    dependencies=[Depends(file_services(workflow_file_service))],
 )
 async def job_script_workflow_upload_file(
     id_or_identifier: int | str = Path(),
     runtime_config: RunTimeConfig = Body(),
     upload_file: UploadFile = File(..., description="File to upload"),
-    secure_session: SecureSession = Depends(
-        secure_services(
-            Permissions.JOB_TEMPLATES_EDIT, services=[crud_service, workflow_file_service], ensure_email=True
-        )
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
     ),
 ):
     """Upload a file to a job script workflow by id or identifier."""
     logger.debug(f"Uploading workflow file to job script template {id_or_identifier=}: {runtime_config}")
     job_script_template = await crud_service.get(
-        id_or_identifier, ensure_attributes={"owner_email": secure_session.identity_payload.email}
+        id_or_identifier, ensure_attributes={"owner_email": secure_services.identity_payload.email}
     )
     return await workflow_file_service.upsert(
         parent_id=job_script_template.id,
@@ -296,20 +266,17 @@ async def job_script_workflow_upload_file(
     "/{id_or_identifier}/upload/workflow",
     status_code=status.HTTP_200_OK,
     description="Endpoint to delete a workflow file from a job script template by id or identifier",
-    dependencies=[Depends(file_services(workflow_file_service))],
 )
 async def job_script_workflow_delete_file(
     id_or_identifier: int | str = Path(),
-    secure_session: SecureSession = Depends(
-        secure_services(
-            Permissions.JOB_TEMPLATES_EDIT, services=[crud_service, workflow_file_service], ensure_email=True
-        )
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
     ),
 ):
     """Delete a workflow file from a job script template by id or identifier."""
     logger.debug(f"Deleting workflow file from job script template {id_or_identifier=}")
     job_script_template = await crud_service.get(
-        id_or_identifier, ensure_attributes={"owner_email": secure_session.identity_payload.email}
+        id_or_identifier, ensure_attributes={"owner_email": secure_services.identity_payload.email}
     )
     workflow_file = await workflow_file_service.get(job_script_template.id, WORKFLOW_FILE_NAME)
     await workflow_file_service.delete(workflow_file)
@@ -323,15 +290,14 @@ async def job_script_workflow_delete_file(
 )
 async def job_script_template_garbage_collector(
     background_tasks: BackgroundTasks,
-    secure_session: SecureSession = Depends(secure_session(Permissions.JOB_TEMPLATES_EDIT)),
-    bucket=Depends(s3_bucket),
+    secure_services: SecureService = Depends(secure_session(Permissions.JOB_TEMPLATES_EDIT)),
 ):
     """Delete all unused files from jobbergate templates on the file storage."""
     logger.info("Starting garbage collection from jobbergate file storage")
     background_tasks.add_task(
         garbage_collect,
-        secure_session.session,
-        bucket,
+        secure_services.session,
+        secure_services.bucket,
         [JobScriptTemplateFile, WorkflowFile],
         background_tasks,
     )

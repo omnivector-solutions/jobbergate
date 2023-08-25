@@ -36,7 +36,7 @@ async def test_create_stand_alone_job_script(
     with pytest.raises(HTTPException) as exc_info:
         crud_service.session
     assert exc_info.value.status_code == 503
-    assert exc_info.value.detail == "Service is not bound to a database session"
+    assert exc_info.value.detail == "Service JobScriptCrudService is not bound to a database session"
 
     # Make sure the data was actually inserted into the database
     with crud_service.bound_session(synth_session):

@@ -10,7 +10,6 @@ from textwrap import dedent
 from unittest.mock import patch
 
 import pytest
-from aioboto3.session import Session as Boto3Session
 from fastapi import status
 from httpx import AsyncClient, Response
 
@@ -18,6 +17,7 @@ from jobbergate_api.apps.models import Base
 from jobbergate_api.config import settings
 from jobbergate_api.main import app
 from jobbergate_api.storage import engine_factory
+from jobbergate_api.apps.dependecies import s3_bucket, get_bucket_name, get_bucket_url
 
 # Charset for producing random strings
 CHARSET = string.ascii_letters + string.digits + string.punctuation
@@ -84,21 +84,20 @@ async def synth_session():
 
 @pytest.fixture(autouse=True, scope="session")
 async def synth_s3_bucket_session():
-    session = Boto3Session()
+    bucket_name = get_bucket_name()
+    bucket_url = get_bucket_url()
 
-    async with session.resource("s3", endpoint_url=settings.TEST_S3_ENDPOINT_URL) as s3:
-        bucket = await s3.Bucket(settings.TEST_S3_BUCKET_NAME)
+    async with s3_bucket(bucket_name, bucket_url) as bucket:
         try:
             await bucket.create()
         except bucket.meta.client.exceptions.BucketAlreadyOwnedByYou:
             pass
 
-        with patch("jobbergate_api.apps.dependecies.s3_bucket", return_value=bucket):
-            try:
-                yield bucket
-            finally:
-                await bucket.objects.all().delete()
-                await bucket.delete()
+        try:
+            yield bucket
+        finally:
+            await bucket.objects.all().delete()
+            await bucket.delete()
 
 
 @pytest.fixture(scope="function")
