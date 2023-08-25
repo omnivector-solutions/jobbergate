@@ -67,7 +67,7 @@ async def submit_job_script(
         name = pending_job_submission.name
         mapper_class_name = user_mapper.__class__.__name__
         logger.debug(f"Fetching username for email {email} with mapper {mapper_class_name}")
-        username = user_mapper(email)
+        username = user_mapper[email]
         logger.debug(f"Using local slurm user {username} for job submission")
 
         submit_dir = pending_job_submission.execution_directory or SETTINGS.DEFAULT_SLURM_WORK_DIR

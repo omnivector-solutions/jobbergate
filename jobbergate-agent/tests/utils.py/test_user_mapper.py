@@ -11,6 +11,10 @@ class TestSingleUserMapper:
         mapper = SingleUserMapper("test-user")
 
         assert mapper.slurm_user == "test-user"
+        assert len(mapper) == 1
+        assert list(mapper) == ["test-user"]
+        assert "test-user" in mapper
+        assert "another-test-user" in mapper
 
     def test_init__default_to_settings(self, tweak_settings):
         """Test that the class is initialized successfully with default value."""
@@ -37,7 +41,7 @@ class TestSingleUserMapper:
         """Test that the class returns the correct user."""
         mapper = SingleUserMapper("test-user")
 
-        assert mapper(user_email) == "test-user"
+        assert mapper[user_email] == "test-user"
 
 
 class TestManufacture:

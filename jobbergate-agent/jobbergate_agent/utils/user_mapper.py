@@ -3,8 +3,9 @@ Provide to the agent a way to map email addresses from Jobbergate local Slurm us
 
 Custom mappers can be added to the agent as installable plugins, which are discovered at runtime.
 """
+from collections.abc import Mapping as MappingABC
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Mapping, Protocol
 
 from buzz import enforce_defined, require_condition
 
@@ -13,12 +14,10 @@ from jobbergate_agent.utils.logging import logger
 from jobbergate_agent.utils.plugin import load_plugins
 
 
-class SlurmUserMapper(Protocol):
-    """Protocol to map email addresses from Jobbergate to local Slurm users."""
-
-    def __call__(self, email: str) -> str:
-        """Specify the signature to map an email address to a local Slurm user."""
-        ...
+SlurmUserMapper = Mapping[str, str]
+"""
+Slurm user mappers are mappings from email addresses to local Slurm users.
+"""
 
 
 class SlurmUserMapperFactory(Protocol):
@@ -27,6 +26,7 @@ class SlurmUserMapperFactory(Protocol):
 
     A callable with no arguments is expected in order to handle to client code
     the configuration and initialization of any custom user mapper.
+    Any object that implements the ``Mapping`` protocol can be returned.
     """
 
     def __call__(self) -> SlurmUserMapper:
@@ -35,7 +35,7 @@ class SlurmUserMapperFactory(Protocol):
 
 
 @dataclass
-class SingleUserMapper:
+class SingleUserMapper(MappingABC):
     """A user mapper that always returns the same user."""
 
     slurm_user: str = ""
@@ -51,8 +51,14 @@ class SingleUserMapper:
         )
         logger.info(f"Started the single-user-mapper with {self.slurm_user=}")
 
-    def __call__(self, _: str) -> str:
+    def __getitem__(self, _: str) -> str:
         return self.slurm_user
+
+    def __iter__(self):
+        yield self.slurm_user
+
+    def __len__(self):
+        return 1
 
 
 def manufacture() -> SlurmUserMapper:
