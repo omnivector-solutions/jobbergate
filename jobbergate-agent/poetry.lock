@@ -497,6 +497,27 @@ plugins = ["setuptools"]
 requirements-deprecated-finder = ["pip-api", "pipreqs"]
 
 [[package]]
+name = "jobbergate-core"
+version = "4.0.0a1"
+description = "Jobbergate Core"
+optional = false
+python-versions = "^3.8"
+files = []
+develop = true
+
+[package.dependencies]
+httpx = "^0.24.1"
+loguru = "^0.6.0"
+pendulum = "^2.1.2"
+py-buzz = "^3.1.0"
+pydantic = "^1.8.2"
+python-jose = "^3.3.0"
+
+[package.source]
+type = "directory"
+url = "../jobbergate-core"
+
+[[package]]
 name = "loguru"
 version = "0.6.0"
 description = "Python logging made (stupidly) simple"
@@ -1179,4 +1200,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "2132b8c793b9809f6c6d86d5cb201d7e712f5cc80799e9f78a1f466a238119ba"
+content-hash = "55c7ad31a4f32df585478f751ed9a550c9f8236c56cbc44b4a444b619ad27834"

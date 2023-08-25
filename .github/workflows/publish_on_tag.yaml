@@ -66,6 +66,7 @@ jobs:
       - name: Build and publish on PyPI
         working-directory: ${{ matrix.sub_project }}
         run: |
+          poetry self add poetry-stickywheel-plugin
           poetry config pypi-token.pypi ${{ secrets.OMNIVECTOR_PYPI_TOKEN }}
           poetry build
           poetry publish
