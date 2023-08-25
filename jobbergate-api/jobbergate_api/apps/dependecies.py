@@ -15,20 +15,25 @@ from jobbergate_api.apps.services import BucketBoundService, DatabaseBoundServic
 from jobbergate_api.config import settings
 from jobbergate_api.safe_types import Bucket
 from jobbergate_api.security import PermissionMode
-from jobbergate_api.storage import SecureSession, secure_session
-from jobbergate_api.storage import AsyncSession
+from jobbergate_api.storage import AsyncSession, SecureSession, secure_session
 
 session = Session()
 
 
 @asynccontextmanager
 async def s3_bucket(bucket_name: str, s3_url: str | None) -> AsyncIterator[Bucket]:
+    """Create a bucket using a context manager."""
     async with session.resource("s3", endpoint_url=s3_url) as s3:
         bucket = await s3.Bucket(bucket_name)
         yield bucket
 
 
 def get_bucket_name(override_bucket_name: str | None = None) -> str:
+    """
+    Get the bucket name based on the environment.
+
+    The name can be overridden when multi tenancy is enabled by passing a bucket name.
+    """
     if settings.DEPLOY_ENV.lower() == "test":
         return settings.TEST_S3_BUCKET_NAME
     if override_bucket_name and settings.MULTI_TENANCY_ENABLED:
@@ -37,6 +42,7 @@ def get_bucket_name(override_bucket_name: str | None = None) -> str:
 
 
 def get_bucket_url() -> str | None:
+    """Get the bucket url based on the environment."""
     if settings.DEPLOY_ENV.lower() == "test":
         return settings.TEST_S3_ENDPOINT_URL
     return settings.S3_ENDPOINT_URL
@@ -44,6 +50,7 @@ def get_bucket_url() -> str | None:
 
 @contextmanager
 def bind_session(session: AsyncSession) -> Iterator[None]:
+    """Bind the session to all CRUD services."""
     try:
         [service.bind_session(session) for service in DatabaseBoundService.iter_instances()]
         yield
@@ -53,6 +60,7 @@ def bind_session(session: AsyncSession) -> Iterator[None]:
 
 @contextmanager
 def bind_bucket(bucket: Bucket) -> Iterator[None]:
+    """Bind the bucket to all file services."""
     try:
         [service.bind_bucket(bucket) for service in BucketBoundService.iter_instances()]
         yield
@@ -62,6 +70,8 @@ def bind_bucket(bucket: Bucket) -> Iterator[None]:
 
 @dataclass
 class SecureService(SecureSession):
+    """Dataclass to hold the secure session and the bucket."""
+
     bucket: Bucket
 
 
@@ -89,7 +99,6 @@ def secure_services(
         """
         Bind each service to the secure session and then return the session.
         """
-
         bucket_name = get_bucket_name(secure_session.identity_payload.organization_id)
         s3_url = get_bucket_url()
 
