@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 from contextlib import contextmanager
 from typing import Any, Generic, Protocol, TypeVar
+from weakref import WeakSet
 
 from botocore.response import StreamingBody
 from buzz import check_expressions, enforce_defined, handle_errors, require_condition
@@ -40,15 +41,20 @@ class ServiceError(HTTPException):
 class DatabaseBoundService:
     """
     Provide base class for services that bind to a database session.
+
+    This class holds a reference to the session and provides methods to bind and unbind the session.
+    It also keeps track of all instances of the service so that they can be iterated over.
     """
 
     _session: AsyncSession | None
+    database_services: WeakSet = WeakSet()
 
     def __init__(self):
         """
         Instantiate the service with a null session.
         """
         self._session = None
+        self.database_services.add(self)
 
     def bind_session(self, session: AsyncSession):
         """
@@ -82,7 +88,7 @@ class DatabaseBoundService:
         """
         return enforce_defined(
             self._session,
-            "Service is not bound to a database session",
+            f"Service {self.__class__.__name__} is not bound to a database session",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_503_SERVICE_UNAVAILABLE),
         )
@@ -349,15 +355,20 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
 class BucketBoundService:
     """
     Provide base class for services that bind to an s3 bucket.
+
+    This class holds a reference to the bucket and provides methods to bind and unbind the bucket.
+    It also keeps track of all instances of the service so that they can be iterated over.
     """
 
     _bucket: Bucket | None
+    bucket_services: WeakSet = WeakSet()
 
     def __init__(self):
         """
         Initialize the service with a null bucket.
         """
         self._bucket = None
+        self.bucket_services.add(self)
 
     def bind_bucket(self, bucket: Bucket):
         """
@@ -391,7 +402,7 @@ class BucketBoundService:
         """
         return enforce_defined(
             self._bucket,
-            "Service is not bound to file storage",
+            f"Service {self.__class__.__name__} is not bound to file storage",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_503_SERVICE_UNAVAILABLE),
         )
@@ -441,7 +452,8 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         """
         Initialize the instance with an ORM model type.
         """
-        super().__init__()
+        DatabaseBoundService.__init__(self)
+        BucketBoundService.__init__(self)
         self.model_type = model_type
 
     async def get(self, parent_id: int, filename: str) -> FileModel:

@@ -94,7 +94,7 @@ async def test_create_job_submission__with_client_id_in_token(
     with pytest.raises(HTTPException) as exc_info:
         crud_service.session
     assert exc_info.value.status_code == 503
-    assert exc_info.value.detail == "Service is not bound to a database session"
+    assert exc_info.value.detail == "Service JobSubmissionService is not bound to a database session"
 
     # Make sure that the data can be retrieved with a GET request
     inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_VIEW)
@@ -1393,7 +1393,7 @@ async def test_job_submissions_agent_pending__returns_400_if_token_does_not_carr
     )
     response = await client.get("/jobbergate/job-submissions/agent/pending")
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "Access token does not contain a client_id" in response.text
+    assert "Access token does not contain\\n  1: client_id" in response.text
 
 
 async def test_job_submissions_agent_update__success(
@@ -1625,4 +1625,4 @@ async def test_job_submissions_agent_active__returns_400_if_token_does_not_carry
     )
     response = await client.get("/jobbergate/job-submissions/agent/active")
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "Access token does not contain a client_id" in response.text
+    assert "Access token does not contain\\n  1: client_id" in response.text

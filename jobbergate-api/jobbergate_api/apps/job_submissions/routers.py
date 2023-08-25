@@ -8,7 +8,7 @@ from fastapi_pagination import Page
 from loguru import logger
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.dependecies import file_services, secure_services
+from jobbergate_api.apps.dependecies import SecureService, secure_services
 from jobbergate_api.apps.job_scripts.services import crud_service as script_crud_service
 from jobbergate_api.apps.job_scripts.services import file_service as script_file_service
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
@@ -26,7 +26,6 @@ from jobbergate_api.apps.job_submissions.services import crud_service
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.apps.schemas import ListParams
 from jobbergate_api.email_notification import notify_submission_rejected
-from jobbergate_api.storage import SecureSession
 
 router = APIRouter(prefix="/job-submissions", tags=["Job Submissions"])
 
@@ -36,15 +35,11 @@ router = APIRouter(prefix="/job-submissions", tags=["Job Submissions"])
     status_code=status.HTTP_201_CREATED,
     description="Endpoint for job_submission creation",
     response_model=JobSubmissionDetailedView,
-    dependencies=[Depends(file_services(script_file_service))],
 )
 async def job_submission_create(
     create_request: JobSubmissionCreateRequest,
-    secure_session: SecureSession = Depends(
-        secure_services(
-            Permissions.JOB_SUBMISSIONS_EDIT,
-            services=[crud_service, script_crud_service, script_file_service],
-        )
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_SUBMISSIONS_EDIT, ensure_email=True)
     ),
 ):
     """
@@ -54,13 +49,7 @@ async def job_submission_create(
     """
     logger.debug(f"Creating job submissions with {create_request=}")
 
-    if secure_session.identity_payload.email is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The token payload does not contain an email",
-        )
-
-    client_id = create_request.client_id or secure_session.identity_payload.client_id
+    client_id = create_request.client_id or secure_services.identity_payload.client_id
     if client_id is None:
         message = "Could not find a client_id in the request body or auth token."
         logger.warning(message)
@@ -89,7 +78,7 @@ async def job_submission_create(
 
     new_job_submission = await crud_service.create(
         **create_request.dict(exclude_unset=True),
-        owner_email=secure_session.identity_payload.email,
+        owner_email=secure_services.identity_payload.email,
         status=JobSubmissionStatus.CREATED,
     )
     return new_job_submission
@@ -99,7 +88,7 @@ async def job_submission_create(
     "/{id}",
     description="Endpoint to get a job_submission",
     response_model=JobSubmissionDetailedView,
-    dependencies=[Depends(secure_services(Permissions.JOB_SUBMISSIONS_VIEW, services=[crud_service]))],
+    dependencies=[Depends(secure_services(Permissions.JOB_SUBMISSIONS_VIEW))],
 )
 async def job_submission_get(id: int = Path(...)):
     """Return the job_submission given it's id."""
@@ -129,9 +118,7 @@ async def job_submission_get_list(
         None,
         description="Filter job-submissions by the job-script-id they were created from.",
     ),
-    secure_session: SecureSession = Depends(
-        secure_services(Permissions.JOB_SUBMISSIONS_VIEW, services=[crud_service])
-    ),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SUBMISSIONS_VIEW)),
 ):
     """List job_submissions for the authenticated user."""
     logger.debug("Fetching job submissions")
@@ -139,7 +126,7 @@ async def job_submission_get_list(
     list_kwargs = list_params.dict(exclude_unset=True, exclude={"user_only", "include_archived"})
 
     if list_params.user_only:
-        list_kwargs["owner_email"] = secure_session.identity_payload.email
+        list_kwargs["owner_email"] = secure_services.identity_payload.email
     if submit_status:
         list_kwargs["status"] = submit_status
     if from_job_script_id:
@@ -165,13 +152,13 @@ async def job_submission_get_list(
 )
 async def job_submission_delete(
     id: int = Path(..., description="id of the job submission to delete"),
-    secure_session: SecureSession = Depends(
-        secure_services(Permissions.JOB_SUBMISSIONS_EDIT, services=[crud_service], ensure_email=True)
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_SUBMISSIONS_EDIT, ensure_email=True)
     ),
 ):
     """Delete job_submission given its id."""
     logger.info(f"Deleting job submission {id=}")
-    await crud_service.get(id, ensure_attributes={"owner_email": secure_session.identity_payload.email})
+    await crud_service.get(id, ensure_attributes={"owner_email": secure_services.identity_payload.email})
     await crud_service.delete(id)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -185,13 +172,13 @@ async def job_submission_delete(
 async def job_submission_update(
     update_params: JobSubmissionUpdateRequest,
     id: int = Path(),
-    secure_session: SecureSession = Depends(
-        secure_services(Permissions.JOB_SUBMISSIONS_EDIT, services=[crud_service], ensure_email=True)
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_SUBMISSIONS_EDIT, ensure_email=True)
     ),
 ):
     """Update a job_submission given its id."""
     logger.debug(f"Updating {id=} with {update_params=}")
-    await crud_service.get(id, ensure_attributes={"owner_email": secure_session.identity_payload.email})
+    await crud_service.get(id, ensure_attributes={"owner_email": secure_services.identity_payload.email})
     return await crud_service.update(id, **update_params.dict(exclude_unset=True))
 
 
@@ -206,12 +193,8 @@ async def job_submission_update(
 async def job_submission_agent_update(
     update_params: JobSubmissionAgentUpdateRequest,
     id: int = Path(),
-    secure_session: SecureSession = Depends(
-        secure_services(
-            Permissions.JOB_SUBMISSIONS_EDIT,
-            services=[crud_service],
-            ensure_client_id=True,
-        )
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_SUBMISSIONS_EDIT, ensure_client_id=True)
     ),
 ):
     """
@@ -224,9 +207,9 @@ async def job_submission_agent_update(
     logger.info(
         f"Setting status to: {update_params.status} "
         f"for job_submission: {id} "
-        f"on client_id: {secure_session.identity_payload.client_id}"
+        f"on client_id: {secure_services.identity_payload.client_id}"
     )
-    await crud_service.get(id, ensure_attributes={"client_id": secure_session.identity_payload.client_id})
+    await crud_service.get(id, ensure_attributes={"client_id": secure_services.identity_payload.client_id})
     job_submission = await crud_service.update(id, **update_params.dict(exclude_unset=True))
 
     if update_params.report_message and update_params.status == JobSubmissionStatus.REJECTED:
@@ -243,20 +226,16 @@ async def job_submission_agent_update(
     tags=["Agent"],
 )
 async def job_submissions_agent_pending(
-    secure_session: SecureSession = Depends(
-        secure_services(Permissions.JOB_SUBMISSIONS_VIEW, services=[crud_service])
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_SUBMISSIONS_VIEW, ensure_client_id=True)
     ),
 ):
     """Get a list of pending job submissions for the cluster-agent."""
     logger.debug("Agent is requesting a list of pending job submissions")
 
-    client_id = secure_session.identity_payload.client_id
-    if client_id is None:
-        message = "Access token does not contain a client_id. Cannot fetch pending submissions"
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+    client_id = secure_services.identity_payload.client_id
 
-    logger.info(f"Fetching newly created job_submissions for client_id: {client_id}")
+    logger.info(f"Fetching newly created job_submissions for {client_id=}")
 
     return await crud_service.paginated_list(
         status=JobSubmissionStatus.CREATED,
@@ -273,22 +252,16 @@ async def job_submissions_agent_pending(
     tags=["Agent"],
 )
 async def job_submissions_agent_active(
-    secure_session: SecureSession = Depends(
-        secure_services(Permissions.JOB_SUBMISSIONS_VIEW, services=[crud_service])
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_SUBMISSIONS_VIEW, ensure_client_id=True)
     ),
 ):
     """Get a list of active job submissions for the cluster-agent."""
     logger.debug("Agent is requesting a list of active job submissions")
 
-    client_id = secure_session.identity_payload.client_id
-    if client_id is None:
-        logger.error("Access token does not contain a client_id")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Access token does not contain a client_id. Cannot fetch pending submissions",
-        )
+    client_id = secure_services.identity_payload.client_id
 
-    logger.info(f"Fetching active job_submissions for client_id: {client_id}")
+    logger.info(f"Fetching active job_submissions for {client_id=}")
 
     pages = await crud_service.paginated_list(
         status=JobSubmissionStatus.SUBMITTED,
