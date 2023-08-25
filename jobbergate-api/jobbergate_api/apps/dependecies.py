@@ -52,20 +52,20 @@ def get_bucket_url() -> str | None:
 def bind_session(session: AsyncSession) -> Iterator[None]:
     """Bind the session to all CRUD services."""
     try:
-        [service.bind_session(session) for service in DatabaseBoundService.iter_instances()]
+        [service.bind_session(session) for service in DatabaseBoundService.database_services]
         yield
     finally:
-        [service.unbind_session() for service in DatabaseBoundService.iter_instances()]
+        [service.unbind_session() for service in DatabaseBoundService.database_services]
 
 
 @contextmanager
 def bind_bucket(bucket: Bucket) -> Iterator[None]:
     """Bind the bucket to all file services."""
     try:
-        [service.bind_bucket(bucket) for service in BucketBoundService.iter_instances()]
+        [service.bind_bucket(bucket) for service in BucketBoundService.bucket_services]
         yield
     finally:
-        [service.unbind_bucket() for service in BucketBoundService.iter_instances()]
+        [service.unbind_bucket() for service in BucketBoundService.bucket_services]
 
 
 @dataclass

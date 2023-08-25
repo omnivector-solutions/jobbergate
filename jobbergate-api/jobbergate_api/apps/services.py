@@ -47,14 +47,14 @@ class DatabaseBoundService:
     """
 
     _session: AsyncSession | None
-    _database_instances: WeakSet = WeakSet()
+    database_services: WeakSet = WeakSet()
 
     def __init__(self):
         """
         Instantiate the service with a null session.
         """
         self._session = None
-        self._database_instances.add(self)
+        self.database_services.add(self)
 
     def bind_session(self, session: AsyncSession):
         """
@@ -92,11 +92,6 @@ class DatabaseBoundService:
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_503_SERVICE_UNAVAILABLE),
         )
-
-    @classmethod
-    def iter_instances(cls):
-        """Iterate over all instances of the service."""
-        return iter(cls._database_instances)
 
 
 class CrudModelProto(Protocol):
@@ -366,14 +361,14 @@ class BucketBoundService:
     """
 
     _bucket: Bucket | None
-    _bucket_instances: WeakSet = WeakSet()
+    bucket_services: WeakSet = WeakSet()
 
     def __init__(self):
         """
         Initialize the service with a null bucket.
         """
         self._bucket = None
-        self._bucket_instances.add(self)
+        self.bucket_services.add(self)
 
     def bind_bucket(self, bucket: Bucket):
         """
@@ -411,11 +406,6 @@ class BucketBoundService:
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_503_SERVICE_UNAVAILABLE),
         )
-
-    @classmethod
-    def iter_instances(cls):
-        """Iterate over all instances of the service."""
-        return iter(cls._bucket_instances)
 
 
 class FileModelProto(Protocol):
