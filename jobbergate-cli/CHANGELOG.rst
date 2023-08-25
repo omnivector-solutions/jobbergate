@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+4.0.0a4 -- 2023-08-25
+---------------------
+
 4.0.0a3 -- 2023-08-24
 ---------------------
 - Fixed integration issue by removing the `template/` from the path when uploading files

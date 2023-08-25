@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+4.0.0a4 -- 2023-08-25
+---------------------
 - Fix the bucket name when multi tenancy is enabled
 - Fix job script update by making name an optional argument
 
