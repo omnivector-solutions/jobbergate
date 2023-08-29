@@ -9,7 +9,7 @@ from loguru import logger
 from sqlalchemy.exc import IntegrityError
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.dependecies import SecureService, secure_services
+from jobbergate_api.apps.dependencies import SecureService, secure_services
 from jobbergate_api.apps.garbage_collector import garbage_collect
 from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
 from jobbergate_api.apps.job_script_templates.models import JobScriptTemplateFile, WorkflowFile
