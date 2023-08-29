@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Fix organization id on multi-tenant mode
 
 4.0.0a4 -- 2023-08-25
 ---------------------

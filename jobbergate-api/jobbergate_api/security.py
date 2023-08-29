@@ -120,11 +120,12 @@ def lockdown_with_identity(
             ),
         ) as check:
             for ensure, name in zip(
-                (ensure_email, ensure_organization, ensure_client_id), ("email", "organization", "client_id")
+                (ensure_email, ensure_organization, ensure_client_id),
+                ("email", "organization_id", "client_id"),
             ):
                 if ensure:
                     check(getattr(identity_payload, name, None) is not None, message=name)
 
-        return IdentityPayload.parse_obj(token_payload)
+        return identity_payload
 
     return dependency

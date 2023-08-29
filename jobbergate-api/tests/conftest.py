@@ -17,7 +17,7 @@ from jobbergate_api.apps.models import Base
 from jobbergate_api.config import settings
 from jobbergate_api.main import app
 from jobbergate_api.storage import engine_factory
-from jobbergate_api.apps.dependecies import s3_bucket, get_bucket_name, get_bucket_url
+from jobbergate_api.apps.dependencies import s3_bucket, get_bucket_name, get_bucket_url
 
 # Charset for producing random strings
 CHARSET = string.ascii_letters + string.digits + string.punctuation

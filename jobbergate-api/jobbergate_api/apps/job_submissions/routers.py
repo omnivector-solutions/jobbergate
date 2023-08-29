@@ -8,7 +8,7 @@ from fastapi_pagination import Page
 from loguru import logger
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.dependecies import SecureService, secure_services
+from jobbergate_api.apps.dependencies import SecureService, secure_services
 from jobbergate_api.apps.job_scripts.services import crud_service as script_crud_service
 from jobbergate_api.apps.job_scripts.services import file_service as script_file_service
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus

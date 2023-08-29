@@ -9,7 +9,7 @@ from fastapi_pagination import Page
 from loguru import logger
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.dependecies import SecureService, secure_services
+from jobbergate_api.apps.dependencies import SecureService, secure_services
 from jobbergate_api.apps.garbage_collector import garbage_collect
 from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate
 from jobbergate_api.apps.job_script_templates.services import crud_service as template_crud_service
