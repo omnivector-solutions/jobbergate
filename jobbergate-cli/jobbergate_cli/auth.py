@@ -237,6 +237,8 @@ def refresh_access_token(ctx: JobbergateContext, token_set: TokenSet):
     )
 
     token_set.access_token = refreshed_token_set.access_token
+    if refreshed_token_set.refresh_token is not None:
+        token_set.refresh_token = refreshed_token_set.refresh_token
 
 
 def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:

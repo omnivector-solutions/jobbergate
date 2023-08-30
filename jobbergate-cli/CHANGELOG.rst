@@ -9,6 +9,7 @@ Unreleased
 
 4.0.0a5 -- 2023-08-29
 ---------------------
+- Fixed refresh token not being updated on cache after token refresh
 
 4.0.0a4 -- 2023-08-25
 ---------------------
