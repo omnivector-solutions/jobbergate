@@ -1,17 +1,18 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import List, Optional
 
 from buzz import DoExceptParams
 from loguru import logger
 
-from jobbergate_agent.identity.cluster_api import backend_client
+from jobbergate_agent.clients.cluster_api import backend_client
 from jobbergate_agent.jobbergate.constants import JobSubmissionStatus
 from jobbergate_agent.jobbergate.schemas import ActiveJobSubmission, PendingJobSubmission
 from jobbergate_agent.utils.exception import JobbergateApiError
 from jobbergate_agent.utils.logging import log_error
 
 
-async def fetch_pending_submissions() -> List[PendingJobSubmission]:
+async def fetch_pending_submissions() -> list[PendingJobSubmission]:
     """
     Retrieve a list of pending job_submissions.
     """
@@ -27,7 +28,7 @@ async def fetch_pending_submissions() -> List[PendingJobSubmission]:
     return pending_job_submissions
 
 
-async def fetch_active_submissions() -> List[ActiveJobSubmission]:
+async def fetch_active_submissions() -> list[ActiveJobSubmission]:
     """
     Retrieve a list of active job_submissions.
     """
@@ -90,7 +91,7 @@ async def update_status(
     job_submission_id: int,
     status: JobSubmissionStatus,
     *,
-    report_message: Optional[str] = None,
+    report_message: str | None = None,
 ) -> None:
     """
     Update a job submission with a status

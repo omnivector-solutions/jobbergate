@@ -1,4 +1,4 @@
-"""Core module for Jobbergate API identity management"""
+"""Core module for Jobbergate API clients management"""
 import httpx
 from jobbergate_core.auth.token import Token, TokenError, TokenType
 

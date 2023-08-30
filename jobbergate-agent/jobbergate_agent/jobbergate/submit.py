@@ -4,9 +4,9 @@ from typing import Any, Dict, cast
 from buzz import handle_errors
 from loguru import logger
 
-from jobbergate_agent.identity.cluster_api import backend_client
-from jobbergate_agent.identity.slurmrestd import backend_client as slurmrestd_client
-from jobbergate_agent.identity.slurmrestd import inject_token
+from jobbergate_agent.clients.cluster_api import backend_client
+from jobbergate_agent.clients.slurmrestd import backend_client as slurmrestd_client
+from jobbergate_agent.clients.slurmrestd import inject_token
 from jobbergate_agent.jobbergate.api import SubmissionNotifier, fetch_pending_submissions, mark_as_submitted
 from jobbergate_agent.jobbergate.constants import FileType, JobSubmissionStatus
 from jobbergate_agent.jobbergate.schemas import (

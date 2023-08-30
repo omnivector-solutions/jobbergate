@@ -99,7 +99,7 @@ async def test_submit_job_script__with_non_default_execution_directory(
     """
     user_mapper = SingleUserMapper("dummy-user")
 
-    mocker.patch("jobbergate_agent.identity.slurmrestd.acquire_token", return_value="dummy-token")
+    mocker.patch("jobbergate_agent.clients.slurmrestd.acquire_token", return_value="dummy-token")
     exe_path = tmp_path / "exec"
     exe_path.mkdir()
     pending_job_submission = PendingJobSubmission(

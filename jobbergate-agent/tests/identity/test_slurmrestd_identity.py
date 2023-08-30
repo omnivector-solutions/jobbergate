@@ -4,7 +4,7 @@ from unittest import mock
 from freezegun import freeze_time
 from jose import jwt
 
-from jobbergate_agent.identity.slurmrestd import SETTINGS, acquire_token
+from jobbergate_agent.clients.slurmrestd import SETTINGS, acquire_token
 from jobbergate_agent.utils.logging import logger
 
 
@@ -59,7 +59,7 @@ def test_acquire_token__gets_a_token_from_slurm_if_one_is_not_in_the_cache(
     assert token_path.read_text() == retrieved_token
 
 
-@mock.patch("jobbergate_agent.identity.slurmrestd.datetime")
+@mock.patch("jobbergate_agent.clients.slurmrestd.datetime")
 def test_acquire_token__uses_key_path_if_supplied(
     mocked_datetime,
     slurmrestd_jwt_key_path,

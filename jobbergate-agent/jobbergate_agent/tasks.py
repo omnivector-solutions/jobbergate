@@ -6,7 +6,7 @@ from typing import Union
 from buzz import handle_errors
 from loguru import logger
 
-from jobbergate_agent.identity.cluster_api import backend_client
+from jobbergate_agent.clients.cluster_api import backend_client
 from jobbergate_agent.jobbergate.finish import finish_active_jobs
 from jobbergate_agent.jobbergate.submit import submit_pending_jobs
 from jobbergate_agent.settings import SETTINGS

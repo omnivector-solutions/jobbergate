@@ -34,14 +34,14 @@ def random_word():
 @pytest.fixture(autouse=True)
 def mock_cluster_api_cache_dir(tmp_path):
     _cache_dir = tmp_path / ".cache/jobbergate-agent/cluster-api"
-    with mock.patch("jobbergate_agent.identity.cluster_api.CACHE_DIR", new=_cache_dir):
+    with mock.patch("jobbergate_agent.clients.cluster_api.CACHE_DIR", new=_cache_dir):
         yield _cache_dir
 
 
 @pytest.fixture(autouse=True)
 def mock_slurmrestd_api_cache_dir(tmp_path):
     _cache_dir = tmp_path / ".cache/jobbergate-agent/slurmrestd"
-    with mock.patch("jobbergate_agent.identity.slurmrestd.CACHE_DIR", new=_cache_dir):
+    with mock.patch("jobbergate_agent.clients.slurmrestd.CACHE_DIR", new=_cache_dir):
         yield _cache_dir
 
 
@@ -61,7 +61,7 @@ def slurmrestd_jwt_key_path(tmp_path, slurmrestd_jwt_key_string):
 @pytest.fixture(autouse=True)
 def mock_slurmrestd_acquire_token(mocker):
     mocker.patch(
-        "jobbergate_agent.identity.slurmrestd.acquire_token",
+        "jobbergate_agent.clients.slurmrestd.acquire_token",
         return_value="default-dummy-token",
     )
 

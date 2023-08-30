@@ -1,19 +1,5 @@
 # Jobbergate-agent
 
-# Table of contents
-
-- [Project setup](#project-setup)
-  - [Dependencies](#dependencies)
-- [Install the package](#install-the-package)
-- [Setup parameters](#setup-parameters)
-- [Local usage example](#local-usage-exemple)
-
-## Project Setup
-
-### Dependencies
-
-- python3-venv
-
 ## Install the package
 
 To install the package from Pypi simply run `pip install jobbergate-agent`.
@@ -51,7 +37,7 @@ To install the package from Pypi simply run `pip install jobbergate-agent`.
 1. Run app
 
   ```bash
-  agentrun
+  jg-run
   ```
 
 **Note**: this command assumes you're inside a virtual environment in which the package is installed.

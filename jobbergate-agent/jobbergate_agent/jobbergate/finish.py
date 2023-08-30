@@ -1,6 +1,6 @@
 from loguru import logger
 
-from jobbergate_agent.identity.slurmrestd import backend_client as slurmrestd_client
+from jobbergate_agent.clients.slurmrestd import backend_client as slurmrestd_client
 from jobbergate_agent.jobbergate.api import fetch_active_submissions, update_status
 from jobbergate_agent.jobbergate.constants import JobSubmissionStatus
 from jobbergate_agent.jobbergate.schemas import SlurmSubmittedJobStatus

@@ -2,7 +2,7 @@ import httpx
 import pytest
 import respx
 
-from jobbergate_agent.identity.cluster_api import Token, TokenError, TokenType, acquire_token
+from jobbergate_agent.clients.cluster_api import Token, TokenError, TokenType, acquire_token
 from jobbergate_agent.settings import SETTINGS
 
 
