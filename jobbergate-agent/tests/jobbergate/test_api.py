@@ -228,13 +228,13 @@ async def test_update_status__success():
         update_route.mock(return_value=httpx.Response(status_code=200))
 
         await update_status(1, JobSubmissionStatus.COMPLETED)
-        assert update_route.calls.last.request.content == json.dumps(
-            dict(status=JobSubmissionStatus.COMPLETED, report_message=None)
-        ).encode("utf-8")
+        assert update_route.calls.last.request.content == json.dumps(dict(status=JobSubmissionStatus.COMPLETED)).encode(
+            "utf-8"
+        )
 
-        await update_status(2, JobSubmissionStatus.FAILED)
+        await update_status(2, JobSubmissionStatus.FAILED, report_message="It failed")
         assert update_route.calls.last.request.content == json.dumps(
-            dict(status=JobSubmissionStatus.FAILED, report_message=None)
+            dict(status=JobSubmissionStatus.FAILED, report_message="It failed")
         ).encode("utf-8")
 
         assert update_route.call_count == 2

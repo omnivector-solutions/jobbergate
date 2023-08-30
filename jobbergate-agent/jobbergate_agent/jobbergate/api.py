@@ -102,8 +102,8 @@ async def update_status(
         f"Could not update status for job submission {job_submission_id} via the API",
         do_except=log_error,
     ):
-        response = await backend_client.put(
-            f"jobbergate/job-submissions/agent/{job_submission_id}",
-            json=dict(status=status, report_message=report_message),
-        )
+        payload = {"status": status}
+        if report_message:
+            payload["report_message"] = report_message
+        response = await backend_client.put(f"jobbergate/job-submissions/agent/{job_submission_id}", json=payload)
         response.raise_for_status()
