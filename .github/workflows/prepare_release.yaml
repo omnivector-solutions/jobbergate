@@ -62,6 +62,14 @@ jobs:
           echo "Poetry version is: $(poetry version --short)"
           echo "::set-output name=version::$(poetry version --short)"
 
+      - id: agent-package
+        name: Bump version on the Agent
+        working-directory: jobbergate-agent
+        run: |
+          ../release-scripts/prepare-release.sh ${{ github.event.inputs.bump_rule }}
+          echo "Poetry version is: $(poetry version --short)"
+          echo "::set-output name=version::$(poetry version --short)"
+
       - id: docs
         name: Bump version on the Documentation
         working-directory: jobbergate-docs
@@ -71,7 +79,7 @@ jobs:
           echo "::set-output name=version::$(poetry version --short)"
 
       - name: Fail if poetry packages version don't match
-        if: ${{ steps.api-package.outputs.version != steps.core-package.outputs.version != steps.cli-package.outputs.version != steps.docs.outputs.version}}
+        if: ${{ steps.api-package.outputs.version != steps.agent-package.outputs.version != steps.core-package.outputs.version != steps.cli-package.outputs.version != steps.docs.outputs.version}}
         run: echo "Poetry packages version don't match!"
 
       - uses: peter-evans/create-pull-request@v4

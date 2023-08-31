@@ -20,7 +20,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        { sub_project: ["jobbergate-api", "jobbergate-cli", "jobbergate-core"] }
+        {
+          sub_project:
+            [
+              "jobbergate-api",
+              "jobbergate-cli",
+              "jobbergate-core",
+              "jobbergate-agent",
+            ],
+        }
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -58,6 +66,7 @@ jobs:
       - name: Build and publish on PyPI
         working-directory: ${{ matrix.sub_project }}
         run: |
+          poetry self add poetry-stickywheel-plugin
           poetry config pypi-token.pypi ${{ secrets.OMNIVECTOR_PYPI_TOKEN }}
           poetry build
           poetry publish

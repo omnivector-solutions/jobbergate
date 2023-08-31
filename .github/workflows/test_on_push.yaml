@@ -54,11 +54,34 @@ jobs:
           architecture: "x64"
           cache: "poetry"
           cache-dependency-path: |
-            jobbergate-core/poetry.lock
-            jobbergate-core/pyproject.toml
+            jobbergate-cli/poetry.lock
+            jobbergate-cli/pyproject.toml
             .github/workflows/test_on_push.yaml
       - name: "run quality control checks"
         working-directory: jobbergate-cli
+        run: |
+          poetry env use "3.8"
+          make qa
+
+  agent-tests:
+    name: "jobbergate-agent tests"
+    runs-on: "ubuntu-20.04"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: Gr1N/setup-poetry@v8
+        with:
+          poetry-version: 1.5.1
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
+          architecture: "x64"
+          cache: "poetry"
+          cache-dependency-path: |
+            jobbergate-agent/poetry.lock
+            jobbergate-agent/pyproject.toml
+            .github/workflows/test_on_push.yaml
+      - name: "run quality control checks"
+        working-directory: jobbergate-agent
         run: |
           poetry env use "3.8"
           make qa
