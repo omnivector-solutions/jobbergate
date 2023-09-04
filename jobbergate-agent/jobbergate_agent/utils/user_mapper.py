@@ -71,4 +71,5 @@ def manufacture() -> SlurmUserMapper:
         ),
         raise_exc_class=KeyError,
     )
+    logger.debug("Selected user-mapper: {}", SETTINGS.SLURM_USER_MAPPER)
     return factory_function()
