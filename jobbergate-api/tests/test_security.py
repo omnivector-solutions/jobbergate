@@ -79,7 +79,7 @@ def test_lockdown_with_identity_ensure_fields__success(opt_name):
         sub="dummy-sub",
         client_id="dummy-client-id",
         email="dummy-email@pytest.com",
-        organization_id="dummy-organization-id",
+        organization={"dummy-organization-id": {...}},
     )
     token_payload = TokenPayload.parse_obj(token_raw_data)
 
@@ -103,3 +103,26 @@ def test_lockdown_with_identity_ensure_fields__raises_error(opt_name):
     with pytest.raises(HTTPException) as exc_info:
         lock(token_payload)
     assert exc_info.value.status_code == 400
+
+
+def test_lockdown_with_identity__backward_compatibility():
+    """
+    Check if the lockdown_with_identity decorator returns the correct identity.
+    
+    For backwards compatibility, the organization_id is set to None if it is a string.
+    """
+    token_raw_data = dict(
+        sub="dummy-sub",
+        client_id="dummy-client-id",
+        email="dummy-email@pytest.com",
+        organization="dummy-organization-id",
+    )
+    token_payload = TokenPayload.parse_obj(token_raw_data)
+
+    lock = lockdown_with_identity()
+
+    actual_identity = lock(token_payload)
+    assert actual_identity.organization_id is None
+
+    expected_identity = IdentityPayload.parse_obj(token_raw_data)
+    assert actual_identity == expected_identity
