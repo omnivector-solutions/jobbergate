@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Add backward compatibility for organization_id on the identity payload
 
 4.0.0a6 -- 2023-08-31
 ---------------------

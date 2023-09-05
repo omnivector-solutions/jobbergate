@@ -82,7 +82,10 @@ class IdentityPayload(TokenPayload):
         }
         """
         organization_dict = values.pop("organization", None)
-        if organization_dict is None:
+        if organization_dict is None or isinstance(organization_dict, str):
+            # String is accepted for backwards compatibility with previous Keycloak setup
+            # Code downstream ensures that the organization_id is not None if necessary
+            logger.warning(f"Invalid organization payload: {organization_dict}")
             return values
 
         if not isinstance(organization_dict, dict):
