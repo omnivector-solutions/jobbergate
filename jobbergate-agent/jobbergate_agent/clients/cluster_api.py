@@ -72,7 +72,7 @@ class AsyncBackendClient(httpx.AsyncClient):
     def _inject_token(self, request: httpx.Request) -> httpx.Request:
         if not self._token.is_valid():
             self._token = acquire_token(self._token)
-        request.headers["authorization"] = f"Bearer {self._token}"
+        request.headers["authorization"] = self._token.bearer_token
         return request
 
     @staticmethod
