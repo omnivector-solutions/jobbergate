@@ -68,13 +68,25 @@ class JobbergateConfig(pydantic.BaseModel, extra=pydantic.Extra.allow):
     template_files: Optional[List[Path]]
     default_template: Optional[str] = None
     output_directory: Path = Path(".")
-    supporting_files_output_name: Optional[Dict[str, Any]] = None
+    supporting_files_output_name: Optional[Dict[str, List[str]]] = None
     supporting_files: Optional[List[str]] = None
 
     # For some reason, we support the application_config being about to override the *required*
     # job_script_name parameter that is passed at job_script creation time.
     # TODO: Find if this functionality is every used, and, if not, remove it immediately.
     job_script_name: Optional[str] = None
+
+    @pydantic.root_validator(pre=True)
+    def compute_extra_settings(cls, values):
+        """
+        Compute missing values and extra operations to enhance the user experience and backward compatibility.
+        """
+        if values.get("supporting_files_output_name"):
+            for k, v in values["supporting_files_output_name"].items():
+                if isinstance(v, str):
+                    values["supporting_files_output_name"][k] = [v]
+
+        return values
 
 
 class JobbergateApplicationConfig(pydantic.BaseModel):
