@@ -6,7 +6,7 @@ from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Extra, Field
 
-from jobbergate_api.apps.job_scripts.schemas import JobScriptListView
+from jobbergate_api.apps.job_scripts.schemas import JobScriptDetailedView, JobScriptListView
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.schemas import TableResource
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
@@ -354,7 +354,7 @@ class PendingJobSubmission(BaseModel):
     owner_email: str
     execution_directory: Optional[Path]
     execution_parameters: dict = Field(default_factory=dict)
-    job_script: Optional[JobScriptListView]
+    job_script: JobScriptDetailedView
 
     class Config:
         orm_mode = True

@@ -21,7 +21,7 @@ class JobScriptFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):
 class JobScript(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     """Model to match database for the JobScript resource."""
 
-    files: List[JobScriptFile]
+    files: List[JobScriptFile] = pydantic.Field(default_factory=list)
 
 
 class PendingJobSubmission(pydantic.BaseModel, extra=pydantic.Extra.ignore):
