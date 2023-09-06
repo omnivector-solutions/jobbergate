@@ -415,6 +415,38 @@ def test_refresh_access_token__success(make_token, respx_mock, dummy_context):
 
     refresh_access_token(dummy_context, token_set)
     assert token_set.access_token == refreshed_access_token
+    assert token_set.refresh_token == refresh_token
+
+
+def test_refresh_access_token__includes_refresh(make_token, respx_mock, dummy_context):
+    """
+    Validate that the ``refreshed_access_token()`` function also updates the refresh token if it is available.
+    """
+    access_token = "expired-access-token"
+    refresh_token = "dummy-refresh-token"
+    token_set = TokenSet(access_token=access_token, refresh_token=refresh_token)
+
+    refreshed_access_token = make_token(
+        azp="dummy-client",
+        email="good@email.com",
+        expires="2022-02-17 22:30:00",
+    )
+    refreshed_refresh_token = make_token(
+        azp="dummy-client",
+        email="good@email.com",
+        expires="2022-02-17 22:30:00",
+    )
+
+    respx_mock.post(f"{LOGIN_DOMAIN}/protocol/openid-connect/token").mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=dict(access_token=refreshed_access_token, refresh_token=refreshed_refresh_token),
+        ),
+    )
+
+    refresh_access_token(dummy_context, token_set)
+    assert token_set.access_token == refreshed_access_token
+    assert token_set.refresh_token == refreshed_refresh_token
 
 
 def test_refresh_access_token__raises_abort_on_non_200_response(respx_mock, dummy_context):
