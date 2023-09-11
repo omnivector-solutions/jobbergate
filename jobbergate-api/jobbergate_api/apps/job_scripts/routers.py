@@ -92,7 +92,6 @@ async def job_script_create_from_template(
     )
 
     required_map = render_request.template_output_name_mapping
-    entrypoint_key = list(required_map.values())[0]
 
     required_keys = set(required_map.keys())
     provided_keys = set(f.filename for f in base_template.template_files)
@@ -109,6 +108,13 @@ async def job_script_create_from_template(
         if (new_filename := required_map.get(file.filename, None))
     }
 
+    entrypoint_files = [f for f in mapped_template_files.values() if f.file_type == FileType.ENTRYPOINT]
+    if len(entrypoint_files) != 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Exactly one entrypoint file must be specified, got {len(entrypoint_files)}",
+        )
+
     job_script = await crud_service.create(
         owner_email=secure_services.identity_payload.email,
         parent_template_id=base_template.id,
@@ -121,24 +127,14 @@ async def job_script_create_from_template(
             render_request.param_dict,
         )
 
-        if new_filename == entrypoint_key:
-            file_type = FileType.ENTRYPOINT
-            if render_request.sbatch_params:
-                file_content = inject_sbatch_params(file_content, render_request.sbatch_params)
-        else:
-            file_type = FileType.SUPPORT
-
-        if template_file.file_type != file_type:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"The file type {template_file} does not match the expected file type {file_type}",
-            )
+        if template_file.file_type == FileType.ENTRYPOINT and render_request.sbatch_params:
+            file_content = inject_sbatch_params(file_content, render_request.sbatch_params)
 
         await file_service.upsert(
             parent_id=job_script.id,
             filename=new_filename,
             upload_content=file_content,
-            file_type=file_type,
+            file_type=template_file.file_type,
         )
 
     return await crud_service.get(job_script.id, include_files=True)
