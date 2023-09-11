@@ -7,9 +7,12 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
-4.0.0a7 -- 2023-09-05
+4.0.0a8 -- 2023-09-11
 ---------------------
 - Fixed supporting files output names
+
+4.0.0a7 -- 2023-09-05
+---------------------
 
 4.0.0a6 -- 2023-08-31
 ---------------------
