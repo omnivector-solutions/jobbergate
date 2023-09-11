@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+4.0.0a8 -- 2023-09-11
+---------------------
 - Fix agent/pending endpoint to include job script files
 
 4.0.0a7 -- 2023-09-05
