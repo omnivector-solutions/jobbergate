@@ -125,9 +125,14 @@ def flatten_param_dict(param_dict: Dict[str, Any]) -> Dict[str, Any]:
     return param_dict_flat
 
 
+def remove_prefix(s: str) -> str:
+    """Remove the prefix 'templates/' from a string"""
+    return re.sub(r"^templates/", "", s)
+
+
 def remove_prefix_suffix(s: str) -> str:
     """Remove the prefix 'templates/' and suffixes '.j2' and '.jinja2' from a string"""
-    s = re.sub(r"^templates/", "", s)
+    s = remove_prefix(s)
     s = re.sub(r"(.j2|.jinja2)$", "", s)
     return s
 
@@ -153,10 +158,16 @@ def get_template_output_name_mapping(config: JobbergateConfig) -> Dict[str, str]
         for template in config.supporting_files:
             output_name_mapping[template] = output_dir / remove_prefix_suffix(template)
     if config.supporting_files_output_name:
-        for template, output_name in config.supporting_files_output_name.items():
-            output_name_mapping[template] = output_dir / output_name
+        for template, output_name_list in config.supporting_files_output_name.items():
+            if len(output_name_list) != 1:
+                raise Abort(
+                    f"{template=} has {len(output_name_list)} output names, one and only one is required",
+                    subject="Supporting file output name is unspecified",
+                    log_message="Supporting file output name is unspecified",
+                )
+            output_name_mapping[template] = output_dir / output_name_list[0]
 
-    return {k: v.as_posix() for k, v in output_name_mapping.items()}
+    return {remove_prefix(k): v.as_posix() for k, v in output_name_mapping.items()}
 
 
 def create_job_script(

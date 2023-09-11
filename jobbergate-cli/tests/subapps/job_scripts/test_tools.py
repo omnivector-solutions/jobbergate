@@ -8,9 +8,11 @@ import pytest
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ApplicationResponse, JobScriptResponse
 from jobbergate_cli.subapps.job_scripts.tools import (
+    JobbergateConfig,
     create_job_script,
     fetch_job_script_data,
     flatten_param_dict,
+    get_template_output_name_mapping,
     remove_prefix_suffix,
     save_job_script_files,
     validate_parameter_file,
@@ -279,3 +281,55 @@ def test_flatten_param_dict__success():
 )
 def test_remove_prefix_suffix(input_string, expected_output):
     assert remove_prefix_suffix(input_string) == expected_output
+
+
+class TestGetTemplateOutputNameMapping:
+    """Test the get_template_output_name_mapping function."""
+
+    def test_default_template_valid_output_name(self):
+        config = JobbergateConfig(
+            default_template="templates/template.j2",
+            output_directory=pathlib.Path("."),
+            supporting_files=None,
+            supporting_files_output_name=None,
+        )
+        expected_mapping = {"template.j2": "template"}
+
+        assert get_template_output_name_mapping(config) == expected_mapping
+
+    def test_supporting_files_with_valid_output_names(self):
+        config = JobbergateConfig(
+            template_files=[pathlib.Path("templates/template1.j2"), pathlib.Path("templates/template2.j2")],
+            default_template="templates/template1.j2",
+            output_directory=pathlib.Path("."),
+            supporting_files=["templates/support1.j2", "templates/support2.j2"],
+            supporting_files_output_name={
+                "templates/support1.j2": ["output1.txt"],
+                "templates/support2.j2": ["output2.txt"],
+            },
+        )
+
+        expected_mapping = {"template1.j2": "template1", "support1.j2": "output1.txt", "support2.j2": "output2.txt"}
+
+        assert get_template_output_name_mapping(config) == expected_mapping
+
+    def test_default_template_not_specified(self):
+        config = JobbergateConfig(
+            template_files=[],
+            output_directory=pathlib.Path("."),
+            supporting_files_output_name=None,
+            supporting_files=None,
+        )
+        with pytest.raises(Abort, match="Default template was not specified"):
+            get_template_output_name_mapping(config)
+
+    def test_supporting_files_output_names_multiple_values(self):
+        config = JobbergateConfig(
+            default_template="templates/template1.j2",
+            supporting_files_output_name={
+                "template2.j2": ["output3", "output4"],
+            },
+        )
+
+        with pytest.raises(Abort, match="template='template2.j2' has 2 output names"):
+            get_template_output_name_mapping(config)
