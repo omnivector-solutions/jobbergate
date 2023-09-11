@@ -1376,6 +1376,8 @@ async def test_job_submissions_agent_pending__success(
     ]
     assert [i["job_script"]["id"] for i in data["items"]] == [inserted_job_script_id] * 2
 
+    assert all(len(i["job_script"]["files"]) >= 1 for i in data["items"])
+
 
 async def test_job_submissions_agent_pending__returns_400_if_token_does_not_carry_client_id(
     client,
