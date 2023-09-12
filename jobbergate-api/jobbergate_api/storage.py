@@ -4,6 +4,7 @@ Provide functions to interact with persistent data storage.
 
 import re
 import typing
+from asyncio import current_task
 from dataclasses import dataclass
 from itertools import product
 
@@ -14,8 +15,8 @@ from asyncpg.exceptions import UniqueViolationError
 from fastapi.exceptions import HTTPException
 from loguru import logger
 from sqlalchemy import Column, Enum, or_
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-from sqlalchemy.orm import Mapped
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine, async_scoped_session
+from sqlalchemy.orm import Mapped, sessionmaker
 from sqlalchemy.sql.expression import Case, ColumnElement, UnaryExpression
 from starlette import status
 from yarl import URL
@@ -93,18 +94,23 @@ class EngineFactory:
             override_db_name=override_db_name,
             force_test=settings.DEPLOY_ENV.lower() == "test",
         )
-        if db_url not in self.engine_map:
-            self.engine_map[db_url] = create_async_engine(db_url, pool_pre_ping=True)
-        return self.engine_map[db_url]
+        return create_async_engine(db_url, pool_pre_ping=True)
 
-    def get_session(self, override_db_name: str | None = None) -> AsyncSession:
+    async def get_session(self, override_db_name: str | None = None) -> AsyncSession:
         """
         Get an asynchronous database session.
 
         Gets a new session from the correct engine in the engine map.
         """
         engine = self.get_engine(override_db_name=override_db_name)
-        return AsyncSession(engine)
+        return async_scoped_session(
+            sessionmaker(
+                engine,
+                expire_on_commit=False,
+                class_=AsyncSession,
+            ),
+            scopefunc=current_task,
+        )
 
 
 engine_factory = EngineFactory()
@@ -154,31 +160,32 @@ def secure_session(
         is_test = settings.DEPLOY_ENV.lower() == "test"
 
         override_db_name = identity_payload.organization_id if settings.MULTI_TENANCY_ENABLED else None
-        session = engine_factory.get_session(override_db_name=override_db_name)
-        nested_transaction = await session.begin_nested()
-        try:
-            yield SecureSession(
-                identity_payload=identity_payload,
-                session=session,
-            )
-            # In test mode, we should not commit the entire transaction.
-            # Instead, we just commit on the nested transaction which releases savepoint and flushes.
-            if is_test:
-                logger.debug("Committing nested transaction due to test mode")
-                await nested_transaction.commit()
-            else:
-                logger.debug("Committing session")
-                await session.commit()
-        except Exception as err:
-            logger.warning(f"Rolling back session due to error: {err}")
-            await nested_transaction.rollback()
-            raise err
-        finally:
-            # In test mode, we should not close the session so that assertions can be made about the state
-            # of the db session in the test functions after calling the application logic
-            if settings.DEPLOY_ENV.lower() != "test":
-                logger.debug("Closing session")
-                await session.close()
+        session = await engine_factory.get_session(override_db_name=override_db_name)
+        async with session() as sess:
+            nested_transaction = await sess.begin_nested()
+            try:
+                yield SecureSession(
+                    identity_payload=identity_payload,
+                    session=sess,
+                )
+                # In test mode, we should not commit the entire transaction.
+                # Instead, we just commit on the nested transaction which releases savepoint and flushes.
+                if is_test:
+                    logger.debug("Committing nested transaction due to test mode")
+                    await nested_transaction.commit()
+                else:
+                    logger.debug("Committing session")
+                    await sess.commit()
+            except Exception as err:
+                logger.warning(f"Rolling back session due to error: {err}")
+                await nested_transaction.rollback()
+                raise err
+            finally:
+                # In test mode, we should not close the session so that assertions can be made about the state
+                # of the db session in the test functions after calling the application logic
+                if settings.DEPLOY_ENV.lower() != "test":
+                    logger.debug("Closing session")
+                    await sess.close()
 
     return dependency
 
