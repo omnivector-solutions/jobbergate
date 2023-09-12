@@ -127,6 +127,107 @@ async def test_render_job_script_from_template(
             assert rendered_file_contents.decode("utf-8") == job_script_data_as_string
 
 
+async def test_render_job_script_from_template__no_entrypoint(
+    fill_job_template_data,
+    fill_job_script_data,
+    client,
+    inject_security_header,
+    dummy_template,
+    tester_email,
+    synth_session,
+    synth_bucket,
+):
+    """
+    Test POST /job_scripts/render-from-template raises 400 if no entrypoint is found.
+    """
+    with template_crud_service.bound_session(synth_session):
+        base_template = await template_crud_service.create(**fill_job_template_data())
+
+    with template_file_service.bound_session(synth_session):
+        with template_file_service.bound_bucket(synth_bucket):
+            template_name = "entrypoint.py.j2"
+            job_script_name = template_name.removesuffix(".j2")
+            await template_file_service.upsert(
+                parent_id=base_template.id,
+                file_type="SUPPORT",
+                filename=template_name,
+                upload_content=dummy_template,
+            )
+
+    payload = {
+        "create_request": fill_job_script_data(),
+        "render_request": {
+            "template_output_name_mapping": {template_name: job_script_name},
+            "param_dict": {"data": {"job_name": "rats", "partition": "debug"}},
+        },
+    }
+
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
+    response = await client.post(
+        f"/jobbergate/job-scripts/render-from-template/{base_template.id}",
+        json=payload,
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST, f"Render failed: {response.text}"
+    assert "Exactly one entrypoint file must be specified, got 0" in response.text
+
+
+async def test_render_job_script_from_template__multiple_entrypoints(
+    fill_job_template_data,
+    fill_job_script_data,
+    client,
+    inject_security_header,
+    dummy_template,
+    tester_email,
+    synth_session,
+    synth_bucket,
+):
+    """
+    Test POST /job_scripts/render-from-template raises 400 if more than one entrypoint is found.
+    """
+    with template_crud_service.bound_session(synth_session):
+        base_template = await template_crud_service.create(**fill_job_template_data())
+
+    with template_file_service.bound_session(synth_session):
+        with template_file_service.bound_bucket(synth_bucket):
+            template_name_1 = "entrypoint-1.py.j2"
+            job_script_name_1 = template_name_1.removesuffix(".j2")
+            await template_file_service.upsert(
+                parent_id=base_template.id,
+                file_type="ENTRYPOINT",
+                filename=template_name_1,
+                upload_content=dummy_template,
+            )
+            template_name_2 = "entrypoint-2.py.j2"
+            job_script_name_2 = template_name_2.removesuffix(".j2")
+            await template_file_service.upsert(
+                parent_id=base_template.id,
+                file_type="ENTRYPOINT",
+                filename=template_name_2,
+                upload_content=dummy_template,
+            )
+
+    payload = {
+        "create_request": fill_job_script_data(),
+        "render_request": {
+            "template_output_name_mapping": {
+                template_name_1: job_script_name_1,
+                template_name_2: job_script_name_2,
+            },
+            "param_dict": {"data": {"job_name": "rats", "partition": "debug"}},
+        },
+    }
+
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
+    response = await client.post(
+        f"/jobbergate/job-scripts/render-from-template/{base_template.id}",
+        json=payload,
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST, f"Render failed: {response.text}"
+    assert "Exactly one entrypoint file must be specified, got 2" in response.text
+
+
 async def test_render_job_script_from_template__template_file_unavailable(
     fill_job_template_data,
     fill_job_script_data,

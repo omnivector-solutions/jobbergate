@@ -13,6 +13,7 @@ from fastapi import HTTPException, UploadFile, status
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from jinja2 import Template
+from jinja2.exceptions import UndefinedError
 from loguru import logger
 from sqlalchemy import delete, func, not_, select, update
 from sqlalchemy.engine import Result
@@ -556,6 +557,30 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
     async def render(self, instance: FileModel, parameters: dict[str, Any]) -> str:
         """
         Render the file using Jinja2.
+
+        The parameters are passed to the template as the context, and two of them are supported:
+        * Directly as the context, for instance, if the template contains ``{{ foo }}``.
+        * As a ``data`` key for backward compatibility, for instance, if the
+          template contains ``{{ data.foo }}``.
+
         """
         file_content = await self.get_file_content(instance)
-        return Template(file_content.decode("utf-8")).render(**parameters)
+        template = Template(file_content.decode("utf-8"))
+
+        render_contexts = [parameters, {"data": parameters}]
+
+        for context in render_contexts:
+            try:
+                return template.render(**context)
+            except UndefinedError as e:
+                logger.debug(
+                    "Unable to render filename={} with context={} -- Error: {}",
+                    instance.filename,
+                    context,
+                    str(e),
+                )
+
+        raise ServiceError(
+            f"Unable to render filename={instance.filename} with the provided parameters",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )

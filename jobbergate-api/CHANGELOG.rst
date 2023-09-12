@@ -6,6 +6,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Refactor POST `job-scripts/render-from-template/{id_or_identifier}` to not assume the first template is the entrypoint
+- Make the rendering process backward compatible with legacy templates
 
 4.0.0a8 -- 2023-09-11
 ---------------------

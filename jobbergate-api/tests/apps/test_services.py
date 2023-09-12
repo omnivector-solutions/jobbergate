@@ -684,3 +684,42 @@ class TestFileService:
             await dummy_file_service.render(upserted_instance, parameters=dict(foo="bar"))
             == "dummy bar content"
         )
+
+    async def test_render__backward_compatible(self, make_upload_file, dummy_file_service):
+        """
+        Test that the ``render()`` works in different contexts.
+        """
+        dummy_upload_file = make_upload_file()
+        with make_upload_file(content="dummy {{ foo }} content") as dummy_upload_file:
+            upserted_instance_1 = await dummy_file_service.upsert(
+                13,
+                "file-one.txt",
+                dummy_upload_file,
+            )
+            rendered_reference = await dummy_file_service.render(
+                upserted_instance_1, parameters=dict(foo="bar")
+            )
+
+        with make_upload_file(content="dummy {{ data.foo }} content") as dummy_upload_file:
+            upserted_instance_3 = await dummy_file_service.upsert(
+                13,
+                "file-one.txt",
+                dummy_upload_file,
+            )
+            rendered_legacy = await dummy_file_service.render(
+                upserted_instance_3, parameters=dict(data=dict(foo="bar"))
+            )
+
+        assert rendered_reference == rendered_legacy
+
+        with make_upload_file(content="dummy {{ data.foo }} content") as dummy_upload_file:
+            upserted_instance_2 = await dummy_file_service.upsert(
+                13,
+                "file-one.txt",
+                dummy_upload_file,
+            )
+            rendered_backward_compatible = await dummy_file_service.render(
+                upserted_instance_2, parameters=dict(foo="bar")
+            )
+
+        assert rendered_reference == rendered_backward_compatible
