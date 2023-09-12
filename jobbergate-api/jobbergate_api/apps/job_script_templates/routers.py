@@ -29,7 +29,6 @@ from jobbergate_api.apps.job_script_templates.services import (
 )
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.apps.schemas import ListParams
-from jobbergate_api.storage import secure_session
 
 router = APIRouter(prefix="/job-script-templates", tags=["Job Script Templates"])
 
@@ -290,7 +289,7 @@ async def job_script_workflow_delete_file(
 )
 async def job_script_template_garbage_collector(
     background_tasks: BackgroundTasks,
-    secure_services: SecureService = Depends(secure_session(Permissions.JOB_TEMPLATES_EDIT)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_EDIT)),
 ):
     """Delete all unused files from jobbergate templates on the file storage."""
     logger.info("Starting garbage collection from jobbergate file storage")

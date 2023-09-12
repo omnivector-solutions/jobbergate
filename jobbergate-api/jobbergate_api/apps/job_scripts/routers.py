@@ -26,7 +26,6 @@ from jobbergate_api.apps.job_scripts.services import crud_service, file_service
 from jobbergate_api.apps.job_scripts.tools import inject_sbatch_params
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.apps.schemas import ListParams
-from jobbergate_api.storage import secure_session
 
 router = APIRouter(prefix="/job-scripts", tags=["Job Scripts"])
 
@@ -301,7 +300,7 @@ async def job_script_delete_file(
 )
 def job_script_garbage_collector(
     background_tasks: BackgroundTasks,
-    secure_services: SecureService = Depends(secure_session(Permissions.JOB_SCRIPTS_EDIT)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_EDIT)),
 ):
     """Delete all unused files from job scripts on the file storage."""
     logger.info("Starting garbage collection from jobbergate file storage")

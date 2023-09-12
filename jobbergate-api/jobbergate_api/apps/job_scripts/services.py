@@ -1,7 +1,7 @@
 """Services for the job_scripts resource, including module specific business logic."""
 from typing import Any, NamedTuple
 
-import pendulum
+from pendulum.datetime import DateTime as PendulumDateTime
 from buzz import enforce_defined, require_condition
 from fastapi import UploadFile, status
 from loguru import logger
@@ -84,7 +84,7 @@ class JobScriptCrudService(CrudService):
                 .where(self.model_type.is_archived.is_(True))
                 .where(
                     func.greatest(joined_query.c.updated_at, joined_query.c.last_used)
-                    < pendulum.now().subtract(days=days_to_delete)
+                    < PendulumDateTime.utcnow().subtract(days=days_to_delete).naive()
                 )
                 .returning(self.model_type.id)
             )
@@ -97,7 +97,7 @@ class JobScriptCrudService(CrudService):
                 .where(self.model_type.is_archived.is_(False))
                 .where(
                     func.greatest(joined_query.c.updated_at, joined_query.c.last_used)
-                    < pendulum.now().subtract(days=days_to_archive)
+                    < PendulumDateTime.utcnow().subtract(days=days_to_archive).naive()
                 )
                 .values(is_archived=True)
                 .returning(self.model_type.id)
