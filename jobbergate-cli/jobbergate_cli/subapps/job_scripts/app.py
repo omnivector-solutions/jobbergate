@@ -29,6 +29,7 @@ HIDDEN_FIELDS = [
     "created_at",
     "updated_at",
     "files",
+    "template",
 ]
 
 
