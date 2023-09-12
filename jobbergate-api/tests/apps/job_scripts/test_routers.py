@@ -169,7 +169,7 @@ async def test_render_job_script_from_template__no_entrypoint(
     )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST, f"Render failed: {response.text}"
-    assert "The template files must contain exactly one entrypoint file, got 0" in response.text
+    assert "Exactly one entrypoint file must be specified, got 0" in response.text
 
 
 async def test_render_job_script_from_template__multiple_entrypoints(
@@ -225,7 +225,7 @@ async def test_render_job_script_from_template__multiple_entrypoints(
     )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST, f"Render failed: {response.text}"
-    assert "The template files must contain exactly one entrypoint file, got 2" in response.text
+    assert "Exactly one entrypoint file must be specified, got 2" in response.text
 
 
 async def test_render_job_script_from_template__template_file_unavailable(
