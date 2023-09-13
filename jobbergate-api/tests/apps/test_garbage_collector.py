@@ -13,17 +13,12 @@ from jobbergate_api.apps.garbage_collector import (
     get_set_of_files_from_database,
 )
 from jobbergate_api.apps.job_script_templates.models import JobScriptTemplateFile
-from jobbergate_api.apps.job_script_templates.services import crud_service, template_file_service
 
 
 @pytest.fixture
-async def file_service(synth_session, synth_bucket, fill_job_template_data):
-    with crud_service.bound_session(synth_session):
-        await crud_service.create(**fill_job_template_data(id=13))
-
-    with template_file_service.bound_session(synth_session):
-        with template_file_service.bound_bucket(synth_bucket):
-            yield template_file_service
+async def file_service(synth_services, fill_job_template_data):
+    await synth_services.crud.template.create(**fill_job_template_data(id=13))
+    yield synth_services.file.template
 
 
 @pytest.fixture

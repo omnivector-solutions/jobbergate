@@ -6,12 +6,25 @@ Note:
 """
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
-from typing import AsyncIterator, Iterator
+from itertools import chain
+from typing import AsyncIterator, Iterator, NamedTuple
 
 from aioboto3.session import Session
 from fastapi import Depends
 
-from jobbergate_api.apps.services import BucketBoundService, DatabaseBoundService
+from jobbergate_api.apps.job_script_templates.models import (
+    JobScriptTemplate,
+    JobScriptTemplateFile,
+    WorkflowFile,
+)
+from jobbergate_api.apps.job_script_templates.services import (
+    JobScriptTemplateFileService,
+    JobScriptTemplateService,
+)
+from jobbergate_api.apps.job_scripts.models import JobScript, JobScriptFile
+from jobbergate_api.apps.job_scripts.services import JobScriptCrudService, JobScriptFileService
+from jobbergate_api.apps.job_submissions.models import JobSubmission
+from jobbergate_api.apps.job_submissions.services import JobSubmissionService
 from jobbergate_api.config import settings
 from jobbergate_api.safe_types import Bucket
 from jobbergate_api.security import PermissionMode
@@ -48,24 +61,27 @@ def get_bucket_url() -> str | None:
     return settings.S3_ENDPOINT_URL
 
 
-@contextmanager
-def bind_session(session: AsyncSession) -> Iterator[None]:
-    """Bind the session to all CRUD services."""
-    try:
-        [service.bind_session(session) for service in DatabaseBoundService.database_services]
-        yield
-    finally:
-        [service.unbind_session() for service in DatabaseBoundService.database_services]
+class CrudServices(NamedTuple):
+    """Provide a container class for the CRUD services."""
+
+    template: JobScriptTemplateService
+    job_script: JobScriptCrudService
+    job_submission: JobSubmissionService
 
 
-@contextmanager
-def bind_bucket(bucket: Bucket) -> Iterator[None]:
-    """Bind the bucket to all file services."""
-    try:
-        [service.bind_bucket(bucket) for service in BucketBoundService.bucket_services]
-        yield
-    finally:
-        [service.unbind_bucket() for service in BucketBoundService.bucket_services]
+class FileServices(NamedTuple):
+    """Provide a container class for the file services."""
+
+    template: JobScriptTemplateFileService
+    workflow: JobScriptTemplateFileService
+    job_script: JobScriptFileService
+
+
+class Services(NamedTuple):
+    """Provide a container class for the services."""
+
+    crud: CrudServices
+    file: FileServices
 
 
 @dataclass
@@ -73,6 +89,31 @@ class SecureService(SecureSession):
     """Dataclass to hold the secure session and the bucket."""
 
     bucket: Bucket
+    crud: CrudServices
+    file: FileServices
+
+
+@contextmanager
+def service_factory(session: AsyncSession, bucket: Bucket) -> Iterator[Services]:
+    """Create the services and bind them to a db section and s3 bucket."""
+    crud = CrudServices(
+        template=JobScriptTemplateService(model_type=JobScriptTemplate),
+        job_script=JobScriptCrudService(model_type=JobScript),
+        job_submission=JobSubmissionService(model_type=JobSubmission),
+    )
+    file = FileServices(
+        template=JobScriptTemplateFileService(model_type=JobScriptTemplateFile),
+        workflow=JobScriptTemplateFileService(model_type=WorkflowFile),
+        job_script=JobScriptFileService(model_type=JobScriptFile),
+    )
+
+    [service.bind_session(session) for service in chain(crud, file)]
+    [service.bind_bucket(bucket) for service in file]
+
+    yield Services(crud=crud, file=file)
+
+    [service.unbind_session() for service in chain(crud, file)]
+    [service.unbind_bucket() for service in file]
 
 
 def secure_services(
@@ -103,11 +144,13 @@ def secure_services(
         s3_url = get_bucket_url()
 
         async with s3_bucket(bucket_name, s3_url) as bucket:
-            with bind_session(secure_session.session), bind_bucket(bucket):
+            with service_factory(secure_session.session, bucket) as services:
                 yield SecureService(
                     identity_payload=secure_session.identity_payload,
                     session=secure_session.session,
                     bucket=bucket,
+                    crud=services.crud,
+                    file=services.file,
                 )
 
     return dependency

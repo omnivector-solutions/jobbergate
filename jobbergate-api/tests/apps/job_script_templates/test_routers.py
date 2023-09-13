@@ -1,27 +1,48 @@
 """Test the router for the Job Script Template resource."""
+import asyncio
 import json
 
 import pytest
-from fastapi import HTTPException, status
+from fastapi import status
+from loguru import logger
 
 from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
 from jobbergate_api.apps.job_script_templates.schemas import JobTemplateDetailedView, JobTemplateListView
-from jobbergate_api.apps.job_script_templates.services import (
-    crud_service,
-    template_file_service,
-    workflow_file_service,
-)
 from jobbergate_api.apps.permissions import Permissions
 
 # Not using the synth_session fixture in a route that needs the database is unsafe
 pytest.mark.usefixtures("synth_session")
 
+async def test_create_job_template__async(
+    client,
+    fill_job_template_data,
+    inject_security_header,
+):
+    """Test the API can accept concurrent requests."""
+
+    async def submit():
+        payload = fill_job_template_data(
+            name="Test Template",
+            description="This is a test template",
+            template_vars=dict(foo="bar"),
+        )
+
+        tester_email = payload.pop("owner_email")
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+
+        return await client.post("jobbergate/job-script-templates", json=payload)
+
+    to_do = [submit() for _ in range(4)]
+    responses = await asyncio.gather(*to_do)
+    for i, response in enumerate(responses):
+        logger.info(f"Response {i}: {response.status_code}")
+        response.raise_for_status()
 
 async def test_create_job_template__success(
     client,
     fill_job_template_data,
     inject_security_header,
-    synth_session,
+    synth_services,
 ):
     """Test a job template can be created."""
     payload = fill_job_template_data(
@@ -46,21 +67,14 @@ async def test_create_job_template__success(
     assert response_data["template_files"] is None
     assert response_data["workflow_files"] is None
 
-    # Make sure that the crud service has no bound session after the request is complete
-    with pytest.raises(HTTPException) as exc_info:
-        crud_service.session
-    assert exc_info.value.status_code == 503
-    assert exc_info.value.detail == "Service JobScriptTemplateService is not bound to a database session"
-
     # Make sure the data was actually inserted into the database
-    with crud_service.bound_session(synth_session):
-        assert (await crud_service.count()) == 1
-        instance = await crud_service.get(response_data["id"])
-        assert instance is not None
-        assert instance.identifier == "create-template"
-        assert instance.name == "Test Template"
-        assert instance.description == "This is a test template"
-        assert instance.template_vars == dict(foo="bar")
+    assert (await synth_services.crud.template.count()) == 1
+    instance = await synth_services.crud.template.get(response_data["id"])
+    assert instance is not None
+    assert instance.identifier == "create-template"
+    assert instance.name == "Test Template"
+    assert instance.description == "This is a test template"
+    assert instance.template_vars == dict(foo="bar")
 
     # Make sure that the data can be retrieved with a GET request
     inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
@@ -73,20 +87,19 @@ async def test_create_job_template__success(
     assert response_data["template_vars"] == dict(foo="bar")
 
 
-async def test_create_job_template__fail_unauthorized(client, fill_job_template_data, synth_session):
+async def test_create_job_template__fail_unauthorized(client, fill_job_template_data, synth_services):
     """Test that the job template creation fails if the user is unauthorized."""
     payload = fill_job_template_data()
     response = await client.post("jobbergate/job-script-templates", json=payload)
     assert response.status_code == 401
-    with crud_service.bound_session(synth_session):
-        assert (await crud_service.count()) == 0
+    assert (await synth_services.crud.template.count()) == 0
 
 
 async def test_create_job_template__fail_identifier_already_exists(
     client,
     fill_job_template_data,
     inject_security_header,
-    synth_session,
+    synth_services,
 ):
     """Test that the job template creation fails if the identifier already exists."""
     payload = fill_job_template_data(identifier="duplicated-template")
@@ -96,20 +109,18 @@ async def test_create_job_template__fail_identifier_already_exists(
 
     response = await client.post("jobbergate/job-script-templates", json=payload)
     assert response.status_code == 201
-    with crud_service.bound_session(synth_session):
-        assert (await crud_service.count()) == 1
+    assert (await synth_services.crud.template.count()) == 1
 
     response = await client.post("jobbergate/job-script-templates", json=payload)
     assert response.status_code == 409
-    with crud_service.bound_session(synth_session):
-        assert (await crud_service.count()) == 1
+    assert (await synth_services.crud.template.count()) == 1
 
 
 async def test_create_job_template__fail_missing_name(
     client,
     fill_job_template_data,
     inject_security_header,
-    synth_session,
+    synth_services,
 ):
     """Test that the job template creation fails if a required field is missing."""
     payload = fill_job_template_data()
@@ -123,8 +134,7 @@ async def test_create_job_template__fail_missing_name(
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    with crud_service.bound_session(synth_session):
-        assert (await crud_service.count()) == 0
+    assert (await synth_services.crud.template.count()) == 0
 
 
 async def test_update_job_template__success(
@@ -132,10 +142,9 @@ async def test_update_job_template__success(
     fill_job_template_data,
     inject_security_header,
     tester_email,
-    synth_session,
+    synth_services,
 ):
-    with crud_service.bound_session(synth_session):
-        instance = await crud_service.create(**fill_job_template_data())
+    instance = await synth_services.crud.template.create(**fill_job_template_data())
 
     payload = dict(
         name="new-name",
@@ -192,10 +201,9 @@ async def test_update_job_template__forbidden(
     fill_job_template_data,
     inject_security_header,
     tester_email,
-    synth_session,
+    synth_services,
 ):
-    with crud_service.bound_session(synth_session):
-        instance = await crud_service.create(**fill_job_template_data())
+    instance = await synth_services.crud.template.create(**fill_job_template_data())
 
     owner_email = tester_email
     requester_email = "another_" + owner_email
@@ -222,14 +230,13 @@ async def test_get_job_template__success(
     client,
     inject_security_header,
     fill_job_template_data,
-    synth_session,
+    synth_services,
 ):
     payload = fill_job_template_data(
         identifier=f"get-template-{identification_field}",
         template_vars={"foo": "bar"},
     )
-    with crud_service.bound_session(synth_session):
-        instance = await crud_service.create(**payload)
+    instance = await synth_services.crud.template.create(**payload)
 
     identification = getattr(instance, identification_field)
 
@@ -252,22 +259,20 @@ async def test_delete_job_template__success(
     tester_email,
     inject_security_header,
     fill_job_template_data,
-    synth_session,
+    synth_services,
 ):
     payload = fill_job_template_data(
         identifier=f"delete-template-{identification_field}",
         template_vars={"foo": "bar"},
     )
-    with crud_service.bound_session(synth_session):
-        instance = await crud_service.create(**payload)
+    instance = await synth_services.crud.template.create(**payload)
 
     inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
     identification = getattr(instance, identification_field)
     response = await client.delete(f"jobbergate/job-script-templates/{identification}")
     assert response.status_code == 204, f"Delete failed: {response.text}"
 
-    with crud_service.bound_session(synth_session):
-        assert (await crud_service.count()) == 0
+    assert (await synth_services.crud.template.count()) == 0
 
 
 async def test_delete_job_template__fail_not_found(
@@ -288,7 +293,7 @@ async def test_delete_job_template__forbidden(
     tester_email,
     inject_security_header,
     fill_job_template_data,
-    synth_session,
+    synth_services,
 ):
     owner_email = tester_email
     requester_email = "another_" + owner_email
@@ -297,23 +302,21 @@ async def test_delete_job_template__forbidden(
         identifier=f"delete-template-forbidden-{identification_field}",
         template_vars={"foo": "bar"},
     )
-    with crud_service.bound_session(synth_session):
-        instance = await crud_service.create(**payload)
+    instance = await synth_services.crud.template.create(**payload)
 
     inject_security_header(requester_email, Permissions.JOB_TEMPLATES_EDIT)
     identification = getattr(instance, identification_field)
     response = await client.delete(f"jobbergate/job-script-templates/{identification}")
     assert response.status_code == 403
 
-    with crud_service.bound_session(synth_session):
-        assert (await crud_service.count()) == 1
+    assert (await synth_services.crud.template.count()) == 1
 
 
 class TestListJobTemplates:
     """Test the list endpoint."""
 
     @pytest.fixture(scope="function")
-    async def job_templates_list(self, synth_session, fill_all_job_template_data):
+    async def job_templates_list(self, synth_services, fill_all_job_template_data):
         data = fill_all_job_template_data(
             {
                 "name": "name-1",
@@ -345,9 +348,8 @@ class TestListJobTemplates:
                 "is_archived": True,
             },
         )
-        with crud_service.bound_session(synth_session):
-            for item in data:
-                await crud_service.create(**item)
+        for item in data:
+            await synth_services.crud.template.create(**item)
         yield data
 
     async def test_list_job_templates__all_success(
@@ -420,9 +422,8 @@ class TestListJobTemplates:
 
 class TestJobTemplateFiles:
     @pytest.fixture(scope="function")
-    async def job_template_data(self, fill_job_template_data, synth_session):
-        with crud_service.bound_session(synth_session):
-            raw_db_data = await crud_service.create(**fill_job_template_data())
+    async def job_template_data(self, fill_job_template_data, synth_services):
+        raw_db_data = await synth_services.crud.template.create(**fill_job_template_data())
         yield JobTemplateDetailedView.from_orm(raw_db_data)
 
     async def test_create__success(
@@ -505,18 +506,15 @@ class TestJobTemplateFiles:
         tester_email,
         inject_security_header,
         job_template_data,
-        synth_session,
-        synth_bucket,
+        synth_services,
     ):
         parent_id = job_template_data.id
-        with template_file_service.bound_bucket(synth_bucket):
-            with template_file_service.bound_session(synth_session):
-                await template_file_service.upsert(
-                    parent_id=parent_id,
-                    filename="test_template.py.j2",
-                    upload_content="dummy file data",
-                    file_type="ENTRYPOINT",
-                )
+        await synth_services.file.template.upsert(
+            parent_id=parent_id,
+            filename="test_template.py.j2",
+            upload_content="dummy file data",
+            file_type="ENTRYPOINT",
+        )
 
         inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
         response = await client.get(
@@ -532,18 +530,16 @@ class TestJobTemplateFiles:
         tester_email,
         inject_security_header,
         job_template_data,
-        synth_session,
         synth_bucket,
+        synth_services,
     ):
         parent_id = job_template_data.id
-        with template_file_service.bound_bucket(synth_bucket):
-            with template_file_service.bound_session(synth_session):
-                await template_file_service.upsert(
-                    parent_id=parent_id,
-                    filename="test_template.py.j2",
-                    upload_content="dummy file data",
-                    file_type="ENTRYPOINT",
-                )
+        await synth_services.file.template.upsert(
+            parent_id=parent_id,
+            filename="test_template.py.j2",
+            upload_content="dummy file data",
+            file_type="ENTRYPOINT",
+        )
 
         inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
         response = await client.delete(
@@ -561,18 +557,15 @@ class TestJobTemplateFiles:
         tester_email,
         inject_security_header,
         job_template_data,
-        synth_session,
-        synth_bucket,
+        synth_services,
     ):
         parent_id = job_template_data.id
-        with template_file_service.bound_bucket(synth_bucket):
-            with template_file_service.bound_session(synth_session):
-                await template_file_service.upsert(
-                    parent_id=parent_id,
-                    filename="test_template.py.j2",
-                    upload_content="dummy file data",
-                    file_type="ENTRYPOINT",
-                )
+        await synth_services.file.template.upsert(
+            parent_id=parent_id,
+            filename="test_template.py.j2",
+            upload_content="dummy file data",
+            file_type="ENTRYPOINT",
+        )
 
         owner_email = tester_email
         requester_email = "another_" + owner_email
@@ -586,9 +579,8 @@ class TestJobTemplateFiles:
 
 class TestJobTemplateWorkflowFile:
     @pytest.fixture(scope="function")
-    async def job_template_data(self, fill_job_template_data, synth_session):
-        with crud_service.bound_session(synth_session):
-            raw_db_data = await crud_service.create(**fill_job_template_data())
+    async def job_template_data(self, fill_job_template_data, synth_services):
+        raw_db_data = await synth_services.crud.template.create(**fill_job_template_data())
         yield JobTemplateListView.from_orm(raw_db_data)
 
     async def test_create__success(
@@ -669,17 +661,15 @@ class TestJobTemplateWorkflowFile:
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     async def test_get__success(
-        self, client, tester_email, inject_security_header, job_template_data, synth_bucket, synth_session
+        self, client, tester_email, inject_security_header, job_template_data, synth_services
     ):
         parent_id = job_template_data.id
-        with workflow_file_service.bound_bucket(synth_bucket):
-            with workflow_file_service.bound_session(synth_session):
-                await workflow_file_service.upsert(
-                    parent_id=parent_id,
-                    filename=WORKFLOW_FILE_NAME,
-                    upload_content="import this",
-                    runtime_config=dict(foo="bar"),
-                )
+        await synth_services.file.workflow.upsert(
+            parent_id=parent_id,
+            filename=WORKFLOW_FILE_NAME,
+            upload_content="import this",
+            runtime_config=dict(foo="bar"),
+        )
 
         inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
         response = await client.get(f"jobbergate/job-script-templates/{parent_id}/upload/workflow")
@@ -694,17 +684,15 @@ class TestJobTemplateWorkflowFile:
         inject_security_header,
         job_template_data,
         synth_bucket,
-        synth_session,
+        synth_services,
     ):
         parent_id = job_template_data.id
-        with workflow_file_service.bound_bucket(synth_bucket):
-            with workflow_file_service.bound_session(synth_session):
-                upserted_instance = await workflow_file_service.upsert(
-                    parent_id=parent_id,
-                    filename=WORKFLOW_FILE_NAME,
-                    upload_content="import this",
-                    runtime_config=dict(foo="bar"),
-                )
+        upserted_instance = await synth_services.file.workflow.upsert(
+            parent_id=parent_id,
+            filename=WORKFLOW_FILE_NAME,
+            upload_content="import this",
+            runtime_config=dict(foo="bar"),
+        )
 
         inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
         response = await client.delete(f"jobbergate/job-script-templates/{parent_id}/upload/workflow")

@@ -1,14 +1,13 @@
 """Services for the job_scripts resource, including module specific business logic."""
 from typing import Any, NamedTuple
 
-from pendulum.datetime import DateTime as PendulumDateTime
 from buzz import enforce_defined, require_condition
 from fastapi import UploadFile, status
 from loguru import logger
+from pendulum.datetime import DateTime as PendulumDateTime
 from sqlalchemy import delete, func, select, update
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.job_scripts.models import JobScript, JobScriptFile
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.job_submissions.models import JobSubmission
 from jobbergate_api.apps.services import CrudService, FileModel, FileService, ServiceError
@@ -161,7 +160,3 @@ class JobScriptFileService(FileService):
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
         )
-
-
-crud_service = JobScriptCrudService(model_type=JobScript)
-file_service = JobScriptFileService(model_type=JobScriptFile)
