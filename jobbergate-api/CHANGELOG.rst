@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+4.0.0a10 -- 2023-09-13
+----------------------
 - Fix concurrency issue on the endpoints
 
 4.0.0a9 -- 2023-09-12
