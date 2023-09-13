@@ -22,6 +22,7 @@ HIDDEN_FIELDS = [
     "created_at",
     "updated_at",
     "execution_parameters",
+    "job_script"
 ]
 
 

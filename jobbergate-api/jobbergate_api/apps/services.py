@@ -5,7 +5,6 @@ from __future__ import annotations
 import io
 from contextlib import contextmanager
 from typing import Any, Generic, Protocol, TypeVar
-from weakref import WeakSet
 
 from botocore.response import StreamingBody
 from buzz import check_expressions, enforce_defined, handle_errors, require_condition
@@ -48,14 +47,12 @@ class DatabaseBoundService:
     """
 
     _session: AsyncSession | None
-    database_services: WeakSet = WeakSet()
 
     def __init__(self):
         """
         Instantiate the service with a null session.
         """
         self._session = None
-        self.database_services.add(self)
 
     def bind_session(self, session: AsyncSession):
         """
@@ -362,14 +359,12 @@ class BucketBoundService:
     """
 
     _bucket: Bucket | None
-    bucket_services: WeakSet = WeakSet()
 
     def __init__(self):
         """
         Initialize the service with a null bucket.
         """
         self._bucket = None
-        self.bucket_services.add(self)
 
     def bind_bucket(self, bucket: Bucket):
         """

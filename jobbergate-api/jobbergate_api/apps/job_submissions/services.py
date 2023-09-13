@@ -37,6 +37,3 @@ class JobSubmissionService(CrudService):
         if filter_slurm_job_ids:
             query = query.where(JobSubmission.slurm_job_id.in_(filter_slurm_job_ids))
         return query
-
-
-crud_service = JobSubmissionService(model_type=JobSubmission)

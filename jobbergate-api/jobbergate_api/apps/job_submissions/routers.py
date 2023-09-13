@@ -9,8 +9,6 @@ from loguru import logger
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.dependencies import SecureService, secure_services
-from jobbergate_api.apps.job_scripts.services import crud_service as script_crud_service
-from jobbergate_api.apps.job_scripts.services import file_service as script_file_service
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.job_submissions.properties_parser import get_job_properties_from_job_script
 from jobbergate_api.apps.job_submissions.schemas import (
@@ -22,7 +20,6 @@ from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionUpdateRequest,
     PendingJobSubmission,
 )
-from jobbergate_api.apps.job_submissions.services import crud_service
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.apps.schemas import ListParams
 from jobbergate_api.email_notification import notify_submission_rejected
@@ -59,7 +56,9 @@ async def job_submission_create(
         )
     create_request.client_id = client_id
 
-    base_job_script = await script_crud_service.get(create_request.job_script_id, include_files=True)
+    base_job_script = await secure_services.crud.job_script.get(
+        create_request.job_script_id, include_files=True
+    )
 
     job_script_files = [f for f in base_job_script.files if f.file_type == FileType.ENTRYPOINT]
 
@@ -70,13 +69,13 @@ async def job_submission_create(
         logger.warning(message)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
 
-    main_file_content = await script_file_service.get_file_content(job_script_files[0])
+    main_file_content = await secure_services.file.job_script.get_file_content(job_script_files[0])
     new_execution_parameters = get_job_properties_from_job_script(
         main_file_content.decode(), **create_request.execution_parameters.dict(exclude_unset=True)
     )
     create_request.execution_parameters = new_execution_parameters
 
-    new_job_submission = await crud_service.create(
+    new_job_submission = await secure_services.crud.job_submission.create(
         **create_request.dict(exclude_unset=True),
         owner_email=secure_services.identity_payload.email,
         status=JobSubmissionStatus.CREATED,
@@ -88,12 +87,14 @@ async def job_submission_create(
     "/{id}",
     description="Endpoint to get a job_submission",
     response_model=JobSubmissionDetailedView,
-    dependencies=[Depends(secure_services(Permissions.JOB_SUBMISSIONS_VIEW))],
 )
-async def job_submission_get(id: int = Path(...)):
+async def job_submission_get(
+    id: int = Path(...),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SUBMISSIONS_VIEW)),
+):
     """Return the job_submission given it's id."""
     logger.debug(f"Getting job submission {id=}")
-    return await crud_service.get(id)
+    return await secure_services.crud.job_submission.get(id)
 
 
 @router.get(
@@ -140,7 +141,7 @@ async def job_submission_get_list(
                 detail="Invalid slurm_job_ids param. Must be a comma-separated list of integers",
             )
 
-    return await crud_service.paginated_list(
+    return await secure_services.crud.job_submission.paginated_list(
         **list_kwargs,
     )
 
@@ -158,8 +159,10 @@ async def job_submission_delete(
 ):
     """Delete job_submission given its id."""
     logger.info(f"Deleting job submission {id=}")
-    await crud_service.get(id, ensure_attributes={"owner_email": secure_services.identity_payload.email})
-    await crud_service.delete(id)
+    await secure_services.crud.job_submission.get(
+        id, ensure_attributes={"owner_email": secure_services.identity_payload.email}
+    )
+    await secure_services.crud.job_submission.delete(id)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -178,8 +181,10 @@ async def job_submission_update(
 ):
     """Update a job_submission given its id."""
     logger.debug(f"Updating {id=} with {update_params=}")
-    await crud_service.get(id, ensure_attributes={"owner_email": secure_services.identity_payload.email})
-    return await crud_service.update(id, **update_params.dict(exclude_unset=True))
+    await secure_services.crud.job_submission.get(
+        id, ensure_attributes={"owner_email": secure_services.identity_payload.email}
+    )
+    return await secure_services.crud.job_submission.update(id, **update_params.dict(exclude_unset=True))
 
 
 # The "agent" routes are used for agents to fetch pending job submissions and update their statuses
@@ -209,8 +214,12 @@ async def job_submission_agent_update(
         f"for job_submission: {id} "
         f"on client_id: {secure_services.identity_payload.client_id}"
     )
-    await crud_service.get(id, ensure_attributes={"client_id": secure_services.identity_payload.client_id})
-    job_submission = await crud_service.update(id, **update_params.dict(exclude_unset=True))
+    await secure_services.crud.job_submission.get(
+        id, ensure_attributes={"client_id": secure_services.identity_payload.client_id}
+    )
+    job_submission = await secure_services.crud.job_submission.update(
+        id, **update_params.dict(exclude_unset=True)
+    )
 
     if update_params.report_message and update_params.status == JobSubmissionStatus.REJECTED:
         notify_submission_rejected(id, update_params.report_message, job_submission.owner_email)
@@ -237,7 +246,7 @@ async def job_submissions_agent_pending(
 
     logger.info(f"Fetching newly created job_submissions for {client_id=}")
 
-    return await crud_service.paginated_list(
+    return await secure_services.crud.job_submission.paginated_list(
         status=JobSubmissionStatus.CREATED,
         client_id=client_id,
         include_files=True,
@@ -263,7 +272,7 @@ async def job_submissions_agent_active(
 
     logger.info(f"Fetching active job_submissions for {client_id=}")
 
-    pages = await crud_service.paginated_list(
+    pages = await secure_services.crud.job_submission.paginated_list(
         status=JobSubmissionStatus.SUBMITTED,
         client_id=client_id,
     )

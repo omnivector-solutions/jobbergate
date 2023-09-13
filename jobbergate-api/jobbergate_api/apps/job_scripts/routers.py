@@ -12,8 +12,6 @@ from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.dependencies import SecureService, secure_services
 from jobbergate_api.apps.garbage_collector import garbage_collect
 from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate
-from jobbergate_api.apps.job_script_templates.services import crud_service as template_crud_service
-from jobbergate_api.apps.job_script_templates.services import template_file_service
 from jobbergate_api.apps.job_scripts.models import JobScriptFile
 from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptCreateRequest,
@@ -22,11 +20,9 @@ from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptUpdateRequest,
     RenderFromTemplateRequest,
 )
-from jobbergate_api.apps.job_scripts.services import crud_service, file_service
 from jobbergate_api.apps.job_scripts.tools import inject_sbatch_params
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.apps.schemas import ListParams
-from jobbergate_api.storage import secure_session
 
 router = APIRouter(prefix="/job-scripts", tags=["Job Scripts"])
 
@@ -36,12 +32,14 @@ router = APIRouter(prefix="/job-scripts", tags=["Job Scripts"])
     status_code=status.HTTP_202_ACCEPTED,
     description="Endpoint to automatically clean unused job scripts depending on a threshold",
     tags=["Garbage collector"],
-    dependencies=[Depends(secure_services(Permissions.JOB_SCRIPTS_EDIT))],
 )
-def job_script_auto_clean_unused_entries(background_tasks: BackgroundTasks):
+def job_script_auto_clean_unused_entries(
+    background_tasks: BackgroundTasks,
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_EDIT)),
+):
     """Automatically clean unused job scripts depending on a threshold."""
     logger.info("Starting automatically cleanup for unused job scripts")
-    background_tasks.add_task(crud_service.auto_clean_unused_job_scripts)
+    background_tasks.add_task(secure_services.crud.job_script.auto_clean_unused_job_scripts)
     return {"description": "Automatically cleanup started"}
 
 
@@ -64,7 +62,7 @@ async def job_script_create(
             detail="The token payload does not contain an email",
         )
 
-    return await crud_service.create(
+    return await secure_services.crud.job_script.create(
         owner_email=secure_services.identity_payload.email,
         **create_request.dict(exclude_unset=True),
     )
@@ -88,7 +86,7 @@ async def job_script_create_from_template(
     logger.info(f"Creating a new job script from {id_or_identifier=} with {create_request=}")
 
     base_template = cast(
-        JobScriptTemplate, await template_crud_service.get(id_or_identifier, include_files=True)
+        JobScriptTemplate, await secure_services.crud.template.get(id_or_identifier, include_files=True)
     )
 
     required_map = render_request.template_output_name_mapping
@@ -115,14 +113,14 @@ async def job_script_create_from_template(
             detail=f"Exactly one entrypoint file must be specified, got {len(entrypoint_files)}",
         )
 
-    job_script = await crud_service.create(
+    job_script = await secure_services.crud.job_script.create(
         owner_email=secure_services.identity_payload.email,
         parent_template_id=base_template.id,
         **create_request.dict(exclude_unset=True),
     )
 
     for new_filename, template_file in mapped_template_files.items():
-        file_content = await template_file_service.render(
+        file_content = await secure_services.file.template.render(
             template_file,
             render_request.param_dict,
         )
@@ -130,26 +128,28 @@ async def job_script_create_from_template(
         if template_file.file_type == FileType.ENTRYPOINT and render_request.sbatch_params:
             file_content = inject_sbatch_params(file_content, render_request.sbatch_params)
 
-        await file_service.upsert(
+        await secure_services.file.job_script.upsert(
             parent_id=job_script.id,
             filename=new_filename,
             upload_content=file_content,
             file_type=template_file.file_type,
         )
 
-    return await crud_service.get(job_script.id, include_files=True)
+    return await secure_services.crud.job_script.get(job_script.id, include_files=True)
 
 
 @router.get(
     "/{id}",
     description="Endpoint to return a job script by its id",
     response_model=JobScriptDetailedView,
-    dependencies=[Depends(secure_services(Permissions.JOB_SCRIPTS_VIEW))],
 )
-async def job_script_get(id: int = Path()):
+async def job_script_get(
+    id: int = Path(),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_VIEW)),
+):
     """Get a job script by id."""
     logger.info(f"Getting job script {id=}")
-    return await crud_service.get(id, include_files=True)
+    return await secure_services.crud.job_script.get(id, include_files=True)
 
 
 @router.get(
@@ -176,7 +176,7 @@ async def job_script_get_list(
     if list_params.user_only:
         list_kwargs["owner_email"] = secure_services.identity_payload.email
 
-    return await crud_service.paginated_list(**list_kwargs)
+    return await secure_services.crud.job_script.paginated_list(**list_kwargs)
 
 
 @router.put(
@@ -194,8 +194,10 @@ async def job_script_update(
 ):
     """Update a job script template by id or identifier."""
     logger.info(f"Updating job script {id=} with {update_params=}")
-    await crud_service.get(id, ensure_attributes={"owner_email": secure_services.identity_payload.email})
-    return await crud_service.update(id, **update_params.dict(exclude_unset=True))
+    await secure_services.crud.job_script.get(
+        id, ensure_attributes={"owner_email": secure_services.identity_payload.email}
+    )
+    return await secure_services.crud.job_script.update(id, **update_params.dict(exclude_unset=True))
 
 
 @router.delete(
@@ -211,29 +213,32 @@ async def job_script_delete(
 ):
     """Delete a job script template by id or identifier."""
     logger.info(f"Deleting job script {id=}")
-    await crud_service.get(id, ensure_attributes={"owner_email": secure_services.identity_payload.email})
-    await crud_service.delete(id)
+    await secure_services.crud.job_script.get(
+        id, ensure_attributes={"owner_email": secure_services.identity_payload.email}
+    )
+    await secure_services.crud.job_script.delete(id)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get(
     "/{id}/upload/{file_name:path}",
     description="Endpoint to get a file from a job script",
-    dependencies=[
-        Depends(secure_services(Permissions.JOB_SCRIPTS_VIEW)),
-    ],
 )
-async def job_script_get_file(id: int = Path(...), file_name: str = Path(...)):
+async def job_script_get_file(
+    id: int = Path(...),
+    file_name: str = Path(...),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_VIEW)),
+):
     """
     Get a job script file.
 
     Note:
         See https://fastapi.tiangolo.com/advanced/custom-response/#streamingresponse
     """
-    job_script = await crud_service.get(id)
-    job_script_file = await file_service.get(job_script.id, file_name)
+    job_script = await secure_services.crud.job_script.get(id)
+    job_script_file = await secure_services.file.job_script.get(job_script.id, file_name)
     return StreamingResponse(
-        content=await file_service.stream_file_content(job_script_file),
+        content=await secure_services.file.job_script.stream_file_content(job_script_file),
         media_type="text/plain",
         headers={"filename": job_script_file.filename},
     )
@@ -261,11 +266,11 @@ async def job_script_upload_file(
 
     logger.debug(f"Uploading file {upload_file.filename} to job script {id=}")
 
-    job_script = await crud_service.get(
+    job_script = await secure_services.crud.job_script.get(
         id, ensure_attributes={"owner_email": secure_services.identity_payload.email}
     )
 
-    await file_service.upsert(
+    await secure_services.file.job_script.upsert(
         parent_id=job_script.id,
         filename=upload_file.filename,
         upload_content=upload_file,
@@ -286,11 +291,11 @@ async def job_script_delete_file(
     ),
 ):
     """Delete a file from a job script template by id or identifier."""
-    job_script = await crud_service.get(
+    job_script = await secure_services.crud.job_script.get(
         id, ensure_attributes={"owner_email": secure_services.identity_payload.email}
     )
-    job_script_file = await file_service.get(job_script.id, file_name)
-    await file_service.delete(job_script_file)
+    job_script_file = await secure_services.file.job_script.get(job_script.id, file_name)
+    await secure_services.file.job_script.delete(job_script_file)
 
 
 @router.delete(
@@ -301,7 +306,7 @@ async def job_script_delete_file(
 )
 def job_script_garbage_collector(
     background_tasks: BackgroundTasks,
-    secure_services: SecureService = Depends(secure_session(Permissions.JOB_SCRIPTS_EDIT)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_EDIT)),
 ):
     """Delete all unused files from job scripts on the file storage."""
     logger.info("Starting garbage collection from jobbergate file storage")

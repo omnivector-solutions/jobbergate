@@ -2,9 +2,6 @@
 import pytest
 from fastapi import HTTPException, status
 from loguru import logger
-from jobbergate_api.apps.job_script_templates.services import crud_service as template_crud_service
-from jobbergate_api.apps.job_script_templates.services import template_file_service
-from jobbergate_api.apps.job_scripts.services import crud_service, file_service
 from jobbergate_api.apps.permissions import Permissions
 
 # Not using the synth_session fixture in a route that needs the database is unsafe
@@ -12,7 +9,7 @@ pytest.mark.usefixtures("synth_session")
 
 
 async def test_create_stand_alone_job_script(
-    client, fill_job_script_data, inject_security_header, synth_session
+    client, fill_job_script_data, inject_security_header, synth_services
 ):
     """Test a stand alone job script can be create."""
     payload = fill_job_script_data()
@@ -32,21 +29,14 @@ async def test_create_stand_alone_job_script(
 
     created_id = response_data["id"]
 
-    # Make sure that the crud service has no bound session after the request is complete
-    with pytest.raises(HTTPException) as exc_info:
-        crud_service.session
-    assert exc_info.value.status_code == 503
-    assert exc_info.value.detail == "Service JobScriptCrudService is not bound to a database session"
-
     # Make sure the data was actually inserted into the database
-    with crud_service.bound_session(synth_session):
-        assert (await crud_service.count()) == 1
-        instance = await crud_service.get(created_id)
-        assert instance is not None
-        assert instance.id == created_id
-        assert instance.name == payload["name"]
-        assert instance.description == payload["description"]
-        assert instance.parent_template_id is None
+    assert (await synth_services.crud.job_script.count()) == 1
+    instance = await synth_services.crud.job_script.get(created_id)
+    assert instance is not None
+    assert instance.id == created_id
+    assert instance.name == payload["name"]
+    assert instance.description == payload["description"]
+    assert instance.parent_template_id is None
 
     # Make sure that the data can be retrieved with a GET request
     inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
@@ -68,8 +58,7 @@ async def test_render_job_script_from_template(
     dummy_template,
     tester_email,
     job_script_data_as_string,
-    synth_session,
-    synth_bucket,
+    synth_services,
 ):
     """
     Test POST /job_scripts/render-from-template correctly creates a job_script.
@@ -78,19 +67,16 @@ async def test_render_job_script_from_template(
     endpoint. We show this by asserting that the job_script is created in the database after the post
     request is made, the correct status code (201) is returned.
     """
-    with template_crud_service.bound_session(synth_session):
-        base_template = await template_crud_service.create(**fill_job_template_data())
+    base_template = await synth_services.crud.template.create(**fill_job_template_data())
 
-    with template_file_service.bound_session(synth_session):
-        with template_file_service.bound_bucket(synth_bucket):
-            template_name = "entrypoint.py.j2"
-            job_script_name = template_name.removesuffix(".j2")
-            await template_file_service.upsert(
-                parent_id=base_template.id,
-                file_type="ENTRYPOINT",
-                filename=template_name,
-                upload_content=dummy_template,
-            )
+    template_name = "entrypoint.py.j2"
+    job_script_name = template_name.removesuffix(".j2")
+    await synth_services.file.template.upsert(
+        parent_id=base_template.id,
+        file_type="ENTRYPOINT",
+        filename=template_name,
+        upload_content=dummy_template,
+    )
 
     payload = {
         "create_request": fill_job_script_data(),
@@ -109,8 +95,7 @@ async def test_render_job_script_from_template(
 
     assert response.status_code == status.HTTP_201_CREATED, f"Render failed: {response.text}"
 
-    with crud_service.bound_session(synth_session):
-        assert (await crud_service.count()) == 1
+    assert (await synth_services.crud.job_script.count()) == 1
 
     response_data = response.json()
 
@@ -120,11 +105,9 @@ async def test_render_job_script_from_template(
     assert job_script_name in [f["filename"] for f in response_data["files"]]
     assert response_data["parent_template_id"] == base_template.id
 
-    with file_service.bound_session(synth_session):
-        with file_service.bound_bucket(synth_bucket):
-            instance = await file_service.get(response_data["id"], job_script_name)
-            rendered_file_contents = await file_service.get_file_content(instance)
-            assert rendered_file_contents.decode("utf-8") == job_script_data_as_string
+    instance = await synth_services.file.job_script.get(response_data["id"], job_script_name)
+    rendered_file_contents = await synth_services.file.job_script.get_file_content(instance)
+    assert rendered_file_contents.decode("utf-8") == job_script_data_as_string
 
 
 async def test_render_job_script_from_template__no_entrypoint(
@@ -134,25 +117,21 @@ async def test_render_job_script_from_template__no_entrypoint(
     inject_security_header,
     dummy_template,
     tester_email,
-    synth_session,
-    synth_bucket,
+    synth_services,
 ):
     """
     Test POST /job_scripts/render-from-template raises 400 if no entrypoint is found.
     """
-    with template_crud_service.bound_session(synth_session):
-        base_template = await template_crud_service.create(**fill_job_template_data())
+    base_template = await synth_services.crud.template.create(**fill_job_template_data())
 
-    with template_file_service.bound_session(synth_session):
-        with template_file_service.bound_bucket(synth_bucket):
-            template_name = "entrypoint.py.j2"
-            job_script_name = template_name.removesuffix(".j2")
-            await template_file_service.upsert(
-                parent_id=base_template.id,
-                file_type="SUPPORT",
-                filename=template_name,
-                upload_content=dummy_template,
-            )
+    template_name = "entrypoint.py.j2"
+    job_script_name = template_name.removesuffix(".j2")
+    await synth_services.file.template.upsert(
+        parent_id=base_template.id,
+        file_type="SUPPORT",
+        filename=template_name,
+        upload_content=dummy_template,
+    )
 
     payload = {
         "create_request": fill_job_script_data(),
@@ -179,33 +158,29 @@ async def test_render_job_script_from_template__multiple_entrypoints(
     inject_security_header,
     dummy_template,
     tester_email,
-    synth_session,
-    synth_bucket,
+    synth_services,
 ):
     """
     Test POST /job_scripts/render-from-template raises 400 if more than one entrypoint is found.
     """
-    with template_crud_service.bound_session(synth_session):
-        base_template = await template_crud_service.create(**fill_job_template_data())
+    base_template = await synth_services.crud.template.create(**fill_job_template_data())
 
-    with template_file_service.bound_session(synth_session):
-        with template_file_service.bound_bucket(synth_bucket):
-            template_name_1 = "entrypoint-1.py.j2"
-            job_script_name_1 = template_name_1.removesuffix(".j2")
-            await template_file_service.upsert(
-                parent_id=base_template.id,
-                file_type="ENTRYPOINT",
-                filename=template_name_1,
-                upload_content=dummy_template,
-            )
-            template_name_2 = "entrypoint-2.py.j2"
-            job_script_name_2 = template_name_2.removesuffix(".j2")
-            await template_file_service.upsert(
-                parent_id=base_template.id,
-                file_type="ENTRYPOINT",
-                filename=template_name_2,
-                upload_content=dummy_template,
-            )
+    template_name_1 = "entrypoint-1.py.j2"
+    job_script_name_1 = template_name_1.removesuffix(".j2")
+    await synth_services.file.template.upsert(
+        parent_id=base_template.id,
+        file_type="ENTRYPOINT",
+        filename=template_name_1,
+        upload_content=dummy_template,
+    )
+    template_name_2 = "entrypoint-2.py.j2"
+    job_script_name_2 = template_name_2.removesuffix(".j2")
+    await synth_services.file.template.upsert(
+        parent_id=base_template.id,
+        file_type="ENTRYPOINT",
+        filename=template_name_2,
+        upload_content=dummy_template,
+    )
 
     payload = {
         "create_request": fill_job_script_data(),
@@ -234,13 +209,12 @@ async def test_render_job_script_from_template__template_file_unavailable(
     client,
     inject_security_header,
     tester_email,
-    synth_session,
+    synth_services,
 ):
     """
     Test POST /job_scripts/render-from-template can't create a job_script if the template file is unavailable.
     """
-    with template_crud_service.bound_session(synth_session):
-        base_template = await template_crud_service.create(**fill_job_template_data())
+    base_template = await synth_services.crud.template.create(**fill_job_template_data())
 
     template_name = "entrypoint.py.j2"
     job_script_name = template_name.removesuffix(".j2")
@@ -262,8 +236,7 @@ async def test_render_job_script_from_template__template_file_unavailable(
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    with crud_service.bound_session(synth_session):
-        assert (await crud_service.count()) == 0
+    assert (await synth_services.crud.job_script.count()) == 0
 
 
 async def test_render_job_script_from_template__bad_permission(
@@ -272,13 +245,12 @@ async def test_render_job_script_from_template__bad_permission(
     client,
     inject_security_header,
     tester_email,
-    synth_session,
+    synth_services,
 ):
     """
     Test that it is not possible to create job_script without proper permission.
     """
-    with template_crud_service.bound_session(synth_session):
-        base_template = await template_crud_service.create(**fill_job_template_data())
+    base_template = await synth_services.crud.template.create(**fill_job_template_data())
 
     template_name = "entrypoint.py.j2"
     job_script_name = template_name.removesuffix(".j2")
@@ -333,7 +305,7 @@ async def test_get_job_script_by_id__success(
     client,
     inject_security_header,
     tester_email,
-    synth_session,
+    synth_services,
 ):
     """
     Test GET /job-scripts/<id>.
@@ -343,8 +315,7 @@ async def test_get_job_script_by_id__success(
     returned in the response is equal to the job_script data that exists in the database
     for the given job_script id.
     """
-    with crud_service.bound_session(synth_session):
-        inserted_instance = await crud_service.create(**fill_job_script_data())
+    inserted_instance = await synth_services.crud.job_script.create(**fill_job_script_data())
 
     inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
     response = await client.get(f"/jobbergate/job-scripts/{inserted_instance.id}")
@@ -382,7 +353,7 @@ async def test_get_job_script_by_id__bad_permission(
     client,
     inject_security_header,
     tester_email,
-    synth_session,
+    synth_services,
 ):
     """
     Test GET /job-scripts/<id>.
@@ -392,8 +363,7 @@ async def test_get_job_script_by_id__bad_permission(
     returned in the response is equal to the job_script data that exists in the database
     for the given job_script id.
     """
-    with crud_service.bound_session(synth_session):
-        inserted_instance = await crud_service.create(**fill_job_script_data())
+    inserted_instance = await synth_services.crud.job_script.create(**fill_job_script_data())
 
     inject_security_header(tester_email, "INVALID_PERMISSION")
     response = await client.get(f"/jobbergate/job-scripts/{inserted_instance.id}")
@@ -405,7 +375,7 @@ class TestListJobScripts:
     """Test the list endpoint."""
 
     @pytest.fixture(scope="function")
-    async def job_scripts_list(self, fill_all_job_script_data, synth_session):
+    async def job_scripts_list(self, fill_all_job_script_data, synth_services):
         data = fill_all_job_script_data(
             {
                 "name": "name-1",
@@ -431,9 +401,8 @@ class TestListJobScripts:
                 "is_archived": True,
             },
         )
-        with crud_service.bound_session(synth_session):
-            for item in data:
-                await crud_service.create(**item)
+        for item in data:
+            await synth_services.crud.job_script.create(**item)
         yield data
 
     async def test_list_job_scripts__all_success(
@@ -502,36 +471,32 @@ class TestListJobScripts:
         self,
         client,
         tester_email,
-        synth_session,
         inject_security_header,
         fill_job_template_data,
         fill_all_job_script_data,
-        synth_bucket,
+        synth_services,
         job_script_data_as_string,
     ):
-        with template_crud_service.bound_session(synth_session):
-            base_template = await template_crud_service.create(**fill_job_template_data())
+        base_template = await synth_services.crud.template.create(**fill_job_template_data())
 
         data = fill_all_job_script_data(
             {"name": "name-1", "parent_template_id": base_template.id},
             {"name": "name-2"},
         )
-        with crud_service.bound_session(synth_session):
-            for item in data:
-                job_script_data = await crud_service.create(**item)
 
-                id = job_script_data.id
-                file_type = "ENTRYPOINT"
-                job_script_filename = "entrypoint.py"
+        for item in data:
+            job_script_data = await synth_services.crud.job_script.create(**item)
 
-                with file_service.bound_session(synth_session):
-                    with file_service.bound_bucket(synth_bucket):
-                        await file_service.upsert(
-                            parent_id=id,
-                            filename=job_script_filename,
-                            upload_content=job_script_data_as_string,
-                            file_type=file_type,
-                        )
+            id = job_script_data.id
+            file_type = "ENTRYPOINT"
+            job_script_filename = "entrypoint.py"
+
+            await synth_services.file.job_script.upsert(
+                parent_id=id,
+                filename=job_script_filename,
+                upload_content=job_script_data_as_string,
+                file_type=file_type,
+            )
 
         inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
         response = await client.get("jobbergate/job-scripts", params={"include_parent": True})
@@ -553,21 +518,20 @@ class TestListJobScripts:
         self,
         client,
         tester_email,
-        synth_session,
         inject_security_header,
         fill_job_template_data,
         fill_all_job_script_data,
+        synth_services,
     ):
-        with template_crud_service.bound_session(synth_session):
-            base_template = await template_crud_service.create(**fill_job_template_data())
+        base_template = await synth_services.crud.template.create(**fill_job_template_data())
 
         data = fill_all_job_script_data(
             {"name": "name-1", "parent_template_id": base_template.id},
             {"name": "name-2"},
         )
-        with crud_service.bound_session(synth_session):
-            for item in data:
-                await crud_service.create(**item)
+
+        for item in data:
+            await synth_services.crud.job_script.create(**item)
 
         inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
         response = await client.get("jobbergate/job-scripts", params={"include_parent": False})
@@ -590,9 +554,9 @@ class TestListJobScripts:
         self,
         client,
         tester_email,
-        synth_session,
         inject_security_header,
         fill_all_job_script_data,
+        synth_services,
     ):
         data = fill_all_job_script_data(
             dict(
@@ -611,9 +575,9 @@ class TestListJobScripts:
                 owner_email="final@test.com",
             ),
         )
-        with crud_service.bound_session(synth_session):
-            for item in data:
-                await crud_service.create(**item)
+
+        for item in data:
+            await synth_services.crud.job_script.create(**item)
 
         inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
         response = await client.get("jobbergate/job-scripts", params={"search": "instance"})
@@ -630,9 +594,8 @@ class TestListJobScripts:
 
 class TestJobScriptFiles:
     @pytest.fixture(scope="function")
-    async def job_script_data(self, fill_job_script_data, synth_session):
-        with crud_service.bound_session(synth_session):
-            raw_db_data = await crud_service.create(**fill_job_script_data())
+    async def job_script_data(self, fill_job_script_data, synth_services):
+        raw_db_data = await synth_services.crud.job_script.create(**fill_job_script_data())
         yield raw_db_data
 
     async def test_create__success(
@@ -643,8 +606,7 @@ class TestJobScriptFiles:
         job_script_data,
         job_script_data_as_string,
         make_dummy_file,
-        synth_session,
-        synth_bucket,
+        synth_services,
     ):
         id = job_script_data.id
         file_type = "ENTRYPOINT"
@@ -659,18 +621,16 @@ class TestJobScriptFiles:
 
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
 
-        with file_service.bound_session(synth_session):
-            with file_service.bound_bucket(synth_bucket):
-                job_script_file = await file_service.get(id, "test_template.py")
+        job_script_file = await synth_services.file.job_script.get(id, "test_template.py")
 
-                assert job_script_file is not None
-                assert job_script_file.parent_id == id
-                assert job_script_file.filename == dummy_file_path.name
-                assert job_script_file.file_type == file_type
-                assert job_script_file.file_key == f"job_script_files/{id}/{dummy_file_path.name}"
+        assert job_script_file is not None
+        assert job_script_file.parent_id == id
+        assert job_script_file.filename == dummy_file_path.name
+        assert job_script_file.file_type == file_type
+        assert job_script_file.file_key == f"job_script_files/{id}/{dummy_file_path.name}"
 
-                file_content = await file_service.get_file_content(job_script_file)
-                assert file_content.decode() == job_script_data_as_string
+        file_content = await synth_services.file.job_script.get_file_content(job_script_file)
+        assert file_content.decode() == job_script_data_as_string
 
     async def test_create__fail_forbidden(
         self,
@@ -704,21 +664,18 @@ class TestJobScriptFiles:
         inject_security_header,
         job_script_data,
         job_script_data_as_string,
-        synth_session,
-        synth_bucket,
+        synth_services
     ):
         id = job_script_data.id
         file_type = "ENTRYPOINT"
         job_script_filename = "entrypoint.py"
 
-        with file_service.bound_session(synth_session):
-            with file_service.bound_bucket(synth_bucket):
-                await file_service.upsert(
-                    parent_id=id,
-                    filename=job_script_filename,
-                    upload_content=job_script_data_as_string,
-                    file_type=file_type,
-                )
+        await synth_services.file.job_script.upsert(
+            parent_id=id,
+            filename=job_script_filename,
+            upload_content=job_script_data_as_string,
+            file_type=file_type,
+        )
 
         inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
         response = await client.get(f"jobbergate/job-scripts/{id}/upload/{job_script_filename}")
@@ -733,21 +690,19 @@ class TestJobScriptFiles:
         inject_security_header,
         job_script_data,
         job_script_data_as_string,
-        synth_session,
+        synth_services,
         synth_bucket,
     ):
         parent_id = job_script_data.id
         file_type = "ENTRYPOINT"
         job_script_filename = "entrypoint.py"
 
-        with file_service.bound_session(synth_session):
-            with file_service.bound_bucket(synth_bucket):
-                upserted_instance = await file_service.upsert(
-                    parent_id=parent_id,
-                    filename=job_script_filename,
-                    upload_content=job_script_data_as_string,
-                    file_type=file_type,
-                )
+        upserted_instance = await synth_services.file.job_script.upsert(
+            parent_id=parent_id,
+            filename=job_script_filename,
+            upload_content=job_script_data_as_string,
+            file_type=file_type,
+        )
 
         inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
         response = await client.delete(f"jobbergate/job-scripts/{parent_id}/upload/{job_script_filename}")
@@ -764,21 +719,18 @@ class TestJobScriptFiles:
         inject_security_header,
         job_script_data,
         job_script_data_as_string,
-        synth_session,
-        synth_bucket,
+        synth_services,
     ):
         parent_id = job_script_data.id
         file_type = "ENTRYPOINT"
         job_script_filename = "entrypoint.py"
 
-        with file_service.bound_session(synth_session):
-            with file_service.bound_bucket(synth_bucket):
-                await file_service.upsert(
-                    parent_id=parent_id,
-                    filename=job_script_filename,
-                    upload_content=job_script_data_as_string,
-                    file_type=file_type,
-                )
+        await synth_services.file.job_script.upsert(
+            parent_id=parent_id,
+            filename=job_script_filename,
+            upload_content=job_script_data_as_string,
+            file_type=file_type,
+        )
 
         owner_email = tester_email
         requester_email = "another_" + owner_email

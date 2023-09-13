@@ -6,11 +6,7 @@ from fastapi import status
 from sqlalchemy import not_
 from sqlalchemy.sql.expression import Select
 
-from jobbergate_api.apps.job_script_templates.models import (
-    JobScriptTemplate,
-    JobScriptTemplateFile,
-    WorkflowFile,
-)
+from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate
 from jobbergate_api.apps.services import CrudModel, CrudService, FileService, ServiceError
 
 
@@ -98,8 +94,3 @@ class JobScriptTemplateFileService(FileService):
         error: Value of type variable "FileModel" of "FileService" cannot be "JobScriptTemplateFile"
         error: Value of type variable "FileModel" of "FileService" cannot be "WorkflowFile"
     """
-
-
-crud_service = JobScriptTemplateService(model_type=JobScriptTemplate)
-template_file_service = JobScriptTemplateFileService(model_type=JobScriptTemplateFile)
-workflow_file_service = JobScriptTemplateFileService(model_type=WorkflowFile)
