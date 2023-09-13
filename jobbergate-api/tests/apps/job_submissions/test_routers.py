@@ -851,14 +851,16 @@ async def test_list_job_submission_pagination(
     ) == ["sub1"]
 
     response = await client.get("/jobbergate/job-submissions?page=2&size=2")
-    assert unpack_response(
-        response,
-        key="name",
-        sort=True,
-        check_total=5,
-        check_page=2,
-        check_size=2,
-        check_pages=3,
+    assert sorted(
+        unpack_response(
+            response,
+            key="name",
+            sort=True,
+            check_total=5,
+            check_page=2,
+            check_size=2,
+            check_pages=3,
+        )
     ) == ["sub3", "sub4"]
 
     response = await client.get("/jobbergate/job-submissions?page=3&size=2")
