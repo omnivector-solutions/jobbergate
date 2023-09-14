@@ -7,56 +7,14 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 
-4.0.0a11 -- 2023-09-14
-----------------------
-- Added functionality to make make the signal job property on job submissions backward compatible with legacy applications
-
-
-4.0.0a10 -- 2023-09-13
-----------------------
-- Fix concurrency issue on the endpoints
-
-4.0.0a9 -- 2023-09-12
----------------------
-- Refactor POST `job-scripts/render-from-template/{id_or_identifier}` to not assume the first template is the entrypoint
-- Make the rendering process backward compatible with legacy templates
-
-4.0.0a8 -- 2023-09-11
----------------------
-- Fix agent/pending endpoint to include job script files
-
-4.0.0a7 -- 2023-09-05
----------------------
-- Add backward compatibility for organization_id on the identity payload
-
-4.0.0a6 -- 2023-08-31
----------------------
-
-4.0.0a5 -- 2023-08-29
----------------------
-- Fix organization id on multi-tenant mode
-
-4.0.0a4 -- 2023-08-25
----------------------
-- Fix the bucket name when multi tenancy is enabled
-- Fix job script update by making name an optional argument
-
-4.0.0a3 -- 2023-08-24
----------------------
-- Build: Include dev dependencies in the docker image
-
-4.0.0a2 -- 2023-08-22
----------------------
-- Fix search when listing job-scripts
-- Modified internal timestamps to standardize the use of UTC
-
-4.0.0a1 -- 2023-08-15
----------------------
-- Added `pendulum` to the requirements
-
-4.0.0a0 -- 2023-08-15
----------------------
+4.0.0 -- 2023-09-14
+-------------------
 - Modified the API to address the new data model on Jobbergate
+- Added functionality to make make the signal job property on job submissions backward compatible with legacy applications
+- Add backward compatibility for organization_id on the identity payload
+- Build: Include dev dependencies in the docker image
+- Added `pendulum` to the requirements
+- Modified internal timestamps to standardize the use of UTC
 
 3.4.3 -- 2023-01-30
 -------------------
