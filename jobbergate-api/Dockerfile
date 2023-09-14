@@ -12,6 +12,7 @@ COPY ./pyproject.toml ./poetry.lock* /app/
 WORKDIR /app
 RUN poetry install --no-root
 
+COPY ./alembic /app/alembic
 COPY ./jobbergate_api /app/jobbergate_api
 
 CMD ["uvicorn", "jobbergate_api.main:app", "--host", "0.0.0.0", "--port", "80"]
