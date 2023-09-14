@@ -7,46 +7,11 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
-4.0.0a11 -- 2023-09-14
-----------------------
-
-4.0.0a10 -- 2023-09-13
-----------------------
-
-4.0.0a9 -- 2023-09-12
----------------------
-
-4.0.0a8 -- 2023-09-11
----------------------
-- Fixed supporting files output names
-
-4.0.0a7 -- 2023-09-05
----------------------
-
-4.0.0a6 -- 2023-08-31
----------------------
-
-4.0.0a5 -- 2023-08-29
----------------------
-- Fixed refresh token not being updated on cache after token refresh
-
-4.0.0a4 -- 2023-08-25
----------------------
-
-4.0.0a3 -- 2023-08-24
----------------------
-- Fixed integration issue by removing the `template/` from the path when uploading files
-
-4.0.0a2 -- 2023-08-22
----------------------
-
-4.0.0a1 -- 2023-08-15
----------------------
-
-4.0.0a0 -- 2023-08-15
----------------------
+4.0.0 -- 2023-09-14
+-------------------
 - Modified internal details to address the new data model on Jobbergate API
 - Drop support for Python 3.6
+- Fixed refresh token not being updated on cache after token refresh
 
 3.4.3 -- 2023-01-30
 -------------------
