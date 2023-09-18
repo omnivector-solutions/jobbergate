@@ -55,6 +55,7 @@ def migrate_applications(nextgen_db, legacy_applications, user_map, batch_size=1
                 updated_at
             )
             values {}
+            on conflict do nothing
             """.format(
                 mogrified_params
             ),

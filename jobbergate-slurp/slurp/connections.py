@@ -23,7 +23,7 @@ def build_url(is_legacy=False):
 
 
 @contextmanager
-def db(is_legacy=False):
+def db(is_legacy=False, **kwargs):
     """
     Creates a connections to the database.
 
@@ -36,7 +36,7 @@ def db(is_legacy=False):
     with connect(database_url, cursor_factory=ClientCursor, row_factory=dict_row) as connection:
         try:
             logger.info(f"Creating cursor for {database_url}")
-            with connection.cursor() as cursor:
+            with connection.cursor(**kwargs) as cursor:
                 yield cursor
 
             logger.info(f"Finalizing transaction for {database_url}")

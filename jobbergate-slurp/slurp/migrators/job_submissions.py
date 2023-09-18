@@ -74,6 +74,7 @@ def migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map, batch_
                 client_id
             )
             values {}
+            on conflict do nothing
             """.format(
                 mogrified_params
             )

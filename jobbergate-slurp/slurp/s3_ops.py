@@ -150,6 +150,8 @@ async def transfer_application_files(legacy_applications, db) -> List[int]:
 
     legacy_application_ids = {application["id"] for application in legacy_applications}
 
+    logger.info(f"{legacy_application_ids=}")
+
     async def transfer_helper(s3_object, nextgen_bucket):
         """
         Helper function that transfers the files from one entry at the legacy bucket to the nextgen bucket.
@@ -172,8 +174,8 @@ async def transfer_application_files(legacy_applications, db) -> List[int]:
                 application_config = load_application_config_from_source(
                     work_dir / APPLICATION_CONFIG_FILE_NAME
                 )
-
                 with db(is_legacy=False) as nextgen_db:
+
                     nextgen_db.execute(
                         """
                         update job_script_templates
@@ -196,6 +198,7 @@ async def transfer_application_files(legacy_applications, db) -> List[int]:
                             updated_at
                         )
                         values (%s, %s, %s, %s, %s)
+                        on conflict do nothing
                         """,
                         (
                             id,
@@ -206,23 +209,24 @@ async def transfer_application_files(legacy_applications, db) -> List[int]:
                         ),
                     )
 
-                    await nextgen_bucket.upload_file(
-                        work_dir / APPLICATION_SOURCE_FILE_NAME,
-                        get_key("workflow_files", id, APPLICATION_SOURCE_FILE_NAME),
-                    )
+                await nextgen_bucket.upload_file(
+                    work_dir / APPLICATION_SOURCE_FILE_NAME,
+                    get_key("workflow_files", id, APPLICATION_SOURCE_FILE_NAME),
+                )
 
-                    supporting_files = application_config.jobbergate_config.get("supporting_files", [])
+                supporting_files = application_config.jobbergate_config.get("supporting_files", [])
 
-                    for complete_template_path in itertools.chain(
-                        work_dir.rglob("*.j2"), work_dir.rglob("*.jinja2")
-                    ):
-                        relative_template_path = complete_template_path.relative_to(work_dir)
+                for complete_template_path in itertools.chain(
+                    work_dir.rglob("*.j2"), work_dir.rglob("*.jinja2")
+                ):
+                    relative_template_path = complete_template_path.relative_to(work_dir)
 
-                        if relative_template_path.as_posix() in supporting_files:
-                            file_type = "SUPPORT"
-                        else:
-                            file_type = "ENTRYPOINT"
+                    if relative_template_path.as_posix() in supporting_files:
+                        file_type = "SUPPORT"
+                    else:
+                        file_type = "ENTRYPOINT"
 
+                    with db(is_legacy=False) as nextgen_db:
                         nextgen_db.execute(
                             """
                             insert into job_script_template_files (
@@ -233,25 +237,29 @@ async def transfer_application_files(legacy_applications, db) -> List[int]:
                             updated_at
                             )
                             values (%s, %s, %s, %s, %s)
+                            on conflict do nothing
                             """,
                             (
                                 id,
                                 file_type,
-                                relative_template_path.as_posix(),
+                                relative_template_path.name,
                                 datetime.now(timezone.utc),
                                 datetime.now(timezone.utc),
                             ),
                         )
 
-                        await nextgen_bucket.upload_file(
-                            complete_template_path,
-                            get_key("job_script_templates", id, relative_template_path.as_posix()),
-                        )
+                    logger.success(f"uploading {get_key('job_script_template_files', id, relative_template_path.name)}")
+
+                    await nextgen_bucket.upload_file(
+                        complete_template_path,
+                        get_key("job_script_template_files", id, relative_template_path.name),
+                    )
 
             return id
 
     async with s3_bucket(is_legacy=True) as legacy_bucket:
         async with s3_bucket(is_legacy=False) as nextgen_bucket:
+        
             prefix = "jobbergate-resources/"
 
             tasks = [

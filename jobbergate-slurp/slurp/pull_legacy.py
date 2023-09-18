@@ -3,8 +3,6 @@ Provides methods that pull data from the legacy database.
 """
 from loguru import logger
 
-from slurp.connections import db
-
 
 def pull_users(legacy_db):
     """
@@ -34,17 +32,27 @@ def pull_job_scripts(legacy_db):
     """
     Pull all job_script data.
     """
+    batch_size = 500
     logger.debug("Fetching job_scripts from legacy database")
     result = legacy_db.execute("select * from job_scripts")
-    logger.debug(f"Fetched {result.rowcount} job_scripts")
-    return result.fetchall()
+    while True:
+        logger.debug(f"Fetching next {batch_size} job_scripts")
+        records = result.fetchmany(batch_size)
+        if not records:
+            break
+        yield records
 
 
 def pull_job_submissions(legacy_db):
     """
     Pull all job_submission data.
     """
+    batch_size = 500
     logger.debug("Fetching job_submissions from legacy database")
     result = legacy_db.execute("select * from job_submissions")
-    logger.debug(f"Fetched {result.rowcount} job_submissions")
-    return result.fetchall()
+    while True:
+        logger.debug(f"Fetching next {batch_size} job_submissions")
+        records = result.fetchmany(batch_size)
+        if not records:
+            break
+        yield records
