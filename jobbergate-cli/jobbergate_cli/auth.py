@@ -9,6 +9,7 @@ from jose import jwt
 from jose.exceptions import ExpiredSignatureError
 from loguru import logger
 from pydantic import ValidationError
+from rich.console import Console
 
 from jobbergate_cli.config import settings
 from jobbergate_cli.exceptions import Abort, JobbergateCliError
@@ -241,6 +242,45 @@ def refresh_access_token(ctx: JobbergateContext, token_set: TokenSet):
         token_set.refresh_token = refreshed_token_set.refresh_token
 
 
+def show_login_message(verification_uri: str):
+    """Show a message to the user with a link to the auth provider to login."""
+    console = Console()
+    EXTRA_CHARS = 7  # for indentation and panel borders
+
+    if console.width >= len(verification_uri) + EXTRA_CHARS:
+        _show_login_standard_screen(verification_uri)
+    else:
+        _show_login_narrow_screen(verification_uri, console)
+
+
+def _show_login_narrow_screen(verification_uri: str, console: Console):
+    """Print the link out of the panel to make it easier to copy."""
+    terminal_message(
+        f"""
+        To complete login, please open the link bellow in a browser.
+
+        Waiting up to {settings.OIDC_MAX_POLL_TIME / 60} minutes for you to complete the process...
+        """,
+        subject="Waiting for login",
+    )
+    console.print(verification_uri, overflow="ignore", no_wrap=True, crop=False)
+    console.print()
+
+
+def _show_login_standard_screen(verification_uri: str):
+    """Print a rich panel with a link to the auth provider to login."""
+    terminal_message(
+        f"""
+        To complete login, please open the following link in a browser:
+
+          {verification_uri}
+
+        Waiting up to {settings.OIDC_MAX_POLL_TIME / 60} minutes for you to complete the process...
+        """,
+        subject="Waiting for login",
+    )
+
+
 def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
     """
     Fetch an access token (and possibly a refresh token) from Auth0.
@@ -270,16 +310,7 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
         ),
     )
 
-    terminal_message(
-        f"""
-        To complete login, please open the following link in a browser:
-
-          {device_code_data.verification_uri_complete}
-
-        Waiting up to {settings.OIDC_MAX_POLL_TIME / 60} minutes for you to complete the process...
-        """,
-        subject="Waiting for login",
-    )
+    show_login_message(device_code_data.verification_uri_complete)
 
     for tick in TimeLoop(
         settings.OIDC_MAX_POLL_TIME,
