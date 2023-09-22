@@ -7,13 +7,17 @@ import pytest
 from jose import ExpiredSignatureError, jwt
 
 from jobbergate_cli.auth import (
+    Console,
     TokenSet,
+    _show_login_narrow_screen,
+    _show_login_standard_screen,
     clear_token_cache,
     fetch_auth_tokens,
     init_persona,
     load_tokens_from_cache,
     refresh_access_token,
     save_tokens_to_cache,
+    show_login_message,
     validate_token_and_extract_identity,
 )
 from jobbergate_cli.config import settings
@@ -500,6 +504,50 @@ def test_fetch_auth_tokens__success(respx_mock, dummy_context):
     token_set = fetch_auth_tokens(dummy_context)
     assert token_set.access_token == access_token
     assert token_set.refresh_token == refresh_token
+
+
+def test_show_login_message__standard_screen(mocker):
+    """
+    Assert that the ``show_login_message()`` function will call ``_show_login_standard_screen()``.
+    """
+    verification_uri = "https://example.com"
+    console_width = len(verification_uri) + 7
+
+    mocked_console = mocker.MagicMock()
+    mocked_console.width = console_width
+    mocker.patch("jobbergate_cli.auth.Console", return_value=mocked_console)
+
+    mocked_show_on_narrow_screen = mocker.patch("jobbergate_cli.auth._show_login_narrow_screen")
+    mocked_show_on_standard_screen = mocker.patch("jobbergate_cli.auth._show_login_standard_screen")
+
+    show_login_message(verification_uri)
+
+    assert mocked_show_on_narrow_screen.call_count == 0
+    assert mocked_show_on_standard_screen.called_once_with(verification_uri)
+
+    _show_login_standard_screen(verification_uri)
+
+
+def test_show_login_message__narrow_screen(mocker):
+    """
+    Assert that the ``show_login_message()`` function will call ``_show_login_narrow_screen()``.
+    """
+    verification_uri = "https://example.com"
+    console_width = len(verification_uri) + 7 - 1
+
+    mocked_console = mocker.MagicMock()
+    mocked_console.width = console_width
+    mocker.patch("jobbergate_cli.auth.Console", return_value=mocked_console)
+
+    mocked_show_on_narrow_screen = mocker.patch("jobbergate_cli.auth._show_login_narrow_screen")
+    mocked_show_on_standard_screen = mocker.patch("jobbergate_cli.auth._show_login_standard_screen")
+
+    show_login_message(verification_uri)
+
+    assert mocked_show_on_narrow_screen.called_once_with(verification_uri, mocked_console)
+    assert mocked_show_on_standard_screen.call_count == 0
+
+    _show_login_narrow_screen(verification_uri, Console())
 
 
 def test_fetch_auth_tokens__raises_Abort_when_it_times_out_waiting_for_the_user(respx_mock, dummy_context, mocker):
