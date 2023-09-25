@@ -38,6 +38,8 @@ services:
         condition: service_healthy
       keycloak.local:
         condition: service_healthy
+      minio-create-bucket:
+        condition: service_completed_successfully
 
   jobbergate-api-qa:
     build:
