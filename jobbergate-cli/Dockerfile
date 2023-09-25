@@ -12,4 +12,4 @@ RUN curl -sSL  https://install.python-poetry.org | \
 
 COPY ./pyproject.toml ./poetry.lock* ./README* ./LICENSE* /app/
 COPY ./jobbergate_cli /app/jobbergate_cli
-RUN poetry install --no-dev
+RUN poetry install --without=dev
