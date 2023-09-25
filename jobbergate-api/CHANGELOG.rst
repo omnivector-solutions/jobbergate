@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-api
 Unreleased
 ----------
 
+4.1.0a0 -- 2023-09-25
+---------------------
+
 4.0.0 -- 2023-09-14
 -------------------
 - Modified the API to address the new data model on Jobbergate
