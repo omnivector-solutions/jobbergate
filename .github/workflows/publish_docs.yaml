@@ -1,49 +1,35 @@
-name: "Publish Docs"
+name: Build Documentation
 
 on:
   push:
-    tags:
-      - "[0-9]+.[0-9]+.[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+a[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+b[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
+    paths:
+      - 'jobbergate-docs/docs/**'
+    branches:
+      - 'main'
 
 jobs:
-  publish:
-    name: "Publish docs to S3"
-    runs-on: "ubuntu-latest"
-    strategy:
-      matrix:
-        python-version: ["3.11"]
+  build:
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_ID }}
-          aws-region: us-west-2
+          python-version: 3.8
 
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
+      - name: Set up Poetry
+        uses: Gr1N/setup-poetry@v8
 
-      - uses: Gr1N/setup-poetry@v8
-        with:
-          poetry-version: 1.5.1
-
-      - name: Build docs
+      - name: Build Documentation
         working-directory: ./jobbergate-docs
         run: |
           make docs
 
-      - name: Push to S3
-        working-directory: ./jobbergate-docs
-        run: |
-          VERSION=`poetry version -s`
-          aws s3 sync ./build s3://docs.omnivector.solutions/jobbergate/$VERSION
-          aws s3 sync ./build s3://docs.omnivector.solutions/jobbergate/latest
+      - name: Deploy documentation
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./jobbergate-docs/docs/site
