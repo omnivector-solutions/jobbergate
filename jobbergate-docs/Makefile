@@ -25,11 +25,11 @@ format: install
 
 .PHONY: docs
 docs: install
-	poetry run sphinx-build src/ build/
+	poetry run mkdocs build --config-file=docs/mkdocs.yaml
 
-.PHONY: dev
-dev: install
-	poetry run sphinx-autobuild src/ build/ --watch ../jobbergate-core/jobbergate_core
+.PHONY: docs-serve
+docs-serve: install
+	poetry run mkdocs serve --config-file=docs/mkdocs.yaml
 
 .PHONY: clean
 clean:
