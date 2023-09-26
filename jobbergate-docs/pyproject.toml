@@ -8,18 +8,18 @@ repository = "https://github.com/omnivector-solutions/jobbergate"
 
 
 [tool.poetry.dependencies]
-python = "^3.8"
-sphinxcontrib-httpdomain = "^1.8.0"
-sphinx-book-theme = "^0.1.6"
-toml = "^0.10.2"
+python = "^3.11"
 jobbergate-core = {path = "../jobbergate-core", develop = true }
-sphinxcontrib-napoleon = "^0.7"
-sphinx-copybutton = "^0.5"
+jobbergate-api = {path = "../jobbergate-api", develop = true }
+jobbergate-cli = {path = "../jobbergate-cli", develop = true }
+jobbergate-agent = {path = "../jobbergate-agent", develop = true }
 
-[tool.poetry.dev-dependencies]
-sphinx-autobuild = "^2021.3.14"
+[tool.poetry.group.dev.dependencies]
 black = "^21.9b0"
 isort = "^5.9.3"
+mkdocs-material = "^9.4.2"
+mkdocstrings = {extras = ["python"], version = "^0.23.0"}
+pygments = "^2.16.1"
 
 [tool.black]
 line-length = 120
