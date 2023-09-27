@@ -21,7 +21,7 @@ packages = [{ include = "jobbergate_agent" }]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-jobbergate-core = { path = "../jobbergate-core", develop = true }
+jobbergate-core = "4.0"
 apscheduler = "3.10.3"
 httpx = "0.24.1"
 importlib-metadata = { version = "^6.8.0", python = "<3.10" }
@@ -67,6 +67,7 @@ pytest-mock = "^3.7.0"
 pytest-random-order = "^1.0.4"
 requests-mock = "^1.10"
 respx = "^0.20.1"
+jobbergate-core = { path = "../jobbergate-core", develop = true }
 
 [tool.pytest.ini_options]
 minversion = "7.0"

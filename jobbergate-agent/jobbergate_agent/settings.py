@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     OIDC_AUDIENCE: str = "https://apis.omnivector.solutions"
     OIDC_CLIENT_ID: str
     OIDC_CLIENT_SECRET: str
+    OIDC_USE_HTTPS: bool = True
 
     CACHE_DIR = Path.home() / ".cache/jobbergate-agent"
 

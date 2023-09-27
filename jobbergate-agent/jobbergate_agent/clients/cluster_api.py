@@ -28,7 +28,8 @@ def acquire_token(token: Token) -> Token:
         client_secret=SETTINGS.OIDC_CLIENT_SECRET,
         grant_type="client_credentials",
     )
-    oidc_url = f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token"
+    protocol = "https" if SETTINGS.OIDC_USE_HTTPS else "http"
+    oidc_url = f"{protocol}://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token"
     logger.debug(f"Posting OIDC request to {oidc_url}")
     response = httpx.post(oidc_url, data=oidc_body)
     AuthTokenError.require_condition(
