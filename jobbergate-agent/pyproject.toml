@@ -21,7 +21,7 @@ packages = [{ include = "jobbergate_agent" }]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-jobbergate-core = "4.0"
+jobbergate-core = "^4.0.0"
 apscheduler = "3.10.3"
 httpx = "0.24.1"
 importlib-metadata = { version = "^6.8.0", python = "<3.10" }
