@@ -51,26 +51,26 @@ def clear_nextgen_db():
 
 def main_task(ignore_submissions):
     with db(is_legacy=True, name="slurp") as legacy_db, db(is_legacy=False) as nextgen_db:
-        user_map = pull_users(legacy_db)
+        # user_map = pull_users(legacy_db)
 
         legacy_applications = pull_applications(legacy_db)
-        migrate_applications(nextgen_db, legacy_applications, user_map)
-        reset_id_seq(nextgen_db, "job_script_templates")
+        # migrate_applications(nextgen_db, legacy_applications, user_map)
+        # reset_id_seq(nextgen_db, "job_script_templates")
 
     asyncio.run(transfer_application_files(legacy_applications, db))
 
-    with db(is_legacy=True, name="slurp") as legacy_db:
-        user_map = pull_users(legacy_db)
-        for legacy_job_scripts in pull_job_scripts(legacy_db):
-            with db(is_legacy=False) as nextgen_db:
-                migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map)
-                asyncio.run(transfer_job_script_files(legacy_job_scripts, nextgen_db))
-        reset_id_seq(nextgen_db, "job_scripts")
+    # with db(is_legacy=True, name="slurp") as legacy_db:
+    #     user_map = pull_users(legacy_db)
+    #     for legacy_job_scripts in pull_job_scripts(legacy_db):
+    #         with db(is_legacy=False) as nextgen_db:
+    #             migrate_job_scripts(nextgen_db, legacy_job_scripts, user_map)
+    #             asyncio.run(transfer_job_script_files(legacy_job_scripts, nextgen_db))
+    #     reset_id_seq(nextgen_db, "job_scripts")
 
-        if not ignore_submissions:
-            for legacy_job_submissions in pull_job_submissions(legacy_db):
-                migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map)
-            reset_id_seq(nextgen_db, "job_submissions")
+    #     if not ignore_submissions:
+    #         for legacy_job_submissions in pull_job_submissions(legacy_db):
+    #             migrate_job_submissions(nextgen_db, legacy_job_submissions, user_map)
+    #         reset_id_seq(nextgen_db, "job_submissions")
 
 
 @app.command()

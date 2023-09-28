@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, List
+import shutil
 
 import aioboto3
 import pydantic
@@ -141,6 +142,7 @@ def load_application_config_from_source(config_source_path: Path) -> JobbergateA
 def get_key(table_name: str, parent_id: int, filename: str) -> str:
     return f"{table_name}/{parent_id}/{filename}"
 
+ids_to_work_on = {179, 200, 220, 357, 369, 375, 402, 403, 432, 530, 561, 566, 571, 572, 579, 590, 591, 592, 598, 599, 602, 610, 612, 613, 618, 621, 625, 629, 660, 663, 664, 672, 673, 689, 695, 697, 700, 701, 702, 703, 704, 724, 725, 753, 757, 760, 761, 763, 765, 787, 791, 792, 793, 794, 796, 797, 798, 800, 801, 814, 845, 850, 853, 854, 855, 856, 858, 864, 872, 911, 933, 955, 959, 961, 982, 995, 996, 1348, 1402, 1403, 1407, 1437, 1492, 1553, 1576, 1577, 1765, 1767, 1824}
 
 async def transfer_application_files(legacy_applications, db) -> List[int]:
     """
@@ -148,9 +150,11 @@ async def transfer_application_files(legacy_applications, db) -> List[int]:
     """
     logger.info("Start migrating application files to s3")
 
+    legacy_applications_dict = {application["id"]: application for application in legacy_applications}
+
     legacy_application_ids = {application["id"] for application in legacy_applications}
 
-    logger.info(f"{legacy_application_ids=}")
+    logger.info(f"legacy_application_ids={sorted(legacy_application_ids)}")
 
     async def transfer_helper(s3_object, nextgen_bucket):
         """
@@ -163,6 +167,10 @@ async def transfer_application_files(legacy_applications, db) -> List[int]:
             f"Missing application id (files on S3 but id not on the database): {s3_object.key}",
         )
 
+        if id not in ids_to_work_on:
+            logger.warning(f"Skipping application id={id}")
+            return id
+
         with handle_errors(f"Error retrieving object from legacy bucket: {s3_object.key}"):
             s3_legacy_object = await s3_object.get()
             s3_legacy_content = await s3_legacy_object["Body"].read()
@@ -171,8 +179,22 @@ async def transfer_application_files(legacy_applications, db) -> List[int]:
             with extract_tarball(s3_legacy_content) as work_dir:
                 check_application_files(work_dir)
 
+                destination_dir = Path(str(id))
+
+                #shutil.copytree(work_dir, destination_dir)
+
+                db_config = destination_dir / ("db_" + APPLICATION_CONFIG_FILE_NAME)
+                db_config.write_text(legacy_applications_dict[id]["application_config"])
+
+                db_source = destination_dir / ("db_" + APPLICATION_SOURCE_FILE_NAME)
+                db_source.write_text(legacy_applications_dict[id]["application_file"])
+
+                # with check_expressions(f"Check on application files failed for id={id}") as check:
+                #     check(db_source.read_text().strip() == (work_dir / APPLICATION_SOURCE_FILE_NAME).read_text().strip(), "Source file was not copied correctly")
+                #     check(db_config.read_text().strip() == (work_dir / APPLICATION_CONFIG_FILE_NAME).read_text().strip(), "Config file was not copied correctly")
+
                 application_config = load_application_config_from_source(
-                    work_dir / APPLICATION_CONFIG_FILE_NAME
+                    db_config
                 )
                 with db(is_legacy=False) as nextgen_db:
 
@@ -190,70 +212,63 @@ async def transfer_application_files(legacy_applications, db) -> List[int]:
 
                     nextgen_db.execute(
                         """
-                        insert into workflow_files (
-                            parent_id,
-                            runtime_config,
-                            filename,
-                            created_at,
-                            updated_at
-                        )
-                        values (%s, %s, %s, %s, %s)
-                        on conflict do nothing
+                        update workflow_files
+                        set runtime_config = %s, updated_at = %s
+                        where parent_id = %s and filename = %s
                         """,
                         (
-                            id,
                             json.dumps(application_config.jobbergate_config),
+                            datetime.now(timezone.utc),
+                            id,
                             APPLICATION_SOURCE_FILE_NAME,
-                            datetime.now(timezone.utc),
-                            datetime.now(timezone.utc),
                         ),
                     )
 
                 await nextgen_bucket.upload_file(
-                    work_dir / APPLICATION_SOURCE_FILE_NAME,
+                    db_source,
                     get_key("workflow_files", id, APPLICATION_SOURCE_FILE_NAME),
                 )
 
-                supporting_files = application_config.jobbergate_config.get("supporting_files", [])
+                # supporting_files = application_config.jobbergate_config.get("supporting_files", [])
 
-                for complete_template_path in itertools.chain(
-                    work_dir.rglob("*.j2"), work_dir.rglob("*.jinja2")
-                ):
-                    relative_template_path = complete_template_path.relative_to(work_dir)
+                # for complete_template_path in itertools.chain(
+                #     work_dir.rglob("*.j2"), work_dir.rglob("*.jinja2")
+                # ):
+                #     relative_template_path = complete_template_path.relative_to(work_dir)
 
-                    if relative_template_path.as_posix() in supporting_files:
-                        file_type = "SUPPORT"
-                    else:
-                        file_type = "ENTRYPOINT"
+                #     if relative_template_path.as_posix() in supporting_files:
+                #         file_type = "SUPPORT"
+                #     else:
+                #         file_type = "ENTRYPOINT"
 
-                    with db(is_legacy=False) as nextgen_db:
-                        nextgen_db.execute(
-                            """
-                            insert into job_script_template_files (
-                            parent_id,
-                            file_type,
-                            filename,
-                            created_at,
-                            updated_at
-                            )
-                            values (%s, %s, %s, %s, %s)
-                            on conflict do nothing
-                            """,
-                            (
-                                id,
-                                file_type,
-                                relative_template_path.name,
-                                datetime.now(timezone.utc),
-                                datetime.now(timezone.utc),
-                            ),
-                        )
+                #     with db(is_legacy=False) as nextgen_db:
+                #         nextgen_db.execute(
+                #             """
+                #             insert into job_script_template_files (
+                #             parent_id,
+                #             file_type,
+                #             filename,
+                #             created_at,
+                #             updated_at
+                #             )
+                #             values (%s, %s, %s, %s, %s)
+                #             on conflict do nothing
+                #             """,
+                #             (
+                #                 id,
+                #                 file_type,
+                #                 relative_template_path.name,
+                #                 datetime.now(timezone.utc),
+                #                 datetime.now(timezone.utc),
+                #             ),
+                #         )
 
-                    logger.success(f"uploading {get_key('job_script_template_files', id, relative_template_path.name)}")
+                #     logger.success(f"uploading {get_key('job_script_template_files', id, relative_template_path.name)}")
 
-                    await nextgen_bucket.upload_file(
-                        complete_template_path,
-                        get_key("job_script_template_files", id, relative_template_path.name),
-                    )
+                #     await nextgen_bucket.upload_file(
+                #         complete_template_path,
+                #         get_key("job_script_template_files", id, relative_template_path.name),
+                #     )
 
             return id
 
@@ -274,7 +289,11 @@ async def transfer_application_files(legacy_applications, db) -> List[int]:
         if isinstance(r, Exception):
             logger.warning(str(r))
         elif isinstance(r, int):
-            transferred_ids.add(r)
+            if r not in transferred_ids:
+                transferred_ids.add(r)
+                logger.success(f"Transferred application id={r}")
+            else:
+                logger.error(f"Id={r} already transferred")
         else:
             logger.error("Unexpected result: {} {}".format(type(r), r))
 
