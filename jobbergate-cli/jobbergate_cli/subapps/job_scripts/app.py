@@ -100,7 +100,7 @@ def list_all(
 @handle_abort
 def get_one(
     ctx: typer.Context,
-    id: int = typer.Option(int, help="The specific id of the job script."),
+    id: int = typer.Option(..., help="The specific id of the job script."),
 ):
     """
     Get a single job script by id.
@@ -336,7 +336,7 @@ def show_files(
 @handle_abort
 def download_files(
     ctx: typer.Context,
-    id: int = typer.Option(int, help="The specific id of the job script."),
+    id: int = typer.Option(..., help="The specific id of the job script."),
 ):
     """
     Download the files from a job script to the current working directory.

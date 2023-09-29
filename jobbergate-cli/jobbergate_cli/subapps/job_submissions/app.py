@@ -171,7 +171,7 @@ def list_all(
 @handle_abort
 def get_one(
     ctx: typer.Context,
-    id: int = typer.Option(int, help="The specific id of the job submission."),
+    id: int = typer.Option(..., help="The specific id of the job submission."),
 ):
     """
     Get a single job submission by id
