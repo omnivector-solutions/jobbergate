@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+4.1.0a1 -- 2023-10-02
+---------------------
+
 4.1.0a0 -- 2023-09-25
 ---------------------
 - Added an alternative way to present to login url on narrow terminals
