@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+4.1.0 -- 2023-10-02
+-------------------
 - Exposed database connection pool settings through the app configuration
 
 4.1.0a0 -- 2023-09-25
