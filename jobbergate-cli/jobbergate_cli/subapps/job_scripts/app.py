@@ -100,7 +100,7 @@ def list_all(
 @handle_abort
 def get_one(
     ctx: typer.Context,
-    id: int = typer.Option(..., help="The specific id of the job script."),
+    id: int = typer.Option(..., "--id", "-i", help="The specific id of the job script."),
 ):
     """
     Get a single job script by id.
@@ -121,6 +121,8 @@ def create(
     ctx: typer.Context,
     name: Optional[str] = typer.Option(
         None,
+        "--name",
+        "-n",
         help=dedent(
             """
             The name of the job script to create.
@@ -130,6 +132,8 @@ def create(
     ),
     application_id: Optional[int] = typer.Option(
         None,
+        "--application-id",
+        "-i",
         help="The id of the application from which to create the job script.",
     ),
     application_identifier: Optional[str] = typer.Option(
@@ -155,6 +159,8 @@ def create(
     ),
     fast: bool = typer.Option(
         False,
+        "--fast",
+        "-f",
         help="Use default answers (when available) instead of asking the user.",
     ),
     submit: Optional[bool] = typer.Option(
@@ -223,6 +229,8 @@ def update(
     ctx: typer.Context,
     id: int = typer.Option(
         ...,
+        "--id",
+        "-i",
         help="The id of the job script to update",
     ),
     name: Optional[str] = typer.Option(
@@ -275,6 +283,8 @@ def delete(
     ctx: typer.Context,
     id: int = typer.Option(
         ...,
+        "--id",
+        "-i",
         help="The id of the job script to delete",
     ),
 ):
