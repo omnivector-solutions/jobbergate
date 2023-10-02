@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     DATABASE_PSWD: str = "local-pswd"
     DATABASE_NAME: str = "local-db"
     DATABASE_PORT: int = 5432
+    DATABASE_POOL_SIZE: int = 20
+    DATABASE_POOL_MAX_OVERFLOW: int = 20
+    DATABASE_POOL_PRE_PING: bool = False
 
     # Test database settings
     TEST_DATABASE_HOST: str = "localhost"
