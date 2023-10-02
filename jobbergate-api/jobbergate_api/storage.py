@@ -94,7 +94,12 @@ class EngineFactory:
             force_test=settings.DEPLOY_ENV.lower() == "test",
         )
         if db_url not in self.engine_map:
-            self.engine_map[db_url] = create_async_engine(db_url, pool_pre_ping=True)
+            self.engine_map[db_url] = create_async_engine(
+                db_url,
+                pool_size=settings.DATABASE_POOL_SIZE,
+                pool_pre_ping=settings.DATABASE_POOL_PRE_PING,
+                max_overflow=settings.DATABASE_POOL_MAX_OVERFLOW,
+            )
         return self.engine_map[db_url]
 
     def get_session(self, override_db_name: str | None = None) -> AsyncSession:
