@@ -10,7 +10,8 @@ from typing import Any, Dict, List, Optional, cast
 
 from loguru import logger
 
-from jobbergate_cli.exceptions import Abort
+from jobbergate_cli.constants import FileType
+from jobbergate_cli.exceptions import Abort, JobbergateCliError
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import (
     ApplicationResponse,
@@ -18,7 +19,7 @@ from jobbergate_cli.schemas import (
     JobbergateConfig,
     JobbergateContext,
     JobScriptCreateRequest,
-    JobScriptCreateRequestData,
+    JobScriptRenderRequestData,
     JobScriptResponse,
     RenderFromTemplateRequest,
 )
@@ -170,7 +171,7 @@ def get_template_output_name_mapping(config: JobbergateConfig) -> Dict[str, str]
     return {remove_prefix(k): v.as_posix() for k, v in output_name_mapping.items()}
 
 
-def create_job_script(
+def render_job_script(
     jg_ctx: JobbergateContext,
     name: Optional[str] = None,
     application_id: Optional[int] = None,
@@ -181,7 +182,7 @@ def create_job_script(
     fast: bool = False,
 ) -> JobScriptResponse:
     """
-    Create a new job script.
+    Render a new job script from an application.
 
     :param str name: Name of the new job script.
     :param Optional[int] application_id: Id of the base application.
@@ -226,7 +227,7 @@ def create_job_script(
 
     param_dict_flat = flatten_param_dict(app_config.dict())
 
-    request_data = JobScriptCreateRequestData(
+    request_data = JobScriptRenderRequestData(
         create_request=JobScriptCreateRequest(
             name=name if name else app_data.name,
             description=description,
@@ -277,6 +278,69 @@ def update_template_files_information(app_data: ApplicationResponse, app_config:
         list_of_supporting_files = [i.filename for i in app_data.template_files if i.file_type.upper() == "SUPPORT"]
         if list_of_supporting_files:
             app_config.jobbergate_config.supporting_files = list_of_supporting_files
+
+
+def upload_job_script_files(
+    jg_ctx: JobbergateContext,
+    job_script_id: int,
+    job_script_path: pathlib.Path,
+    supporting_file_paths: Optional[List[pathlib.Path]] = None,
+):
+    """
+    Upload a job-script and its supporting files given their paths and the job-script id.
+
+    :param: jg_ctx:                The JobbergateContext. Needed to access the Httpx client with which to make API calls
+    :param: job_script_path:       The path to the job-script file to upload
+    :param: supporting_file_paths: The paths to any supporting files to upload with the job-scritpt
+    :param: job_script_id:         The id of the job-script for which to upload  data
+    :returns: True if the main job script upload was successful; False otherwise
+    """
+
+    client = JobbergateCliError.enforce_defined(jg_ctx.client)
+
+    Abort.require_condition(job_script_path.exists(), f"Job Script file {job_script_path} does not exist")
+    Abort.require_condition(job_script_path.is_file(), f"Job Script file {job_script_path} is not a file")
+
+    if supporting_file_paths is None:
+        supporting_file_paths = []
+    for sfp in supporting_file_paths:
+        Abort.require_condition(sfp.exists(), f"Supporting file {job_script_path} does not exist")
+        Abort.require_condition(sfp.is_file(), f"Supporting file {job_script_path} is not a file")
+
+    with open(job_script_path, "rb") as job_script_file:
+        response_code = cast(
+            int,
+            make_request(
+                client,
+                f"/jobbergate/job-scripts/{job_script_id}/upload/{FileType.ENTRYPOINT}",
+                "PUT",
+                expect_response=False,
+                abort_message="Request to upload job-script files was not accepted by the API",
+                support=True,
+                files={"upload_file": (job_script_path.name, job_script_file, "text/plain")},
+            ),
+        )
+        Abort.require_condition(response_code == 200, f"Job Script file {job_script_path} failed to upload")
+
+    with JobbergateCliError.check_expressions("Some supporting files failed to upload") as check:
+        for supporting_file_path in supporting_file_paths:
+            with open(supporting_file_path, "rb") as supporting_file:
+                response_code = cast(
+                    int,
+                    make_request(
+                        client,
+                        f"/jobbergate/job-scripts/{job_script_id}/upload/{FileType.SUPPORT}",
+                        "PUT",
+                        expect_response=False,
+                        abort_message="Request to upload job-script supporting file was not accepted by the API",
+                        support=True,
+                        files={"upload_file": (supporting_file_path.name, supporting_file, "text/plain")},
+                    ),
+                )
+                check(
+                    response_code == 200,
+                    f"Supporting file {supporting_file_path} was not accepted by the API for download",
+                )
 
 
 def save_job_script_files(

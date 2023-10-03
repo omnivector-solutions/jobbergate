@@ -22,6 +22,7 @@ from jobbergate_cli.subapps.job_scripts.app import (
     get_one,
     list_all,
     pathlib,
+    render,
     show_files,
     style_mapper,
     update,
@@ -96,7 +97,112 @@ def test_get_one__success(
     )
 
 
-def test_create__non_fast_mode_and_job_submission(
+def test_create__success(
+    respx_mock,
+    make_test_app,
+    dummy_context,
+    dummy_module_source,
+    dummy_application_data,
+    dummy_job_script_data,
+    dummy_job_submission_data,
+    dummy_domain,
+    dummy_render_class,
+    cli_runner,
+    tmp_path,
+    attach_persona,
+    mocker,
+):
+    dummy_job_script = tmp_path / "dummy.sh"
+    dummy_job_script.write_text("echo hello world")
+
+    dummy_support_1 = tmp_path / "dummy-support-1.txt"
+    dummy_support_1.write_text("dummy 1")
+
+    dummy_support_2 = tmp_path / "dummy-support-2.txt"
+    dummy_support_2.write_text("dummy 2")
+
+    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-scripts")
+    create_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.CREATED,
+            json=dict(
+                id=1,
+                created_at="2023-10-03 08:25:00",
+                updated_at="2023-10-03 08:25:00",
+                name="dummy-name",
+                description=None,
+                owner_email="dummy@dummy.com",
+                application_id=None,
+            ),
+        )
+    )
+
+    upload_entrypoint_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-scripts/1/upload/ENTRYPOINT")
+    upload_entrypoint_route.mock(return_value=httpx.Response(httpx.codes.OK))
+
+    upload_support_route = respx_mock.put(
+        f"{dummy_domain}/jobbergate/job-scripts/1/upload/SUPPORT",
+    )
+    upload_support_route.mock(return_value=httpx.Response(httpx.codes.OK))
+
+    attach_persona("dummy@dummy.com")
+
+    test_app = make_test_app("create", create)
+
+    mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
+    mocker.patch.object(
+        importlib.import_module("inquirer.prompt"),
+        "ConsoleRender",
+        new=dummy_render_class,
+    )
+    result = cli_runner.invoke(
+        test_app,
+        shlex.split(
+            unwrap(
+                f"""
+                create --name=dummy-name
+                       --job-script-path={dummy_job_script}
+                       --supporting-file-path={dummy_support_1}
+                       --supporting-file-path={dummy_support_2}
+                """
+            )
+        ),
+    )
+    assert result.exit_code == 0, f"render failed: {result.stdout}"
+
+    assert create_route.called
+    content = json.loads(create_route.calls.last.request.content)
+    assert content == {
+        "name": "dummy-name",
+        "description": None,
+    }
+
+    assert upload_entrypoint_route.call_count == 1
+    assert b'filename="dummy.sh"' in upload_entrypoint_route.calls[0].request.content
+
+    assert upload_support_route.call_count == 2
+    assert b'filename="dummy-support-1.txt"' in upload_support_route.calls[0].request.content
+    assert b'filename="dummy-support-2.txt"' in upload_support_route.calls[1].request.content
+
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        JobScriptResponse.parse_obj(
+            dict(
+                id=1,
+                created_at="2023-10-03 08:25:00",
+                updated_at="2023-10-03 08:25:00",
+                name="dummy-name",
+                description=None,
+                owner_email="dummy@dummy.com",
+                application_id=None,
+            ),
+        ),
+        title="Created Job Script",
+        hidden_fields=HIDDEN_FIELDS,
+    )
+
+
+def test_render__non_fast_mode_and_job_submission(
     respx_mock,
     make_test_app,
     dummy_context,
@@ -118,10 +224,10 @@ def test_create__non_fast_mode_and_job_submission(
 
     job_submission_data = dummy_job_submission_data[0]
 
-    create_route = respx_mock.post(
+    render_route = respx_mock.post(
         f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.id}"
     )
-    create_route.mock(
+    render_route.mock(
         return_value=httpx.Response(
             httpx.codes.CREATED,
             json=job_script_data,
@@ -141,7 +247,7 @@ def test_create__non_fast_mode_and_job_submission(
 
     attach_persona("dummy@dummy.com")
 
-    test_app = make_test_app("create", create)
+    test_app = make_test_app("render", render)
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
     mocked_fetch_application_data = mocker.patch(
         "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
@@ -169,7 +275,7 @@ def test_create__non_fast_mode_and_job_submission(
         shlex.split(
             unwrap(
                 f"""
-                create --name=dummy-name
+                render --name=dummy-name
                        --application-id={application_response.id}
                        --param-file={param_file_path}
                        {sbatch_params}
@@ -178,7 +284,7 @@ def test_create__non_fast_mode_and_job_submission(
         ),
         input="y\n",  # To confirm that the job should be submitted right away
     )
-    assert result.exit_code == 0, f"create failed: {result.stdout}"
+    assert result.exit_code == 0, f"render failed: {result.stdout}"
     assert mocked_fetch_application_data.called_once_with(
         dummy_context,
         id=application_response.id,
@@ -189,8 +295,8 @@ def test_create__non_fast_mode_and_job_submission(
         job_script_id,
         "dummy-name",
     )
-    assert create_route.called
-    content = json.loads(create_route.calls.last.request.content)
+    assert render_route.called
+    content = json.loads(render_route.calls.last.request.content)
     assert content == {
         "create_request": {"name": "dummy-name", "description": None},
         "render_request": {
@@ -230,7 +336,7 @@ def test_create__non_fast_mode_and_job_submission(
     )
 
 
-def test_create__with_fast_mode_and_no_job_submission(
+def test_render__with_fast_mode_and_no_job_submission(
     respx_mock,
     make_test_app,
     dummy_context,
@@ -247,10 +353,10 @@ def test_create__with_fast_mode_and_no_job_submission(
 
     job_script_data = dummy_job_script_data[0]
 
-    create_route = respx_mock.post(
+    render_route = respx_mock.post(
         f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.id}"
     )
-    create_route.mock(
+    render_route.mock(
         return_value=httpx.Response(
             httpx.codes.CREATED,
             json=job_script_data,
@@ -272,7 +378,7 @@ def test_create__with_fast_mode_and_no_job_submission(
 
     attach_persona("dummy@dummy.com")
 
-    test_app = make_test_app("create", create)
+    test_app = make_test_app("render", render)
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
     mocked_fetch_application_data = mocker.patch(
         "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
@@ -291,7 +397,7 @@ def test_create__with_fast_mode_and_no_job_submission(
         shlex.split(
             unwrap(
                 f"""
-                create --name=dummy-name
+                render --name=dummy-name
                        --application-id={application_response.id}
                        --param-file={param_file_path}
                        --fast
@@ -301,14 +407,14 @@ def test_create__with_fast_mode_and_no_job_submission(
             )
         ),
     )
-    assert result.exit_code == 0, f"create failed: {result.stdout}"
+    assert result.exit_code == 0, f"render failed: {result.stdout}"
     assert mocked_fetch_application_data.called_once_with(
         dummy_context,
         id=application_response.id,
         identifier=None,
     )
-    assert create_route.called
-    content = json.loads(create_route.calls.last.request.content)
+    assert render_route.called
+    content = json.loads(render_route.calls.last.request.content)
     assert content == {
         "create_request": {"name": "dummy-name", "description": None},
         "render_request": {
