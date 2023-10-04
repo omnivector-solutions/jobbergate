@@ -59,6 +59,7 @@ def test_list_all__makes_request_and_renders_results(
     )
 
 
+@pytest.mark.parametrize("id_flag,separator", [("--id", "="), ("-i", " ")])
 def test_get_one__success__using_id(
     respx_mock,
     make_test_app,
@@ -67,6 +68,8 @@ def test_get_one__success__using_id(
     dummy_domain,
     cli_runner,
     mocker,
+    id_flag,
+    separator,
 ):
     respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/1").mock(
         return_value=httpx.Response(
@@ -76,7 +79,7 @@ def test_get_one__success__using_id(
     )
     test_app = make_test_app("get-one", get_one)
     mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
-    result = cli_runner.invoke(test_app, shlex.split("get-one --id=1"))
+    result = cli_runner.invoke(test_app, shlex.split(f"get-one {id_flag}{separator}1"))
     assert result.exit_code == 0, f"get-one failed: {result.stdout}"
     mocked_render.assert_called_once_with(
         dummy_context,
@@ -127,6 +130,9 @@ def test_get_one__fails_with_both_id_and_identifier(make_test_app, cli_runner):
     assert "You may not supply both" in result.stdout
 
 
+@pytest.mark.parametrize(
+    "name_flag,application_path_flag,separator", [("--name", "--application-path", "="), ("-n", "-a", " ")]
+)
 def test_create__success(
     respx_mock,
     make_test_app,
@@ -136,6 +142,9 @@ def test_create__success(
     dummy_domain,
     cli_runner,
     mocker,
+    name_flag,
+    application_path_flag,
+    separator,
 ):
     response_data = dummy_application_data[0]
     response_data["application_uploaded"] = False
@@ -158,8 +167,8 @@ def test_create__success(
         shlex.split(
             unwrap(
                 f"""
-                create --name=dummy-name --identifier=dummy-identifier
-                       --application-path={dummy_application_dir}
+                create {name_flag}{separator}dummy-name --identifier=dummy-identifier
+                       {application_path_flag}{separator}{dummy_application_dir}
                        --application-desc="This application is kinda dumb, actually"
                 """
             )
@@ -230,6 +239,9 @@ def test_create__warns_but_does_not_abort_if_upload_fails(
     )
 
 
+@pytest.mark.parametrize(
+    "id_flag,application_path_flag,separator", [("--id", "--application-path", "="), ("-i", "-a", " ")]
+)
 def test_update__success(
     respx_mock,
     make_test_app,
@@ -239,6 +251,9 @@ def test_update__success(
     dummy_domain,
     cli_runner,
     mocker,
+    id_flag,
+    application_path_flag,
+    separator,
 ):
     response_data = dummy_application_data[0]
     application_id = response_data["id"]
@@ -269,8 +284,8 @@ def test_update__success(
         shlex.split(
             unwrap(
                 f"""
-                update --id={application_id} --identifier=dummy-identifier
-                       --application-path={dummy_application_dir}
+                update {id_flag}{separator}{application_id} --identifier=dummy-identifier
+                       {application_path_flag}{separator}{dummy_application_dir}
                        --application-desc="This application is kinda dumb, actually"
                 """
             )
@@ -402,12 +417,13 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
     )
 
 
-def test_delete__success(respx_mock, make_test_app, dummy_domain, cli_runner):
+@pytest.mark.parametrize("id_flag,separator", [("--id", "="), ("-i", " ")])
+def test_delete__success(respx_mock, make_test_app, dummy_domain, cli_runner, id_flag, separator):
     delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/job-script-templates/1")
     delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
 
     test_app = make_test_app("delete", delete)
-    result = cli_runner.invoke(test_app, shlex.split("delete --id=1"))
+    result = cli_runner.invoke(test_app, shlex.split(f"delete {id_flag}{separator}1"))
     assert result.exit_code == 0, f"delete failed: {result.stdout}"
     assert delete_route.called
     assert "Application delete succeeded" in result.stdout

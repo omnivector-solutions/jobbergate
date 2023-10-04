@@ -2,12 +2,20 @@ import json
 import shlex
 
 import httpx
+import pytest
 
 from jobbergate_cli.schemas import JobSubmissionResponse, ListResponseEnvelope
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS, create, delete, get_one, list_all, style_mapper
 from jobbergate_cli.text_tools import unwrap
 
 
+@pytest.mark.parametrize(
+    "flag_name,flag_job_script_id,separator",
+    [
+        ("--name", "--job-script-id", "="),
+        ("-n", "-i", " "),
+    ],
+)
 def test_create(
     make_test_app,
     dummy_context,
@@ -15,6 +23,9 @@ def test_create(
     cli_runner,
     mocker,
     tmp_path,
+    flag_name,
+    flag_job_script_id,
+    separator,
 ):
     job_submission_data = JobSubmissionResponse(**dummy_job_submission_data[0])
     job_submission_name = job_submission_data.name
@@ -39,9 +50,9 @@ def test_create(
         shlex.split(
             unwrap(
                 f"""
-                create --name={job_submission_name}
+                create {flag_name}{separator}{job_submission_name}
                        --description='{job_submission_description}'
-                       --job-script-id={job_script_id}
+                       {flag_job_script_id}{separator}{job_script_id}
                        --execution-parameters={param_file_path}
                        --download
                 """
@@ -99,6 +110,13 @@ def test_list_all__makes_request_and_renders_results(
     )
 
 
+@pytest.mark.parametrize(
+    "flag_id,separator",
+    [
+        ("--id", "="),
+        ("-i", " "),
+    ],
+)
 def test_get_one__success(
     respx_mock,
     make_test_app,
@@ -107,6 +125,8 @@ def test_get_one__success(
     dummy_domain,
     cli_runner,
     mocker,
+    flag_id,
+    separator,
 ):
     respx_mock.get(f"{dummy_domain}/jobbergate/job-submissions/1").mock(
         return_value=httpx.Response(
@@ -116,7 +136,7 @@ def test_get_one__success(
     )
     test_app = make_test_app("get-one", get_one)
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_submissions.app.render_single_result")
-    result = cli_runner.invoke(test_app, shlex.split("get-one --id=1"))
+    result = cli_runner.invoke(test_app, shlex.split(f"get-one {flag_id}{separator}1"))
     assert result.exit_code == 0, f"get-one failed: {result.stdout}"
     mocked_render.assert_called_once_with(
         dummy_context,
@@ -126,11 +146,20 @@ def test_get_one__success(
     )
 
 
+@pytest.mark.parametrize(
+    "flag_id,separator",
+    [
+        ("--id", "="),
+        ("-i", " "),
+    ],
+)
 def test_delete__makes_request_and_sends_terminal_message(
     respx_mock,
     make_test_app,
     dummy_domain,
     cli_runner,
+    flag_id,
+    separator,
 ):
     job_submission_id = 13
 
@@ -138,7 +167,7 @@ def test_delete__makes_request_and_sends_terminal_message(
         return_value=httpx.Response(httpx.codes.NO_CONTENT),
     )
     test_app = make_test_app("delete", delete)
-    result = cli_runner.invoke(test_app, shlex.split(f"delete --id={job_submission_id}"))
+    result = cli_runner.invoke(test_app, shlex.split(f"delete {flag_id}{separator}{job_submission_id}"))
     assert result.exit_code == 0, f"delete failed: {result.stdout}"
     assert delete_route.called
     assert "JOB SUBMISSION DELETE SUCCEEDED"
