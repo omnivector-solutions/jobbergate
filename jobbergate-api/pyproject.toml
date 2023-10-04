@@ -43,8 +43,9 @@ sendgrid = "^6.9.7"
 sentry-sdk = "^1.29.2"
 snick = "^1.3.0"
 sqlalchemy = { extras = ["mypy"], version = "^2.0.19" }
-uvicorn = "^0.23.0"
+uvicorn = {extras = ["standard"], version = "^0.23.2"}
 yarl = "^1.7.2"
+gunicorn = "^21.2.0"
 
 [tool.poetry.group.dev.dependencies]
 asgi-lifespan = "^1.0.1"
