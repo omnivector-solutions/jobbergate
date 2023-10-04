@@ -25,6 +25,7 @@ services:
       - ARMASEC_AUDIENCE=https://local.omnivector.solutions
       - ARMASEC_DEBUG=false
       - ARMASEC_USE_HTTPS=false
+      - PROFILING_ENABLED=true
       - LOG_LEVEL=DEBUG
     ports:
       - 8000:80

@@ -61,6 +61,7 @@ class Settings(BaseSettings):
     # S3 configuration
     S3_BUCKET_NAME: str = Field("jobbergate-staging-eu-north-1-resources")
     S3_ENDPOINT_URL: Optional[str]
+    S3_PROFILE_BUCKET_NAME: str = Field("api-profile-data")
 
     # Test S3 configuration
     TEST_S3_BUCKET_NAME: str = Field("test-jobbergate-resources")
@@ -92,6 +93,9 @@ class Settings(BaseSettings):
 
     # Enable multi-tenancy so that the database is determined by the client_id in the auth token
     MULTI_TENANCY_ENABLED: bool = Field(False)
+
+    # If enabled, requests can include a `profile` param to trigger profiling for that request
+    PROFILING_ENABLED: bool = Field(False)
 
     # Automatically clean up unused job scripts
     AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE: int | None

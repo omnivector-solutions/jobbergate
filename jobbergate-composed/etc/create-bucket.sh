@@ -6,3 +6,5 @@ mc mb --ignore-existing myminio/jobbergate-resources
 mc policy set public myminio/jobbergate-resources
 mc mb --ignore-existing myminio/test-resources
 mc policy set public myminio/test-resources
+mc mb --ignore-existing myminio/api-profile-data
+mc policy set public myminio/api-profile-data
