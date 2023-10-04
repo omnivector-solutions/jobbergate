@@ -7,6 +7,7 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 - Fixed help information for id on `get-job-script`, `download-job-script`, and `get-job-submission` commands
+- Added short arguments for backward compatiblity
 
 4.1.0a1 -- 2023-10-02
 ---------------------
