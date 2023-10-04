@@ -175,6 +175,15 @@ class JobScriptResponse(
 
     files: List[JobScriptFiles] = []
 
+    @pydantic.validator("files", pre=True)
+    def null_files(cls, value):
+        """
+        Remap a `None` value in files to an empty list.
+        """
+        if value is None:
+            return []
+        return value
+
 
 class JobSubmissionResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     """
@@ -213,7 +222,7 @@ class RenderFromTemplateRequest(pydantic.BaseModel):
     param_dict: Dict[str, Any]
 
 
-class JobScriptCreateRequestData(pydantic.BaseModel):
+class JobScriptRenderRequestData(pydantic.BaseModel):
     """
     Describes the data that will be sent to the ``create`` endpoint of the Jobbergate API for job scripts.
     """

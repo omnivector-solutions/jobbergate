@@ -4,17 +4,19 @@ import pathlib
 
 import httpx
 import pytest
+import respx
 
-from jobbergate_cli.exceptions import Abort
+from jobbergate_cli.exceptions import Abort, JobbergateCliError
 from jobbergate_cli.schemas import ApplicationResponse, JobScriptResponse
 from jobbergate_cli.subapps.job_scripts.tools import (
     JobbergateConfig,
-    create_job_script,
     fetch_job_script_data,
     flatten_param_dict,
     get_template_output_name_mapping,
     remove_prefix_suffix,
+    render_job_script,
     save_job_script_files,
+    upload_job_script_files,
     validate_parameter_file,
 )
 
@@ -58,7 +60,7 @@ def test_fetch_job_script_data__success(
     assert job_script == JobScriptResponse.parse_obj(dummy_job_script_data[0])
 
 
-def test_create_job_script__providing_a_name(
+def test_render_job_script__providing_a_name(
     dummy_application_data,
     dummy_job_script_data,
     dummy_module_source,
@@ -111,7 +113,7 @@ def test_create_job_script__providing_a_name(
         ),
     )
 
-    actual_job_script_data = create_job_script(
+    actual_job_script_data = render_job_script(
         dummy_context,
         name=desired_job_script_data["name"],
         application_id=1,
@@ -127,7 +129,7 @@ def test_create_job_script__providing_a_name(
     assert actual_job_script_data == JobScriptResponse.parse_obj(desired_job_script_data)
 
 
-def test_create_job_script__without_a_name(
+def test_render_job_script__without_a_name(
     dummy_application_data,
     dummy_job_script_data,
     dummy_module_source,
@@ -183,7 +185,7 @@ def test_create_job_script__without_a_name(
         ),
     )
 
-    actual_job_script_data = create_job_script(
+    actual_job_script_data = render_job_script(
         dummy_context,
         name=None,
         application_id=application_response.id,
@@ -333,3 +335,153 @@ class TestGetTemplateOutputNameMapping:
 
         with pytest.raises(Abort, match="template='template2.j2' has 2 output names"):
             get_template_output_name_mapping(config)
+
+
+class TestUploadJobScriptFiles:
+    """Test the upload_job_script_files function."""
+
+    job_script_id = 1
+
+    @pytest.fixture(scope="function")
+    def mocked_routes(self, dummy_domain):
+        def _helper(assert_all_mocked=True, assert_all_called=False):
+            app_mock = respx.mock(
+                base_url=dummy_domain,
+                assert_all_mocked=assert_all_mocked,
+                assert_all_called=assert_all_called,
+            )
+
+            app_mock.put(
+                path=f"/jobbergate/job-scripts/{self.job_script_id}/upload/ENTRYPOINT",
+                name="upload_entrypoint",
+            ).respond(httpx.codes.OK)
+
+            app_mock.put(
+                path=f"/jobbergate/job-scripts/{self.job_script_id}/upload/SUPPORT",
+                name="upload_support",
+            ).respond(httpx.codes.OK)
+            return app_mock
+
+        return _helper
+
+    def test_upload_job_script__success(
+        self,
+        dummy_context,
+        mocked_routes,
+        tmp_path,
+    ):
+        with mocked_routes(assert_all_called=True) as routes:
+            dummy_job_script = tmp_path / "dummy.sh"
+            dummy_job_script.write_text("echo hello world")
+
+            dummy_support_1 = tmp_path / "dummy-support-1.txt"
+            dummy_support_1.write_text("dummy 1")
+
+            dummy_support_2 = tmp_path / "dummy-support-2.txt"
+            dummy_support_2.write_text("dummy 2")
+
+            upload_job_script_files(
+                dummy_context, self.job_script_id, dummy_job_script, [dummy_support_1, dummy_support_2]
+            )
+
+            assert routes["upload_entrypoint"].call_count == 1
+            assert b'filename="dummy.sh"' in routes["upload_entrypoint"].calls[0].request.content
+            assert b"echo hello world" in routes["upload_entrypoint"].calls[0].request.content
+
+            assert routes["upload_support"].call_count == 2
+
+            assert b'filename="dummy-support-1.txt"' in routes["upload_support"].calls[0].request.content
+            assert b"dummy 1" in routes["upload_support"].calls[0].request.content
+
+            assert b'filename="dummy-support-2.txt"' in routes["upload_support"].calls[1].request.content
+            assert b"dummy 2" in routes["upload_support"].calls[1].request.content
+
+    def test_upload_job_script__raises_exception_if_context_client_is_undefined(
+        self,
+        dummy_context,
+        tmp_path,
+    ):
+        dummy_job_script = tmp_path / "dummy.sh"
+        dummy_job_script.write_text("echo hello world")
+
+        dummy_context.client = None
+        with pytest.raises(JobbergateCliError, match="not defined"):
+            upload_job_script_files(dummy_context, self.job_script_id, dummy_job_script)
+
+    def test_upload_job_script__raises_exception_if_job_script_does_not_exist_or_is_not_a_file(
+        self,
+        dummy_context,
+        tmp_path,
+    ):
+        dummy_job_script = tmp_path / "dummy.sh"
+
+        with pytest.raises(Abort, match="Job Script file .* does not exist"):
+            upload_job_script_files(dummy_context, self.job_script_id, dummy_job_script)
+
+        dummy_job_script.mkdir()
+        with pytest.raises(Abort, match="Job Script file .* is not a file"):
+            upload_job_script_files(dummy_context, self.job_script_id, dummy_job_script)
+
+    def test_upload_job_script__raises_exception_if_job_supporting_file_does_not_exist_or_is_not_a_file(
+        self,
+        dummy_context,
+        tmp_path,
+    ):
+        dummy_job_script = tmp_path / "dummy.sh"
+        dummy_job_script.touch()
+
+        dummy_support_1 = tmp_path / "dummy-support-1.txt"
+
+        with pytest.raises(Abort, match="Supporting file .* does not exist"):
+            upload_job_script_files(dummy_context, self.job_script_id, dummy_job_script, [dummy_support_1])
+
+        dummy_support_1.mkdir()
+        with pytest.raises(Abort, match="Supporting file .* is not a file"):
+            upload_job_script_files(dummy_context, self.job_script_id, dummy_job_script, [dummy_support_1])
+
+    def test_upload_job_script__raises_exception_if_job_script_fails_to_upload(
+        self,
+        dummy_context,
+        mocked_routes,
+        tmp_path,
+    ):
+        with mocked_routes() as routes:
+            dummy_job_script = tmp_path / "dummy.sh"
+            dummy_job_script.write_text("echo hello world")
+            routes["upload_entrypoint"].respond(httpx.codes.BAD_REQUEST)
+
+            with pytest.raises(Abort, match="Job Script file .* failed to upload"):
+                upload_job_script_files(dummy_context, self.job_script_id, dummy_job_script)
+
+            assert routes["upload_entrypoint"].call_count == 1
+            assert b'filename="dummy.sh"' in routes["upload_entrypoint"].calls[0].request.content
+
+    def test_upload_job_script__raises_exception_if_any_of_the_supporting_files_fail_to_upload(
+        self,
+        dummy_context,
+        mocked_routes,
+        tmp_path,
+    ):
+        with mocked_routes(assert_all_called=True) as routes:
+            routes["upload_support"].respond(httpx.codes.BAD_REQUEST)
+
+            dummy_job_script = tmp_path / "dummy.sh"
+            dummy_job_script.write_text("echo hello world")
+
+            dummy_support_1 = tmp_path / "dummy-support-1.txt"
+            dummy_support_1.write_text("dummy 1")
+
+            dummy_support_2 = tmp_path / "dummy-support-2.txt"
+            dummy_support_2.write_text("dummy 2")
+
+            with pytest.raises(JobbergateCliError, match="Supporting file .* was not accepted"):
+                upload_job_script_files(
+                    dummy_context, self.job_script_id, dummy_job_script, [dummy_support_1, dummy_support_2]
+                )
+
+            assert routes["upload_entrypoint"].call_count == 1
+            assert b'filename="dummy.sh"' in routes["upload_entrypoint"].calls[0].request.content
+
+            assert routes["upload_support"].call_count == 2
+            assert b'filename="dummy-support-1.txt"' in routes["upload_support"].calls[0].request.content
+            assert b'filename="dummy-support-2.txt"' in routes["upload_support"].calls[1].request.content

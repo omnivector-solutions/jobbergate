@@ -12,12 +12,13 @@ from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobbergateContext, JobScriptResponse, ListResponseEnvelope
+from jobbergate_cli.schemas import JobbergateContext, JobScriptCreateRequest, JobScriptResponse, ListResponseEnvelope
 from jobbergate_cli.subapps.job_scripts.tools import (
-    create_job_script,
     download_job_script_files,
     fetch_job_script_data,
+    render_job_script,
     save_job_script_files,
+    upload_job_script_files,
 )
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
 from jobbergate_cli.subapps.job_submissions.tools import create_job_submission
@@ -119,6 +120,58 @@ def get_one(
 @handle_abort
 def create(
     ctx: typer.Context,
+    name: str = typer.Option(
+        ...,
+        help=dedent("The name of the job script to create."),
+    ),
+    description: Optional[str] = typer.Option(
+        None,
+        help="Optional text describing the job script.",
+    ),
+    job_script_path: pathlib.Path = typer.Option(..., help="The path to the job script file to upload"),
+    supporting_file_path: Optional[List[pathlib.Path]] = typer.Option(
+        None,
+        help="A path for one of the supporting files to upload",
+    ),
+):
+    jg_ctx: JobbergateContext = ctx.obj
+
+    # Make static type checkers happy
+    assert jg_ctx.client is not None
+
+    request_data = JobScriptCreateRequest(
+        name=name,
+        description=description,
+    )
+
+    job_script_result = cast(
+        JobScriptResponse,
+        make_request(
+            jg_ctx.client,
+            "/jobbergate/job-scripts",
+            "POST",
+            expected_status=201,
+            abort_message="Couldn't create job script",
+            support=True,
+            request_model=request_data,
+            response_model_cls=JobScriptResponse,
+        ),
+    )
+
+    upload_job_script_files(jg_ctx, job_script_result.id, job_script_path, supporting_file_path)
+
+    render_single_result(
+        jg_ctx,
+        job_script_result,
+        hidden_fields=HIDDEN_FIELDS,
+        title="Created Job Script",
+    )
+
+
+@app.command()
+@handle_abort
+def render(
+    ctx: typer.Context,
     name: Optional[str] = typer.Option(
         None,
         "--name",
@@ -169,11 +222,11 @@ def create(
     ),
 ):
     """
-    Create a new job script.
+    Render a new job script from an application.
     """
     jg_ctx: JobbergateContext = ctx.obj
 
-    job_script_result = create_job_script(
+    job_script_result = render_job_script(
         jg_ctx,
         name,
         application_id,
