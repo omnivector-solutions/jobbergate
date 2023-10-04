@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-cli
 
 Unreleased
 ----------
+- Added a `create` for Job Scripts to to create without Template. (former `create` renamed to `render`)
 - Fixed help information for id on `get-job-script`, `download-job-script`, and `get-job-submission` commands
 
 4.1.0a1 -- 2023-10-02

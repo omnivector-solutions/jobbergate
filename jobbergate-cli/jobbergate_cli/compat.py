@@ -11,11 +11,11 @@ from jobbergate_cli.subapps.applications.app import download_files as download_f
 from jobbergate_cli.subapps.applications.app import get_one as get_application
 from jobbergate_cli.subapps.applications.app import list_all as list_applications
 from jobbergate_cli.subapps.applications.app import update as update_application
-from jobbergate_cli.subapps.job_scripts.app import create as create_job_script
 from jobbergate_cli.subapps.job_scripts.app import delete as delete_job_script
 from jobbergate_cli.subapps.job_scripts.app import download_files as download_files_job_script
 from jobbergate_cli.subapps.job_scripts.app import get_one as get_job_script
 from jobbergate_cli.subapps.job_scripts.app import list_all as list_job_scripts
+from jobbergate_cli.subapps.job_scripts.app import render as render_job_script
 from jobbergate_cli.subapps.job_scripts.app import update as update_job_script
 from jobbergate_cli.subapps.job_submissions.app import create as create_job_submission
 from jobbergate_cli.subapps.job_submissions.app import delete as delete_job_submission
@@ -67,7 +67,7 @@ def add_legacy_compatible_commands(app: typer.Typer):
     app.command(
         name="create-job-script",
         help="CREATE a job script",
-    )(create_job_script)
+    )(render_job_script)
     app.command(
         name="update-job-script",
         help="UPDATE a job script",
