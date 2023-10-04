@@ -24,6 +24,7 @@ from jobbergate_api.apps.job_script_templates.schemas import (
 )
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.apps.schemas import ListParams
+from jobbergate_api.apps.services import ServiceError
 
 router = APIRouter(prefix="/job-script-templates", tags=["Job Script Templates"])
 
@@ -246,7 +247,10 @@ async def job_script_workflow_get_file(
 )
 async def job_script_workflow_upload_file(
     id_or_identifier: int | str = Path(),
-    runtime_config: RunTimeConfig = Body(),
+    runtime_config: RunTimeConfig
+    | None = Body(
+        None, description="Runtime configuration is optional when the workflow file already exists"
+    ),
     upload_file: UploadFile = File(..., description="File to upload"),
     secure_services: SecureService = Depends(
         secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
@@ -257,12 +261,26 @@ async def job_script_workflow_upload_file(
     job_script_template = await secure_services.crud.template.get(
         id_or_identifier, ensure_attributes={"owner_email": secure_services.identity_payload.email}
     )
-    return await secure_services.file.workflow.upsert(
-        parent_id=job_script_template.id,
-        filename=WORKFLOW_FILE_NAME,
-        upload_content=upload_file,
-        runtime_config=runtime_config.dict(),
+
+    upsert_kwargs = dict(
+        parent_id=job_script_template.id, filename=WORKFLOW_FILE_NAME, upload_content=upload_file
     )
+
+    try:
+        await secure_services.file.workflow.get(job_script_template.id, WORKFLOW_FILE_NAME)
+        file_exist = True
+    except ServiceError:
+        file_exist = False
+
+    if runtime_config is None and file_exist is False:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Runtime configuration is required when the workflow file does not exist",
+        )
+    elif runtime_config is not None:
+        upsert_kwargs["runtime_config"] = runtime_config.dict()
+
+    return await secure_services.file.workflow.upsert(**upsert_kwargs)
 
 
 @router.delete(
