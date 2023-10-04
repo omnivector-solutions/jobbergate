@@ -99,6 +99,7 @@ def test_get_one__success(
         hidden_fields=HIDDEN_FIELDS,
     )
 
+
 def test_create__success(
     respx_mock,
     make_test_app,
