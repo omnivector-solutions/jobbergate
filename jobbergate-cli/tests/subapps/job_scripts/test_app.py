@@ -70,6 +70,7 @@ def test_list_all__makes_request_and_renders_results(
     )
 
 
+@pytest.mark.parametrize("id_flag,separator", [("--id", "="), ("-i", " ")])
 def test_get_one__success(
     respx_mock,
     make_test_app,
@@ -78,6 +79,8 @@ def test_get_one__success(
     dummy_domain,
     cli_runner,
     mocker,
+    id_flag,
+    separator,
 ):
     respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/1").mock(
         return_value=httpx.Response(
@@ -87,7 +90,7 @@ def test_get_one__success(
     )
     test_app = make_test_app("get-one", get_one)
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
-    result = cli_runner.invoke(test_app, shlex.split("get-one --id=1"))
+    result = cli_runner.invoke(test_app, shlex.split(f"get-one {id_flag}{separator}1"))
     assert result.exit_code == 0, f"get-one failed: {result.stdout}"
     mocked_render.assert_called_once_with(
         dummy_context,
@@ -202,6 +205,9 @@ def test_create__success(
     )
 
 
+@pytest.mark.parametrize(
+    "name_flag,application_id_flag,separator", [("--name", "--application-id", "="), ("-n", "-i", " ")]
+)
 def test_render__non_fast_mode_and_job_submission(
     respx_mock,
     make_test_app,
@@ -216,6 +222,9 @@ def test_render__non_fast_mode_and_job_submission(
     tmp_path,
     attach_persona,
     mocker,
+    name_flag,
+    application_id_flag,
+    separator,
 ):
     application_response = ApplicationResponse(**dummy_application_data[0])
 
@@ -275,8 +284,8 @@ def test_render__non_fast_mode_and_job_submission(
         shlex.split(
             unwrap(
                 f"""
-                render --name=dummy-name
-                       --application-id={application_response.id}
+                render {name_flag}{separator}dummy-name
+                       {application_id_flag}{separator}{application_response.id}
                        --param-file={param_file_path}
                        {sbatch_params}
                 """
@@ -444,6 +453,7 @@ def test_render__with_fast_mode_and_no_job_submission(
     )
 
 
+@pytest.mark.parametrize("id_flag,separator", [("--id", "="), ("-i", " ")])
 def test_update__makes_request_and_renders_results(
     respx_mock,
     make_test_app,
@@ -452,6 +462,8 @@ def test_update__makes_request_and_renders_results(
     dummy_domain,
     cli_runner,
     mocker,
+    id_flag,
+    separator,
 ):
     job_script_data = dummy_job_script_data[0]
     job_script_id = job_script_data["id"]
@@ -471,7 +483,7 @@ def test_update__makes_request_and_renders_results(
         shlex.split(
             unwrap(
                 f"""
-                update --id={job_script_id}
+                update {id_flag}{separator}{job_script_id}
                        --name='new-test-name'
                        --description='new-test-description'
                 """
@@ -487,11 +499,14 @@ def test_update__makes_request_and_renders_results(
     )
 
 
+@pytest.mark.parametrize("id_flag,separator", [("--id", "="), ("-i", " ")])
 def test_delete__makes_request_and_sends_terminal_message(
     respx_mock,
     make_test_app,
     dummy_domain,
     cli_runner,
+    id_flag,
+    separator,
 ):
     job_script_id = 13
 
@@ -499,7 +514,7 @@ def test_delete__makes_request_and_sends_terminal_message(
         return_value=httpx.Response(httpx.codes.NO_CONTENT),
     )
     test_app = make_test_app("delete", delete)
-    result = cli_runner.invoke(test_app, shlex.split(f"delete --id={job_script_id}"))
+    result = cli_runner.invoke(test_app, shlex.split(f"delete {id_flag}{separator}{job_script_id}"))
     assert result.exit_code == 0, f"delete failed: {result.stdout}"
     assert delete_route.called
     assert "JOB SCRIPT DELETE SUCCEEDED"

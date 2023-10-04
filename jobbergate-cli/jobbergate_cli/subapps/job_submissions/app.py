@@ -38,6 +38,8 @@ def create(
     ctx: typer.Context,
     name: str = typer.Option(
         ...,
+        "--name",
+        "-n",
         help="The name of the job submission to create",
     ),
     description: Optional[str] = typer.Option(
@@ -46,6 +48,8 @@ def create(
     ),
     job_script_id: int = typer.Option(
         ...,
+        "--job-script-id",
+        "-i",
         help="The id of the job_script from which to create the job submission",
     ),
     cluster_name: str = typer.Option(
@@ -171,7 +175,7 @@ def list_all(
 @handle_abort
 def get_one(
     ctx: typer.Context,
-    id: int = typer.Option(..., help="The specific id of the job submission."),
+    id: int = typer.Option(..., "--id", "-i", help="The specific id of the job submission."),
 ):
     """
     Get a single job submission by id
@@ -195,6 +199,8 @@ def delete(
     ctx: typer.Context,
     id: int = typer.Option(
         ...,
+        "--id",
+        "-i",
         help="The id of the job submission to delete",
     ),
 ):

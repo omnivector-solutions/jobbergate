@@ -112,6 +112,8 @@ def get_one(
     ctx: typer.Context,
     id: Optional[int] = typer.Option(
         None,
+        "--id",
+        "-i",
         help=f"The specific id of the application. {ID_NOTE}",
     ),
     identifier: Optional[str] = typer.Option(
@@ -138,6 +140,8 @@ def create(
     ctx: typer.Context,
     name: str = typer.Option(
         ...,
+        "--name",
+        "-n",
         help="The name of the application to create",
     ),
     identifier: Optional[str] = typer.Option(
@@ -146,6 +150,8 @@ def create(
     ),
     application_path: pathlib.Path = typer.Option(
         ...,
+        "--application-path",
+        "-a",
         help="The path to the directory where the application files are located",
     ),
     application_desc: Optional[str] = typer.Option(
@@ -215,10 +221,14 @@ def update(
     ctx: typer.Context,
     id: int = typer.Option(
         ...,
+        "--id",
+        "-i",
         help=f"The specific id of the application to update. {ID_NOTE}",
     ),
     application_path: Optional[pathlib.Path] = typer.Option(
         None,
+        "--application-path",
+        "-a",
         help="The path to the directory where the application files are located",
     ),
     identifier: Optional[str] = typer.Option(
@@ -297,6 +307,8 @@ def delete(
     ctx: typer.Context,
     id: int = typer.Option(
         ...,
+        "--id",
+        "-i",
         help=f"the specific id of the application to delete. {ID_NOTE}",
     ),
 ):
