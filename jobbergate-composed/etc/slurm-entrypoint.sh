@@ -1,13 +1,12 @@
 #!/bin/bash
 set -e
 
+echo "---> Starting the MUNGE Authentication service (munged) ..."
+service munge start
+
 if [ "$1" = "slurmdbd" ]
 then
-    echo "---> Starting the MUNGE Authentication service (munged) ..."
-    gosu munge /usr/sbin/munged
-
     echo "---> Starting the Slurm Database Daemon (slurmdbd) ..."
-
     {
         . /etc/slurm/slurmdbd.conf
         until echo "SELECT 1" | mysql -h $StorageHost -u$StorageUser -p$StoragePass 2>&1 > /dev/null
@@ -23,9 +22,6 @@ fi
 
 if [ "$1" = "slurmctld" ]
 then
-    echo "---> Starting the MUNGE Authentication service (munged) ..."
-    gosu munge /usr/sbin/munged
-
     echo "---> Waiting for slurmdbd to become active before starting slurmctld ..."
 
     until 2>/dev/null >/dev/tcp/slurmdbd/6819
@@ -42,9 +38,6 @@ fi
 
 if [ "$1" = "slurmd" ]
 then
-    echo "---> Starting the MUNGE Authentication service (munged) ..."
-    gosu munge /usr/sbin/munged
-
     echo "---> Waiting for slurmctld to become active before starting slurmd..."
 
     until 2>/dev/null >/dev/tcp/slurmctld/6817
@@ -60,8 +53,6 @@ fi
 
 if [ "$1" = "slurmrestd" ]
 then
-    echo "---> Starting the MUNGE Authentication service (munged) ..."
-    gosu munge /usr/sbin/munged
 
     echo "---> Waiting for slurmctld to become active before starting slurmrestd..."
 
@@ -74,7 +65,7 @@ then
 
     echo "---> Starting the Slurm Rest API (slurmrestd) ..."
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib
-    export SLURMRESTD_SECURITY=SKIP_LOCKDOWN
+    export SLURMRESTD_SECURITY=
     export SLURM_JWT=1
     exec /usr/sbin/slurmrestd -vvvv -a rest_auth/jwt 0.0.0.0:6820
 fi
