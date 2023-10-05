@@ -44,6 +44,15 @@ def main(
     full: bool = typer.Option(False, help="Print all fields from CRUD commands"),
     raw: bool = typer.Option(False, help="Print output from CRUD commands as raw json"),
     version: bool = typer.Option(False, help="Print the version of jobbergate-cli and exit"),
+    ignore_extra_args: str = typer.Option(
+        None,
+        "--username",
+        "-u",
+        "--password",
+        "-p",
+        hidden=True,
+        help="Ignore extra arguments passed to the command for backward compatibility with the legacy app.",
+    ),
 ):
     """
     Welcome to the Jobbergate CLI!
