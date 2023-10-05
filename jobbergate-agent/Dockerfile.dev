@@ -11,5 +11,10 @@ RUN curl -sSL  https://install.python-poetry.org | \
     poetry config virtualenvs.create false
 
 COPY ./pyproject.toml ./poetry.lock* ./README* ./LICENSE* /app/
-COPY ./jobbergate_agent /app/jobbergate_agent
-RUN poetry install --no-dev
+COPY ./etc/entrypoint.sh /app/entrypoint.sh
+WORKDIR /app
+
+VOLUME /app/jobbergate_agent
+VOLUME /jobbergate-core
+
+ENTRYPOINT /app/entrypoint.sh
