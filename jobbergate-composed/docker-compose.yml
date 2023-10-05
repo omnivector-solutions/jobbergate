@@ -45,6 +45,7 @@ services:
     build:
       context: ../jobbergate-api
       dockerfile: Dockerfile-dev
+    profiles: ["dev"]
     networks:
       - jobbergate-net
     environment:
@@ -316,6 +317,8 @@ services:
     networks:
       - jobbergate-net
     command: ["slurmrestd"]
+    environment:
+      - SLURMRESTD_SECURITY=disable_unshare_files,disable_unshare_sysv,disable_user_check
     container_name: slurmrestd
     hostname: slurmrestd
     volumes:

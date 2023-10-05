@@ -9,9 +9,11 @@ from loguru import logger
 from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
 from jobbergate_api.apps.job_script_templates.schemas import JobTemplateDetailedView, JobTemplateListView
 from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.apps.services import ServiceError
 
 # Not using the synth_session fixture in a route that needs the database is unsafe
 pytest.mark.usefixtures("synth_session")
+
 
 async def test_create_job_template__async(
     client,
@@ -37,6 +39,7 @@ async def test_create_job_template__async(
     for i, response in enumerate(responses):
         logger.info(f"Response {i}: {response.status_code}")
         response.raise_for_status()
+
 
 async def test_create_job_template__success(
     client,
@@ -632,6 +635,115 @@ class TestJobTemplateWorkflowFile:
         assert workflow_file["parent_id"] == parent_id
         assert workflow_file["filename"] == WORKFLOW_FILE_NAME
         assert workflow_file["runtime_config"] == runtime_config
+
+    async def test_update__success(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_template_data,
+        synth_services,
+        make_dummy_file,
+    ):
+        parent_id = job_template_data.id
+        original_runtime_config = {"foo": "bar"}
+        original_content = "import this"
+
+        synth_services.file.workflow.upsert(
+            parent_id=parent_id,
+            filename=WORKFLOW_FILE_NAME,
+            upload_content=original_content,
+            runtime_config=original_runtime_config,
+        )
+
+        new_runtime_config = {"new": "config"}
+        new_content = "import that"
+
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+        with open(make_dummy_file("test_template.py.j2", content=new_content), mode="rb") as workflow_file:
+            response = await client.put(
+                f"jobbergate/job-script-templates/{parent_id}/upload/workflow",
+                files={"upload_file": (workflow_file.name, workflow_file, "text/plain")},
+                data={"runtime_config": json.dumps(new_runtime_config)},
+            )
+
+        assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
+
+        workflow_file = await synth_services.file.workflow.get(
+            parent_id=parent_id,
+            filename=WORKFLOW_FILE_NAME,
+        )
+
+        assert workflow_file.runtime_config == new_runtime_config
+        assert (await synth_services.file.workflow.get_file_content(workflow_file)) == new_content.encode()
+
+    async def test_update_optional_runtime_config__success(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_template_data,
+        synth_services,
+        make_dummy_file,
+    ):
+        parent_id = job_template_data.id
+        original_runtime_config = {"foo": "bar"}
+        original_content = "import this"
+
+        await synth_services.file.workflow.upsert(
+            parent_id=parent_id,
+            filename=WORKFLOW_FILE_NAME,
+            upload_content=original_content,
+            runtime_config=original_runtime_config,
+        )
+
+        new_content = "import that"
+
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+        with open(make_dummy_file("test_template.py.j2", content=new_content), mode="rb") as workflow_file:
+            response = await client.put(
+                f"jobbergate/job-script-templates/{parent_id}/upload/workflow",
+                files={"upload_file": (workflow_file.name, workflow_file, "text/plain")},
+            )
+
+        assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
+
+        workflow_file = await synth_services.file.workflow.get(
+            parent_id=parent_id,
+            filename=WORKFLOW_FILE_NAME,
+        )
+
+        assert workflow_file.runtime_config == original_runtime_config
+        assert (await synth_services.file.workflow.get_file_content(workflow_file)) == new_content.encode()
+
+    async def test_update_optional_runtime_config__fail_on_creation_time(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_template_data,
+        synth_services,
+        make_dummy_file,
+    ):
+        parent_id = job_template_data.id
+
+        new_content = "import that"
+
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+        with open(make_dummy_file("test_template.py.j2", content=new_content), mode="rb") as workflow_file:
+            response = await client.put(
+                f"jobbergate/job-script-templates/{parent_id}/upload/workflow",
+                files={"upload_file": (workflow_file.name, workflow_file, "text/plain")},
+            )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert (
+            response.json()["detail"]
+            == "Runtime configuration is required when the workflow file does not exist"
+        )
+
+        with pytest.raises(ServiceError, match="workflow_files row not found"):
+            await synth_services.file.workflow.get(parent_id=parent_id, filename=WORKFLOW_FILE_NAME)
 
     async def test_create__fail_forbidden(
         self,
