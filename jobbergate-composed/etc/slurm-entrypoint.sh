@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+
 echo "---> Starting the MUNGE Authentication service (munged) ..."
 service munge start
 
@@ -65,7 +66,6 @@ then
 
     echo "---> Starting the Slurm Rest API (slurmrestd) ..."
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib
-    export SLURMRESTD_SECURITY=
     export SLURM_JWT=1
     exec /usr/sbin/slurmrestd -vvvv -a rest_auth/jwt 0.0.0.0:6820
 fi

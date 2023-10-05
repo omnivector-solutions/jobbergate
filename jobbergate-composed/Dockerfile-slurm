@@ -3,7 +3,7 @@ FROM ubuntu:jammy-20211122
 RUN apt update \
     && apt install software-properties-common -y \
     && add-apt-repository ppa:ubuntu-hpc/slurm-wlm-23.02 -y \
-    && apt install slurm-wlm-basic-plugins slurmrestd slurmd slurmdbd slurmctld -y
+    && apt install slurm-wlm-basic-plugins slurmrestd slurmd slurmdbd slurmctld mysql-client -y
 
 
 ARG GOSU_VERSION=1.11
@@ -34,6 +34,12 @@ COPY etc/slurm-env.sh /etc/profile.d/slurm-env.sh
 
 # Add local-user
 RUN useradd -ms /bin/bash local-user
+
+
+RUN mkdir /var/spool/slurmctld \
+    && mkdir /var/spool/slurmd \
+    && chown -R slurm:slurm /var/spool/slurmctld \
+    && chown -R slurm:slurm /var/spool/slurmd
 
 COPY etc/slurm-entrypoint.sh /usr/local/bin/slurm-entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/slurm-entrypoint.sh"]

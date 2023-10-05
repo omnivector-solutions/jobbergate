@@ -45,6 +45,7 @@ services:
     build:
       context: ../jobbergate-api
       dockerfile: Dockerfile-dev
+    profiles: ["dev"]
     networks:
       - jobbergate-net
     environment:
