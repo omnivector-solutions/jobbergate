@@ -42,6 +42,7 @@ def test_list_all__makes_request_and_renders_results():
             "create-job-submission",
             "delete-job-submission",
             "download-job-script",
+            "show-job-script-files",
         ]
     )
 

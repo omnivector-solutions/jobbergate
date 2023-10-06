@@ -158,19 +158,42 @@ def get_upload_files(application_path: pathlib.Path):
 def upload_application(
     jg_ctx: JobbergateContext,
     application_path: pathlib.Path,
-    application_id: int,
+    application_id: Optional[int],
+    application_identifier: Optional[str],
 ) -> bool:
     """
     Upload an application given an application path and the application id.
 
-    :param: jg_ctx:           The JobbergateContext. Needed to access the Httpx client with which to make API calls
-    :param: application_path: The directory where the application files to upload may be found
-    :param: application_id:   The id of the application for which to upload  data
+    :param: jg_ctx:                 The JobbergateContext. Needed to access the Httpx client with which to
+    make API calls
+    :param: application_path:       The directory where the application files to upload may be found
+    :param: application_id:         The id of the application for which to upload  data
+    :param: application_identifier: The identifier of the application for which to upload  data
     :returns: True if the upload was successful; False otherwise
     """
 
     # Make static type checkers happy
     assert jg_ctx.client is not None
+
+    identification: Any = application_id
+    if application_id is None and application_identifier is None:
+        raise Abort(
+            """
+            You must supply either [yellow]id[/yellow] or [yellow]identifier[/yellow].
+            """,
+            subject="Invalid params",
+            warn_only=True,
+        )
+    elif application_id is not None and application_identifier is not None:
+        raise Abort(
+            """
+            You may not supply both [yellow]id[/yellow] and [yellow]identifier[/yellow].
+            """,
+            subject="Invalid params",
+            warn_only=True,
+        )
+    elif application_identifier is not None:
+        identification = application_identifier
 
     Abort.require_condition(application_path.is_dir(), f"Application directory {application_path} does not exist")
 
@@ -191,7 +214,7 @@ def upload_application(
         int,
         make_request(
             jg_ctx.client,
-            f"/jobbergate/job-script-templates/{application_id}",
+            f"/jobbergate/job-script-templates/{identification}",
             "PUT",
             expect_response=False,
             abort_message="Request to upload application configuration was not accepted by the API",
@@ -219,7 +242,7 @@ def upload_application(
                 int,
                 make_request(
                     jg_ctx.client,
-                    f"/jobbergate/job-script-templates/{application_id}/upload/template/{file_type}",
+                    f"/jobbergate/job-script-templates/{identification}/upload/template/{file_type}",
                     "PUT",
                     expect_response=False,
                     abort_message="Request to upload application files was not accepted by the API",
@@ -236,7 +259,7 @@ def upload_application(
             int,
             make_request(
                 jg_ctx.client,
-                f"/jobbergate/job-script-templates/{application_id}/upload/workflow",
+                f"/jobbergate/job-script-templates/{identification}/upload/workflow",
                 "PUT",
                 expect_response=False,
                 abort_message="Request to upload application module was not accepted by the API",
