@@ -30,10 +30,10 @@ COPY etc/jwt_hs256.key /var/spool/slurmctld/jwt_hs256.key
 COPY etc/slurm.conf /etc/slurm/slurm.conf
 
 RUN chown -R slurm:slurm /var/spool/slurmctld \
+    && chmod 600 /var/spool/slurmctld/jwt_hs256.key \
+    && chmod 600 /etc/slurm/slurmdbd.conf \
     && chown -R slurm:slurm /var/spool/slurmd \
-    && chown -R slurm:slurm /etc/slurm \
-    && chown slurm:slurm /etc/slurm/slurmdbd.conf \
-    && chmod 600 /etc/slurm/slurmdbd.conf
+    && chown -R slurm:slurm /etc/slurm 
 
 COPY etc/slurm-env.sh /etc/profile.d/slurm-env.sh
 
