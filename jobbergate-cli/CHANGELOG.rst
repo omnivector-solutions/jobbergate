@@ -10,6 +10,8 @@ Unreleased
 - Fixed help information for id on `get-job-script`, `download-job-script`, and `get-job-submission` commands
 - Added short arguments for backward compatiblity
 - Ignore username and password arguments if provided, aiming to keep backward compatibility
+- Add support to select applications by identifier in update and delete commands
+- Add show-files command to compat mode
 
 4.1.0a1 -- 2023-10-02
 ---------------------
