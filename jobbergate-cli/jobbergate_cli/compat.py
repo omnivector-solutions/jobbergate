@@ -16,6 +16,7 @@ from jobbergate_cli.subapps.job_scripts.app import download_files as download_fi
 from jobbergate_cli.subapps.job_scripts.app import get_one as get_job_script
 from jobbergate_cli.subapps.job_scripts.app import list_all as list_job_scripts
 from jobbergate_cli.subapps.job_scripts.app import render as render_job_script
+from jobbergate_cli.subapps.job_scripts.app import show_files as show_files
 from jobbergate_cli.subapps.job_scripts.app import update as update_job_script
 from jobbergate_cli.subapps.job_submissions.app import create as create_job_submission
 from jobbergate_cli.subapps.job_submissions.app import delete as delete_job_submission
@@ -80,6 +81,10 @@ def add_legacy_compatible_commands(app: typer.Typer):
         name="download-job-script",
         help="Download job script files.",
     )(download_files_job_script)
+    app.command(
+        name="show-job-script-files",
+        help="Show job script files.",
+    )(show_files)
 
     # Job Submissions
     app.command(

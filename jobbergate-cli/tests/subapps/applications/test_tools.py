@@ -287,7 +287,7 @@ class TestUploadApplicationFiles:
         mocked_routes,
     ):
         with mocked_routes as routes:
-            result = upload_application(dummy_context, dummy_application_dir, self.application_id)
+            result = upload_application(dummy_context, dummy_application_dir, self.application_id, None)
 
             # Ensure just the filename is included, nothing extra from path
             filename_check = b'filename="jobbergate.py"\r\n'
@@ -304,28 +304,28 @@ class TestUploadApplicationFiles:
     def test_upload_application__fails_directory_does_not_exists(self, dummy_application_dir, dummy_context):
         application_path = dummy_application_dir / "does-not-exist"
         with pytest.raises(Abort, match="Application directory"):
-            upload_application(dummy_context, application_path, self.application_id)
+            upload_application(dummy_context, application_path, self.application_id, None)
 
     @respx.mock(assert_all_mocked=True)
     def test_upload_application__fails_config_file_not_found(self, dummy_application_dir, dummy_context):
         file_path = dummy_application_dir / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
         file_path.unlink()
         with pytest.raises(Abort, match="Application config file"):
-            upload_application(dummy_context, dummy_application_dir, self.application_id)
+            upload_application(dummy_context, dummy_application_dir, self.application_id, None)
 
     @respx.mock(assert_all_mocked=True)
     def test_upload_application__fails_module_file_not_found(self, dummy_application_dir, dummy_context):
         file_path = dummy_application_dir / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
         file_path.unlink()
         with pytest.raises(Abort, match="Application module file"):
-            upload_application(dummy_context, dummy_application_dir, self.application_id)
+            upload_application(dummy_context, dummy_application_dir, self.application_id, None)
 
     @respx.mock(assert_all_mocked=True)
     def test_upload_application__fails_no_template_found(self, dummy_application_dir, dummy_context):
         file_path = dummy_application_dir / "templates" / "job-script-template.py.j2"
         file_path.unlink()
         with pytest.raises(Abort, match="No template files found in"):
-            upload_application(dummy_context, dummy_application_dir, self.application_id)
+            upload_application(dummy_context, dummy_application_dir, self.application_id, None)
 
 
 class TestDownloadApplicationFiles:

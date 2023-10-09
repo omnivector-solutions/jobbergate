@@ -242,7 +242,7 @@ def test_create__warns_but_does_not_abort_if_upload_fails(
 @pytest.mark.parametrize(
     "id_flag,application_path_flag,separator", [("--id", "--application-path", "="), ("-i", "-a", " ")]
 )
-def test_update__success(
+def test_update__success_by_id(
     respx_mock,
     make_test_app,
     dummy_context,
@@ -284,8 +284,67 @@ def test_update__success(
         shlex.split(
             unwrap(
                 f"""
-                update {id_flag}{separator}{application_id} --identifier=dummy-identifier
+                update {id_flag}{separator}{application_id} --update-identifier=dummy-identifier
                        {application_path_flag}{separator}{dummy_application_dir}
+                       --application-desc="This application is kinda dumb, actually"
+                """
+            )
+        ),
+    )
+    assert result.exit_code == 0, f"update failed: {result.stdout}"
+    assert update_route.called
+    assert get_route.called
+    assert mocked_upload.called
+
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        ApplicationResponse(**response_data),
+        title="Updated Application",
+        hidden_fields=HIDDEN_FIELDS,
+    )
+
+
+def test_update__success_by_identifier(
+    respx_mock,
+    make_test_app,
+    dummy_context,
+    dummy_application_data,
+    dummy_application_dir,
+    dummy_domain,
+    cli_runner,
+    mocker,
+):
+    response_data = dummy_application_data[0]
+    application_identifier = response_data["identifier"]
+
+    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-script-templates/{application_identifier}")
+    update_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=response_data,
+        ),
+    )
+
+    mocked_upload = mocker.patch("jobbergate_cli.subapps.applications.app.upload_application")
+    mocked_upload.return_value = True
+
+    get_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{application_identifier}")
+    get_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=response_data,
+        ),
+    )
+
+    test_app = make_test_app("update", update)
+    mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
+    result = cli_runner.invoke(
+        test_app,
+        shlex.split(
+            unwrap(
+                f"""
+                update --identifier={application_identifier} --update-identifier=dummy-identifier
+                       --application-path={dummy_application_dir}
                        --application-desc="This application is kinda dumb, actually"
                 """
             )
@@ -341,7 +400,7 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(
         shlex.split(
             unwrap(
                 f"""
-                update --id={application_id} --identifier=dummy-identifier
+                update --id={application_id} --update-identifier=dummy-identifier
                        --application-desc="This application is kinda dumb, actually"
                 """
             )
@@ -397,7 +456,7 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
         shlex.split(
             unwrap(
                 f"""
-                update --id={application_id} --identifier=dummy-identifier
+                update --id={application_id} --update-identifier=dummy-identifier
                        --application-path={dummy_application_dir}
                        --application-desc="This application is kinda dumb, actually"
                 """
@@ -418,12 +477,23 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
 
 
 @pytest.mark.parametrize("id_flag,separator", [("--id", "="), ("-i", " ")])
-def test_delete__success(respx_mock, make_test_app, dummy_domain, cli_runner, id_flag, separator):
+def test_delete__success_by_id(respx_mock, make_test_app, dummy_domain, cli_runner, id_flag, separator):
     delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/job-script-templates/1")
     delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
 
     test_app = make_test_app("delete", delete)
     result = cli_runner.invoke(test_app, shlex.split(f"delete {id_flag}{separator}1"))
+    assert result.exit_code == 0, f"delete failed: {result.stdout}"
+    assert delete_route.called
+    assert "Application delete succeeded" in result.stdout
+
+
+def test_delete__success_by_identifier(respx_mock, make_test_app, dummy_domain, cli_runner):
+    delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/job-script-templates/dummy")
+    delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
+
+    test_app = make_test_app("delete", delete)
+    result = cli_runner.invoke(test_app, shlex.split("delete --identifier=dummy"))
     assert result.exit_code == 0, f"delete failed: {result.stdout}"
     assert delete_route.called
     assert "Application delete succeeded" in result.stdout

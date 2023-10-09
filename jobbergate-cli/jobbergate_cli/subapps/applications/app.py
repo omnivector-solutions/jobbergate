@@ -189,7 +189,9 @@ def create(
     )
     application_id = result["id"]
 
-    successful_upload = upload_application(jg_ctx, application_path, application_id)
+    successful_upload = upload_application(
+        jg_ctx, application_path, application_id=application_id, application_identifier=None
+    )
     if not successful_upload:
         result["application_uploaded"] = False
         terminal_message(
@@ -219,11 +221,15 @@ def create(
 @handle_abort
 def update(
     ctx: typer.Context,
-    id: int = typer.Option(
-        ...,
+    id: Optional[int] = typer.Option(
+        None,
         "--id",
         "-i",
         help=f"The specific id of the application to update. {ID_NOTE}",
+    ),
+    identifier: Optional[str] = typer.Option(
+        None,
+        help=f"The human-friendly identifier of the application to update. {IDENTIFIER_NOTE}",
     ),
     application_path: Optional[pathlib.Path] = typer.Option(
         None,
@@ -231,7 +237,7 @@ def update(
         "-a",
         help="The path to the directory where the application files are located",
     ),
-    identifier: Optional[str] = typer.Option(
+    update_identifier: Optional[str] = typer.Option(
         None,
         help="Optional new application identifier to be set",
     ),
@@ -247,10 +253,29 @@ def update(
     """
     Update an existing application.
     """
+    identification: Any = id
+    if id is None and identifier is None:
+        terminal_message(
+            """
+            You must supply either [yellow]id[/yellow] or [yellow]identifier[/yellow].
+            """,
+            subject="Invalid params",
+        )
+        raise typer.Exit()
+    elif id is not None and identifier is not None:
+        terminal_message(
+            """
+            You may not supply both [yellow]id[/yellow] and [yellow]identifier[/yellow].
+            """,
+            subject="Invalid params",
+        )
+    elif identifier is not None:
+        identification = identifier
+
     req_data = dict()
 
-    if identifier:
-        req_data["identifier"] = identifier
+    if update_identifier:
+        req_data["identifier"] = update_identifier
 
     if application_desc:
         req_data["description"] = application_desc
@@ -268,7 +293,7 @@ def update(
             Dict[str, Any],
             make_request(
                 jg_ctx.client,
-                f"/jobbergate/job-script-templates/{id}",
+                f"/jobbergate/job-script-templates/{identification}",
                 "PUT",
                 expect_response=False,
                 abort_message="Request to update application was not accepted by the API",
@@ -278,7 +303,9 @@ def update(
         )
 
     if application_path is not None:
-        successful_upload = upload_application(jg_ctx, application_path, id)
+        successful_upload = upload_application(
+            jg_ctx, application_path, application_id=id, application_identifier=identifier
+        )
         if not successful_upload:
             terminal_message(
                 f"""
@@ -291,7 +318,7 @@ def update(
                 color="yellow",
             )
 
-    result = fetch_application_data(jg_ctx, id=id)
+    result = fetch_application_data(jg_ctx, id=id, identifier=identifier)
 
     render_single_result(
         jg_ctx,
@@ -305,11 +332,15 @@ def update(
 @handle_abort
 def delete(
     ctx: typer.Context,
-    id: int = typer.Option(
-        ...,
+    id: Optional[int] = typer.Option(
+        None,
         "--id",
         "-i",
-        help=f"the specific id of the application to delete. {ID_NOTE}",
+        help=f"The specific id of the application to delete. {ID_NOTE}",
+    ),
+    identifier: Optional[str] = typer.Option(
+        None,
+        help=f"The human-friendly identifier of the application to update. {IDENTIFIER_NOTE}",
     ),
 ):
     """
@@ -320,10 +351,29 @@ def delete(
     # Make static type checkers happy
     assert jg_ctx.client is not None
 
+    identification: Any = id
+    if id is None and identifier is None:
+        terminal_message(
+            """
+            You must supply either [yellow]id[/yellow] or [yellow]identifier[/yellow].
+            """,
+            subject="Invalid params",
+        )
+        raise typer.Exit()
+    elif id is not None and identifier is not None:
+        terminal_message(
+            """
+            You may not supply both [yellow]id[/yellow] and [yellow]identifier[/yellow].
+            """,
+            subject="Invalid params",
+        )
+    elif identifier is not None:
+        identification = identifier
+
     # Delete the upload. The API will also remove the application data files
     make_request(
         jg_ctx.client,
-        f"/jobbergate/job-script-templates/{id}",
+        f"/jobbergate/job-script-templates/{identification}",
         "DELETE",
         expected_status=204,
         expect_response=False,
