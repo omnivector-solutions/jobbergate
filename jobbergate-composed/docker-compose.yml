@@ -279,8 +279,6 @@ services:
       - var_log_slurm:/var/log/slurm
       - ./slurm-fake-nfs:/nfs
       - ./slurm-work-dir:/slurm-work-dir
-    environment:
-      - LD_LIBRARY_PATH=/lib:/lib64:/usr/local/lib
     expose:
       - "6818"
     depends_on:
@@ -302,8 +300,6 @@ services:
       - var_log_slurm:/var/log/slurm
       - ./slurm-fake-nfs:/nfs
       - ./slurm-work-dir:/slurm-work-dir
-    environment:
-      - LD_LIBRARY_PATH=/lib:/lib64:/usr/local/lib
     expose:
       - "6818"
     depends_on:
@@ -319,6 +315,7 @@ services:
     command: ["slurmrestd"]
     environment:
       - SLURMRESTD_SECURITY=disable_unshare_files,disable_unshare_sysv,disable_user_check
+      - SLURM_JWT=daemon
     container_name: slurmrestd
     hostname: slurmrestd
     volumes:

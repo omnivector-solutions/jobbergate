@@ -22,24 +22,23 @@ RUN set -ex \
 
 ARG JWT_SECRET=supersecret
 
+RUN mkdir /var/spool/slurmctld \
+    && mkdir /var/spool/slurmd
+
 COPY etc/slurmdbd.conf /etc/slurm/slurmdbd.conf
-RUN chown slurm:slurm /etc/slurm/slurmdbd.conf
-RUN chmod 600 /etc/slurm/slurmdbd.conf
+COPY etc/jwt_hs256.key /var/spool/slurmctld/jwt_hs256.key
 COPY etc/slurm.conf /etc/slurm/slurm.conf
-# JWKS doesn't seem to work. Makes slurmrestd throw a 500
-# COPY jwks.json /etc/slurm/jwks.json
-RUN echo -n "$JWT_SECRET" > /etc/slurm/jwt_hs256.key
+
+RUN chown -R slurm:slurm /var/spool/slurmctld \
+    && chown -R slurm:slurm /var/spool/slurmd \
+    && chown -R slurm:slurm /etc/slurm \
+    && chown slurm:slurm /etc/slurm/slurmdbd.conf \
+    && chmod 600 /etc/slurm/slurmdbd.conf
 
 COPY etc/slurm-env.sh /etc/profile.d/slurm-env.sh
 
 # Add local-user
 RUN useradd -ms /bin/bash local-user
-
-
-RUN mkdir /var/spool/slurmctld \
-    && mkdir /var/spool/slurmd \
-    && chown -R slurm:slurm /var/spool/slurmctld \
-    && chown -R slurm:slurm /var/spool/slurmd
 
 COPY etc/slurm-entrypoint.sh /usr/local/bin/slurm-entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/slurm-entrypoint.sh"]
