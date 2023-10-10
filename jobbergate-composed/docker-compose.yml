@@ -112,6 +112,7 @@ services:
       - JOBBERGATE_AGENT_CACHE_DIR=/cache
       - JOBBERGATE_AGENT_SLURMRESTD_JWT_KEY_STRING=${JWT_SECRET:-supersecret}
       - JOBBERGATE_AGENT_TASK_JOBS_INTERVAL_SECONDS=15
+      - JOBBERGATE_AGENT_SLURM_RESTD_VERSION=v0.0.37
     depends_on:
       jobbergate-api:
         condition: service_healthy
@@ -279,8 +280,6 @@ services:
       - var_log_slurm:/var/log/slurm
       - ./slurm-fake-nfs:/nfs
       - ./slurm-work-dir:/slurm-work-dir
-    environment:
-      - LD_LIBRARY_PATH=/lib:/lib64:/usr/local/lib
     expose:
       - "6818"
     depends_on:
@@ -302,8 +301,6 @@ services:
       - var_log_slurm:/var/log/slurm
       - ./slurm-fake-nfs:/nfs
       - ./slurm-work-dir:/slurm-work-dir
-    environment:
-      - LD_LIBRARY_PATH=/lib:/lib64:/usr/local/lib
     expose:
       - "6818"
     depends_on:
@@ -319,6 +316,7 @@ services:
     command: ["slurmrestd"]
     environment:
       - SLURMRESTD_SECURITY=disable_unshare_files,disable_unshare_sysv,disable_user_check
+      - SLURM_JWT=daemon
     container_name: slurmrestd
     hostname: slurmrestd
     volumes:
