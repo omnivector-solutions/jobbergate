@@ -6,6 +6,9 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+
+4.1.0a2 -- 2023-10-10
+---------------------
 - Made `runtime_config` optional when uploading a workflow file
 
 4.1.0a1 -- 2023-10-02
