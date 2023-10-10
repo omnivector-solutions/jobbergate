@@ -33,7 +33,6 @@ then
     echo "-- slurmdbd is now active ..."
 
     echo "---> Starting the Slurm Controller Daemon (slurmctld) ..."
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib
     exec gosu slurm /usr/sbin/slurmctld -Dvvv
 fi
 
@@ -65,8 +64,6 @@ then
     echo "-- slurmctld is now active ..."
 
     echo "---> Starting the Slurm Rest API (slurmrestd) ..."
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib
-    export SLURM_JWT=1
     exec /usr/sbin/slurmrestd -vvvv -a rest_auth/jwt 0.0.0.0:6820
 fi
 
