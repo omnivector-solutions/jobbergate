@@ -12,6 +12,7 @@ Unreleased
 - Ignore username and password arguments if provided, aiming to keep backward compatibility
 - Add support to select applications by identifier in update and delete commands
 - Add show-files command to compat mode
+- Add support to select all and deselect all options in checkboxes using Ctrl+A and Ctrl+R as shortcuts
 
 4.1.0a1 -- 2023-10-02
 ---------------------
