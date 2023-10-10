@@ -197,7 +197,12 @@ class Checkbox(QuestionBase):
         :param: choices:       A list of the possible values from which the Question will allow the user to select many
         """
 
-        super().__init__(variablename, message, inquirer_type=inquirer.Checkbox, **kwargs)
+        super().__init__(
+            variablename,
+            message + " (press CTRL+A to SELECT ALL or CTRL+R to DESELECT ALL)",
+            inquirer_type=inquirer.Checkbox,
+            **kwargs
+        )
         self.inquirer_kwargs.update(choices=choices)
 
 
