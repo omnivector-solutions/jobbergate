@@ -41,5 +41,3 @@ RUN useradd -ms /bin/bash local-user
 
 COPY etc/slurm-entrypoint.sh /usr/local/bin/slurm-entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/slurm-entrypoint.sh"]
-
-CMD ["slurmdbd"]
