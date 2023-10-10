@@ -1,15 +1,12 @@
 FROM ubuntu:jammy-20211122
 
-RUN apt update \
-    && apt install software-properties-common -y \
-    && add-apt-repository ppa:ubuntu-hpc/slurm-wlm-23.02 -y \
-    && apt install slurm-wlm-basic-plugins slurmrestd slurmd slurmdbd slurmctld mysql-client -y
 
-
-ARG GOSU_VERSION=1.11
+# Install GOSU
+ARG GOSU_VERSION=1.16
 
 RUN set -ex \
-    && apt install wget -y \
+    && apt update \
+    && apt install wget gpg -y \
     && wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-amd64" \
     && wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-amd64.asc" \
     && export GNUPGHOME="$(mktemp -d)" \
@@ -19,11 +16,27 @@ RUN set -ex \
     && chmod +x /usr/local/bin/gosu \
     && gosu nobody true
 
+
+# Install slurm from ubuntu-hpc ppa
+COPY ubuntu-hpc.pub .
+
+RUN set -ex \
+    && export GNUPGHOME="$(mktemp -d)" \
+    && cat ubuntu-hpc.pub | gpg --dearmor -o /usr/share/keyrings/ubuntu-hpc.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/ubuntu-hpc.gpg] https://ppa.launchpadcontent.net/ubuntu-hpc/slurm-wlm-23.02/ubuntu/ jammy main" > /etc/apt/sources.list.d/ubuntu-hpc-slurm.list \
+    && gpg --keyserver hkp://keyserver.ubuntu.com:80  --recv-keys AE87121DC3E4A0B0F81FF023F6D0C5D5C6BEB37B \
+    && apt update \
+    && apt install slurm-wlm-basic-plugins slurmrestd slurmd slurmdbd slurmctld mysql-client -y \
+    && rm -rf "${GNUPGHOME}" ubuntu-hpc.pub
+
+
+# Prepare Filesystem
 RUN mkdir /var/spool/slurmctld \
     && mkdir /var/spool/slurmd
 
 COPY etc/slurmdbd.conf /etc/slurm/slurmdbd.conf
 COPY etc/slurm.conf /etc/slurm/slurm.conf
+COPY etc/slurm-env.sh /etc/profile.d/slurm-env.sh
 
 ARG JWT_SECRET=supersecret
 RUN echo -n "$JWT_SECRET" > /var/spool/slurmctld/jwt_hs256.key
@@ -34,10 +47,11 @@ RUN chown -R slurm:slurm /var/spool/slurmctld \
     && chown -R slurm:slurm /var/spool/slurmd \
     && chown -R slurm:slurm /etc/slurm
 
-COPY etc/slurm-env.sh /etc/profile.d/slurm-env.sh
 
 # Add local-user
 RUN useradd -ms /bin/bash local-user
 
+# Copy in the entrypoint.sh
 COPY etc/slurm-entrypoint.sh /usr/local/bin/slurm-entrypoint.sh
+
 ENTRYPOINT ["/usr/local/bin/slurm-entrypoint.sh"]
