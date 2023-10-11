@@ -538,7 +538,9 @@ async def test_get_job_submissions__bad_permission(
     inserted_job_script_id = base_job_script.id
 
     with synth_services.crud.job_submission.bound_session(synth_session):
-        await synth_services.crud.job_submission.create(**fill_job_submission_data(job_script_id=inserted_job_script_id))
+        await synth_services.crud.job_submission.create(
+            **fill_job_submission_data(job_script_id=inserted_job_script_id)
+        )
 
     inject_security_header("owner1@org.com", "INVALID_PERMISSION")
     response = await client.get("/jobbergate/job-submissions")
@@ -634,7 +636,7 @@ async def test_get_job_submissions__from_job_script_id(
     fill_job_submission_data,
     inject_security_header,
     unpack_response,
-    synth_services
+    synth_services,
 ):
     """
     Test listing job-submissions when from_job_script_id=<num> is present.
@@ -645,7 +647,9 @@ async def test_get_job_submissions__from_job_script_id(
     job_script_list = [await synth_services.crud.job_script.create(**create_script_data) for _ in range(3)]
 
     for i in range(6):
-        await synth_services.crud.job_submission.create(**fill_job_submission_data(job_script_id=job_script_list[i // 2].id))
+        await synth_services.crud.job_submission.create(
+            **fill_job_submission_data(job_script_id=job_script_list[i // 2].id)
+        )
 
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
 
@@ -839,7 +843,7 @@ async def test_list_job_submission_pagination(
         await synth_services.crud.job_submission.create(**item)
 
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
-    response = await client.get("/jobbergate/job-submissions?page=1&size=1")
+    response = await client.get("/jobbergate/job-submissions?page=1&size=1&sort_field=id")
     assert unpack_response(
         response,
         key="name",
@@ -850,7 +854,7 @@ async def test_list_job_submission_pagination(
         check_pages=5,
     ) == ["sub1"]
 
-    response = await client.get("/jobbergate/job-submissions?page=2&size=2")
+    response = await client.get("/jobbergate/job-submissions?page=2&size=2&sort_field=id")
     assert sorted(
         unpack_response(
             response,
@@ -863,7 +867,7 @@ async def test_list_job_submission_pagination(
         )
     ) == ["sub3", "sub4"]
 
-    response = await client.get("/jobbergate/job-submissions?page=3&size=2")
+    response = await client.get("/jobbergate/job-submissions?page=3&size=2&sort_field=id")
     assert unpack_response(
         response,
         key="name",
