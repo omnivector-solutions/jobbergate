@@ -6,6 +6,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 Unreleased
 ----------
+- Changed internals to avoid committing to the database when a GET request is made
+- Added extra settings to allow profiling and tracing on sentry
 
 4.0.0 -- 2023-09-14
 -------------------

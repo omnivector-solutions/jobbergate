@@ -90,7 +90,7 @@ async def job_submission_create(
 )
 async def job_submission_get(
     id: int = Path(...),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SUBMISSIONS_VIEW)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SUBMISSIONS_VIEW, commit=False)),
 ):
     """Return the job_submission given it's id."""
     logger.debug(f"Getting job submission {id=}")
@@ -119,7 +119,7 @@ async def job_submission_get_list(
         None,
         description="Filter job-submissions by the job-script-id they were created from.",
     ),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SUBMISSIONS_VIEW)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SUBMISSIONS_VIEW, commit=False)),
 ):
     """List job_submissions for the authenticated user."""
     logger.debug("Fetching job submissions")
@@ -236,7 +236,7 @@ async def job_submission_agent_update(
 )
 async def job_submissions_agent_pending(
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SUBMISSIONS_VIEW, ensure_client_id=True)
+        secure_services(Permissions.JOB_SUBMISSIONS_VIEW, commit=False, ensure_client_id=True)
     ),
 ):
     """Get a list of pending job submissions for the cluster-agent."""
@@ -262,7 +262,7 @@ async def job_submissions_agent_pending(
 )
 async def job_submissions_agent_active(
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SUBMISSIONS_VIEW, ensure_client_id=True)
+        secure_services(Permissions.JOB_SUBMISSIONS_VIEW, commit=False, ensure_client_id=True)
     ),
 ):
     """Get a list of active job submissions for the cluster-agent."""

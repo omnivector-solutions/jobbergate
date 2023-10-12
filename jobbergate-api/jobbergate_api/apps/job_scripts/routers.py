@@ -145,7 +145,7 @@ async def job_script_create_from_template(
 )
 async def job_script_get(
     id: int = Path(),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_VIEW)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_VIEW, commit=False)),
 ):
     """Get a job script by id."""
     logger.info(f"Getting job script {id=}")
@@ -164,7 +164,7 @@ async def job_script_get_list(
         None,
         description="Filter job-scripts by the job-script-template-id they were created from.",
     ),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_VIEW)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_VIEW, commit=False)),
 ):
     """Get a list of job scripts."""
     logger.debug("Preparing to list job scripts")
@@ -227,7 +227,7 @@ async def job_script_delete(
 async def job_script_get_file(
     id: int = Path(...),
     file_name: str = Path(...),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_VIEW)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_VIEW, commit=False)),
 ):
     """
     Get a job script file.
