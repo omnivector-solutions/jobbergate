@@ -119,6 +119,7 @@ def service_factory(session: AsyncSession, bucket: Bucket) -> Iterator[Services]
 def secure_services(
     *scopes: str,
     permission_mode: PermissionMode = PermissionMode.ALL,
+    commit: bool = True,
     ensure_email: bool = False,
     ensure_client_id: bool = False,
 ):
@@ -131,6 +132,7 @@ def secure_services(
             secure_session(
                 *scopes,
                 permission_mode=permission_mode,
+                commit=commit,
                 ensure_email=ensure_email,
                 ensure_organization=settings.MULTI_TENANCY_ENABLED is True,
                 ensure_client_id=ensure_client_id,
