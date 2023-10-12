@@ -123,6 +123,7 @@ class SecureSession:
 def secure_session(
     *scopes: str,
     permission_mode: PermissionMode = PermissionMode.ALL,
+    commit: bool = True,
     ensure_email: bool = False,
     ensure_organization: bool = False,
     ensure_client_id: bool = False,
@@ -166,7 +167,7 @@ def secure_session(
             if is_test:
                 logger.debug("Committing nested transaction due to test mode")
                 await nested_transaction.commit()
-            else:
+            elif commit is True:
                 logger.debug("Committing session")
                 await session.commit()
         except Exception as err:

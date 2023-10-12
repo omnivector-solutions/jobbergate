@@ -2,7 +2,6 @@
 Main file to startup the fastapi server.
 """
 import sys
-import typing
 from contextlib import asynccontextmanager
 
 import asyncpg
@@ -47,8 +46,10 @@ if settings.SENTRY_DSN and settings.DEPLOY_ENV.lower() != "test":
     logger.info("Initializing Sentry")
     sentry_sdk.init(
         dsn=settings.SENTRY_DSN,
-        sample_rate=typing.cast(float, settings.SENTRY_SAMPLE_RATE),  # The cast silences mypy
+        sample_rate=settings.SENTRY_SAMPLE_RATE,
         environment=settings.DEPLOY_ENV,
+        profiles_sample_rate=settings.SENTRY_PROFILING_SAMPLE_RATE,
+        traces_sample_rate=settings.SENTRY_TRACING_SAMPLE_RATE,
     )
     subapp.add_middleware(SentryAsgiMiddleware)
 else:
