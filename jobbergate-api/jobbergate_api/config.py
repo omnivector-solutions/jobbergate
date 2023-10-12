@@ -82,6 +82,8 @@ class Settings(BaseSettings):
     # Sentry configuration
     SENTRY_DSN: Optional[HttpUrl]
     SENTRY_SAMPLE_RATE: float = Field(1.0, gt=0.0, le=1.0)
+    SENTRY_PROFILING_SAMPLE_RATE: float = Field(1.0, gt=0.0, le=1.0)
+    SENTRY_TRACING_SAMPLE_RATE: float = Field(1.0, gt=0.0, le=1.0)
 
     # Maximum number of bytes allowed for file uploads
     MAX_UPLOAD_FILE_SIZE: int = 100 * 1024 * 1024  # 100 MB
