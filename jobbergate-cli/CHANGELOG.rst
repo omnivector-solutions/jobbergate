@@ -7,6 +7,9 @@ This file keeps track of all notable changes to jobbergate-cli
 Unreleased
 ----------
 
+4.0.1 -- 2023-10-12
+-------------------
+
 4.0.0 -- 2023-09-14
 -------------------
 - Modified internal details to address the new data model on Jobbergate API
