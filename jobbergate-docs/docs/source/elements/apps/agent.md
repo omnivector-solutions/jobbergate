@@ -1,40 +1,48 @@
 # Jobbergate Agent Overview
 
 The [Jobbergate Agent](https://github.com/omnivector-solutions/jobbergate/jobbergate-agent)
-is a daemon app that is installed on the Slurm cluster.
+is a daemon application that is designed to be integrated into the slurm cluster.
 
-It performs two primary functions:
+It predominantly fulfills two key roles:
 
 * Submitting newly created Job Submissions to the Slurm cluster
-* Updating the status on Job Submissions as they are processed
+* Monitoring and updating the status of Job Submissions as they undergo processing
 
 ## Submitting Jobs
 
-To find which Job Submissions need to be passed on to the Slurm cluster, The Jobbergate Agent
-watches the Job Submissions resource for entries with a `CREATED` status. Job Submissions in
-this status have been created by the API but have not yet been submitted to Slurm.
 
-When submitting a job to Slurm, the Jobbergate Agent must first pull all the files for the job
-from the Job Script entry from which the Job Submission was created. Once all the files have
-been dowloaded, the job is submitted by a POST call to the Slurm Rest API with the Job Script
-files and paramters.
+The Jobbergate Agent constantly monitors the Job Submissions resource for entries marked with
+a `CREATED` status. These are Job Submissions that the API has instantiated but are yet to be
+dispatched to Slurm.
+
+When submitting a job to Slurm, the Jobbergate Agent pulls the Job Script itself plus any
+supporting files associated with it down to the cluster. Once all the files have been downloaded,
+the Job Script is submitted to Slurm via it's RESTful API. The Job Submission saves the identifier
+for the Slurm Job so that it can be associated with the Job Script that was submitted. The Job
+Submission also tracks all of the supporting files and submission parameters that were submitted
+along with the Job Script.
+
+Upon job submission to Slurm, the Jobbergate Agent retrieves not only the Job Script but also any
+related supporting files, downloading them to the cluster. After ensuring all files are downloaded,
+the Job Script is dispatched to Slurm through its RESTful API. The Job Submission retains the
+unique identifier for the Slurm Job, ensuring it's linked to the submitted Job Script.
+Additionally, the Job Submission logs all the supporting files and submission parameters that were
+provided in tandem with the Job Script at submission time.
 
 
 ## Updating Job Status
 
 Once submitted, the Jobbergate Agent updates the status of the Job Submission to `SUBMITTED`.
-If there is an error during the submission process, the Agent will set the Job Submission
+If there is an error during the submission process, the Agent sets the Job Submission
 status to `REJECTED`.
 
-Finally, when the Slurm cluster is finished running the job, the Agent will update the status
-to `COMPLETE` or `FAILED` to indicate that work for that Job Submission is finished.
-cluster, and then submits them through Slurm. It also updates the status for jobs that are
-complete or have failed.
+Upon completion of the job by the Slurm cluster, the Agent updates the status either to
+`COMPLETE` if successful, or `FAILED` if the job could not complete. This signifies the conclusion
+of tasks related to that particular Job Submission.
 
 
 # Usage
 
-The Jobbergate Agent is not interactive at all, and is intended to be launched and left in
-place.
+The Jobbergate Agent operates in the background; it's designed to be initiated and left uninterrupted.
 
-The Agent provides rich logging that may be monitored to understand its current state.
+For insights into its ongoing operations, the Agent offers detailed logging which can be analyzed.

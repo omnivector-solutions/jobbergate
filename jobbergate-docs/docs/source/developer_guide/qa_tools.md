@@ -1,25 +1,23 @@
 # Quality Assurance Tools
 
-Jobbergate makes use of quality control tools in all three of its major components (API,
-CLI, and Agent). The tools are invoked in the same way in each of the subprojects, and
-may be invoked *en masse* from the root Jobbergate directory.
+Jobbergate utilizes quality control tools across its three primary components (API, CLI, and Agent). The tools are
+invoked in the same way in each of the sub-projects, and may be invoked *en masse* from the root Jobbergate directory.
 
 
 ## Running Unit Tests
 
-The main subprojects each make use of [pytest](https://docs.pytest.org/en/7.1.x/) to apply unit testing. The unit tests
-for each subproject are contained in a subdirectory named `tests/`.
+The main sub-projects each make use of [pytest](https://docs.pytest.org/en/7.1.x/) to apply unit testing. The unit tests
+for each are contained in a subdirectory named `tests/`.
 
-To invoke all of the unit tests for a subproject, you may use `make`:
+To invoke all of the unit tests for a sub-project, simply issue the following command:
 
 ```shell
-$ make test
+make test
 ```
 
-
-The test suite will then begin running. For the API, this process takes a few minutes.
-The others only take a few seconds. The status of the tests will be logged to the
-console as well as a coverage report for the unit tests:
+Once you enter the command above, the unit tests suite will start running. For the API, this process takes a few
+minutes. The others only take a few seconds. The status of the tests will be logged to the console as well as a coverage
+report for the unit tests:
 
 ```
 ================================================================== test session starts ===================================================================
@@ -123,23 +121,22 @@ Required test coverage of 95.0% reached. Total coverage: 98.05%
 =========================================================== 158 passed, 130 warnings in 52.46s ===========================================================
 ```
 
+!!!Note
 
-Note that for the API, there must be a test database already running for it to connect
-with.
+    The API unit tests require that a test database is already running. You can start one by using the
+    [dev-tools](./dev_tools.md) provided in the API sub-project.
 
 
 ## Running Linters
 
-The main subprojects each use a group of linting tools to make sure that the code
-follows some standards. These linters will report any lines or segements of the code
-that do not meet the project's standards.
+The main sub-projects each use a group of linting tools to make sure that the code follows code quality standards. These
+linters will report any lines or segments of the code that do not meet the project's standards.
 
-To invoke all of the linters for a subproject, you may use `make`:
+To invoke all of the linters for a sub-project, issue the following command:
 
 ```shell
-$ make lint
+make lint
 ```
-
 
 If any issues are reported, fix the reported error and try running it again. The linters
 will only succeed if all of the issues are fixed.
@@ -150,15 +147,15 @@ will only succeed if all of the issues are fixed.
 For most of the linting issues, the code can be auto-corrected using the configured
 code formatters.
 
-Currently, the subprojects use the following formatters::
+Currently, the sub-projects use the following formatters:
 
-* [black](https://black.readthedocs.io/en/stable/)
-* [isort](https://github.com/PyCQA/isort)
+- [black](https://black.readthedocs.io/en/stable/)
+- [isort](https://github.com/PyCQA/isort)
 
-To apply the formatters, you may use `make`:
+To apply the formatters, use this command:
 
 ```shell
-$ make format
+make format
 ```
 
 
@@ -167,11 +164,11 @@ The formatters will report any files that were changed in their reports.
 
 ## Running Static Code Checkers
 
-The Jobbergate subprojects include type-hints that must be checked using the
+The Jobbergate sub-projects include type-hints that must be checked using the
 [mypy](http://www.mypy-lang.org/) static code checker. It may invoked using `make`:
 
 ```shell
-$ make mypy
+make mypy
 ```
 
 If any issues are located, they will be reported. Each type issue must be fixed before
@@ -180,7 +177,7 @@ the static type checker passes.
 
 ## Running All Quality Checks
 
-Finally, all of the quality checks can be run using `make`:
+Finally, all of the quality checks can be run using this command:
 
 ```shell
 $ make qa

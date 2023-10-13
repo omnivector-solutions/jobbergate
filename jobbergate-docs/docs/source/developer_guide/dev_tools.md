@@ -1,21 +1,27 @@
 # API Dev Tools
 
-The Jobbergate API application ships with a few developer helper tools that add some
-convenient ways to set up or interact with the API
+The Jobbergate API sub-project is equipped with a few tools designed to assist with
+some everyday development tasks. These can help streamline the process of setting up and
+interacting with the API.
+
+The dev-tools are shipped as a CLI program that can be invoked via Poetry within the
+project. All of the commands will operate within the virtual environment set up by
+Poetry.
 
 
 ## Invoking `dev-tools`
 
-The `dev-tools` are invoked as scripts in the Jobbergate API environment created and
-maintained by Poetry.
-
 To invoke the dev tools, you must execute the commands from the home directory for the
-`jobbergate-api`. Then, run the `dev-tools` script with Poetry:
+`jobbergate-api`. To see some information about the `dev-tools`, execute:
 
-```shell
-
+```console
 $ poetry run dev-tools --help
+```
 
+This will provide some help output that shows what options and sub-commands are
+available:
+
+```
 Usage: dev-tools [OPTIONS] COMMAND [ARGS]...
 
 Options:
@@ -32,14 +38,17 @@ Commands:
   show-env    Print out the current environment settings.
 ```
 
+The `--help` option is available for all of the subcommands provided in `dev-tools`.
+
 
 ## The `db` subcommand
 
-There are a few convenience methods in the `dev-tools` for interacting with the
-Jobbergate API's postgres database. These tools are found in the `db` subcommand:
+There are a few convenience methods in the `dev-tools` for interacting with Jobbergate
+API's PostgreSQL database. These tools are found in the `db` subcommand. To see more
+info about this sub-command, run:
 
 ```shell
-$ poetry run dev-tools db --help
+poetry run dev-tools db --help
 ```
 
 
@@ -50,14 +59,13 @@ values found in the execution environment for Jobbergate.
 
 To start a development database, invoke this command:
 
-.. code-block:: console
 ```shell
-$ poetry run dev-tools db start
+poetry run dev-tools db start
 ```
 
 Note that the values for the database name, host, port, and password will all be
-gathered from the environment. The sript shold produce some logging output that will
-indicate the status of the db:
+gathered from the environment that the API is configured to use. The script should
+produce some logging output that will indicate the status of the db:
 
 ```
 2022-09-07 15:44:56.634 | DEBUG    | dev_tools.db:start:57 - Starting dev-jobbergate-postgres with:
@@ -86,8 +94,11 @@ In this example, the container name is `dev-jobbergate-postgres` and it is runni
 the docker container referenced by `e686e97595` with the port 5432 mapped from
 the host machine to the container.
 
-This command is also very convenient for starting up a database for unit testing. To do
-so, you need only pass the `--test` flag.
+!!!Note
+
+    This command is also very convenient for starting up a database for unit testing. To
+    do so, you need the `--test` flag to the command. When you run the unit tests suite,
+    it will use the database started by this command.
 
 
 ### The `start-all` subcommand
@@ -97,34 +108,32 @@ test database in one command. It is equivalent to running the following two comm
 succession:
 
 ```shell
-$ poetry run dev-tools db start
+poetry run dev-tools db start
 ```
 
 
 ```shell
-$ poetry run dev-tools db start --test
+poetry run dev-tools db start --test
 ```
 
 
 ### The `login` subcommand
 
-This command allows you to log in to the database that your Jobbergate API execution
-environment is configured to connect with. Whether the database is hosted locally in
-docker or on a remote postrges server, this command will let you log into any database
-that your Jobbergate API can connect with.
+This command allows you to log in to the database that your Jobbergate API is configured
+to connect with. It allows you to login to databases, regardless of whether they are
+locally hosted via Docker or situated on a remote PostgreSQL server. this ensures
+seamless access to any database that the Jobbergate API is configured to connect with.
 
 To log in to the database, execute this command:
 
 ```shell
-$ poetry run dev-tools db login
+poetry run dev-tools db login
 ```
 
-
 The command will show some debug output including the URL of the database to which it is
-connecting and will then show a REPL connection to the database::
+connecting and will then show a REPL connection to the database:
 
 ```shell
-$ poetry run dev-tools db login
 2022-09-07 15:52:02.089 | DEBUG    | dev_tools.db:login:26 - Logging into database: postgresql://compose-db-user:compose-db-pswd@localhost:5432/compose-db-name
 Server: PostgreSQL 14.1 (Debian 14.1-1.pgdg110+1)
 Version: 3.4.1
@@ -136,14 +145,15 @@ compose-db-name>
 ### The `migrate` subcommand
 
 
-This command uses [alembic](https://alembic.sqlalchemy.org/en/latest/) to generate a migration script to bring the
-current database (described by the environment) up to date with the [SQLAlchemy](https://www.sqlalchemy.org/) models
-specified in the Jobbergate API source code.
+This command uses [alembic](https://alembic.sqlalchemy.org/en/latest/) to generate a
+migration script to bring the current database (described by the environment) up to date
+with the [SQLAlchemy](https://www.sqlalchemy.org/) models specified in the Jobbergate
+API source code.
 
 To invoke the migration script generation, execute:
 
 ```shell
-$ poetry run dev-tools db migrate --message="An example migration"
+poetry run dev-tools db migrate --message="An example migration"
 ```
 
 
@@ -176,7 +186,7 @@ write an Alembic script by hand. Just pass the `--blank` parameter on the comman
 line:
 
 ```shell
-$ poetry run dev-tools db migrate --blank --message="A blank migration"
+poetry run dev-tools db migrate --blank --message="A blank migration"
 ```
 
 
@@ -215,7 +225,12 @@ This command will show how the Jobbergate API is configured through its environm
 settings. To see the environment, execute this command:
 
 ```shell
-$ poetry run dev-tools show-env
+poetry run dev-tools show-env
+```
+
+The output that the command produces will look something like:
+
+```
 Jobbergate settings:
   DEPLOY_ENV: LOCAL
   LOG_LEVEL: DEBUG
@@ -247,10 +262,14 @@ Jobbergate settings:
   SENDGRID_API_KEY: None
 ```
 
-The command can also produce the output as JSON if needed:
+The command can also produce the output as JSON if needed by pyassing the `--json` flag:
 
 ```shell
-$ poetry run dev-tools show-env --json
+poetry run dev-tools show-env --json
+```
+
+The JSON output will look something like:
+```
 {"DEPLOY_ENV": "LOCAL", "LOG_LEVEL": "DEBUG", "DATABASE_HOST": "localhost", "DATABASE_USER": "compose-db-user", "DATABASE_PSWD": "compose-db-pswd", "DATABASE_NAME": "compose-db-name", "DATABASE_PORT": 5432, "TEST_DATABASE_HOST": "localhost", "TEST_DATABASE_USER": "test-user", "TEST_DATABASE_PSWD": "test-pswd", "TEST_DATABASE_NAME": "test-db", "TEST_DATABASE_PORT": 5433, "S3_BUCKET_NAME": "jobbergate-k8s-staging", "S3_ENDPOINT_URL": null, "ARMASEC_DOMAIN": "localhost:9080/realms/master/protocol/openid-connect", "ARMASEC_USE_HTTPS": true, "ARMASEC_AUDIENCE": "https://local.omnivector.solutions", "ARMASEC_DEBUG": true, "ARMASEC_ADMIN_DOMAIN": null, "ARMASEC_ADMIN_AUDIENCE": null, "ARMASEC_ADMIN_MATCH_KEY": null, "ARMASEC_ADMIN_MATCH_VALUE": null, "IDENTITY_CLAIMS_KEY": "https://omnivector.solutions", "SENTRY_DSN": null, "SENTRY_SAMPLE_RATE": 1.0, "MAX_UPLOAD_FILE_SIZE": 104857600, "SENDGRID_FROM_EMAIL": null, "SENDGRID_API_KEY": null}
 ```
 
@@ -263,7 +282,11 @@ be created using the configuration set up in the environment settings.
 To start the server, run:
 
 ```shell
-$ poetry run dev-tools dev-server
+poetry run dev-tools dev-server
+```
+
+The command will produce some logging output that looks like this:
+```
 2022-09-07 16:15:05.830 | INFO     | dev_tools.dev_server:dev_server:50 - Waiting for the database
 2022-09-07 16:15:05.830 | DEBUG    | dev_tools.dev_server:_wait_for_db:23 - database url is: postgresql://compose-db-user:compose-db-pswd@localhost:5432/compose-db-name
 2022-09-07 16:15:05.830 | DEBUG    | dev_tools.dev_server:_wait_for_db:26 - Checking health of database at postgresql://compose-db-user:compose-db-pswd@localhost:5432/compose-db-name: Attempt #0
@@ -283,7 +306,12 @@ There are additional options that can control some of the details of the setting
 dev server. These can be examined with the `--help` flag:
 
 ```shell
-$ poetry run dev-tools dev-server --help
+poetry run dev-tools dev-server --help
+```
+
+The dev server options will be printed like:
+
+```
 Usage: dev-tools dev-server [OPTIONS]
 
   Start a development server locally.
@@ -298,9 +326,8 @@ Options:
 ```
 
 
-Note the `--db-wait-*` flags. These are used to make the dev server wait for the
-dev database to become available. These are mostly useful in the context of
-`docker-compose`.
+The `--db-wait-*` flags are used to make the dev server wait for the dev database to
+become available. These are mostly useful in the context of `docker-compose`.
 
 It should also be noted that a development uvicorn server will automatically reload the
 app if the source files of the app change. This is very helpful for debugging behavior

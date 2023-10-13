@@ -1,53 +1,85 @@
 # Tutorial
 
-This guide will walk you through using Jobbergate to submit a simulation job to a Slurm cluster. During this guide, you
-will:
+Welcome to this step-by-step tutorial that introduces the basic functionalities of Jobbergate!
+to seamlessly upload a Job Script and submit it to a Slurm cluster using the Jobbergate CLI.
 
- - Log in to the Jobbergate system
- - Upload an Application to Jobbergate
- - Render a Job Script from the Application template
- - Submit a Job Script to the cluster
- - Check the results and statuses of submitted jobs
- - Delete the resources
- - Log out of the Jobbergate system
+In this walk-through, you will learn how to upload a Job Script and submit it to a Slurm cluster using the
+Jobbergate CLI. To accomplish this, we will guide you through the following steps:
 
-
-## Setup
-
-Follow these few steps to set up your computer to run this tutorial locally. You will need administrator privileges
-on your machine to do so.
+ - Initiating a session by logging into the Jobbergate system
+ - Uploading a basic Job Script to Jobbergate
+ - Submitting the Job Script to the cluster
+ - Reviewing the results and monitoring the status of your submitted job
+ - Cleaning up by deleting the Job Script
+ - Logging out of the Jobbergate system
 
 
-### docker-compose
+## Getting Started
 
-For this tutorial, we will be using an instance of Jobbergate that is deployed locally using docker-compose. If you
-do not have it already, follow [this guide](https://docs.docker.com/compose/install/) to install docker-compose before
-you begin the tutorial.
+Before diving into the tutorial, there are some initial setup steps that are needed to ensure that your computer is
+prepared to run the tutorial locally. Make sure you have administrative access to your machine, as it's required for
+the setup process.
 
 
-### hostfile
+### Install docker-compose
 
-You will also need to have this line added to your computer's hostfile:
+For this tutorial, we will be using an instance of Jobbergate that is deployed locally along-side a local Slurm cluster.
+We will set all this up using docker-compose. If you do not have it already, follow
+[this guide](https://docs.docker.com/compose/install/) to install docker-compose before you continue the tutorial.
+
+
+### Update the hostfile
+
+Next, you’ll need to add the following line to your computer’s hostfile:
 
 ```
 127.0.0.1 keycloak.local
 ```
 
-For Linux and OSX, this file is located at `/etc/hosts`. You will need to use sudo to update this file.
+#### For Linux and OSX users:
 
-For Windows, it is found at `c:\windows\system32\drivers\etc\hosts`. You will need to use administrator rights to
-update this file.
+ - The hostfile is located at `/etc/hosts`.
+ - Open a terminal.
+ - Use this command to open the file in a text editor
+   ```shell
+   sudo nano /etc/hosts
+   ```
+   (you may, of course, substitute your editor of choice here)
+ - Add the above line at the end of the file.
+ - Save and close the file.
+
+
+#### For Windows users:
+
+ - The hostfile can be found at c:\windows\system32\drivers\etc\hosts.
+ - Open Notepad as an administrator.
+ - Open the hostfile in Notepad.
+ - Append the above line to the file.
+ - Save and exit.
+
 
 
 ### Clone Jobbergate with git
 
-You will also need to clone the Jobbergate source code to your machine. Use this command to clone the repo from GitHub:
+To run the Jobbergate and Slurm locally, you will first need a copy of the Jobbergate source code. The easiest way to
+get it is to use Git to download the source code repository from GitHub onto your machine.
+
+Git is a version control system that lets you manage and keep track ofyour source code history. If you haven't installed
+it yet, download and install Git using the instructions available [here](https://git-scm.com/).
+
+With Git installed, you can now clone the Jobbergate source code from its GitHub repository. Cloning allows you to have
+a local copy (or clone) of the source code on your machine.
+
+Run the following command in your terminal:
 
 ```shell
 $ git clone git@github.com:omnivector-solutions/jobbergate.git
 ```
 
-Then, change to the directory `jobbergate-composed` directory where Jobbergate was cloned:
+Now you have a full copy of the Jobbergate source code including the Docker Compose configuration to stand up a local
+Slurm Cluster and the example Job Script we will be using for this tutorial.
+
+Next, switch to the directory in the source code that contains the Docker Compose configuration:
 
 ```shell
 $ cd jobbergate/jobbergate-composed
@@ -56,21 +88,32 @@ $ cd jobbergate/jobbergate-composed
 
 ### Start the Jobbergate Services
 
-Next, you will need to spin up the Jobbergate services. We will do this with docker-compose using the following command:
+With the Jobbergate source code in place, it's time to initiate the Jobbergate Services and the local Slurm cluster
+using Docker Compose. Follow the steps outlined below to get things up and running.
+
+#### Start up the services
+Run the following command to build and start the services. The `--build` flag ensures that Docker Compose build the
+images before attempting to start the services. The `--detach` flag runs the services in the background so that you
+can run other commands in the terminal.
 
 ```shell
-$ docker-compose up --build
+$ docker-compose up --build --detach
 ```
 
+This operation might take a few minutes as it involves building the images and starting up all the associated services.
 
-This will take a little time to spin up all the services. To check if everything is operating as expected, you may
-use this command:
+
+#### Verify the status of the services
+
+To confirm that all the services are running smoothly, execute the following command. It will list the status of all the
+services initiated by Docker Compose:
 
 ```shell
 docker-compose ps
 ```
 
-If everything is operating as it should, you will see output that looks like this:
+If the services are up and running as expected, you should see output similar to the following, indicating that all the
+services are in a healthy state
 
 ```
 NAME                                        COMMAND                  SERVICE               STATUS              PORTS
@@ -86,44 +129,93 @@ jobbergate-composed-minio-create-bucket-1   "/create-bucket.sh"      minio-creat
 mysql                                       "docker-entrypoint.s…"   mysql                 running             3306/tcp, 33060/tcp
 slurmctld                                   "/usr/local/bin/slur…"   slurmctld             running             6817/tcp
 slurmdbd                                    "/usr/local/bin/slur…"   slurmdbd              running             6819/tcp
-slurmrestd                                  "/usr/local/bin/slur…"   slurmrestd            running             0.0.0.0:6820->6820/tcpOnce everything is
+slurmrestd                                  "/usr/local/bin/slur…"   slurmrestd            running             0.0.0.0:6820->6820/tcp
 ```
 
 The `STATUS` for each service should be "running" except for the `minio-create-bucket` and `jobbergate-cli`
-containers which should be "exited"
+services which should be "exited".
 
-Now, you can connect to the `jobbergate-cli` container to begin issuing commands:
+
+#### Confirm Jobbergate CLI availability
+
+Since this tutorial relies on running commands in the Jobbergate CLI, it's essential to verify that the CLI is available
+and working as expected at this juncture.
+
+
+First, initiate a connection to the `jobbergate-cli` container by executing the following command. This gives you
+direct access to the CLI.
 
 ```shell
 $ docker-compose run jobbergate-cli bash
 ```
 
-You should now see a new command prompt line that looks something like this::
+Upon successful connection, your command prompt should change to reflect that you're inside the container. It will look
+something like this:
 
 ```shell
 root@e226a9a401d1:/app#
 ```
 
-Test that you are able to issue Jobbergate commands by listing the avaiable commands like so:
+This confirms that you're now operating within the `jobbergate-cli` container environment.
+
+Next, we need to make sure that the Jobbergate CLI is available and accepting commands. Test this by listing the
+available commands in Jobbergate CLI with the `--help` option:
 
 ```shell
 jobbergate --help
 ```
 
-This should show a usage description of the app and the avaialble sub-commands
+The command above will yield a detailed description of the CLI's usage and the variety of sub-commands it provides:
+
+```
+ Usage: jobbergate [OPTIONS] COMMAND [ARGS]...
+
+ Welcome to the Jobbergate CLI!
+ More information can be shown for each command listed below by running it with the --help option.
+
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --verbose               --no-verbose                                     Enable verbose logging to the terminal      │
+│                                                                          [default: no-verbose]                       │
+│ --full                  --no-full                                        Print all fields from CRUD commands         │
+│                                                                          [default: no-full]                          │
+│ --raw                   --no-raw                                         Print output from CRUD commands as raw json │
+│                                                                          [default: no-raw]                           │
+│ --version               --no-version                                     Print the version of jobbergate-cli and     │
+│                                                                          exit                                        │
+│                                                                          [default: no-version]                       │
+│ --install-completion                    [bash|zsh|fish|powershell|pwsh]  Install completion for the specified shell. │
+│                                                                          [default: None]                             │
+│ --show-completion                       [bash|zsh|fish|powershell|pwsh]  Show completion for the specified shell, to │
+│                                                                          copy it or customize the installation.      │
+│                                                                          [default: None]                             │
+│ --help                                                                   Show this message and exit.                 │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ applications        Commands to interact with applications                                                           │
+│ job-scripts         Commands to interact with job scripts                                                            │
+│ job-submissions     Commands to interact with job submissions                                                        │
+│ login               Log in to the jobbergate-cli by storing the supplied token argument in the cache.                │
+│ logout              Logs out of the jobbergate-cli. Clears the saved user credentials.                               │
+│ show-token          Show the token for the logged in user.                                                           │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
 
 
 ## Log in to Jobbergate
 
-Before you can interact with Jobbergate data, you will need to log into the system. In the tutorial used in this
-example, only a single user exists. This guide will exclusively use this user, however, you can create more by logging
-into the Keycloak server (Described in the Appendix).
+To begin working with Jobbergate data, you must first sign into the system. For the purpose of this tutorial, there's
+just one user available. We'll soley focus on this user in this guide, but should you wish to add more users, you can
+do so by accessing the Keycloak server (details provided in the [Appendix](#appendix)).
 
-Logging in through the Jobbergate CLI is done via the command:
+To log in using the Jobbergate CLI, execute the following command:
 
 ```shell
 $ jobbergate login
+```
 
+The CLI will provide a URL for you to log into your account:
+
+```
 ╭─────────────────────────────────────────────── Waiting for login ─────────────────────────────────────────────────╮
 │                                                                                                                   │
 │   To complete login, please open the following link in a browser:                                                 │
@@ -153,198 +245,119 @@ have successfully logged in:
 ╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-You are now logged in through the CLI. Your auth token will be cached automatically for you, so you should not need to
-log in again for some time. However, your session will expire. If your token is no longer valid, the CLI will notify
-you. At that point, you should go through the login process again.
+You are now logged in through the CLI! Your auth token will be cached automatically for you, so you should not need to
+log in again for some time. However, be aware that your session does expire; you will have to log in again to get a new
+token. If this happens, the CLI will alert you that your token is invalid. When you receive this notification, you will
+need to log in anew.
 
 
-**TODO**: Update for Job Scripts
-## Upload an Application to Jobbergate
+## Upload a Job Script to Jobbergate
 
-The first step in running a simulation job through Jobbergate is to create an Application for it. An application is a
-reusable template that describes both the Job Script template as well as the template variables whose values must be
-supplied to create a submittable Job Script.
+Job Scripts are integral to Jobbergate, serving as the foundation for running simulations on our cluster. To initiate a
+simulation, your first task is to upload the Job Script to the Jobbergate API.
 
-For this example, we will use the
-[motorbike-application](https://github.com/omnivector-solutions/jobbergate/tree/main/examples/motorbike-application)
-that is included with the Jobbergate git repository. For the purposes of the tutorial, the application files have
-already been placed into the `jobbergate-cli` container where we are running the tutorial. To see the files that the
-application is composed of, you can inspect the `/motorbike-example` folder in the running `jobbergate-cli` container.
-
-Creating the applicaiton requires only a name and a path to the Application files. We will also give it a unique
-`identifier` which will make it easer to locate later.
-
-Issue the following Jobbergate command:
-
-```shell
-jobbergate applications create --name=tutorial --identifier=tutorial --application-path=/motorbike-example
-
-                 Created Application
-┏━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Key                     ┃ Value                       ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ id                      │ 1                           │
-│ application_name        │ tutorial                    │
-│ application_identifier  │ tutorial                    │
-│ application_description │                             │
-│ application_owner_email │ local-user@jobbergate.local │
-│ application_uploaded    │ True                        │
-└─────────────────────────┴─────────────────────────────┘
-```
-
-As you can see, the Application was successfully created and the Application files were uploaded as well. Now, this
-Application can be used any number of times to produce Job Scripts from its template.
+Within each Job Script, an entrypoint file is designated. This is the specific script that Slurm executes to commence
+the simulation on the cluster.
 
 
-## Render a Job Script from the Application template
+### Get the example script
 
-The primary purpose of the Application is to produce Job Scripts with different values substituted in for the template
-variables. Thus, rendering a Job Script from an Application is fundamental to the Jobbergate workflow.
+To keep this tutorial focused on using Jobbergate and not any of the complexities of simulations or operating a cluster,
+we will use a
+[very basic example](https://github.com/omnivector-solutions/jobbergate/tree/main/examples/simple-job-script.py)
+job script. We will need a copy of this script where the `jobbergate-cli` can access it. Since it's a small script, we
+can just copy/paste it into the container where we are accessing the `jobbergate-cli`.
 
-We will run the Motorbike Application to demonstate the proces.
-
-Begin by creating a Job Script from an Application using the follow command:
+In the terminal where you were typing jobbergate commands, enter this command:
 
 ```shell
-$ jobbergate job-scripts create --name=tutorial --application-id=1
-[?] Choose a partition: compute
-[?] Choose number of nodes for job: 2
-[?] Choose number of tasks per node for job: 6
-
-                                              Created Job Script
-┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Key                    ┃ Value                                                                                    ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ id                     │ 1                                                                                        │
-│ application_id         │ 1                                                                                        │
-│ job_script_name        │ tutorial                                                                                 │
-│ job_script_description │ None                                                                                     │
-│ job_script_owner_email │ local-user@jobbergate.local                                                              │
-└────────────────────────┴──────────────────────────────────────────────────────────────────────────────────────────┘
+cat > simple-job-script.py
 ```
 
-You will be prompted to enter values for:
+Paste the contents of the job script and then press `ctrl-d` on your keyboard. This will create a saved copy of the
+job script that's ready to submit with the `jobbergate-cli`. To ensure that the command sequence captured the intended
+script contents, execute the following command to review the job script:
 
- - The name of the partition
- - The number of compute nodes to use for the job
- - The number of tasks to use for each job on the node the job
+```shell
+cat simple-job-script.python3
+```
 
-For the tutorial, you should just use the defaults.
+The script should appear exactly as you see it on the link above.
 
-The command will render the templates into a Job Script that can be submitted to a Slurm cluster.
 
-To view the rendered files, you can use the `show-files` subcommand:
+
+### Create the Job Script from the example
+
+Now it's time to create a Job Script entry within the Jobbergate system. We'll use the `create` subcommand associated
+with the `job-scripts` command. To view all the options that come with this sub-command, you can use the `--help`
+option:
+
+```shell
+jobbergate job-scripts create --help
+```
+
+Now, let's create the Job Script. In your terminal, type:
+
+```shell
+jobbergate job-scripts create --name=tutorial --job-script-path=simple-job-script.py
+```
+
+You should see output like this indicating that the Job Script was successfully created:
+
+```
+                 Created Job Script
+┏━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Key            ┃ Value                            ┃
+┡━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ id             │ 1                                │
+│ application_id │ None                             │
+│ name           │ tutorial                         │
+│ description    │                                  │
+│ owner_email    │ local-user@jobbergate.local-mail │
+└────────────────┴──────────────────────────────────┘
+```
+
+Great, your Job Script is now prepared and ready for submission to the cluster!
+
+!!! Note
+
+    Keep track of the `id` value produced by your command. The tutorial text assumes that it is "1", but it may be
+    different if you have done the tutorial before or had to restart!
+
+To confirm that the Job Script has been uploaded correctly, you can review the file content using the
+`show-files` subcommand:
 
 ```shell
 $ jobbergate job-scripts show-files --id=1
-
-╭────────────────────────────────────────────── job-script-template.py ─────────────────────────────────────────────╮
-│                                                                                                                   │
-│   #!/bin/bash                                                                                                     │
-│   #SBATCH --partition compute                                                                                     │
-│   #SBATCH --nodes=2                                                                                               │
-│   #SBATCH --ntasks=6                                                                                              │
-│   #SBATCH -J motorbike                                                                                            │
-│   #SBATCH --output=/nfs/R-%x.%j.out                                                                               │
-│   #SBATCH --error=/nfs/R-%x.%j.err                                                                                │
-│   #SBATCH -t 1:00:00                                                                                              │
-│                                                                                                                   │
-│   # clone OpenFOAM-10 if it is not available yet                                                                  │
-│   OPENFOAM_DIR=/nfs/OpenFOAM-10                                                                                   │
-│   if [[ ! -d $OPENFOAM_DIR ]]                                                                                     │
-│   then                                                                                                            │
-│       echo "Cloning OpenFOAM-10"                                                                                  │
-│       cd /nfs                                                                                                     │
-│       git clone https://github.com/OpenFOAM/OpenFOAM-10.git                                                       │
-│   else                                                                                                            │
-│       echo "Skipping clone process...we already have the OpenFOAM-10 source code"                                 │
-│   fi                                                                                                              │
-│                                                                                                                   │
-│   # create a working folder inside the shared directory                                                           │
-│   WORK_DIR=/nfs/$SLURM_JOB_NAME-Job-$SLURM_JOB_ID                                                                 │
-│   mkdir -p $WORK_DIR                                                                                              │
-│   cd $WORK_DIR                                                                                                    │
-│                                                                                                                   │
-│   # path to the openfoam singularity image                                                                        │
-│   export SINGULARITY_IMAGE=/nfs/openfoam10.sif                                                                    │
-│                                                                                                                   │
-│   # download the openfoam v10 singularity image if it is not available yet                                        │
-│   if [[ ! -f $SINGULARITY_IMAGE ]]                                                                                │
-│   then                                                                                                            │
-│       echo "Fetching the singularity image for OpenFOAM-10"                                                       │
-│       curl -o $SINGULARITY_IMAGE --location "https://omnivector-public-assets.s3.us-west-2.amazonaws.com/singul...│
-│   else                                                                                                            │
-│       echo "Skipping the image fetch process...we already have the singularity image"                             │
-│   fi                                                                                                              │
-│                                                                                                                   │
-│                                                                                                                   │
-│   # copy motorBike folder                                                                                         │
-│   cp -r $OPENFOAM_DIR/tutorials/incompressible/simpleFoam/motorBike .                                             │
-│                                                                                                                   │
-│   # enter motorBike folder                                                                                        │
-│   cd motorBike                                                                                                    │
-│                                                                                                                   │
-│   # clear any previous execution                                                                                  │
-│   singularity exec --bind $PWD:$HOME $SINGULARITY_IMAGE ./Allclean                                                │
-│                                                                                                                   │
-│   # copy motorBike geometry obj                                                                                   │
-│   cp $OPENFOAM_DIR/tutorials/resources/geometry/motorBike.obj.gz constant/geometry/                               │
-│                                                                                                                   │
-│   # define surface features inside the block mesh                                                                 │
-│   singularity exec --bind $PWD:$HOME $SINGULARITY_IMAGE surfaceFeatures                                           │
-│                                                                                                                   │
-│   # generate the first mesh                                                                                       │
-│   # mesh the environment (block around the model)                                                                 │
-│   singularity exec --bind $PWD:$HOME $SINGULARITY_IMAGE blockMesh                                                 │
-│                                                                                                                   │
-│   # decomposition of mesh and initial field data                                                                  │
-│   # according to the parameters in decomposeParDict located in the system                                         │
-│   # create 6 domains by default                                                                                   │
-│   singularity exec --bind $PWD:$HOME $SINGULARITY_IMAGE decomposePar -copyZero                                    │
-│                                                                                                                   │
-│   # mesh the motorcicle                                                                                           │
-│   # overwrite the new mesh files that are generated                                                               │
-│   srun singularity exec --bind $PWD:$HOME $SINGULARITY_IMAGE snappyHexMesh -overwrite -parallel                   │
-│                                                                                                                   │
-│   # write field and boundary condition info for each patch                                                        │
-│   srun singularity exec --bind $PWD:$HOME $SINGULARITY_IMAGE patchSummary -parallel                               │
-│                                                                                                                   │
-│   # potential flow solver                                                                                         │
-│   # solves the velocity potential to calculate the volumetric face-flux field                                     │
-│   srun singularity exec --bind $PWD:$HOME $SINGULARITY_IMAGE potentialFoam -parallel                              │
-│                                                                                                                   │
-│   # steady-state solver for incompressible turbutent flows                                                        │
-│   srun singularity exec --bind $PWD:$HOME $SINGULARITY_IMAGE simpleFoam -parallel                                 │
-│                                                                                                                   │
-│   # after a case has been run in parallel                                                                         │
-│   # it can be reconstructed for post-processing                                                                   │
-│   singularity exec --bind $PWD:$HOME $SINGULARITY_IMAGE reconstructParMesh -constant                              │
-│   singularity exec --bind $PWD:$HOME $SINGULARITY_IMAGE reconstructPar -latestTime                                │
-│                                                                                                                   │
-╰────────────────────────────────────── This is the main job script file ───────────────────────────────────────────╯
 ```
 
-Notice that the values that we supplied for the questions asked by the applicaiton have been rendered into the resulting
-Job Script:
-
-```
-#SBATCH --partition compute
-#SBATCH --nodes=2
-#SBATCH --ntasks=6
-```
+The file should appear exactly as it does on the link above.
 
 
 ## Submit a Job Script to the cluster
 
-Now that we have produced a Job Script from the source Applicaiton, we can now submit this to the Slurm cluster. In this
-tutorial, we have one attached cluster named `local-slurm`. We will use this name when we are submitting the Job
-Script to make sure it runs on the correct cluster.
+With the Job Script ready, the next step is to submit it to the Slurm cluster. In this tutorial, a cluster named
+`local-slurm` is already attached and available for use. We will specify this cluster name when submitting the Job
+Script to ensure it is executed on the appropriate cluster.
 
-Create the Job Submission from the Job Script with the following command:
+
+### Create the Job Submission
+
+We will use the `create` subcommand of the `job-submissions` command to submit the job to the cluster. To see all the
+options available for this command, we can use the `--help` option again:
+
+```shell
+jobbergate job-submissions create --help
+```
+
+For the tutorial, we need to issue the following command:
 
 ```shell
 jobbergate job-submissions create --name=tutorial --job-script-id=1 --cluster-name=local-slurm
+```
 
+The command should produce output that looks like this:
+```
                    Created Job Submission
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Key                        ┃ Value                       ┃
@@ -365,14 +378,22 @@ The Job Submission was successfully created! However, it has not submitted to th
 Jobbergate Agent that is running remotely in the cluster pulls all "CREATED" Job Submissions down from the API and
 submits them to Slurm one by one.
 
+!!! Note
 
-## Check the results and statuses of submitted jobs
+    Again, be careful to use the correct `id` produced by this command for the remainder of the tutorial!
+
+
+### Check the status of the submitted job
 
 We can look up the status of a Job Submission using the following command:
 
 ```shell
 jobbergate job-submissions get-one --id=1
+```
 
+This command should produce output that looks like:
+
+```
                        Job Submission
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Key                        ┃ Value                       ┃
@@ -389,85 +410,40 @@ jobbergate job-submissions get-one --id=1
 └────────────────────────────┴─────────────────────────────┘
 ```
 
-Notice that the status of the Job Submission has now changed to "SUBMITTED". This means that the Jobbergate Agent has
-pulled the Job Script down and submitted it to the cluster named `local-slurm`. The status will remain the same until
-the Job Script finishes executing. The Jobbergate Agent will watch for the job to finish in Slurm, and will update the
-status of the Job Submission to "COMPLETE".
+If the `status` reported by your command is `CREATED`, don't worry! The Jobbergate Agent just hasn't retrieved and
+submitted the job script yet. Wait a few more seconds and dry again. You should now see the status change to
+`SUBMITTED`.
 
-In this tutorial, we have locally mounted a "fake" NFS folder to contain the output from the job running in slurm. You
-can watch the output as Slurm processes the job by tailing the terminal output file that Slurm produces and displaying
-30 lines at a time (this output is truncated to 30 lines):
-
-```shell
-$ tail -n 30 /nfs/R-motorbike.1.out
-
-Cloning OpenFOAM-10
-Cloning into 'OpenFOAM-10'...
-Fetching the singularity image for OpenFOAM-10
-Cleaning /home/local-user case
-/*---------------------------------------------------------------------------*\
-  =========                 |
-  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Version:  10
-     \\/     M anipulation  |
-\*---------------------------------------------------------------------------*/
-Build  : 10
-Exec   : /opt/OpenFOAM/OpenFOAM-10/platforms/linux64GccDPInt32Opt/bin/surfaceFeatures
-Date   : Sep 29 2022
-Time   : 19:40:12
-Host   : "c1"
-PID    : 329
-I/O    : uncollated
-Case   : /home/local-user
-nProcs : 1
-sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
-fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
-allowSystemOperations : Allowing user-supplied system call operations
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-Create time
-
-Reading "surfaceFeaturesDict"
-```
+When the Job Submission status shifts to "SUBMITTED", it indicats that the Jobbergate Agent has retrieved the Job Script
+and submitted it to the `local-slurm` cluster. This status will persist until the completion of the Job Script's
+execution. The Jobbergate Agent continuaously monitors the job's progress within slurm, and , upon its completion, will
+update the Job Submission status to "COMPLETE".
 
 
-This command will continue to collect output until you quit with `Ctrl-C`. It will take some time to even begin seeing
-output here as the job downloads OpenFOAM resources to run the job. Subsequent runs will take advantage of local caching
-and complete *much* more quickly. So, please be patient!
+### Check the results of the job
 
+In this tutorial, we have locally mounted a "fake" NFS folder to contain the output from the job running in slurm. When
+the job finishes running, it will produce an output file in this folder. First we need to verify that the file was
+produced by listing the contents of the `nfs` directory:
 
 ```shell
-$ jobbergate job-submissions get-one --id=1
-
-                       Job Submission
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Key                        ┃ Value                       ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ id                         │ 1                           │
-│ job_script_id              │ 1                           │
-│ client_id                  │ local-slurm                 │
-│ slurm_job_id               │ 1                           │
-│ execution_directory        │ None                        │
-│ job_submission_name        │ tutorial                    │
-│ job_submission_description │ None                        │
-│ job_submission_owner_email │ local-user@jobbergate.local │
-│ status                     │ COMPLETED                   │
-└────────────────────────────┴─────────────────────────────┘
+ls /nfs
 ```
 
-Don't worry if the Job Submission seems to be stuck and does not change for a while. If it fails, the status
-of the Job Submission will change to "FAILED". If you don't see this, the Job Submission is still being processed.
+If the job completed, you should see a file in the `/nfs` directory named `simple-output.txt`. Check the contents of the
+file with a simple `cat` command:
 
-In this tutorial, the results from the Job Submission are available in the `/nfs` directory. All of the processing
-files can be found there:
-
-```shell
-
-$ ls /nfs/motorbike-Job-1/motorbike/
-
-0  500  Allclean  Allrun  constant  postProcessing  processor0  processor1  processor2  processor3  processor4  processor5  system
 ```
+cat /nfs/simple-output.txt
+```
+
+It should look look like:
+
+```
+Simple output from c1
+```
+
+It's possible that the output says it came from c2 if slurm ran the job on the `c2` compute node instead of `c1`.
 
 
 ## Delete the resources
@@ -477,7 +453,7 @@ Sometimes it is useful to remove resources that have been created in Jobbergate.
 When deleting the resources, you must delete in reverse order of creation:
 
 ```
-Job Submission -> Job Script -> Application
+Job Submission -> Job Script
 ```
 
 Start by deleting the Job Submission:
@@ -506,27 +482,14 @@ $ jobbergate job-scripts delete --id=1
 ╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-
-Then finally delete the Application:
-
-```shell
-$ jobbergate applications delete --id=1
-
-╭───────────────────────────────────────── Application delete succeeded ────────────────────────────────────────────╮
-│                                                                                                                   │
-│   The application was successfully deleted.                                                                       │
-│                                                                                                                   │
-╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-```
-
 If you attempt to delete a resource before any that were created _from_ it, you will see an error like this:
 
 ```shell
-$ jobbergate applications delete --id=1
+$ jobbergate job-scripts delete --id=1
 
 ╭─────────────────────────────────────────────── REQUEST FAILED ────────────────────────────────────────────────────╮
-│ Request to delete application was not accepted by the API:                                                        │
-│ There are job_scripts that reference id 1.                                                                        │
+│ Request to delete job-script was not accepted by the API:                                                         │
+│ There are job_submissions that reference id 1.                                                                    │
 ╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ````
 

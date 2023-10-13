@@ -1,18 +1,10 @@
 # Job Script Templates
 
-The Job Scripts Templates are composed of the combination of a Job Script template with a framework
-for interactively gathering the template variable values from the user.
+Job Script Templates serve as adaptable blueprints for Job Scripts, allowing for the dynamic replacement of crucial
+values upon rendering. The end result of this process is a Job Script primed for cluster submission.
 
-Job Script Templates are used to produce Job Scripts that may be submitted.
+The specific values incorporated into the template to generate a Job Script are termed "template variables." Users can
+define constrains and default settings for these values within the Job Script Template's workflow script.
 
-A Job Script Template is composed of:
-
-**TODO**: Rewrite all of this after this line
-
-An Application
-folder contains:
-
-* jobbergate.py: Source code for describing how to gather template variable value
-* jobbergate.yaml: Configuration and default variable values
-* templates: One or more [Jinja 2](https://palletsprojects.com/p/jinja/) templates that will be rendered with the
-  supplied config
+Additionally, Job Script Templates provide a framework that allows for the interactive collection of values from users
+via the [Jobbergate CLI](../apps/cli.md).

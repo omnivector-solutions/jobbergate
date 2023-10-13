@@ -6,8 +6,11 @@ docs_dir: source
 theme:
   name: material
   logo: https://omnivector-public-assets.s3.us-west-2.amazonaws.com/branding/omnivector-logo.png
+  font:
+    code: Fira Code
   features:
     - navigation.expand
+    - navigation.tracking
     - content.code.copy
   pallete:
     # Dark/Light mode toggle is not working and can't figure out why
@@ -53,20 +56,20 @@ extra_css:
   - stylesheets/extra.css
 nav:
   - Home: index.md
-  - Attribution: attribution.md
   - Elements:
     - Resources:
       - Overview: elements/resources/index.md
-      - Job Script Templates: elements/resources/job_script_templates.md
       - Job Scripts: elements/resources/job_scripts.md
+      - Job Script Templates: elements/resources/job_script_templates.md
       - Job Submissions: elements/resources/job_submissions.md
     - Apps:
       - Overview: elements/apps/index.md
       - Jobbergate Agent: elements/apps/agent.md
       - Jobbergate API: elements/apps/api.md
       - Jobbergate CLI: elements/apps/cli.md
+      - Jobbergate Core: elements/apps/core.md
   - Tutorial: tutorial.md
-  - Contact Us: contact.md
+  - Authors: authors.md
   - Developer Guide:
     - Developer Tools: developer_guide/dev_tools.md
     - Quality Assurance Tools: developer_guide/qa_tools.md

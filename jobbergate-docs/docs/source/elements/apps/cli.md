@@ -1,45 +1,23 @@
 # Jobbergate CLI Overview
 
-The primary purpose of the [Jobbergate CLI](https://github.com/omnivector-solutions/jobbergate/jobbergate-cli) is to
-provide interactive access to the features of Jobbergate API via a command-line interface.
+The [Jobbergate CLI](https://github.com/omnivector-solutions/jobbergate/jobbergate-cli) offers an interactive
+gateway to the functionalities of the Jobbergate API's. Users can utilize the CLI to manage resources and execute
+various tasks.
 
-There are two primary modes used:
+The CLI operates under two primary modes:
 
-* Creating resources
-* Viewing resources
+ - **Resource Creation**: The CLI introduces `create` subcommands for every resource, allowing users to establish new
+   instances.
+ - **Resource Viewing**: With `list` and `get-one` subcommands available for each resource, users can inspect different
+   detail levels about the resource entities stored in the database.
 
-For creating resources, the CLI provides `create` subcommands for each resource that allow the user to create new
-instances. The Application resource is created by uploading files along with some metadata about the application. The
-Job Script resources are created in the CLI by rendering templates in the Application resource into new Job Script
-instances. The Job Submission resources are created by submitting a Job Script to a connected Slurm Cluster.
-
-For viewing resoruces, the CLI provides `list` and `get-one` subcommands for each resource. These commands allow
-the user to view varying levels of details about the instances that exist in the database.
-
-The Jobbergate CLI can also be used to sign in to the Jobbergate API and to retrieve the auth token that is used to
-identify the current user. This token can then be used for accessing the Jobbergate API through other means.
+To ensure secure access, the Jobbergate CLI offers a sign-in mechanism to the Jobbergate API. Once authenticated,
+users may use all the resources in Jobbergate that their account has been granted access to.
 
 
-# Usage
+## Discovering Command details
 
-The commands available in `jobbergate-cli` revolve around the three core [resources](../resources/index.md) of
-the system:
-
-
-!!! Note
-
-    The commands shown here are for the most recent version of Jobbergate. In order to use the Jobbergate CLI in "legacy"
-    mode, you need to set the `JOBBERGATE_COMPATIBILITY_MODE` environment variable to 1. Then, check the usage using the
-    `--help` for details about the subcommands.
-
-
-## Checking Usage
-
-The usage of the `jobbergate-cli` can be checked at any time using the `--help`
-flag. In addition to usage information for the top-level command, `jobbergate-cli`
-also provides `--help` usage for each subcommand.
-
-To see the top-level usage, run the following command:
+You can start learning about the commands and usage of the Jobbergate CLI by starting with this command:
 
 ```shell
 
@@ -76,19 +54,26 @@ Commands:
   show-token       Show the token for the logged in user.
 ```
 
+If you want to delve deeper and understand the usage of a specific subcommand, you can use the `--help` flag with that
+particular subcommand. For example, to better understand the usage of the `job-scripts create` subcommand, you would
+run:
+
+```shell
+$ jobbergate job-scripts create --help
+```
+
+
 
 ## Logging In
 
-In order to interact with any Jobbergate resources, you first need to log in as a
-Jobbergate user.
-
-First, invoke the `login` subcommand. You will then be prompted with a browser link to
-open in order to login. Open the link in the browser and complete the login process.
-When you have finished, the CLI will report that you have successfully logged in:
+The first thing you need to do with the Jobbergate CLI is to log in:
 
 ```shell
-$ jobbergate login
+jobbergate login
+```
+Upon executing the command, a message will appear like:
 
+```
 ╭───────────────────────────────────────────── Waiting for login ──────────────────────────────────────────────────────╮
 │                                                                                                                      │
 │   To complete login, please open the following link in a browser:                                                    │
@@ -100,7 +85,18 @@ $ jobbergate login
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 
 Waiting for web login... ━╺━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   3% 0:04:50
+```
 
+Next, you will need to:
+
+ 1. Open the provided link by either clicking on it (if your terminal supports it) or copy/paste it into a browser.
+ 2. Enter your login credentials
+ 3. Complete the sign in process
+ 4. Return to your terminal
+
+You should see a message like:
+
+```
 ╭──────────────────────────────────────────────── Logged in! ──────────────────────────────────────────────────────────╮
 │                                                                                                                      │
 │   User was logged in with email 'local-user@jobbergate.local'                                                        │
@@ -109,81 +105,35 @@ Waiting for web login... ━╺━━━━━━━━━━━━━━━━�
 ```
 
 
-It is often useful to see the auth token granted upon login. To do this, you can execute
-the `show-token` command. When running with `docker-compose` or over an ssh connection
-where clipboard is not shared, you will need to pass the `--plain` option to remove
-formatting characters and then copy the token to your clipboard manually. The command
-looks like this:
+## Checking the Auth Token
+
+To get access to the auth token you acquired by logging in, run this command:
 
 ```shell
-$ jobbergate show-token --plain
-eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJFVU1BNnBYY0V2VC10U09sSTlrQ3J1ZHktbmtoTzI0VkQyVG92aHp1N2NnIn0.eyJleHAiOjE2NjI3NTc4NjQsImlhdCI6MTY2Mjc1NzU2NCwiYXV0aF90aW1lIjoxNjYyNzU3NTYzLCJqdGkiOiI2YjY3NWNjYS04NGVkLTRiZjYtOTFkNC00ZjlkOTZhNjE4MGYiLCJpc3MiOiJodHRwOi8va2V5Y2xvYWsubG9jYWw6ODA4MC9yZWFsbXMvam9iYmVyZ2F0ZS1sb2NhbCIsImF1ZCI6WyJodHRwczovL2xvY2FsLm9tbml2ZWN0b3Iuc29sdXRpb25zIiwiYWNjb3VudCJdLCJzdWIiOiJiNTgxNjViMC1mNDQyLTRmZDEtYWY0NS05MTZlYzJiYTNhOWEiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJjbGkiLCJzZXNzaW9uX3N0YXRlIjoiMmFjY2Q1M2EtZTY0Yy00ZGI0LWI0MTEtYWE2ZTc3YTY2N2RmIiwiYWNyIjoiMSIsInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIiwiZGVmYXVsdC1yb2xlcy1qb2JiZXJnYXRlLWxvY2FsIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiY2xpIjp7InJvbGVzIjpbImpvYmJlcmdhdGU6am9iLXNjcmlwdHM6dmlldyIsImpvYmJlcmdhdGU6am9iLXNjcmlwdHM6ZWRpdCIsImpvYmJlcmdhdGU6YXBwbGljYXRpb25zOmVkaXQiLCJqb2JiZXJnYXRlOmFwcGxpY2F0aW9uczp2aWV3Iiwiam9iYmVyZ2F0ZTpqb2Itc3VibWlzc2lvbnM6dmlldyIsImpvYmJlcmdhdGU6am9iLXN1Ym1pc3Npb25zOmVkaXQiXX0sImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsInNpZCI6IjJhY2NkNTNhLWU2NGMtNGRiNC1iNDExLWFhNmU3N2E2NjdkZiIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwicGVybWlzc2lvbnMiOlsiam9iYmVyZ2F0ZTpqb2Itc2NyaXB0czp2aWV3Iiwiam9iYmVyZ2F0ZTpqb2Itc2NyaXB0czplZGl0Iiwiam9iYmVyZ2F0ZTphcHBsaWNhdGlvbnM6ZWRpdCIsImpvYmJlcmdhdGU6YXBwbGljYXRpb25zOnZpZXciLCJqb2JiZXJnYXRlOmpvYi1zdWJtaXNzaW9uczp2aWV3Iiwiam9iYmVyZ2F0ZTpqb2Itc3VibWlzc2lvbnM6ZWRpdCJdLCJuYW1lIjoiTG9jYWwgVXNlciIsInByZWZlcnJlZF91c2VybmFtZSI6ImxvY2FsLXVzZXIiLCJnaXZlbl9uYW1lIjoiTG9jYWwiLCJmYW1pbHlfbmFtZSI6IlVzZXIiLCJlbWFpbCI6ImxvY2FsLXVzZXJAam9iYmVyZ2F0ZS5sb2NhbCJ9.cNfsslV0rXFcurpndR-kXKtnERn3sfehWPFLNDNFT4s24ifRf1uWlZYGMiwMGj7YkuLv46BDrBHTBMb64Lldsb37-Se1W5ZHeGNRckgkVbVbEaCHmB7hBTf5EJB78JciYqKaoZhRJpENWAwQpvZpjZ5WTedscJPvTcbIegD2e4MCSoG7qya2tnB9yn08QC6vG-aO9qkFzHr7BNVViLvFBzrBO5oc2KGlP8BnTUxzr5O6ork8IYr-PTKQd_zGdNgZiXQuB10LPYUYaCnji6biaMSApp2Dukrc1FQPlpiQ_Zbku00tJ0tQDtdVQHxEsjncXuXNI_oRTDSVXyuxnwxEmQ
+jobbergate show-token --plain
 ```
+Executing this command will display the authentication token in a plain text format, without any additional characters
+or formatting. This makes it easier for you to manually select and copy the token, especially in environments where
+clipboard access might be restricted, such as when using docker-compose or an SSH connection.
+
+Once the token is displayed, you can copy the token to your clipboard to use with API requests.
+
+It's essential to treat this token with care, as it provides access to the Jobbergate system under your user account.
+Ensure you don't share it with unauthorized individuals and avoid unintentionally exposing it in logs or scripts.
 
 
 
-## Application Commands
+## Resource Commands
 
-You may interact with Jobbergate Application resources using the `applications`
-subcommand.
+Now that you are logged in, you can interact with any of the three main Jobbergate resources. Most of the resources
+provide the following sub-commands:
 
-The following sub-commands are available for `applications`:
-
-* create
-* delete
-* get-one
-* list
-* update
+* **create**: Create a new instance of the resource
+* **delete**: Delete an instance of the resource
+* **get-one**: Fetch details about a single instance of the resource
+* **list**: Fetch a listing of all the resources limited by filters
+* **update**: Update an instance of the resource.
 
 Details for each subcommand can be viewed by passing the `--help` flag to any of them.
 
-**TODO**: Update this with Job Script Templates language
-
-Example: Creating an Application:
-
-```shell
-$ jobbergate applications create --name test-application --application-path /path/to/application
-```
-
-
-## Job Script Commands
-
-You may interact with Jobbergate Job Script resources using the `job-scripts`
-subcommand.
-
-The following sub-commands are available for `job-scripts`:
-
-* create
-* delete
-* get-one
-* list
-* update
-
-Details for each subcommand can be viewed by passing the `--help` flag to any of them.
-
-Example: Rendering an Application into a new Job Script:
-
-```shell
-jobbergate job-scripts create --application-id=1 --name test-job-script
-```
-
-
-## Job Submission Commands
-
-You may interact with Jobbergate Job Submission resources using the `job-submissions`
-subcommand.
-
-The following sub-commands are available for `job-submissions`:
-
-* create
-* delete
-* get-one
-* list
-
-Details for each subcommand can be viewed by passing the `--help` flag to any of them.
-
-Example: Submitting a Job Script as a new Job Submission:
-
-```shell
-$ jobbergate job-sripts create --job-script-id=1 --name test-job-submission --cluster-name test-cluster
-```
+Use the `--help` option to explore the CLI and disccover the usage and options for all the subcommands.

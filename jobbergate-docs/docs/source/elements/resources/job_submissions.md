@@ -1,11 +1,6 @@
 Job Submissions
 ---------------
 
-**TODO**: Rewrite this mess
-
-Job Submissions stimply track the status and metadata for a Job Script that has been
-submitted by Jobbergate to a Slurm cluster. It carries identification information that
-tie it to both the Job Script in the Jobbergate data store and to the Job objects that
-Slurm uses.
-
-
+Job Submissions primarily monitor the status and metadata of a [Job Script](./job_scripts.md) dispatched by Jobbergate
+to a Slurm cluster. They possess identifying details linking them to the Job Script that was submitted and to the
+corresponding Job objects created by Slurm.

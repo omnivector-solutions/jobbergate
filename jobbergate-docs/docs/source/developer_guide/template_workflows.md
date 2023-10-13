@@ -1,21 +1,20 @@
 # Job Script Template Workflow Files
 
-**TODO**: Rewrite/update
 
-The `jobbergate.py` is a python script that is used within an interactive framework
+The main workflow file is a python script that is used within an interactive framework
 that gathers the values for template variables that will be needed when Job Scripts are
 rendered from Applications.
 
-Throughout the documentation, this file is referred to as the "Application Source."
+Throughout the documentation, this file is referred to as the "Workflow Source File."
 
-The entire purpose of the Application Source is to construct a workflow of questions
+The entire purpose of the Workflow Source File is to construct a workflow of questions
 organized in a series of that can be changed dynamically according to the answers
 provided by the user.
 
 
 ## The JobbergateApplication class
 
-Each Application Source script must define exactly one class named
+Each Workflow Source File script must define exactly one class named
 `JobbergateApplication`.
 
 This class should be a regular python class that inherits from the
@@ -29,7 +28,7 @@ workflow methods that the Application processes.
 
 ## The workflow methods
 
-The `mainflow()` method is essentially the entry point for the Application Source.
+The `mainflow()` method is essentially the entry point for the Workflow Source File.
 It must return a list of questions that should be asked to the user in order. These
 questions will be used to gather the template variable values.
 
@@ -52,35 +51,35 @@ represent answers to previous questions.
 
 ## The Questions
 
-The Application source is built around a question asking framework that defines
+The Workflow Source File is built around a question asking framework that defines
 different sorts of questions that can be asked of the user.
 
 The question types are defined by classes that derive from a base `QuestionBase`
-class. The question types include::
+class. The question types include:
 
-* Text: gather a simple string response from the user
-* Integer: gather a simple int response from the user
-* List: prompt the user to select one item from a list
-* Directory: prompt the user for a directory path
-* File: prompt the user for a file path
-* Checkbox: prompt the user to select as many items from a list as they want
-* Confirm: prompt the user to offer a boolean response
-* BooleanList: prompt a series of boolean resonses
-* Const: set the variable to the default value without even asking the user
+- Text: gather a simple string response from the user
+- Integer: gather a simple int response from the user
+- List: prompt the user to select one item from a list
+- Directory: prompt the user for a directory path
+- File: prompt the user for a file path
+- Checkbox: prompt the user to select as many items from a list as they want
+- Confirm: prompt the user to offer a boolean response
+- BooleanList: prompt a series of boolean resonses
+- Const: set the variable to the default value without even asking the user
 
 !!!note
 
-  The BooleanList question has some very complex logic. The source code should be
-  examined to understand what this does in detail.
+    The BooleanList question has some very complex logic. The source code should be
+    examined to understand what this does in detail.
 
-All of the implementation of the quetion classes (including the base class) can be found
+All of the implementation of the question classes (including the base class) can be found
 in [the questions module](https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-cli/jobbergate_cli/subapps/applications/questions.py)
 of the Jobbergate source code.
 
 
 ## Other class attributes
 
-Each Application Source also has access to some attributes set up by the
+Each Workflow Source File also has access to some attributes set up by the
 `JobbergateApplicationBase`.
 
 The `jobbergate_config` attribute will contain any of the properties that are set in
@@ -91,5 +90,5 @@ The `application_config` attribute contains all of the properties that are set i
 `application_config` section of the Application config (`jobbergate.yaml`). This
 section may be empty. If it is, the `application_config` atrribute will be an empty
 dictionary. This dictionary should only be populated by the template variables that
-the Application Source seeks to collect from the user. The values for each item are the
+the Workflow Source File seeks to collect from the user. The values for each item are the
 default values for that template variable.

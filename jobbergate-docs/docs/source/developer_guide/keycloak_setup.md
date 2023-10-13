@@ -1,59 +1,66 @@
 # Setting up Keycloak for Jobbergate
 
-Though Jobbergate should be compatible with any OIDC provider (through the [Armasec package](https://github.com/omnivector-solutions/armasec)),
-the recommended provider is Keycloak.
+Jobbergate's security is provided by the [Armasec package](https://github.com/omnivector-solutions/armasec) which should
+be compatible with any OIDC provider. However, the recommended provider is Keycloak.
 
-This document describes the procedure for setting up an already deployed Keycloak instance to work with Jobbergate.
+In this guide, we outline the steps to integrate an existing Keycloak instance (version 19.0.2 as used in this example)
+with Jobbergate to ensure a smooth user experience and enhanced security features.
 
-The version of Keycloak used for this guide is `19.0.2`.
-
-The examples provided here describe how to set it up for a local deployment (for example, one deployed with Docker).
-However, the instructions should be easily extensible for any deployment that relies on
-a single-node Keycloak cluster.
+Although this tutorial focuses on integrating Keycloak with a locally deployed instance of Jobbergate, such as one
+housed in a Docker container via the `jobbergate-composed` sub-project, the procedures can be easily adapted to suit
+deployments on single-node Keycloak clusters or other complex configurations.
 
 
 ## Create a new Realm
 
-It is possible to configure an existing realm for Jobbergate, however, it may be most convenient to start with a new
-realm set aside for your Jobbergate deployment.
+You have the option to utilize an existing realm for Jobbergate, but for a streamlined process, it's typically more
+advantageous to create a new realm specifically for your Jobbergate deployment.
 
-After logging in to the keycloak frontend, click the `Add realm` button under the `Selet realm` drop-down on the left.
+Once you're logged into the Keycloak interface, navigate and click the Add realm button, found beneath the Select realm
+dropdown menu on the left-hand side.
 
-For locally deployed Jobbergate, set `Name` to "jobbergate-local".
+For those using a local Jobbergate deployment, you should assign the Name as "jobbergate-local".
 
-The realm will require a `Frontend URL`. It is not convenient to use "localhost" for this URL because the redirect
-requires a valid domain. The `.local` special domain is perfect for this, because it cannot be used as a reserved name
-on any DNS. The full `Frontend URL` value should be "http://keycloak.local:8080".
+You'll also need to specify a Frontend URL. Avoid using "localhost" because a valid domain is required for the
+redirection to function correctly. A suitable alternative is the .local special domain; this domain is ideal as it isn't
+subject to reservation on any DNS. For instance, your full Frontend URL would be "http://keycloak.local:8080".
 
-Leave all the rest of the realm settings as defaults.
+The remaining realm settings can be left at their default configurations.
 
 
-### Hostfile Note
+### Setup Hostfile
 
-To allow the `Frontend URL` to work, you need to add the `keycloak.local` domain to your hostfile.
+For the Keycloak admin UI to work correctly in a local deployment, it's essential to include the `keycloak.local` domain
+in your system’s hostfile.
 
-For Linux and OSX, this file is located at ``/etc/hosts``.
-For Windows, it is found at ``c:\windows\system32\drivers\etc\hosts``
+For users on Linux or OSX, you can find this file at `/etc/hosts`. Windows users can locate it at
+`c:\windows\system32\drivers\etc\hosts`.
 
-(You will need to be admin/sudo to edit this file)
+Editing this file requires administrative or sudo privileges.
 
-Once you have located the file, add this line to it and save::
+Upon accessing the file, append the following line and save your changes:
 
-   127.0.0.1   keycloak.local
+```
+127.0.0.1   keycloak.local
+```
+
+This step ensures that the `Frontend URL` resolves correctly, facilitating seamless navigation and operation.
 
 
 ## Create a new Client for the CLI
 
-Next, there needs to be a client set aside for the Jobbergate CLI to use to log in and sign JWT for auth.
+To facilitate login and JWT authentication for the Jobbergate CLI, it's essential to allocate a dedicated client.
 
-Click the `Clients` section on the left navigation bar, and then click the `Create` button on the right.
+Begin by navigating to the `Clients` section, found on the left sidebar, and then proceed to click on the `Create`
+button located on the right.
 
-For the `Client Protocol` setting, choose the `openid-connect` protocol. The `Client ID` setting is only important for
-finding it later; "jobbergate-cli" is a convenient `Client ID`.
+When adjusting the `Client Protocol` settings, select the `openid-connect` option. For the `Client ID` setting, which
+choosing an easy to identify name like "jobbergate-cli" is best even though this field can be any unique string.
 
-To allow the CLI to use this client for login, you must enable `OAuth 2.0 Device Authorization Grant`.
+To ensure the CLI can utilize this client for login purposes, it's vital to activate the `OAuth 2.0 Device Authorization
+Grant` option.
 
-For a local deployment just add "\*" under `Valid Redirect URIs`.
+If you're working with a local deployment, simply input "\*" in the `Valid Redirect URIs` section.
 
 
 ### Add Roles
@@ -91,20 +98,23 @@ First, we need to add an "audience" mapper. Select "audience" for the `Name` fie
 
 #### Permissions
 
-Next, add a "permissions" mapper. The `Armasec` package expects to find a "permissions" claims under a claim at the root
-of the JWT payload. Enter "Permissions" under the `Name` field. Next, select "User Client Role" as the `Mapper Type`.
+The `Armasec` package expects to find "permissions" in a claim at the root
+of the JWT payload. To facilitate this, we need to add a mapper that will copy the permissions to the correct place in
+the JWT. We will call the new mapper our "permissions" mapper.
+
+Enter "Permissions" under the `Name` field. Next, select "User Client Role" as the `Mapper Type`.
 Select "jobbergatel-cli" for the `Client ID`. The `Token Claim Name` *must* have the value "permissions". The
 `Claim JSON Type` field must be "String".
 
 
 ## Create a new Client for the Agent
 
-The Jobbergate Agent will also need a client.
+The Jobbergate Agent also requires its own client.
 
 Again, click the `Clients` section on the left navigation bar, and then click the `Create` button on the right.
 
 For the `Client Protocol` setting, choose the `openid-connect` protocol. The `Client ID` setting will be used to match
-jobs created for the agent to submit to Slurm, so use the cluster name for this setting. For a local deployment, the
+jobs to the cluster they should be submitted to. So use the cluster name for this setting. For a local deployment, the
 `Client ID` should be "local-slurm".
 
 On the `Settings` tab, set `Access Type` to `confidential` and enter "\*" for the `Valid Redirect URIs`. Scroll down and
