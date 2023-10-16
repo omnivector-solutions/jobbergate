@@ -2,7 +2,7 @@
 
    <p align="center">
      <img
-       src="https://img.shields.io/github/workflow/status/omnivector-solutions/jobbergate/Test/main?label=main-build&logo=github&style=plastic"
+       src="https://img.shields.io/github/actions/workflow/status/omnivector-solutions/jobbergate/test_on_push.yaml?branch=main&label=main-build&logo=github&style=plastic"
        alt="main build"
      />
      <img
