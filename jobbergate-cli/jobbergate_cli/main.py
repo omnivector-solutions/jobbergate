@@ -83,6 +83,7 @@ def main(
     client = httpx.Client(
         base_url=f"{protocol}://{domain}",
         headers={"content-type": "application/x-www-form-urlencoded"},
+        verify=settings.JOBBERGATE_REQUESTS_VERIFY,
         timeout=settings.JOBBERGATE_REQUESTS_TIMEOUT,
     )
     context = JobbergateContext(persona=None, client=client)
@@ -92,6 +93,7 @@ def main(
         context.client = httpx.Client(
             base_url=settings.ARMADA_API_BASE,
             headers=dict(Authorization=f"Bearer {persona.token_set.access_token}"),
+            verify=settings.JOBBERGATE_REQUESTS_VERIFY,
             timeout=settings.JOBBERGATE_REQUESTS_TIMEOUT,
         )
         context.persona = persona

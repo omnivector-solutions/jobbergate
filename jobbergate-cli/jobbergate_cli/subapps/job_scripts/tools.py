@@ -13,6 +13,8 @@ from loguru import logger
 from jobbergate_cli.config import settings
 from jobbergate_cli.constants import FileType
 from jobbergate_cli.exceptions import Abort, JobbergateCliError
+from jobbergate_cli.constants import JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import (
     ApplicationResponse,
@@ -212,8 +214,8 @@ def render_job_script(
             log_message="Application does not have a workflow file",
         )
 
-    with tempfile.NamedTemporaryFile() as fp:
-        tmp_file_path = pathlib.Path(fp.name)
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_file_path = pathlib.Path(tmp_dir) / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
         make_request(
             jg_ctx.client,
             app_data.workflow_files[0].path,
