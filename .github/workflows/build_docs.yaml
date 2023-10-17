@@ -4,6 +4,10 @@ on:
   push:
     paths:
       - 'jobbergate-docs/docs/**'
+      - 'jobbergate-api/jobbergate_api/**'
+      - 'jobbergate-cli/jobbergate_cli/**'
+      - 'jobbergate-core/jobbergate_core/**'
+      - 'jobbergate-agent/jobbergate_agent/**'
     branches:
       - 'main'
 
@@ -18,7 +22,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.11
 
       - name: Set up Poetry
         uses: Gr1N/setup-poetry@v8

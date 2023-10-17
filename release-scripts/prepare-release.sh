@@ -27,8 +27,6 @@ version_target=$(poetry version --short)
 echo "Building release $version_target"
 
 echo "Updating CHANGELOG"
-version_line="$version_target -- $(date '+%Y-%m-%d')"
-replacement='Unreleased\n$1\n\n'
-replacement+="$version_line\n"
-replacement+="$(printf %${#version_line}s | tr ' ' '-')"
-perl -0777 -p -i -e "s/Unreleased\s*(-+)/$replacement/gs" CHANGELOG.rst
+version_line="## $version_target -- $(date '+%Y-%m-%d')"
+replacement="## Unreleased\n\n\n$version_line\n"
+perl -0777 -p -i -e "s/## Unreleased\s*/$replacement/gs" CHANGELOG.md

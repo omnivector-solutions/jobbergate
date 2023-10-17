@@ -1,6 +1,4 @@
-==================
- Jobbergate Slurp
-==================
+# Jobbergate Slurp
 
 Jobbergate Slurp is a utility tool that provides support for migrating from legacy
 versions of Jobbergate to the latest version.
@@ -13,11 +11,11 @@ It's not recommended that anyone but SMEs for Jobbergate use Slurp, as it is a v
 specifically tailored app for legacy deployments (that all use very old versions).
 
 
-License
--------
-* `MIT <LICENSE>`_
+## License
+
+* [MIT](LICENSE)
 
 
-Copyright
----------
+## Copyright
+
 * Copyright (c) 2021 OmniVector Solutions <info@omnivector.solutions>

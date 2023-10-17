@@ -58,7 +58,7 @@ Once activated, this action:
  - Checks if the new version number is synchronized between the sub-packages, and fails if they are not.
  - Creates a new dated entry for the new release on each of the sub-packages' changelog
    files from the contents of the "Unreleased" section.
- - Creates a new branch named `release/<version>`.
+ - Creates a new branch named `prepare-release/<version>`.
  - Opens a draft pull request titled `Release <version>`.
 
 In this way, all the changes above can be reviewed before the release is published,

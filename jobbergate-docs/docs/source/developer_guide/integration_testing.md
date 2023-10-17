@@ -82,12 +82,11 @@ At this point, verify that the token that has been retrieved for the user is cor
 Run the following command in the CLI:
 
 ```shell
-jobbergate show-token --plain
+jobbergate show-token --decode
 ```
 
-Copy the text of the token that is printed to the screen, navigate to
-[jwt.io](https://jwt.io), and paste the token into the "Encoded" box. Then, check the
-"Payload" output and verify that it contains:
+This command will pretty print the payload of the token.
+Verify that it contains:
 
  -  "view" and "edit" `permissions` for job-templates, job-scripts, and job-submissions
  -  `email` equalling "local-user@jobberate.local"
