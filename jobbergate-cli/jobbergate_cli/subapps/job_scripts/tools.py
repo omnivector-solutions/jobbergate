@@ -6,7 +6,7 @@ import json
 import pathlib
 import re
 import tempfile
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, cast
 
 from loguru import logger
 
@@ -386,3 +386,14 @@ def download_job_script_files(id: int, jg_ctx: JobbergateContext) -> List[pathli
         destination_path=pathlib.Path.cwd(),
     )
     return downloaded_files
+
+
+def question_helper(question_func: Callable, text: str, default: bool, fast: bool, actual_value: Optional[bool]):
+    """
+    Helper function for asking questions to the user.
+    """
+    if actual_value is not None:
+        return actual_value
+    if fast:
+        return default
+    return question_func(text, default=default)
