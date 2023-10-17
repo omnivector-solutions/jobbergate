@@ -151,7 +151,7 @@ def test_create_job_submission__throws_exception_with_no_explicit_or_default_clu
         )
 
 
-def test_create_job_submission__with_execution_dir(
+def test_create_job_submission__with_explicit_execution_dir(
     respx_mock,
     dummy_job_submission_data,
     dummy_domain,
@@ -198,6 +198,35 @@ def test_create_job_submission__with_execution_dir(
     payload = json.loads(create_job_submission_route.calls.last.request.content)
     assert payload["execution_directory"] == str(pathlib.Path.cwd() / "./some/relative/path")
 
+
+def test_create_job_submission__with_default_execution_dir(
+    mocker,
+    respx_mock,
+    dummy_job_submission_data,
+    dummy_domain,
+    dummy_context,
+    attach_persona,
+    seed_clusters,
+):
+    job_submission_data = dummy_job_submission_data[0]
+    job_submission_name = job_submission_data["name"]
+    job_submission_description = job_submission_data["description"]
+
+    job_script_id = job_submission_data["job_script_id"]
+
+    create_job_submission_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions")
+    create_job_submission_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.CREATED,
+            json=job_submission_data,
+        ),
+    )
+
+    attach_persona("dummy@dummy.com")
+    seed_clusters("dummy-cluster")
+
+    mocker.patch("jobbergate_cli.subapps.job_submissions.tools.Path.cwd", return_value=pathlib.Path("/some/fake/path"))
+
     create_job_submission(
         dummy_context,
         job_script_id,
@@ -207,7 +236,7 @@ def test_create_job_submission__with_execution_dir(
         execution_directory=None,
     )
     payload = json.loads(create_job_submission_route.calls.last.request.content)
-    assert payload["execution_directory"] is None
+    assert payload["execution_directory"] == "/some/fake/path"
 
 
 def test_fetch_job_submission_data__success__using_id(

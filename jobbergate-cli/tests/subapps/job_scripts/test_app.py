@@ -291,7 +291,7 @@ def test_render__non_fast_mode_and_job_submission(
                 """
             )
         ),
-        input="y\n",  # To confirm that the job should be submitted right away
+        input="y\nn\n",  # To confirm that the job should be submitted and not downloaded
     )
     assert result.exit_code == 0, f"render failed: {result.stdout}"
     assert mocked_fetch_application_data.called_once_with(
@@ -450,6 +450,77 @@ def test_render__with_fast_mode_and_no_job_submission(
         JobScriptResponse(**job_script_data),
         title="Created Job Script",
         hidden_fields=HIDDEN_FIELDS,
+    )
+
+
+def test_render__submit_is_none_and_cluster_name_is_defined(
+    respx_mock,
+    make_test_app,
+    dummy_context,
+    dummy_module_source,
+    dummy_application_data,
+    dummy_job_script_data,
+    dummy_domain,
+    cli_runner,
+    tmp_path,
+    attach_persona,
+    mocker,
+):
+    application_response = ApplicationResponse(**dummy_application_data[0])
+
+    job_script_data = dummy_job_script_data[0]
+
+    render_route = respx_mock.post(
+        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.id}"
+    )
+    render_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.CREATED,
+            json=job_script_data,
+        ),
+    )
+
+    sbatch_params = " ".join(f"--sbatch-params={i}" for i in (1, 2, 3))
+
+    param_file_path = tmp_path / "param_file.json"
+    param_file_path.write_text(
+        json.dumps(
+            dict(
+                foo="oof",
+                bar="rab",
+                baz="zab",
+            )
+        )
+    )
+
+    attach_persona("dummy@dummy.com")
+
+    test_app = make_test_app("render", render)
+    mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
+    mocked_abort = mocker.patch("jobbergate_cli.subapps.job_scripts.app.Abort")
+
+    cli_runner.invoke(
+        test_app,
+        shlex.split(
+            unwrap(
+                f"""
+                render --name=dummy-name
+                       --application-id={application_response.id}
+                       --param-file={param_file_path}
+                       --cluster-name=dummy-cluster
+                       {sbatch_params}
+                """
+            )
+        ),
+    )
+    assert mocked_render.called_once_with(
+        dummy_context,
+        JobScriptResponse(**job_script_data),
+        title="Created Job Script",
+        hidden_fields=HIDDEN_FIELDS,
+    )
+    assert mocked_abort.called_once_with(
+        "You must specify --cluster-name and --execution-directory only on submit mode.",
     )
 
 
