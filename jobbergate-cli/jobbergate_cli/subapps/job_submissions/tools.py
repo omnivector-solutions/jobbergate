@@ -24,16 +24,19 @@ def create_job_submission(
     """
     Create a Job Submission from the given Job Script.
 
-    :param: jg_ctx:              The JobbergateContext. Used to retrieve the client for requests
-                                 and the email of the submitting user
-    :param: job_script_id:       The ``id`` of the Job Script to submit to Slurm
-    :param: name:                The name to attach to the Job Submission
-    :param: description:         An optional description that may be added to the Job Submission
-    :param: cluster_name:        An optional cluster_name for the cluster where the job should be executed,
-                                 If left off, it will default to the DEFAULT_CLUSTER_NAME from the settings.
-                                 If no default is set, an exception will be raised.
-    :param: execution_directory: An optional directory where the job should be executed. If provided as a relative path,
-                                 it will be constructed as an absolute path relative to the current working directory.
+    :param: jg_ctx:                    The JobbergateContext. Used to retrieve the client for requests
+                                       and the email of the submitting user
+    :param: job_script_id:             The ``id`` of the Job Script to submit to Slurm
+    :param: name:                      The name to attach to the Job Submission
+    :param: description:               An optional description that may be added to the Job Submission
+    :param: cluster_name:              An optional cluster_name for the cluster where the job should be executed,
+                                       If left off, it will default to the DEFAULT_CLUSTER_NAME from the settings.
+                                       If no default is set, an exception will be raised.
+    :param: execution_directory:       An optional directory where the job should be executed. If provided as a
+                                       relative path, it will be constructed as an absolute path relative to
+                                       the current working directory.
+    :param: execution_parameters_file: An optional file containing the execution parameters for the job.
+
     :returns: The Job Submission data returned by the API after creating the new Job Submission
     """
 
@@ -60,11 +63,14 @@ def create_job_submission(
         cluster_name=cluster_name,
     )
 
-    if execution_directory is not None:
-        if not execution_directory.is_absolute():
-            execution_directory = Path.cwd() / execution_directory
-        execution_directory.resolve()
-        job_submission_data.execution_directory = execution_directory
+    if execution_directory is None:
+        execution_directory = Path.cwd()
+    else:
+        if execution_directory is not None:
+            if not execution_directory.is_absolute():
+                execution_directory = Path.cwd() / execution_directory
+            execution_directory.resolve()
+    job_submission_data.execution_directory = execution_directory
 
     if execution_parameters_file is not None:
         job_submission_data.execution_parameters = validate_parameter_file(execution_parameters_file)
