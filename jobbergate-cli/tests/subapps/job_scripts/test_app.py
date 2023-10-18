@@ -6,6 +6,7 @@ from unittest import mock
 import httpx
 import pytest
 
+from jobbergate_cli.config import settings
 from jobbergate_cli.schemas import (
     ApplicationResponse,
     JobScriptFiles,
@@ -291,7 +292,8 @@ def test_render__non_fast_mode_and_job_submission(
                 """
             )
         ),
-        input="y\nn\n",  # To confirm that the job should be submitted and not downloaded
+        # To confirm that the job should be submitted to the default cluster, in the current dir and not downloaded
+        input=f"y\n{settings.DEFAULT_CLUSTER_NAME}\n.\nn\n",
     )
     assert result.exit_code == 0, f"render failed: {result.stdout}"
     assert mocked_fetch_application_data.called_once_with(

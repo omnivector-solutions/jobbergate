@@ -66,10 +66,8 @@ def create_job_submission(
     if execution_directory is None:
         execution_directory = Path.cwd()
     else:
-        if execution_directory is not None:
-            if not execution_directory.is_absolute():
-                execution_directory = Path.cwd() / execution_directory
-            execution_directory.resolve()
+        if not execution_directory.is_absolute():
+            execution_directory = (Path.cwd() / execution_directory).resolve()
     job_submission_data.execution_directory = execution_directory
 
     if execution_parameters_file is not None:

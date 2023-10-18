@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, cast
 
 import typer
 
+from jobbergate_cli.config import settings
 from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
@@ -281,8 +282,35 @@ def render(
     will invoke the function and return the user's answer.
     """
 
-    submit = question_helper(typer.confirm, "Would you like to submit this job immediately?", True, fast, submit)
-    download = question_helper(typer.confirm, "Would you like to download the job script files?", True, fast, download)
+    submit = question_helper(
+        question_func=typer.confirm,
+        text="Would you like to submit this job immediately?",
+        default=True,
+        fast=fast,
+        actual_value=submit,
+    )
+    cluster_name = question_helper(
+        question_func=typer.prompt,
+        text="What cluster should this job be submitted to?",
+        default=settings.DEFAULT_CLUSTER_NAME,
+        fast=fast,
+        actual_value=cluster_name,
+    )
+    execution_directory = question_helper(
+        question_func=typer.prompt,
+        text="Where should this job be executed?",
+        default=pathlib.Path.cwd(),
+        fast=fast,
+        actual_value=execution_directory,
+    )
+
+    download = question_helper(
+        question_func=typer.confirm,
+        text="Would you like to download the job script files?",
+        default=True,
+        fast=fast,
+        actual_value=download,
+    )
 
     if not submit:
         return

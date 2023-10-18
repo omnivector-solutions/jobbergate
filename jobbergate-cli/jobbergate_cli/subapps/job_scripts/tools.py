@@ -388,9 +388,21 @@ def download_job_script_files(id: int, jg_ctx: JobbergateContext) -> List[pathli
     return downloaded_files
 
 
-def question_helper(question_func: Callable, text: str, default: bool, fast: bool, actual_value: Optional[bool]):
+def question_helper(question_func: Callable, text: str, default: Any, fast: bool, actual_value: Optional[Any]):
     """
     Helper function for asking questions to the user.
+
+    :param Callable question_func: The function to use to ask the question
+    :param str text:               The text of the question to ask
+    :param Any default:            The default value to use if the user does not provide one
+    :param bool fast:              Whether to use default answers (when available) instead of asking the user
+    :param Any actual_value:       The actual value provided by the user, if any
+
+    :returns: `actual_value` or `default` or the value provided by the user
+
+    The `actual_value` has the most priority and will be returned if it is not None.
+    After evaluating the `actual_value`, the fast mode will determine if the default value will be used.
+    Otherwise, the question will be prompted to the user.
     """
     if actual_value is not None:
         return actual_value
