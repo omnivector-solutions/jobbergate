@@ -4,7 +4,7 @@ version = "4.1.0a2"
 description = "Jobbergate CLI Client"
 authors = ["Omnivector Solutions <info@omnivector.solutions>"]
 license = "MIT"
-readme = "README.rst"
+readme = "README.md"
 repository = "https://github.com/omnivector-solutions/jobbergate"
 packages = [{ include = "jobbergate_cli" }]
 classifiers = [
