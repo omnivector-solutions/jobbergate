@@ -52,71 +52,6 @@ poetry run dev-tools db --help
 ```
 
 
-### The `start` subcommand
-
-This command is used to start up a database in docker that is configured using the
-values found in the execution environment for Jobbergate.
-
-To start a development database, invoke this command:
-
-```shell
-poetry run dev-tools db start
-```
-
-Note that the values for the database name, host, port, and password will all be
-gathered from the environment that the API is configured to use. The script should
-produce some logging output that will indicate the status of the db:
-
-```
-2022-09-07 15:44:56.634 | DEBUG    | dev_tools.db:start:57 - Starting dev-jobbergate-postgres with:
-{
-  "image": "postgres:14.1",
-  "env": {
-    "POSTGRES_PASSWORD": "compose-db-pswd",
-    "POSTGRES_DB": "compose-db-name",
-    "POSTGRES_USER": "compose-db-user"
-  },
-  "ports": {
-    "5432/tcp": 5432
-  }
-}
-2022-09-07 15:44:56.634 | DEBUG    | docker_gadgets.gadgets:start_service:19 - Starting service 'dev-jobbergate-postgres'
-2022-09-07 15:44:56.642 | DEBUG    | docker_gadgets.gadgets:start_service:26 - Retrieving external image for dev-jobbergate-postgres using postgres:14.1
-2022-09-07 15:44:56.649 | DEBUG    | docker_gadgets.helpers:get_image_external:43 - Pulling postgres:14.1 image (tag='14.1')
-2022-09-07 15:45:03.190 | DEBUG    | docker_gadgets.helpers:cleanup_container:13 - Checking for existing container: dev-jobbergate-postgres
-2022-09-07 15:45:03.195 | DEBUG    | docker_gadgets.helpers:cleanup_container:24 - No existing container found: dev-jobbergate-postgres
-2022-09-07 15:45:03.196 | DEBUG    | docker_gadgets.gadgets:start_service:31 - Checking if needed ports {'5432/tcp': 5432} are available
-2022-09-07 15:45:03.217 | DEBUG    | docker_gadgets.gadgets:start_service:34 - Starting container: dev-jobbergate-postgres
-2022-09-07 15:45:03.647 | DEBUG    | docker_gadgets.gadgets:start_service:48 - Started container: dev-jobbergate-postgres (<Container: e686e97595>)
-```
-
-In this example, the container name is `dev-jobbergate-postgres` and it is running in
-the docker container referenced by `e686e97595` with the port 5432 mapped from
-the host machine to the container.
-
-!!!Note
-
-    This command is also very convenient for starting up a database for unit testing. To
-    do so, you need the `--test` flag to the command. When you run the unit tests suite,
-    it will use the database started by this command.
-
-
-### The `start-all` subcommand
-
-This command is just a convenient way of spinning up both a development database and a
-test database in one command. It is equivalent to running the following two commands in
-succession:
-
-```shell
-poetry run dev-tools db start
-```
-
-
-```shell
-poetry run dev-tools db start --test
-```
-
-
 ### The `login` subcommand
 
 This command allows you to log in to the database that your Jobbergate API is configured
@@ -277,7 +212,8 @@ The JSON output will look something like:
 ## The `dev-server` subcommand
 
 This command starts up a local development server for the Jobbergate API. It will
-be created using the configuration set up in the environment settings.
+be created using the configuration set up in the environment settings. This command is especially useful if
+you want to run the API locally but connect to remote services such as a database and s3 hosted on AWS.
 
 To start the server, run:
 
