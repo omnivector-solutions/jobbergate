@@ -21,7 +21,7 @@ provides authorization according to your user's rights.
 
 The authentication for Jobbergate API is managed by an affiliated OIDC service. While it's possible to directly
 interface with this service from your application to get an authentication token, the simplest method is via the
-Jobbergate CLI. Refer to the "Logging In" segment on the [CLI usage](./jobbergate_cli.md#usage) page.
+Jobbergate CLI. Refer to the "Logging In" segment on the [CLI usage](./cli.md#usage) page.
 
 
 ## Querying the API

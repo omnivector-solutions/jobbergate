@@ -14,7 +14,7 @@ pushed to the `main` branch or whenever a pull request is submitted.
 
 The suite of quality assurance tools encompasses unit tests, code coverage, linters,
 code formatters, and static type checkers. Comprehensive documentation about each tool
-is available in the [Quality Assurance Tools](./qa.md) section.
+is available in the [Quality Assurance Tools](./qa_tools.md) section.
 
 
 ## Automated Publication to PyPI
