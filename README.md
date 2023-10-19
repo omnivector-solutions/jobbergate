@@ -1,4 +1,4 @@
-![Build Status](https://img.shields.io/github/workflow/status/omnivector-solutions/jobbergate/Test/main?label=main-build&logo=github&style=plastic)
+![Build Status](https://img.shields.io/github/actions/workflow/status/omnivector-solutions/jobbergate/test_on_push.yaml?branch=main&label=main-build&logo=github&style=plastic)
 ![GitHub Issues](https://img.shields.io/github/issues/omnivector-solutions/jobbergate?label=issues&logo=github&style=plastic)
 ![Pull Requests](https://img.shields.io/github/issues-pr/omnivector-solutions/jobbergate?label=pull-requests&logo=github&style=plastic)
 ![GitHub Contributors](https://img.shields.io/github/contributors/omnivector-solutions/jobbergate?logo=github&style=plastic)
