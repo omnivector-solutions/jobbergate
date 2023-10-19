@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, cast
 
 import typer
 
+from jobbergate_cli.config import settings
 from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
@@ -16,6 +17,7 @@ from jobbergate_cli.schemas import JobbergateContext, JobScriptCreateRequest, Jo
 from jobbergate_cli.subapps.job_scripts.tools import (
     download_job_script_files,
     fetch_job_script_data,
+    question_helper,
     render_job_script,
     save_job_script_files,
     upload_job_script_files,
@@ -210,6 +212,25 @@ def render(
             """
         ),
     ),
+    cluster_name: Optional[str] = typer.Option(
+        None,
+        help="The name of the cluster where the job should be submitted (i.g. 'nash-staging')",
+    ),
+    execution_directory: Optional[pathlib.Path] = typer.Option(
+        None,
+        help=dedent(
+            """
+            The path on the cluster where the job script should be executed.
+            If provided as a relative path, it will be converted as an absolute path from your current
+            working directory. If you use "~" to denote your home directory, the path will be expanded to an
+            absolute path for your home directory on *this* machine.
+            """
+        ).strip(),
+    ),
+    download: Optional[bool] = typer.Option(
+        None,
+        help="Download the job script files to the current working directory",
+    ),
     fast: bool = typer.Option(
         False,
         "--fast",
@@ -244,21 +265,70 @@ def render(
         title="Created Job Script",
     )
 
-    # `submit` will be `None` --submit/--no-submit flag was not set
-    if submit is None:
-        # If not running in "fast" mode, ask the user what to do.
-        if not fast:
-            submit = typer.confirm("Would you like to submit this job immediately?")
+    # `submit` will be `None` when --submit/--no-submit flag was not set
+    if submit is None and (cluster_name or execution_directory):
+        # If the user specified --cluster-name or --execution-directory, they must also specify --submit
+        raise Abort(
+            "You must specify --cluster-name and --execution-directory only on submit mode.",
+            subject="Incorrect parameters",
+            support=True,
+        )
 
-        # Otherwise, assume that the job script should be submitted immediately
-        else:
-            submit = True
+    """
+    Invoke `question_helper` to handle the logic for parameters that are not specified by the user.
+
+    If the user specified --fast, the `question_helper` will not invoke the function and will
+    instead return the default answer. If the user did not specify --fast, the `question_helper`
+    will invoke the function and return the user's answer.
+    """
+
+    submit = question_helper(
+        question_func=typer.confirm,
+        text="Would you like to submit this job immediately?",
+        default=True,
+        fast=fast,
+        actual_value=submit,
+    )
+
+    download = question_helper(
+        question_func=typer.confirm,
+        text="Would you like to download the job script files?",
+        default=True,
+        fast=fast,
+        actual_value=download,
+    )
+
+    if download:
+        download_job_script_files(job_script_result.id, jg_ctx)
 
     if not submit:
         return
 
+    cluster_name = question_helper(
+        question_func=typer.prompt,
+        text="What cluster should this job be submitted to?",
+        default=settings.DEFAULT_CLUSTER_NAME,
+        fast=fast,
+        actual_value=cluster_name,
+    )
+    execution_directory = question_helper(
+        question_func=typer.prompt,
+        text="Where should this job be executed?",
+        default=pathlib.Path.cwd(),
+        fast=fast,
+        actual_value=execution_directory,
+    )
+
     try:
-        job_submission_result = create_job_submission(jg_ctx, job_script_result.id, job_script_result.name)
+        job_submission_result = create_job_submission(
+            jg_ctx,
+            job_script_result.id,
+            job_script_result.name,
+            job_script_result.description,
+            cluster_name,
+            execution_directory,
+            param_file,
+        )
     except Exception as err:
         raise Abort(
             "Failed to immediately submit the job after job script creation.",

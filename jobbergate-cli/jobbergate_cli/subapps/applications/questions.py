@@ -201,7 +201,7 @@ class Checkbox(QuestionBase):
             variablename,
             message + " (press CTRL+A to SELECT ALL or CTRL+R to DESELECT ALL)",
             inquirer_type=inquirer.Checkbox,
-            **kwargs
+            **kwargs,
         )
         self.inquirer_kwargs.update(choices=choices)
 

@@ -1,6 +1,7 @@
 import importlib
 import json
 import pathlib
+from unittest import mock
 
 import httpx
 import pytest
@@ -13,6 +14,7 @@ from jobbergate_cli.subapps.job_scripts.tools import (
     fetch_job_script_data,
     flatten_param_dict,
     get_template_output_name_mapping,
+    question_helper,
     remove_prefix_suffix,
     render_job_script,
     save_job_script_files,
@@ -199,6 +201,67 @@ def test_render_job_script__without_a_name(
     )
 
     assert actual_job_script_data == JobScriptResponse.parse_obj(desired_job_script_data)
+
+
+def test_question_helper__return_actual_value_when_actual_value_is_not_none():
+    question_func = mock.Mock()
+
+    assert (
+        question_helper(
+            question_func=question_func,
+            text="Give me foo",
+            default="foo",
+            fast=True,
+            actual_value="bar",
+        )
+        == "bar"
+    )
+
+    assert question_func.not_called()
+
+    assert (
+        question_helper(
+            question_func=question_func,
+            text="Give me foo",
+            default="foo",
+            fast=False,
+            actual_value="bar",
+        )
+        == "bar"
+    )
+
+    assert question_func.not_called()
+
+
+def test_question_helper__return_default_when_actual_value_is_none_on_fast_mode():
+    question_func = mock.Mock()
+
+    assert (
+        question_helper(
+            question_func=question_func,
+            text="Give me foo",
+            default="foo",
+            fast=True,
+            actual_value=None,
+        )
+        == "foo"
+    )
+
+    assert question_func.not_called()
+
+
+def test_question_helper__ask_question_when_actual_value_is_none_on_non_fast_mode():
+    question_func = mock.Mock()
+
+    question_helper(
+        question_func=question_func,
+        text="Give me foo",
+        default="foo",
+        fast=False,
+        actual_value=None,
+    )
+
+    assert question_func.called_once_with("Give me foo", default="foo")
 
 
 class TestSaveJobScriptFiles:
