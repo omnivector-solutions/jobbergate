@@ -6,16 +6,17 @@ This file keeps track of all notable changes to jobbergate-cli
 
 Unreleased
 ----------
+- Added --cluster-name, --execution-directory and --download parameters to create-job-script command on submit mode
 
 4.1.0a2 -- 2023-10-10
 ---------------------
 - Added a `create` for Job Scripts to to create without Template. (former `create` renamed to `render`)
 - Fixed help information for id on `get-job-script`, `download-job-script`, and `get-job-submission` commands
 - Added short arguments for backward compatiblity
-- Ignore username and password arguments if provided, aiming to keep backward compatibility
-- Add support to select applications by identifier in update and delete commands
-- Add show-files command to compat mode
-- Add support to select all and deselect all options in checkboxes using Ctrl+A and Ctrl+R as shortcuts
+- Ignored username and password arguments if provided, aiming to keep backward compatibility
+- Added support to select applications by identifier in update and delete commands
+- Added show-files command to compat mode
+- Added support to select all and deselect all options in checkboxes using Ctrl+A and Ctrl+R as shortcuts
 
 4.1.0a1 -- 2023-10-02
 ---------------------
