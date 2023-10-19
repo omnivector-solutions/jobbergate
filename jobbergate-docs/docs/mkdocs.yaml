@@ -75,7 +75,6 @@ nav:
     - Quality Assurance Tools: developer_guide/qa_tools.md
     - Integration Testing: developer_guide/integration_testing.md
     - Continuous Integration: developer_guide/ci.md
-    - S3 File Storage: developer_guide/s3_file_storage.md
     - Keycloak Setup: developer_guide/keycloak_setup.md
     - Template Workflows: developer_guide/template_workflows.md
   - Reference:
