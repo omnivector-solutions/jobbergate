@@ -1,0 +1,38 @@
+name: Build Documentation
+
+on:
+  push:
+    paths:
+      - 'jobbergate-docs/docs/**'
+      - 'jobbergate-api/jobbergate_api/**'
+      - 'jobbergate-cli/jobbergate_cli/**'
+      - 'jobbergate-core/jobbergate_core/**'
+      - 'jobbergate-agent/jobbergate_agent/**'
+    branches:
+      - 'main'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Set up Poetry
+        uses: Gr1N/setup-poetry@v8
+
+      - name: Build Documentation
+        run: |
+          make docs
+
+      - name: Deploy documentation
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/site

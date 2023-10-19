@@ -4,7 +4,7 @@ version = "4.1.0a2"
 description = "Jobbergate Core"
 authors = ["Omnivector Solutions <info@omnivector.solutions>"]
 license = "MIT"
-readme = "README.rst"
+readme = "README.md"
 repository = "https://github.com/omnivector-solutions/jobbergate"
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -23,7 +23,7 @@ python = "^3.8"
 httpx = "^0.24.1"
 loguru = "^0.6.0"
 pendulum = "^2.1.2"
-py-buzz = "^3.1.0"
+py-buzz = "^4.0.0"
 pydantic = "^1.8.2"
 python-jose = "^3.3.0"
 

@@ -1,0 +1,85 @@
+# Configuration for mkdocs
+
+site_name: Jobbergate Documentation
+repo_url: https://github.com/omnivector-solutions/jobbergate
+docs_dir: source
+theme:
+  name: material
+  logo: https://omnivector-public-assets.s3.us-west-2.amazonaws.com/branding/omnivector-logo.png
+  font:
+    code: Fira Code
+  features:
+    - navigation.expand
+    - navigation.tracking
+    - content.code.copy
+  pallete:
+    # Dark/Light mode toggle is not working and can't figure out why
+    - scheme: default
+      toggle:
+        icon: material/brightness-4
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-7
+        name: Switch to light mode
+watch:
+  - ../../jobbergate-api/
+  - ../../jobbergate-cli/
+plugins:
+  search:
+    lang: en
+  mkdocstrings:
+    default_handler: python
+    handlers:
+      python:
+        paths: [..]
+        options:
+          heading_level: 3
+          show_root_heading: true
+          separate_signature: true
+          show_signature_annotations: true
+          show_source: false
+          docstring_style: google
+          show_submodules: true
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite:
+  - pymdownx.snippets:
+  - pymdownx.superfences:
+  - pymdownx.details:
+  - admonition:
+  - attr_list:
+extra_css:
+  - stylesheets/extra.css
+nav:
+  - Home: index.md
+  - Elements:
+    - Resources:
+      - Overview: elements/resources/index.md
+      - Job Scripts: elements/resources/job_scripts.md
+      - Job Script Templates: elements/resources/job_script_templates.md
+      - Job Submissions: elements/resources/job_submissions.md
+    - Apps:
+      - Overview: elements/apps/index.md
+      - Jobbergate Agent: elements/apps/agent.md
+      - Jobbergate API: elements/apps/api.md
+      - Jobbergate CLI: elements/apps/cli.md
+      - Jobbergate Core: elements/apps/core.md
+  - Tutorial: tutorial.md
+  - Authors: authors.md
+  - Developer Guide:
+    - Developer Tools: developer_guide/dev_tools.md
+    - Quality Assurance Tools: developer_guide/qa_tools.md
+    - Integration Testing: developer_guide/integration_testing.md
+    - Continuous Integration: developer_guide/ci.md
+    - S3 File Storage: developer_guide/s3_file_storage.md
+    - Keycloak Setup: developer_guide/keycloak_setup.md
+    - Template Workflows: developer_guide/template_workflows.md
+  - Reference:
+    - Jobbergate Agent: reference/agent.md
+    - Jobbergate API: reference/api.md
+    - Jobbergate CLI: reference/cli.md
+    - Jobbergate Core: reference/core.md

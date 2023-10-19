@@ -14,7 +14,7 @@ on:
     inputs:
       bump_rule:
         type: choice
-        description: Bump version rule for Poetry
+        description: Release Type
         options:
           - patch
           - minor
