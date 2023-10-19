@@ -1,0 +1,1224 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../dev_tools/">
+      
+      
+        <link rel="next" href="../integration_testing/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.6">
+    
+    
+      
+        <title>Quality Assurance Tools - Jobbergate Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.35e1ed30.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CFira+Code:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Fira Code"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#quality-assurance-tools" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Jobbergate Documentation" class="md-header__button md-logo" aria-label="Jobbergate Documentation" data-md-component="logo">
+      
+  <img src="https://omnivector-public-assets.s3.us-west-2.amazonaws.com/branding/omnivector-logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Jobbergate Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Quality Assurance Tools
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/omnivector-solutions/jobbergate" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Jobbergate Documentation" class="md-nav__button md-logo" aria-label="Jobbergate Documentation" data-md-component="logo">
+      
+  <img src="https://omnivector-public-assets.s3.us-west-2.amazonaws.com/branding/omnivector-logo.png" alt="logo">
+
+    </a>
+    Jobbergate Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/omnivector-solutions/jobbergate" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Elements
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Elements
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_1" id="__nav_2_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Resources
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1">
+            <span class="md-nav__icon md-icon"></span>
+            Resources
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/resources/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/resources/job_scripts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Job Scripts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/resources/job_script_templates/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Job Script Templates
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/resources/job_submissions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Job Submissions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Apps
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            Apps
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/agent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Agent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate CLI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/core/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Core
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorial/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tutorial
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../authors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Authors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Developer Guide
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Developer Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev_tools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Developer Tools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Quality Assurance Tools
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Quality Assurance Tools
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#running-unit-tests" class="md-nav__link">
+    Running Unit Tests
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-linters" class="md-nav__link">
+    Running Linters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-formatters" class="md-nav__link">
+    Running Formatters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-static-code-checkers" class="md-nav__link">
+    Running Static Code Checkers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-all-quality-checks" class="md-nav__link">
+    Running All Quality Checks
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integration_testing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Integration Testing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Integration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../keycloak_setup/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Keycloak Setup
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../template_workflows/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Template Workflows
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/agent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Agent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate CLI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/core/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Core
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#running-unit-tests" class="md-nav__link">
+    Running Unit Tests
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-linters" class="md-nav__link">
+    Running Linters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-formatters" class="md-nav__link">
+    Running Formatters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-static-code-checkers" class="md-nav__link">
+    Running Static Code Checkers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-all-quality-checks" class="md-nav__link">
+    Running All Quality Checks
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="quality-assurance-tools">Quality Assurance Tools</h1>
+<p>Jobbergate utilizes quality control tools across its three primary components (API, CLI, and Agent). The tools are
+invoked in the same way in each of the sub-projects, and may be invoked <em>en masse</em> from the root Jobbergate directory.</p>
+<h2 id="running-unit-tests">Running Unit Tests</h2>
+<p>The main sub-projects each make use of <a href="https://docs.pytest.org/en/7.1.x/">pytest</a> to apply unit testing. The unit tests
+for each are contained in a subdirectory named <code>tests/</code>.</p>
+<p>To invoke all of the unit tests for a sub-project, simply issue the following command:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>make<span class="w"> </span><span class="nb">test</span>
+</span></code></pre></div>
+<p>Once you enter the command above, the unit tests suite will start running. For the API, this process takes a few
+minutes. The others only take a few seconds. The status of the tests will be logged to the console as well as a coverage
+report for the unit tests:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>================================================================== test session starts ===================================================================
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>platform linux -- Python 3.8.12, pytest-6.2.5, py-1.11.0, pluggy-1.0.0
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>Using --random-order-bucket=module
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>Using --random-order-seed=650699
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>rootdir: /home/dusktreader/git-repos/omnivector/jobbergate/jobbergate-api, configfile: pyproject.toml, testpaths: jobbergate_api/tests
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>plugins: asyncio-0.12.0, random-order-1.0.4, respx-0.17.1, env-0.6.2, armasec-0.11.0, freezegun-0.4.2, cov-2.12.1, anyio-3.5.0
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>collecting ... 2022-09-07 16:31:37.548 | INFO     | jobbergate_api.main:&lt;module&gt;:39 - Skipping Sentry
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>collected 158 items
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>tests/apps/job_scripts/test_routers.py ........................                                                                     [ 15%]
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>tests/apps/applications/test_schemas.py ....                                                                                        [ 17%]
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>tests/test_file_validation.py ...........                                                                                           [ 24%]
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>tests/test_email_notification.py .......                                                                                            [ 29%]
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>tests/apps/applications/test_application_files.py .........                                                                         [ 34%]
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>tests/apps/job_submissions/test_routers.py .................................                                                        [ 55%]
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>tests/apps/job_scripts/test_job_script_files.py .........                                                                           [ 61%]
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>tests/apps/test_main.py .                                                                                                           [ 62%]
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>tests/test_meta_mapper.py ...                                                                                                       [ 63%]
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>tests/test_s3_manager.py ...                                                                                                        [ 65%]
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>tests/test_config.py ................                                                                                               [ 75%]
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>tests/test_pagination.py ........                                                                                                   [ 81%]
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>tests/test_storage.py ..                                                                                                            [ 82%]
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>tests/test_security.py ...                                                                                                          [ 84%]
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>tests/apps/applications/test_routers.py .........................                                                                   [100%]
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>==================================================================== warnings summary ====================================================================
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>tests/conftest.py:53
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>  /home/dusktreader/git-repos/omnivector/jobbergate/jobbergate-api/tests/conftest.py:53: PytestUnknownMarkWarning: Unknown pytest.mark.enforce_empty_database - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/mark.html
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>    @pytest.mark.enforce_empty_database()
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>
+</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a>tests/apps/job_scripts/test_routers.py: 37 warnings
+</span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>tests/apps/job_submissions/test_routers.py: 40 warnings
+</span><span id="__span-1-34"><a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>tests/test_pagination.py: 10 warnings
+</span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a>tests/apps/applications/test_routers.py: 42 warnings
+</span><span id="__span-1-36"><a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>  /home/dusktreader/.cache/pypoetry/virtualenvs/jobbergate-api-zc2JKxO9-py3.8/lib/python3.8/site-packages/databases/backends/postgres.py:114: DeprecationWarning: The `Row.keys()` method is deprecated to mimic SQLAlchemy behaviour, use `Row._mapping.keys()` instead.
+</span><span id="__span-1-37"><a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a>    warnings.warn(
+</span><span id="__span-1-38"><a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a>
+</span><span id="__span-1-39"><a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a>-- Docs: https://docs.pytest.org/en/stable/warnings.html
+</span><span id="__span-1-40"><a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a>
+</span><span id="__span-1-41"><a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a>---------- coverage: platform linux, python 3.8.12-final-0 -----------
+</span><span id="__span-1-42"><a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a>Name                                                               Stmts   Miss  Cover   Missing
+</span><span id="__span-1-43"><a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a>------------------------------------------------------------------------------------------------
+</span><span id="__span-1-44"><a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a>jobbergate_api/__init__.py                                             0      0   100%
+</span><span id="__span-1-45"><a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a>jobbergate_api/apps/__init__.py                                        0      0   100%
+</span><span id="__span-1-46"><a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a>jobbergate_api/apps/applications/__init__.py                           0      0   100%
+</span><span id="__span-1-47"><a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a>jobbergate_api/apps/applications/application_files.py                 77      0   100%
+</span><span id="__span-1-48"><a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a>jobbergate_api/apps/applications/models.py                             7      0   100%
+</span><span id="__span-1-49"><a id="__codelineno-1-49" name="__codelineno-1-49" href="#__codelineno-1-49"></a>jobbergate_api/apps/applications/routers.py                          136     14    90%   64-66, 129-131, 136-137, 210-212, 331-332, 341
+</span><span id="__span-1-50"><a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a>jobbergate_api/apps/applications/schemas.py                           66      0   100%
+</span><span id="__span-1-51"><a id="__codelineno-1-51" name="__codelineno-1-51" href="#__codelineno-1-51"></a>jobbergate_api/apps/job_scripts/__init__.py                            0      0   100%
+</span><span id="__span-1-52"><a id="__codelineno-1-52" name="__codelineno-1-52" href="#__codelineno-1-52"></a>jobbergate_api/apps/job_scripts/job_script_files.py                  121      4    97%   67, 80-81, 270
+</span><span id="__span-1-53"><a id="__codelineno-1-53" name="__codelineno-1-53" href="#__codelineno-1-53"></a>jobbergate_api/apps/job_scripts/models.py                              7      0   100%
+</span><span id="__span-1-54"><a id="__codelineno-1-54" name="__codelineno-1-54" href="#__codelineno-1-54"></a>jobbergate_api/apps/job_scripts/routers.py                           132     11    92%   98-100, 108-109, 235-237, 267-269, 301
+</span><span id="__span-1-55"><a id="__codelineno-1-55" name="__codelineno-1-55" href="#__codelineno-1-55"></a>jobbergate_api/apps/job_scripts/schemas.py                            38      0   100%
+</span><span id="__span-1-56"><a id="__codelineno-1-56" name="__codelineno-1-56" href="#__codelineno-1-56"></a>jobbergate_api/apps/job_submissions/__init__.py                        0      0   100%
+</span><span id="__span-1-57"><a id="__codelineno-1-57" name="__codelineno-1-57" href="#__codelineno-1-57"></a>jobbergate_api/apps/job_submissions/constants.py                      11      0   100%
+</span><span id="__span-1-58"><a id="__codelineno-1-58" name="__codelineno-1-58" href="#__codelineno-1-58"></a>jobbergate_api/apps/job_submissions/models.py                          8      0   100%
+</span><span id="__span-1-59"><a id="__codelineno-1-59" name="__codelineno-1-59" href="#__codelineno-1-59"></a>jobbergate_api/apps/job_submissions/routers.py                       186     12    94%   101-103, 260-262, 382, 395-400, 406, 449
+</span><span id="__span-1-60"><a id="__codelineno-1-60" name="__codelineno-1-60" href="#__codelineno-1-60"></a>jobbergate_api/apps/job_submissions/schemas.py                        51      0   100%
+</span><span id="__span-1-61"><a id="__codelineno-1-61" name="__codelineno-1-61" href="#__codelineno-1-61"></a>jobbergate_api/apps/permissions.py                                     8      0   100%
+</span><span id="__span-1-62"><a id="__codelineno-1-62" name="__codelineno-1-62" href="#__codelineno-1-62"></a>jobbergate_api/config.py                                              58      1    98%   102
+</span><span id="__span-1-63"><a id="__codelineno-1-63" name="__codelineno-1-63" href="#__codelineno-1-63"></a>jobbergate_api/email_notification.py                                  28      0   100%
+</span><span id="__span-1-64"><a id="__codelineno-1-64" name="__codelineno-1-64" href="#__codelineno-1-64"></a>jobbergate_api/file_validation.py                                    102      6    94%   36-56, 111, 175
+</span><span id="__span-1-65"><a id="__codelineno-1-65" name="__codelineno-1-65" href="#__codelineno-1-65"></a>jobbergate_api/main.py                                                47      4    91%   31-37, 94
+</span><span id="__span-1-66"><a id="__codelineno-1-66" name="__codelineno-1-66" href="#__codelineno-1-66"></a>jobbergate_api/meta_mapper.py                                         24      1    96%   104
+</span><span id="__span-1-67"><a id="__codelineno-1-67" name="__codelineno-1-67" href="#__codelineno-1-67"></a>jobbergate_api/metadata.py                                             2      0   100%
+</span><span id="__span-1-68"><a id="__codelineno-1-68" name="__codelineno-1-68" href="#__codelineno-1-68"></a>jobbergate_api/pagination.py                                          31      0   100%
+</span><span id="__span-1-69"><a id="__codelineno-1-69" name="__codelineno-1-69" href="#__codelineno-1-69"></a>jobbergate_api/s3_manager.py                                          14      0   100%
+</span><span id="__span-1-70"><a id="__codelineno-1-70" name="__codelineno-1-70" href="#__codelineno-1-70"></a>jobbergate_api/security.py                                            22      0   100%
+</span><span id="__span-1-71"><a id="__codelineno-1-71" name="__codelineno-1-71" href="#__codelineno-1-71"></a>jobbergate_api/storage.py                                             52      1    98%   128
+</span><span id="__span-1-72"><a id="__codelineno-1-72" name="__codelineno-1-72" href="#__codelineno-1-72"></a>tests/__init__.py                                       0      0   100%
+</span><span id="__span-1-73"><a id="__codelineno-1-73" name="__codelineno-1-73" href="#__codelineno-1-73"></a>tests/apps/__init__.py                                  0      0   100%
+</span><span id="__span-1-74"><a id="__codelineno-1-74" name="__codelineno-1-74" href="#__codelineno-1-74"></a>tests/apps/applications/__init__.py                     0      0   100%
+</span><span id="__span-1-75"><a id="__codelineno-1-75" name="__codelineno-1-75" href="#__codelineno-1-75"></a>tests/apps/applications/test_application_files.py     104      0   100%
+</span><span id="__span-1-76"><a id="__codelineno-1-76" name="__codelineno-1-76" href="#__codelineno-1-76"></a>tests/apps/applications/test_routers.py               368      0   100%
+</span><span id="__span-1-77"><a id="__codelineno-1-77" name="__codelineno-1-77" href="#__codelineno-1-77"></a>tests/apps/applications/test_schemas.py                14      0   100%
+</span><span id="__span-1-78"><a id="__codelineno-1-78" name="__codelineno-1-78" href="#__codelineno-1-78"></a>tests/apps/conftest.py                                 41      0   100%
+</span><span id="__span-1-79"><a id="__codelineno-1-79" name="__codelineno-1-79" href="#__codelineno-1-79"></a>tests/apps/job_scripts/__init__.py                      0      0   100%
+</span><span id="__span-1-80"><a id="__codelineno-1-80" name="__codelineno-1-80" href="#__codelineno-1-80"></a>tests/apps/job_scripts/conftest.py                     10      2    80%   32, 49
+</span><span id="__span-1-81"><a id="__codelineno-1-81" name="__codelineno-1-81" href="#__codelineno-1-81"></a>tests/apps/job_scripts/test_job_script_files.py       102      0   100%
+</span><span id="__span-1-82"><a id="__codelineno-1-82" name="__codelineno-1-82" href="#__codelineno-1-82"></a>tests/apps/job_scripts/test_routers.py                373      3    99%   48-64, 72
+</span><span id="__span-1-83"><a id="__codelineno-1-83" name="__codelineno-1-83" href="#__codelineno-1-83"></a>tests/apps/job_submissions/__init__.py                  0      0   100%
+</span><span id="__span-1-84"><a id="__codelineno-1-84" name="__codelineno-1-84" href="#__codelineno-1-84"></a>tests/apps/job_submissions/test_routers.py            483      0   100%
+</span><span id="__span-1-85"><a id="__codelineno-1-85" name="__codelineno-1-85" href="#__codelineno-1-85"></a>tests/apps/test_main.py                                 7      0   100%
+</span><span id="__span-1-86"><a id="__codelineno-1-86" name="__codelineno-1-86" href="#__codelineno-1-86"></a>tests/conftest.py                                     114      1    99%   127
+</span><span id="__span-1-87"><a id="__codelineno-1-87" name="__codelineno-1-87" href="#__codelineno-1-87"></a>tests/test_config.py                                   33      0   100%
+</span><span id="__span-1-88"><a id="__codelineno-1-88" name="__codelineno-1-88" href="#__codelineno-1-88"></a>tests/test_email_notification.py                       44      0   100%
+</span><span id="__span-1-89"><a id="__codelineno-1-89" name="__codelineno-1-89" href="#__codelineno-1-89"></a>tests/test_file_validation.py                          17      0   100%
+</span><span id="__span-1-90"><a id="__codelineno-1-90" name="__codelineno-1-90" href="#__codelineno-1-90"></a>tests/test_meta_mapper.py                              27      0   100%
+</span><span id="__span-1-91"><a id="__codelineno-1-91" name="__codelineno-1-91" href="#__codelineno-1-91"></a>tests/test_pagination.py                               55      0   100%
+</span><span id="__span-1-92"><a id="__codelineno-1-92" name="__codelineno-1-92" href="#__codelineno-1-92"></a>tests/test_s3_manager.py                               17      0   100%
+</span><span id="__span-1-93"><a id="__codelineno-1-93" name="__codelineno-1-93" href="#__codelineno-1-93"></a>tests/test_security.py                                 39      0   100%
+</span><span id="__span-1-94"><a id="__codelineno-1-94" name="__codelineno-1-94" href="#__codelineno-1-94"></a>tests/test_storage.py                                   7      0   100%
+</span><span id="__span-1-95"><a id="__codelineno-1-95" name="__codelineno-1-95" href="#__codelineno-1-95"></a>------------------------------------------------------------------------------------------------
+</span><span id="__span-1-96"><a id="__codelineno-1-96" name="__codelineno-1-96" href="#__codelineno-1-96"></a>TOTAL                                                               3083     60    98%
+</span><span id="__span-1-97"><a id="__codelineno-1-97" name="__codelineno-1-97" href="#__codelineno-1-97"></a>
+</span><span id="__span-1-98"><a id="__codelineno-1-98" name="__codelineno-1-98" href="#__codelineno-1-98"></a>Required test coverage of 95.0% reached. Total coverage: 98.05%
+</span><span id="__span-1-99"><a id="__codelineno-1-99" name="__codelineno-1-99" href="#__codelineno-1-99"></a>=========================================================== 158 passed, 130 warnings in 52.46s ===========================================================
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The API unit tests require that a test database is already running. You can start one by using the
+<a href="../dev_tools/">dev-tools</a> provided in the API sub-project.</p>
+</div>
+<h2 id="running-linters">Running Linters</h2>
+<p>The main sub-projects each use a group of linting tools to make sure that the code follows code quality standards. These
+linters will report any lines or segments of the code that do not meet the project's standards.</p>
+<p>To invoke all of the linters for a sub-project, issue the following command:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>make<span class="w"> </span>lint
+</span></code></pre></div>
+<p>If any issues are reported, fix the reported error and try running it again. The linters
+will only succeed if all of the issues are fixed.</p>
+<h2 id="running-formatters">Running Formatters</h2>
+<p>For most of the linting issues, the code can be auto-corrected using the configured
+code formatters.</p>
+<p>Currently, the sub-projects use the following formatters:</p>
+<ul>
+<li><a href="https://black.readthedocs.io/en/stable/">black</a></li>
+<li><a href="https://github.com/PyCQA/isort">isort</a></li>
+</ul>
+<p>To apply the formatters, use this command:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>make<span class="w"> </span>format
+</span></code></pre></div>
+<p>The formatters will report any files that were changed in their reports.</p>
+<h2 id="running-static-code-checkers">Running Static Code Checkers</h2>
+<p>The Jobbergate sub-projects include type-hints that must be checked using the
+<a href="http://www.mypy-lang.org/">mypy</a> static code checker. It may invoked using <code>make</code>:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>make<span class="w"> </span>mypy
+</span></code></pre></div>
+<p>If any issues are located, they will be reported. Each type issue must be fixed before
+the static type checker passes.</p>
+<h2 id="running-all-quality-checks">Running All Quality Checks</h2>
+<p>Finally, all of the quality checks can be run using this command:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>$<span class="w"> </span>make<span class="w"> </span>qa
+</span></code></pre></div>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.expand", "navigation.tracking", "content.code.copy"], "search": "../../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.aecac24b.min.js"></script>
+      
+    
+  </body>
+</html>

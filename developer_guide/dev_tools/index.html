@@ -1,0 +1,1303 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../../authors/">
+      
+      
+        <link rel="next" href="../qa_tools/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.6">
+    
+    
+      
+        <title>Developer Tools - Jobbergate Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.35e1ed30.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CFira+Code:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Fira Code"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#api-dev-tools" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Jobbergate Documentation" class="md-header__button md-logo" aria-label="Jobbergate Documentation" data-md-component="logo">
+      
+  <img src="https://omnivector-public-assets.s3.us-west-2.amazonaws.com/branding/omnivector-logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Jobbergate Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Developer Tools
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/omnivector-solutions/jobbergate" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Jobbergate Documentation" class="md-nav__button md-logo" aria-label="Jobbergate Documentation" data-md-component="logo">
+      
+  <img src="https://omnivector-public-assets.s3.us-west-2.amazonaws.com/branding/omnivector-logo.png" alt="logo">
+
+    </a>
+    Jobbergate Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/omnivector-solutions/jobbergate" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Elements
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Elements
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_1" id="__nav_2_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Resources
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1">
+            <span class="md-nav__icon md-icon"></span>
+            Resources
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/resources/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/resources/job_scripts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Job Scripts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/resources/job_script_templates/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Job Script Templates
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/resources/job_submissions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Job Submissions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Apps
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            Apps
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/agent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Agent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate CLI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/core/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Core
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorial/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tutorial
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../authors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Authors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Developer Guide
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Developer Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Developer Tools
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Developer Tools
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#invoking-dev-tools" class="md-nav__link">
+    Invoking dev-tools
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-db-subcommand" class="md-nav__link">
+    The db subcommand
+  </a>
+  
+    <nav class="md-nav" aria-label="The db subcommand">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-login-subcommand" class="md-nav__link">
+    The login subcommand
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-migrate-subcommand" class="md-nav__link">
+    The migrate subcommand
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-upgrade-subcommand" class="md-nav__link">
+    The upgrade subcommand
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-show-env-subcommand" class="md-nav__link">
+    The show-env subcommand
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-dev-server-subcommand" class="md-nav__link">
+    The dev-server subcommand
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../qa_tools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quality Assurance Tools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integration_testing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Integration Testing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Integration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../keycloak_setup/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Keycloak Setup
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../template_workflows/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Template Workflows
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/agent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Agent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate CLI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/core/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Core
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#invoking-dev-tools" class="md-nav__link">
+    Invoking dev-tools
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-db-subcommand" class="md-nav__link">
+    The db subcommand
+  </a>
+  
+    <nav class="md-nav" aria-label="The db subcommand">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-login-subcommand" class="md-nav__link">
+    The login subcommand
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-migrate-subcommand" class="md-nav__link">
+    The migrate subcommand
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-upgrade-subcommand" class="md-nav__link">
+    The upgrade subcommand
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-show-env-subcommand" class="md-nav__link">
+    The show-env subcommand
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-dev-server-subcommand" class="md-nav__link">
+    The dev-server subcommand
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="api-dev-tools">API Dev Tools</h1>
+<p>The Jobbergate API sub-project is equipped with a few tools designed to assist with
+some everyday development tasks. These can help streamline the process of setting up and
+interacting with the API.</p>
+<p>The dev-tools are shipped as a CLI program that can be invoked via Poetry within the
+project. All of the commands will operate within the virtual environment set up by
+Poetry.</p>
+<h2 id="invoking-dev-tools">Invoking <code>dev-tools</code></h2>
+<p>To invoke the dev tools, you must execute the commands from the home directory for the
+<code>jobbergate-api</code>. To see some information about the <code>dev-tools</code>, execute:</p>
+<div class="language-console highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>poetry<span class="w"> </span>run<span class="w"> </span>dev-tools<span class="w"> </span>--help
+</span></code></pre></div>
+<p>This will provide some help output that shows what options and sub-commands are
+available:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Usage: dev-tools [OPTIONS] COMMAND [ARGS]...
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>Options:
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  --install-completion [bash|zsh|fish|powershell|pwsh]
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>                                  Install completion for the specified shell.
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>  --show-completion [bash|zsh|fish|powershell|pwsh]
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>                                  Show completion for the specified shell, to
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>                                  copy it or customize the installation.
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>  --help                          Show this message and exit.
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>Commands:
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>  db
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>  dev-server  Start a development server locally.
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>  show-env    Print out the current environment settings.
+</span></code></pre></div>
+<p>The <code>--help</code> option is available for all of the subcommands provided in <code>dev-tools</code>.</p>
+<h2 id="the-db-subcommand">The <code>db</code> subcommand</h2>
+<p>There are a few convenience methods in the <code>dev-tools</code> for interacting with Jobbergate
+API's PostgreSQL database. These tools are found in the <code>db</code> subcommand. To see more
+info about this sub-command, run:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>poetry<span class="w"> </span>run<span class="w"> </span>dev-tools<span class="w"> </span>db<span class="w"> </span>--help
+</span></code></pre></div>
+<h3 id="the-login-subcommand">The <code>login</code> subcommand</h3>
+<p>This command allows you to log in to the database that your Jobbergate API is configured
+to connect with. It allows you to login to databases, regardless of whether they are
+locally hosted via Docker or situated on a remote PostgreSQL server. this ensures
+seamless access to any database that the Jobbergate API is configured to connect with.</p>
+<p>To log in to the database, execute this command:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>poetry<span class="w"> </span>run<span class="w"> </span>dev-tools<span class="w"> </span>db<span class="w"> </span>login
+</span></code></pre></div>
+<p>The command will show some debug output including the URL of the database to which it is
+connecting and will then show a REPL connection to the database:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="m">2022</span>-09-07<span class="w"> </span><span class="m">15</span>:52:02.089<span class="w"> </span><span class="p">|</span><span class="w"> </span>DEBUG<span class="w">    </span><span class="p">|</span><span class="w"> </span>dev_tools.db:login:26<span class="w"> </span>-<span class="w"> </span>Logging<span class="w"> </span>into<span class="w"> </span>database:<span class="w"> </span>postgresql://compose-db-user:compose-db-pswd@localhost:5432/compose-db-name
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>Server:<span class="w"> </span>PostgreSQL<span class="w"> </span><span class="m">14</span>.1<span class="w"> </span><span class="o">(</span>Debian<span class="w"> </span><span class="m">14</span>.1-1.pgdg110+1<span class="o">)</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Version:<span class="w"> </span><span class="m">3</span>.4.1
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>Home:<span class="w"> </span>http://pgcli.com
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>compose-db-name&gt;
+</span></code></pre></div>
+<h3 id="the-migrate-subcommand">The <code>migrate</code> subcommand</h3>
+<p>This command uses <a href="https://alembic.sqlalchemy.org/en/latest/">alembic</a> to generate a
+migration script to bring the current database (described by the environment) up to date
+with the <a href="https://www.sqlalchemy.org/">SQLAlchemy</a> models specified in the Jobbergate
+API source code.</p>
+<p>To invoke the migration script generation, execute:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>poetry<span class="w"> </span>run<span class="w"> </span>dev-tools<span class="w"> </span>db<span class="w"> </span>migrate<span class="w"> </span>--message<span class="o">=</span><span class="s2">&quot;An example migration&quot;</span>
+</span></code></pre></div>
+<p>Some logging info will be produced, including the location of the new migration script:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>2022-09-07 15:58:09.725 | DEBUG    | dev_tools.db:migrate:79 - Creating migration with message: An example migration
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>INFO  [alembic.runtime.migration] Will assume transactional DDL.
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>INFO  [alembic.ddl.postgresql] Detected sequence named &#39;applications_id_seq&#39; as owned by integer column &#39;applications(id)&#39;, assuming SERIAL and omitting
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>INFO  [alembic.ddl.postgresql] Detected sequence named &#39;job_scripts_id_seq&#39; as owned by integer column &#39;job_scripts(id)&#39;, assuming SERIAL and omitting
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>INFO  [alembic.ddl.postgresql] Detected sequence named &#39;job_submissions_id_seq&#39; as owned by integer column &#39;job_submissions(id)&#39;, assuming SERIAL and omitting
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>  Generating /home/dusktreader/git-repos/omnivector/jobbergate/jobbergate-api/alembic/versions/20220907_155809--c275de463a90_an_example_migration.py ...  done
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>  Running post write hook &quot;black&quot; ...
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>reformatted /home/dusktreader/git-repos/omnivector/jobbergate/jobbergate-api/alembic/versions/20220907_155809--c275de463a90_an_example_migration.py
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>All done! ✨ 🍰 ✨
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>1 file reformatted.
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>  done
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>  Running post write hook &quot;isort&quot; ...
+</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>Fixing /home/dusktreader/git-repos/omnivector/jobbergate/jobbergate-api/alembic/versions/20220907_155809--c275de463a90_an_example_migration.py
+</span><span id="__span-6-16"><a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>  done
+</span></code></pre></div>
+<p>The generated migration should <em>always</em> be reviewed before it is committed to the
+repository.</p>
+<p>It is also possible to produce a blank migration if you need to execute some raw SQL or
+write an Alembic script by hand. Just pass the <code>--blank</code> parameter on the command
+line:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>poetry<span class="w"> </span>run<span class="w"> </span>dev-tools<span class="w"> </span>db<span class="w"> </span>migrate<span class="w"> </span>--blank<span class="w"> </span>--message<span class="o">=</span><span class="s2">&quot;A blank migration&quot;</span>
+</span></code></pre></div>
+<h3 id="the-upgrade-subcommand">The <code>upgrade</code> subcommand</h3>
+<p>This subcommand is used to apply a database migration to the database that the
+Jobbergate API is configured to connect with.</p>
+<p>By default, it will apply all the migrations that have not yet been applied to the
+database.</p>
+<p>To apply the migrations, execute the command:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>$<span class="w"> </span>poetry<span class="w"> </span>run<span class="w"> </span>dev-tools<span class="w"> </span>db<span class="w"> </span>upgrade
+</span></code></pre></div>
+<p>It will produce some logging output that shows what migrations were applied:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>2022-09-07 16:05:46.315 | DEBUG    | dev_tools.db:upgrade:89 - Upgrading database...
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>INFO  [alembic.runtime.migration] Will assume transactional DDL.
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>INFO  [alembic.runtime.migration] Running upgrade d22da0741b7f -&gt; c275de463a90, An example migration
+</span></code></pre></div>
+<p>If you wish to only upgrade the database <em>to</em> a specific migration, you can pass that
+migration's id to the <code>--target</code> param.</p>
+<h2 id="the-show-env-subcommand">The <code>show-env</code> subcommand</h2>
+<p>This command will show how the Jobbergate API is configured through its environment
+settings. To see the environment, execute this command:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>poetry<span class="w"> </span>run<span class="w"> </span>dev-tools<span class="w"> </span>show-env
+</span></code></pre></div>
+<p>The output that the command produces will look something like:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>Jobbergate settings:
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  DEPLOY_ENV: LOCAL
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  LOG_LEVEL: DEBUG
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>  DATABASE_HOST: localhost
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>  DATABASE_USER: compose-db-user
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>  DATABASE_PSWD: compose-db-pswd
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>  DATABASE_NAME: compose-db-name
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>  DATABASE_PORT: 5432
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>  TEST_DATABASE_HOST: localhost
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>  TEST_DATABASE_USER: test-user
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>  TEST_DATABASE_PSWD: test-pswd
+</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>  TEST_DATABASE_NAME: test-db
+</span><span id="__span-11-13"><a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>  TEST_DATABASE_PORT: 5433
+</span><span id="__span-11-14"><a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>  S3_BUCKET_NAME: jobbergate-k8s-staging
+</span><span id="__span-11-15"><a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>  S3_ENDPOINT_URL: None
+</span><span id="__span-11-16"><a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>  ARMASEC_DOMAIN: localhost:9080/realms/master/protocol/openid-connect
+</span><span id="__span-11-17"><a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>  ARMASEC_USE_HTTPS: True
+</span><span id="__span-11-18"><a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>  ARMASEC_AUDIENCE: https://local.omnivector.solutions
+</span><span id="__span-11-19"><a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>  ARMASEC_DEBUG: True
+</span><span id="__span-11-20"><a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>  ARMASEC_ADMIN_DOMAIN: None
+</span><span id="__span-11-21"><a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>  ARMASEC_ADMIN_AUDIENCE: None
+</span><span id="__span-11-22"><a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>  ARMASEC_ADMIN_MATCH_KEY: None
+</span><span id="__span-11-23"><a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>  ARMASEC_ADMIN_MATCH_VALUE: None
+</span><span id="__span-11-24"><a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>  IDENTITY_CLAIMS_KEY: https://omnivector.solutions
+</span><span id="__span-11-25"><a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a>  SENTRY_DSN: None
+</span><span id="__span-11-26"><a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a>  SENTRY_SAMPLE_RATE: 1.0
+</span><span id="__span-11-27"><a id="__codelineno-11-27" name="__codelineno-11-27" href="#__codelineno-11-27"></a>  MAX_UPLOAD_FILE_SIZE: 104857600
+</span><span id="__span-11-28"><a id="__codelineno-11-28" name="__codelineno-11-28" href="#__codelineno-11-28"></a>  SENDGRID_FROM_EMAIL: None
+</span><span id="__span-11-29"><a id="__codelineno-11-29" name="__codelineno-11-29" href="#__codelineno-11-29"></a>  SENDGRID_API_KEY: None
+</span></code></pre></div>
+<p>The command can also produce the output as JSON if needed by pyassing the <code>--json</code> flag:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>poetry<span class="w"> </span>run<span class="w"> </span>dev-tools<span class="w"> </span>show-env<span class="w"> </span>--json
+</span></code></pre></div>
+<p>The JSON output will look something like:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>{&quot;DEPLOY_ENV&quot;: &quot;LOCAL&quot;, &quot;LOG_LEVEL&quot;: &quot;DEBUG&quot;, &quot;DATABASE_HOST&quot;: &quot;localhost&quot;, &quot;DATABASE_USER&quot;: &quot;compose-db-user&quot;, &quot;DATABASE_PSWD&quot;: &quot;compose-db-pswd&quot;, &quot;DATABASE_NAME&quot;: &quot;compose-db-name&quot;, &quot;DATABASE_PORT&quot;: 5432, &quot;TEST_DATABASE_HOST&quot;: &quot;localhost&quot;, &quot;TEST_DATABASE_USER&quot;: &quot;test-user&quot;, &quot;TEST_DATABASE_PSWD&quot;: &quot;test-pswd&quot;, &quot;TEST_DATABASE_NAME&quot;: &quot;test-db&quot;, &quot;TEST_DATABASE_PORT&quot;: 5433, &quot;S3_BUCKET_NAME&quot;: &quot;jobbergate-k8s-staging&quot;, &quot;S3_ENDPOINT_URL&quot;: null, &quot;ARMASEC_DOMAIN&quot;: &quot;localhost:9080/realms/master/protocol/openid-connect&quot;, &quot;ARMASEC_USE_HTTPS&quot;: true, &quot;ARMASEC_AUDIENCE&quot;: &quot;https://local.omnivector.solutions&quot;, &quot;ARMASEC_DEBUG&quot;: true, &quot;ARMASEC_ADMIN_DOMAIN&quot;: null, &quot;ARMASEC_ADMIN_AUDIENCE&quot;: null, &quot;ARMASEC_ADMIN_MATCH_KEY&quot;: null, &quot;ARMASEC_ADMIN_MATCH_VALUE&quot;: null, &quot;IDENTITY_CLAIMS_KEY&quot;: &quot;https://omnivector.solutions&quot;, &quot;SENTRY_DSN&quot;: null, &quot;SENTRY_SAMPLE_RATE&quot;: 1.0, &quot;MAX_UPLOAD_FILE_SIZE&quot;: 104857600, &quot;SENDGRID_FROM_EMAIL&quot;: null, &quot;SENDGRID_API_KEY&quot;: null}
+</span></code></pre></div></p>
+<h2 id="the-dev-server-subcommand">The <code>dev-server</code> subcommand</h2>
+<p>This command starts up a local development server for the Jobbergate API. It will
+be created using the configuration set up in the environment settings. This command is especially useful if
+you want to run the API locally but connect to remote services such as a database and s3 hosted on AWS.</p>
+<p>To start the server, run:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>poetry<span class="w"> </span>run<span class="w"> </span>dev-tools<span class="w"> </span>dev-server
+</span></code></pre></div>
+<p>The command will produce some logging output that looks like this:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>2022-09-07 16:15:05.830 | INFO     | dev_tools.dev_server:dev_server:50 - Waiting for the database
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>2022-09-07 16:15:05.830 | DEBUG    | dev_tools.dev_server:_wait_for_db:23 - database url is: postgresql://compose-db-user:compose-db-pswd@localhost:5432/compose-db-name
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>2022-09-07 16:15:05.830 | DEBUG    | dev_tools.dev_server:_wait_for_db:26 - Checking health of database at postgresql://compose-db-user:compose-db-pswd@localhost:5432/compose-db-name: Attempt #0
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>INFO:     Will watch for changes in these directories: [&#39;/home/dusktreader/git-repos/omnivector/jobbergate/jobbergate-api&#39;]
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>INFO:     Uvicorn running on http://0.0.0.0:5000 (Press CTRL+C to quit)
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>INFO:     Started reloader process [27314] using statreload
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>2022-09-07 16:15:06.555 | INFO     | jobbergate_api.main:&lt;module&gt;:39 - Skipping Sentry
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>INFO:     Started server process [27319]
+</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>INFO:     Waiting for application startup.
+</span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>2022-09-07 16:15:06.587 | INFO     | jobbergate_api.main:init_logger:71 - Logging configured 📝 Level: DEBUG
+</span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>2022-09-07 16:15:06.587 | DEBUG    | jobbergate_api.main:init_database:79 - Initializing database
+</span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>INFO:     Application startup complete.
+</span></code></pre></div></p>
+<p>There are additional options that can control some of the details of the settings of the
+dev server. These can be examined with the <code>--help</code> flag:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>poetry<span class="w"> </span>run<span class="w"> </span>dev-tools<span class="w"> </span>dev-server<span class="w"> </span>--help
+</span></code></pre></div>
+<p>The dev server options will be printed like:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>Usage: dev-tools dev-server [OPTIONS]
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>  Start a development server locally.
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>Options:
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>  --db-wait-count INTEGER   How many times to attempt a check  [default: 3]
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>  --db-wait-interval FLOAT  Seconds to wait between checks  [default: 5.0]
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>  --port INTEGER            The port where the server should listen  [default:
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>                            5000]
+</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>  --log-level TEXT          The level to log uvicorn output  [default: DEBUG]
+</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>  --help                    Show this message and exit.
+</span></code></pre></div>
+<p>The <code>--db-wait-*</code> flags are used to make the dev server wait for the dev database to
+become available. These are mostly useful in the context of <code>docker-compose</code>.</p>
+<p>It should also be noted that a development uvicorn server will automatically reload the
+app if the source files of the app change. This is very helpful for debugging behavior
+in the app without having to manually stop and start the app after every source code
+modification.</p>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.expand", "navigation.tracking", "content.code.copy"], "search": "../../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.aecac24b.min.js"></script>
+      
+    
+  </body>
+</html>

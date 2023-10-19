@@ -1,0 +1,1735 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../elements/apps/core/">
+      
+      
+        <link rel="next" href="../authors/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.6">
+    
+    
+      
+        <title>Tutorial - Jobbergate Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.35e1ed30.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CFira+Code:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Fira Code"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tutorial" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Jobbergate Documentation" class="md-header__button md-logo" aria-label="Jobbergate Documentation" data-md-component="logo">
+      
+  <img src="https://omnivector-public-assets.s3.us-west-2.amazonaws.com/branding/omnivector-logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Jobbergate Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Tutorial
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/omnivector-solutions/jobbergate" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Jobbergate Documentation" class="md-nav__button md-logo" aria-label="Jobbergate Documentation" data-md-component="logo">
+      
+  <img src="https://omnivector-public-assets.s3.us-west-2.amazonaws.com/branding/omnivector-logo.png" alt="logo">
+
+    </a>
+    Jobbergate Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/omnivector-solutions/jobbergate" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Elements
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Elements
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_1" id="__nav_2_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Resources
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1">
+            <span class="md-nav__icon md-icon"></span>
+            Resources
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../elements/resources/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../elements/resources/job_scripts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Job Scripts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../elements/resources/job_script_templates/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Job Script Templates
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../elements/resources/job_submissions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Job Submissions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Apps
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            Apps
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../elements/apps/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../elements/apps/agent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Agent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../elements/apps/api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../elements/apps/cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate CLI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../elements/apps/core/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Core
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Tutorial
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Tutorial
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    Getting Started
+  </a>
+  
+    <nav class="md-nav" aria-label="Getting Started">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#install-docker-compose" class="md-nav__link">
+    Install docker-compose
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-the-hostfile" class="md-nav__link">
+    Update the hostfile
+  </a>
+  
+    <nav class="md-nav" aria-label="Update the hostfile">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#for-linux-and-osx-users" class="md-nav__link">
+    For Linux and OSX users:
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#for-windows-users" class="md-nav__link">
+    For Windows users:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clone-jobbergate-with-git" class="md-nav__link">
+    Clone Jobbergate with git
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#start-the-jobbergate-services" class="md-nav__link">
+    Start the Jobbergate Services
+  </a>
+  
+    <nav class="md-nav" aria-label="Start the Jobbergate Services">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#start-up-the-services" class="md-nav__link">
+    Start up the services
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify-the-status-of-the-services" class="md-nav__link">
+    Verify the status of the services
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#confirm-jobbergate-cli-availability" class="md-nav__link">
+    Confirm Jobbergate CLI availability
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#log-in-to-jobbergate" class="md-nav__link">
+    Log in to Jobbergate
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#upload-a-job-script-to-jobbergate" class="md-nav__link">
+    Upload a Job Script to Jobbergate
+  </a>
+  
+    <nav class="md-nav" aria-label="Upload a Job Script to Jobbergate">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-the-example-script" class="md-nav__link">
+    Get the example script
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-the-job-script-from-the-example" class="md-nav__link">
+    Create the Job Script from the example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#submit-a-job-script-to-the-cluster" class="md-nav__link">
+    Submit a Job Script to the cluster
+  </a>
+  
+    <nav class="md-nav" aria-label="Submit a Job Script to the cluster">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-the-job-submission" class="md-nav__link">
+    Create the Job Submission
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-the-status-of-the-submitted-job" class="md-nav__link">
+    Check the status of the submitted job
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-the-results-of-the-job" class="md-nav__link">
+    Check the results of the job
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delete-the-resources" class="md-nav__link">
+    Delete the resources
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix" class="md-nav__link">
+    Appendix
+  </a>
+  
+    <nav class="md-nav" aria-label="Appendix">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keycloak-ui" class="md-nav__link">
+    Keycloak UI
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Authors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Developer Guide
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Developer Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer_guide/dev_tools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Developer Tools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer_guide/qa_tools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quality Assurance Tools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer_guide/integration_testing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Integration Testing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer_guide/ci/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Integration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer_guide/keycloak_setup/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Keycloak Setup
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer_guide/template_workflows/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Template Workflows
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/agent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Agent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate CLI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/core/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Core
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    Getting Started
+  </a>
+  
+    <nav class="md-nav" aria-label="Getting Started">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#install-docker-compose" class="md-nav__link">
+    Install docker-compose
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-the-hostfile" class="md-nav__link">
+    Update the hostfile
+  </a>
+  
+    <nav class="md-nav" aria-label="Update the hostfile">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#for-linux-and-osx-users" class="md-nav__link">
+    For Linux and OSX users:
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#for-windows-users" class="md-nav__link">
+    For Windows users:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clone-jobbergate-with-git" class="md-nav__link">
+    Clone Jobbergate with git
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#start-the-jobbergate-services" class="md-nav__link">
+    Start the Jobbergate Services
+  </a>
+  
+    <nav class="md-nav" aria-label="Start the Jobbergate Services">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#start-up-the-services" class="md-nav__link">
+    Start up the services
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify-the-status-of-the-services" class="md-nav__link">
+    Verify the status of the services
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#confirm-jobbergate-cli-availability" class="md-nav__link">
+    Confirm Jobbergate CLI availability
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#log-in-to-jobbergate" class="md-nav__link">
+    Log in to Jobbergate
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#upload-a-job-script-to-jobbergate" class="md-nav__link">
+    Upload a Job Script to Jobbergate
+  </a>
+  
+    <nav class="md-nav" aria-label="Upload a Job Script to Jobbergate">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-the-example-script" class="md-nav__link">
+    Get the example script
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-the-job-script-from-the-example" class="md-nav__link">
+    Create the Job Script from the example
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#submit-a-job-script-to-the-cluster" class="md-nav__link">
+    Submit a Job Script to the cluster
+  </a>
+  
+    <nav class="md-nav" aria-label="Submit a Job Script to the cluster">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-the-job-submission" class="md-nav__link">
+    Create the Job Submission
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-the-status-of-the-submitted-job" class="md-nav__link">
+    Check the status of the submitted job
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-the-results-of-the-job" class="md-nav__link">
+    Check the results of the job
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#delete-the-resources" class="md-nav__link">
+    Delete the resources
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix" class="md-nav__link">
+    Appendix
+  </a>
+  
+    <nav class="md-nav" aria-label="Appendix">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keycloak-ui" class="md-nav__link">
+    Keycloak UI
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="tutorial">Tutorial</h1>
+<p>Welcome to this step-by-step tutorial that introduces the basic functionalities of Jobbergate!
+to seamlessly upload a Job Script and submit it to a Slurm cluster using the Jobbergate CLI.</p>
+<p>In this walk-through, you will learn how to upload a Job Script and submit it to a Slurm cluster using the
+Jobbergate CLI. To accomplish this, we will guide you through the following steps:</p>
+<ul>
+<li>Initiating a session by logging into the Jobbergate system</li>
+<li>Uploading a basic Job Script to Jobbergate</li>
+<li>Submitting the Job Script to the cluster</li>
+<li>Reviewing the results and monitoring the status of your submitted job</li>
+<li>Cleaning up by deleting the Job Script</li>
+<li>Logging out of the Jobbergate system</li>
+</ul>
+<h2 id="getting-started">Getting Started</h2>
+<p>Before diving into the tutorial, there are some initial setup steps that are needed to ensure that your computer is
+prepared to run the tutorial locally. Make sure you have administrative access to your machine, as it's required for
+the setup process.</p>
+<h3 id="install-docker-compose">Install docker-compose</h3>
+<p>For this tutorial, we will be using an instance of Jobbergate that is deployed locally along-side a local Slurm cluster.
+We will set all this up using docker-compose. If you do not have it already, follow
+<a href="https://docs.docker.com/compose/install/">this guide</a> to install docker-compose before you continue the tutorial.</p>
+<h3 id="update-the-hostfile">Update the hostfile</h3>
+<p>Next, you’ll need to add the following line to your computer’s hostfile:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>127.0.0.1 keycloak.local
+</span></code></pre></div>
+<h4 id="for-linux-and-osx-users">For Linux and OSX users:</h4>
+<ul>
+<li>The hostfile is located at <code>/etc/hosts</code>.</li>
+<li>Open a terminal.</li>
+<li>Use this command to open the file in a text editor
+   <div class="language-shell highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>sudo<span class="w"> </span>nano<span class="w"> </span>/etc/hosts
+</span></code></pre></div>
+   (you may, of course, substitute your editor of choice here)</li>
+<li>Add the above line at the end of the file.</li>
+<li>Save and close the file.</li>
+</ul>
+<h4 id="for-windows-users">For Windows users:</h4>
+<ul>
+<li>The hostfile can be found at c:\windows\system32\drivers\etc\hosts.</li>
+<li>Open Notepad as an administrator.</li>
+<li>Open the hostfile in Notepad.</li>
+<li>Append the above line to the file.</li>
+<li>Save and exit.</li>
+</ul>
+<h3 id="clone-jobbergate-with-git">Clone Jobbergate with git</h3>
+<p>To run the Jobbergate and Slurm locally, you will first need a copy of the Jobbergate source code. The easiest way to
+get it is to use Git to download the source code repository from GitHub onto your machine.</p>
+<p>Git is a version control system that lets you manage and keep track ofyour source code history. If you haven't installed
+it yet, download and install Git using the instructions available <a href="https://git-scm.com/">here</a>.</p>
+<p>With Git installed, you can now clone the Jobbergate source code from its GitHub repository. Cloning allows you to have
+a local copy (or clone) of the source code on your machine.</p>
+<p>Run the following command in your terminal:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>$<span class="w"> </span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:omnivector-solutions/jobbergate.git
+</span></code></pre></div>
+<p>Now you have a full copy of the Jobbergate source code including the Docker Compose configuration to stand up a local
+Slurm Cluster and the example Job Script we will be using for this tutorial.</p>
+<p>Next, switch to the directory in the source code that contains the Docker Compose configuration:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>jobbergate/jobbergate-composed
+</span></code></pre></div>
+<h3 id="start-the-jobbergate-services">Start the Jobbergate Services</h3>
+<p>With the Jobbergate source code in place, it's time to initiate the Jobbergate Services and the local Slurm cluster
+using Docker Compose. Follow the steps outlined below to get things up and running.</p>
+<h4 id="start-up-the-services">Start up the services</h4>
+<p>Run the following command to build and start the services. The <code>--build</code> flag ensures that Docker Compose build the
+images before attempting to start the services. The <code>--detach</code> flag runs the services in the background so that you
+can run other commands in the terminal.</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>$<span class="w"> </span>docker-compose<span class="w"> </span>up<span class="w"> </span>--build<span class="w"> </span>--detach
+</span></code></pre></div>
+<p>This operation might take a few minutes as it involves building the images and starting up all the associated services.</p>
+<h4 id="verify-the-status-of-the-services">Verify the status of the services</h4>
+<p>To confirm that all the services are running smoothly, execute the following command. It will list the status of all the
+services initiated by Docker Compose:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker-compose<span class="w"> </span>ps
+</span></code></pre></div>
+<p>If the services are up and running as expected, you should see output similar to the following, indicating that all the
+services are in a healthy state</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>NAME                                        COMMAND                  SERVICE               STATUS              PORTS
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>c1                                          &quot;/usr/local/bin/slur…&quot;   c1                    running             6818/tcp
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>c2                                          &quot;/usr/local/bin/slur…&quot;   c2                    running             6818/tcp
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>jobbergate-composed-cluster-agent-1         &quot;/agent/entrypoint.sh&quot;   cluster-agent         running
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>jobbergate-composed-db-1                    &quot;docker-entrypoint.s…&quot;   db                    running             0.0.0.0:5432-&gt;5432/tcp
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>jobbergate-composed-jobbergate-api-1        &quot;/bin/sh -c /app/dev…&quot;   jobbergate-api        running (healthy)   0.0.0.0:8000-&gt;80/tcp
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>jobbergate-composed-jobbergate-cli-1        &quot;python3&quot;                jobbergate-cli        exited (0)
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>jobbergate-composed-keycloak.local-1        &quot;/opt/keycloak/bin/k…&quot;   keycloak.local        running             0.0.0.0:8080-&gt;8080/tcp, 8443/tcp
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>jobbergate-composed-minio-1                 &quot;/usr/bin/docker-ent…&quot;   minio                 running             0.0.0.0:9000-9001-&gt;9000-9001/tcp
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>jobbergate-composed-minio-create-bucket-1   &quot;/create-bucket.sh&quot;      minio-create-bucket   exited (1)
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>mysql                                       &quot;docker-entrypoint.s…&quot;   mysql                 running             3306/tcp, 33060/tcp
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>slurmctld                                   &quot;/usr/local/bin/slur…&quot;   slurmctld             running             6817/tcp
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>slurmdbd                                    &quot;/usr/local/bin/slur…&quot;   slurmdbd              running             6819/tcp
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>slurmrestd                                  &quot;/usr/local/bin/slur…&quot;   slurmrestd            running             0.0.0.0:6820-&gt;6820/tcp
+</span></code></pre></div>
+<p>The <code>STATUS</code> for each service should be "running" except for the <code>minio-create-bucket</code> and <code>jobbergate-cli</code>
+services which should be "exited".</p>
+<h4 id="confirm-jobbergate-cli-availability">Confirm Jobbergate CLI availability</h4>
+<p>Since this tutorial relies on running commands in the Jobbergate CLI, it's essential to verify that the CLI is available
+and working as expected at this juncture.</p>
+<p>First, initiate a connection to the <code>jobbergate-cli</code> container by executing the following command. This gives you
+direct access to the CLI.</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>$<span class="w"> </span>docker-compose<span class="w"> </span>run<span class="w"> </span>jobbergate-cli<span class="w"> </span>bash
+</span></code></pre></div>
+<p>Upon successful connection, your command prompt should change to reflect that you're inside the container. It will look
+something like this:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>root@e226a9a401d1:/app#
+</span></code></pre></div>
+<p>This confirms that you're now operating within the <code>jobbergate-cli</code> container environment.</p>
+<p>Next, we need to make sure that the Jobbergate CLI is available and accepting commands. Test this by listing the
+available commands in Jobbergate CLI with the <code>--help</code> option:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>jobbergate<span class="w"> </span>--help
+</span></code></pre></div>
+<p>The command above will yield a detailed description of the CLI's usage and the variety of sub-commands it provides:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a> Usage: jobbergate [OPTIONS] COMMAND [ARGS]...
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a> Welcome to the Jobbergate CLI!
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a> More information can be shown for each command listed below by running it with the --help option.
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>│ --verbose               --no-verbose                                     Enable verbose logging to the terminal      │
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>│                                                                          [default: no-verbose]                       │
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>│ --full                  --no-full                                        Print all fields from CRUD commands         │
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>│                                                                          [default: no-full]                          │
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>│ --raw                   --no-raw                                         Print output from CRUD commands as raw json │
+</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>│                                                                          [default: no-raw]                           │
+</span><span id="__span-10-13"><a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>│ --version               --no-version                                     Print the version of jobbergate-cli and     │
+</span><span id="__span-10-14"><a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>│                                                                          exit                                        │
+</span><span id="__span-10-15"><a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>│                                                                          [default: no-version]                       │
+</span><span id="__span-10-16"><a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>│ --install-completion                    [bash|zsh|fish|powershell|pwsh]  Install completion for the specified shell. │
+</span><span id="__span-10-17"><a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>│                                                                          [default: None]                             │
+</span><span id="__span-10-18"><a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>│ --show-completion                       [bash|zsh|fish|powershell|pwsh]  Show completion for the specified shell, to │
+</span><span id="__span-10-19"><a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>│                                                                          copy it or customize the installation.      │
+</span><span id="__span-10-20"><a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>│                                                                          [default: None]                             │
+</span><span id="__span-10-21"><a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>│ --help                                                                   Show this message and exit.                 │
+</span><span id="__span-10-22"><a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</span><span id="__span-10-23"><a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>╭─ Commands ───────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+</span><span id="__span-10-24"><a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>│ applications        Commands to interact with applications                                                           │
+</span><span id="__span-10-25"><a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a>│ job-scripts         Commands to interact with job scripts                                                            │
+</span><span id="__span-10-26"><a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a>│ job-submissions     Commands to interact with job submissions                                                        │
+</span><span id="__span-10-27"><a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a>│ login               Log in to the jobbergate-cli by storing the supplied token argument in the cache.                │
+</span><span id="__span-10-28"><a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a>│ logout              Logs out of the jobbergate-cli. Clears the saved user credentials.                               │
+</span><span id="__span-10-29"><a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a>│ show-token          Show the token for the logged in user.                                                           │
+</span><span id="__span-10-30"><a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a>╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</span></code></pre></div>
+<h2 id="log-in-to-jobbergate">Log in to Jobbergate</h2>
+<p>To begin working with Jobbergate data, you must first sign into the system. For the purpose of this tutorial, there's
+just one user available. We'll soley focus on this user in this guide, but should you wish to add more users, you can
+do so by accessing the Keycloak server (details provided in the <a href="#appendix">Appendix</a>).</p>
+<p>To log in using the Jobbergate CLI, execute the following command:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>$<span class="w"> </span>jobbergate<span class="w"> </span>login
+</span></code></pre></div>
+<p>The CLI will provide a URL for you to log into your account:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>╭─────────────────────────────────────────────── Waiting for login ─────────────────────────────────────────────────╮
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>│                                                                                                                   │
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>│   To complete login, please open the following link in a browser:                                                 │
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>│                                                                                                                   │
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>│     http://keycloak.local:8080/realms/jobbergate-local/device?user_code=CZAU-TZAH                                 │
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>│                                                                                                                   │
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>│   Waiting up to 5.0 minutes for you to complete the process...                                                    │
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>│                                                                                                                   │
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>
+</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>Waiting for web login... ━╺━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   3% 0:04:50
+</span></code></pre></div>
+<p>Open the URL shown in a browser and log in as "local-user":</p>
+<ul>
+<li><strong>username</strong>: "local-user"</li>
+<li><strong>password</strong>: "local"</li>
+</ul>
+<p>When prompted, grant all the requested access privileges to the CLI. Once you have finished, the CLI will show that you
+have successfully logged in:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>╭──────────────────────────────────────────────────<span class="w"> </span>Logged<span class="w"> </span><span class="k">in</span>!<span class="w"> </span>─────────────────────────────────────────────────────╮
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>│<span class="w">                                                                                                                   </span>│
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>│<span class="w">   </span>User<span class="w"> </span>was<span class="w"> </span>logged<span class="w"> </span><span class="k">in</span><span class="w"> </span>with<span class="w"> </span>email<span class="w"> </span><span class="s1">&#39;local-user@jobbergate.local&#39;</span><span class="w">                                                     </span>│
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>│<span class="w">                                                                                                                   </span>│
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</span></code></pre></div>
+<p>You are now logged in through the CLI! Your auth token will be cached automatically for you, so you should not need to
+log in again for some time. However, be aware that your session does expire; you will have to log in again to get a new
+token. If this happens, the CLI will alert you that your token is invalid. When you receive this notification, you will
+need to log in anew.</p>
+<h2 id="upload-a-job-script-to-jobbergate">Upload a Job Script to Jobbergate</h2>
+<p>Job Scripts are integral to Jobbergate, serving as the foundation for running simulations on our cluster. To initiate a
+simulation, your first task is to upload the Job Script to the Jobbergate API.</p>
+<p>Within each Job Script, an entrypoint file is designated. This is the specific script that Slurm executes to commence
+the simulation on the cluster.</p>
+<h3 id="get-the-example-script">Get the example script</h3>
+<p>To keep this tutorial focused on using Jobbergate and not any of the complexities of simulations or operating a cluster,
+we will use a
+<a href="https://github.com/omnivector-solutions/jobbergate/tree/main/examples/simple-job-script.py">very basic example</a>
+job script. We will need a copy of this script where the <code>jobbergate-cli</code> can access it. Since it's a small script, we
+can just copy/paste it into the container where we are accessing the <code>jobbergate-cli</code>.</p>
+<p>In the terminal where you were typing jobbergate commands, enter this command:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>cat<span class="w"> </span>&gt;<span class="w"> </span>simple-job-script.py
+</span></code></pre></div>
+<p>Paste the contents of the job script and then press <code>ctrl-d</code> on your keyboard. This will create a saved copy of the
+job script that's ready to submit with the <code>jobbergate-cli</code>. To ensure that the command sequence captured the intended
+script contents, execute the following command to review the job script:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>cat<span class="w"> </span>simple-job-script.python3
+</span></code></pre></div>
+<p>The script should appear exactly as you see it on the link above.</p>
+<h3 id="create-the-job-script-from-the-example">Create the Job Script from the example</h3>
+<p>Now it's time to create a Job Script entry within the Jobbergate system. We'll use the <code>create</code> subcommand associated
+with the <code>job-scripts</code> command. To view all the options that come with this sub-command, you can use the <code>--help</code>
+option:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>jobbergate<span class="w"> </span>job-scripts<span class="w"> </span>create<span class="w"> </span>--help
+</span></code></pre></div>
+<p>Now, let's create the Job Script. In your terminal, type:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>jobbergate<span class="w"> </span>job-scripts<span class="w"> </span>create<span class="w"> </span>--name<span class="o">=</span>tutorial<span class="w"> </span>--job-script-path<span class="o">=</span>simple-job-script.py
+</span></code></pre></div>
+<p>You should see output like this indicating that the Job Script was successfully created:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>                 Created Job Script
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>┏━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>┃ Key            ┃ Value                            ┃
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>┡━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>│ id             │ 1                                │
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>│ application_id │ None                             │
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>│ name           │ tutorial                         │
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>│ description    │                                  │
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>│ owner_email    │ local-user@jobbergate.local-mail │
+</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a>└────────────────┴──────────────────────────────────┘
+</span></code></pre></div>
+<p>Great, your Job Script is now prepared and ready for submission to the cluster!</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Keep track of the <code>id</code> value produced by your command. The tutorial text assumes that it is "1", but it may be
+different if you have done the tutorial before or had to restart!</p>
+</div>
+<p>To confirm that the Job Script has been uploaded correctly, you can review the file content using the
+<code>show-files</code> subcommand:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>$<span class="w"> </span>jobbergate<span class="w"> </span>job-scripts<span class="w"> </span>show-files<span class="w"> </span>--id<span class="o">=</span><span class="m">1</span>
+</span></code></pre></div>
+<p>The file should appear exactly as it does on the link above.</p>
+<h2 id="submit-a-job-script-to-the-cluster">Submit a Job Script to the cluster</h2>
+<p>With the Job Script ready, the next step is to submit it to the Slurm cluster. In this tutorial, a cluster named
+<code>local-slurm</code> is already attached and available for use. We will specify this cluster name when submitting the Job
+Script to ensure it is executed on the appropriate cluster.</p>
+<h3 id="create-the-job-submission">Create the Job Submission</h3>
+<p>We will use the <code>create</code> subcommand of the <code>job-submissions</code> command to submit the job to the cluster. To see all the
+options available for this command, we can use the <code>--help</code> option again:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>jobbergate<span class="w"> </span>job-submissions<span class="w"> </span>create<span class="w"> </span>--help
+</span></code></pre></div>
+<p>For the tutorial, we need to issue the following command:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>jobbergate<span class="w"> </span>job-submissions<span class="w"> </span>create<span class="w"> </span>--name<span class="o">=</span>tutorial<span class="w"> </span>--job-script-id<span class="o">=</span><span class="m">1</span><span class="w"> </span>--cluster-name<span class="o">=</span>local-slurm
+</span></code></pre></div>
+<p>The command should produce output that looks like this:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>                   Created Job Submission
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>┃ Key                        ┃ Value                       ┃
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>│ id                         │ 1                           │
+</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>│ job_script_id              │ 1                           │
+</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>│ client_id                  │ local-slurm                 │
+</span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a>│ slurm_job_id               │ None                        │
+</span><span id="__span-22-9"><a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a>│ execution_directory        │ None                        │
+</span><span id="__span-22-10"><a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a>│ job_submission_name        │ tutorial                    │
+</span><span id="__span-22-11"><a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a>│ job_submission_description │ None                        │
+</span><span id="__span-22-12"><a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a>│ job_submission_owner_email │ local-user@jobbergate.local │
+</span><span id="__span-22-13"><a id="__codelineno-22-13" name="__codelineno-22-13" href="#__codelineno-22-13"></a>│ status                     │ CREATED                     │
+</span><span id="__span-22-14"><a id="__codelineno-22-14" name="__codelineno-22-14" href="#__codelineno-22-14"></a>└────────────────────────────┴─────────────────────────────┘
+</span></code></pre></div></p>
+<p>The Job Submission was successfully created! However, it has not submitted to the cluster yet. This will happen when the
+Jobbergate Agent that is running remotely in the cluster pulls all "CREATED" Job Submissions down from the API and
+submits them to Slurm one by one.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Again, be careful to use the correct <code>id</code> produced by this command for the remainder of the tutorial!</p>
+</div>
+<h3 id="check-the-status-of-the-submitted-job">Check the status of the submitted job</h3>
+<p>We can look up the status of a Job Submission using the following command:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>jobbergate<span class="w"> </span>job-submissions<span class="w"> </span>get-one<span class="w"> </span>--id<span class="o">=</span><span class="m">1</span>
+</span></code></pre></div>
+<p>This command should produce output that looks like:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>                       Job Submission
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>┃ Key                        ┃ Value                       ┃
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>│ id                         │ 1                           │
+</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>│ job_script_id              │ 1                           │
+</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>│ client_id                  │ local-slurm                 │
+</span><span id="__span-24-8"><a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a>│ slurm_job_id               │ 1                           │
+</span><span id="__span-24-9"><a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a>│ execution_directory        │ None                        │
+</span><span id="__span-24-10"><a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a>│ job_submission_name        │ tutorial                    │
+</span><span id="__span-24-11"><a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a>│ job_submission_description │ None                        │
+</span><span id="__span-24-12"><a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a>│ job_submission_owner_email │ local-user@jobbergate.local │
+</span><span id="__span-24-13"><a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a>│ status                     │ SUBMITTED                   │
+</span><span id="__span-24-14"><a id="__codelineno-24-14" name="__codelineno-24-14" href="#__codelineno-24-14"></a>└────────────────────────────┴─────────────────────────────┘
+</span></code></pre></div>
+<p>If the <code>status</code> reported by your command is <code>CREATED</code>, don't worry! The Jobbergate Agent just hasn't retrieved and
+submitted the job script yet. Wait a few more seconds and dry again. You should now see the status change to
+<code>SUBMITTED</code>.</p>
+<p>When the Job Submission status shifts to "SUBMITTED", it indicats that the Jobbergate Agent has retrieved the Job Script
+and submitted it to the <code>local-slurm</code> cluster. This status will persist until the completion of the Job Script's
+execution. The Jobbergate Agent continuaously monitors the job's progress within slurm, and , upon its completion, will
+update the Job Submission status to "COMPLETE".</p>
+<h3 id="check-the-results-of-the-job">Check the results of the job</h3>
+<p>In this tutorial, we have locally mounted a "fake" NFS folder to contain the output from the job running in slurm. When
+the job finishes running, it will produce an output file in this folder. First we need to verify that the file was
+produced by listing the contents of the <code>nfs</code> directory:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>ls<span class="w"> </span>/nfs
+</span></code></pre></div>
+<p>If the job completed, you should see a file in the <code>/nfs</code> directory named <code>simple-output.txt</code>. Check the contents of the
+file with a simple <code>cat</code> command:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>cat /nfs/simple-output.txt
+</span></code></pre></div>
+<p>It should look look like:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>Simple output from c1
+</span></code></pre></div>
+<p>It's possible that the output says it came from c2 if slurm ran the job on the <code>c2</code> compute node instead of <code>c1</code>.</p>
+<h2 id="delete-the-resources">Delete the resources</h2>
+<p>Sometimes it is useful to remove resources that have been created in Jobbergate.</p>
+<p>When deleting the resources, you must delete in reverse order of creation:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>Job Submission -&gt; Job Script
+</span></code></pre></div>
+<p>Start by deleting the Job Submission:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>$<span class="w"> </span>jobbergate<span class="w"> </span>job-submissions<span class="w"> </span>delete<span class="w"> </span>--id<span class="o">=</span><span class="m">1</span>
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>
+</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>╭────────────────────────────────────────<span class="w"> </span>Job<span class="w"> </span>submission<span class="w"> </span>delete<span class="w"> </span>succeeded<span class="w"> </span>──────────────────────────────────────────╮
+</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>│<span class="w">                                                                                                                   </span>│
+</span><span id="__span-29-5"><a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>│<span class="w">   </span>The<span class="w"> </span>job<span class="w"> </span>submission<span class="w"> </span>was<span class="w"> </span>successfully<span class="w"> </span>deleted.<span class="w">                                                                    </span>│
+</span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>│<span class="w">                                                                                                                   </span>│
+</span><span id="__span-29-7"><a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</span></code></pre></div>
+<p>Then delete the Job Script:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>$<span class="w"> </span>jobbergate<span class="w"> </span>job-scripts<span class="w"> </span>delete<span class="w"> </span>--id<span class="o">=</span><span class="m">1</span>
+</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>
+</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>╭────────────────────────────────────────<span class="w"> </span>Job<span class="w"> </span>script<span class="w"> </span>delete<span class="w"> </span>succeeded<span class="w"> </span>──────────────────────────────────────────────╮
+</span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>│<span class="w">                                                                                                                   </span>│
+</span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>│<span class="w">   </span>The<span class="w"> </span>job<span class="w"> </span>script<span class="w"> </span>was<span class="w"> </span>successfully<span class="w"> </span>deleted.<span class="w">                                                                        </span>│
+</span><span id="__span-30-6"><a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a>│<span class="w">                                                                                                                   </span>│
+</span><span id="__span-30-7"><a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a>╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</span></code></pre></div>
+<p>If you attempt to delete a resource before any that were created <em>from</em> it, you will see an error like this:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>$<span class="w"> </span>jobbergate<span class="w"> </span>job-scripts<span class="w"> </span>delete<span class="w"> </span>--id<span class="o">=</span><span class="m">1</span>
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>
+</span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>╭───────────────────────────────────────────────<span class="w"> </span>REQUEST<span class="w"> </span>FAILED<span class="w"> </span>────────────────────────────────────────────────────╮
+</span><span id="__span-31-4"><a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>│<span class="w"> </span>Request<span class="w"> </span>to<span class="w"> </span>delete<span class="w"> </span>job-script<span class="w"> </span>was<span class="w"> </span>not<span class="w"> </span>accepted<span class="w"> </span>by<span class="w"> </span>the<span class="w"> </span>API:<span class="w">                                                         </span>│
+</span><span id="__span-31-5"><a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>│<span class="w"> </span>There<span class="w"> </span>are<span class="w"> </span>job_submissions<span class="w"> </span>that<span class="w"> </span>reference<span class="w"> </span>id<span class="w"> </span><span class="m">1</span>.<span class="w">                                                                    </span>│
+</span><span id="__span-31-6"><a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a>╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</span><span id="__span-31-7"><a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="sb">````</span>
+</span><span id="__span-31-8"><a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a>
+</span><span id="__span-31-9"><a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a>
+</span><span id="__span-31-10"><a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a><span class="c1">## Log out of the Jobbergate system</span>
+</span><span id="__span-31-11"><a id="__codelineno-31-11" name="__codelineno-31-11" href="#__codelineno-31-11"></a>
+</span><span id="__span-31-12"><a id="__codelineno-31-12" name="__codelineno-31-12" href="#__codelineno-31-12"></a>You<span class="w"> </span>have<span class="w"> </span>completed<span class="w"> </span>the<span class="w"> </span>tutorial.<span class="w"> </span>Try<span class="w"> </span>logging<span class="w"> </span>out<span class="w"> </span>of<span class="w"> </span>Jobbergate<span class="w"> </span>now:
+</span><span id="__span-31-13"><a id="__codelineno-31-13" name="__codelineno-31-13" href="#__codelineno-31-13"></a>
+</span><span id="__span-31-14"><a id="__codelineno-31-14" name="__codelineno-31-14" href="#__codelineno-31-14"></a><span class="sb">```</span>shell
+</span><span id="__span-31-15"><a id="__codelineno-31-15" name="__codelineno-31-15" href="#__codelineno-31-15"></a>$<span class="w"> </span>jobbergate<span class="w"> </span><span class="nb">logout</span>
+</span><span id="__span-31-16"><a id="__codelineno-31-16" name="__codelineno-31-16" href="#__codelineno-31-16"></a>
+</span><span id="__span-31-17"><a id="__codelineno-31-17" name="__codelineno-31-17" href="#__codelineno-31-17"></a>╭────────────────────────────────────────────────<span class="w"> </span>Logged<span class="w"> </span>out<span class="w"> </span>───────────────────────────────────────────────────────╮
+</span><span id="__span-31-18"><a id="__codelineno-31-18" name="__codelineno-31-18" href="#__codelineno-31-18"></a>│<span class="w">                                                                                                                   </span>│
+</span><span id="__span-31-19"><a id="__codelineno-31-19" name="__codelineno-31-19" href="#__codelineno-31-19"></a>│<span class="w">   </span>User<span class="w"> </span>was<span class="w"> </span>logged<span class="w"> </span>out.<span class="w">                                                                                            </span>│
+</span><span id="__span-31-20"><a id="__codelineno-31-20" name="__codelineno-31-20" href="#__codelineno-31-20"></a>│<span class="w">                                                                                                                   </span>│
+</span><span id="__span-31-21"><a id="__codelineno-31-21" name="__codelineno-31-21" href="#__codelineno-31-21"></a>╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</span></code></pre></div>
+<p>This will clear any cached tokens, and any subsequent Jobbergate commands will require you to log in again</p>
+<h2 id="appendix">Appendix</h2>
+<h3 id="keycloak-ui">Keycloak UI</h3>
+<p>You can connect to the Keycloak UI to create additional realms, clients, and users. However, the use of Keycloak is a
+rather large topic that goes outside the scope of this Tutorial.</p>
+<p>To get started, you can connect to the Keycloak UI through a browser if the server is running as a part of the
+docker-compose cluster using <a href="http:localhost:8080">this local URL</a>. To log in as administrator use these credentials:</p>
+<ul>
+<li><strong>username</strong>: admin</li>
+<li><strong>password</strong>: admin</li>
+</ul>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.expand", "navigation.tracking", "content.code.copy"], "search": "../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.aecac24b.min.js"></script>
+      
+    
+  </body>
+</html>

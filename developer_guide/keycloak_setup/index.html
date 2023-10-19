@@ -1,0 +1,1448 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../ci/">
+      
+      
+        <link rel="next" href="../template_workflows/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.6">
+    
+    
+      
+        <title>Keycloak Setup - Jobbergate Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.35e1ed30.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CFira+Code:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Fira Code"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#setting-up-keycloak-for-jobbergate" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Jobbergate Documentation" class="md-header__button md-logo" aria-label="Jobbergate Documentation" data-md-component="logo">
+      
+  <img src="https://omnivector-public-assets.s3.us-west-2.amazonaws.com/branding/omnivector-logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Jobbergate Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Keycloak Setup
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/omnivector-solutions/jobbergate" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Jobbergate Documentation" class="md-nav__button md-logo" aria-label="Jobbergate Documentation" data-md-component="logo">
+      
+  <img src="https://omnivector-public-assets.s3.us-west-2.amazonaws.com/branding/omnivector-logo.png" alt="logo">
+
+    </a>
+    Jobbergate Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/omnivector-solutions/jobbergate" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Elements
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Elements
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_1" id="__nav_2_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Resources
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1">
+            <span class="md-nav__icon md-icon"></span>
+            Resources
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/resources/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/resources/job_scripts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Job Scripts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/resources/job_script_templates/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Job Script Templates
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/resources/job_submissions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Job Submissions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Apps
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            Apps
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/agent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Agent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate CLI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/core/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Core
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorial/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tutorial
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../authors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Authors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Developer Guide
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Developer Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dev_tools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Developer Tools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../qa_tools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quality Assurance Tools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integration_testing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Integration Testing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Integration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Keycloak Setup
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Keycloak Setup
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-new-realm" class="md-nav__link">
+    Create a new Realm
+  </a>
+  
+    <nav class="md-nav" aria-label="Create a new Realm">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#setup-hostfile" class="md-nav__link">
+    Setup Hostfile
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-new-client-for-the-cli" class="md-nav__link">
+    Create a new Client for the CLI
+  </a>
+  
+    <nav class="md-nav" aria-label="Create a new Client for the CLI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#add-roles" class="md-nav__link">
+    Add Roles
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add-mappers" class="md-nav__link">
+    Add Mappers
+  </a>
+  
+    <nav class="md-nav" aria-label="Add Mappers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#audience" class="md-nav__link">
+    Audience
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#permissions" class="md-nav__link">
+    Permissions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-new-client-for-the-agent" class="md-nav__link">
+    Create a new Client for the Agent
+  </a>
+  
+    <nav class="md-nav" aria-label="Create a new Client for the Agent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#add-roles_1" class="md-nav__link">
+    Add Roles
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add-mappers_1" class="md-nav__link">
+    Add Mappers
+  </a>
+  
+    <nav class="md-nav" aria-label="Add Mappers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#audience_1" class="md-nav__link">
+    Audience
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#permissions_1" class="md-nav__link">
+    Permissions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add-service-account-roles" class="md-nav__link">
+    Add Service Account Roles
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-users" class="md-nav__link">
+    Create User(s)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    Conclusion
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../template_workflows/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Template Workflows
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/agent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Agent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate CLI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/core/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Core
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-new-realm" class="md-nav__link">
+    Create a new Realm
+  </a>
+  
+    <nav class="md-nav" aria-label="Create a new Realm">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#setup-hostfile" class="md-nav__link">
+    Setup Hostfile
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-new-client-for-the-cli" class="md-nav__link">
+    Create a new Client for the CLI
+  </a>
+  
+    <nav class="md-nav" aria-label="Create a new Client for the CLI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#add-roles" class="md-nav__link">
+    Add Roles
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add-mappers" class="md-nav__link">
+    Add Mappers
+  </a>
+  
+    <nav class="md-nav" aria-label="Add Mappers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#audience" class="md-nav__link">
+    Audience
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#permissions" class="md-nav__link">
+    Permissions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-new-client-for-the-agent" class="md-nav__link">
+    Create a new Client for the Agent
+  </a>
+  
+    <nav class="md-nav" aria-label="Create a new Client for the Agent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#add-roles_1" class="md-nav__link">
+    Add Roles
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add-mappers_1" class="md-nav__link">
+    Add Mappers
+  </a>
+  
+    <nav class="md-nav" aria-label="Add Mappers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#audience_1" class="md-nav__link">
+    Audience
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#permissions_1" class="md-nav__link">
+    Permissions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add-service-account-roles" class="md-nav__link">
+    Add Service Account Roles
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-users" class="md-nav__link">
+    Create User(s)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    Conclusion
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="setting-up-keycloak-for-jobbergate">Setting up Keycloak for Jobbergate</h1>
+<p>Jobbergate's security is provided by the <a href="https://github.com/omnivector-solutions/armasec">Armasec package</a> which should
+be compatible with any OIDC provider. However, the recommended provider is Keycloak.</p>
+<p>In this guide, we outline the steps to integrate an existing Keycloak instance (version 19.0.2 as used in this example)
+with Jobbergate to ensure a smooth user experience and enhanced security features.</p>
+<p>Although this tutorial focuses on integrating Keycloak with a locally deployed instance of Jobbergate, such as one
+housed in a Docker container via the <code>jobbergate-composed</code> sub-project, the procedures can be easily adapted to suit
+deployments on single-node Keycloak clusters or other complex configurations.</p>
+<h2 id="create-a-new-realm">Create a new Realm</h2>
+<p>You have the option to utilize an existing realm for Jobbergate, but for a streamlined process, it's typically more
+advantageous to create a new realm specifically for your Jobbergate deployment.</p>
+<p>Once you're logged into the Keycloak interface, navigate and click the Add realm button, found beneath the Select realm
+dropdown menu on the left-hand side.</p>
+<p>For those using a local Jobbergate deployment, you should assign the Name as "jobbergate-local".</p>
+<p>You'll also need to specify a Frontend URL. Avoid using "localhost" because a valid domain is required for the
+redirection to function correctly. A suitable alternative is the .local special domain; this domain is ideal as it isn't
+subject to reservation on any DNS. For instance, your full Frontend URL would be "http://keycloak.local:8080".</p>
+<p>The remaining realm settings can be left at their default configurations.</p>
+<h3 id="setup-hostfile">Setup Hostfile</h3>
+<p>For the Keycloak admin UI to work correctly in a local deployment, it's essential to include the <code>keycloak.local</code> domain
+in your system’s hostfile.</p>
+<p>For users on Linux or OSX, you can find this file at <code>/etc/hosts</code>. Windows users can locate it at
+<code>c:\windows\system32\drivers\etc\hosts</code>.</p>
+<p>Editing this file requires administrative or sudo privileges.</p>
+<p>Upon accessing the file, append the following line and save your changes:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>127.0.0.1   keycloak.local
+</span></code></pre></div>
+<p>This step ensures that the <code>Frontend URL</code> resolves correctly, facilitating seamless navigation and operation.</p>
+<h2 id="create-a-new-client-for-the-cli">Create a new Client for the CLI</h2>
+<p>To facilitate login and JWT authentication for the Jobbergate CLI, it's essential to allocate a dedicated client.</p>
+<p>Begin by navigating to the <code>Clients</code> section, found on the left sidebar, and then proceed to click on the <code>Create</code>
+button located on the right.</p>
+<p>When adjusting the <code>Client Protocol</code> settings, select the <code>openid-connect</code> option. For the <code>Client ID</code> setting, which
+choosing an easy to identify name like "jobbergate-cli" is best even though this field can be any unique string.</p>
+<p>To ensure the CLI can utilize this client for login purposes, it's vital to activate the <code>OAuth 2.0 Device Authorization
+Grant</code> option.</p>
+<p>If you're working with a local deployment, simply input "*" in the <code>Valid Redirect URIs</code> section.</p>
+<h3 id="add-roles">Add Roles</h3>
+<p>Next, we need to add the needed roles for Jobbergate endpoints. These represent the fine-grained permissions that
+are checked for each request to make sure that the user has permission to fulfill the request.</p>
+<p>Click the <code>Roles</code> tab at the top, and then click on <code>Add Role</code> on the right.</p>
+<p>Add the following roles:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>jobbergate:job-templates:edit</td>
+<td>Allow to view job templates</td>
+</tr>
+<tr>
+<td>jobbergate:job-templates:view</td>
+<td>Allow to view job templates</td>
+</tr>
+<tr>
+<td>jobbergate:job-scripts:edit</td>
+<td>Allow to edit job scripts</td>
+</tr>
+<tr>
+<td>jobbergate:job-scripts:view</td>
+<td>Allow to view job scripts</td>
+</tr>
+<tr>
+<td>jobbergate:job-submissions:edit</td>
+<td>Allow to edit job submissions</td>
+</tr>
+<tr>
+<td>jobbergate:job-submissions:view</td>
+<td>Allow to view job submissions</td>
+</tr>
+</tbody>
+</table>
+<h3 id="add-mappers">Add Mappers</h3>
+<p>Jobbergate requires two claims that are not available by default. We will add them to the JWTs with Mappers.</p>
+<p>Click the <code>Mappers</code>  tab at the top, and then click the <code>Create</code> button to add a new Mapper.</p>
+<h4 id="audience">Audience</h4>
+<p>First, we need to add an "audience" mapper. Select "audience" for the <code>Name</code> field. Next, select "Audience" for the
+<code>Mapper Type</code>.  The <code>Included Custom Audience</code> value may be whatever you like. The local deploy, by default, uses
+"https://apis.omnivector.solutions". Make sure to enable the <code>Add to ID token</code> setting.</p>
+<h4 id="permissions">Permissions</h4>
+<p>The <code>Armasec</code> package expects to find "permissions" in a claim at the root
+of the JWT payload. To facilitate this, we need to add a mapper that will copy the permissions to the correct place in
+the JWT. We will call the new mapper our "permissions" mapper.</p>
+<p>Enter "Permissions" under the <code>Name</code> field. Next, select "User Client Role" as the <code>Mapper Type</code>.
+Select "jobbergatel-cli" for the <code>Client ID</code>. The <code>Token Claim Name</code> <em>must</em> have the value "permissions". The
+<code>Claim JSON Type</code> field must be "String".</p>
+<h2 id="create-a-new-client-for-the-agent">Create a new Client for the Agent</h2>
+<p>The Jobbergate Agent also requires its own client.</p>
+<p>Again, click the <code>Clients</code> section on the left navigation bar, and then click the <code>Create</code> button on the right.</p>
+<p>For the <code>Client Protocol</code> setting, choose the <code>openid-connect</code> protocol. The <code>Client ID</code> setting will be used to match
+jobs to the cluster they should be submitted to. So use the cluster name for this setting. For a local deployment, the
+<code>Client ID</code> should be "local-slurm".</p>
+<p>On the <code>Settings</code> tab, set <code>Access Type</code> to <code>confidential</code> and enter "*" for the <code>Valid Redirect URIs</code>. Scroll down and
+click on the <code>Save</code> button.</p>
+<h3 id="add-roles_1">Add Roles</h3>
+<p>Click on the <code>Roles</code> tab, and click the <code>Add Role</code> button. Add all the following roles as above:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>jobbergate:job-templates:edit</td>
+<td>Allow to view Jobbergate applications</td>
+</tr>
+<tr>
+<td>jobbergate:job-templates:view</td>
+<td>Allow to view applications</td>
+</tr>
+<tr>
+<td>jobbergate:job-scripts:edit</td>
+<td>Allow to edit job scripts</td>
+</tr>
+<tr>
+<td>jobbergate:job-scripts:view</td>
+<td>Allow to view job scripts</td>
+</tr>
+<tr>
+<td>jobbergate:job-submissions:edit</td>
+<td>Allow to edit job submissions</td>
+</tr>
+<tr>
+<td>jobbergate:job-submissions:view</td>
+<td>Allow to view job submissions</td>
+</tr>
+</tbody>
+</table>
+<h3 id="add-mappers_1">Add Mappers</h3>
+<p>Like the CLI client, the Agent's client also requires the "Audience" and "Permissions" mappers.</p>
+<p>Click the <code>Mappers</code>  tab at the top, and then click the <code>Create</code> button to add a new Mapper.</p>
+<h4 id="audience_1">Audience</h4>
+<p>First, we need to add an "audience" mapper. Select "audience" for the <code>Name</code> field. Next, select "Audience" for the
+<code>Mapper Type</code>.  The <code>Included Custom Audience</code> value may be whatever you like. The local deploy, by default, uses
+"https://apis.omnivector.solutions". Make sure to enable the <code>Add to ID token</code> setting.</p>
+<h4 id="permissions_1">Permissions</h4>
+<p>Next, add a "permissions" mapper. The <code>Armasec</code> package expects to find a "permissions" claims under a claim at the root
+of the JWT payload. Enter "Permissions" under the <code>Name</code> field. Next, select "User Client Role" as the <code>Mapper Type</code>.
+Select "jobbergatel-cli" for the <code>Client ID</code>. The <code>Token Claim Name</code> <em>must</em> have the value "permissions". The
+<code>Claim JSON Type</code> field must be "String".</p>
+<h3 id="add-service-account-roles">Add Service Account Roles</h3>
+<p>To add the correct roles to the tokens issued for the Agent's client, we need to add some "Service Account Roles".</p>
+<p>Click the <code>Service Account Roles</code> tab. Then, from the <code>Client Roles</code> drop-down, select the <code>local-slurm</code> client. Select
+all of the Jobbergate roles created above and then click the <code>Add selected</code> button.</p>
+<h2 id="create-users">Create User(s)</h2>
+<p>You will need to create some users that can use Jobbergate. These users will be able to sign-in through the Jobbergate
+CLI. Each user must have a unique email address. Other than that, no special settings are needed.</p>
+<p>To add a user, click <code>Users</code> on the left nav bar. Next, click the <code>Add user</code> button on the right.</p>
+<p>Use the following settings, and then click the <code>Save</code> button.</p>
+<p>| Username    | local-user                  |
+| Email       | local-user@jobbergate.local |
+| First Name  | Local                       |
+| Last Name   | User                        |</p>
+<p>After you have created the user, edit it by clicking on it in the list. You may need to click on the <code>View all users</code>
+button to see it.</p>
+<p>Click the <code>Credentials</code> tab at the top. Enter "local" for the <code>Password</code> and <code>Password Confirmation</code> field. Turn the
+<code>Temporary</code> setting to <code>OFF</code>, and click <code>Reset Password</code>. Click the <code>Set password</code> verification button.</p>
+<p>Next, click the <code>Role Mappings</code> tab at the top. Select the <code>jobbergate-local</code> entry in the <code>Client Roles</code> drop-down.
+Select all of the roles for jobbergate added above and click <code>Add selected</code> to add them to the user.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>Your Keycloak instance is now prepared for use by Jobbergate! For additional information on configuring Keycloak and
+Armasec, consult documentation at:</p>
+<ul>
+<li>https://www.keycloak.org/documentation</li>
+<li>https://omnivector-solutions.github.io/armasec/</li>
+</ul>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.expand", "navigation.tracking", "content.code.copy"], "search": "../../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.aecac24b.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,4623 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../../developer_guide/template_workflows/">
+      
+      
+        <link rel="next" href="../api/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.6">
+    
+    
+      
+        <title>Jobbergate Agent - Jobbergate Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.35e1ed30.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CFira+Code:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Fira Code"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#jobbergate-agent-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Jobbergate Documentation" class="md-header__button md-logo" aria-label="Jobbergate Documentation" data-md-component="logo">
+      
+  <img src="https://omnivector-public-assets.s3.us-west-2.amazonaws.com/branding/omnivector-logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Jobbergate Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Jobbergate Agent
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/omnivector-solutions/jobbergate" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Jobbergate Documentation" class="md-nav__button md-logo" aria-label="Jobbergate Documentation" data-md-component="logo">
+      
+  <img src="https://omnivector-public-assets.s3.us-west-2.amazonaws.com/branding/omnivector-logo.png" alt="logo">
+
+    </a>
+    Jobbergate Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/omnivector-solutions/jobbergate" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Elements
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Elements
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_1" id="__nav_2_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Resources
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_1">
+            <span class="md-nav__icon md-icon"></span>
+            Resources
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/resources/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/resources/job_scripts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Job Scripts
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/resources/job_script_templates/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Job Script Templates
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/resources/job_submissions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Job Submissions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Apps
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            Apps
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/agent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Agent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate CLI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../elements/apps/core/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Core
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorial/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tutorial
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../authors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Authors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Developer Guide
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Developer Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer_guide/dev_tools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Developer Tools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer_guide/qa_tools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quality Assurance Tools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer_guide/integration_testing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Integration Testing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer_guide/ci/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Continuous Integration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer_guide/keycloak_setup/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Keycloak Setup
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../developer_guide/template_workflows/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Template Workflows
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Jobbergate Agent
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Agent
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#jobbergate_agent" class="md-nav__link">
+    jobbergate_agent
+  </a>
+  
+    <nav class="md-nav" aria-label="jobbergate_agent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.clients" class="md-nav__link">
+    clients
+  </a>
+  
+    <nav class="md-nav" aria-label="clients">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.clients.cluster_api" class="md-nav__link">
+    cluster_api
+  </a>
+  
+    <nav class="md-nav" aria-label="cluster_api">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.clients.cluster_api.AsyncBackendClient" class="md-nav__link">
+    AsyncBackendClient
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.clients.cluster_api.acquire_token" class="md-nav__link">
+    acquire_token()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.clients.slurmrestd" class="md-nav__link">
+    slurmrestd
+  </a>
+  
+    <nav class="md-nav" aria-label="slurmrestd">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.clients.slurmrestd.AsyncBackendClient" class="md-nav__link">
+    AsyncBackendClient
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.clients.slurmrestd.acquire_token" class="md-nav__link">
+    acquire_token()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.clients.slurmrestd.inject_token" class="md-nav__link">
+    inject_token()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate" class="md-nav__link">
+    jobbergate
+  </a>
+  
+    <nav class="md-nav" aria-label="jobbergate">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.api" class="md-nav__link">
+    api
+  </a>
+  
+    <nav class="md-nav" aria-label="api">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.api.SubmissionNotifier" class="md-nav__link">
+    SubmissionNotifier
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.api.fetch_active_submissions" class="md-nav__link">
+    fetch_active_submissions()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.api.fetch_pending_submissions" class="md-nav__link">
+    fetch_pending_submissions()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.api.mark_as_submitted" class="md-nav__link">
+    mark_as_submitted()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.api.update_status" class="md-nav__link">
+    update_status()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.constants" class="md-nav__link">
+    constants
+  </a>
+  
+    <nav class="md-nav" aria-label="constants">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.constants.FileType" class="md-nav__link">
+    FileType
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.constants.JobSubmissionStatus" class="md-nav__link">
+    JobSubmissionStatus
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.finish" class="md-nav__link">
+    finish
+  </a>
+  
+    <nav class="md-nav" aria-label="finish">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.finish.finish_active_jobs" class="md-nav__link">
+    finish_active_jobs()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas" class="md-nav__link">
+    schemas
+  </a>
+  
+    <nav class="md-nav" aria-label="schemas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.ActiveJobSubmission" class="md-nav__link">
+    ActiveJobSubmission
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.JobScript" class="md-nav__link">
+    JobScript
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.JobScriptFile" class="md-nav__link">
+    JobScriptFile
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.PendingJobSubmission" class="md-nav__link">
+    PendingJobSubmission
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.SlurmJobParams" class="md-nav__link">
+    SlurmJobParams
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.SlurmJobSubmission" class="md-nav__link">
+    SlurmJobSubmission
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.SlurmSubmitError" class="md-nav__link">
+    SlurmSubmitError
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.SlurmSubmitResponse" class="md-nav__link">
+    SlurmSubmitResponse
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.SlurmSubmittedJobStatus" class="md-nav__link">
+    SlurmSubmittedJobStatus
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit" class="md-nav__link">
+    submit
+  </a>
+  
+    <nav class="md-nav" aria-label="submit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.get_job_parameters" class="md-nav__link">
+    get_job_parameters()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.submit_job_script" class="md-nav__link">
+    submit_job_script()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.submit_pending_jobs" class="md-nav__link">
+    submit_pending_jobs()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.unpack_error_from_slurm_response" class="md-nav__link">
+    unpack_error_from_slurm_response()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.main" class="md-nav__link">
+    main
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.settings" class="md-nav__link">
+    settings
+  </a>
+  
+    <nav class="md-nav" aria-label="settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.settings.Settings" class="md-nav__link">
+    Settings
+  </a>
+  
+    <nav class="md-nav" aria-label="Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.settings.Settings.Config" class="md-nav__link">
+    Config
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.settings.Settings.compute_extra_settings" class="md-nav__link">
+    compute_extra_settings()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.tasks" class="md-nav__link">
+    tasks
+  </a>
+  
+    <nav class="md-nav" aria-label="tasks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.tasks.active_submissions_task" class="md-nav__link">
+    active_submissions_task()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.tasks.garbage_collection_task" class="md-nav__link">
+    garbage_collection_task()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.tasks.pending_submissions_task" class="md-nav__link">
+    pending_submissions_task()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.tasks.trigger_garbage_collections" class="md-nav__link">
+    trigger_garbage_collections()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils" class="md-nav__link">
+    utils
+  </a>
+  
+    <nav class="md-nav" aria-label="utils">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception" class="md-nav__link">
+    exception
+  </a>
+  
+    <nav class="md-nav" aria-label="exception">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception.AuthTokenError" class="md-nav__link">
+    AuthTokenError
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception.ClusterAgentError" class="md-nav__link">
+    ClusterAgentError
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception.JobSubmissionError" class="md-nav__link">
+    JobSubmissionError
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception.JobbergateApiError" class="md-nav__link">
+    JobbergateApiError
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception.ProcessExecutionError" class="md-nav__link">
+    ProcessExecutionError
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception.SlurmParameterParserError" class="md-nav__link">
+    SlurmParameterParserError
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception.SlurmrestdError" class="md-nav__link">
+    SlurmrestdError
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception.handle_errors_async" class="md-nav__link">
+    handle_errors_async()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.logging" class="md-nav__link">
+    logging
+  </a>
+  
+    <nav class="md-nav" aria-label="logging">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.logging.log_error" class="md-nav__link">
+    log_error()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.logging.logger_wraps" class="md-nav__link">
+    logger_wraps()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.plugin" class="md-nav__link">
+    plugin
+  </a>
+  
+    <nav class="md-nav" aria-label="plugin">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.plugin.load_plugins" class="md-nav__link">
+    load_plugins()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.scheduler" class="md-nav__link">
+    scheduler
+  </a>
+  
+    <nav class="md-nav" aria-label="scheduler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.scheduler.JobbergateTask" class="md-nav__link">
+    JobbergateTask
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.scheduler.init_scheduler" class="md-nav__link">
+    init_scheduler()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.scheduler.schedule_tasks" class="md-nav__link">
+    schedule_tasks()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.scheduler.shut_down_scheduler" class="md-nav__link">
+    shut_down_scheduler()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.user_mapper" class="md-nav__link">
+    user_mapper
+  </a>
+  
+    <nav class="md-nav" aria-label="user_mapper">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.user_mapper.SlurmUserMapper" class="md-nav__link">
+    SlurmUserMapper
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.user_mapper.SingleUserMapper" class="md-nav__link">
+    SingleUserMapper
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.user_mapper.SlurmUserMapperFactory" class="md-nav__link">
+    SlurmUserMapperFactory
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.user_mapper.manufacture" class="md-nav__link">
+    manufacture()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate CLI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../core/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Jobbergate Core
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#jobbergate_agent" class="md-nav__link">
+    jobbergate_agent
+  </a>
+  
+    <nav class="md-nav" aria-label="jobbergate_agent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.clients" class="md-nav__link">
+    clients
+  </a>
+  
+    <nav class="md-nav" aria-label="clients">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.clients.cluster_api" class="md-nav__link">
+    cluster_api
+  </a>
+  
+    <nav class="md-nav" aria-label="cluster_api">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.clients.cluster_api.AsyncBackendClient" class="md-nav__link">
+    AsyncBackendClient
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.clients.cluster_api.acquire_token" class="md-nav__link">
+    acquire_token()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.clients.slurmrestd" class="md-nav__link">
+    slurmrestd
+  </a>
+  
+    <nav class="md-nav" aria-label="slurmrestd">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.clients.slurmrestd.AsyncBackendClient" class="md-nav__link">
+    AsyncBackendClient
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.clients.slurmrestd.acquire_token" class="md-nav__link">
+    acquire_token()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.clients.slurmrestd.inject_token" class="md-nav__link">
+    inject_token()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate" class="md-nav__link">
+    jobbergate
+  </a>
+  
+    <nav class="md-nav" aria-label="jobbergate">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.api" class="md-nav__link">
+    api
+  </a>
+  
+    <nav class="md-nav" aria-label="api">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.api.SubmissionNotifier" class="md-nav__link">
+    SubmissionNotifier
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.api.fetch_active_submissions" class="md-nav__link">
+    fetch_active_submissions()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.api.fetch_pending_submissions" class="md-nav__link">
+    fetch_pending_submissions()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.api.mark_as_submitted" class="md-nav__link">
+    mark_as_submitted()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.api.update_status" class="md-nav__link">
+    update_status()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.constants" class="md-nav__link">
+    constants
+  </a>
+  
+    <nav class="md-nav" aria-label="constants">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.constants.FileType" class="md-nav__link">
+    FileType
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.constants.JobSubmissionStatus" class="md-nav__link">
+    JobSubmissionStatus
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.finish" class="md-nav__link">
+    finish
+  </a>
+  
+    <nav class="md-nav" aria-label="finish">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.finish.finish_active_jobs" class="md-nav__link">
+    finish_active_jobs()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas" class="md-nav__link">
+    schemas
+  </a>
+  
+    <nav class="md-nav" aria-label="schemas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.ActiveJobSubmission" class="md-nav__link">
+    ActiveJobSubmission
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.JobScript" class="md-nav__link">
+    JobScript
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.JobScriptFile" class="md-nav__link">
+    JobScriptFile
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.PendingJobSubmission" class="md-nav__link">
+    PendingJobSubmission
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.SlurmJobParams" class="md-nav__link">
+    SlurmJobParams
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.SlurmJobSubmission" class="md-nav__link">
+    SlurmJobSubmission
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.SlurmSubmitError" class="md-nav__link">
+    SlurmSubmitError
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.SlurmSubmitResponse" class="md-nav__link">
+    SlurmSubmitResponse
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.schemas.SlurmSubmittedJobStatus" class="md-nav__link">
+    SlurmSubmittedJobStatus
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit" class="md-nav__link">
+    submit
+  </a>
+  
+    <nav class="md-nav" aria-label="submit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.get_job_parameters" class="md-nav__link">
+    get_job_parameters()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.submit_job_script" class="md-nav__link">
+    submit_job_script()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.submit_pending_jobs" class="md-nav__link">
+    submit_pending_jobs()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.unpack_error_from_slurm_response" class="md-nav__link">
+    unpack_error_from_slurm_response()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.main" class="md-nav__link">
+    main
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.settings" class="md-nav__link">
+    settings
+  </a>
+  
+    <nav class="md-nav" aria-label="settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.settings.Settings" class="md-nav__link">
+    Settings
+  </a>
+  
+    <nav class="md-nav" aria-label="Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.settings.Settings.Config" class="md-nav__link">
+    Config
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.settings.Settings.compute_extra_settings" class="md-nav__link">
+    compute_extra_settings()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.tasks" class="md-nav__link">
+    tasks
+  </a>
+  
+    <nav class="md-nav" aria-label="tasks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.tasks.active_submissions_task" class="md-nav__link">
+    active_submissions_task()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.tasks.garbage_collection_task" class="md-nav__link">
+    garbage_collection_task()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.tasks.pending_submissions_task" class="md-nav__link">
+    pending_submissions_task()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.tasks.trigger_garbage_collections" class="md-nav__link">
+    trigger_garbage_collections()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils" class="md-nav__link">
+    utils
+  </a>
+  
+    <nav class="md-nav" aria-label="utils">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception" class="md-nav__link">
+    exception
+  </a>
+  
+    <nav class="md-nav" aria-label="exception">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception.AuthTokenError" class="md-nav__link">
+    AuthTokenError
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception.ClusterAgentError" class="md-nav__link">
+    ClusterAgentError
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception.JobSubmissionError" class="md-nav__link">
+    JobSubmissionError
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception.JobbergateApiError" class="md-nav__link">
+    JobbergateApiError
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception.ProcessExecutionError" class="md-nav__link">
+    ProcessExecutionError
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception.SlurmParameterParserError" class="md-nav__link">
+    SlurmParameterParserError
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception.SlurmrestdError" class="md-nav__link">
+    SlurmrestdError
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.exception.handle_errors_async" class="md-nav__link">
+    handle_errors_async()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.logging" class="md-nav__link">
+    logging
+  </a>
+  
+    <nav class="md-nav" aria-label="logging">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.logging.log_error" class="md-nav__link">
+    log_error()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.logging.logger_wraps" class="md-nav__link">
+    logger_wraps()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.plugin" class="md-nav__link">
+    plugin
+  </a>
+  
+    <nav class="md-nav" aria-label="plugin">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.plugin.load_plugins" class="md-nav__link">
+    load_plugins()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.scheduler" class="md-nav__link">
+    scheduler
+  </a>
+  
+    <nav class="md-nav" aria-label="scheduler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.scheduler.JobbergateTask" class="md-nav__link">
+    JobbergateTask
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.scheduler.init_scheduler" class="md-nav__link">
+    init_scheduler()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.scheduler.schedule_tasks" class="md-nav__link">
+    schedule_tasks()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.scheduler.shut_down_scheduler" class="md-nav__link">
+    shut_down_scheduler()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.user_mapper" class="md-nav__link">
+    user_mapper
+  </a>
+  
+    <nav class="md-nav" aria-label="user_mapper">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.user_mapper.SlurmUserMapper" class="md-nav__link">
+    SlurmUserMapper
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.user_mapper.SingleUserMapper" class="md-nav__link">
+    SingleUserMapper
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.user_mapper.SlurmUserMapperFactory" class="md-nav__link">
+    SlurmUserMapperFactory
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.utils.user_mapper.manufacture" class="md-nav__link">
+    manufacture()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="jobbergate-agent-reference">Jobbergate Agent Reference</h1>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h3 id="jobbergate_agent" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">jobbergate_agent</span>
+
+
+</h3>
+
+  <div class="doc doc-contents first">
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h4 id="jobbergate_agent.clients" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">clients</span>
+
+
+</h4>
+
+  <div class="doc doc-contents ">
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h5 id="jobbergate_agent.clients.cluster_api" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">cluster_api</span>
+
+
+</h5>
+
+  <div class="doc doc-contents ">
+  
+      <p>Core module for Jobbergate API clients management</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.clients.cluster_api.AsyncBackendClient" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">AsyncBackendClient</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="httpx.AsyncClient">AsyncClient</span></code></p>
+
+  
+      <p>Extends the httpx.AsyncClient class with automatic token acquisition for requests.
+The token is acquired lazily on the first httpx request issued.
+This client should be used for most agent actions.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.clients.cluster_api.acquire_token" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">acquire_token</span>
+
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">acquire_token</span><span class="p">(</span><span class="n">token</span><span class="p">:</span> <span class="n">Token</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Token</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Retrieves a token from OIDC based on the app settings.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h5 id="jobbergate_agent.clients.slurmrestd" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">slurmrestd</span>
+
+
+</h5>
+
+  <div class="doc doc-contents ">
+  
+      <p>Core module for Jobbergate API clients management</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.clients.slurmrestd.AsyncBackendClient" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">AsyncBackendClient</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="httpx.AsyncClient">AsyncClient</span></code></p>
+
+  
+      <p>Extends the httpx.AsyncClient class with automatic token acquisition for requests.
+The token is acquired lazily on the first httpx request issued.
+This client should be used for most agent actions.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.clients.slurmrestd.acquire_token" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">acquire_token</span>
+
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">acquire_token</span><span class="p">(</span><span class="n">username</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Retrieves a token from Slurmrestd based on the app settings.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.clients.slurmrestd.inject_token" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">inject_token</span>
+
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">inject_token</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">request</span><span class="p">:</span> <span class="n">httpx</span><span class="o">.</span><span class="n">Request</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">username</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">httpx</span><span class="o">.</span><span class="n">Request</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Inject a token based on the provided username into the request.</p>
+<p>For requests that need to use something except the default username,
+this injector should be used at the request level (instead of at client
+initialization) like this:</p>
+<p>.. code-block:: python</p>
+<p>client.get(url, auth=lambda r: inject_token(r, username=username))</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h4 id="jobbergate_agent.jobbergate" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">jobbergate</span>
+
+
+</h4>
+
+  <div class="doc doc-contents ">
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h5 id="jobbergate_agent.jobbergate.api" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">api</span>
+
+
+</h5>
+
+  <div class="doc doc-contents ">
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.api.SubmissionNotifier" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">SubmissionNotifier</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Class used to update the status for a job submission when some error is detected.</p>
+<p>It is designed to work together with py-buzz, extracting the error message,
+logging it and sending it to Jobbergate API.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_agent.jobbergate.api.SubmissionNotifier.report_error" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">report_error</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">report_error</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="n">DoExceptParams</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Update the status for a job submission.</p>
+<p>:param DoExceptParams params: Dataclass for the <code>do_except</code> user supplied handling method.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.api.fetch_active_submissions" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">fetch_active_submissions</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">fetch_active_submissions</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ActiveJobSubmission</span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Retrieve a list of active job_submissions.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.api.fetch_pending_submissions" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">fetch_pending_submissions</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">fetch_pending_submissions</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">PendingJobSubmission</span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Retrieve a list of pending job_submissions.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.api.mark_as_submitted" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">mark_as_submitted</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">mark_as_submitted</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_submission_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">slurm_job_id</span><span class="p">:</span> <span class="nb">int</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Mark job_submission as submitted in the Jobbergate API.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.api.update_status" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">update_status</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">update_status</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_submission_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">status</span><span class="p">:</span> <span class="n">JobSubmissionStatus</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="o">*</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">report_message</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Update a job submission with a status</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h5 id="jobbergate_agent.jobbergate.constants" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">constants</span>
+
+
+</h5>
+
+  <div class="doc doc-contents ">
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.constants.FileType" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">FileType</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code>str</code>, <code><span title="enum.Enum">Enum</span></code></p>
+
+  
+      <p>File type enum.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.constants.JobSubmissionStatus" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobSubmissionStatus</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code>str</code>, <code><span title="enum.Enum">Enum</span></code></p>
+
+  
+      <p>Enumeration of possible job_submission statuses.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h5 id="jobbergate_agent.jobbergate.finish" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">finish</span>
+
+
+</h5>
+
+  <div class="doc doc-contents ">
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.finish.finish_active_jobs" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">finish_active_jobs</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">finish_active_jobs</span><span class="p">()</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Mark all active jobs that have completed or failed as finished.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h5 id="jobbergate_agent.jobbergate.schemas" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">schemas</span>
+
+
+</h5>
+
+  <div class="doc doc-contents ">
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.schemas.ActiveJobSubmission" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">ActiveJobSubmission</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Specialized model for the cluster-agent to pull an active job_submission.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.schemas.JobScript" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobScript</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Model to match database for the JobScript resource.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.schemas.JobScriptFile" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobScriptFile</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Model for the job_script_files field of the JobScript resource.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.schemas.PendingJobSubmission" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">PendingJobSubmission</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Specialized model for the cluster-agent to pull a pending job_submission along with
+data from its job_script and application sources.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.schemas.SlurmJobParams" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">SlurmJobParams</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Specialized model for describing job submission parameters for Slurm REST API.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.schemas.SlurmJobSubmission" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">SlurmJobSubmission</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Specialized model for describing a request to submit a job to Slurm REST API.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.schemas.SlurmSubmitError" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">SlurmSubmitError</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Specialized model for error content in a SlurmSubmitResponse.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.schemas.SlurmSubmitResponse" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">SlurmSubmitResponse</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Specialized model for the cluster-agent to pull a pending job_submission along with
+data from its job_script and application sources.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.schemas.SlurmSubmittedJobStatus" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">SlurmSubmittedJobStatus</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Specialized model for the cluster-agent to pull a concluded job_submission.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h5 id="jobbergate_agent.jobbergate.submit" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">submit</span>
+
+
+</h5>
+
+  <div class="doc doc-contents ">
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.submit.get_job_parameters" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">get_job_parameters</span>
+
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_job_parameters</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">slurm_parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SlurmJobParams</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Obtain the job parameters from the slurm_parameters dict and additional values.</p>
+<p>Extra keyword arguments can be used to supply default values for any parameter
+(like name or current_working_directory). Note they may be overwritten by
+values from slurm_parameters.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.submit.submit_job_script" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">submit_job_script</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">submit_job_script</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">pending_job_submission</span><span class="p">:</span> <span class="n">PendingJobSubmission</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">user_mapper</span><span class="p">:</span> <span class="n">SlurmUserMapper</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Submit a Job Script to slurm via the Slurm REST API.</p>
+<p>:param: pending_job_submission: A job_submission with fields needed to submit.
+:returns: The <code>slurm_job_id</code> for the submitted job</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.submit.submit_pending_jobs" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">submit_pending_jobs</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">submit_pending_jobs</span><span class="p">()</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Submit all pending jobs and update them with <code>SUBMITTED</code> status and slurm_job_id.</p>
+<p>:returns: The <code>slurm_job_id</code> for the submitted job</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.submit.unpack_error_from_slurm_response" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">unpack_error_from_slurm_response</span>
+
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">unpack_error_from_slurm_response</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">response</span><span class="p">:</span> <span class="n">SlurmSubmitResponse</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Unpack the error message from the response of a slurmrestd request.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h4 id="jobbergate_agent.main" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">main</span>
+
+
+</h4>
+
+  <div class="doc doc-contents ">
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h4 id="jobbergate_agent.settings" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">settings</span>
+
+
+</h4>
+
+  <div class="doc doc-contents ">
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h5 id="jobbergate_agent.settings.Settings" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">Settings</span>
+
+
+</h5>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseSettings">BaseSettings</span></code></p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.settings.Settings.Config" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">Config</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Provide configuration for the project settings.</p>
+<p>Note that we disable use of <code>dotenv</code> if we are in test mode.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.settings.Settings.compute_extra_settings" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">compute_extra_settings</span>
+
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">compute_extra_settings</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Compute settings values that are based on other settings values.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h4 id="jobbergate_agent.tasks" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">tasks</span>
+
+
+</h4>
+
+  <div class="doc doc-contents ">
+  
+      <p>Task definitions for the Jobbergate Agent.</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h5 id="jobbergate_agent.tasks.active_submissions_task" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">active_submissions_task</span>
+
+
+</h5>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">active_submissions_task</span><span class="p">(</span><span class="n">scheduler</span><span class="p">:</span> <span class="n">BaseScheduler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Job</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Schedule a task to handle active jobs every <code>TASK_JOBS_INTERVAL_SECONDS</code> seconds.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h5 id="jobbergate_agent.tasks.garbage_collection_task" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">garbage_collection_task</span>
+
+
+</h5>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">garbage_collection_task</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">scheduler</span><span class="p">:</span> <span class="n">BaseScheduler</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Job</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Schedule a task to perform garbage collection every dat at.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h5 id="jobbergate_agent.tasks.pending_submissions_task" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">pending_submissions_task</span>
+
+
+</h5>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">pending_submissions_task</span><span class="p">(</span><span class="n">scheduler</span><span class="p">:</span> <span class="n">BaseScheduler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Job</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Schedule a task to submit pending jobs every <code>TASK_JOBS_INTERVAL_SECONDS</code> seconds.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h5 id="jobbergate_agent.tasks.trigger_garbage_collections" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">trigger_garbage_collections</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h5>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">trigger_garbage_collections</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">interval_between_calls</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">60</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Trigger maintenance tasks on the Jobbergate API.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h4 id="jobbergate_agent.utils" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">utils</span>
+
+
+</h4>
+
+  <div class="doc doc-contents ">
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h5 id="jobbergate_agent.utils.exception" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">exception</span>
+
+
+</h5>
+
+  <div class="doc doc-contents ">
+  
+      <p>Core module for exception related operations</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.utils.exception.AuthTokenError" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">AuthTokenError</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_agent.utils.exception.ClusterAgentError" href="#jobbergate_agent.utils.exception.ClusterAgentError">ClusterAgentError</a></code></p>
+
+  
+      <p>Raise exception when there are connection issues with the backend</p>
+
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.utils.exception.ClusterAgentError" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">ClusterAgentError</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="buzz.Buzz">Buzz</span></code></p>
+
+  
+      <p>Raise exception when execution command returns an error</p>
+
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.utils.exception.JobSubmissionError" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobSubmissionError</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_agent.utils.exception.ClusterAgentError" href="#jobbergate_agent.utils.exception.ClusterAgentError">ClusterAgentError</a></code></p>
+
+  
+      <p>Raise exception when a job cannot be submitted raises any error</p>
+
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.utils.exception.JobbergateApiError" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobbergateApiError</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_agent.utils.exception.ClusterAgentError" href="#jobbergate_agent.utils.exception.ClusterAgentError">ClusterAgentError</a></code></p>
+
+  
+      <p>Raise exception when communication with Jobbergate API fails</p>
+
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.utils.exception.ProcessExecutionError" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">ProcessExecutionError</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_agent.utils.exception.ClusterAgentError" href="#jobbergate_agent.utils.exception.ClusterAgentError">ClusterAgentError</a></code></p>
+
+  
+      <p>Raise exception when execution command returns an error</p>
+
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.utils.exception.SlurmParameterParserError" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">SlurmParameterParserError</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_agent.utils.exception.ClusterAgentError" href="#jobbergate_agent.utils.exception.ClusterAgentError">ClusterAgentError</a></code></p>
+
+  
+      <p>Raise exception when Slurm mapper or SBATCH parser face any error</p>
+
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.utils.exception.SlurmrestdError" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">SlurmrestdError</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_agent.utils.exception.ClusterAgentError" href="#jobbergate_agent.utils.exception.ClusterAgentError">ClusterAgentError</a></code></p>
+
+  
+      <p>Raise exception when slurmrestd raises any error</p>
+
+
+  </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.utils.exception.handle_errors_async" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">handle_errors_async</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">handle_errors_async</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">raise_exc_class</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="n">Type</span><span class="p">[</span><span class="ne">Exception</span><span class="p">],</span> <span class="kc">None</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="p">]</span> <span class="o">=</span> <span class="ne">Exception</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">raise_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">raise_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">handle_exc_class</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="n">Type</span><span class="p">[</span><span class="ne">Exception</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="ne">Exception</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="p">]</span> <span class="o">=</span> <span class="ne">Exception</span><span class="p">,</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">do_finally</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">noop</span><span class="p">,</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">do_except</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">DoExceptParams</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">noop</span><span class="p">,</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">do_else</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">noop</span><span class="p">,</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Async context manager that will intercept exceptions and repackage them with a message attached.</p>
+<p>Example:</p>
+<p>.. code-block:: python</p>
+<p>with handle_errors("It didn't work"):
+       some_code_that_might_raise_an_exception()</p>
+<p>:param: message:           The message to attach to the raised exception.
+:param: raise_exc_class:   The exception type to raise with the constructed message
+                           if an exception is caught in the managed context.</p>
+<div class="language-text highlight"><pre><span></span><code>                       Defaults to Exception.
+
+                       If ``None`` is passed, no new exception will be raised and only the
+                       ``do_except``, ``do_else``, and ``do_finally``
+                       functions will be called.
+</code></pre></div>
+<p>:param: raise_args:        Additional positional args (after the constructed message) that will
+                           passed when raising an instance of the <code>raise_exc_class</code>.
+:param: raise_kwargs:      Keyword args that will be passed when raising an instance of the
+                           <code>raise_exc_class</code>.
+:param: handle_exc_class:  Limits the class of exceptions that will be intercepted
+                           Any other exception types will not be caught and re-packaged.
+                           Defaults to Exception (will handle all exceptions). May also be
+                           provided as a tuple of multiple exception types to handle.
+:param: do_finally:        A function that should always be called at the end of the block.
+                           Should take no parameters.
+:param: do_except:         A function that should be called only if there was an exception.
+                           Must accept one parameter that is an instance of the
+                           <code>DoExceptParams</code> dataclass. Note that the <code>do_except</code>
+                           method is passed the <em>original exception</em>.
+:param: do_else:           A function that should be called only if there were no
+                           exceptions encountered.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h5 id="jobbergate_agent.utils.logging" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">logging</span>
+
+
+</h5>
+
+  <div class="doc doc-contents ">
+  
+      <p>Core module for logging operations</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.utils.logging.log_error" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">log_error</span>
+
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">log_error</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="n">DoExceptParams</span><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Provide a utility function to log a Buzz-based exception and the stack-trace of
+the error's context.</p>
+<p>:param: params: A DoExceptParams instance containing the original exception, a
+                message describing it, and the stack trace of the error.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.utils.logging.logger_wraps" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">logger_wraps</span>
+
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">logger_wraps</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="o">*</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">entry</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">exit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;DEBUG&quot;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Decorator to wrap a function with logging statements.</p>
+
+<details class="reference" open>
+  <summary>Reference</summary>
+  <p>https://loguru.readthedocs.io/en/stable/resources/recipes.html</p>
+</details>
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h5 id="jobbergate_agent.utils.plugin" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">plugin</span>
+
+
+</h5>
+
+  <div class="doc doc-contents ">
+  
+      <p>Provide to the agent the ability to load custom plugins that are installed on the same environment.</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.utils.plugin.load_plugins" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">load_plugins</span>
+
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">load_plugins</span><span class="p">(</span><span class="n">plugin_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Discover and load plugins available to the agent, allowing for third party ones to be included.</p>
+<p>Notice the ones shipped with the agent are also declared on the <code>pyproject.toml</code> file
+as plugins, even though they could be easily loaded directly from source. This aims
+to support tests and to demonstrate how to use the plugin system.</p>
+
+<details class="reference" open>
+  <summary>Reference</summary>
+  <p>https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins/</p>
+</details>
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h5 id="jobbergate_agent.utils.scheduler" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">scheduler</span>
+
+
+</h5>
+
+  <div class="doc doc-contents ">
+  
+      <p>Provide the task scheduler for the agent and the main loop to run it.</p>
+<p>Custom tasks can be added to the agent as installable plugins, which are discovered at runtime.</p>
+
+<details class="references" open>
+  <summary>References</summary>
+  <p>https://github.com/agronholm/apscheduler
+https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins</p>
+</details>
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.utils.scheduler.JobbergateTask" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobbergateTask</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+
+  
+      <p>Protocol to be implemented by any task that is expected to run on the scheduler.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_agent.utils.scheduler.JobbergateTask.__call__" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">__call__</span>
+
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__call__</span><span class="p">(</span><span class="n">scheduler</span><span class="p">:</span> <span class="n">BaseScheduler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Job</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Specify a callable used to schedule a task and return the resulting job.</p>
+<p>This is handled to client code to give them the opportunity to handle
+their own configuration and to access the rich flexibility of the scheduler API.</p>
+<p>None can also be returned if no task is going to be scheduled due to internal business logic.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.utils.scheduler.init_scheduler" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">init_scheduler</span>
+
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">init_scheduler</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">BaseScheduler</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Initialize the scheduler and schedule all tasks.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.utils.scheduler.schedule_tasks" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">schedule_tasks</span>
+
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">schedule_tasks</span><span class="p">(</span><span class="n">scheduler</span><span class="p">:</span> <span class="n">BaseScheduler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Discovery and schedule all tasks to be run by the agent.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.utils.scheduler.shut_down_scheduler" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">shut_down_scheduler</span>
+
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">shut_down_scheduler</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">scheduler</span><span class="p">:</span> <span class="n">BaseScheduler</span><span class="p">,</span> <span class="n">wait</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Shutdown the scheduler.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h5 id="jobbergate_agent.utils.user_mapper" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">user_mapper</span>
+
+
+</h5>
+
+  <div class="doc doc-contents ">
+  
+      <p>Provide to the agent a way to map email addresses from Jobbergate local Slurm users.</p>
+<p>Custom mappers can be added to the agent as installable plugins, which are discovered at runtime.</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+
+<h6 id="jobbergate_agent.utils.user_mapper.SlurmUserMapper" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">SlurmUserMapper</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">SlurmUserMapper</span> <span class="o">=</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Slurm user mappers are mappings from email addresses to local Slurm users.</p>
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.utils.user_mapper.SingleUserMapper" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">SingleUserMapper</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="collections.abc.Mapping">Mapping</span></code></p>
+
+  
+      <p>A user mapper that always returns the same user.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_agent.utils.user_mapper.SingleUserMapper.__post_init__" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">__post_init__</span>
+
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">__post_init__</span><span class="p">()</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Validate the user mapper by asserting it is not an empty string.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.utils.user_mapper.SlurmUserMapperFactory" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">SlurmUserMapperFactory</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+
+  
+      <p>Protocol to be implemented by plugins on client code.</p>
+<p>A callable with no arguments is expected in order to handle to client code
+the configuration and initialization of any custom user mapper.
+Any object that implements the <code>Mapping</code> protocol can be returned.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_agent.utils.user_mapper.SlurmUserMapperFactory.__call__" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">__call__</span>
+
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__call__</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">SlurmUserMapper</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Specify the signature to build a user mapper.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.utils.user_mapper.manufacture" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">manufacture</span>
+
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">manufacture</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">SlurmUserMapper</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Create an instance of a Slurm user mapper given the app configuration.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.expand", "navigation.tracking", "content.code.copy"], "search": "../../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.aecac24b.min.js"></script>
+      
+    
+  </body>
+</html>
