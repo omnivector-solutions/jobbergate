@@ -293,7 +293,7 @@ def test_render__non_fast_mode_and_job_submission(
             )
         ),
         # To confirm that the job should be submitted to the default cluster, in the current dir and not downloaded
-        input=f"y\n{settings.DEFAULT_CLUSTER_NAME}\n.\nn\n",
+        input=f"y\nn\n{settings.DEFAULT_CLUSTER_NAME}\n.\n",
     )
     assert result.exit_code == 0, f"render failed: {result.stdout}"
     assert mocked_fetch_application_data.called_once_with(
@@ -413,6 +413,7 @@ def test_render__with_fast_mode_and_no_job_submission(
                        --param-file={param_file_path}
                        --fast
                        --no-submit
+                       --no-download
                        {sbatch_params}
                 """
             )

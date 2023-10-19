@@ -289,6 +289,21 @@ def render(
         fast=fast,
         actual_value=submit,
     )
+
+    download = question_helper(
+        question_func=typer.confirm,
+        text="Would you like to download the job script files?",
+        default=True,
+        fast=fast,
+        actual_value=download,
+    )
+
+    if download:
+        download_job_script_files(job_script_result.id, jg_ctx)
+
+    if not submit:
+        return
+
     cluster_name = question_helper(
         question_func=typer.prompt,
         text="What cluster should this job be submitted to?",
@@ -303,20 +318,6 @@ def render(
         fast=fast,
         actual_value=execution_directory,
     )
-
-    download = question_helper(
-        question_func=typer.confirm,
-        text="Would you like to download the job script files?",
-        default=True,
-        fast=fast,
-        actual_value=download,
-    )
-
-    if not submit:
-        return
-
-    if download:
-        download_job_script_files(job_script_result.id, jg_ctx)
 
     try:
         job_submission_result = create_job_submission(
