@@ -7,10 +7,17 @@ from textwrap import dedent
 from typing import Any, Dict, Optional, cast
 
 import typer
+from pynput import keyboard
 
 from jobbergate_cli.constants import OV_CONTACT, SortOrder
 from jobbergate_cli.exceptions import handle_abort
-from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
+from jobbergate_cli.render import (
+    StyleMapper,
+    render_list_results,
+    render_paginated_list_results,
+    render_single_result,
+    terminal_message,
+)
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 from jobbergate_cli.subapps.applications.tools import fetch_application_data, save_application_files, upload_application
@@ -97,13 +104,52 @@ def list_all(
             params=params,
         ),
     )
-    render_list_results(
+
+    render_paginated_list_results(
         jg_ctx,
         envelope,
         title="Applications List",
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,
     )
+
+    current_page = envelope.page
+    total_pages = envelope.pages
+
+    def handle_pagination(key, current_page=current_page, total_pages=total_pages):
+        if key == keyboard.Key.left:
+            current_page = max(1, current_page - 1)
+
+        if key == keyboard.Key.right:
+            current_page = min(current_page + 1, total_pages)
+
+        if key == keyboard.Key.esc:
+            return False
+
+        envelope = cast(
+            ListResponseEnvelope,
+            make_request(
+                jg_ctx.client,
+                "/jobbergate/job-script-templates?page={}".format(current_page),
+                "GET",
+                expected_status=200,
+                abort_message="Couldn't retrieve applications list from API",
+                support=True,
+                response_model_cls=ListResponseEnvelope,
+                params=params,
+            ),
+        )
+
+        render_paginated_list_results(
+            jg_ctx,
+            envelope,
+            title="Applications List",
+            style_mapper=style_mapper,
+            hidden_fields=HIDDEN_FIELDS,
+        )
+
+    with keyboard.Listener(on_press=handle_pagination, current_page=current_page, total_pages=total_pages) as listener:
+        listener.join()
 
 
 @app.command()
