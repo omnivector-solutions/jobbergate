@@ -202,3 +202,48 @@ def render_single_result(
         if ctx.full_output or hidden_fields is None:
             hidden_fields = []
         render_dict(result, hidden_fields=hidden_fields, title=title)
+
+
+def render_paginated_list_results(
+    ctx: JobbergateContext,
+    envelope: ListResponseEnvelope,
+    title: str = "Results List",
+    style_mapper: StyleMapper = None,
+    hidden_fields: List[str] = None,
+):
+    if ctx.raw_output:
+        serialized = envelope.json()
+        deserialized = json.loads(serialized)
+        render_json(deserialized["items"])
+    else:
+        if envelope.total == 0:
+            terminal_message("There are no results to display", subject="Nothing here...")
+            return
+
+        current_page = envelope.page
+        total_pages = envelope.pages
+
+        if ctx.full_output or hidden_fields is None:
+            filtered_results = envelope.items
+        else:
+            filtered_results = [{k: v for (k, v) in d.items() if k not in hidden_fields} for d in envelope.items]
+
+        first_row = filtered_results[0]
+
+        table = Table(title=title, caption=f"Page {current_page} of {total_pages} - Total items: {envelope.total}")
+        if style_mapper is None:
+            style_mapper = StyleMapper()
+        for key in first_row.keys():
+            table.add_column(key, **style_mapper.map_style(key))
+
+        for row in filtered_results:
+            table.add_row(*[str(v) for v in row.values()])
+
+        console = Console()
+        console.print()
+        console.print(table)
+
+        page_controls = (
+            f"Page {current_page} of {total_pages} - press Left for previous page, Right for next page, or Esc to exit"
+        )
+        console.print(page_controls)
