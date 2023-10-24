@@ -7,7 +7,7 @@ from textwrap import dedent
 from typing import Any, Dict, Optional, cast
 
 import typer
-from pynput import keyboard
+from inquirer import List, prompt
 
 from jobbergate_cli.constants import OV_CONTACT, SortOrder
 from jobbergate_cli.exceptions import handle_abort
@@ -116,15 +116,47 @@ def list_all(
     current_page = envelope.page
     total_pages = envelope.pages
 
-    def handle_pagination(key, current_page=current_page, total_pages=total_pages):
-        if key == keyboard.Key.left:
-            current_page = max(1, current_page - 1)
+    while True:
+        if current_page == 1:
+            answer = prompt(
+                [
+                    List(
+                        "navigation",
+                        message="Which page would you like to view?",
+                        choices=["Next page", "Exit"],
+                        default="Next page",
+                    )
+                ]
+            )
+        elif current_page == total_pages:
+            answer = prompt(
+                [
+                    List(
+                        "navigation",
+                        message="Which page would you like to view?",
+                        choices=["Previous page", "Exit"],
+                        default="Exit",
+                    )
+                ]
+            )
+        else:
+            answer = prompt(
+                [
+                    List(
+                        "navigation",
+                        message="Which page would you like to view?",
+                        choices=["Previous page", "Next page", "Exit"],
+                        default="Next page",
+                    )
+                ]
+            )
 
-        if key == keyboard.Key.right:
-            current_page = min(current_page + 1, total_pages)
-
-        if key == keyboard.Key.esc:
-            return False
+        if answer["navigation"] == "Next page":
+            current_page += 1
+        elif answer["navigation"] == "Previous page":
+            current_page -= 1
+        else:
+            break
 
         envelope = cast(
             ListResponseEnvelope,
@@ -139,7 +171,6 @@ def list_all(
                 params=params,
             ),
         )
-
         render_paginated_list_results(
             jg_ctx,
             envelope,
@@ -147,9 +178,6 @@ def list_all(
             style_mapper=style_mapper,
             hidden_fields=HIDDEN_FIELDS,
         )
-
-    with keyboard.Listener(on_press=handle_pagination, current_page=current_page, total_pages=total_pages) as listener:
-        listener.join()
 
 
 @app.command()

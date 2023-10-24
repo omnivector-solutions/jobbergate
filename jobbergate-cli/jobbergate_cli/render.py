@@ -243,7 +243,5 @@ def render_paginated_list_results(
         console.print()
         console.print(table)
 
-        page_controls = (
-            f"Page {current_page} of {total_pages} - press Left for previous page, Right for next page, or Esc to exit"
-        )
+        page_controls = f"Page {current_page} of {total_pages}"
         console.print(page_controls)
