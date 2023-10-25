@@ -7,19 +7,13 @@ from textwrap import dedent
 from typing import Any, Dict, Optional, cast
 
 import typer
-from inquirer import List, prompt
 
 from jobbergate_cli.constants import OV_CONTACT, SortOrder
 from jobbergate_cli.exceptions import handle_abort
-from jobbergate_cli.render import (
-    StyleMapper,
-    render_list_results,
-    render_paginated_list_results,
-    render_single_result,
-    terminal_message,
-)
+from jobbergate_cli.pagination import handle_pagination
+from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
+from jobbergate_cli.schemas import JobbergateContext
 from jobbergate_cli.subapps.applications.tools import fetch_application_data, save_application_files, upload_application
 
 
@@ -91,93 +85,15 @@ def list_all(
     if sort_field is not None:
         params["sort_field"] = sort_field
 
-    envelope = cast(
-        ListResponseEnvelope,
-        make_request(
-            jg_ctx.client,
-            "/jobbergate/job-script-templates",
-            "GET",
-            expected_status=200,
-            abort_message="Couldn't retrieve applications list from API",
-            support=True,
-            response_model_cls=ListResponseEnvelope,
-            params=params,
-        ),
-    )
-
-    render_paginated_list_results(
-        jg_ctx,
-        envelope,
+    handle_pagination(
+        jg_ctx=jg_ctx,
+        url_path="/jobbergate/job-script-templates",
+        abort_message="Couldn't retrieve applications list from API",
+        params=params,
         title="Applications List",
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,
     )
-
-    current_page = envelope.page
-    total_pages = envelope.pages
-
-    while True:
-        if current_page == 1:
-            answer = prompt(
-                [
-                    List(
-                        "navigation",
-                        message="Which page would you like to view?",
-                        choices=["Next page", "Exit"],
-                        default="Next page",
-                    )
-                ]
-            )
-        elif current_page == total_pages:
-            answer = prompt(
-                [
-                    List(
-                        "navigation",
-                        message="Which page would you like to view?",
-                        choices=["Previous page", "Exit"],
-                        default="Exit",
-                    )
-                ]
-            )
-        else:
-            answer = prompt(
-                [
-                    List(
-                        "navigation",
-                        message="Which page would you like to view?",
-                        choices=["Previous page", "Next page", "Exit"],
-                        default="Next page",
-                    )
-                ]
-            )
-
-        if answer["navigation"] == "Next page":
-            current_page += 1
-        elif answer["navigation"] == "Previous page":
-            current_page -= 1
-        else:
-            break
-
-        envelope = cast(
-            ListResponseEnvelope,
-            make_request(
-                jg_ctx.client,
-                "/jobbergate/job-script-templates?page={}".format(current_page),
-                "GET",
-                expected_status=200,
-                abort_message="Couldn't retrieve applications list from API",
-                support=True,
-                response_model_cls=ListResponseEnvelope,
-                params=params,
-            ),
-        )
-        render_paginated_list_results(
-            jg_ctx,
-            envelope,
-            title="Applications List",
-            style_mapper=style_mapper,
-            hidden_fields=HIDDEN_FIELDS,
-        )
 
 
 @app.command()
