@@ -15,7 +15,6 @@ the main command:
 jobbergate job-scripts --help
 ```
 
-
 There is also help and parameter guides for each of the subcommands that can be accessed
 by passing them the `--help` flag:
 
@@ -27,10 +26,10 @@ See also:
 
 * [jobbergate-api](https://github.com/omnivector-solutions/jobbergate/jobbergate-api)
 
-
 ## License
+
 * [MIT](./LICENSE)
 
-
 ## Copyright
+
 * Copyright (c) 2020 OmniVector Solutions <info@omnivector.solutions>

@@ -6,13 +6,12 @@ to seamlessly upload a Job Script and submit it to a Slurm cluster using the Job
 In this walk-through, you will learn how to upload a Job Script and submit it to a Slurm cluster using the
 Jobbergate CLI. To accomplish this, we will guide you through the following steps:
 
- - Initiating a session by logging into the Jobbergate system
- - Uploading a basic Job Script to Jobbergate
- - Submitting the Job Script to the cluster
- - Reviewing the results and monitoring the status of your submitted job
- - Cleaning up by deleting the Job Script
- - Logging out of the Jobbergate system
-
+- Initiating a session by logging into the Jobbergate system
+- Uploading a basic Job Script to Jobbergate
+- Submitting the Job Script to the cluster
+- Reviewing the results and monitoring the status of your submitted job
+- Cleaning up by deleting the Job Script
+- Logging out of the Jobbergate system
 
 ## Getting Started
 
@@ -20,51 +19,51 @@ Before diving into the tutorial, there are some initial setup steps that are nee
 prepared to run the tutorial locally. Make sure you have administrative access to your machine, as it's required for
 the setup process.
 
-
 ### Install docker-compose
 
 For this tutorial, we will be using an instance of Jobbergate that is deployed locally along-side a local Slurm cluster.
 We will set all this up using docker-compose. If you do not have it already, follow
 [this guide](https://docs.docker.com/compose/install/) to install docker-compose before you continue the tutorial.
 
-
 ### Update the hostfile
 
 Next, you’ll need to add the following line to your computer’s hostfile:
 
-```
+```plain
 127.0.0.1 keycloak.local
 ```
 
-#### For Linux and OSX users:
+#### For Linux and OSX users
 
- - The hostfile is located at `/etc/hosts`.
- - Open a terminal.
- - Use this command to open the file in a text editor
-   ```shell
-   sudo nano /etc/hosts
-   ```
-   (you may, of course, substitute your editor of choice here)
- - Add the above line at the end of the file.
- - Save and close the file.
+- The hostfile is located at `/etc/hosts`.
+- Open a terminal.
+- Use this command to open the file in a text editor
 
+    ```shell
+    sudo nano /etc/hosts
+    ```
 
-#### For Windows users:
+    !!! note
 
- - The hostfile can be found at c:\windows\system32\drivers\etc\hosts.
- - Open Notepad as an administrator.
- - Open the hostfile in Notepad.
- - Append the above line to the file.
- - Save and exit.
+        You may, of course, substitute `nano` by your editor of choice
 
+- Add the above line at the end of the file.
+- Save and close the file.
 
+#### For Windows users
+
+- The hostfile can be found at c:\windows\system32\drivers\etc\hosts.
+- Open Notepad as an administrator.
+- Open the hostfile in Notepad.
+- Append the above line to the file.
+- Save and exit.
 
 ### Clone Jobbergate with git
 
 To run the Jobbergate and Slurm locally, you will first need a copy of the Jobbergate source code. The easiest way to
 get it is to use Git to download the source code repository from GitHub onto your machine.
 
-Git is a version control system that lets you manage and keep track ofyour source code history. If you haven't installed
+Git is a version control system that lets you manage and keep track of your source code history. If you haven't installed
 it yet, download and install Git using the instructions available [here](https://git-scm.com/).
 
 With Git installed, you can now clone the Jobbergate source code from its GitHub repository. Cloning allows you to have
@@ -73,7 +72,7 @@ a local copy (or clone) of the source code on your machine.
 Run the following command in your terminal:
 
 ```shell
-$ git clone git@github.com:omnivector-solutions/jobbergate.git
+git clone git@github.com:omnivector-solutions/jobbergate.git
 ```
 
 Now you have a full copy of the Jobbergate source code including the Docker Compose configuration to stand up a local
@@ -82,9 +81,8 @@ Slurm Cluster and the example Job Script we will be using for this tutorial.
 Next, switch to the directory in the source code that contains the Docker Compose configuration:
 
 ```shell
-$ cd jobbergate/jobbergate-composed
+cd jobbergate/jobbergate-composed
 ```
-
 
 ### Start the Jobbergate Services
 
@@ -92,16 +90,16 @@ With the Jobbergate source code in place, it's time to initiate the Jobbergate S
 using Docker Compose. Follow the steps outlined below to get things up and running.
 
 #### Start up the services
+
 Run the following command to build and start the services. The `--build` flag ensures that Docker Compose build the
 images before attempting to start the services. The `--detach` flag runs the services in the background so that you
 can run other commands in the terminal.
 
 ```shell
-$ docker-compose up --build --detach
+docker-compose up --build --detach
 ```
 
 This operation might take a few minutes as it involves building the images and starting up all the associated services.
-
 
 #### Verify the status of the services
 
@@ -115,7 +113,7 @@ docker-compose ps
 If the services are up and running as expected, you should see output similar to the following, indicating that all the
 services are in a healthy state
 
-```
+```plain
 NAME                                        COMMAND                  SERVICE               STATUS              PORTS
 c1                                          "/usr/local/bin/slur…"   c1                    running             6818/tcp
 c2                                          "/usr/local/bin/slur…"   c2                    running             6818/tcp
@@ -133,20 +131,18 @@ slurmrestd                                  "/usr/local/bin/slur…"   slurmrest
 ```
 
 The `STATUS` for each service should be "running" except for the `minio-create-bucket` and `jobbergate-cli`
-services which should be "exited".
-
+services that should be "exited".
 
 #### Confirm Jobbergate CLI availability
 
 Since this tutorial relies on running commands in the Jobbergate CLI, it's essential to verify that the CLI is available
 and working as expected at this juncture.
 
-
 First, initiate a connection to the `jobbergate-cli` container by executing the following command. This gives you
 direct access to the CLI.
 
 ```shell
-$ docker-compose run jobbergate-cli bash
+docker-compose run jobbergate-cli bash
 ```
 
 Upon successful connection, your command prompt should change to reflect that you're inside the container. It will look
@@ -167,7 +163,7 @@ jobbergate --help
 
 The command above will yield a detailed description of the CLI's usage and the variety of sub-commands it provides:
 
-```
+```plain
  Usage: jobbergate [OPTIONS] COMMAND [ARGS]...
 
  Welcome to the Jobbergate CLI!
@@ -200,22 +196,21 @@ The command above will yield a detailed description of the CLI's usage and the v
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-
 ## Log in to Jobbergate
 
 To begin working with Jobbergate data, you must first sign into the system. For the purpose of this tutorial, there's
-just one user available. We'll soley focus on this user in this guide, but should you wish to add more users, you can
+just one user available. We'll solely focus on this user in this guide, but should you wish to add more users, you can
 do so by accessing the Keycloak server (details provided in the [Appendix](#appendix)).
 
 To log in using the Jobbergate CLI, execute the following command:
 
 ```shell
-$ jobbergate login
+jobbergate login
 ```
 
 The CLI will provide a URL for you to log into your account:
 
-```
+```plain
 ╭─────────────────────────────────────────────── Waiting for login ─────────────────────────────────────────────────╮
 │                                                                                                                   │
 │   To complete login, please open the following link in a browser:                                                 │
@@ -231,8 +226,8 @@ Waiting for web login... ━╺━━━━━━━━━━━━━━━━�
 
 Open the URL shown in a browser and log in as "local-user":
 
- - **username**: "local-user"
- - **password**: "local"
+- **username**: "local-user"
+- **password**: "local"
 
 When prompted, grant all the requested access privileges to the CLI. Once you have finished, the CLI will show that you
 have successfully logged in:
@@ -250,7 +245,6 @@ log in again for some time. However, be aware that your session does expire; you
 token. If this happens, the CLI will alert you that your token is invalid. When you receive this notification, you will
 need to log in anew.
 
-
 ## Upload a Job Script to Jobbergate
 
 Job Scripts are integral to Jobbergate, serving as the foundation for running simulations on our cluster. To initiate a
@@ -258,7 +252,6 @@ simulation, your first task is to upload the Job Script to the Jobbergate API.
 
 Within each Job Script, an entrypoint file is designated. This is the specific script that Slurm executes to commence
 the simulation on the cluster.
-
 
 ### Get the example script
 
@@ -283,8 +276,6 @@ cat simple-job-script.python3
 ```
 
 The script should appear exactly as you see it on the link above.
-
-
 
 ### Create the Job Script from the example
 
@@ -328,18 +319,16 @@ To confirm that the Job Script has been uploaded correctly, you can review the f
 `show-files` subcommand:
 
 ```shell
-$ jobbergate job-scripts show-files --id=1
+jobbergate job-scripts show-files --id=1
 ```
 
 The file should appear exactly as it does on the link above.
-
 
 ## Submit a Job Script to the cluster
 
 With the Job Script ready, the next step is to submit it to the Slurm cluster. In this tutorial, a cluster named
 `local-slurm` is already attached and available for use. We will specify this cluster name when submitting the Job
 Script to ensure it is executed on the appropriate cluster.
-
 
 ### Create the Job Submission
 
@@ -357,6 +346,7 @@ jobbergate job-submissions create --name=tutorial --job-script-id=1 --cluster-na
 ```
 
 The command should produce output that looks like this:
+
 ```
                    Created Job Submission
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -374,14 +364,15 @@ The command should produce output that looks like this:
 └────────────────────────────┴─────────────────────────────┘
 ```
 
-The Job Submission was successfully created! However, it has not submitted to the cluster yet. This will happen when the
-Jobbergate Agent that is running remotely in the cluster pulls all "CREATED" Job Submissions down from the API and
-submits them to Slurm one by one.
+!!! info
+
+    The Job Submission was successfully created! However, it has not submitted to the cluster yet, and thus `slurm_job_id` is still `None`.
+    This will happen when the Jobbergate Agent that is running remotely in the cluster pulls all "CREATED" Job Submissions down
+    from the API and submits them to Slurm one by one.
 
 !!! Note
 
     Again, be careful to use the correct `id` produced by this command for the remainder of the tutorial!
-
 
 ### Check the status of the submitted job
 
@@ -393,7 +384,7 @@ jobbergate job-submissions get-one --id=1
 
 This command should produce output that looks like:
 
-```
+```plain
                        Job Submission
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Key                        ┃ Value                       ┃
@@ -411,14 +402,13 @@ This command should produce output that looks like:
 ```
 
 If the `status` reported by your command is `CREATED`, don't worry! The Jobbergate Agent just hasn't retrieved and
-submitted the job script yet. Wait a few more seconds and dry again. You should now see the status change to
+submitted the job script yet. Wait a few more seconds and try again. You should now see the status change to
 `SUBMITTED`.
 
-When the Job Submission status shifts to "SUBMITTED", it indicats that the Jobbergate Agent has retrieved the Job Script
+When the Job Submission status shifts to `SUBMITTED`, it indicates that the Jobbergate Agent has retrieved the Job Script
 and submitted it to the `local-slurm` cluster. This status will persist until the completion of the Job Script's
-execution. The Jobbergate Agent continuaously monitors the job's progress within slurm, and , upon its completion, will
-update the Job Submission status to "COMPLETE".
-
+execution. The Jobbergate Agent continuously monitors the job's progress within slurm, and, upon its completion, will
+update the Job Submission status to `COMPLETE`.
 
 ### Check the results of the job
 
@@ -433,30 +423,23 @@ ls /nfs
 If the job completed, you should see a file in the `/nfs` directory named `simple-output.txt`. Check the contents of the
 file with a simple `cat` command:
 
-```
+```shell
 cat /nfs/simple-output.txt
 ```
 
 It should look look like:
 
-```
+```shell
 Simple output from c1
 ```
 
 It's possible that the output says it came from c2 if slurm ran the job on the `c2` compute node instead of `c1`.
 
-
 ## Delete the resources
 
 Sometimes it is useful to remove resources that have been created in Jobbergate.
 
-When deleting the resources, you must delete in reverse order of creation:
-
-```
-Job Submission -> Job Script
-```
-
-Start by deleting the Job Submission:
+For instance, start by deleting the Job Submission:
 
 ```shell
 $ jobbergate job-submissions delete --id=1
@@ -467,7 +450,6 @@ $ jobbergate job-submissions delete --id=1
 │                                                                                                                   │
 ╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
-
 
 Then delete the Job Script:
 
@@ -481,18 +463,6 @@ $ jobbergate job-scripts delete --id=1
 │                                                                                                                   │
 ╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
-
-If you attempt to delete a resource before any that were created _from_ it, you will see an error like this:
-
-```shell
-$ jobbergate job-scripts delete --id=1
-
-╭─────────────────────────────────────────────── REQUEST FAILED ────────────────────────────────────────────────────╮
-│ Request to delete job-script was not accepted by the API:                                                         │
-│ There are job_submissions that reference id 1.                                                                    │
-╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-````
-
 
 ## Log out of the Jobbergate system
 
@@ -508,8 +478,7 @@ $ jobbergate logout
 ╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-This will clear any cached tokens, and any subsequent Jobbergate commands will require you to log in again
-
+This will clear any cached tokens, and any subsequent Jobbergate commands will require you to log in again.
 
 ## Appendix
 
@@ -521,5 +490,5 @@ rather large topic that goes outside the scope of this Tutorial.
 To get started, you can connect to the Keycloak UI through a browser if the server is running as a part of the
 docker-compose cluster using [this local URL](http:localhost:8080). To log in as administrator use these credentials:
 
- - **username**: admin
- - **password**: admin
+- **username**: admin
+- **password**: admin

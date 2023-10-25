@@ -3,7 +3,6 @@
 Jobbergate utilizes quality control tools across its three primary components (API, CLI, and Agent). The tools are
 invoked in the same way in each of the sub-projects, and may be invoked *en masse* from the root Jobbergate directory.
 
-
 ## Running Unit Tests
 
 The main sub-projects each make use of [pytest](https://docs.pytest.org/en/7.1.x/) to apply unit testing. The unit tests
@@ -19,7 +18,7 @@ Once you enter the command above, the unit tests suite will start running. For t
 minutes. The others only take a few seconds. The status of the tests will be logged to the console as well as a coverage
 report for the unit tests:
 
-```
+```plain
 ================================================================== test session starts ===================================================================
 platform linux -- Python 3.8.12, pytest-6.2.5, py-1.11.0, pluggy-1.0.0
 Using --random-order-bucket=module
@@ -126,7 +125,6 @@ Required test coverage of 95.0% reached. Total coverage: 98.05%
     The API unit tests require that a test database is already running. You can start one by using the
     [dev-tools](./dev_tools.md) provided in the API sub-project.
 
-
 ## Running Linters
 
 The main sub-projects each use a group of linting tools to make sure that the code follows code quality standards. These
@@ -140,7 +138,6 @@ make lint
 
 If any issues are reported, fix the reported error and try running it again. The linters
 will only succeed if all of the issues are fixed.
-
 
 ## Running Formatters
 
@@ -158,9 +155,7 @@ To apply the formatters, use this command:
 make format
 ```
 
-
 The formatters will report any files that were changed in their reports.
-
 
 ## Running Static Code Checkers
 
@@ -174,11 +169,10 @@ make mypy
 If any issues are located, they will be reported. Each type issue must be fixed before
 the static type checker passes.
 
-
 ## Running All Quality Checks
 
 Finally, all of the quality checks can be run using this command:
 
 ```shell
-$ make qa
+make qa
 ```

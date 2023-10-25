@@ -4,17 +4,16 @@
 
 To install the package from Pypi simply run `pip install jobbergate-agent`.
 
-
 ## Setup parameters
 
 1. Setup dependencies
   You can use whenever dependency manager you want to. Just run the command below (and the ones following) on behalf of the manager you prefer.
 
   ```bash
-  make dependencies
+  make install
   ```
 
-2. Setup `.env` parameters
+1. Setup `.env` parameters
 
   ```bash
   JOBBERGATE_AGENT_BASE_API_URL="<base-api-url>"
@@ -32,7 +31,6 @@ To install the package from Pypi simply run `pip install jobbergate-agent`.
   NOTE: `JOBBERGATE_AGENT_SENTRY_DSN` is optional. If you do not pass it the agent understands Sentry will not be used.
 
   NOTE: When both `JOBBERGATE_AGENT_SLURMRESTD_JWT_KEY_PATH` and `JOBBERGATE_AGENT_SLURMRESTD_JWT_KEY_STRING` are passed, the agent will completely ignore the `JOBBERGATE_AGENT_SLURMRESTD_JWT_KEY_PATH` and will prioritize the `JOBBERGATE_AGENT_SLURMRESTD_JWT_KEY_STRING`. Beware this behaviour.
-
 
 ## Local usage example
 

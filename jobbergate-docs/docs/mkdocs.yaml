@@ -2,6 +2,7 @@
 
 site_name: Jobbergate Documentation
 repo_url: https://github.com/omnivector-solutions/jobbergate
+repo_name: omnivector-solutions/jobbergate
 docs_dir: source
 theme:
   name: material
@@ -10,21 +11,27 @@ theme:
     code: Fira Code
   features:
     - navigation.expand
+    - navigation.footer
     - navigation.tracking
     - content.code.copy
-  pallete:
-    # Dark/Light mode toggle is not working and can't figure out why
-    - scheme: default
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
       toggle:
         icon: material/brightness-4
         name: Switch to dark mode
-    - scheme: slate
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
       toggle:
         icon: material/brightness-7
         name: Switch to light mode
 watch:
+  - ../../jobbergate-agent/
   - ../../jobbergate-api/
   - ../../jobbergate-cli/
+  - ../../jobbergate-core/
 plugins:
   search:
     lang: en
@@ -57,28 +64,28 @@ extra_css:
 nav:
   - Home: index.md
   - Elements:
-    - Resources:
-      - Overview: elements/resources/index.md
-      - Job Scripts: elements/resources/job_scripts.md
-      - Job Script Templates: elements/resources/job_script_templates.md
-      - Job Submissions: elements/resources/job_submissions.md
-    - Apps:
-      - Overview: elements/apps/index.md
-      - Jobbergate Agent: elements/apps/agent.md
-      - Jobbergate API: elements/apps/api.md
-      - Jobbergate CLI: elements/apps/cli.md
-      - Jobbergate Core: elements/apps/core.md
+      - Resources:
+          - Overview: elements/resources/index.md
+          - Job Scripts: elements/resources/job_scripts.md
+          - Job Script Templates: elements/resources/job_script_templates.md
+          - Job Submissions: elements/resources/job_submissions.md
+      - Apps:
+          - Overview: elements/apps/index.md
+          - Jobbergate Agent: elements/apps/agent.md
+          - Jobbergate API: elements/apps/api.md
+          - Jobbergate CLI: elements/apps/cli.md
+          - Jobbergate Core: elements/apps/core.md
   - Tutorial: tutorial.md
   - Authors: authors.md
   - Developer Guide:
-    - Developer Tools: developer_guide/dev_tools.md
-    - Quality Assurance Tools: developer_guide/qa_tools.md
-    - Integration Testing: developer_guide/integration_testing.md
-    - Continuous Integration: developer_guide/ci.md
-    - Keycloak Setup: developer_guide/keycloak_setup.md
-    - Template Workflows: developer_guide/template_workflows.md
+      - Developer Tools: developer_guide/dev_tools.md
+      - Quality Assurance Tools: developer_guide/qa_tools.md
+      - Integration Testing: developer_guide/integration_testing.md
+      - Continuous Integration: developer_guide/ci.md
+      - Keycloak Setup: developer_guide/keycloak_setup.md
+      - Template Workflows: developer_guide/template_workflows.md
   - Reference:
-    - Jobbergate Agent: reference/agent.md
-    - Jobbergate API: reference/api.md
-    - Jobbergate CLI: reference/cli.md
-    - Jobbergate Core: reference/core.md
+      - Jobbergate Agent: reference/agent.md
+      - Jobbergate API: reference/api.md
+      - Jobbergate CLI: reference/cli.md
+      - Jobbergate Core: reference/core.md
