@@ -268,7 +268,9 @@ def update_template_files_information(app_data: ApplicationResponse, app_config:
         list_of_entrypoints = [i.filename for i in app_data.template_files if i.file_type.upper() == "ENTRYPOINT"]
         if len(list_of_entrypoints) != 1:
             raise Abort(
-                f"Application {app_data.application_id} does not have one entry point, found {len(list_of_entrypoints)}",
+                f"""
+                Application {app_data.application_id} does not have one entry point, found {len(list_of_entrypoints)}",
+                """,
                 subject="Entry point is unspecified",
                 log_message="Entry point file not specified",
             )
