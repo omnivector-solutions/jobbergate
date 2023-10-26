@@ -334,7 +334,9 @@ def render(
             "Failed to immediately submit the job after job script creation.",
             subject="Automatic job submission failed",
             support=True,
-            log_message=f"There was an issue submitting the job immediately job_script_id={job_script_result.id}.",
+            log_message=f"""
+                There was an issue submitting the job immediately job_script_id={job_script_result.job_script_id}.
+            """,
             original_error=err,
         )
 
