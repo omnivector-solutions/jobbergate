@@ -4,7 +4,7 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 - Added --cluster-name, --execution-directory and --download parameters to create-job-script command on submit mode
-- Change application-id, job-script-id and job-submission-id to havbe alias when displaying the id on the CLI
+- Change application-id, job-script-id and job-submission-id to have alias when displaying the id on the CLI
 
 
 ## 4.1.0a2 -- 2023-10-10
