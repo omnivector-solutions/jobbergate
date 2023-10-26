@@ -25,10 +25,9 @@ class AutoCleanResponse(NamedTuple):
 
 class JobScriptCrudService(CrudService):
     """
-    Provide an empty derived class of CrudService.
+    Provide a CrudService for Job Scripts.
 
-    Although it doesn't do anything, it fixes an error with mypy:
-        error: Value of type variable "CrudModel" of "CrudService" cannot be "JobScript"
+    Handles special logic for delete and automatic cleanup of unused Job Scripts.
     """
 
     async def delete(self, locator: Any) -> None:
@@ -112,10 +111,9 @@ class JobScriptCrudService(CrudService):
 
 class JobScriptFileService(FileService):
     """
-    Provide an empty derived class of FileService.
+    Provide a FileService for Job Scripts.
 
-    Although it doesn't do anything, it fixes an error with mypy:
-        error: Value of type variable "FileModel" of "FileService" cannot be "JobScriptFile"
+    Handles special logic for upserting entrypoint files and validating them.
     """
 
     async def upsert(

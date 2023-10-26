@@ -34,7 +34,7 @@ def check_none_or_all_keys_exist(input_dict: dict, target_keys: set) -> bool:
 
 class Settings(BaseSettings):
     """
-    Provide a pydantic ``BaseSettings`` model for the application settings.
+    Provide a pydantic `BaseSettings` model for the application settings.
     """
 
     DEPLOY_ENV: str = "LOCAL"
@@ -104,7 +104,7 @@ class Settings(BaseSettings):
         """
         Remove any settings from the environment that are blank strings.
 
-        This allows the defaults to be set if ``docker-compose`` defaults a missing
+        This allows the defaults to be set if `docker-compose` defaults a missing
         environment variable to a blank string.
         """
         clean_values = dict()

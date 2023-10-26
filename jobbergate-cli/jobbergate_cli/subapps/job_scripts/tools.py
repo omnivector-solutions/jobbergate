@@ -87,34 +87,34 @@ def flatten_param_dict(param_dict: Dict[str, Any]) -> Dict[str, Any]:
     """
     Flatten an input dictionary to support the rendering process.
 
-    See the example:
+    Example:
 
-    >>> param_dict = {
-    ...     "application_config": {"job_name": "rats", "partitions": [...]},
-    ...     "jobbergate_config": {
-    ...         "default_template": "test_job_script.sh",
-    ...         "supporting_files": [...],
-    ...         "supporting_files_output_name": {...},
-    ...         "template_files": [...],
-    ...         "job_script_name": None,
-    ...         "output_directory": ".",
-    ...         "partition": "debug",
-    ...         "job_name": "rats",
-    ...     },
-    ... }
-    >>> flat_param_dict = flatten_param_dict(param_dict)
-    >>> print(flat_param_dict)
-    {
-        "job_name": "rats",
-        "partitions": ["debug", "partition1"],
-        "default_template": "test_job_script.sh",
-        "supporting_files": ["test_job_script.sh"],
-        "supporting_files_output_name": {"test_job_script.sh": [...]},
-        "template_files": ["templates/test_job_script.sh"],
-        "job_script_name": None,
-        "output_directory": ".",
-        "partition": "debug",
-    }
+        >>> param_dict = {
+        ...     "application_config": {"job_name": "rats", "partitions": [...]},
+        ...     "jobbergate_config": {
+        ...         "default_template": "test_job_script.sh",
+        ...         "supporting_files": [...],
+        ...         "supporting_files_output_name": {...},
+        ...         "template_files": [...],
+        ...         "job_script_name": None,
+        ...         "output_directory": ".",
+        ...         "partition": "debug",
+        ...         "job_name": "rats",
+        ...     },
+        ... }
+        >>> flat_param_dict = flatten_param_dict(param_dict)
+        >>> print(flat_param_dict)
+        {
+            "job_name": "rats",
+            "partitions": ["debug", "partition1"],
+            "default_template": "test_job_script.sh",
+            "supporting_files": ["test_job_script.sh"],
+            "supporting_files_output_name": {"test_job_script.sh": [...]},
+            "template_files": ["templates/test_job_script.sh"],
+            "job_script_name": None,
+            "output_directory": ".",
+            "partition": "debug",
+        }
     """
     param_dict_flat = {}
     for key, value in param_dict.items():
@@ -184,15 +184,18 @@ def render_job_script(
     """
     Render a new job script from an application.
 
-    :param str name: Name of the new job script.
-    :param Optional[int] application_id: Id of the base application.
-    :param Optional[str] application_identifier: Identifier of the base application.
-    :param Optional[str] description: Description of the new job script.
-    :param Optional[List[str]] sbatch_params: List of sbatch parameters.
-    :param Optional[pathlib.Path] param_file: Path to a parameters file.
-    :param bool fast: Whether to use default answers (when available) instead of asking the user.
-    :param JobbergateContext jg_ctx: The Jobbergate context.
-    :return JobScriptResponse: The new job script.
+    Args:
+        name:                   Name of the new job script.
+        application_id:         Id of the base application.
+        application_identifier: Identifier of the base application.
+        description:            Description of the new job script.
+        sbatch_params:          List of sbatch parameters.
+        param_file:             Path to a parameters file.
+        fast:                   Whether to use default answers (when available) instead of asking the user.
+        jg_ctx:                 The Jobbergate context.
+
+    Returns:
+        The new job script.
     """
     # Make static type checkers happy
     assert jg_ctx.client is not None
@@ -289,11 +292,14 @@ def upload_job_script_files(
     """
     Upload a job-script and its supporting files given their paths and the job-script id.
 
-    :param: jg_ctx:                The JobbergateContext. Needed to access the Httpx client with which to make API calls
-    :param: job_script_path:       The path to the job-script file to upload
-    :param: supporting_file_paths: The paths to any supporting files to upload with the job-scritpt
-    :param: job_script_id:         The id of the job-script for which to upload  data
-    :returns: True if the main job script upload was successful; False otherwise
+    Args:
+        jg_ctx:                The JobbergateContext. Needed to access the Httpx client with which to make API calls
+        job_script_path:       The path to the job-script file to upload
+        supporting_file_paths: The paths to any supporting files to upload with the job-scritpt
+        job_script_id:         The id of the job-script for which to upload  data
+
+    Returns:
+        True if the main job script upload was successful; False otherwise
     """
 
     client = JobbergateCliError.enforce_defined(jg_ctx.client)
@@ -392,13 +398,15 @@ def question_helper(question_func: Callable, text: str, default: Any, fast: bool
     """
     Helper function for asking questions to the user.
 
-    :param Callable question_func: The function to use to ask the question
-    :param str text:               The text of the question to ask
-    :param Any default:            The default value to use if the user does not provide one
-    :param bool fast:              Whether to use default answers (when available) instead of asking the user
-    :param Any actual_value:       The actual value provided by the user, if any
+    Args:
+       question_func: The function to use to ask the question
+       text:          The text of the question to ask
+       default:       The default value to use if the user does not provide one
+       fast:          Whether to use default answers (when available) instead of asking the user
+       actual_value:  The actual value provided by the user, if any
 
-    :returns: `actual_value` or `default` or the value provided by the user
+    Returns:
+        `actual_value` or `default` or the value provided by the user
 
     The `actual_value` has the most priority and will be returned if it is not None.
     After evaluating the `actual_value`, the fast mode will determine if the default value will be used.

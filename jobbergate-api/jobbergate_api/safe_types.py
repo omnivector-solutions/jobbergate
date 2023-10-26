@@ -1,5 +1,5 @@
 """
-Provide "safe" type annotatons to avoid issues with mypy and Fast api.
+Provide "safe" type annotations to avoid issues with mypy and Fast api.
 
 Regarding the JobScript and JobSubmission type:
     These are needed for the relationships in the models. This avoids issues with circular imports at runtime.

@@ -25,6 +25,8 @@ theme:
 watch:
   - ../../jobbergate-api/
   - ../../jobbergate-cli/
+  - ../../jobbergate-agent/
+  - ../../jobbergate-core/
 plugins:
   search:
     lang: en
@@ -34,7 +36,7 @@ plugins:
       python:
         paths: [..]
         options:
-          heading_level: 3
+          heading_level: 2
           show_root_heading: true
           separate_signature: true
           show_signature_annotations: true

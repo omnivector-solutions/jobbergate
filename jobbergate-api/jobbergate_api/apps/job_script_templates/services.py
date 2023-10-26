@@ -1,4 +1,5 @@
 """Services for the job_script_templates resource, including module specific business logic."""
+
 from typing import Any
 
 from buzz import require_condition

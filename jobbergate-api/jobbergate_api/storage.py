@@ -34,9 +34,9 @@ def build_db_url(
     """
     Build a database url based on settings.
 
-    If ``force_test`` is set, build from the test database settings.
-    If ``asynchronous`` is set, use asyncpg.
-    If ``override_db_name`` replace the database name in the settings with the supplied value.
+    If `force_test` is set, build from the test database settings.
+    If `asynchronous` is set, use asyncpg.
+    If `override_db_name` replace the database name in the settings with the supplied value.
     """
     prefix = "TEST_" if force_test else ""
     db_user = getattr(settings, f"{prefix}DATABASE_USER")
@@ -219,7 +219,9 @@ def _build_enum_sort_clause(sort_column: Column, sort_ascending: bool) -> Case:
     SQLAlchemy will not sort enums alphabetically by default, but rather by creation order.  Thus, we have to
     force alphabetical sorting using a CASE clause. The logic here is strange. Basically, we have to provide a
     lookup and then a string sort value. If sort order is ascending, each enum value's sort value is itself.
-    Otherwise, the sort value is it's opposite in the list. For example::
+    Otherwise, the sort value is it's opposite in the list.
+
+    Example:
 
         Given the enum (GAMMA, ALPHA, DELTA, BETA)
         The default sort order used by SQLAlchemy is (GAMMA, ALPHA, DELTA, BETA)
@@ -228,8 +230,8 @@ def _build_enum_sort_clause(sort_column: Column, sort_ascending: bool) -> Case:
 
     To understand this more fully, start with this SO question: https://stackoverflow.com/a/23618085/642511
 
-    Note::
-        For sorting to work on sqlalchemy.Enum types, the enum _must_ be specified with ``native_enum=False``
+    Note:
+        For sorting to work on sqlalchemy.Enum types, the enum _must_ be specified with `native_enum=False`
 
         ```
         class SomeTable(Base):

@@ -2,7 +2,7 @@
 Abstraction layer for questions. Each class represents different question types.
 
 The questions describe literal questions that are asked of the user in an interactive
-mode via the ``inquirer`` package.
+mode via the `inquirer` package.
 
 Questions will be skipped and use the default value if the `ignore` property resolves
 to True.
@@ -44,11 +44,12 @@ class QuestionBase:
         """
         Initialize the Question.
 
-        :param: variablename:  The key in the config dictionary that this question will set
-        :param: message:       The message to show the user that describes what the question is gathering
-        :param: ignore:        If true, do not ask the question and just use the default value instead
-        :param: default:       The default value for the variablename in the answers dict
-        :param: inquirer_type: The ``inquirer`` question type that this ``QuestionBase`` wraps
+        Args:
+            variablename:  The key in the config dictionary that this question will set
+            message:       The message to show the user that describes what the question is gathering
+            ignore:        If true, do not ask the question and just use the default value instead
+            default:       The default value for the variablename in the answers dict
+            inquirer_type: The `inquirer` question type that this `QuestionBase` wraps
         """
         self.variablename = variablename
         self.default = default
@@ -61,9 +62,10 @@ class QuestionBase:
 
     def make_prompts(self, **override_kwargs):
         """
-        Create ``inquirer`` prompts from this instance of ``QuestionBase``.
+        Create `inquirer` prompts from this instance of `QuestionBase`.
 
-        :param: override_kwargs: A collection of keyword arguments to override in intializing the ``inquirer`` question
+        Args:
+            override_kwargs: A collection of keyword arguments to override in intializing the `inquirer` question
         """
         final_kwargs = {
             **self.inquirer_kwargs,
@@ -94,10 +96,11 @@ class Integer(QuestionBase):
         """
         Initialize the Integer question.
 
-        :param: variablename:  The key in the config dictionary that this question will set
-        :param: message:       The message to show the user that describes what the question is gathering
-        :param: minval:        The minimum value the integer may be set to. If not specified, use negative infinity.
-        :param: minval:        The maximum value the integer may be set to. If not specified, use infinity.
+        Args:
+            variablename:  The key in the config dictionary that this question will set
+            message:       The message to show the user that describes what the question is gathering
+            minval:        The minimum value the integer may be set to. If not specified, use negative infinity.
+            minval:        The maximum value the integer may be set to. If not specified, use infinity.
         """
         super().__init__(variablename, message, **kwargs)
         self.minval = minval
@@ -134,9 +137,10 @@ class List(QuestionBase):
         """
         Initialize the List question.
 
-        :param: variablename:  The key in the config dictionary that this question will set
-        :param: message:       The message to show the user that describes what the question is gathering
-        :param: choices:       A list of the possible values from which the Question will allow the user to select one
+        Args:
+            variablename:  The key in the config dictionary that this question will set
+            message:       The message to show the user that describes what the question is gathering
+            choices:       A list of the possible values from which the Question will allow the user to select one
         """
         super().__init__(variablename, message, inquirer_type=inquirer.List, **kwargs)
         self.inquirer_kwargs.update(choices=choices)
@@ -146,16 +150,18 @@ class Directory(QuestionBase):
     """
     Asks for a directory name. If `exists` is `True` it checks if path exists and is a directory.
 
-    :param exists: Checks if given directory exists
+    Attributes:
+        exists: Checks if given directory exists
     """
 
     def __init__(self, variablename: str, message: str, exists: Optional[bool] = None, **kwargs):
         """
         Initialize the Directory question.
 
-        :param: variablename:  The key in the config dictionary that this question will set
-        :param: message:       The message to show the user that describes what the question is gathering
-        :param: exists:        If True, ensure that the directory exists on the system
+        Args:
+            variablename:  The key in the config dictionary that this question will set
+            message:       The message to show the user that describes what the question is gathering
+            exists:        If True, ensure that the directory exists on the system
         """
 
         super().__init__(variablename, message, inquirer_type=inquirer.Path, **kwargs)
@@ -173,9 +179,10 @@ class File(QuestionBase):
         """
         Initialize the File question.
 
-        :param: variablename:  The key in the config dictionary that this question will set
-        :param: message:       The message to show the user that describes what the question is gathering
-        :param: exists:        If True, ensure that the file path exists on the system
+        Args:
+            variablename:  The key in the config dictionary that this question will set
+            message:       The message to show the user that describes what the question is gathering
+            exists:        If True, ensure that the file path exists on the system
         """
         super().__init__(variablename, message, inquirer_type=inquirer.Path, **kwargs)
         self.inquirer_kwargs.update(path_type=inquirer.Path.FILE)
@@ -192,9 +199,10 @@ class Checkbox(QuestionBase):
         """
         Initialize the Checkbox question.
 
-        :param: variablename:  The key in the config dictionary that this question will set
-        :param: message:       The message to show the user that describes what the question is gathering
-        :param: choices:       A list of the possible values from which the Question will allow the user to select many
+        Args:
+            variablename:  The key in the config dictionary that this question will set
+            message:       The message to show the user that describes what the question is gathering
+            choices:       A list of the possible values from which the Question will allow the user to select many
         """
 
         super().__init__(
@@ -215,8 +223,9 @@ class Confirm(QuestionBase):
         """
         Initialize the Confirm question.
 
-        :param: variablename:  The key in the config dictionary that this question will set
-        :param: message:       The message to show the user that describes what the question is gathering
+        Attribute:
+            variablename:  The key in the config dictionary that this question will set
+            message:       The message to show the user that describes what the question is gathering
         """
         super().__init__(variablename, message, inquirer_type=inquirer.Confirm, **kwargs)
 
@@ -237,10 +246,11 @@ class BooleanList(Confirm):
         """
         Initialize the Checkbox question.
 
-        :param: variablename:  The key in the config dictionary that this question will set
-        :param: message:       The message to show the user that describes what the question is gathering
-        :param whentrue:       List of questions to ask if user answers 'true' on this question
-        :param whentrue:       List of questions to show if user answers 'false' on this question
+        Args:
+            variablename:  The key in the config dictionary that this question will set
+            message:       The message to show the user that describes what the question is gathering
+            whentrue:      List of questions to ask if user answers 'true' on this question
+            whenfalse:     List of questions to show if user answers 'false' on this question
         """
         super().__init__(variablename, message, **kwargs)
         self.whentrue_child_map = {c.variablename: c for c in (whentrue if whentrue is not None else [])}
@@ -250,8 +260,9 @@ class BooleanList(Confirm):
         """
         Dynamically check if a child question should be ignored based on the questions that have already been answered.
 
-        :param: child:   The child question that might be ignored
-        :param: answers: Answer values to previously asked questions
+        Args:
+            child:   The child question that might be ignored
+            answers: Answer values to previously asked questions
         """
         my_answer = answers.get(self.variablename)
         Abort.require_condition(
@@ -283,9 +294,10 @@ class BooleanList(Confirm):
 
     def make_prompts(self, **override_kwargs):
         """
-        Create ``inquirer`` prompts from this instance of ``BooleanList`` and for all its child questions.
+        Create `inquirer` prompts from this instance of `BooleanList` and for all its child questions.
 
-        :param: override_kwargs: A collection of keyword arguments to override in the base ``make_prompts`` method
+        Args:
+            override_kwargs: A collection of keyword arguments to override in the base `make_prompts` method
         """
 
         retval = super().make_prompts(**override_kwargs)
@@ -304,13 +316,14 @@ class Const(Text):
         """
         Initialize the Const "question".
 
-        :param: variablename:  The key in the config dictionary that this question will set
+        Args:
+            variablename:  The key in the config dictionary that this question will set
         """
         super().__init__(variablename, "", **kwargs)
 
     def make_prompts(self):
         """
-        Create ``inquirer`` prompts from this instance of ``Const``.
+        Create `inquirer` prompts from this instance of `Const`.
         """
         return super().make_prompts(ignore=True)
 
@@ -325,12 +338,15 @@ def gather_param_values(
 
     Prompt users for answers or use defaults as needed.
 
-    :param: application:     The application instance to pull questions from
-    :param: supplied_params: Pre-supplied parameters.
-                             Any questions where the variablename matches a pre-supplied key in the dict
-                             at the start of execution will be skipped.
-    :param: fast_mode:       Do not ask the user questions. Just use the supplied params and defaults.
-    :returns: A dict of the gathered parameter values
+    Args:
+        application:     The application instance to pull questions from
+        supplied_params: Pre-supplied parameters.
+                         Any questions where the variablename matches a pre-supplied key in the dict
+                         at the start of execution will be skipped.
+        fast_mode:       Do not ask the user questions. Just use the supplied params and defaults.
+
+    Returns:
+        A dict of the gathered parameter values
     """
     if supplied_params is None:
         supplied_params = dict()

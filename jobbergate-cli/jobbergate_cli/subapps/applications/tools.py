@@ -39,12 +39,15 @@ def fetch_application_data(
     identifier: Optional[str] = None,
 ) -> ApplicationResponse:
     """
-    Retrieve an application from the API by ``id`` or ``identifier``.
+    Retrieve an application from the API by `id` or `identifier`.
 
-    :param: jg_ctx:     The JobbergateContext. Needed to access the Httpx client with which to make API calls
-    :param: id:         The id of the application to fetch
-    :param: identifier: If supplied, look for an application instance with the provided identifier
-    :returns: An instance of ApplicationResponse containing the application data
+    Args:
+        jg_ctx:     The JobbergateContext. Needed to access the Httpx client with which to make API calls
+        id:         The id of the application to fetch
+        identifier: If supplied, look for an application instance with the provided identifier
+
+    Returns:
+        An instance of ApplicationResponse containing the application data
     """
     identification: Any = id
     if id is None and identifier is None:
@@ -96,8 +99,11 @@ def load_application_data(
     them from app_data.workflow_file.runtime_config and app_data.template_vars
     for backward compatibility.
 
-    :param: app_data: A dictionary containing the application data
-    :returns: A tuple containing the application config and the application module
+    Args:
+        app_data: A dictionary containing the application data
+
+    Returns:
+        A tuple containing the application config and the application module
     """
     if not app_data.workflow_files:  # make type checker happy
         raise Abort(
@@ -164,12 +170,14 @@ def upload_application(
     """
     Upload an application given an application path and the application id.
 
-    :param: jg_ctx:                 The JobbergateContext. Needed to access the Httpx client with which to
-    make API calls
-    :param: application_path:       The directory where the application files to upload may be found
-    :param: application_id:         The id of the application for which to upload  data
-    :param: application_identifier: The identifier of the application for which to upload  data
-    :returns: True if the upload was successful; False otherwise
+    Args:
+        jg_ctx:                 The JobbergateContext. Needed to access the Httpx client with which to make API calls
+        application_path:       The directory where the application files to upload may be found
+        application_id:         The id of the application for which to upload  data
+        application_identifier: The identifier of the application for which to upload  data
+
+    Returns:
+        True if the upload was successful; False otherwise
     """
 
     # Make static type checkers happy
@@ -342,8 +350,11 @@ def load_application_config_from_source(config_source: str) -> JobbergateApplica
     """
     Load the JobbergateApplicationConfig from a text string containing the config as YAML.
 
-    :param: config_source: The YAML containing the config
-    :returns: A JobbergateApplicationConfig instance with the config values
+    Args:
+        config_source: The YAML containing the config
+
+    Returns:
+        A JobbergateApplicationConfig instance with the config values
     """
     config_data = yaml.safe_load(config_source)
     config = JobbergateApplicationConfig(**config_data)
@@ -358,8 +369,9 @@ def load_application_from_source(app_source: str, app_config: JobbergateApplicat
 
     Adapted from: https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
 
-    :param: app_source: The JobbergateApplication source code to load
-    :param: app_config: The JobbergateApplicationConfig needed to instantiate the JobbergateApplication
+    Args:
+        app_source: The JobbergateApplication source code to load
+        app_config: The JobbergateApplicationConfig needed to instantiate the JobbergateApplication
     """
     app_locals: Dict[str, Any] = dict()
     exec(app_source, app_locals, app_locals)
@@ -379,11 +391,14 @@ def execute_application(
 
     Updates the app_config with values gathered in the question workflow
 
-    :param: app_module:      The source code for the application to execute
-    :param: app_config:      The configuration for the JobbergateApplication
-    :param: supplied_params: Pre-set values for the parameters. Any questions about these values will be skipped.
-    :param: fast_mode:       If true, do not ask the user questions. Just use supplied_params or defaults
-    :returns: The configuration values collected from the user by executing the application
+    Args:
+         app_module:      The source code for the application to execute
+         app_config:      The configuration for the JobbergateApplication
+         supplied_params: Pre-set values for the parameters. Any questions about these values will be skipped.
+         fast_mode:       If true, do not ask the user questions. Just use supplied_params or defaults
+
+    Returns:
+        The configuration values collected from the user by executing the application
     """
     app_params = gather_param_values(app_module, supplied_params=supplied_params, fast_mode=fast_mode)
     app_config.application_config.update(**app_params)

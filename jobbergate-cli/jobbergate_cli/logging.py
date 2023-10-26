@@ -32,7 +32,7 @@ def init_logs(verbose=False):
 
 def init_sentry():
     """
-    Initialize Sentry if the ``SENTRY_DSN`` environment variable is present.
+    Initialize Sentry if the `SENTRY_DSN` environment variable is present.
     """
     if settings.SENTRY_DSN:
         logger.debug("Initializing sentry")

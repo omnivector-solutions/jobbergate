@@ -31,7 +31,7 @@ class Abort(buzz.Buzz):
     """
     A special exception used to abort the Jobbergate CLI.
 
-    Collects information provided for use in the ``handle_abort`` context manager.
+    Collects information provided for use in the `handle_abort` context manager.
     """
 
     def __init__(

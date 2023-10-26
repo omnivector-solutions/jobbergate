@@ -554,9 +554,9 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         Render the file using Jinja2.
 
         The parameters are passed to the template as the context, and two of them are supported:
-        * Directly as the context, for instance, if the template contains ``{{ foo }}``.
-        * As a ``data`` key for backward compatibility, for instance, if the
-          template contains ``{{ data.foo }}``.
+        * Directly as the context, for instance, if the template contains `{{ foo }}`.
+        * As a `data` key for backward compatibility, for instance, if the
+          template contains `{{ data.foo }}`.
 
         """
         file_content = await self.get_file_content(instance)

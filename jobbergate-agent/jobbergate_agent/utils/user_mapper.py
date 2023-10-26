@@ -26,7 +26,7 @@ class SlurmUserMapperFactory(Protocol):
 
     A callable with no arguments is expected in order to handle to client code
     the configuration and initialization of any custom user mapper.
-    Any object that implements the ``Mapping`` protocol can be returned.
+    Any object that implements the `Mapping` protocol can be returned.
     """
 
     def __call__(self) -> SlurmUserMapper:

@@ -17,7 +17,7 @@ from jobbergate_core.auth.exceptions import TokenError
 
 class TokenType(str, Enum):
     """
-    The types of tokens available in the system are ``access`` and ``refresh``.
+    The types of tokens available in the system are `access` and `refresh`.
     """
 
     ACCESS = "access"
@@ -32,11 +32,11 @@ class Token:
     Arguments:
         cache_directory: The directory used for cache.
         label: The type of token.
-        content: The content of the token (default is ``""``).
+        content: The content of the token (default is `""`).
 
     Attributes:
         file_path: The path to the file associated with the token.
-          It is computed  as ``<cache_directory>/<label>.token``.
+          It is computed  as `<cache_directory>/<label>.token`.
         data: Metadata decoded from the token's content are available in this dictionary.
           Expiration date and permissions are some examples of data that can be found.
     """

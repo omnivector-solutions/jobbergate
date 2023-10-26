@@ -20,57 +20,60 @@ class MetaMapper:
     """
     Maps re-usable metadata for fields. Should be used with the `schema_extra` property of a Model's Config.
 
-    Example::
+    Example:
 
-        foo_meta = MetaMapper(
-            id=MetaField(
-                description="The unique identifier of this Foo",
-                example=13,
-            ),
-            name=MetaField(
-                description="The name of this Foo",
-                example="Bar",
-            ),
-            is_active=MetaField(
-                description="Indicates if this Foo is active",
-                example=True,
-            ),
-            created_at=MetaField(
-                description="The timestamp indicating when this Foo was created",
-                example="2023-08-18T13:55:37.172285",
-            ),
-        )
-
-
-        class CreateFooRequest(BaseModel):
-            name: str
-            is_active: Optional[bool]
-
-            class Config:
-                schema_extra = foo_meta
+    ```python
+    foo_meta = MetaMapper(
+        id=MetaField(
+            description="The unique identifier of this Foo",
+            example=13,
+        ),
+        name=MetaField(
+            description="The name of this Foo",
+            example="Bar",
+        ),
+        is_active=MetaField(
+            description="Indicates if this Foo is active",
+            example=True,
+        ),
+        created_at=MetaField(
+            description="The timestamp indicating when this Foo was created",
+            example="2023-08-18T13:55:37.172285",
+        ),
+    )
 
 
-        class UpdateFooRequest(BaseModel):
-            name: Optional[str] = None
-            is_active: Optional[bool] = None
+    class CreateFooRequest(BaseModel):
+        name: str
+        is_active: Optional[bool]
 
-            class Config:
-                schema_extra = foo_meta
-
-
-        class FooResponse(BaseModel):
-            id: int
-            name: str
-            is_active: bool
-            created_at: DateTime
-
-            class Config:
-                schema_extra = foo_meta
+        class Config:
+            schema_extra = foo_meta
 
 
-    Notice in this example that the fields may be required in some models and optional in others. Further,
-    not all the fields are present in all the models. The MetaMapper allows the models to share field metadata
-    and yet define the fields independently.
+    class UpdateFooRequest(BaseModel):
+        name: Optional[str] = None
+        is_active: Optional[bool] = None
+
+        class Config:
+            schema_extra = foo_meta
+
+
+    class FooResponse(BaseModel):
+        id: int
+        name: str
+        is_active: bool
+        created_at: DateTime
+
+        class Config:
+            schema_extra = foo_meta
+    ```
+
+
+    Note:
+        In this example that the fields may be required in some models and optional in others. Further,
+        not all the fields are present in all the models. The MetaMapper allows the models to share field
+        metadata and yet define the fields independently.
     """
 
     field_dict: Dict[str, MetaField]

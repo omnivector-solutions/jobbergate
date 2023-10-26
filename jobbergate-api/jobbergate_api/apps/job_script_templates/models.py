@@ -113,7 +113,7 @@ class WorkflowFile(FileMixin, Base):
     Workflow file table definition.
 
     Attributes:
-        parent_id:      A foreign key to the parent job script template row.
+        parent_id: A foreign key to the parent job script template row.
         runtime_config: The runtime configuration of the workflow.
 
     See Mixin class definitions for other columns
