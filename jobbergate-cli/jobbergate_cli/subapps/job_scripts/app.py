@@ -160,7 +160,7 @@ def create(
         ),
     )
 
-    upload_job_script_files(jg_ctx, job_script_result.id, job_script_path, supporting_file_path)
+    upload_job_script_files(jg_ctx, job_script_result.job_script_id, job_script_path, supporting_file_path)
 
     render_single_result(
         jg_ctx,
@@ -299,7 +299,7 @@ def render(
     )
 
     if download:
-        download_job_script_files(job_script_result.id, jg_ctx)
+        download_job_script_files(job_script_result.job_script_id, jg_ctx)
 
     if not submit:
         return
@@ -322,7 +322,7 @@ def render(
     try:
         job_submission_result = create_job_submission(
             jg_ctx,
-            job_script_result.id,
+            job_script_result.job_script_id,
             job_script_result.name,
             job_script_result.description,
             cluster_name,
