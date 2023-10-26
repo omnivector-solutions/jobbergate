@@ -106,7 +106,7 @@ def test_render_job_script__providing_a_name(
         new=dummy_render_class,
     )
     create_route = respx_mock.post(
-        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.id}"
+        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.application_id}"
     )
     create_route.mock(
         return_value=httpx.Response(
@@ -178,7 +178,7 @@ def test_render_job_script__without_a_name(
         new=dummy_render_class,
     )
     create_route = respx_mock.post(
-        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.id}"
+        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.application_id}"
     )
     create_route.mock(
         return_value=httpx.Response(
@@ -190,13 +190,13 @@ def test_render_job_script__without_a_name(
     actual_job_script_data = render_job_script(
         dummy_context,
         name=None,
-        application_id=application_response.id,
+        application_id=application_response.application_id,
         fast=True,
     )
 
     mocked_fetch_application_data.assert_called_once_with(
         dummy_context,
-        id=application_response.id,
+        id=application_response.application_id,
         identifier=None,
     )
 

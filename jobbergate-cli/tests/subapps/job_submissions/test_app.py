@@ -30,7 +30,7 @@ def test_create(
     job_submission_data = JobSubmissionResponse(**dummy_job_submission_data[0])
     job_submission_name = job_submission_data.name
     job_submission_description = job_submission_data.description
-    job_script_id = job_submission_data.id
+    job_script_id = job_submission_data.job_script_id
 
     param_file_path = tmp_path / "param_file.json"
     param_file_path.write_text(json.dumps(job_submission_data.execution_parameters))
