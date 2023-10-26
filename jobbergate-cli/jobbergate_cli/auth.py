@@ -301,7 +301,7 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
             abort_message="There was a problem retrieving a device verification code from the auth provider",
             abort_subject="COULD NOT RETRIEVE TOKEN",
             support=True,
-            response_model_cls=DeviceCodeData
+            response_model_cls=DeviceCodeData,
             data=dict(
                 client_id=settings.OIDC_CLIENT_ID,
                 grant_type="client_credentials",
