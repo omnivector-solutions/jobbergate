@@ -127,7 +127,7 @@ class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     Describes the format of data for applications retrieved from the Jobbergate API endpoints.
     """
 
-    id: int
+    application_id: int = pydantic.Field(alias="id")
     name: str
     owner_email: str
     created_at: datetime
@@ -165,7 +165,7 @@ class JobScriptResponse(
     Describes the format of data for job_scripts retrieved from the Jobbergate API endpoints.
     """
 
-    id: int
+    job_script_id: int = pydantic.Field(alias="id")
     application_id: Optional[int] = pydantic.Field(None, alias="parent_template_id")
     name: str
     description: Optional[str] = None
@@ -190,7 +190,7 @@ class JobSubmissionResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     Describes the format of data for job_submissions retrieved from the Jobbergate API endpoints.
     """
 
-    id: int
+    job_submission_id: int = pydantic.Field(alias="id")
     job_script_id: int
     cluster_name: Optional[str] = pydantic.Field(alias="client_id")
     slurm_job_id: Optional[int]

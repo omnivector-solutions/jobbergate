@@ -235,7 +235,7 @@ def test_render__non_fast_mode_and_job_submission(
     job_submission_data = dummy_job_submission_data[0]
 
     render_route = respx_mock.post(
-        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.id}"
+        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.application_id}"
     )
     render_route.mock(
         return_value=httpx.Response(
@@ -286,7 +286,7 @@ def test_render__non_fast_mode_and_job_submission(
             unwrap(
                 f"""
                 render {name_flag}{separator}dummy-name
-                       {application_id_flag}{separator}{application_response.id}
+                       {application_id_flag}{separator}{application_response.application_id}
                        --param-file={param_file_path}
                        {sbatch_params}
                 """
@@ -298,7 +298,7 @@ def test_render__non_fast_mode_and_job_submission(
     assert result.exit_code == 0, f"render failed: {result.stdout}"
     assert mocked_fetch_application_data.called_once_with(
         dummy_context,
-        id=application_response.id,
+        id=application_response.application_id,
         identifier=None,
     )
     assert mocked_create_job_submission.called_once_with(
@@ -365,7 +365,7 @@ def test_render__with_fast_mode_and_no_job_submission(
     job_script_data = dummy_job_script_data[0]
 
     render_route = respx_mock.post(
-        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.id}"
+        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.application_id}"
     )
     render_route.mock(
         return_value=httpx.Response(
@@ -409,7 +409,7 @@ def test_render__with_fast_mode_and_no_job_submission(
             unwrap(
                 f"""
                 render --name=dummy-name
-                       --application-id={application_response.id}
+                       --application-id={application_response.application_id}
                        --param-file={param_file_path}
                        --fast
                        --no-submit
@@ -422,7 +422,7 @@ def test_render__with_fast_mode_and_no_job_submission(
     assert result.exit_code == 0, f"render failed: {result.stdout}"
     assert mocked_fetch_application_data.called_once_with(
         dummy_context,
-        id=application_response.id,
+        id=application_response.application_id,
         identifier=None,
     )
     assert render_route.called
@@ -474,7 +474,7 @@ def test_render__submit_is_none_and_cluster_name_is_defined(
     job_script_data = dummy_job_script_data[0]
 
     render_route = respx_mock.post(
-        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.id}"
+        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.application_id}"
     )
     render_route.mock(
         return_value=httpx.Response(
@@ -508,7 +508,7 @@ def test_render__submit_is_none_and_cluster_name_is_defined(
             unwrap(
                 f"""
                 render --name=dummy-name
-                       --application-id={application_response.id}
+                       --application-id={application_response.application_id}
                        --param-file={param_file_path}
                        --cluster-name=dummy-cluster
                        {sbatch_params}

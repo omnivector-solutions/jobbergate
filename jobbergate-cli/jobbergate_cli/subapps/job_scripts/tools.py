@@ -201,7 +201,7 @@ def render_job_script(
 
     if not app_data.workflow_files:
         raise Abort(
-            f"Application {app_data.id} does not have a workflow file",
+            f"Application {app_data.application_id} does not have a workflow file",
             subject="Workflow file not found",
             log_message="Application does not have a workflow file",
         )
@@ -249,7 +249,7 @@ def render_job_script(
         JobScriptResponse,
         make_request(
             jg_ctx.client,
-            f"/jobbergate/job-scripts/render-from-template/{app_data.id}",
+            f"/jobbergate/job-scripts/render-from-template/{app_data.application_id}",
             "POST",
             expected_status=201,
             abort_message="Couldn't create job script",
@@ -268,7 +268,9 @@ def update_template_files_information(app_data: ApplicationResponse, app_config:
         list_of_entrypoints = [i.filename for i in app_data.template_files if i.file_type.upper() == "ENTRYPOINT"]
         if len(list_of_entrypoints) != 1:
             raise Abort(
-                f"Application {app_data.id} does not have one entry point, found {len(list_of_entrypoints)}",
+                f"""
+                Application {app_data.application_id} does not have one entry point, found {len(list_of_entrypoints)}",
+                """,
                 subject="Entry point is unspecified",
                 log_message="Entry point file not specified",
             )
