@@ -17,7 +17,7 @@ from jobbergate_cli.text_tools import conjoin
 
 class Settings(BaseSettings):
     """
-    Provide a ``pydantic`` settings model to hold configuration values loaded from the environment.
+    Provide a `pydantic` settings model to hold configuration values loaded from the environment.
     """
 
     JOBBERGATE_CACHE_DIR: Path = Field(Path.home() / ".local/share/jobbergate3")
@@ -90,8 +90,9 @@ class Settings(BaseSettings):
 
     class Config:
         """
-        Customize behavior of the Settings class. Especially, enable the use of dotenv to load settings from a ``.env``
-        file instead of the environment.
+        Customize behavior of the Settings class.
+
+        Especially, enable the use of dotenv to load settings from a `.env` file instead of the environment.
         """
 
         if constants.JOBBERGATE_DEFAULT_DOTENV_PATH.is_file():

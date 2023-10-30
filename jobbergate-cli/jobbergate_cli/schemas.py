@@ -224,7 +224,7 @@ class RenderFromTemplateRequest(pydantic.BaseModel):
 
 class JobScriptRenderRequestData(pydantic.BaseModel):
     """
-    Describes the data that will be sent to the ``create`` endpoint of the Jobbergate API for job scripts.
+    Describes the data that will be sent to the `create` endpoint of the Jobbergate API for job scripts.
     """
 
     create_request: JobScriptCreateRequest
@@ -233,7 +233,7 @@ class JobScriptRenderRequestData(pydantic.BaseModel):
 
 class JobSubmissionCreateRequestData(pydantic.BaseModel):
     """
-    Describes the data that will be sent to the ``create`` endpoint of the Jobbergate API for job submissions.
+    Describes the data that will be sent to the `create` endpoint of the Jobbergate API for job submissions.
     """
 
     name: str

@@ -49,7 +49,7 @@ class TimeLoop:
         """
         Initialize the time-loop.
 
-        Duration may be either a count of seconds or a ``pendulum.duration``.
+        Duration may be either a count of seconds or a `pendulum.duration`.
         """
         self.moment = None
         self.last_moment = None

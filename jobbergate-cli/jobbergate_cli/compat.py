@@ -27,7 +27,7 @@ from jobbergate_cli.subapps.job_submissions.app import list_all as list_job_subm
 def add_legacy_compatible_commands(app: typer.Typer):
     """
     Add commands from the restructured CLI under the previous names for the commands
-    to the root ``typer`` app.
+    to the root `typer` app.
     """
 
     # Applications

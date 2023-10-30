@@ -27,7 +27,7 @@ def conjoin(*items: str, join_str: str = "\n") -> str:
     """
     Joins strings supplied as args.
 
-    Helper that wraps ``str.join()`` without having to pack strings in an iterable.
+    Helper that wraps `str.join()` without having to pack strings in an iterable.
     """
     return join_str.join(items)
 

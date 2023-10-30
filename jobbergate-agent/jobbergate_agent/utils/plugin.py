@@ -21,7 +21,7 @@ def load_plugins(plugin_name: str) -> Dict[str, Any]:
     """
     Discover and load plugins available to the agent, allowing for third party ones to be included.
 
-    Notice the ones shipped with the agent are also declared on the ``pyproject.toml`` file
+    Notice the ones shipped with the agent are also declared on the `pyproject.toml` file
     as plugins, even though they could be easily loaded directly from source. This aims
     to support tests and to demonstrate how to use the plugin system.
 

@@ -18,7 +18,7 @@ from jobbergate_cli.text_tools import indent as indent_text
 
 class StyleMapper:
     """
-    Provide a mapper that can set ``rich`` styles for rendered output of data tables and dicts.
+    Provide a mapper that can set `rich` styles for rendered output of data tables and dicts.
 
     The subapps have list endpoints that return sets of values. These are rendered as tables in
     the output. The StyleMapper class provides a way to simply define styles that should be applied
@@ -26,24 +26,23 @@ class StyleMapper:
 
     Example:
 
-    The following code will print a table where the columns are colored according to the style_mapper
-
-    .. code-block: python
-
-       style_mapper = StyleMapper(
-           a="bold green",
-           b="red",
-           c="blue",
-       )
-       envelope = dict(
-           results=[
-               dict(a=1, b=2, c=3),
-               dict(a=4, b=5, c=6),
-               dict(a=7, b=8, c=9),
-           ],
-           pagination=dict(total=3)
-       )
-       render_list_results(jb_ctx, envelope, style_mapper)
+    ```python
+    # print a table where the columns are colored according to the style_mapper
+    style_mapper = StyleMapper(
+        a="bold green",
+        b="red",
+        c="blue",
+    )
+    envelope = dict(
+        results=[
+            dict(a=1, b=2, c=3),
+            dict(a=4, b=5, c=6),
+            dict(a=7, b=8, c=9),
+        ],
+        pagination=dict(total=3)
+    )
+    render_list_results(jb_ctx, envelope, style_mapper)
+    ```
 
     """
 
@@ -68,13 +67,14 @@ class StyleMapper:
 
 def terminal_message(message, subject=None, color="green", footer=None, indent=True):
     """
-    Print a nicely formatted message as output to the user using a ``rich`` ``Panel``.
+    Print a nicely formatted message as output to the user using a `rich` `Panel`.
 
-    :param: message: The message to print out
-    :param: subject: An optional subject line to add in the header of the ``Panel``
-    :param: color:   An optional color to style the ``subject`` header with
-    :param: footer:  An optional message to display in the footer of the ``Panel``
-    :param: indent:  Adds padding to the left of the message
+    Args:
+        message: The message to print out
+        subject: An optional subject line to add in the header of the `Panel`
+        color:   An optional color to style the `subject` header with
+        footer:  An optional message to display in the footer of the `Panel`
+        indent:  Adds padding to the left of the message
     """
     panel_kwargs = dict(padding=1)
     if subject is not None:
@@ -108,13 +108,14 @@ def render_list_results(
     title: str = "Results List",
 ):
     """
-    Render a list of result data items in a ``rich`` ``Table``.
+    Render a list of result data items in a `rich` `Table`.
 
-    :param: ctx:           The JobbergateContext. This is needed to detect if ``full`` or ``raw`` output is needed
-    :param: envelope:      A ListResponseEnvelope containing the data items
-    :param: style_mapper:  The style mapper that should be used to apply styles to the columns of the table
-    :param: hidden_fields: Columns that should (if not using ``full`` mode) be hidden in the ``Table`` output
-    :param: title:         The title header to include above the ``Table`` output
+    Args:
+         ctx:           The JobbergateContext. This is needed to detect if `full` or `raw` output is needed
+         envelope:      A ListResponseEnvelope containing the data items
+         style_mapper:  The style mapper that should be used to apply styles to the columns of the table
+         hidden_fields: Columns that should (if not using `full` mode) be hidden in the `Table` output
+         title:         The title header to include above the `Table` output
     """
     if ctx.raw_output:
         # THIS IS SO DUMB....need to dump to string to make sure paths are converted,
@@ -154,11 +155,12 @@ def render_dict(
     hidden_fields: Optional[List[str]] = None,
 ):
     """
-    Render a dictionary in a ``rich`` ``Table`` That shows the key and value of each item.
+    Render a dictionary in a `rich` `Table` That shows the key and value of each item.
 
-    :param: data: The dictionary to render
-    :param: title: The title header to include above the ``Table`` output
-    :param: hidden_fields: Keys that should be hidden in the ``Table`` output
+    Args:
+        data:          The dictionary to render
+        title:         The title header to include above the `Table` output
+        hidden_fields: Keys that should be hidden in the `Table` output
     """
     if hidden_fields is None:
         hidden_fields = []
@@ -184,12 +186,13 @@ def render_single_result(
     title: str = "Result",
 ):
     """
-    Render a single data item in a ``rich`` ``Table.
+    Render a single data item in a `rich` `Table.
 
-    :param: ctx:           The JobbergateContext. This is needed to detect if ``full` or ``raw`` output is needed
-    :param: result:        The data item to display. May be a dict or a pydantic model.
-    :param: hidden_fields: Rows that should (if not using ``full`` mode) be hidden in the ``Table`` output
-    :param: title:         The title header to include above the ``Tale`` output
+    Args:
+        ctx:           The JobbergateContext. This is needed to detect if `full` or `raw` output is needed
+        result:        The data item to display. May be a dict or a pydantic model.
+        hidden_fields: Rows that should (if not using `full` mode) be hidden in the `Table` output
+        title:         The title header to include above the `Tale` output
     """
     if isinstance(result, pydantic.BaseModel):
         result_model = cast(pydantic.BaseModel, result)

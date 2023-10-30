@@ -175,8 +175,8 @@ class FileMixin(CommonMixin, TimestampMixin):
     Add needed columns and declared attributes for all models that support a FileService.
 
     Attributes:
-        parent_id:   The id of the parent row in another table.
-                     Note: Derived classes should override this attribute to make it a foreign key as well.
+        parent_id: The id of the parent row in another table.
+                   **Note: ** Derived classes should override this attribute to make it a foreign key as well.
         description: The description of the job script template.
     """
 
