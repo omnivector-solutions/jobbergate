@@ -10,7 +10,6 @@ Although this tutorial focuses on integrating Keycloak with a locally deployed i
 housed in a Docker container via the `jobbergate-composed` sub-project, the procedures can be easily adapted to suit
 deployments on single-node Keycloak clusters or other complex configurations.
 
-
 ## Create a new Realm
 
 You have the option to utilize an existing realm for Jobbergate, but for a streamlined process, it's typically more
@@ -23,10 +22,9 @@ For those using a local Jobbergate deployment, you should assign the Name as "jo
 
 You'll also need to specify a Frontend URL. Avoid using "localhost" because a valid domain is required for the
 redirection to function correctly. A suitable alternative is the .local special domain; this domain is ideal as it isn't
-subject to reservation on any DNS. For instance, your full Frontend URL would be "http://keycloak.local:8080".
+subject to reservation on any DNS. For instance, your full Frontend URL would be <http://keycloak.local:8080>.
 
 The remaining realm settings can be left at their default configurations.
-
 
 ### Setup Hostfile
 
@@ -40,12 +38,11 @@ Editing this file requires administrative or sudo privileges.
 
 Upon accessing the file, append the following line and save your changes:
 
-```
+```plain
 127.0.0.1   keycloak.local
 ```
 
 This step ensures that the `Frontend URL` resolves correctly, facilitating seamless navigation and operation.
-
 
 ## Create a new Client for the CLI
 
@@ -61,7 +58,6 @@ To ensure the CLI can utilize this client for login purposes, it's vital to acti
 Grant` option.
 
 If you're working with a local deployment, simply input "\*" in the `Valid Redirect URIs` section.
-
 
 ### Add Roles
 
@@ -81,20 +77,17 @@ Add the following roles:
 | jobbergate:job-submissions:edit | Allow to edit job submissions             |
 | jobbergate:job-submissions:view | Allow to view job submissions             |
 
-
 ### Add Mappers
 
 Jobbergate requires two claims that are not available by default. We will add them to the JWTs with Mappers.
 
 Click the `Mappers`  tab at the top, and then click the `Create` button to add a new Mapper.
 
-
 #### Audience
 
 First, we need to add an "audience" mapper. Select "audience" for the `Name` field. Next, select "Audience" for the
 `Mapper Type`.  The `Included Custom Audience` value may be whatever you like. The local deploy, by default, uses
-"https://apis.omnivector.solutions". Make sure to enable the `Add to ID token` setting.
-
+<https://apis.omnivector.solutions>. Make sure to enable the `Add to ID token` setting.
 
 #### Permissions
 
@@ -105,7 +98,6 @@ the JWT. We will call the new mapper our "permissions" mapper.
 Enter "Permissions" under the `Name` field. Next, select "User Client Role" as the `Mapper Type`.
 Select "jobbergatel-cli" for the `Client ID`. The `Token Claim Name` *must* have the value "permissions". The
 `Claim JSON Type` field must be "String".
-
 
 ## Create a new Client for the Agent
 
@@ -120,7 +112,6 @@ jobs to the cluster they should be submitted to. So use the cluster name for thi
 On the `Settings` tab, set `Access Type` to `confidential` and enter "\*" for the `Valid Redirect URIs`. Scroll down and
 click on the `Save` button.
 
-
 ### Add Roles
 
 Click on the `Roles` tab, and click the `Add Role` button. Add all the following roles as above:
@@ -134,20 +125,17 @@ Click on the `Roles` tab, and click the `Add Role` button. Add all the following
 | jobbergate:job-submissions:edit | Allow to edit job submissions             |
 | jobbergate:job-submissions:view | Allow to view job submissions             |
 
-
 ### Add Mappers
 
 Like the CLI client, the Agent's client also requires the "Audience" and "Permissions" mappers.
 
 Click the `Mappers`  tab at the top, and then click the `Create` button to add a new Mapper.
 
-
 #### Audience
 
 First, we need to add an "audience" mapper. Select "audience" for the `Name` field. Next, select "Audience" for the
 `Mapper Type`.  The `Included Custom Audience` value may be whatever you like. The local deploy, by default, uses
-"https://apis.omnivector.solutions". Make sure to enable the `Add to ID token` setting.
-
+"<https://apis.omnivector.solutions>". Make sure to enable the `Add to ID token` setting.
 
 #### Permissions
 
@@ -156,14 +144,12 @@ of the JWT payload. Enter "Permissions" under the `Name` field. Next, select "Us
 Select "jobbergatel-cli" for the `Client ID`. The `Token Claim Name` *must* have the value "permissions". The
 `Claim JSON Type` field must be "String".
 
-
 ### Add Service Account Roles
 
 To add the correct roles to the tokens issued for the Agent's client, we need to add some "Service Account Roles".
 
 Click the `Service Account Roles` tab. Then, from the `Client Roles` drop-down, select the `local-slurm` client. Select
 all of the Jobbergate roles created above and then click the `Add selected` button.
-
 
 ## Create User(s)
 
@@ -188,11 +174,10 @@ Click the `Credentials` tab at the top. Enter "local" for the `Password` and `Pa
 Next, click the `Role Mappings` tab at the top. Select the `jobbergate-local` entry in the `Client Roles` drop-down.
 Select all of the roles for jobbergate added above and click `Add selected` to add them to the user.
 
-
 ## Conclusion
 
 Your Keycloak instance is now prepared for use by Jobbergate! For additional information on configuring Keycloak and
 Armasec, consult documentation at:
 
- - https://www.keycloak.org/documentation
- - https://omnivector-solutions.github.io/armasec/
+- <https://www.keycloak.org/documentation>
+- <https://omnivector-solutions.github.io/armasec/>

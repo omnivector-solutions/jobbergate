@@ -27,11 +27,10 @@ Integration testing should cover the following work-flows:
 - Deleting the Job Submission, Job Script, and Application
 - Logging out through the CLI
 
-
 ## Setup
 
 To begin, you will need two separate terminals open. Change directory to the
-`jobbergate-composed` sub-project of the toplevel `jobbergate` folder.
+`jobbergate-composed` sub-project of the top-level `jobbergate` folder.
 
 First, you need to start up the Jobbergate platform with docker-compose. In one of your
 terminals, run the following command:
@@ -61,7 +60,6 @@ export NAME="test--$(whoami)--$(date -I)"
 
 You have now created a test name like `test--tbeck--2023-10-13`.
 
-
 ## Logging in through the CLI
 
 The first work-flow you will test covers the auth mechanics of both the CLI and the API.
@@ -88,11 +86,10 @@ jobbergate show-token --decode
 This command will pretty print the payload of the token.
 Verify that it contains:
 
- -  "view" and "edit" `permissions` for job-templates, job-scripts, and job-submissions
- -  `email` equalling "local-user@jobberate.local"
- -  `aud` includes "https://local.omnivector.solutions"
- -  `azp` equals "jobbergate-cli"
-
+- "view" and "edit" `permissions` for job-templates, job-scripts, and job-submissions
+- `email` equalling "<local-user@jobberate.local>"
+- `aud` includes "<https://local.omnivector.solutions>"
+- `azp` equals "jobbergate-cli"
 
 ## Creating an Application
 
@@ -111,11 +108,10 @@ Run the following command in the Jobbergate CLI:
 jobbergate applications create --name=$NAME --identifier=$NAME --application-path=/example
 ```
 
-
 Verify that output shows that a single application was inserted and that the files were
 uploaded:
 
-```
+```plain
                     Created Application
 ┏━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Key                  ┃ Value                            ┃
@@ -129,7 +125,6 @@ uploaded:
 │ application_uploaded │ True                             │
 └──────────────────────┴──────────────────────────────────┘
 ```
-
 
 ## Querying a single Application
 
@@ -146,7 +141,7 @@ jobbergate --full applications get-one --id=1
 
 The output should look something like this:
 
-```
+```plain
 ┏━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Key            ┃ Value                                                                                                                                 ┃
 ┡━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
@@ -176,7 +171,6 @@ Application:
 jobbergate --full applications get-one --identifier=test--tbeck--2023-10-13
 ```
 
-
 ## Updating an Application
 
 Next, verify that you can update the application through the CLI.
@@ -191,17 +185,15 @@ Verify that you can see the new description in the application when you fetch it
 `get-one` subcommand. Also, check the output with the `--full` parameter to make
 sure that the `updated_at` field is different and later than the `created_at` field.
 
-
 ## Rendering a Job Script from an Application
 
 Now that an application has been uploaded uploaded, use it to render a new Job Script.
 
 There are a few different options to test here to check for correct behavior:
 
- - Basic, interactive render
- - Render in "fast mode" with a `--param-file`
- - Render with additional SBATCH params
-
+- Basic, interactive render
+- Render in "fast mode" with a `--param-file`
+- Render with additional SBATCH params
 
 ### Basic, interactive render
 
@@ -218,7 +210,7 @@ Verify that you are shown 3 prompts to supply values for the template variables.
 these in with any values you like. Notice that the third question has a default response
 supplied already. Accept this value or replace it with your preferred value:
 
-```
+```plain
    [?] gimme the foo!: FOO
    [?] gimme the bar!: BAR
    [?] gimme the foo!: BAZ
@@ -230,7 +222,7 @@ When prompted if you would like to submit the job, decline with "n".
 After completing the questions, verify that the CLI reports that the new Job Script was
 created using the supplied values:
 
-```
+```plain
                  Created Job Script
 ┏━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Key            ┃ Value                            ┃
@@ -254,7 +246,7 @@ jobbergate job-scripts show-files --id=1
 The output should show the Job Script with the provided template variable values
 rendered as expected:
 
-```
+```plain
 ╭─────────────────────────────────────────────────────────────────── dummy-script.py ────────────────────────────────────────────────────────────────────╮
 │                                                                                                                                                        │
 │   #!/bin/python3                                                                                                                                       │
@@ -271,7 +263,6 @@ rendered as expected:
 │                                                                                                                                                        │
 ╰─────────────────────────────────────────────────────────── This is the main job script file ───────────────────────────────────────────────────────────╯
 ```
-
 
 ### Render in "fast mode" with a `--param-file`
 
@@ -301,7 +292,7 @@ jobbergate job-scripts render --name=$NAME --application-id=1 --fast --param-fil
 The output from the command will show you the default values that were used that you did
 not specify in the `params.json` file:
 
-```
+```plain
 Default values used
 ┏━━━━━━━━━┳━━━━━━━┓
 ┃ Key     ┃ Value ┃
@@ -325,7 +316,6 @@ Default values used
 
 Now check the rendered file again using the `show-files` sub-command.
 
-
 ### Render with additional SBATCH params
 
 Finally, test that additional `SBATCH` params can be inserted at render time. The code
@@ -340,7 +330,7 @@ jobbergate job-scripts render --name=$NAME --application-id=1 --fast --param-fil
 
 The output should look like:
 
-```
+```plain
 Default values used
 ┏━━━━━━━━━┳━━━━━━━┓
 ┃ Key     ┃ Value ┃
@@ -365,11 +355,10 @@ Default values used
 Now, review the rendered Job Script file using the `--show-files` command. You should
 see that the additional two SBATCH parameters are included:
 
-```
+```python
 #SBATCH --cluster=fake                                                                                                                               │
 #SBATCH --partition=dummy
 ```
-
 
 ## Updating a Job Script
 
@@ -378,14 +367,12 @@ Next, verify that an existing Job Script can be updated.
 Run this command to verify that you can change the description:
 
 ```shell
-
 jobbergate job-scripts update --id=1 --description="Here is a test description"
 ```
 
 Verify that you can see the new description in the Job Script when you fetch it via the
 `get-one` subcommand. Also, check the output with the `--full` parameter to make
 sure that the `updated_at` field is different and later than the `created_at` field.
-
 
 ## Submitting a Job Script
 
@@ -397,11 +384,10 @@ directory after the job completes execution to check the results.
 
 You will need to verify that jobs are being submitted correctly vai the following steps:
 
-* Submit the job through the CLI
-* Verify that the agent submitted the job
-* Verify that the agent updates the Job Submission status
-* Verify the output from the job
-
+- Submit the job through the CLI
+- Verify that the agent submitted the job
+- Verify that the agent updates the Job Submission status
+- Verify the output from the job
 
 ### Submit the job through the CLI
 
@@ -414,8 +400,7 @@ jobbergate job-submissions create --name=$NAME --job-script-id=1 --cluster-name=
 Verify that the output shows that the Job Submission has been created for the target
 Job Script
 
-
-```
+```plain
                   Created Job Submission
 ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Key                 ┃ Value                            ┃
@@ -433,7 +418,6 @@ Job Script
 └─────────────────────┴──────────────────────────────────┘
 ```
 
-
 ### Verify that the agent submitted the job
 
 To verify that the agent submitted the job correctly, review the log output from the
@@ -441,9 +425,9 @@ agent.
 
 The agent performs the following process to complete a Job Submission with Slurm
 
- - Fetch a pending job from the API
- - Submit the job to slurm
- - Mark the job as submitted and add the slurm job id to it
+- Fetch a pending job from the API
+- Submit the job to slurm
+- Mark the job as submitted and add the slurm job id to it
 
 You can access the log data by running the following command in a terminal that has
 changed directory to the `jobbergate-composed` folder:
@@ -457,7 +441,7 @@ It may be useful to pipe the output to a text viewer like `less`.
 If the agent has successfully submitted the job, you should see some log lines that
 look like this (ellipses indicate omitted content):
 
-```
+```plain
 ...Retrieved 1 pending job submission...
 ...Submitting pending job submission 1
 ...
@@ -469,7 +453,6 @@ look like this (ellipses indicate omitted content):
 
 If you find those log lines, then the Agent has successfully submitted the job to slurm.
 
-
 ### Verify that the job was completed
 
 To verify that the job completed successfully, review the log output from the
@@ -477,13 +460,13 @@ agent.
 
 The agent performs the following process to complete Job Submissions
 
- - Fetch the submitted job from the API
- - Check the status of the job in slurm using the the `slurm_job_id`
- - If the job is completed, mark the Job Submission as COMPLETED
+- Fetch the submitted job from the API
+- Check the status of the job in slurm using the the `slurm_job_id`
+- If the job is completed, mark the Job Submission as COMPLETED
 
 You should look for log lines that look like this (ellipses indicate omitted content):
 
-```
+```plain
 ...Retrieved 1 active job submissions...
 ...Fetching status of job_submission 1 from slurm
 ...Fetching slurm job status for slurm job 1
@@ -492,15 +475,14 @@ You should look for log lines that look like this (ellipses indicate omitted con
 ...Updating job_submission with status=COMPLETED
 ```
 
-
 ### Verify the output from the job
 
 In the terminal where you are running Jobbergate CLI commands, you can check the `/nfs`
 directory to see the results. You should see three output files in the directory:
 
- - test--root--2023-10-13.out
- - test--root--2023-10-13.err
- - dummy-output.txt
+- test--root--2023-10-13.out
+- test--root--2023-10-13.err
+- dummy-output.txt
 
 First, check the standard output from the script:
 
@@ -510,7 +492,7 @@ cat /nfs/test--root--2023-10-13.out
 
 You should see a single line that says:
 
-```
+```plain
 Executing dummy job script
 ```
 
@@ -518,14 +500,14 @@ The standard error from the script should be empty.
 
 The final file, `dummy-output.txt`, should contain the following content:
 
-```
+```plain
 I am a very, very dumb job script
 foo=FOO
 bar=BAR
 baz=BAZ
 ```
 
-# Conclusion
+## Conclusion
 
 The process described in this document covers integration tests across the entire
 Jobbergate platform. These integration tests should be performed before new versions of

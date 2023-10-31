@@ -10,9 +10,9 @@ install:
 
 .PHONY: lint
 lint: install
-	poetry run black --check src
-	poetry run isort --check src
-	poetry run flake8 --max-line-length=120 --max-complexity=40 src
+	poetry run black --check source
+	poetry run isort --check source
+	poetry run flake8 --max-line-length=120 --max-complexity=40 source
 
 .PHONY: qa
 qa: lint
@@ -20,8 +20,8 @@ qa: lint
 
 .PHONY: format
 format: install
-	poetry run black src
-	poetry run isort src
+	poetry run black source
+	poetry run isort source
 
 .PHONY: docs
 docs: install

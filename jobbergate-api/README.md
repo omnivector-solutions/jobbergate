@@ -1,6 +1,5 @@
 # Jobbergate API
 
-
 The Jobbergate API provides a RESTful interface over the Jobbergate data and is used
 by both the `jobbergate-agent` and the `jobbergate-cli` to view and manage the
 Jobbergate resources.
@@ -15,12 +14,10 @@ See also:
 
 * [jobbergate-cli](https://github.com/omnivector-solutions/jobbergate/jobbergate-cli)
 
+## License
 
-# License
+* [MIT](./LICENSE)
 
-* `MIT <LICENSE>`_
-
-
-# Copyright
+## Copyright
 
 * Copyright (c) 2020 OmniVector Solutions <info@omnivector.solutions>
