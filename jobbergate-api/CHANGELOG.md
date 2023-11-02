@@ -7,7 +7,7 @@ This file keeps track of all notable changes to jobbergate-api
 - Changed internals to avoid committing to the database when a GET request is made
 - Added extra settings to allow profiling and tracing on sentry
 - Removed db-start from dev-tools
-
+- Added `container` on job properties for submissions, new in Slurm REST 0.0.38
 
 ## 4.1.0a2 -- 2023-10-10
 - Made `runtime_config` optional when uploading a workflow file
