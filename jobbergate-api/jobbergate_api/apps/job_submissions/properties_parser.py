@@ -78,7 +78,7 @@ sbatch_to_slurm_mapping = [
     SbatchToSlurm("", "--clusters", "-M"),
     SbatchToSlurm("comment", "--comment"),
     SbatchToSlurm("constraints", "--constraint", "-C"),
-    SbatchToSlurm("", "--container"),
+    SbatchToSlurm("container", "--container"),
     SbatchToSlurm("", "--contiguous", "", dict(action="store_const", const=True)),
     SbatchToSlurm("core_specification", "--core-spec", "-S", dict(type=int)),
     SbatchToSlurm("cores_per_socket", "--cores-per-socket", "", dict(type=int)),

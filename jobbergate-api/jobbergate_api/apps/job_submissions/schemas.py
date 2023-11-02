@@ -106,6 +106,7 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     )
     comment: Optional[str] = Field(description="An arbitrary comment.")
     constraints: Optional[str] = Field(description="node features required by job.")
+    container: Optional[str] = Field(description="Absolute path to OCI container bundle.")
     core_specification: Optional[int] = Field(
         description=(
             "Count of specialized threads per node reserved by the job for system "
