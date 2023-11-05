@@ -37,6 +37,16 @@ def dummy_context():
     )
 
 
+@pytest.fixture(autouse=True)
+def mocked_open_on_browser(mocker):
+    """
+    Provide a fixture that mocks the ``open_on_browser()`` function.
+    """
+    mocked = mocker.patch("jobbergate_cli.auth.open_on_browser")
+    mocked.return_value = True
+    return mocked
+
+
 @pytest.fixture
 def make_token():
     """

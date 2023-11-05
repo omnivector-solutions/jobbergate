@@ -2,6 +2,7 @@
 Utilities for handling auth in jobbergate-cli.
 """
 
+import webbrowser
 from time import sleep
 from typing import Dict, Optional, cast
 
@@ -16,7 +17,7 @@ from jobbergate_cli.exceptions import Abort, JobbergateCliError
 from jobbergate_cli.render import terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import DeviceCodeData, IdentityData, JobbergateContext, Persona, TokenSet
-from jobbergate_cli.text_tools import unwrap
+from jobbergate_cli.text_tools import copy_to_clipboard, unwrap
 from jobbergate_cli.time_loop import TimeLoop
 
 
@@ -242,18 +243,36 @@ def refresh_access_token(ctx: JobbergateContext, token_set: TokenSet):
         token_set.refresh_token = refreshed_token_set.refresh_token
 
 
+def open_on_browser(url: str) -> bool:
+    """Open the url on the browser using webbrowser."""
+    try:
+        browser = webbrowser.get()
+        browser.open(url)
+        return True
+    except Exception as e:
+        logger.warning(f"Couldn't open login url on browser due to -- {str(e)}")
+        return False
+
+
 def show_login_message(verification_uri: str):
     """Show a message to the user with a link to the auth provider to login."""
     console = Console()
     EXTRA_CHARS = 7  # for indentation and panel borders
 
+    kwargs = {}
+
+    if open_on_browser(verification_uri):
+        kwargs["footer"] = "The output was opened on your browser"
+    elif copy_to_clipboard(verification_uri):
+        kwargs["footer"] = "The output was copied to your clipboard"
+
     if console.width >= len(verification_uri) + EXTRA_CHARS:
-        _show_login_standard_screen(verification_uri)
+        _show_login_standard_screen(verification_uri, **kwargs)
     else:
-        _show_login_narrow_screen(verification_uri, console)
+        _show_login_narrow_screen(verification_uri, console, **kwargs)
 
 
-def _show_login_narrow_screen(verification_uri: str, console: Console):
+def _show_login_narrow_screen(verification_uri: str, console: Console, **kwargs):
     """Print the link out of the panel to make it easier to copy."""
     terminal_message(
         f"""
@@ -262,12 +281,13 @@ def _show_login_narrow_screen(verification_uri: str, console: Console):
         Waiting up to {settings.OIDC_MAX_POLL_TIME / 60} minutes for you to complete the process...
         """,
         subject="Waiting for login",
+        **kwargs,
     )
     console.print(verification_uri, overflow="ignore", no_wrap=True, crop=False)
     console.print()
 
 
-def _show_login_standard_screen(verification_uri: str):
+def _show_login_standard_screen(verification_uri: str, **kwargs):
     """Print a rich panel with a link to the auth provider to login."""
     terminal_message(
         f"""
@@ -278,6 +298,7 @@ def _show_login_standard_screen(verification_uri: str):
         Waiting up to {settings.OIDC_MAX_POLL_TIME / 60} minutes for you to complete the process...
         """,
         subject="Waiting for login",
+        **kwargs,
     )
 
 
@@ -309,7 +330,6 @@ def fetch_auth_tokens(ctx: JobbergateContext) -> TokenSet:
             ),
         ),
     )
-
     show_login_message(device_code_data.verification_uri_complete)
 
     for tick in TimeLoop(

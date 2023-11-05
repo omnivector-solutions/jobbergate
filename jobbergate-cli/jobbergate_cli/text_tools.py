@@ -5,6 +5,7 @@ Provide some basic tools for manipulating text.
 import textwrap
 
 import pyperclip
+from loguru import logger
 
 
 def dedent(text: str) -> str:
@@ -55,5 +56,6 @@ def copy_to_clipboard(text: str) -> bool:
     try:
         pyperclip.copy(text)
         return True
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Couldn't copy to clipboard doe to -- {str(e)}")
         return False
