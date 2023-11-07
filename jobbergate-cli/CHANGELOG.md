@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+
+## 4.1.0a4 -- 2023-11-07
 - Added ability to open the login url on browser or copy it to clipboard
 - Removed the questions for cluster name and execution directory on submit mode
 
