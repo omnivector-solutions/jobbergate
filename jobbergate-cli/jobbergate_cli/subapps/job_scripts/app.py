@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional, cast
 
 import typer
 
-from jobbergate_cli.config import settings
 from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
@@ -303,21 +302,6 @@ def render(
 
     if not submit:
         return
-
-    cluster_name = question_helper(
-        question_func=typer.prompt,
-        text="What cluster should this job be submitted to?",
-        default=settings.DEFAULT_CLUSTER_NAME,
-        fast=fast,
-        actual_value=cluster_name,
-    )
-    execution_directory = question_helper(
-        question_func=typer.prompt,
-        text="Where should this job be executed?",
-        default=pathlib.Path.cwd(),
-        fast=fast,
-        actual_value=execution_directory,
-    )
 
     try:
         job_submission_result = create_job_submission(
