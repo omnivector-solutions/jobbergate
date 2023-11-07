@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-docs
 ## Unreleased
 
 
+## 4.1.0a4 -- 2023-11-07
 ## 4.1.0a3 -- 2023-11-03
 - Converted to Markdown and built with mkdocs-material
 
