@@ -360,7 +360,19 @@ class TestGetTemplateOutputNameMapping:
         )
         expected_mapping = {"template.j2": "template"}
 
-        assert get_template_output_name_mapping(config) == expected_mapping
+        assert get_template_output_name_mapping(config, "dummy-name") == expected_mapping
+
+    def test_default_template_valid_output_name__legacy_mode(self, tweak_settings):
+        config = JobbergateConfig(
+            default_template="templates/template.j2",
+            output_directory=pathlib.Path("."),
+            supporting_files=None,
+            supporting_files_output_name=None,
+        )
+        expected_mapping = {"template.j2": "dummy-name.job"}
+
+        with tweak_settings(JOBBERGATE_LEGACY_NAME_CONVENTION=True):
+            assert get_template_output_name_mapping(config, "dummy-name") == expected_mapping
 
     def test_supporting_files_with_valid_output_names(self):
         config = JobbergateConfig(
@@ -376,7 +388,7 @@ class TestGetTemplateOutputNameMapping:
 
         expected_mapping = {"template1.j2": "template1", "support1.j2": "output1.txt", "support2.j2": "output2.txt"}
 
-        assert get_template_output_name_mapping(config) == expected_mapping
+        assert get_template_output_name_mapping(config, "dummy-name") == expected_mapping
 
     def test_default_template_not_specified(self):
         config = JobbergateConfig(
@@ -386,7 +398,7 @@ class TestGetTemplateOutputNameMapping:
             supporting_files=None,
         )
         with pytest.raises(Abort, match="Default template was not specified"):
-            get_template_output_name_mapping(config)
+            get_template_output_name_mapping(config, "dummy-name")
 
     def test_supporting_files_output_names_multiple_values(self):
         config = JobbergateConfig(
@@ -397,7 +409,7 @@ class TestGetTemplateOutputNameMapping:
         )
 
         with pytest.raises(Abort, match="template='template2.j2' has 2 output names"):
-            get_template_output_name_mapping(config)
+            get_template_output_name_mapping(config, "dummy-name")
 
 
 class TestUploadJobScriptFiles:

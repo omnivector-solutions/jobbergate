@@ -10,6 +10,7 @@ from typing import Any, Callable, Dict, List, Optional, cast
 
 from loguru import logger
 
+from jobbergate_cli.config import settings
 from jobbergate_cli.constants import FileType
 from jobbergate_cli.exceptions import Abort, JobbergateCliError
 from jobbergate_cli.requests import make_request
@@ -138,7 +139,7 @@ def remove_prefix_suffix(s: str) -> str:
     return s
 
 
-def get_template_output_name_mapping(config: JobbergateConfig) -> Dict[str, str]:
+def get_template_output_name_mapping(config: JobbergateConfig, job_name: str) -> Dict[str, str]:
     """
     Get the mapping of template names to output names.
 
@@ -153,7 +154,12 @@ def get_template_output_name_mapping(config: JobbergateConfig) -> Dict[str, str]
             log_message="Entry point file not specified",
         )
 
-    output_name_mapping = {config.default_template: output_dir / remove_prefix_suffix(config.default_template)}
+    if settings.JOBBERGATE_LEGACY_NAME_CONVENTION:
+        job_script_file_name = f"{job_name}.job"
+    else:
+        job_script_file_name = remove_prefix_suffix(config.default_template)
+
+    output_name_mapping = {config.default_template: output_dir / job_script_file_name}
 
     if config.supporting_files:
         for template in config.supporting_files:
@@ -227,13 +233,16 @@ def render_job_script(
 
     param_dict_flat = flatten_param_dict(app_config.dict())
 
+    job_script_name = name if name else app_data.name
     request_data = JobScriptRenderRequestData(
         create_request=JobScriptCreateRequest(
-            name=name if name else app_data.name,
+            name=job_script_name,
             description=description,
         ),
         render_request=RenderFromTemplateRequest(
-            template_output_name_mapping=get_template_output_name_mapping(app_config.jobbergate_config),
+            template_output_name_mapping=get_template_output_name_mapping(
+                app_config.jobbergate_config, job_script_name
+            ),
             sbatch_params=sbatch_params,
             param_dict={"data": param_dict_flat},
         ),
