@@ -55,6 +55,7 @@ class Settings(BaseSettings):
 
     # Compatibility mode: If True, add commands as they appear in the legacy app
     JOBBERGATE_COMPATIBILITY_MODE: Optional[bool] = False
+    JOBBERGATE_LEGACY_NAME_CONVENTION: Optional[bool] = False
 
     # Auth0 config for machine-to-machine security
     OIDC_DOMAIN: str
