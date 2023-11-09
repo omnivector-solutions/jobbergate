@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+
+## 4.2.0a0 -- 2023-11-09
 - Added a new config to change the way job-script files are named to `<job-script-name>.job`, following behavior from jobbergate-legacy
 
 ## 4.1.0 -- 2023-11-07
