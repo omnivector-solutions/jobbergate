@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jobbergate-api"
-version = "4.1.0"
+version = "4.2.0a0"
 description = "Jobbergate API"
 authors = ["Omnivector Solutions <info@omnivector.solutions>"]
 license = "MIT"

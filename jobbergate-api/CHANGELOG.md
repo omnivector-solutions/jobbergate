@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+
+## 4.2.0a0 -- 2023-11-09
 ## 4.1.0 -- 2023-11-07
 
 - Changed internals to avoid committing to the database when a GET request is made
