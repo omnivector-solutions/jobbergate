@@ -137,3 +137,8 @@ provide the following sub-commands:
 Details for each subcommand can be viewed by passing the `--help` flag to any of them.
 
 Use the `--help` option to explore the CLI and disccover the usage and options for all the subcommands.
+
+
+## Usability
+
+To ensure that you can see the full output of the CLI, we recommend that you use a terminal in a maximized window.
