@@ -141,4 +141,12 @@ Use the `--help` option to explore the CLI and disccover the usage and options f
 
 ## Usability
 
-To ensure that you can see the full output of the CLI, we recommend that you use a terminal in a maximized window.
+When rendering a job-script from a template, the user will be asked a series of questions to fill in the template variables.
+
+The [library](https://python-inquirer.readthedocs.io/en/latest/) used for the questionnaire has a
+[limitation](https://github.com/magmax/python-inquirer/issues/312) that messages can only be displayed in a single line.
+This means that some of the questions can be truncated and will not be fully visible if the message is too long.
+
+!!!Note
+
+    To ensure that you can see the full output of the CLI, we recommend that you use a terminal in a maximized window.
