@@ -606,6 +606,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#usability" class="md-nav__link">
+    Usability
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1032,6 +1039,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#usability" class="md-nav__link">
+    Usability
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1155,6 +1169,15 @@ provide the following sub-commands:</p>
 </ul>
 <p>Details for each subcommand can be viewed by passing the <code>--help</code> flag to any of them.</p>
 <p>Use the <code>--help</code> option to explore the CLI and disccover the usage and options for all the subcommands.</p>
+<h2 id="usability">Usability</h2>
+<p>When rendering a job-script from a template, the user will be asked a series of questions to fill in the template variables.</p>
+<p>The <a href="https://python-inquirer.readthedocs.io/en/latest/">library</a> used for the questionnaire has a
+<a href="https://github.com/magmax/python-inquirer/issues/312">limitation</a> that messages can only be displayed in a single line.
+This means that some of the questions can be truncated and will not be fully visible if the message is too long.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To ensure that you can see the full output of the CLI, we recommend that you use a terminal in a maximized window.</p>
+</div>
 
 
 
