@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     OIDC_USE_HTTPS: bool = True
 
     CACHE_DIR = Path.home() / ".cache/jobbergate-agent"
+    REQUESTS_TIMEOUT: Optional[int] = 15
 
     # Type of slurm user mapper to use
     SLURM_USER_MAPPER: Optional[str]

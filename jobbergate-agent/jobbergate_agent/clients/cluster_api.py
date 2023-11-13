@@ -68,6 +68,7 @@ class AsyncBackendClient(httpx.AsyncClient):
                 request=[self._log_request],
                 response=[self._log_response],
             ),
+            timeout=SETTINGS.REQUESTS_TIMEOUT,
         )
 
     def _inject_token(self, request: httpx.Request) -> httpx.Request:

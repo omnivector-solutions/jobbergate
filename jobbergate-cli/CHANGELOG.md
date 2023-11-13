@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-cli
 ## Unreleased
 
 - Patched create-job-script command on submit mode when parameter file is provided
+- Added setting to control the timeout on `httpx` requests
 
 ## 4.2.0a0 -- 2023-11-09
 
