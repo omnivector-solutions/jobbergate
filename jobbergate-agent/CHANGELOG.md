@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
 
+
+## 4.2.0a1 -- 2023-11-13
 - Added setting to control the timeout on `httpx` requests
 
 ## 4.2.0a0 -- 2023-11-09
