@@ -305,13 +305,13 @@ def render(
 
     try:
         job_submission_result = create_job_submission(
-            jg_ctx,
-            job_script_result.job_script_id,
-            job_script_result.name,
-            job_script_result.description,
-            cluster_name,
-            execution_directory,
-            param_file,
+            jg_ctx=jg_ctx,
+            job_script_id=job_script_result.job_script_id,
+            name=job_script_result.name,
+            description=job_script_result.description,
+            cluster_name=cluster_name,
+            execution_directory=execution_directory,
+            execution_parameters_file=None,
         )
     except Exception as err:
         raise Abort(
