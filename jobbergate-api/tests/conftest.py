@@ -15,11 +15,11 @@ from fastapi import status
 from httpx import AsyncClient, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from jobbergate_api.apps.dependencies import get_bucket_name, get_bucket_url, s3_bucket, service_factory
 from jobbergate_api.apps.models import Base
 from jobbergate_api.config import settings
 from jobbergate_api.main import app
 from jobbergate_api.storage import engine_factory
-from jobbergate_api.apps.dependencies import s3_bucket, get_bucket_name, get_bucket_url, service_factory
 
 # Charset for producing random strings
 CHARSET = string.ascii_letters + string.digits + string.punctuation
@@ -120,6 +120,7 @@ async def synth_bucket(synth_s3_bucket_session):
     finally:
         await synth_s3_bucket_session.objects.all().delete()
 
+
 @pytest.fixture(scope="function")
 async def synth_services(synth_session, synth_bucket):
     """
@@ -127,6 +128,7 @@ async def synth_services(synth_session, synth_bucket):
     """
     with service_factory(synth_session, synth_bucket) as services:
         yield services
+
 
 @pytest.fixture(autouse=True)
 def enforce_mocked_oidc_provider(mock_openid_server):

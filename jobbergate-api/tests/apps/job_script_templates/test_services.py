@@ -4,6 +4,7 @@ from typing import Any
 import pytest
 from fastapi import HTTPException
 from sqlalchemy import inspect
+
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
 
@@ -21,7 +22,6 @@ def template_test_data() -> dict[str, Any]:
 
 
 class TestJobScriptTemplateCrudService:
-
     @pytest.mark.parametrize("locator_attribute", ("id", "identifier"))
     async def test_get__success(self, locator_attribute, template_test_data, synth_services):
         """Test that the template is recovered successfully using multiple locator attributes."""

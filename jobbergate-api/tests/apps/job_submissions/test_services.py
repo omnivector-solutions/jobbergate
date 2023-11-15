@@ -1,11 +1,14 @@
 """Database models for the job scripts resource."""
 
 from sqlalchemy import inspect
+
 from jobbergate_api.apps.constants import FileType
 
 
 class TestIntegration:
-    async def test_get_includes_all_files(self, fill_job_script_data, fill_job_submission_data, synth_services):
+    async def test_get_includes_all_files(
+        self, fill_job_script_data, fill_job_submission_data, synth_services
+    ):
         script_instance = await synth_services.crud.job_script.create(**fill_job_script_data())
         submission_instance = await synth_services.crud.job_submission.create(
             **fill_job_submission_data(), job_script_id=script_instance.id
@@ -37,7 +40,9 @@ class TestIntegration:
 
         assert result.job_script == script_instance
 
-    async def test_get_not_include_parent(self, fill_job_script_data, fill_job_submission_data, synth_services):
+    async def test_get_not_include_parent(
+        self, fill_job_script_data, fill_job_submission_data, synth_services
+    ):
         script_instance = await synth_services.crud.job_script.create(**fill_job_script_data())
         submission_instance = await synth_services.crud.job_submission.create(
             **fill_job_submission_data(), job_script_id=script_instance.id
@@ -47,7 +52,9 @@ class TestIntegration:
 
         assert "job_script" in inspect(result).unloaded
 
-    async def test_list_includes_all_files(self, fill_job_script_data, fill_job_submission_data, synth_services):
+    async def test_list_includes_all_files(
+        self, fill_job_script_data, fill_job_submission_data, synth_services
+    ):
         script_instance = await synth_services.crud.job_script.create(**fill_job_script_data())
         submission_instance = await synth_services.crud.job_submission.create(
             **fill_job_submission_data(), job_script_id=script_instance.id
@@ -64,7 +71,9 @@ class TestIntegration:
         assert actual_result == [submission_instance]
         assert actual_result[0].job_script.files == [script_file]
 
-    async def test_update_includes_no_files(self, fill_job_script_data, fill_job_submission_data, synth_services):
+    async def test_update_includes_no_files(
+        self, fill_job_script_data, fill_job_submission_data, synth_services
+    ):
         script_instance = await synth_services.crud.job_script.create(**fill_job_script_data())
         submission_instance = await synth_services.crud.job_submission.create(
             **fill_job_submission_data(), job_script_id=script_instance.id

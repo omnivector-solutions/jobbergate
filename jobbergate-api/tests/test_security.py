@@ -2,14 +2,16 @@
 Test the security module.
 """
 from unittest.mock import patch
+
 import pytest
+
 from jobbergate_api.security import (
+    HTTPException,
     IdentityPayload,
     TokenPayload,
-    lockdown_with_identity,
-    HTTPException,
-    settings,
     get_domain_configs,
+    lockdown_with_identity,
+    settings,
 )
 
 
@@ -108,7 +110,7 @@ def test_lockdown_with_identity_ensure_fields__raises_error(opt_name):
 def test_lockdown_with_identity__backward_compatibility():
     """
     Check if the lockdown_with_identity decorator returns the correct identity.
-    
+
     For backwards compatibility, the organization_id is set to None if it is a string.
     """
     token_raw_data = dict(

@@ -2,6 +2,7 @@
 import pytest
 from fastapi import HTTPException, status
 from loguru import logger
+
 from jobbergate_api.apps.permissions import Permissions
 
 # Not using the synth_session fixture in a route that needs the database is unsafe
@@ -666,7 +667,7 @@ class TestJobScriptFiles:
         inject_security_header,
         job_script_data,
         job_script_data_as_string,
-        synth_services
+        synth_services,
     ):
         id = job_script_data.id
         file_type = "ENTRYPOINT"
