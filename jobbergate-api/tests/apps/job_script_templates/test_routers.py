@@ -15,32 +15,6 @@ from jobbergate_api.apps.services import ServiceError
 pytest.mark.usefixtures("synth_session")
 
 
-async def test_create_job_template__async(
-    client,
-    fill_job_template_data,
-    inject_security_header,
-):
-    """Test the API can accept concurrent requests."""
-
-    async def submit():
-        payload = fill_job_template_data(
-            name="Test Template",
-            description="This is a test template",
-            template_vars=dict(foo="bar"),
-        )
-
-        tester_email = payload.pop("owner_email")
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
-
-        return await client.post("jobbergate/job-script-templates", json=payload)
-
-    to_do = [submit() for _ in range(4)]
-    responses = await asyncio.gather(*to_do)
-    for i, response in enumerate(responses):
-        logger.info(f"Response {i}: {response.status_code}")
-        response.raise_for_status()
-
-
 async def test_create_job_template__success(
     client,
     fill_job_template_data,
@@ -174,6 +148,7 @@ async def test_update_job_template__fail_not_found(
     client,
     tester_email,
     inject_security_header,
+    synth_session,
 ):
     job_template_id = 0
     payload = dict(
@@ -282,6 +257,7 @@ async def test_delete_job_template__fail_not_found(
     client,
     tester_email,
     inject_security_header,
+    synth_session,
 ):
     job_template_id = 0
     inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)

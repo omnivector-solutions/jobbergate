@@ -4,6 +4,7 @@ Provide functions to interact with persistent data storage.
 
 import re
 import typing
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from itertools import product
 
@@ -102,14 +103,39 @@ class EngineFactory:
             )
         return self.engine_map[db_url]
 
-    def get_session(self, override_db_name: str | None = None) -> AsyncSession:
+    @asynccontextmanager
+    async def auto_session(
+        self,
+        override_db_name: str | None = None,
+        commit: bool = True,
+    ) -> typing.AsyncIterator[AsyncSession]:
         """
         Get an asynchronous database session.
 
         Gets a new session from the correct engine in the engine map.
         """
+        if settings.DEPLOY_ENV.lower() == "test":
+            raise RuntimeError("The auto_session context manager may not be used in unit tests.")
+
         engine = self.get_engine(override_db_name=override_db_name)
-        return AsyncSession(engine)
+        session = AsyncSession(engine)
+        nested_transaction = await session.begin_nested()
+        try:
+            yield session
+            if commit is True:
+                logger.debug("Committing session")
+                await session.commit()
+            else:
+                logger.debug("Committing nested transaction")
+                await nested_transaction.commit()
+        except Exception as err:
+            logger.warning(f"Rolling back session due to error: {err}")
+            await nested_transaction.rollback()
+            raise err
+        finally:
+            logger.debug("Closing session")
+            await session.close()
+
 
 
 engine_factory = EngineFactory()
@@ -157,34 +183,12 @@ def secure_session(
             )
         )
     ) -> typing.AsyncIterator[SecureSession]:
-        is_test = settings.DEPLOY_ENV.lower() == "test"
-
         override_db_name = identity_payload.organization_id if settings.MULTI_TENANCY_ENABLED else None
-        session = engine_factory.get_session(override_db_name=override_db_name)
-        nested_transaction = await session.begin_nested()
-        try:
+        async with engine_factory.auto_session(override_db_name=override_db_name, commit=commit) as session:
             yield SecureSession(
                 identity_payload=identity_payload,
                 session=session,
             )
-            # In test mode, we should not commit the entire transaction.
-            # Instead, we just commit on the nested transaction which releases savepoint and flushes.
-            if is_test:
-                logger.debug("Committing nested transaction due to test mode")
-                await nested_transaction.commit()
-            elif commit is True:
-                logger.debug("Committing session")
-                await session.commit()
-        except Exception as err:
-            logger.warning(f"Rolling back session due to error: {err}")
-            await nested_transaction.rollback()
-            raise err
-        finally:
-            # In test mode, we should not close the session so that assertions can be made about the state
-            # of the db session in the test functions after calling the application logic
-            if settings.DEPLOY_ENV.lower() != "test":
-                logger.debug("Closing session")
-                await session.close()
 
     return dependency
 

@@ -310,6 +310,7 @@ async def test_create_job_submission_without_job_script(
     client,
     fill_job_submission_data,
     inject_security_header,
+    synth_session,
 ):
     """
     Test that is not possible to create a job_submission without a job_script.
@@ -437,7 +438,7 @@ async def test_get_job_submission_by_id_bad_permission(
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
-async def test_get_job_submission_by_id_invalid(client, inject_security_header):
+async def test_get_job_submission_by_id_invalid(client, inject_security_header, synth_session):
     """
     Test the correct response code is returned when a job_submission does not exist.
 
@@ -973,6 +974,7 @@ async def test_get_job_submissions_applies_no_slurm_filter_if_slurm_job_ids_is_e
 async def test_get_job_submissions_with_invalid_slurm_job_ids_param(
     client,
     inject_security_header,
+    synth_session,
 ):
     """
     Test GET /job-submissions/ returns a 422 if the slurm_job_id parameter is invalid.
@@ -1150,7 +1152,7 @@ async def test_delete_job_submission(
     await synth_services.crud.job_submission.count() == 0
 
 
-async def test_delete_job_submission_not_found(client, inject_security_header):
+async def test_delete_job_submission_not_found(client, inject_security_header, synth_session):
     """
     Test that it is not possible to delete a job_submission that is not found.
 

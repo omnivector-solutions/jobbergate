@@ -6,12 +6,14 @@ import datetime
 import random
 import string
 import typing
+from contextlib import asynccontextmanager
 from textwrap import dedent
 from unittest.mock import patch
 
 import pytest
 from fastapi import status
 from httpx import AsyncClient, Response
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from jobbergate_api.apps.models import Base
 from jobbergate_api.config import settings
@@ -58,7 +60,7 @@ async def synth_engine():
 
 
 @pytest.fixture(scope="function")
-async def synth_session():
+async def synth_session(synth_engine):
     """
     Get a session from the engine_factory for the current test function.
 
@@ -72,9 +74,20 @@ async def synth_session():
         session they get will not be the same session used across different routes or by the locally bound
         services.
     """
-    session = engine_factory.get_session()
-    with patch("jobbergate_api.storage.engine_factory.get_session", return_value=session):
-        await session.begin_nested()
+    session = AsyncSession(synth_engine)
+    await session.begin()
+
+    @asynccontextmanager
+    async def auto_session(*_, **__):
+        nested_transaction = await session.begin_nested()
+        try:
+            yield session
+            await nested_transaction.commit()
+        except Exception as err:
+            await nested_transaction.rollback()
+            raise err
+
+    with patch("jobbergate_api.storage.engine_factory.auto_session", new=auto_session):
         try:
             yield session
         finally:
