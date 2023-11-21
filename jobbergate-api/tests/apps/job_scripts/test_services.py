@@ -23,7 +23,9 @@ def script_test_data() -> dict[str, Any]:
 
 class TestIntegration:
     @pytest.mark.parametrize("file_type", [FileType.ENTRYPOINT, FileType.ENTRYPOINT.value])
-    async def test_file_upsert__guarantee_only_one_entrypoint(self, file_type, script_test_data, synth_services):
+    async def test_file_upsert__guarantee_only_one_entrypoint(
+        self, file_type, script_test_data, synth_services
+    ):
         """
         Ensure that only one entrypoint file is allowed.
         """
@@ -142,7 +144,9 @@ class TestIntegration:
             await synth_services.file.job_script.get(script_file.parent_id, script_file.filename)
         assert exc_info.value.status_code == 404
 
-    async def test_delete_updates_related_submissions(self, script_test_data, fill_job_script_data, synth_services):
+    async def test_delete_updates_related_submissions(
+        self, script_test_data, fill_job_script_data, synth_services
+    ):
         """
         Test all related submissions still on status CREATED are updated when parent job-script is deleted.
         """
@@ -171,7 +175,9 @@ class TestIntegration:
             await synth_services.crud.job_script.get(target_for_deletion.id)
         assert exc_info.value.status_code == 404
 
-        actual_submissions = await synth_services.crud.job_submission.list(sort_field="id", sort_ascending=True)
+        actual_submissions = await synth_services.crud.job_submission.list(
+            sort_field="id", sort_ascending=True
+        )
 
         assert [s.status for s in actual_submissions] == [s.get("status") for s in expected_submissions]
 

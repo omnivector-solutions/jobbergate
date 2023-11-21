@@ -3,6 +3,8 @@
 This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
+- Moved database session management into a dedicated context manager and removed test-aware logic
+- Modified testing harnesses to override session management context manager and fail if test session is not used
 
 
 ## 4.2.0a1 -- 2023-11-13

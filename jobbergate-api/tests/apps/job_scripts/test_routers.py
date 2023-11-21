@@ -2,6 +2,7 @@
 import pytest
 from fastapi import HTTPException, status
 from loguru import logger
+
 from jobbergate_api.apps.permissions import Permissions
 
 # Not using the synth_session fixture in a route that needs the database is unsafe
@@ -277,6 +278,7 @@ async def test_render_job_script_from_template__without_template(
     client,
     inject_security_header,
     tester_email,
+    synth_session,
 ):
     """
     Test POST /job_scripts/render-from-template can't create a job_script if the template file is unavailable.
@@ -334,6 +336,7 @@ async def test_get_job_script_by_id__invalid_id(
     client,
     inject_security_header,
     tester_email,
+    synth_session,
 ):
     """
     Test the correct response code is returned when a job_script does not exist.
@@ -664,7 +667,7 @@ class TestJobScriptFiles:
         inject_security_header,
         job_script_data,
         job_script_data_as_string,
-        synth_services
+        synth_services,
     ):
         id = job_script_data.id
         file_type = "ENTRYPOINT"
@@ -740,7 +743,7 @@ class TestJobScriptFiles:
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
-async def test_auto_clean_unused_entries(client, tester_email, inject_security_header):
+async def test_auto_clean_unused_entries(client, tester_email, inject_security_header, synth_session):
     """Test that unused job scripts are automatically cleaned."""
     inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
     response = await client.delete("jobbergate/job-scripts/clean-unused-entries")
