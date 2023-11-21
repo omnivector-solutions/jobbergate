@@ -1655,6 +1655,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_api.storage.EngineFactory.auto_session" class="md-nav__link">
+    auto_session()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_api.storage.EngineFactory.cleanup" class="md-nav__link">
     cleanup()
   </a>
@@ -1664,13 +1671,6 @@
           <li class="md-nav__item">
   <a href="#jobbergate_api.storage.EngineFactory.get_engine" class="md-nav__link">
     get_engine()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_api.storage.EngineFactory.get_session" class="md-nav__link">
-    get_session()
   </a>
   
 </li>
@@ -2616,6 +2616,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_api.storage.EngineFactory.auto_session" class="md-nav__link">
+    auto_session()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_api.storage.EngineFactory.cleanup" class="md-nav__link">
     cleanup()
   </a>
@@ -2625,13 +2632,6 @@
           <li class="md-nav__item">
   <a href="#jobbergate_api.storage.EngineFactory.get_engine" class="md-nav__link">
     get_engine()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_api.storage.EngineFactory.get_session" class="md-nav__link">
-    get_session()
   </a>
   
 </li>
@@ -10938,6 +10938,35 @@ checking.</p>
 
 
 
+<h6 id="jobbergate_api.storage.EngineFactory.auto_session" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">auto_session</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">auto_session</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">override_db_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">commit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing</span><span class="o">.</span><span class="n">AsyncIterator</span><span class="p">[</span><span class="n">AsyncSession</span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Get an asynchronous database session.</p>
+<p>Gets a new session from the correct engine in the engine map.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
 <h6 id="jobbergate_api.storage.EngineFactory.cleanup" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">cleanup</span>
 
@@ -10979,31 +11008,6 @@ checking.</p>
       <p>Get a database engine.</p>
 <p>If the database url is already in the engine map, return the engine stored there. Otherwise, build
 a new one, store it, and return the new engine.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h6 id="jobbergate_api.storage.EngineFactory.get_session" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">get_session</span>
-
-
-</h6>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_session</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">override_db_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncSession</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Get an asynchronous database session.</p>
-<p>Gets a new session from the correct engine in the engine map.</p>
 
   </div>
 
