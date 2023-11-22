@@ -416,7 +416,7 @@ class TestListJobScripts:
         job_scripts_list,
     ):
         inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
-        response = await client.get("jobbergate/job-scripts?include_archived=True")
+        response = await client.get("jobbergate/job-scripts?include_archived=True&sort_field=id")
         assert response.status_code == 200, f"Get failed: {response.text}"
 
         response_data = response.json()
