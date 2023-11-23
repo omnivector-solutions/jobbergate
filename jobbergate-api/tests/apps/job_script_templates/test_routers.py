@@ -341,7 +341,7 @@ class TestListJobTemplates:
         inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
         response = await client.get(
             "jobbergate/job-script-templates",
-            params=dict(include_null_identifier=True, include_archived=True),
+            params=dict(include_null_identifier=True, include_archived=True, sort_field="id"),
         )
         assert response.status_code == 200, f"List failed: {response.text}"
 
