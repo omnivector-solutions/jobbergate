@@ -1,4 +1,6 @@
+import asyncio
 import json
+from pathlib import Path
 from typing import Any, Dict, cast
 
 from buzz import handle_errors
@@ -10,6 +12,7 @@ from jobbergate_agent.clients.slurmrestd import inject_token
 from jobbergate_agent.jobbergate.api import SubmissionNotifier, fetch_pending_submissions, mark_as_submitted
 from jobbergate_agent.jobbergate.constants import FileType, JobSubmissionStatus
 from jobbergate_agent.jobbergate.schemas import (
+    JobScriptFile,
     PendingJobSubmission,
     SlurmJobParams,
     SlurmJobSubmission,
@@ -45,6 +48,25 @@ def get_job_parameters(slurm_parameters: Dict[str, Any], **kwargs) -> SlurmJobPa
     return SlurmJobParams.parse_obj(merged_parameters)
 
 
+async def retrieve_job_script_file(job_script_file: JobScriptFile, submit_dir: Path):
+    """
+    Get a submission file from the backend.
+
+    Write the file to the submit_dir if DOWNLOAD_JOB_SCRIPTS is set to True.
+    Return the decoded file content.
+    """
+    response = await backend_client.get(job_script_file.path)
+    response.raise_for_status()
+
+    if SETTINGS.DOWNLOAD_JOB_SCRIPTS:
+        local_script_path = submit_dir / job_script_file.filename
+        local_script_path.parent.mkdir(parents=True, exist_ok=True)
+        local_script_path.write_bytes(response.content)
+        logger.debug(f"Copied file to {local_script_path}")
+
+    return response.content.decode("utf-8")
+
+
 async def submit_job_script(
     pending_job_submission: PendingJobSubmission,
     user_mapper: SlurmUserMapper,
@@ -72,25 +94,39 @@ async def submit_job_script(
 
         submit_dir = pending_job_submission.execution_directory or SETTINGS.DEFAULT_SLURM_WORK_DIR
 
+        """
+        The flag `DOWNLOAD_JOB_SCRIPTS` controls whether the agent will download the job script files
+        to the submit directory. It should be set to `False` when the agent doesn't have permission
+        to write to the submit directory.
+        """
+
         job_script = None
+        supporting_files = []
 
-        for metadata in pending_job_submission.job_script.files:
-            local_script_path = submit_dir / metadata.filename
-            local_script_path.parent.mkdir(parents=True, exist_ok=True)
+        for file in pending_job_submission.job_script.files:
+            if file.file_type == FileType.ENTRYPOINT:  # should have only one entrypoint
+                job_script = await retrieve_job_script_file(file, submit_dir)
 
-            response = await backend_client.get(metadata.path)
-            response.raise_for_status()
-            local_script_path.write_bytes(response.content)
-
-            if metadata.file_type == FileType.ENTRYPOINT:
-                job_script = response.content.decode("utf-8")
-
-            logger.debug(f"Copied job script file to {local_script_path}")
+            elif file.file_type == FileType.SUPPORT:
+                supporting_files.append(file)
 
         JobSubmissionError.require_condition(
             job_script,
             "Could not find an executable script in retrieved job script data.",
         )
+
+        if SETTINGS.DOWNLOAD_JOB_SCRIPTS:
+            # Download the supporting files to the execution dir
+            files_to_download = [retrieve_job_script_file(file, submit_dir) for file in supporting_files]
+            await asyncio.gather(*files_to_download)
+        else:
+            # Reject the submission if there are supporting files with DOWNLOAD_JOB_SCRIPTS set to False
+            JobSubmissionError.require_condition(
+                not supporting_files,
+                "Job submission rejected. The submission has supporting files that can't be downloaded to "
+                "the execution dir. Set `DOWNLOAD_JOB_SCRIPTS` setting to `True` to download the "
+                "job script files to the execution dir.",
+            )
 
     async with handle_errors_async(
         "Failed to extract Slurm parameters",
