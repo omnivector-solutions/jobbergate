@@ -3,7 +3,7 @@
 This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
-- Added env var to control whether the job script files should be downloaded or not
+- Added setting to specify if the job script files should be written to the submit directory
 
 ## 4.2.0a1 -- 2023-11-13
 - Added setting to control the timeout on `httpx` requests
