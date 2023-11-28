@@ -3,8 +3,6 @@ Define tests for the submission functions of the jobbergate section.
 """
 
 import json
-from pathlib import Path
-from unittest import mock
 
 import httpx
 import pytest
@@ -21,22 +19,25 @@ from jobbergate_agent.jobbergate.schemas import (
 )
 from jobbergate_agent.jobbergate.submit import (
     get_job_parameters,
-    retrieve_job_script_file,
+    get_job_script_file,
+    process_supporting_files,
+    retrieve_submission_file,
     submit_job_script,
     submit_pending_jobs,
     unpack_error_from_slurm_response,
+    write_submission_file,
 )
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobSubmissionError, SlurmrestdError
 from jobbergate_agent.utils.user_mapper import SingleUserMapper
 
 
+@pytest.mark.usefixtures("mock_access_token")
 @pytest.mark.asyncio
-@mock.patch("jobbergate_agent.jobbergate.submit.Path.write_bytes")
-async def test_retrieve_job_script_file__with_download(write_mock, tweak_settings):
+async def test_retrieve_submission_file__success():
     """
-    Test that the ``retrieve_job_script_file()`` function can retrieve a job script file
-    from the backend and write it to disk.
+    Test that the ``retrieve_submission_file()`` function can retrieve a submission file
+    from the backend and return its content.
     """
     job_script_file = JobScriptFile(
         parent_id=1,
@@ -44,40 +45,6 @@ async def test_retrieve_job_script_file__with_download(write_mock, tweak_setting
         file_type="ENTRYPOINT",
         path="/jobbergate/job-scripts/1/upload/application.sh",
     )
-    submit_dir = Path("/tmp/submit")
-
-    async with respx.mock:
-        download_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh")
-        download_route.mock(
-            return_value=httpx.Response(
-                status_code=200,
-                content="I am a job script".encode("utf-8"),
-            ),
-        )
-        with tweak_settings(DOWNLOAD_JOB_SCRIPTS=True):
-            actual_content = await retrieve_job_script_file(job_script_file, submit_dir)
-
-        assert actual_content == "I am a job script"
-        assert download_route.call_count == 1
-        last_request = download_route.calls.last.request
-        assert last_request.url == f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh"
-        assert write_mock.call_count == 1
-
-
-@pytest.mark.asyncio
-@mock.patch("jobbergate_agent.jobbergate.submit.Path.write_bytes")
-async def test_retrieve_job_script_file__without_download(write_mock, tweak_settings):
-    """
-    Test that the ``retrieve_job_script_file()`` function can retrieve a job script file
-    from the backend without writing it to disk.
-    """
-    job_script_file = JobScriptFile(
-        parent_id=1,
-        filename="application.sh",
-        file_type="ENTRYPOINT",
-        path="/jobbergate/job-scripts/1/upload/application.sh",
-    )
-    submit_dir = Path("/tmp/submit")
 
     async with respx.mock:
         download_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh")
@@ -88,14 +55,191 @@ async def test_retrieve_job_script_file__without_download(write_mock, tweak_sett
             ),
         )
 
-        with tweak_settings(DOWNLOAD_JOB_SCRIPTS=False):
-            actual_content = await retrieve_job_script_file(job_script_file, submit_dir)
+        actual_content = await retrieve_submission_file(job_script_file)
 
         assert actual_content == "I am a job script"
         assert download_route.call_count == 1
         last_request = download_route.calls.last.request
         assert last_request.url == f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh"
-        assert write_mock.call_count == 0
+
+
+@pytest.mark.usefixtures("mock_access_token")
+@pytest.mark.asyncio
+async def test_retrieve_submission_file__raises_exception():
+    """
+    Test that the ``retrieve_submission_file()`` function raises an exception if the
+    backend returns a non-200 response.
+    """
+    job_script_file = JobScriptFile(
+        parent_id=1,
+        filename="application.sh",
+        file_type="ENTRYPOINT",
+        path="/jobbergate/job-scripts/1/upload/application.sh",
+    )
+
+    async with respx.mock:
+        download_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh")
+        download_route.mock(
+            return_value=httpx.Response(
+                status_code=400,
+            ),
+        )
+
+        with pytest.raises(
+            httpx.HTTPStatusError,
+        ):
+            await retrieve_submission_file(job_script_file)
+
+
+@pytest.mark.asyncio
+async def test_write_submission_file__success(tmp_path):
+    """
+    Test that the ``write_submission_file()`` function can write a submission file to disk.
+    """
+    job_script_content = "I am a job script"
+    submit_dir = tmp_path / "submit"
+    submit_dir.mkdir()
+
+    await write_submission_file(job_script_content, "application.sh", submit_dir)
+
+    assert (submit_dir / "application.sh").read_text() == "I am a job script"
+
+
+@pytest.mark.usefixtures("mock_access_token")
+@pytest.mark.asyncio
+async def test_process_supporting_files__with_write_submission_files_set_to_true(
+    tmp_path,
+    dummy_pending_job_submission_with_supporting_files_data,
+    tweak_settings,
+):
+    """
+    Test that the ``process_supporting_files()`` function can write submission files to disk.
+
+    The files should be written to the submit_dir if WRITE_SUBMISSION_FILES is set to True.
+    """
+    pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_with_supporting_files_data)
+    submit_dir = tmp_path / "submit"
+    submit_dir.mkdir()
+
+    async with respx.mock:
+        download_support_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/input.txt")
+        download_support_route.mock(
+            return_value=httpx.Response(
+                status_code=200,
+                content="I am a supporting file".encode("utf-8"),
+            ),
+        )
+        with tweak_settings(WRITE_SUBMISSION_FILES=True):
+            await process_supporting_files(pending_job_submission, submit_dir)
+
+        assert (submit_dir / "input.txt").read_text() == "I am a supporting file"
+        assert download_support_route.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_process_supporting_files__with_write_submission_files_set_to_false_and_supporting_files(
+    tmp_path,
+    dummy_pending_job_submission_with_supporting_files_data,
+    tweak_settings,
+):
+    """
+    Test that the ``process_supporting_files()`` function can reject a submission if there
+    are supporting files and WRITE_SUBMISSION_FILES is set to False.
+    """
+    pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_with_supporting_files_data)
+    submit_dir = tmp_path / "submit"
+    submit_dir.mkdir()
+
+    with tweak_settings(WRITE_SUBMISSION_FILES=False):
+        with pytest.raises(
+            JobSubmissionError,
+            match="Job submission rejected. The submission has supporting files that can't be downloaded to "
+            "the execution dir. Set `WRITE_SUBMISSION_FILES` setting to `True` to download the "
+            "job script files to the execution dir.",
+        ):
+            await process_supporting_files(pending_job_submission, submit_dir)
+
+
+@pytest.mark.asyncio
+async def test_process_supporting_files__with_write_submission_files_set_to_false_and_no_supporting_files(
+    tmp_path,
+    dummy_pending_job_submission_data,
+    tweak_settings,
+):
+    """
+    Test that the ``process_supporting_files()`` function can accept a submission if there
+    are no supporting files and WRITE_SUBMISSION_FILES is set to False.
+    """
+    pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
+    submit_dir = tmp_path / "submit"
+    submit_dir.mkdir()
+
+    with tweak_settings(WRITE_SUBMISSION_FILES=False):
+        await process_supporting_files(pending_job_submission, submit_dir)
+
+
+@pytest.mark.usefixtures("mock_access_token")
+@pytest.mark.asyncio
+async def test_get_job_script_file__success_with_write(tmp_path, dummy_pending_job_submission_data, tweak_settings):
+    """
+    Test that the ``get_job_script_file()`` function can retrieve a job script file
+    from the backend, write the content to the submit dir, and return its content.
+    """
+    pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
+    submit_dir = tmp_path / "submit"
+    submit_dir.mkdir()
+
+    async with respx.mock:
+        download_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh")
+        download_route.mock(
+            return_value=httpx.Response(
+                status_code=200,
+                content="I am a job script".encode("utf-8"),
+            ),
+        )
+
+        with tweak_settings(WRITE_SUBMISSION_FILES=True):
+            actual_content = await get_job_script_file(pending_job_submission, submit_dir)
+
+        assert actual_content == "I am a job script"
+        assert (submit_dir / "application.sh").read_text() == "I am a job script"
+        assert download_route.call_count == 1
+        last_request = download_route.calls.last.request
+        assert last_request.url == f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh"
+
+
+@pytest.mark.usefixtures("mock_access_token")
+@pytest.mark.asyncio
+async def test_get_job_script_file__success_without_write(
+    tmp_path,
+    dummy_pending_job_submission_data,
+    tweak_settings,
+):
+    """
+    Test that the ``get_job_script_file()`` function can retrieve a job script file
+    from the backend and return its content.
+    """
+    pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
+    submit_dir = tmp_path / "submit"
+    submit_dir.mkdir()
+
+    async with respx.mock:
+        download_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh")
+        download_route.mock(
+            return_value=httpx.Response(
+                status_code=200,
+                content="I am a job script".encode("utf-8"),
+            ),
+        )
+
+        with tweak_settings(WRITE_SUBMISSION_FILES=False):
+            actual_content = await get_job_script_file(pending_job_submission, submit_dir)
+
+        assert actual_content == "I am a job script"
+        assert not (submit_dir / "application.sh").exists()
+        assert download_route.call_count == 1
+        last_request = download_route.calls.last.request
+        assert last_request.url == f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh"
 
 
 @pytest.mark.asyncio
@@ -151,137 +295,6 @@ async def test_submit_job_script__success(dummy_pending_job_submission_data, dum
         ).json()
 
         assert actual_response == expected_response
-
-
-@pytest.mark.asyncio
-@mock.patch("jobbergate_agent.jobbergate.submit.retrieve_job_script_file")
-async def test_submit_job_script_without_download(
-    retrieve_file_mock, dummy_pending_job_submission_data, tweak_settings
-):
-    """
-    Test that the ``submit_job_script()`` function can submit a job without downloading
-    the job script.
-    """
-    user_mapper = SingleUserMapper("dummy-user")
-
-    pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
-    name = pending_job_submission.name
-
-    retrieve_file_mock.return_value = "I am a job script"
-
-    async with respx.mock:
-        submit_route = respx.post(f"{SETTINGS.SLURM_RESTD_VERSIONED_URL}/job/submit")
-        submit_route.mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(job_id=13),
-            )
-        )
-
-        with tweak_settings(DOWNLOAD_JOB_SCRIPTS=False):
-            slurm_job_id = await submit_job_script(pending_job_submission, user_mapper)
-
-        assert slurm_job_id == 13
-        assert submit_route.call_count == 1
-        last_request = submit_route.calls.last.request
-        assert last_request.method == "POST"
-        assert last_request.headers["x-slurm-user-name"] == "dummy-user"
-        assert last_request.headers["x-slurm-user-token"] == "default-dummy-token"
-        actual_response = last_request.content.decode("utf-8")
-        expected_response = SlurmJobSubmission(
-            script="I am a job script",
-            job=SlurmJobParams(
-                name=name,
-                current_working_directory=SETTINGS.DEFAULT_SLURM_WORK_DIR,
-                standard_output=SETTINGS.DEFAULT_SLURM_WORK_DIR / f"{name}.out",
-                standard_error=SETTINGS.DEFAULT_SLURM_WORK_DIR / f"{name}.err",
-            ),
-        ).json()
-
-        assert actual_response == expected_response
-
-
-@pytest.mark.asyncio
-@mock.patch("jobbergate_agent.jobbergate.submit.retrieve_job_script_file")
-async def test_submit_job_script_reject_job_when_no_download_and_supporting_files(
-    retrieve_file_mock, dummy_pending_job_submission_with_supporting_files_data, tweak_settings
-):
-    """
-    Test that the ``submit_job_script()`` will raise an exception when there are
-    supporting files but the DOWNLOAD_JOB_SCRIPT flag is set to ``False``.
-    """
-    user_mapper = SingleUserMapper("dummy-user")
-
-    pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_with_supporting_files_data)
-
-    retrieve_file_mock.return_value = "I am a job script"
-
-    async with respx.mock:
-        submit_route = respx.post(f"{SETTINGS.SLURM_RESTD_VERSIONED_URL}/job/submit")
-        submit_route.mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(job_id=13),
-            )
-        )
-        update_route = respx.put(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/1")
-        update_route.mock(return_value=httpx.Response(status_code=200))
-
-        with tweak_settings(DOWNLOAD_JOB_SCRIPTS=False):
-            with pytest.raises(
-                JobSubmissionError,
-                match="Job submission rejected. The submission has supporting files that can't be downloaded to "
-                "the execution dir. Set `DOWNLOAD_JOB_SCRIPTS` setting to `True` to download the "
-                "job script files to the execution dir.",
-            ):
-                await submit_job_script(pending_job_submission, user_mapper)
-
-
-@pytest.mark.asyncio
-@pytest.mark.usefixtures("mock_access_token")
-@mock.patch("jobbergate_agent.jobbergate.submit.Path.write_bytes")
-async def test_submit_job_script_download_supporting_files(
-    retrieve_file_mock, dummy_pending_job_submission_with_supporting_files_data, tweak_settings
-):
-    """
-    Test that the ``submit_job_script()`` will download the supporting files
-    when DOWNLOAD_JOB_SCRIPT flag is set to ``True``.
-    """
-    user_mapper = SingleUserMapper("dummy-user")
-
-    pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_with_supporting_files_data)
-
-    retrieve_file_mock.return_value = "I am a job script"
-
-    async with respx.mock:
-        download_entrypoint_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh")
-        download_entrypoint_route.mock(
-            return_value=httpx.Response(
-                status_code=200,
-                content="I am a job script".encode("utf-8"),
-            ),
-        )
-        download_support_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/input.txt")
-        download_support_route.mock(
-            return_value=httpx.Response(
-                status_code=200,
-                content="I am a supporting file".encode("utf-8"),
-            ),
-        )
-        submit_route = respx.post(f"{SETTINGS.SLURM_RESTD_VERSIONED_URL}/job/submit")
-        submit_route.mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(job_id=13),
-            )
-        )
-        update_route = respx.put(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/1")
-        update_route.mock(return_value=httpx.Response(status_code=200))
-
-        with tweak_settings(DOWNLOAD_JOB_SCRIPTS=True):
-            await submit_job_script(pending_job_submission, user_mapper)
-
-        assert retrieve_file_mock.call_count == 2
 
 
 @pytest.mark.asyncio
