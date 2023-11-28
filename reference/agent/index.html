@@ -1151,6 +1151,27 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.get_job_script_file" class="md-nav__link">
+    get_job_script_file()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.process_supporting_files" class="md-nav__link">
+    process_supporting_files()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.retrieve_submission_file" class="md-nav__link">
+    retrieve_submission_file()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_agent.jobbergate.submit.submit_job_script" class="md-nav__link">
     submit_job_script()
   </a>
@@ -1167,6 +1188,13 @@
           <li class="md-nav__item">
   <a href="#jobbergate_agent.jobbergate.submit.unpack_error_from_slurm_response" class="md-nav__link">
     unpack_error_from_slurm_response()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.write_submission_file" class="md-nav__link">
+    write_submission_file()
   </a>
   
 </li>
@@ -1864,6 +1892,27 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.get_job_script_file" class="md-nav__link">
+    get_job_script_file()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.process_supporting_files" class="md-nav__link">
+    process_supporting_files()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.retrieve_submission_file" class="md-nav__link">
+    retrieve_submission_file()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_agent.jobbergate.submit.submit_job_script" class="md-nav__link">
     submit_job_script()
   </a>
@@ -1880,6 +1929,13 @@
           <li class="md-nav__item">
   <a href="#jobbergate_agent.jobbergate.submit.unpack_error_from_slurm_response" class="md-nav__link">
     unpack_error_from_slurm_response()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.write_submission_file" class="md-nav__link">
+    write_submission_file()
   </a>
   
 </li>
@@ -3372,6 +3428,93 @@ values from slurm_parameters.</p>
 
 
 
+<h6 id="jobbergate_agent.jobbergate.submit.get_job_script_file" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">get_job_script_file</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_job_script_file</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">pending_job_submission</span><span class="p">:</span> <span class="n">PendingJobSubmission</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">submit_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the job script file from the backend.</p>
+<p>Write the job script file to the submit_dir if WRITE_SUBMISSION_FILES is set to True.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.submit.process_supporting_files" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">process_supporting_files</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">process_supporting_files</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">pending_job_submission</span><span class="p">:</span> <span class="n">PendingJobSubmission</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">submit_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Process the submission support files.</p>
+<p>Write the support files to the submit_dir if WRITE_SUBMISSION_FILES is set to True.
+Reject the submission if there are support files with WRITE_SUBMISSION_FILES set to False.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.submit.retrieve_submission_file" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">retrieve_submission_file</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">retrieve_submission_file</span><span class="p">(</span><span class="n">file</span><span class="p">:</span> <span class="n">JobScriptFile</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Get a submission file from the backend and return the decoded file content.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
 <h6 id="jobbergate_agent.jobbergate.submit.submit_job_script" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">submit_job_script</span>
 
@@ -3443,6 +3586,34 @@ values from slurm_parameters.</p>
   <div class="doc doc-contents ">
   
       <p>Unpack the error message from the response of a slurmrestd request.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.submit.write_submission_file" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">write_submission_file</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">write_submission_file</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">file_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">submit_dir</span><span class="p">:</span> <span class="n">Path</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Write a decoded file content to the submit_dir.</p>
 
   </div>
 
