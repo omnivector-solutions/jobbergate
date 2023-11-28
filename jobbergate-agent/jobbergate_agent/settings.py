@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     TASK_JOBS_INTERVAL_SECONDS: int = Field(60, ge=10, le=3600)  # seconds
     TASK_GARBAGE_COLLECTION_HOUR: Optional[int] = Field(None, ge=0, le=23)  # hour of day
 
+    # Job submission settings
+    WRITE_SUBMISSION_FILES: bool = True
+
     @root_validator
     def compute_extra_settings(cls, values):
         """
