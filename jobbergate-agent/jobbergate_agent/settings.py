@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     TASK_GARBAGE_COLLECTION_HOUR: Optional[int] = Field(None, ge=0, le=23)  # hour of day
 
     # Job submission settings
-    DOWNLOAD_JOB_SCRIPTS: bool = True
+    WRITE_SUBMISSION_FILES: bool = True
 
     @root_validator
     def compute_extra_settings(cls, values):
