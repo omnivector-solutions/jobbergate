@@ -150,3 +150,21 @@ This means that some of the questions can be truncated and will not be fully vis
 !!!Note
 
     To ensure that you can see the full output of the CLI, we recommend that you use a terminal in a maximized window.
+
+## Submission Modes
+
+The Jobbergate CLI supports two modes for submitting jobs:
+
+- Remote Job Submission:
+
+    - `SBATCH_PATH` is configured on the CLI, so the payload to create a new submission does not include `slurm_job_id`.
+    - The API processes the creation as usual, giving it the status `CREATED` and adding the new entry on the database.
+    - The agent pulls pending jobs (`status=CREATED`) and submit them to slurm on every cycle using [Slurm Rest Api](https://slurm.schedmd.com/rest.html).
+    - The agent pulls active jobs (`STATUS=SUBMITTED`) and update their status on every cycle.
+
+- Aiming to provide backward compatibility with Jobbergate-cli v1, on-site submissions are also available (new in 4.2.0):
+
+    - `SBATCH_PATH` is configured on the CLI, so it downloads job-script files, submits them to slurm using `sbatch`, and includes `slurm_job_id` on the payload to create a new submissions.
+    - The API processes the creation giving it the status `SUBMITTED` and adding the new entry on the database. No need to parse any job-property, since all `#SBATCH` directives were processed at submission time by sbatch.
+    - This jobs won't be processed as pending by the agent since their status is not `CREATED`, remember it was already submitted.
+    - Just like on remote submissions, the agent will still keep track of active jobs (`STATUS=SUBMITTED`) and update them as needed.
