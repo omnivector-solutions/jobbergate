@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, cast
 
 import typer
 
+from jobbergate_cli.config import settings
 from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
@@ -18,7 +19,6 @@ from jobbergate_cli.subapps.job_scripts.tools import (
     fetch_job_script_data,
     question_helper,
     render_job_script,
-    save_job_script_files,
     upload_job_script_files,
 )
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
@@ -211,9 +211,23 @@ def render(
             """
         ),
     ),
+    fast: bool = typer.Option(
+        False,
+        "--fast",
+        "-f",
+        help="Use default answers (when available) instead of asking the user.",
+    ),
+    download: Optional[bool] = typer.Option(
+        None,
+        help="Download the job script files to the current working directory",
+    ),
+    submit: Optional[bool] = typer.Option(
+        None,
+        help="Do not ask the user if they want to submit a job.",
+    ),
     cluster_name: Optional[str] = typer.Option(
         None,
-        help="The name of the cluster where the job should be submitted (i.g. 'nash-staging')",
+        help="The name of the cluster where the job should be submitted to (i.g. 'nash-staging')",
     ),
     execution_directory: Optional[pathlib.Path] = typer.Option(
         None,
@@ -225,20 +239,6 @@ def render(
             absolute path for your home directory on *this* machine.
             """
         ).strip(),
-    ),
-    download: Optional[bool] = typer.Option(
-        None,
-        help="Download the job script files to the current working directory",
-    ),
-    fast: bool = typer.Option(
-        False,
-        "--fast",
-        "-f",
-        help="Use default answers (when available) instead of asking the user.",
-    ),
-    submit: Optional[bool] = typer.Option(
-        None,
-        help="Do not ask the user if they want to submit a job.",
     ),
 ):
     """
@@ -289,16 +289,8 @@ def render(
         actual_value=submit,
     )
 
-    download = question_helper(
-        question_func=typer.confirm,
-        text="Would you like to download the job script files?",
-        default=True,
-        fast=fast,
-        actual_value=download,
-    )
-
-    if download:
-        download_job_script_files(job_script_result.job_script_id, jg_ctx)
+    if download and settings.SBATCH_PATH is None:  # on-site submission will download the job script files anyway
+        download_job_script_files(job_script_result.job_script_id, jg_ctx, pathlib.Path.cwd())
 
     if not submit:
         return
@@ -430,14 +422,15 @@ def show_files(
     Show the files for a single job script by id.
     """
     jg_ctx: JobbergateContext = ctx.obj
-    result = fetch_job_script_data(jg_ctx, id)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = pathlib.Path(tmp_dir)
-        file_list = save_job_script_files(jg_ctx, result, tmp_path)
 
-        for metadata, file_path in zip(result.files, file_list):
+        files = download_job_script_files(id, jg_ctx, tmp_path)
+
+        for metadata in files:
             filename = metadata.filename
+            file_path = tmp_path / filename
             file_content = file_path.read_text()
             is_main_file = metadata.file_type.upper() == "ENTRYPOINT"
             if plain or jg_ctx.raw_output:
@@ -461,7 +454,7 @@ def download_files(
     Download the files from a job script to the current working directory.
     """
     jg_ctx: JobbergateContext = ctx.obj
-    downloaded_files = download_job_script_files(id, jg_ctx)
+    downloaded_files = download_job_script_files(id, jg_ctx, pathlib.Path.cwd())
 
     terminal_message(
         dedent(

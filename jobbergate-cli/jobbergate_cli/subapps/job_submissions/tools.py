@@ -2,14 +2,56 @@
 Provide tool functions for working with Job Submission data
 """
 
+import re
 from pathlib import Path
+from subprocess import PIPE, Popen
 from typing import Optional, cast
 
+from loguru import logger
+
 from jobbergate_cli.config import settings
+from jobbergate_cli.constants import FileType
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobSubmissionCreateRequestData, JobSubmissionResponse
-from jobbergate_cli.subapps.job_scripts.tools import validate_parameter_file
+from jobbergate_cli.subapps.job_scripts.tools import download_job_script_files, validate_parameter_file
+
+
+def sbatch_run(filename: str, *argv) -> int:
+    """Execute Job Submission using sbatch and returns slurm id."""
+
+    if settings.SBATCH_PATH is None or not settings.SBATCH_PATH.exists():
+        raise Abort(
+            "The path to the sbatch executable is not set or does not exist. "
+            "Please set the SBATCH_PATH environment to allow on-site job submissions.",
+            subject="sbatch error",
+            support=False,
+        )
+
+    cmd = [settings.SBATCH_PATH.as_posix(), filename, *argv]
+    logger.debug(f"Executing: {''.join(cmd)}")
+    p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    output_raw, err_raw = p.communicate(b"sbatch output")
+
+    output = output_raw.decode("utf-8")
+    err = err_raw.decode("utf-8")
+    rc = p.returncode
+
+    logger.debug("Job submission output: {}", output)
+    logger.debug("Job submission return code: {}", rc)
+
+    if rc != 0:
+        logger.error("Job submission error: {}", err)
+        raise Abort(f"Failed to execute submission with error: {err}", subject="sbatch error", support=False)
+
+    match = re.search(r"^Submitted batch job (\d+)", output)
+
+    if match is None:
+        raise Abort(f"Failed to parse slurm job id from {output=}", subject="sbatch error", support=False)
+
+    slurm_job_id = int(match.group(1))
+    logger.info("Job submission successful. Slurm job id: {}", slurm_job_id)
+    return slurm_job_id
 
 
 def create_job_submission(
@@ -20,6 +62,7 @@ def create_job_submission(
     cluster_name: Optional[str] = None,
     execution_directory: Optional[Path] = None,
     execution_parameters_file: Optional[Path] = None,
+    download: bool = False,
 ) -> JobSubmissionResponse:
     """
     Create a Job Submission from the given Job Script.
@@ -42,7 +85,6 @@ def create_job_submission(
 
     # Make static type checkers happy
     assert jg_ctx.client is not None, "jg_ctx.client is uninitialized"
-    assert jg_ctx.persona is not None, "jg_ctx.persona is uninitialized"
 
     if cluster_name is None:
         cluster_name = settings.DEFAULT_CLUSTER_NAME
@@ -56,22 +98,43 @@ def create_job_submission(
         ),
     )
 
+    Abort.require_condition(
+        not (settings.SBATCH_PATH is not None and execution_parameters_file is not None),
+        "Execution parameters file is not compatible with on-site job submissions",
+        raise_kwargs=dict(subject="Job Submission Error", support=False),
+    )
+
+    if execution_directory is None:
+        execution_directory = Path.cwd()
+    if not execution_directory.is_absolute():
+        execution_directory = execution_directory.resolve()
+
     job_submission_data = JobSubmissionCreateRequestData(
         name=name,
         description=description,
         job_script_id=job_script_id,
         cluster_name=cluster_name,
+        execution_directory=execution_directory,
     )
-
-    if execution_directory is None:
-        execution_directory = Path.cwd()
-    else:
-        if not execution_directory.is_absolute():
-            execution_directory = (Path.cwd() / execution_directory).resolve()
-    job_submission_data.execution_directory = execution_directory
 
     if execution_parameters_file is not None:
         job_submission_data.execution_parameters = validate_parameter_file(execution_parameters_file)
+
+    if download or settings.SBATCH_PATH is not None:
+        job_script_files = download_job_script_files(job_script_id, jg_ctx, Path.cwd())
+
+    if settings.SBATCH_PATH is not None:
+        entrypoint_file = [f for f in job_script_files if f.file_type == FileType.ENTRYPOINT]
+
+        Abort.require_condition(
+            len(entrypoint_file) == 1,
+            "There should be exactly one entrypoint file in the parent job script",
+            raise_kwargs=dict(subject="Job Script Error"),
+        )
+
+        filename = entrypoint_file[0].filename
+        slurm_id = sbatch_run(filename, name)
+        job_submission_data.slurm_job_id = slurm_id
 
     result = cast(
         JobSubmissionResponse,

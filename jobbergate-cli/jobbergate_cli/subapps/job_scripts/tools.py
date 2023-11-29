@@ -6,6 +6,8 @@ import json
 import pathlib
 import re
 import tempfile
+from concurrent import futures
+from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
 from loguru import logger
@@ -20,6 +22,7 @@ from jobbergate_cli.schemas import (
     JobbergateConfig,
     JobbergateContext,
     JobScriptCreateRequest,
+    JobScriptFile,
     JobScriptRenderRequestData,
     JobScriptResponse,
     RenderFromTemplateRequest,
@@ -354,49 +357,44 @@ def upload_job_script_files(
                 )
 
 
-def save_job_script_files(
-    jg_ctx: JobbergateContext,
-    job_script_data: JobScriptResponse,
-    destination_path: pathlib.Path,
-) -> List[pathlib.Path]:
+def save_job_script_file(
+    jg_ctx: JobbergateContext, destination_path: pathlib.Path, job_script_file: JobScriptFile
+) -> pathlib.Path:
     """
-    Save the job script files from the API response to the output path.
+    Save a job script file from the API response to the destination path.
     """
     # Make static type checkers happy
     assert jg_ctx.client is not None
 
-    logger.debug(f"Saving job script files to {destination_path.as_posix()}")
-    saved_files: List[pathlib.Path] = []
-
-    for metadata in job_script_data.files:
-        filename = metadata.filename
-        file_path = destination_path / filename
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        make_request(
-            jg_ctx.client,
-            metadata.path,
-            "GET",
-            expected_status=200,
-            abort_message=f"Couldn't retrieve job script file {filename} from API",
-            save_to_file=file_path,
-        )
-        saved_files.append(file_path)
-
-    logger.debug(f"The following files were saved: {list(map(str, saved_files))}")
-    return saved_files
-
-
-def download_job_script_files(id: int, jg_ctx: JobbergateContext) -> List[pathlib.Path]:
-    """
-    Download the job script files from the API and save them to the current working directory.
-    """
-    result = fetch_job_script_data(jg_ctx, id)
-    downloaded_files = save_job_script_files(
-        jg_ctx,
-        job_script_data=result,
-        destination_path=pathlib.Path.cwd(),
+    filename = job_script_file.filename
+    file_path = destination_path / filename
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    make_request(
+        jg_ctx.client,
+        job_script_file.path,
+        "GET",
+        expected_status=200,
+        abort_message=f"Couldn't retrieve job script file {filename} from API",
+        save_to_file=file_path,
     )
-    return downloaded_files
+
+    logger.debug("Downloaded {}", file_path.as_posix())
+    return file_path
+
+
+def download_job_script_files(
+    id: int, jg_ctx: JobbergateContext, destination_path: pathlib.Path
+) -> List[JobScriptFile]:
+    """
+    Download all job script files from the API and save them to the destination path.
+    """
+
+    result = fetch_job_script_data(jg_ctx, id)
+
+    with futures.ThreadPoolExecutor() as executor:
+        executor.map(partial(save_job_script_file, jg_ctx, destination_path), result.files)
+
+    return result.files
 
 
 def question_helper(question_func: Callable, text: str, default: Any, fast: bool, actual_value: Optional[Any]):

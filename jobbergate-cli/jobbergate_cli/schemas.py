@@ -140,7 +140,7 @@ class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     workflow_files: List[WorkflowFileResponse] = []
 
 
-class JobScriptFiles(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+class JobScriptFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     """
     Model containing job-script files.
     """
@@ -173,7 +173,7 @@ class JobScriptResponse(
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    files: List[JobScriptFiles] = []
+    files: List[JobScriptFile] = []
 
     @pydantic.validator("files", pre=True)
     def null_files(cls, value):
@@ -239,6 +239,7 @@ class JobSubmissionCreateRequestData(pydantic.BaseModel):
     name: str
     description: Optional[str] = None
     job_script_id: int
+    slurm_job_id: Optional[int] = None
     client_id: Optional[str] = pydantic.Field(None, alias="cluster_name")
     execution_directory: Optional[Path] = None
     execution_parameters: Dict[str, Any] = pydantic.Field(default_factory=dict)
