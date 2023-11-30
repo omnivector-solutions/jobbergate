@@ -289,8 +289,18 @@ def render(
         actual_value=submit,
     )
 
-    if download and settings.SBATCH_PATH is None:  # on-site submission will download the job script files anyway
-        download_job_script_files(job_script_result.job_script_id, jg_ctx, pathlib.Path.cwd())
+    if settings.SBATCH_PATH is None:
+        # Notice on-site submission will download the job script files anyway, so it is asked just in remote mode.
+        download = question_helper(
+            question_func=typer.confirm,
+            text="Would you like to download the job script files?",
+            default=True,
+            fast=fast,
+            actual_value=download,
+        )
+
+        if download:
+            download_job_script_files(job_script_result.job_script_id, jg_ctx, pathlib.Path.cwd())
 
     if not submit:
         return

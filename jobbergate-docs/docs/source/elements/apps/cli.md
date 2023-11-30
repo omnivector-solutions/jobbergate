@@ -166,5 +166,5 @@ The Jobbergate CLI supports two modes for submitting jobs:
 
     - `SBATCH_PATH` is configured on the CLI, so it downloads job-script files, submits them to slurm using `sbatch`, and includes `slurm_job_id` on the payload to create a new submissions.
     - The API processes the creation giving it the status `SUBMITTED` and adding the new entry on the database. No need to parse any job-property, since all `#SBATCH` directives were processed at submission time by sbatch.
-    - This jobs won't be processed as pending by the agent since their status is not `CREATED`, remember it was already submitted.
+  - These jobs won't be processed as pending by the agent since their status is not `CREATED`, remember it was already submitted.
     - Just like on remote submissions, the agent will still keep track of active jobs (`STATUS=SUBMITTED`) and update them as needed.

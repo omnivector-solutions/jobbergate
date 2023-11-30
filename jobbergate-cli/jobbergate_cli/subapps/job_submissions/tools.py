@@ -99,7 +99,7 @@ def create_job_submission(
     )
 
     Abort.require_condition(
-        not (settings.SBATCH_PATH is not None and execution_parameters_file is not None),
+        settings.SBATCH_PATH is None or execution_parameters_file is None,
         "Execution parameters file is not compatible with on-site job submissions",
         raise_kwargs=dict(subject="Job Submission Error", support=False),
     )
