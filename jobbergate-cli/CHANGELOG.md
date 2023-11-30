@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+
+## 4.2.0a3 -- 2023-11-30
 - Added support for on-site job submissions using the `sbatch` command [ASP-4238]
 
 ## 4.2.0a2 -- 2023-11-29

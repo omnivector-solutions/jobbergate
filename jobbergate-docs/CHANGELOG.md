@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-docs
 
 ## Unreleased
 
+
+## 4.2.0a3 -- 2023-11-30
 - Added new page describing the support for on-site job submissions [ASP-4238]
 
 ## 4.2.0a2 -- 2023-11-29
