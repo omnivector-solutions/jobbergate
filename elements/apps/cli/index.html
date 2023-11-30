@@ -613,6 +613,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#submission-modes" class="md-nav__link">
+    Submission Modes
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1046,6 +1053,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#submission-modes" class="md-nav__link">
+    Submission Modes
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1178,6 +1192,28 @@ This means that some of the questions can be truncated and will not be fully vis
 <p class="admonition-title">Note</p>
 <p>To ensure that you can see the full output of the CLI, we recommend that you use a terminal in a maximized window.</p>
 </div>
+<h2 id="submission-modes">Submission Modes</h2>
+<p>The Jobbergate CLI supports two modes for submitting jobs:</p>
+<ul>
+<li>
+<p>Remote Job Submission:</p>
+<ul>
+<li><code>SBATCH_PATH</code> is configured on the CLI, so the payload to create a new submission does not include <code>slurm_job_id</code>.</li>
+<li>The API processes the creation as usual, giving it the status <code>CREATED</code> and adding the new entry on the database.</li>
+<li>The agent pulls pending jobs (<code>status=CREATED</code>) and submit them to slurm on every cycle using <a href="https://slurm.schedmd.com/rest.html">Slurm Rest Api</a>.</li>
+<li>The agent pulls active jobs (<code>STATUS=SUBMITTED</code>) and update their status on every cycle.</li>
+</ul>
+</li>
+<li>
+<p>Aiming to provide backward compatibility with Jobbergate-cli v1, on-site submissions are also available (new in 4.2.0):</p>
+<ul>
+<li><code>SBATCH_PATH</code> is configured on the CLI, so it downloads job-script files, submits them to slurm using <code>sbatch</code>, and includes <code>slurm_job_id</code> on the payload to create a new submissions.</li>
+<li>The API processes the creation giving it the status <code>SUBMITTED</code> and adding the new entry on the database. No need to parse any job-property, since all <code>#SBATCH</code> directives were processed at submission time by sbatch.</li>
+<li>These jobs won't be processed as pending by the agent since their status is not <code>CREATED</code>, remember it was already submitted.</li>
+<li>Just like on remote submissions, the agent will still keep track of active jobs (<code>STATUS=SUBMITTED</code>) and update them as needed.</li>
+</ul>
+</li>
+</ul>
 
 
 
