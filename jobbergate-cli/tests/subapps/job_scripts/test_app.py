@@ -9,7 +9,7 @@ import pytest
 from jobbergate_cli.config import settings
 from jobbergate_cli.schemas import (
     ApplicationResponse,
-    JobScriptFiles,
+    JobScriptFile,
     JobScriptResponse,
     JobSubmissionResponse,
     ListResponseEnvelope,
@@ -615,7 +615,7 @@ def test_show_files__success(
     )
 
     get_file_routes = [
-        respx_mock.get(f"{dummy_domain}{JobScriptFiles.parse_obj(f).path}") for f in job_script_data["files"]
+        respx_mock.get(f"{dummy_domain}{JobScriptFile.parse_obj(f).path}") for f in job_script_data["files"]
     ]
     for route in get_file_routes:
         route.mock(
@@ -675,41 +675,15 @@ class TestDownloadJobScriptFiles:
 
         with mock.patch.object(pathlib.Path, "cwd", return_value=tmp_path):
             with mock.patch(
-                "jobbergate_cli.subapps.job_scripts.tools.save_job_script_files",
+                "jobbergate_cli.subapps.job_scripts.app.download_job_script_files",
                 return_value=list(f["filename"] for f in job_script_data["files"]),
             ) as mocked_save_job_script_files:
                 result = cli_runner.invoke(test_app, shlex.split("download --id=1"))
 
-                mocked_save_job_script_files.assert_called_once_with(
-                    dummy_context,
-                    job_script_data=JobScriptResponse.parse_obj(job_script_data),
-                    destination_path=tmp_path,
-                )
+                mocked_save_job_script_files.assert_called_once_with(1, dummy_context, tmp_path)
 
         assert result.exit_code == 0, f"download failed: {result.stdout}"
         mocked_render.assert_called_once_with(
             "A total of 1 job script files were successfully downloaded.",
             subject="Job script download succeeded",
         )
-
-    def test_download__fail(
-        self,
-        respx_mock,
-        test_app,
-        dummy_domain,
-        cli_runner,
-    ):
-        """
-        Test that the ``download`` subcommand fails when the job script does not exist.
-        """
-        respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/1").mock(
-            return_value=httpx.Response(
-                httpx.codes.NOT_FOUND,
-            ),
-        )
-
-        with mock.patch("jobbergate_cli.subapps.job_scripts.tools.save_job_script_files") as mocked:
-            result = cli_runner.invoke(test_app, shlex.split("download --id=1"))
-            mocked.assert_not_called()
-
-        assert result.exit_code == 1

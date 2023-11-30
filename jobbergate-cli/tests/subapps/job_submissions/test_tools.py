@@ -6,7 +6,7 @@ import pytest
 
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import JobSubmissionResponse
-from jobbergate_cli.subapps.job_submissions.tools import create_job_submission, fetch_job_submission_data
+from jobbergate_cli.subapps.job_submissions.tools import create_job_submission, fetch_job_submission_data, sbatch_run
 
 
 def test_create_job_submission__success(
@@ -259,3 +259,60 @@ def test_fetch_job_submission_data__success__using_id(
     assert fetch_route.called
     assert result == JobSubmissionResponse(**job_submission_data)
     assert result.report_message == job_submission_data.get("report_message")
+
+
+class TestSbatchRun:
+    def test_valid_arguments_returns_slurm_id(self, mocker, tweak_settings, tmp_path):
+        mocked_popen = mocker.MagicMock()
+        mocker.patch("jobbergate_cli.subapps.job_submissions.tools.Popen", return_value=mocked_popen)
+        mocked_popen.communicate.return_value = (b"Submitted batch job 123", b"")
+        mocked_popen.returncode = 0
+
+        with tweak_settings(SBATCH_PATH=tmp_path):
+            slurm_id = sbatch_run("filename.sh")
+
+        assert slurm_id == 123
+
+    def test_raises_abort_if_sbatch_command_returns_non_zero_exit_code(
+        self,
+        mocker,
+        tweak_settings,
+        tmp_path,
+    ):
+        mocked_popen = mocker.MagicMock()
+        mocker.patch("jobbergate_cli.subapps.job_submissions.tools.Popen", return_value=mocked_popen)
+        mocked_popen.communicate.return_value = (b"", b"Error: Invalid argument")
+        mocked_popen.returncode = 1
+
+        with tweak_settings(SBATCH_PATH=tmp_path):
+            with pytest.raises(
+                Abort,
+                match="^Failed to execute submission with error",
+            ):
+                sbatch_run("filename.sh")
+
+    def test_raises_abort_if_slurm_job_id_cannot_be_parsed_from_output(
+        self,
+        mocker,
+        tweak_settings,
+        tmp_path,
+    ):
+        mocked_popen = mocker.MagicMock()
+        mocker.patch("jobbergate_cli.subapps.job_submissions.tools.Popen", return_value=mocked_popen)
+        mocked_popen.communicate.return_value = (b"Invalid output", b"")
+        mocked_popen.returncode = 0
+
+        with tweak_settings(SBATCH_PATH=tmp_path):
+            with pytest.raises(
+                Abort,
+                match="^Failed to parse slurm job id from output=",
+            ):
+                sbatch_run("filename.sh")
+
+    def test_raises_abort_if_sbatch_path_not_set_or_does_not_exist(self, tweak_settings, tmp_path):
+        with tweak_settings(SBATCH_PATH=tmp_path / "nonexistent"):
+            with pytest.raises(
+                Abort,
+                match="^The path to the sbatch executable is not set or does not exist",
+            ):
+                sbatch_run("filename.sh")

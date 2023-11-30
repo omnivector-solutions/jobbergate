@@ -69,16 +69,24 @@ async def job_submission_create(
         logger.warning(message)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
 
-    main_file_content = await secure_services.file.job_script.get_file_content(job_script_files[0])
-    new_execution_parameters = get_job_properties_from_job_script(
-        main_file_content.decode(), **create_request.execution_parameters.dict(exclude_unset=True)
-    )
-    create_request.execution_parameters = new_execution_parameters
+    if create_request.slurm_job_id is None:
+        main_file_content = await secure_services.file.job_script.get_file_content(job_script_files[0])
+        execution_parameters = get_job_properties_from_job_script(
+            main_file_content.decode(), **create_request.execution_parameters.dict(exclude_unset=True)
+        )
+        create_request.execution_parameters = execution_parameters
+        submission_status = JobSubmissionStatus.CREATED
+    else:
+        if create_request.execution_parameters.dict(exclude_unset=True):
+            message = "Execution parameters are not allowed for on-site job submissions"
+            logger.warning(message)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+        submission_status = JobSubmissionStatus.SUBMITTED
 
     new_job_submission = await secure_services.crud.job_submission.create(
         **create_request.dict(exclude_unset=True),
         owner_email=secure_services.identity_payload.email,
-        status=JobSubmissionStatus.CREATED,
+        status=submission_status,
     )
     return new_job_submission
 

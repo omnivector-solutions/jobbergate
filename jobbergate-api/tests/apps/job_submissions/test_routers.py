@@ -14,6 +14,116 @@ from jobbergate_api.apps.permissions import Permissions
 pytest.mark.usefixtures("synth_session")
 
 
+async def test_create_job_submission__on_site_submission(
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    tester_email,
+    job_script_data_as_string,
+    synth_session,
+    synth_bucket,
+    synth_services,
+):
+    """
+    Test POST /job-submissions/ correctly creates a job_submission.
+
+    This test proves that a job_submission is successfully created via a POST request to the /job-submissions/
+    endpoint. We show this by asserting that the job_submission is created in the database after the post
+    request is made, the correct status code (201) is returned. We also show that the ``status``
+    is ``SUBMITTED`` and the ``execution_parameters`` were not processed.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    job_script_file_name = "entrypoint.py"
+
+    await synth_services.file.job_script.upsert(
+        parent_id=base_job_script.id,
+        filename=job_script_file_name,
+        upload_content=job_script_data_as_string,
+        file_type="ENTRYPOINT",
+    )
+
+    inserted_job_script_id = base_job_script.id
+    slurm_job_id = 1234
+
+    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-cluster-client")
+    create_data = fill_job_submission_data(job_script_id=inserted_job_script_id, slurm_job_id=slurm_job_id)
+
+    # Removed defaults to make sure these are correctly set by other mechanisms
+    create_data.pop("status", None)
+    create_data.pop("client_id", None)
+    create_data.pop("execution_parameters", None)
+
+    with mock.patch(
+        "jobbergate_api.apps.job_submissions.routers.get_job_properties_from_job_script"
+    ) as mocked:
+        response = await client.post("/jobbergate/job-submissions", json=create_data)
+    mocked.assert_not_called()
+
+    assert response.status_code == status.HTTP_201_CREATED, f"Create failed: {response.text}"
+
+    with synth_services.crud.job_submission.bound_session(synth_session):
+        assert (await synth_services.crud.job_submission.count()) == 1
+
+    response_data = response.json()
+
+    # Check that each field is correctly set
+    assert response_data["name"] == create_data["name"]
+    assert response_data["owner_email"] == tester_email
+    assert response_data["description"] == create_data["description"]
+    assert response_data["job_script_id"] == inserted_job_script_id
+    assert response_data["execution_directory"] is None
+    assert response_data["client_id"] == "dummy-cluster-client"
+    assert response_data["status"] == JobSubmissionStatus.SUBMITTED
+
+    assert isinstance(response_data["execution_parameters"], dict)
+    assert {k: v for k, v in response_data["execution_parameters"].items() if v is not None} == {}
+
+
+async def test_create_job_submission__on_site_submission_with_execution_parameters(
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    tester_email,
+    job_script_data_as_string,
+    synth_session,
+    synth_bucket,
+    synth_services,
+):
+    """
+    Test POST /job-submissions/ correctly creates a job_submission.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    job_script_file_name = "entrypoint.py"
+
+    await synth_services.file.job_script.upsert(
+        parent_id=base_job_script.id,
+        filename=job_script_file_name,
+        upload_content=job_script_data_as_string,
+        file_type="ENTRYPOINT",
+    )
+
+    inserted_job_script_id = base_job_script.id
+    slurm_job_id = 1234
+
+    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-cluster-client")
+    create_data = fill_job_submission_data(
+        job_script_id=inserted_job_script_id, slurm_job_id=slurm_job_id, execution_parameters={"name": "foo"}
+    )
+
+    # Removed defaults to make sure these are correctly set by other mechanisms
+    create_data.pop("status", None)
+    create_data.pop("client_id", None)
+
+    response = await client.post("/jobbergate/job-submissions", json=create_data)
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "Execution parameters are not allowed for on-site job submissions" in response.text
+
+
 async def test_create_job_submission__with_client_id_in_token(
     fill_job_script_data,
     fill_job_submission_data,
