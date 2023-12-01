@@ -29,7 +29,7 @@ def sbatch_run(filename: str, *argv) -> int:
         )
 
     cmd = [settings.SBATCH_PATH.as_posix(), filename, *argv]
-    logger.debug(f"Executing: {''.join(cmd)}")
+    logger.debug(f"Executing: {' '.join(cmd)}")
     p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
     output_raw, err_raw = p.communicate(b"sbatch output")
 
@@ -123,7 +123,11 @@ def create_job_submission(
     if download or settings.SBATCH_PATH is not None:
         job_script_files = download_job_script_files(job_script_id, jg_ctx, Path.cwd())
 
-    if settings.SBATCH_PATH is not None:
+    if settings.SBATCH_PATH is None:
+        logger.info("Creating job submission in remote mode")
+    else:
+        logger.info("Creating job submission in on-site mode")
+
         entrypoint_file = [f for f in job_script_files if f.file_type == FileType.ENTRYPOINT]
 
         Abort.require_condition(
