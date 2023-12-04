@@ -10,7 +10,6 @@ import typer
 
 from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import Abort, handle_abort
-from jobbergate_cli.subapps.pagination import handle_pagination
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobScriptCreateRequest, JobScriptResponse
@@ -24,6 +23,7 @@ from jobbergate_cli.subapps.job_scripts.tools import (
 )
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
 from jobbergate_cli.subapps.job_submissions.tools import create_job_submission
+from jobbergate_cli.subapps.pagination import handle_pagination
 from jobbergate_cli.text_tools import dedent
 
 
