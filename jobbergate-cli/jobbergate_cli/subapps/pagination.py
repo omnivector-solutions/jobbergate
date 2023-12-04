@@ -45,7 +45,7 @@ def handle_pagination(
             hidden_fields=hidden_fields,
         )
 
-        if envelope.pages < 1:
+        if envelope.pages <= 1:
             return
 
         current_page = envelope.page

@@ -242,6 +242,3 @@ def render_paginated_list_results(
         console = Console()
         console.print()
         console.print(table)
-
-        page_controls = f"Page {current_page} of {total_pages}"
-        console.print(page_controls)
