@@ -70,40 +70,21 @@ def test_create(
     mocked_download_job_script.assert_called_once_with(job_script_id, dummy_context)
 
 
-def test_list_all__makes_request_and_renders_results(
-    respx_mock,
+def test_list_all__renders_paginated_results(
     make_test_app,
     dummy_context,
-    dummy_job_submission_data,
-    dummy_domain,
     cli_runner,
     mocker,
 ):
-    respx_mock.get(f"{dummy_domain}/jobbergate/job-submissions?user_only=true").mock(
-        return_value=httpx.Response(
-            httpx.codes.OK,
-            json=dict(
-                items=dummy_job_submission_data,
-                total=len(dummy_job_submission_data),
-                page=1,
-                size=len(dummy_job_submission_data),
-                pages=1,
-            ),
-        ),
-    )
     test_app = make_test_app("list-all", list_all)
-    mocked_render = mocker.patch("jobbergate_cli.subapps.job_submissions.app.render_list_results")
+    mocked_pagination = mocker.patch("jobbergate_cli.subapps.job_submissions.app.handle_pagination")
     result = cli_runner.invoke(test_app, ["list-all"])
     assert result.exit_code == 0, f"list-all failed: {result.stdout}"
-    mocked_render.assert_called_once_with(
-        dummy_context,
-        ListResponseEnvelope(
-            items=dummy_job_submission_data,
-            total=len(dummy_job_submission_data),
-            page=1,
-            size=len(dummy_job_submission_data),
-            pages=1,
-        ),
+    mocked_pagination.assert_called_once_with(
+        jg_ctx=dummy_context,
+        url_path="/jobbergate/job-submissions",
+        abort_message="Couldn't retrieve job submissions list from API",
+        params={"user_only": True},
         title="Job Submission List",
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,

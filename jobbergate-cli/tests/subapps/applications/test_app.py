@@ -19,40 +19,21 @@ from jobbergate_cli.subapps.applications.app import (
 from jobbergate_cli.text_tools import unwrap
 
 
-def test_list_all__makes_request_and_renders_results(
-    respx_mock,
+def test_list_all__renders_paginated_results(
     make_test_app,
     dummy_context,
-    dummy_application_data,
-    dummy_domain,
     cli_runner,
     mocker,
 ):
-    respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates").mock(
-        return_value=httpx.Response(
-            httpx.codes.OK,
-            json=dict(
-                items=dummy_application_data,
-                total=len(dummy_application_data),
-                page=1,
-                size=len(dummy_application_data),
-                pages=1,
-            ),
-        ),
-    )
     test_app = make_test_app("list-all", list_all)
-    mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_list_results")
+    mocked_pagination = mocker.patch("jobbergate_cli.subapps.applications.app.handle_pagination")
     result = cli_runner.invoke(test_app, ["list-all"])
     assert result.exit_code == 0, f"list-all failed: {result.stdout}"
-    mocked_render.assert_called_once_with(
-        dummy_context,
-        ListResponseEnvelope(
-            items=dummy_application_data,
-            total=len(dummy_application_data),
-            page=1,
-            size=len(dummy_application_data),
-            pages=1,
-        ),
+    mocked_pagination.assert_called_once_with(
+        jg_ctx=dummy_context,
+        url_path="/jobbergate/job-script-templates",
+        abort_message="Couldn't retrieve applications list from API",
+        params={"include_null_identifier": False, "user_only": False},
         title="Applications List",
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,
