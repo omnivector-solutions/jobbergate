@@ -7,7 +7,7 @@ import httpx
 import pytest
 
 from jobbergate_cli.config import settings
-from jobbergate_cli.schemas import ApplicationResponse, JobScriptFiles, JobScriptResponse, JobSubmissionResponse
+from jobbergate_cli.schemas import ApplicationResponse, JobScriptFile, JobScriptResponse, JobSubmissionResponse
 from jobbergate_cli.subapps.job_scripts.app import (
     HIDDEN_FIELDS,
     JOB_SUBMISSION_HIDDEN_FIELDS,
