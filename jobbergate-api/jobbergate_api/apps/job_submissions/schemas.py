@@ -163,8 +163,7 @@ class JobProperties(BaseModel, extra=Extra.forbid):
             "'user' option or with the 'mcs' option)."
         )
     )
-    get_user_environment: int = Field(
-        default=1,
+    get_user_environment: Optional[int] = Field(
         description="Load new login environment for user on job node.",
         ge=0,
         le=1,
@@ -305,6 +304,7 @@ class JobSubmissionCreateRequest(BaseModel):
     name: str
     description: Optional[str]
     job_script_id: int
+    slurm_job_id: Optional[int]
     execution_directory: Optional[str]
     client_id: Optional[str]
     execution_parameters: JobProperties = Field(default_factory=JobProperties)

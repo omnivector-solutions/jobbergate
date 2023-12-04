@@ -40,9 +40,6 @@ def test_create(
         "jobbergate_cli.subapps.job_submissions.app.create_job_submission",
     )
     patched_create_job_submission.return_value = job_submission_data
-    mocked_download_job_script = mocker.patch(
-        "jobbergate_cli.subapps.job_submissions.app.download_job_script_files",
-    )
 
     test_app = make_test_app("create", create)
     result = cli_runner.invoke(
@@ -67,7 +64,6 @@ def test_create(
         title="Created Job Submission",
         hidden_fields=HIDDEN_FIELDS,
     )
-    mocked_download_job_script.assert_called_once_with(job_script_id, dummy_context)
 
 
 def test_list_all__renders_paginated_results(

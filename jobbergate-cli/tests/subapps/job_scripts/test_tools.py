@@ -11,13 +11,13 @@ from jobbergate_cli.exceptions import Abort, JobbergateCliError
 from jobbergate_cli.schemas import ApplicationResponse, JobScriptResponse
 from jobbergate_cli.subapps.job_scripts.tools import (
     JobbergateConfig,
+    download_job_script_files,
     fetch_job_script_data,
     flatten_param_dict,
     get_template_output_name_mapping,
     question_helper,
     remove_prefix_suffix,
     render_job_script,
-    save_job_script_files,
     upload_job_script_files,
     validate_parameter_file,
 )
@@ -264,12 +264,12 @@ def test_question_helper__ask_question_when_actual_value_is_none_on_non_fast_mod
     assert question_func.called_once_with("Give me foo", default="foo")
 
 
-class TestSaveJobScriptFiles:
+class TestDownloadJobScriptFiles:
     """
     Test the save_job_script_files function.
     """
 
-    def test_save_job_scripts_files__all_files(
+    def test_download_job_scripts_files__all_files(
         self,
         tmp_path,
         respx_mock,
@@ -281,6 +281,13 @@ class TestSaveJobScriptFiles:
         """
         Test that we can download all the files from a job script.
         """
+        job_script_id = 1
+        respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/{job_script_id}").mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                json=dummy_job_script_data[0],
+            ),
+        )
         job_script_data = JobScriptResponse.parse_obj(dummy_job_script_data[0])
 
         get_file_routes = [respx_mock.get(f"{dummy_domain}{f.path}") for f in job_script_data.files]
@@ -291,17 +298,18 @@ class TestSaveJobScriptFiles:
                     content=dummy_template_source.encode(),
                 ),
             )
-        desired_list_of_files = [tmp_path / f.filename for f in job_script_data.files]
 
-        assert len(desired_list_of_files) >= 1
+        list_of_files = [tmp_path / f.filename for f in job_script_data.files]
 
-        actual_list_of_files = save_job_script_files(dummy_context, job_script_data, tmp_path)
+        assert len(list_of_files) >= 1, "sanity check"
 
-        assert actual_list_of_files == desired_list_of_files
-        assert set(tmp_path.rglob("*")) == set(desired_list_of_files)
+        files = download_job_script_files(job_script_id, dummy_context, tmp_path)
+
+        assert files == job_script_data.files
+        assert set(tmp_path.rglob("*")) == set(list_of_files)
         assert all(r.called for r in get_file_routes)
 
-        assert all(p.read_text() == dummy_template_source for p in actual_list_of_files)
+        assert all(p.read_text() == dummy_template_source for p in list_of_files)
 
 
 def test_flatten_param_dict__success():

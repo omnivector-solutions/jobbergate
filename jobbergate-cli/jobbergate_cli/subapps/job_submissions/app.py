@@ -101,10 +101,8 @@ def create(
         execution_directory=execution_directory,
         cluster_name=cluster_name,
         execution_parameters_file=execution_parameters,
+        download=download,
     )
-
-    if download:
-        download_job_script_files(job_script_id, jg_ctx)
 
     render_single_result(
         jg_ctx,

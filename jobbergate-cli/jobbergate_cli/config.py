@@ -24,6 +24,8 @@ class Settings(BaseSettings):
 
     ARMADA_API_BASE: AnyHttpUrl = Field("https://armada-k8s.staging.omnivector.solutions")
 
+    SBATCH_PATH: Optional[Path]
+
     # enable http tracing
     JOBBERGATE_DEBUG: bool = Field(False)
     JOBBERGATE_REQUESTS_TIMEOUT: Optional[int] = 15

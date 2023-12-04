@@ -3,12 +3,20 @@
 This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
+
+
+## 4.2.0a3 -- 2023-11-30
+- Added support for on-site job submissions [ASP-4238]
+
+## 4.2.0a2 -- 2023-11-29
+
 - Moved database session management into a dedicated context manager and removed test-aware logic
 - Modified testing harnesses to override session management context manager and fail if test session is not used
 
-
 ## 4.2.0a1 -- 2023-11-13
+
 ## 4.2.0a0 -- 2023-11-09
+
 ## 4.1.0 -- 2023-11-07
 
 - Changed internals to avoid committing to the database when a GET request is made
@@ -180,27 +188,30 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## 2.1.2 -- 2022-02-02
 
-* Revised permissions to use a view/edit model for each data model
+- Revised permissions to use a view/edit model for each data model
+
 - Added parameter to filter job_submissions by slurm_job_id
 
 ## 2.1.1 -- 2022-01-13
 
-* Refactored the Dockerfile
+- Refactored the Dockerfile
 
 ## 2.1.0 -- 2021-12-22
 
-* Added graceful handling of delete failures due to FK constraints
+- Added graceful handling of delete failures due to FK constraints
+
 - Added Alembic support
 - Added application_identifier to response payload
 - Added pagination support back in
 
 ## 2.0.1 -- 2021-12-10
 
-* Removed CORS origins parameter from settings and set all origins as the allowed ones
+- Removed CORS origins parameter from settings and set all origins as the allowed ones
 
 ## 2.0.0 -- 2021-12-08
 
-* Added support for auth via Armasec & Auth0
+- Added support for auth via Armasec & Auth0
+
 - Added unit tests
 - Migrated model definitions from legacy `jobbergate-api`
 - Migrated endpoint definitions from legacy `jobbergate-api`
