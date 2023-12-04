@@ -4,7 +4,7 @@ from unittest import mock
 import httpx
 import pytest
 
-from jobbergate_cli.schemas import ApplicationResponse, ListResponseEnvelope
+from jobbergate_cli.schemas import ApplicationResponse
 from jobbergate_cli.subapps.applications.app import (
     HIDDEN_FIELDS,
     create,

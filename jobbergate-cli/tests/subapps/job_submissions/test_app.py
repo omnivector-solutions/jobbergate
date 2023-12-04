@@ -4,7 +4,7 @@ import shlex
 import httpx
 import pytest
 
-from jobbergate_cli.schemas import JobSubmissionResponse, ListResponseEnvelope
+from jobbergate_cli.schemas import JobSubmissionResponse
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS, create, delete, get_one, list_all, style_mapper
 from jobbergate_cli.text_tools import unwrap
 

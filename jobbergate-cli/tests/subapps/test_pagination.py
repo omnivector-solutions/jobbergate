@@ -1,8 +1,7 @@
 import httpx
-import pytest
 
 from jobbergate_cli.constants import PaginationChoices
-from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
+from jobbergate_cli.schemas import ListResponseEnvelope
 from jobbergate_cli.subapps.pagination import handle_pagination
 
 
