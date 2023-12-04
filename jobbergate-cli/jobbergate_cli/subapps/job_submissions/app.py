@@ -151,8 +151,8 @@ def list_all(
         params["from_job_script_id"] = from_job_script_id
 
     handle_pagination(
-        jg_ctx,
-        "/jobbergate/job-submissions",
+        jg_ctx=jg_ctx,
+        url_path="/jobbergate/job-submissions",
         abort_message="Couldn't retrieve job submissions list from API",
         params=params,
         title="Job Submission List",
