@@ -4,8 +4,14 @@ from typing import Any
 
 import sqlalchemy
 from pendulum.datetime import DateTime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConstrainedStr
 from pydantic.utils import GetterDict
+
+
+class LengthLimitedStr(ConstrainedStr):
+    """A custom ConstrainedStr to limit the length of a string."""
+
+    max_length = 255
 
 
 class IgnoreLazyGetterDict(GetterDict):
@@ -67,7 +73,7 @@ class ListParams(BaseModel):
 
     sort_ascending: bool = True
     user_only: bool = False
-    search: str | None
-    sort_field: str | None
+    search: LengthLimitedStr | None
+    sort_field: LengthLimitedStr | None
     include_archived: bool = False
     include_parent: bool = False
