@@ -19,6 +19,7 @@ def test_handle_pagination__one_page(respx_mock, dummy_domain, dummy_context, du
     handle_pagination(
         jg_ctx=dummy_context,
         url_path="/jobbergate/job-script-templates",
+        params={},
         title="Applications List",
         style_mapper=None,
         hidden_fields=None,
@@ -55,6 +56,7 @@ def test_handle_pagination__show_next_page(respx_mock, dummy_domain, dummy_conte
     handle_pagination(
         jg_ctx=dummy_context,
         url_path="/jobbergate/job-script-templates",
+        params={},
         title="Applications List",
         style_mapper=None,
         hidden_fields=None,
@@ -106,6 +108,7 @@ def test_handle_pagination__show_previous_page(
     handle_pagination(
         jg_ctx=dummy_context,
         url_path="/jobbergate/job-script-templates",
+        params={},
         title="Applications List",
         style_mapper=None,
         hidden_fields=None,

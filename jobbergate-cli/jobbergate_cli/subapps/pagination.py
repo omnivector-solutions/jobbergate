@@ -23,11 +23,15 @@ def handle_pagination(
     current_page = 1
 
     while True:
+        if params is None:
+            params = {}
+        params["page"] = current_page
+
         envelope = cast(
             ListResponseEnvelope,
             make_request(
                 jg_ctx.client,
-                url_path + f"?page={current_page}",
+                url_path,
                 "GET",
                 expected_status=200,
                 abort_message=abort_message,
