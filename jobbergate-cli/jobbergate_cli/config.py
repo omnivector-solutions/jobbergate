@@ -72,6 +72,7 @@ class Settings(BaseSettings):
         """
         Compute settings values that are based on other settings values.
         """
+        values["JOBBERGATE_CACHE_DIR"] = Path(values["JOBBERGATE_CACHE_DIR"]).expanduser().resolve()
         cache_dir = values["JOBBERGATE_CACHE_DIR"]
         cache_dir.mkdir(exist_ok=True, parents=True)
 
