@@ -3,7 +3,7 @@
 This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
-
+- Added pagination support for `list`` commands [ASP-3966]
 
 ## 4.2.0a3 -- 2023-11-30
 - Added support for on-site job submissions using the `sbatch` command [ASP-4238]
