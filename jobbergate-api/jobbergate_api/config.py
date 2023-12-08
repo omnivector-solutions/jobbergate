@@ -86,7 +86,7 @@ class Settings(BaseSettings):
     SENTRY_TRACING_SAMPLE_RATE: float = Field(1.0, gt=0.0, le=1.0)
 
     # Maximum number of bytes allowed for file uploads
-    MAX_UPLOAD_FILE_SIZE: int = 100 * 1024 * 1024  # 100 MB
+    MAX_UPLOAD_FILE_SIZE: int = 5 * 1024 * 1024  # 100 MB
 
     # Sendgrid configuration for email notification
     SENDGRID_FROM_EMAIL: Optional[str]

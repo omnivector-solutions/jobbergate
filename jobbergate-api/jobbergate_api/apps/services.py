@@ -8,7 +8,7 @@ from typing import Any, Generic, Protocol, TypeVar
 
 from botocore.response import StreamingBody
 from buzz import check_expressions, enforce_defined, handle_errors, require_condition
-from fastapi import HTTPException, UploadFile, status
+from fastapi import HTTPException, status
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from jinja2 import Template
@@ -19,7 +19,9 @@ from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped
 from sqlalchemy.sql.expression import Select
+from starlette.datastructures import UploadFile
 
+from jobbergate_api.config import settings
 from jobbergate_api.safe_types import Bucket
 from jobbergate_api.storage import render_sql, search_clause, sort_clause
 
@@ -528,12 +530,27 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
 
         if isinstance(upload_content, str):
             file_obj: Any = io.BytesIO(upload_content.encode())
+            size = file_obj.getbuffer().nbytes
         elif isinstance(upload_content, bytes):
             file_obj = io.BytesIO(upload_content)
-        elif hasattr(upload_content, "file"):
+            size = file_obj.getbuffer().nbytes
+        elif isinstance(upload_content, UploadFile):
             file_obj = upload_content.file
+            size = enforce_defined(
+                upload_content.size,  # double checking just because it can be None
+                "UploadFile has no size attribute",
+                raise_exc_class=ServiceError,
+                raise_kwargs=dict(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR),
+            )
         else:
             raise TypeError(f"Unsupported file type {type(upload_content)}")
+
+        require_condition(
+            size <= settings.MAX_UPLOAD_FILE_SIZE,
+            f"Uploaded files cannot exceed {settings.MAX_UPLOAD_FILE_SIZE} bytes, got {size} bytes",
+            raise_exc_class=ServiceError,
+            raise_kwargs=dict(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE),
+        )
 
         # Mypy doesn't like aioboto3 much
         await self.bucket.upload_fileobj(Fileobj=file_obj, Key=instance.file_key)  # type: ignore
