@@ -210,6 +210,27 @@ def test_BooleanList__success(dummy_render_class, mocker):
     )
 
 
+@pytest.mark.parametrize("parent_answer", [True, False])
+def test_BooleanList__same_variable_name(dummy_render_class, parent_answer):
+    """Assert that BooleanList works when multiple children have the same variable name."""
+    variablename = "child"
+    question_a = Text(variablename, message="Question A")
+    question_b = Text(variablename, message="Question B")
+
+    question = BooleanList("parent", message="Parent", whentrue=[question_a], whenfalse=[question_b], default=False)
+    prompts = question.make_prompts()
+
+    expected_answers = {"parent": parent_answer, variablename: "any-answer"}
+    dummy_render_class.prepared_input = expected_answers
+
+    actual_answers = prompt(prompts, answers=expected_answers, render=dummy_render_class())
+    assert actual_answers == expected_answers
+
+    expected_ignored_questions = [False, not parent_answer, parent_answer]
+    actual_ignored_questions = [q.ignore for q in prompts]
+    assert actual_ignored_questions == expected_ignored_questions
+
+
 def test_gather_config_values__basic(dummy_render_class, mocker):
     variablename1 = "foo"
     question1 = Text(variablename1, message="gimme the foo!")

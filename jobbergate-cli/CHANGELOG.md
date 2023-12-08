@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-cli
 ## Unreleased
 
 - Fixed the setting `CACHE_DIR` to expand the user home directory, allowing more flexibility on the path [ASP-4053]
+- Fixed the question `BooleanList` to allow subquestion to have the same name [ASP-4228]
 
 ## 4.2.0a3 -- 2023-11-30
 
