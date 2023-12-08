@@ -121,8 +121,8 @@ def list_all(
         help="Show all job submissions, even the ones owned by others",
     ),
     search: Optional[str] = typer.Option(None, help="Apply a search term to results"),
-    sort_order: SortOrder = typer.Option(SortOrder.UNSORTED, help="Specify sort order"),
-    sort_field: Optional[str] = typer.Option(None, help="The field by which results should be sorted"),
+    sort_order: SortOrder = typer.Option(SortOrder.DESCENDING, help="Specify sort order"),
+    sort_field: Optional[str] = typer.Option("id", help="The field by which results should be sorted"),
     from_job_script_id: Optional[int] = typer.Option(
         None,
         help="Filter job-submissions by the job-script-id they were created from.",

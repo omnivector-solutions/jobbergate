@@ -39,7 +39,7 @@ def test_list_all__renders_paginated_results(
         jg_ctx=dummy_context,
         url_path="/jobbergate/job-scripts",
         abort_message="Couldn't retrieve job scripts list from API",
-        params={"user_only": True},
+        params={"user_only": True, "sort_ascending": False, "sort_field": "id"},
         title="Job Scripts List",
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,

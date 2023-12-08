@@ -62,8 +62,8 @@ def list_all(
     show_all: bool = typer.Option(False, "--all", help="Show all applications, even the ones without identifier"),
     user_only: bool = typer.Option(False, "--user", help="Show only applications owned by the current user"),
     search: Optional[str] = typer.Option(None, help="Apply a search term to results"),
-    sort_order: SortOrder = typer.Option(SortOrder.UNSORTED, help="Specify sort order"),
-    sort_field: Optional[str] = typer.Option(None, help="The field by which results should be sorted"),
+    sort_order: SortOrder = typer.Option(SortOrder.DESCENDING, help="Specify sort order"),
+    sort_field: Optional[str] = typer.Option("id", help="The field by which results should be sorted"),
 ):
     """
     Show available applications

@@ -33,7 +33,7 @@ def test_list_all__renders_paginated_results(
         jg_ctx=dummy_context,
         url_path="/jobbergate/job-script-templates",
         abort_message="Couldn't retrieve applications list from API",
-        params={"include_null_identifier": False, "user_only": False},
+        params={"include_null_identifier": False, "user_only": False, "sort_ascending": False, "sort_field": "id"},
         title="Applications List",
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,
