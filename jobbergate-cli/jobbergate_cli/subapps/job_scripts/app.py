@@ -279,7 +279,7 @@ def render(
         actual_value=submit,
     )
 
-    if settings.SBATCH_PATH is None:
+    if settings.SBATCH_PATH is None or not submit:
         # Notice on-site submission will download the job script files anyway, so it is asked just in remote mode.
         download = question_helper(
             question_func=typer.confirm,

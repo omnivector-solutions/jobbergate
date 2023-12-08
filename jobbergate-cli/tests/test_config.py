@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import pydantic
 import pytest
@@ -29,3 +30,9 @@ def test_Validation_error__when_parameter_is_missing():
     finally:
         if original_value is not None:
             os.environ["OIDC_DOMAIN"] = original_value
+
+
+def test_cache_dir__expands_user_and_resolves():
+    settings = Settings(JOBBERGATE_CACHE_DIR="~/.jobbergate-cli-prod")
+    assert settings.JOBBERGATE_CACHE_DIR == Path.home() / ".jobbergate-cli-prod"
+    assert settings.JOBBERGATE_CACHE_DIR.is_absolute()
