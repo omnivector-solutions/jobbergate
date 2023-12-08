@@ -91,6 +91,9 @@ def handle_pagination(
                 ]
             )
 
+        if not answer:
+            return
+
         if answer["navigation"] == PaginationChoices.NEXT_PAGE:
             current_page += 1
         elif answer["navigation"] == PaginationChoices.PREVIOUS_PAGE:
