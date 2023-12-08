@@ -12,6 +12,7 @@ Questions will also resolve to their default values if running in "fast mode".
 
 from copy import deepcopy
 from functools import partial
+from itertools import chain
 from typing import Any, Callable, Dict, Optional, Type, TypeVar, cast
 
 import inquirer
@@ -243,8 +244,8 @@ class BooleanList(Confirm):
         :param whentrue:       List of questions to show if user answers 'false' on this question
         """
         super().__init__(variablename, message, **kwargs)
-        self.whentrue_child_map = {c.variablename: c for c in (whentrue if whentrue is not None else [])}
-        self.whenfalse_child_map = {c.variablename: c for c in (whenfalse if whenfalse is not None else [])}
+        self.whentrue_child = whentrue or list()
+        self.whenfalse_child = whenfalse or list()
 
     def ignore_child(self, child: QuestionBase, answers: Dict[str, Any]) -> bool:
         """
@@ -258,20 +259,11 @@ class BooleanList(Confirm):
             my_answer is not None,
             "Questions were asked out of order. Please check your Application for consistency",
         )
-        if my_answer is True:
-            if child.variablename in self.whentrue_child_map:
-                return False
-            elif child.variablename in self.whenfalse_child_map:
-                return True
-            else:
-                return False  # This child wasn't registered. This should not happen. But, don't ignore to be safe.
-        else:
-            if child.variablename in self.whentrue_child_map:
-                return True
-            elif child.variablename in self.whenfalse_child_map:
-                return False
-            else:
-                return False  # This child wasn't registered. This should not happen. But, don't ignore to be safe.
+        if (my_answer is True and child in self.whenfalse_child) or (
+            my_answer is False and child in self.whentrue_child
+        ):
+            return True
+        return False
 
     def make_ignore_partial(self, child: QuestionBase) -> Callable[[Dict[str, Any]], bool]:
         """
@@ -289,8 +281,7 @@ class BooleanList(Confirm):
         """
 
         retval = super().make_prompts(**override_kwargs)
-        all_children = [*self.whentrue_child_map.values(), *self.whenfalse_child_map.values()]
-        for child in all_children:
+        for child in chain(self.whentrue_child, self.whenfalse_child):
             retval.extend(child.make_prompts(ignore=self.make_ignore_partial(child)))
         return retval
 
