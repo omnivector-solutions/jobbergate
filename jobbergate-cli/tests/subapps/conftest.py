@@ -347,3 +347,34 @@ def dummy_render_class():
             return value
 
     return DummyRender
+
+
+@pytest.fixture
+def dummy_one_page_results():
+    return {
+        "items": [{"id": 1, "name": "Item 1"}],
+        "total": 1,
+        "page": 1,
+        "size": 50,
+        "pages": 1,
+    }
+
+
+@pytest.fixture
+def dummy_two_pages_results():
+    return [
+        {
+            "items": [{"id": i + 1, "name": f"Item {i + 1}"} for i in range(50)],
+            "total": 80,
+            "page": 1,
+            "size": 50,
+            "pages": 2,
+        },
+        {
+            "items": [{"id": i + 1, "name": f"Item {i + 1}"} for i in range(30)],
+            "total": 30,
+            "page": 2,
+            "size": 50,
+            "pages": 2,
+        },
+    ]

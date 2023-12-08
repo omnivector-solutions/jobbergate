@@ -4,16 +4,17 @@ Provide a ``typer`` app that can interact with Job Submission data in a cruddy m
 
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional
 
 import typer
 
 from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import handle_abort
-from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
+from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
+from jobbergate_cli.schemas import JobbergateContext
 from jobbergate_cli.subapps.job_submissions.tools import create_job_submission, fetch_job_submission_data
+from jobbergate_cli.subapps.pagination import handle_pagination
 
 
 # move hidden field logic to the API
@@ -120,8 +121,8 @@ def list_all(
         help="Show all job submissions, even the ones owned by others",
     ),
     search: Optional[str] = typer.Option(None, help="Apply a search term to results"),
-    sort_order: SortOrder = typer.Option(SortOrder.UNSORTED, help="Specify sort order"),
-    sort_field: Optional[str] = typer.Option(None, help="The field by which results should be sorted"),
+    sort_order: SortOrder = typer.Option(SortOrder.DESCENDING, help="Specify sort order"),
+    sort_field: Optional[str] = typer.Option("id", help="The field by which results should be sorted"),
     from_job_script_id: Optional[int] = typer.Option(
         None,
         help="Filter job-submissions by the job-script-id they were created from.",
@@ -146,22 +147,11 @@ def list_all(
     if from_job_script_id is not None:
         params["from_job_script_id"] = from_job_script_id
 
-    envelope = cast(
-        ListResponseEnvelope,
-        make_request(
-            jg_ctx.client,
-            "/jobbergate/job-submissions",
-            "GET",
-            expected_status=200,
-            abort_message="Couldn't retrieve job submissions list from API",
-            support=True,
-            response_model_cls=ListResponseEnvelope,
-            params=params,
-        ),
-    )
-    render_list_results(
-        jg_ctx,
-        envelope,
+    handle_pagination(
+        jg_ctx=jg_ctx,
+        url_path="/jobbergate/job-submissions",
+        abort_message="Couldn't retrieve job submissions list from API",
+        params=params,
         title="Job Submission List",
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,

@@ -11,9 +11,9 @@ import typer
 from jobbergate_cli.config import settings
 from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import Abort, handle_abort
-from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
+from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobbergateContext, JobScriptCreateRequest, JobScriptResponse, ListResponseEnvelope
+from jobbergate_cli.schemas import JobbergateContext, JobScriptCreateRequest, JobScriptResponse
 from jobbergate_cli.subapps.job_scripts.tools import (
     download_job_script_files,
     fetch_job_script_data,
@@ -23,6 +23,7 @@ from jobbergate_cli.subapps.job_scripts.tools import (
 )
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
 from jobbergate_cli.subapps.job_submissions.tools import create_job_submission
+from jobbergate_cli.subapps.pagination import handle_pagination
 from jobbergate_cli.text_tools import dedent
 
 
@@ -50,8 +51,8 @@ def list_all(
     ctx: typer.Context,
     show_all: bool = typer.Option(False, "--all", help="Show all job scripts, even the ones owned by others"),
     search: Optional[str] = typer.Option(None, help="Apply a search term to results"),
-    sort_order: SortOrder = typer.Option(SortOrder.UNSORTED, help="Specify sort order"),
-    sort_field: Optional[str] = typer.Option(None, help="The field by which results should be sorted"),
+    sort_order: SortOrder = typer.Option(SortOrder.DESCENDING, help="Specify sort order"),
+    sort_field: Optional[str] = typer.Option("id", help="The field by which results should be sorted"),
     from_application_id: Optional[int] = typer.Option(
         None,
         help="Filter job-scripts by the application-id they were created from.",
@@ -76,22 +77,11 @@ def list_all(
     if from_application_id is not None:
         params["from_job_script_template_id"] = from_application_id
 
-    envelope = cast(
-        ListResponseEnvelope,
-        make_request(
-            jg_ctx.client,
-            "/jobbergate/job-scripts",
-            "GET",
-            expected_status=200,
-            abort_message="Couldn't retrieve job scripts list from API",
-            support=True,
-            response_model_cls=ListResponseEnvelope,
-            params=params,
-        ),
-    )
-    render_list_results(
-        jg_ctx,
-        envelope,
+    handle_pagination(
+        jg_ctx=jg_ctx,
+        url_path="/jobbergate/job-scripts",
+        abort_message="Couldn't retrieve job scripts list from API",
+        params=params,
         title="Job Scripts List",
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,

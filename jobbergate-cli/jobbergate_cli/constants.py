@@ -49,3 +49,19 @@ class FileType(str, Enum):
 
     ENTRYPOINT = "ENTRYPOINT"
     SUPPORT = "SUPPORT"
+
+
+class PaginationChoices(str, Enum):
+    """
+    Enum describing the type of pagination that is available for list commands.
+    """
+
+    PREVIOUS_PAGE = "Previous page"
+    NEXT_PAGE = "Next page"
+    EXIT = "Exit"
+
+    def __str__(self) -> str:
+        """
+        Return the string representation of the enum.
+        """
+        return self.value

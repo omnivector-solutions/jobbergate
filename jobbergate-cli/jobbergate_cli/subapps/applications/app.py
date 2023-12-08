@@ -10,10 +10,11 @@ import typer
 
 from jobbergate_cli.constants import OV_CONTACT, SortOrder
 from jobbergate_cli.exceptions import handle_abort
-from jobbergate_cli.render import StyleMapper, render_list_results, render_single_result, terminal_message
+from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
+from jobbergate_cli.schemas import JobbergateContext
 from jobbergate_cli.subapps.applications.tools import fetch_application_data, save_application_files, upload_application
+from jobbergate_cli.subapps.pagination import handle_pagination
 
 
 # TODO: move hidden field logic to the API
@@ -61,8 +62,8 @@ def list_all(
     show_all: bool = typer.Option(False, "--all", help="Show all applications, even the ones without identifier"),
     user_only: bool = typer.Option(False, "--user", help="Show only applications owned by the current user"),
     search: Optional[str] = typer.Option(None, help="Apply a search term to results"),
-    sort_order: SortOrder = typer.Option(SortOrder.UNSORTED, help="Specify sort order"),
-    sort_field: Optional[str] = typer.Option(None, help="The field by which results should be sorted"),
+    sort_order: SortOrder = typer.Option(SortOrder.DESCENDING, help="Specify sort order"),
+    sort_field: Optional[str] = typer.Option("id", help="The field by which results should be sorted"),
 ):
     """
     Show available applications
@@ -84,22 +85,11 @@ def list_all(
     if sort_field is not None:
         params["sort_field"] = sort_field
 
-    envelope = cast(
-        ListResponseEnvelope,
-        make_request(
-            jg_ctx.client,
-            "/jobbergate/job-script-templates",
-            "GET",
-            expected_status=200,
-            abort_message="Couldn't retrieve applications list from API",
-            support=True,
-            response_model_cls=ListResponseEnvelope,
-            params=params,
-        ),
-    )
-    render_list_results(
-        jg_ctx,
-        envelope,
+    handle_pagination(
+        jg_ctx=jg_ctx,
+        url_path="/jobbergate/job-script-templates",
+        abort_message="Couldn't retrieve applications list from API",
+        params=params,
         title="Applications List",
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,
