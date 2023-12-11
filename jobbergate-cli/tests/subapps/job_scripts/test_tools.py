@@ -217,7 +217,7 @@ def test_question_helper__return_actual_value_when_actual_value_is_not_none():
         == "bar"
     )
 
-    assert question_func.not_called()
+    assert question_func.call_count == 0
 
     assert (
         question_helper(
@@ -230,7 +230,7 @@ def test_question_helper__return_actual_value_when_actual_value_is_not_none():
         == "bar"
     )
 
-    assert question_func.not_called()
+    assert question_func.call_count == 0
 
 
 def test_question_helper__return_default_when_actual_value_is_none_on_fast_mode():
@@ -247,7 +247,7 @@ def test_question_helper__return_default_when_actual_value_is_none_on_fast_mode(
         == "foo"
     )
 
-    assert question_func.not_called()
+    assert question_func.call_count == 0
 
 
 def test_question_helper__ask_question_when_actual_value_is_none_on_non_fast_mode():
@@ -261,7 +261,7 @@ def test_question_helper__ask_question_when_actual_value_is_none_on_non_fast_mod
         actual_value=None,
     )
 
-    assert question_func.called_once_with("Give me foo", default="foo")
+    question_func.assert_called_once_with("Give me foo", default="foo")
 
 
 class TestDownloadJobScriptFiles:

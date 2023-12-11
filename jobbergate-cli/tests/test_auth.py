@@ -516,48 +516,53 @@ def test_fetch_auth_tokens__success(respx_mock, dummy_context):
     assert token_set.refresh_token == refresh_token
 
 
-def test_show_login_message__standard_screen(mocker):
-    """
-    Assert that the ``show_login_message()`` function will call ``_show_login_standard_screen()``.
-    """
-    verification_uri = "https://example.com"
-    console_width = len(verification_uri) + 7
+class TestShowLoginMessage:
+    @pytest.fixture()
+    def mocked_helpers(self, mocker):
+        mocker.patch("jobbergate_cli.auth.open_on_browser", return_value=False)
+        mocker.patch("jobbergate_cli.auth.copy_to_clipboard", return_value=False)
 
-    mocked_console = mocker.MagicMock()
-    mocked_console.width = console_width
-    mocker.patch("jobbergate_cli.auth.Console", return_value=mocked_console)
+    def test_show_login_message__standard_screen(self, mocker, mocked_helpers):
+        """
+        Assert that the ``show_login_message()`` function will call ``_show_login_standard_screen()``.
+        """
+        verification_uri = "https://example.com"
+        console_width = len(verification_uri) + 7
 
-    mocked_show_on_narrow_screen = mocker.patch("jobbergate_cli.auth._show_login_narrow_screen")
-    mocked_show_on_standard_screen = mocker.patch("jobbergate_cli.auth._show_login_standard_screen")
+        mocked_console = mocker.MagicMock()
+        mocked_console.width = console_width
+        mocker.patch("jobbergate_cli.auth.Console", return_value=mocked_console)
 
-    show_login_message(verification_uri)
+        mocked_show_on_narrow_screen = mocker.patch("jobbergate_cli.auth._show_login_narrow_screen")
+        mocked_show_on_standard_screen = mocker.patch("jobbergate_cli.auth._show_login_standard_screen")
 
-    assert mocked_show_on_narrow_screen.call_count == 0
-    assert mocked_show_on_standard_screen.called_once_with(verification_uri)
+        show_login_message(verification_uri)
 
-    _show_login_standard_screen(verification_uri)
+        assert mocked_show_on_narrow_screen.call_count == 0
+        mocked_show_on_standard_screen.assert_called_once_with(verification_uri)
 
+        _show_login_standard_screen(verification_uri)
 
-def test_show_login_message__narrow_screen(mocker):
-    """
-    Assert that the ``show_login_message()`` function will call ``_show_login_narrow_screen()``.
-    """
-    verification_uri = "https://example.com"
-    console_width = len(verification_uri) + 7 - 1
+    def test_show_login_message__narrow_screen(self, mocker, mocked_helpers):
+        """
+        Assert that the ``show_login_message()`` function will call ``_show_login_narrow_screen()``.
+        """
+        verification_uri = "https://example.com"
+        console_width = len(verification_uri) + 7 - 1
 
-    mocked_console = mocker.MagicMock()
-    mocked_console.width = console_width
-    mocker.patch("jobbergate_cli.auth.Console", return_value=mocked_console)
+        mocked_console = mocker.MagicMock()
+        mocked_console.width = console_width
+        mocker.patch("jobbergate_cli.auth.Console", return_value=mocked_console)
 
-    mocked_show_on_narrow_screen = mocker.patch("jobbergate_cli.auth._show_login_narrow_screen")
-    mocked_show_on_standard_screen = mocker.patch("jobbergate_cli.auth._show_login_standard_screen")
+        mocked_show_on_narrow_screen = mocker.patch("jobbergate_cli.auth._show_login_narrow_screen")
+        mocked_show_on_standard_screen = mocker.patch("jobbergate_cli.auth._show_login_standard_screen")
 
-    show_login_message(verification_uri)
+        show_login_message(verification_uri)
 
-    assert mocked_show_on_narrow_screen.called_once_with(verification_uri, mocked_console)
-    assert mocked_show_on_standard_screen.call_count == 0
+        assert mocked_show_on_standard_screen.call_count == 0
+        mocked_show_on_narrow_screen.assert_called_once_with(verification_uri, mocked_console)
 
-    _show_login_narrow_screen(verification_uri, Console())
+        _show_login_narrow_screen(verification_uri, Console())
 
 
 def test_fetch_auth_tokens__raises_Abort_when_it_times_out_waiting_for_the_user(respx_mock, dummy_context, mocker):

@@ -389,7 +389,7 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(
     )
     assert result.exit_code == 0, f"update failed: {result.stdout}"
     assert update_route.called
-    assert mocked_upload.not_called
+    assert mocked_upload.call_count == 0
 
     mocked_render.assert_called_once_with(
         dummy_context,
@@ -523,10 +523,10 @@ class TestDownloadApplicationFiles:
         with mock.patch.object(pathlib.Path, "cwd", return_value=tmp_path):
             result = cli_runner.invoke(test_app, shlex.split("download --id=1"))
 
-        assert mocked_save_files.called_with(
+        mocked_save_files.assert_called_with(
             dummy_context,
-            ApplicationResponse(**dummy_application_data[0]),
-            tmp_path,
+            application_data=ApplicationResponse(**dummy_application_data[0]),
+            destination_path=tmp_path,
         )
 
         assert result.exit_code == 0, f"download failed: {result.stdout}"
@@ -569,10 +569,10 @@ class TestDownloadApplicationFiles:
         with mock.patch.object(pathlib.Path, "cwd", return_value=tmp_path):
             result = cli_runner.invoke(test_app, shlex.split(f"download --identifier={identifier}"))
 
-        assert mocked_save_files.called_with(
+        mocked_save_files.assert_called_with(
             dummy_context,
-            ApplicationResponse(**dummy_application_data[0]),
-            tmp_path,
+            application_data=ApplicationResponse(**dummy_application_data[0]),
+            destination_path=tmp_path,
         )
 
         assert result.exit_code == 0, f"download failed: {result.stdout}"
