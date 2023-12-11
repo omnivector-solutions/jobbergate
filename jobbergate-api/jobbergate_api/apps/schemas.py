@@ -1,17 +1,14 @@
 """Define app-wide, reusable pydantic schemas."""
 
-from typing import Any
+from typing import Annotated, Any
 
 import sqlalchemy
 from pendulum.datetime import DateTime
-from pydantic import BaseModel, ConstrainedStr
+from pydantic import BaseModel, Field
 from pydantic.utils import GetterDict
 
-
-class LengthLimitedStr(ConstrainedStr):
-    """A custom ConstrainedStr to limit the length of a string."""
-
-    max_length = 255
+# Make both Pydantic and mypy happy:
+LengthLimitedStr = Annotated[str, Field(max_length=255)]
 
 
 class IgnoreLazyGetterDict(GetterDict):

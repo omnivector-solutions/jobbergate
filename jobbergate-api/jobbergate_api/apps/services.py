@@ -8,7 +8,7 @@ from typing import Any, Generic, Protocol, TypeVar
 
 from botocore.response import StreamingBody
 from buzz import check_expressions, enforce_defined, handle_errors, require_condition
-from fastapi import HTTPException, status
+from fastapi import HTTPException, UploadFile, status
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from jinja2 import Template
@@ -19,7 +19,6 @@ from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped
 from sqlalchemy.sql.expression import Select
-from starlette.datastructures import UploadFile
 
 from jobbergate_api.config import settings
 from jobbergate_api.safe_types import Bucket
@@ -534,7 +533,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         elif isinstance(upload_content, bytes):
             file_obj = io.BytesIO(upload_content)
             size = file_obj.getbuffer().nbytes
-        elif isinstance(upload_content, UploadFile):
+        elif hasattr(upload_content, "file") and hasattr(upload_content, "size"):
             file_obj = upload_content.file
             size = enforce_defined(
                 upload_content.size,  # double checking just because it can be None
