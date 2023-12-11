@@ -6,6 +6,7 @@ from typing import Optional, Union
 
 import pendulum
 import pydantic
+from buzz import require_condition
 from rich.progress import Progress
 
 from jobbergate_cli.exceptions import JobbergateCliError
@@ -97,8 +98,13 @@ class TimeLoop:
         self.counter += 1
         self.last_moment = self.moment
         self.moment: pendulum.DateTime = pendulum.now()
-        elapsed: pendulum.Duration = self.moment - self.last_moment
-        total_elapsed: pendulum.Duration = self.moment - self.advent
+        require_condition(
+            all(isinstance(x, pendulum.DateTime) for x in (self.advent, self.last_moment, self.moment)),
+            "The time-loop has not been initialized",
+            TypeError,
+        )
+        elapsed: pendulum.Duration = self.moment - self.last_moment  # type: ignore
+        total_elapsed: pendulum.Duration = self.moment - self.advent  # type: ignore
 
         for task_id in self.progress.task_ids:
             self.progress.advance(task_id, elapsed.total_seconds())
