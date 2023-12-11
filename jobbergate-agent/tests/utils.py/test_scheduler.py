@@ -23,8 +23,9 @@ def test_schedule_tasks__success(mocked_plugins):
     scheduler = AsyncIOScheduler()
     schedule_tasks(scheduler)
 
-    assert mocked_plugins.called_once_with()
-    assert all(m.called_once_with(scheduler=scheduler) for m in mocked_functions.values())
+    mocked_plugins.assert_called_once_with("tasks")
+    assert all(m.call_count == 1 for m in mocked_functions.values())
+    assert all(m.call_args(scheduler=scheduler) for m in mocked_functions.values())
 
 
 @mock.patch("jobbergate_agent.utils.scheduler.load_plugins")
@@ -40,7 +41,7 @@ def test_schedule_tasks__fails(mocked_plugins):
     with pytest.raises(RuntimeError, match="^Failed to execute"):
         schedule_tasks(scheduler)
 
-    assert mocked_plugins.called_once_with()
+    mocked_plugins.assert_called_once_with("tasks")
 
 
 def test_scheduler_end_to_end(tweak_settings):

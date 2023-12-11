@@ -15,7 +15,7 @@ test: install ## Run the suite of unit tests
 lint: install ## Lint the code using black, isort and flake8
 	poetry run black --check ${PACKAGE_NAME} tests
 	poetry run isort --check ${PACKAGE_NAME} tests
-	poetry run pflake8 ${PACKAGE_NAME} tests
+	poetry run flake8 ${PACKAGE_NAME} tests
 
 .PHONY: mypy
 mypy: install ## Run static typer checks

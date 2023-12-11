@@ -20,13 +20,12 @@ packages = [{ include = "jobbergate_agent" }]
 "Changelog" = "https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-agent/CHANGELOG.rst"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.8.1"
 jobbergate-core = { path = "../jobbergate-core", develop = true }
 apscheduler = "3.10.3"
 httpx = "0.24.1"
 importlib-metadata = { version = "^6.8.0", python = "<3.10" }
 loguru = "0.6.0"
-pendulum = "^2.1.2"
 py-buzz = "^4.0.0"
 pydantic = "1.10.12"
 pyjwt = "^2.8.0"
@@ -56,10 +55,11 @@ single-user-mapper = "jobbergate_agent.utils.user_mapper:SingleUserMapper"
 [tool.poetry.dev-dependencies]
 asynctest = "^0.13.0"
 black = "^23.1"
+flake8 = "^6.1"
+flake8-pyproject = "^1.2.3"
 freezegun = "^1.2.2"
 isort = "^5.9.3"
 mypy = "^0.931"
-pyproject-flake8 = "^3.8"
 pytest-asyncio = "^0.18.2"
 pytest-cov = "^3.0.0"
 pytest-env = "^0.6.2"
