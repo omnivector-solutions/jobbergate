@@ -11,11 +11,11 @@ def time_now():
     Return a pendulum instance with a fixed time.
     """
     time_now = pendulum.datetime(2020, 1, 1, tz="UTC")
-    pendulum.set_test_now(time_now)
+    pendulum.travel_to(time_now)
 
     yield time_now
 
-    pendulum.set_test_now(None)
+    pendulum.travel_back()
 
 
 @pytest.fixture(scope="session")
@@ -44,7 +44,7 @@ def valid_token(tmp_path, jwt_token):
     return Token(
         content=jwt_token(exp=pendulum.tomorrow().int_timestamp),
         cache_directory=tmp_path,
-        label=TokenType.ACCESS,
+        label=TokenType.ACCESS.value,
     )
 
 
@@ -56,5 +56,5 @@ def expired_token(tmp_path, jwt_token):
     return Token(
         content=jwt_token(exp=pendulum.yesterday().int_timestamp),
         cache_directory=tmp_path,
-        label=TokenType.ACCESS,
+        label=TokenType.ACCESS.value,
     )
