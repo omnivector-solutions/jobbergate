@@ -4,8 +4,10 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+- Added support for Python 3.12
 
 ## 4.2.0a4 -- 2023-12-11
+
 - Fixed the setting `CACHE_DIR` to expand the user home directory, allowing more flexibility on the path [ASP-4053]
 - Fixed the question `BooleanList` to allow subquestion to have the same name [ASP-4228]
 - Added pagination support for `list` commands [ASP-3966]
