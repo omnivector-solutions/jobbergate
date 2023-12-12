@@ -45,7 +45,7 @@ def test_handle_abort__with_all_options(capsys, caplog, mocker, dummy_handled_fu
 
     assert "volatile log message" in caplog.text
     assert f"Original exception: {dummy_exception}" in caplog.text
-    assert mocked_sentry_capture.called_once_with(dummy_exception)
+    assert mocked_sentry_capture.call_count == 0
 
 
 def test_handle_abort__without_SENTRY_DNS_does_not_push_to_sentry(mocker, tweak_settings, dummy_handled_function):
@@ -80,4 +80,4 @@ def test_handle_abort__does_not_include_subject_message_if_subject_is_None(mocke
     with pytest.raises(typer.Exit):
         dummy_handled_function(message="Bang!", subject=None)
 
-    assert mocked_panel.called_once_with("Bang!")
+    assert mocked_panel.call_count == 1

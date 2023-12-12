@@ -85,8 +85,8 @@ class JobbergateAuthHandler:
     _refresh_token: Token = field(init=False, repr=False)
 
     def __post_init__(self):
-        self._access_token = Token(cache_directory=self.cache_directory, label=TokenType.ACCESS)
-        self._refresh_token = Token(cache_directory=self.cache_directory, label=TokenType.REFRESH)
+        self._access_token = Token(cache_directory=self.cache_directory, label=TokenType.ACCESS.value)
+        self._refresh_token = Token(cache_directory=self.cache_directory, label=TokenType.REFRESH.value)
 
     def __call__(self, request):
         """
@@ -281,7 +281,7 @@ class JobbergateAuthHandler:
     def _process_tokens_from_response(self, response):
         response_data = response.json()
 
-        tokens_content = {t: response_data.get(f"{t}_token") for t in TokenType}
+        tokens_content = {t: response_data.get(f"{t.value}_token") for t in TokenType}
         AuthenticationError.require_condition(
             all(tokens_content.values()), "Not all tokens were included in the response"
         )

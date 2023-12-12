@@ -132,8 +132,8 @@ class TestJobbergateAuthHandlerLoadFromCache:
         If a token is already loaded in the class, it should be replaced.
         """
         cached_tokens = {
-            TokenType.ACCESS: expired_token.replace(label=TokenType.ACCESS),
-            TokenType.REFRESH: expired_token.replace(label=TokenType.REFRESH),
+            TokenType.ACCESS: expired_token.replace(label=TokenType.ACCESS.value),
+            TokenType.REFRESH: expired_token.replace(label=TokenType.REFRESH.value),
         }
         for token in cached_tokens.values():
             token.save_to_cache()

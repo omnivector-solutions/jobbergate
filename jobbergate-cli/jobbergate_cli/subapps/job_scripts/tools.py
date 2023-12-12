@@ -326,7 +326,7 @@ def upload_job_script_files(
             int,
             make_request(
                 client,
-                f"/jobbergate/job-scripts/{job_script_id}/upload/{FileType.ENTRYPOINT}",
+                f"/jobbergate/job-scripts/{job_script_id}/upload/{FileType.ENTRYPOINT.value}",
                 "PUT",
                 expect_response=False,
                 abort_message="Request to upload job-script files was not accepted by the API",
@@ -343,7 +343,7 @@ def upload_job_script_files(
                     int,
                     make_request(
                         client,
-                        f"/jobbergate/job-scripts/{job_script_id}/upload/{FileType.SUPPORT}",
+                        f"/jobbergate/job-scripts/{job_script_id}/upload/{FileType.SUPPORT.value}",
                         "PUT",
                         expect_response=False,
                         abort_message="Request to upload job-script supporting file was not accepted by the API",

@@ -24,7 +24,7 @@ class TestToken:
         token = Token(
             content=token_content,
             cache_directory=tmp_path,
-            label=TokenType.ACCESS,
+            label=TokenType.ACCESS.value,
         )
 
         assert token.content == token_content
@@ -40,7 +40,7 @@ class TestToken:
 
         token = Token(
             cache_directory=tmp_path,
-            label=TokenType.ACCESS,
+            label=TokenType.ACCESS.value,
         )
 
         assert token.content == ""
@@ -59,7 +59,7 @@ class TestToken:
         token = Token(
             content=token_content,
             cache_directory=tmp_path,
-            label=TokenType.ACCESS,
+            label=TokenType.ACCESS.value,
         )
 
         assert token.file_path.exists() is False
@@ -78,7 +78,7 @@ class TestToken:
         token = Token(
             content=token_content,
             cache_directory=token_directory,
-            label=TokenType.ACCESS,
+            label=TokenType.ACCESS.value,
         )
 
         with pytest.raises(TokenError, match="Parent directory does not exist"):
@@ -96,7 +96,7 @@ class TestToken:
             "name": "John Doe",
             "exp": time_now.int_timestamp,
         }
-        token_label = TokenType.ACCESS
+        token_label = TokenType.ACCESS.value
         token_path = tmp_path / "access.token"
         token_content = jwt_token(**token_data)
         token_path.write_text(token_content)
@@ -123,7 +123,7 @@ class TestToken:
         assert token_path.exists() is False
 
         with pytest.raises(TokenError, match="Token file was not found"):
-            Token(cache_directory=tmp_path, label=TokenType.ACCESS).load_from_cache()
+            Token(cache_directory=tmp_path, label=TokenType.ACCESS.value).load_from_cache()
 
     def test_clear_cache__success(self, tmp_path, jwt_token):
         """
@@ -137,7 +137,7 @@ class TestToken:
         token = Token(
             content=token_content,
             cache_directory=tmp_path,
-            label=TokenType.ACCESS,
+            label=TokenType.ACCESS.value,
         )
 
         assert token_path.is_file() is True
@@ -155,7 +155,7 @@ class TestToken:
         token = Token(
             content=token_content,
             cache_directory=tmp_path,
-            label=TokenType.ACCESS,
+            label=TokenType.ACCESS.value,
         )
 
         assert token_path.is_file() is False
@@ -171,7 +171,7 @@ class TestToken:
             Token(
                 content=test_content,
                 cache_directory=tmp_path,
-                label=TokenType.ACCESS,
+                label=TokenType.ACCESS.value,
             )
 
     @pytest.mark.parametrize(
@@ -187,7 +187,7 @@ class TestToken:
         token = Token(
             content=jwt_token(exp=expiration_date),
             cache_directory=tmp_path,
-            label=TokenType.ACCESS,
+            label=TokenType.ACCESS.value,
         )
 
         assert token.is_expired() == is_expired
@@ -210,7 +210,7 @@ class TestToken:
             token_content = expired_token.content if is_expired else valid_token.content
         token = Token(
             cache_directory=tmp_path,
-            label=TokenType.ACCESS,
+            label=TokenType.ACCESS.value,
             content=token_content,
         )
 
@@ -225,7 +225,7 @@ class TestToken:
         token = Token(
             content=token_content,
             cache_directory=tmp_path,
-            label=TokenType.ACCESS,
+            label=TokenType.ACCESS.value,
         )
 
         assert token.bearer_token == f"Bearer {token_content}"

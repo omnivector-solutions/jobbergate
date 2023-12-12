@@ -242,7 +242,7 @@ def upload_application(
                 int,
                 make_request(
                     jg_ctx.client,
-                    f"/jobbergate/job-script-templates/{identification}/upload/template/{file_type}",
+                    f"/jobbergate/job-script-templates/{identification}/upload/template/{file_type.value}",
                     "PUT",
                     expect_response=False,
                     abort_message="Request to upload application files was not accepted by the API",

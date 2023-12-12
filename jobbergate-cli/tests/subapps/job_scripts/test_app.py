@@ -205,7 +205,6 @@ def test_render__non_fast_mode_and_job_submission(
     application_response = ApplicationResponse(**dummy_application_data[0])
 
     job_script_data = dummy_job_script_data[0]
-    job_script_id = job_script_data["id"]
 
     job_submission_data = dummy_job_submission_data[0]
 
@@ -271,17 +270,21 @@ def test_render__non_fast_mode_and_job_submission(
         input=f"y\nn\n{settings.DEFAULT_CLUSTER_NAME}\n.\n",
     )
     assert result.exit_code == 0, f"render failed: {result.stdout}"
-    assert mocked_fetch_application_data.called_once_with(
+    mocked_fetch_application_data.assert_called_once_with(
         dummy_context,
         id=application_response.application_id,
         identifier=None,
     )
-    assert mocked_create_job_submission.called_once_with(
-        dummy_context,
-        job_script_id,
-        "dummy-name",
+    mocked_create_job_submission.assert_called_once_with(
+        jg_ctx=dummy_context,
+        job_script_id=job_script_data["id"],
+        name=job_script_data["name"],
+        description=job_script_data["description"],
+        cluster_name=None,
+        execution_directory=None,
+        execution_parameters_file=None,
     )
-    assert render_route.called
+    assert render_route.call_count == 1
     content = json.loads(render_route.calls.last.request.content)
     assert content == {
         "create_request": {"name": "dummy-name", "description": None},
@@ -395,12 +398,12 @@ def test_render__with_fast_mode_and_no_job_submission(
         ),
     )
     assert result.exit_code == 0, f"render failed: {result.stdout}"
-    assert mocked_fetch_application_data.called_once_with(
+    mocked_fetch_application_data.assert_called_once_with(
         dummy_context,
         id=application_response.application_id,
         identifier=None,
     )
-    assert render_route.called
+    assert render_route.call_count == 1
     content = json.loads(render_route.calls.last.request.content)
     assert content == {
         "create_request": {"name": "dummy-name", "description": None},
@@ -452,10 +455,7 @@ def test_render__submit_is_none_and_cluster_name_is_defined(
         f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.application_id}"
     )
     render_route.mock(
-        return_value=httpx.Response(
-            httpx.codes.CREATED,
-            json=job_script_data,
-        ),
+        return_value=httpx.Response(httpx.codes.CREATED, json=job_script_data),
     )
 
     sbatch_params = " ".join(f"--sbatch-params={i}" for i in (1, 2, 3))
@@ -475,9 +475,12 @@ def test_render__submit_is_none_and_cluster_name_is_defined(
 
     test_app = make_test_app("render", render)
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
-    mocked_abort = mocker.patch("jobbergate_cli.subapps.job_scripts.app.Abort")
+    mocked_fetch_application_data = mocker.patch(
+        "jobbergate_cli.subapps.job_scripts.app.render_job_script",
+        return_value=JobScriptResponse(**job_script_data),
+    )
 
-    cli_runner.invoke(
+    result = cli_runner.invoke(
         test_app,
         shlex.split(
             unwrap(
@@ -491,15 +494,16 @@ def test_render__submit_is_none_and_cluster_name_is_defined(
             )
         ),
     )
-    assert mocked_render.called_once_with(
+    assert mocked_fetch_application_data.call_count == 1
+    mocked_render.assert_called_once_with(
         dummy_context,
         JobScriptResponse(**job_script_data),
         title="Created Job Script",
         hidden_fields=HIDDEN_FIELDS,
     )
-    assert mocked_abort.called_once_with(
-        "You must specify --cluster-name and --execution-directory only on submit mode.",
-    )
+
+    assert result.exit_code == 1, f"render failed: {result.stdout}"
+    assert "Incorrect parameters" in result.stdout
 
 
 @pytest.mark.parametrize("id_flag,separator", [("--id", "="), ("-i", " ")])
