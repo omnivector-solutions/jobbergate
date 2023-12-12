@@ -3,7 +3,7 @@
 This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
-
+- Add instructions to checkbox questions [ASP-4042]
 
 ## 4.2.0a4 -- 2023-12-11
 - Fixed the setting `CACHE_DIR` to expand the user home directory, allowing more flexibility on the path [ASP-4053]
