@@ -200,7 +200,7 @@ class Checkbox(QuestionBase):
 
         super().__init__(
             variablename,
-            message + " (press CTRL+A to SELECT ALL or CTRL+R to DESELECT ALL)",
+            message + " [SPACE: Select | ENTER: Confirm | CTRL+A: Select all | CTRL+R: Unselect all]",
             inquirer_type=inquirer.Checkbox,
             **kwargs,
         )

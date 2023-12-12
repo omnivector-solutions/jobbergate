@@ -3,7 +3,7 @@
 This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
-
+- Add instructions to checkbox questions [ASP-4042]
 
 ## 4.2.0a5 -- 2023-12-12
 - Added support for Python 3.12
