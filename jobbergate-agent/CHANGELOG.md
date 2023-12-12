@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
 
+
+## 4.2.0a5 -- 2023-12-12
 - Added support for Python 3.12
 
 ## 4.2.0a4 -- 2023-12-11
