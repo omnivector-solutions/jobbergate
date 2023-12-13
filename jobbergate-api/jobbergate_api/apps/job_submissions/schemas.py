@@ -266,7 +266,7 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     standard_output: Optional[LengthLimitedStr] = Field(
         description="Instruct Slurm to connect the batch script's standard output directly to the file name."
     )
-    tasks: Optional[int] = Field(
+    tasks: Optional[NonNegativeInt] = Field(
         description=(
             "Advises the Slurm controller that job steps run within the allocation "
             "will launch a maximum of number tasks and to provide for sufficient resources."
