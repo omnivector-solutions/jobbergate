@@ -10,7 +10,7 @@ import pydantic
 from pydantic import BaseModel
 
 from jobbergate_api.apps.constants import FileType
-from jobbergate_api.apps.schemas import TableResource
+from jobbergate_api.apps.schemas import LengthLimitedStr, TableResource
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
 job_template_meta_mapper = MetaMapper(
@@ -107,10 +107,10 @@ class RunTimeConfig(BaseModel):
 class JobTemplateCreateRequest(BaseModel):
     """Schema for the request to create a job template."""
 
-    name: str
-    identifier: str | None
-    description: str | None
-    template_vars: dict[str, Any] | None
+    name: LengthLimitedStr
+    identifier: LengthLimitedStr | None
+    description: LengthLimitedStr | None
+    template_vars: dict[LengthLimitedStr, Any] | None
 
     class Config:
         schema_extra = job_template_meta_mapper
@@ -119,10 +119,10 @@ class JobTemplateCreateRequest(BaseModel):
 class JobTemplateUpdateRequest(BaseModel):
     """Schema for the request to update a job template."""
 
-    name: str | None
-    identifier: str | None
-    description: str | None
-    template_vars: dict[str, Any] | None
+    name: LengthLimitedStr | None
+    identifier: LengthLimitedStr | None
+    description: LengthLimitedStr | None
+    template_vars: dict[LengthLimitedStr, Any] | None
     is_archived: bool | None
 
     class Config:

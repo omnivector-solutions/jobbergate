@@ -511,7 +511,7 @@ def make_upload_file(tmp_path):
         file_path = tmp_path / filename
         file_path.write_text(content)
         with open(file_path, "rb") as file_handle:
-            yield UploadFile(file_handle, filename=file_path.name)
+            yield UploadFile(file_handle, filename=file_path.name, size=file_path.stat().st_size)
 
     return _helper
 
@@ -652,6 +652,28 @@ class TestFileService:
 
         file_data = await dummy_file_service.get_file_content(upserted_instance)
         assert file_data == "dummy bytes content".encode()
+
+    async def test_upsert__raises_500_no_size_attribute(self, make_upload_file, dummy_file_service):
+        """
+        Test that the ``upsert()`` method raises a 413 error if the file is too large.
+        """
+        dummy_upload_file = make_upload_file()
+        with make_upload_file(content="dummy upload content") as dummy_upload_file:
+            dummy_upload_file.size = None
+            with pytest.raises(HTTPException, match="^UploadFile has no size attribute") as exc_info:
+                await dummy_file_service.upsert(13, "file-one.txt", dummy_upload_file)
+        assert exc_info.value.status_code == 500
+
+    async def test_upsert__raises_413_too_large(self, make_upload_file, dummy_file_service, tweak_settings):
+        """
+        Test that the ``upsert()`` method raises a 413 error if the file is too large.
+        """
+        dummy_upload_file = make_upload_file()
+        with make_upload_file(content="dummy upload content") as dummy_upload_file:
+            with tweak_settings(MAX_UPLOAD_FILE_SIZE=1):
+                with pytest.raises(HTTPException, match="^Uploaded files cannot exceed 1 bytes") as exc_info:
+                    await dummy_file_service.upsert(13, "file-one.txt", dummy_upload_file)
+        assert exc_info.value.status_code == 413
 
     async def test_delete__success(self, make_upload_file, dummy_file_service):
         """

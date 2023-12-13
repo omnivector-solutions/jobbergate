@@ -5,11 +5,11 @@ from datetime import datetime
 from textwrap import dedent
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, NonNegativeInt
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.job_script_templates.schemas import JobTemplateListView
-from jobbergate_api.apps.schemas import TableResource
+from jobbergate_api.apps.schemas import LengthLimitedStr, TableResource
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
 job_script_meta_mapper = MetaMapper(
@@ -82,8 +82,8 @@ class JobScriptCreateRequest(BaseModel):
     Request model for creating JobScript instances.
     """
 
-    name: str
-    description: str | None
+    name: LengthLimitedStr
+    description: LengthLimitedStr | None
 
     class Config:
         schema_extra = job_script_meta_mapper
@@ -92,7 +92,7 @@ class JobScriptCreateRequest(BaseModel):
 class RenderFromTemplateRequest(BaseModel):
     """Request model for creating a JobScript entry from a template."""
 
-    template_output_name_mapping: dict[str, str]
+    template_output_name_mapping: dict[LengthLimitedStr, LengthLimitedStr]
     sbatch_params: list[str] | None
     param_dict: dict[str, Any]
 
@@ -105,8 +105,8 @@ class JobScriptUpdateRequest(BaseModel):
     Request model for updating JobScript instances.
     """
 
-    name: str | None
-    description: str | None
+    name: LengthLimitedStr | None
+    description: LengthLimitedStr | None
     is_archived: bool | None
 
     class Config:
@@ -116,8 +116,8 @@ class JobScriptUpdateRequest(BaseModel):
 class JobScriptFileDetailedView(BaseModel):
     """Model for the job_script_files field of the JobScript resource."""
 
-    parent_id: int
-    filename: str
+    parent_id: NonNegativeInt
+    filename: LengthLimitedStr
     file_type: FileType
     created_at: datetime | None = None
     updated_at: datetime | None = None

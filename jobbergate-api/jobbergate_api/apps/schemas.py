@@ -1,11 +1,14 @@
 """Define app-wide, reusable pydantic schemas."""
 
-from typing import Any
+from typing import Annotated, Any
 
 import sqlalchemy
 from pendulum.datetime import DateTime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic.utils import GetterDict
+
+# Make both Pydantic and mypy happy:
+LengthLimitedStr = Annotated[str, Field(max_length=255)]
 
 
 class IgnoreLazyGetterDict(GetterDict):
@@ -67,7 +70,7 @@ class ListParams(BaseModel):
 
     sort_ascending: bool = True
     user_only: bool = False
-    search: str | None
-    sort_field: str | None
+    search: LengthLimitedStr | None
+    sort_field: LengthLimitedStr | None
     include_archived: bool = False
     include_parent: bool = False
