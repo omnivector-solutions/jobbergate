@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-cli
 ## Unreleased
 
 
+## 4.2.0a7 -- 2023-12-13
 ## 4.2.0a6 -- 2023-12-12
 - Add instructions to checkbox questions [ASP-4042]
 
