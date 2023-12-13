@@ -288,7 +288,7 @@ class JobProperties(BaseModel, extra=Extra.forbid):
     )
     time_limit: Optional[LengthLimitedStr] = Field(description="Step time limit.")
     time_minimum: Optional[NonNegativeInt] = Field(description="Minimum run time in minutes.")
-    wait_all_nodes: Optional[NonNegativeInt] = Field(
+    wait_all_nodes: Optional[int] = Field(
         description="Do not begin execution until all nodes are ready for use.", ge=0, le=1
     )
     wckey: Optional[LengthLimitedStr] = Field(description="Specify wckey to be used with job.")
