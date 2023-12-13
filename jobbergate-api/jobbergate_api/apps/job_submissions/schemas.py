@@ -283,7 +283,7 @@ class JobProperties(BaseModel, extra=Extra.forbid):
             "operations and not used by the application."
         )
     )
-    threads_per_core: Optional[int] = Field(
+    threads_per_core: Optional[NonNegativeInt] = Field(
         description="Restrict node selection to nodes with at least the specified number of threads per core."
     )
     time_limit: Optional[LengthLimitedStr] = Field(description="Step time limit.")
