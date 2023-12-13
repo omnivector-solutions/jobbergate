@@ -212,8 +212,8 @@ class JobProperties(BaseModel, extra=Extra.forbid):
         description="This parameter is a group among the groups of the user."
     )
     memory_binding: Optional[LengthLimitedStr] = Field(description="Bind tasks to memory.")
-    memory_per_cpu: Optional[int] = Field(description="Minimum real memory per cpu (MB).")
-    memory_per_gpu: Optional[int] = Field(description="Minimum memory required per allocated GPU.")
+    memory_per_cpu: Optional[NonNegativeInt] = Field(description="Minimum real memory per cpu (MB).")
+    memory_per_gpu: Optional[NonNegativeInt] = Field(description="Minimum memory required per allocated GPU.")
     memory_per_node: Optional[LengthLimitedStr] = Field(description="Minimum real memory per node (MB).")
     minimum_cpus_per_node: Optional[int] = Field(description="Minimum number of CPUs per node.")
     minimum_nodes: Optional[bool] = Field(
