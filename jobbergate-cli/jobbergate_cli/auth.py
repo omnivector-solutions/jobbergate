@@ -247,8 +247,10 @@ def open_on_browser(url: str) -> bool:
     """Open the url on the browser using webbrowser."""
     try:
         browser = webbrowser.get()
-        browser.open(url)
-        return True
+        if isinstance(browser, webbrowser.GenericBrowser):
+            # skip all browsers started with a command and without remote functionality
+            return False
+        return browser.open(url)
     except Exception as e:
         logger.warning(f"Couldn't open login url on browser due to -- {str(e)}")
         return False

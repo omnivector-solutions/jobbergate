@@ -4,12 +4,16 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+- Fixed the login URL trying to be opened in the browser on the command line and without remote functionality
 
 ## 4.2.0a7 -- 2023-12-13
+
 ## 4.2.0a6 -- 2023-12-12
+
 - Add instructions to checkbox questions [ASP-4042]
 
 ## 4.2.0a5 -- 2023-12-12
+
 - Added support for Python 3.12
 
 ## 4.2.0a4 -- 2023-12-11
