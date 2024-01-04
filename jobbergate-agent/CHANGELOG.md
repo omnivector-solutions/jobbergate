@@ -3,7 +3,7 @@
 This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
-
+- Map job submissions with cancelled status
 
 ## 4.2.0a8 -- 2024-01-05
 ## 4.2.0a7 -- 2023-12-13
