@@ -51,6 +51,7 @@ async def finish_active_jobs():
         if status.jobbergate_status not in {
             JobSubmissionStatus.COMPLETED,
             JobSubmissionStatus.FAILED,
+            JobSubmissionStatus.CANCELLED,
         }:
             logger.debug(f"Job is not complete or failed...{skip}")
             continue
