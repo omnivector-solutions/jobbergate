@@ -19,6 +19,7 @@ class JobSubmissionStatus(str, Enum):
     SUBMITTED = "SUBMITTED"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
     REJECTED = "REJECTED"
 
 
@@ -26,4 +27,5 @@ status_map: DefaultDict[str, JobSubmissionStatus] = defaultdict(
     lambda: JobSubmissionStatus.SUBMITTED,
     COMPLETED=JobSubmissionStatus.COMPLETED,
     FAILED=JobSubmissionStatus.FAILED,
+    CANCELLED=JobSubmissionStatus.CANCELLED,
 )
