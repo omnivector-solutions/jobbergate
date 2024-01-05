@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-api
 ## Unreleased
 
 
+## 4.2.0a8 -- 2024-01-05
 ## 4.2.0a7 -- 2023-12-13
 - Added constraints to prevent long strings from being inserted into the database
 - Added constraints to prevent negative id numbers from being inserted into the database
