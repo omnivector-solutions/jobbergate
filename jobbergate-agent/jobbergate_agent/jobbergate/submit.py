@@ -147,7 +147,7 @@ async def submit_job_script(
     notify_submission_rejected = SubmissionNotifier(pending_job_submission.id, JobSubmissionStatus.REJECTED)
 
     async with handle_errors_async(
-        "An internal error occurred while processing the job-submission",
+        "Username could not be resolved",
         raise_exc_class=JobSubmissionError,
         do_except=notify_submission_rejected.report_error,
     ):
@@ -158,6 +158,11 @@ async def submit_job_script(
         username = user_mapper[email]
         logger.debug(f"Using local slurm user {username} for job submission")
 
+    async with handle_errors_async(
+        "Error processing job-script files",
+        raise_exc_class=JobSubmissionError,
+        do_except=notify_submission_rejected.report_error,
+    ):
         submit_dir = pending_job_submission.execution_directory or SETTINGS.DEFAULT_SLURM_WORK_DIR
 
         logger.debug(f"Processing submission files for job submission {pending_job_submission.id}")
@@ -182,16 +187,17 @@ async def submit_job_script(
     payload = SlurmJobSubmission(script=job_script, job=job_parameters)
     logger.debug(f"Submitting pending job submission {pending_job_submission.id} " f"to slurm with payload {payload}")
 
+    response = await slurmrestd_client.post(
+        "/job/submit",
+        auth=lambda r: inject_token(r, username=username),
+        json=json.loads(payload.json()),
+    )
+
     async with handle_errors_async(
         "Failed to submit job to slurm",
         raise_exc_class=SlurmrestdError,
         do_except=notify_submission_rejected.report_error,
     ):
-        response = await slurmrestd_client.post(
-            "/job/submit",
-            auth=lambda r: inject_token(r, username=username),
-            json=json.loads(payload.json()),
-        )
         logger.debug(f"Slurmrestd response: {response.text}")
         sub_data = SlurmSubmitResponse.parse_raw(response.content)
         with handle_errors(unpack_error_from_slurm_response(sub_data)):
