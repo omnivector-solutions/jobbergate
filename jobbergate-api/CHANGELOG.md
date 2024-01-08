@@ -4,29 +4,14 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+## 4.2.0 -- 2024-01-08
 
-## 4.2.0a9 -- 2024-01-08
-## 4.2.0a8 -- 2024-01-05
-## 4.2.0a7 -- 2023-12-13
-- Added constraints to prevent long strings from being inserted into the database
-- Added constraints to prevent negative id numbers from being inserted into the database
-- Added constraints to limit the size on the uploaded files
-
-## 4.2.0a6 -- 2023-12-12
-## 4.2.0a5 -- 2023-12-12
-## 4.2.0a4 -- 2023-12-11
-## 4.2.0a3 -- 2023-11-30
-
+- Added constraints to prevent long strings from being inserted into the database [ASP-4113]
+- Added constraints to prevent negative id numbers from being inserted into the database [ASP-4113]
+- Added constraints to limit the size on the uploaded files [ASP-4113]
 - Added support for on-site job submissions [ASP-4238]
-
-## 4.2.0a2 -- 2023-11-29
-
 - Moved database session management into a dedicated context manager and removed test-aware logic
 - Modified testing harnesses to override session management context manager and fail if test session is not used
-
-## 4.2.0a1 -- 2023-11-13
-
-## 4.2.0a0 -- 2023-11-09
 
 ## 4.1.0 -- 2023-11-07
 
