@@ -17,6 +17,8 @@ class JobSubmissionStatus(str, Enum):
     FAILED = "FAILED"
     UNKNOWN = "UNKNOWN"
     REJECTED = "REJECTED"
+    CANCELLED = "CANCELLED"
+
 
     @classmethod
     def pretty_list(cls):
