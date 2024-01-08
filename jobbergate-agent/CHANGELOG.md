@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
 
+
+## 4.2.0a9 -- 2024-01-08
 - Capture request errors with Slurm API in Sentry notifications [PENG-2000]
 - Capture request errors with Jobbergate API in Sentry notifications [PENG-2000]
 
