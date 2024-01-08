@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-cli
 ## Unreleased
 
 
+## 4.2.0a9 -- 2024-01-08
 ## 4.2.0a8 -- 2024-01-05
 - Fixed the login URL trying to be opened in the browser on the command line and without remote functionality
 
