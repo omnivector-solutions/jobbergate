@@ -11,11 +11,9 @@ from jobbergate_agent.utils.logging import log_error
 async def fetch_job_status(slurm_job_id: int) -> SlurmSubmittedJobStatus:
     logger.debug(f"Fetching slurm job status for slurm job {slurm_job_id}")
 
-    with SlurmrestdError.handle_errors(
-        "Failed to fetch job status from slurm",
-        do_except=log_error,
-    ):
-        response = await slurmrestd_client.get(f"/job/{slurm_job_id}")
+    response = await slurmrestd_client.get(f"/job/{slurm_job_id}")
+
+    with SlurmrestdError.handle_errors("Failed to fetch job status from slurm", do_except=log_error):
         response.raise_for_status()
         data = response.json()
 
@@ -48,10 +46,7 @@ async def finish_active_jobs():
             logger.debug(f"Fetch status failed...{skip}")
             continue
 
-        if status.jobbergate_status not in {
-            JobSubmissionStatus.COMPLETED,
-            JobSubmissionStatus.FAILED,
-        }:
+        if status.jobbergate_status not in {JobSubmissionStatus.COMPLETED, JobSubmissionStatus.FAILED}:
             logger.debug(f"Job is not complete or failed...{skip}")
             continue
 

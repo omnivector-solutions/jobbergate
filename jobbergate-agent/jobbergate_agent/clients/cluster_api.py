@@ -1,5 +1,6 @@
 """Core module for Jobbergate API clients management"""
 import httpx
+import sentry_sdk
 from jobbergate_core.auth.token import Token, TokenError, TokenType
 
 from jobbergate_agent.settings import SETTINGS
@@ -86,6 +87,19 @@ class AsyncBackendClient(httpx.AsyncClient):
         logger.debug(
             f"Received response: {response.request.method} " f"{response.request.url} " f"{response.status_code}"
         )
+
+    async def request(self, *args, **kwargs):
+        """
+        Request wrapper that captures request errors and sends them to Sentry.
+
+        This ensures events are sent to Sentry even if the caller handles the exception.
+        """
+        try:
+            return await super().request(*args, **kwargs)
+        except Exception as err:
+            sentry_sdk.capture_exception(err)
+            logger.error(f"Request to Jobbergate-API failed: {err}")
+            raise err
 
 
 backend_client = AsyncBackendClient()

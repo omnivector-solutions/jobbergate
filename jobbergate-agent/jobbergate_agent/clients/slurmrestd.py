@@ -4,6 +4,7 @@ import typing
 from datetime import datetime, timedelta
 
 import httpx
+import sentry_sdk
 from buzz import enforce_defined
 from jobbergate_core.auth.token import Token, TokenError
 from jose import jwt
@@ -113,6 +114,19 @@ class AsyncBackendClient(httpx.AsyncClient):
         logger.debug(
             f"Received response: {response.request.method} " f"{response.request.url} " f"{response.status_code}"
         )
+
+    async def request(self, *args, **kwargs):
+        """
+        Request wrapper that captures request errors and sends them to Sentry.
+
+        This ensures events are sent to Sentry even if the caller handles the exception.
+        """
+        try:
+            return await super().request(*args, **kwargs)
+        except Exception as err:
+            sentry_sdk.capture_exception(err)
+            logger.error(f"Request to Slurm-API failed: {err}")
+            raise err
 
 
 backend_client = AsyncBackendClient()
