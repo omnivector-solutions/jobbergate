@@ -27,7 +27,7 @@ def upgrade():
     # Create a temporary "_status" type, convert and drop the "old" type
     tmp_type.create(op.get_bind(), checkfirst=False)
     op.execute("ALTER TABLE job_submissions ALTER COLUMN status TYPE _status USING status::text::_status")
-    old_type.drop(op.get_bind(), checkfirst=False)
+    old_type.drop(op.get_bind(), checkfirst=True)
     # Create and convert to the "new" jobsubmissionstatus type
     new_type.create(op.get_bind(), checkfirst=False)
     op.execute(
