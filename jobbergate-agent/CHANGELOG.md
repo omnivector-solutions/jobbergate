@@ -3,7 +3,7 @@
 This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
-- Map job submissions with cancelled status
+- Map job submissions with cancelled status [ASP-4288]
 
 ## 4.2.0a9 -- 2024-01-08
 - Capture request errors with Slurm API in Sentry notifications [PENG-2000]
