@@ -212,7 +212,10 @@ def render_paginated_list_results(
     hidden_fields: List[str] = None,
 ):
     if envelope.total == 0:
-        terminal_message("There are no results to display", subject="Nothing here...")
+        if ctx.raw_output:
+            print_json("[]")
+        else:
+            terminal_message("There are no results to display", subject="Nothing here...")
         return
 
     if ctx.raw_output:

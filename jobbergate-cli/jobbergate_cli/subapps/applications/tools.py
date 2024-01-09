@@ -373,6 +373,7 @@ def execute_application(
     app_config: JobbergateApplicationConfig,
     supplied_params: Optional[Dict[str, Any]] = None,
     fast_mode: bool = False,
+    verbose: bool = False,
 ):
     """
     Execute the jobbergate application python module.
@@ -383,8 +384,9 @@ def execute_application(
     :param: app_config:      The configuration for the JobbergateApplication
     :param: supplied_params: Pre-set values for the parameters. Any questions about these values will be skipped.
     :param: fast_mode:       If true, do not ask the user questions. Just use supplied_params or defaults
+    :param: verbose:         If true, allow output while processing the application
     :returns: The configuration values collected from the user by executing the application
     """
-    app_params = gather_param_values(app_module, supplied_params=supplied_params, fast_mode=fast_mode)
+    app_params = gather_param_values(app_module, supplied_params=supplied_params, fast_mode=fast_mode, verbose=verbose)
     app_config.application_config.update(**app_params)
     return app_params

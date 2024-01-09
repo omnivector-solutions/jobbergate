@@ -310,6 +310,7 @@ def gather_param_values(
     application: JobbergateApplicationBase,
     supplied_params: Optional[Dict[str, Any]] = None,
     fast_mode: bool = False,
+    verbose: bool = False,
 ) -> Dict[str, Any]:
     """
     Gather the parameter values by executing the application methods.
@@ -321,6 +322,7 @@ def gather_param_values(
                              Any questions where the variablename matches a pre-supplied key in the dict
                              at the start of execution will be skipped.
     :param: fast_mode:       Do not ask the user questions. Just use the supplied params and defaults.
+    :param: verbose:         If true, allow output while processing the application
     :returns: A dict of the gathered parameter values
     """
     if supplied_params is None:
@@ -359,7 +361,7 @@ def gather_param_values(
         workflow_answers = cast(Dict[str, Any], inquirer.prompt(prompts, raise_keyboard_interrupt=True))
         config.update(workflow_answers)
         config.update(auto_answers)
-        if len(auto_answers) > 0:
+        if len(auto_answers) > 0 and verbose:
             render_dict(auto_answers, title="Default values used")
 
         next_method = config.pop("nextworkflow", None)

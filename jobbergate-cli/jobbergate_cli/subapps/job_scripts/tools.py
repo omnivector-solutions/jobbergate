@@ -231,7 +231,7 @@ def render_job_script(
     (app_config, app_module) = load_application_data(app_data, application_source_code)
 
     supplied_params = validate_parameter_file(param_file) if param_file else dict()
-    execute_application(app_module, app_config, supplied_params, fast_mode=fast)
+    execute_application(app_module, app_config, supplied_params, fast_mode=fast, verbose=not jg_ctx.raw_output)
     update_template_files_information(app_data, app_config)
 
     param_dict_flat = flatten_param_dict(app_config.dict())
