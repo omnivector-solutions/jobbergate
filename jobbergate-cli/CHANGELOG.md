@@ -4,53 +4,25 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+## 4.2.0 -- 2024-01-08
 
-## 4.2.0a9 -- 2024-01-08
-## 4.2.0a8 -- 2024-01-05
-- Fixed the login URL trying to be opened in the browser on the command line and without remote functionality
-
-## 4.2.0a7 -- 2023-12-13
-
-## 4.2.0a6 -- 2023-12-12
-
-- Add instructions to checkbox questions [ASP-4042]
-
-## 4.2.0a5 -- 2023-12-12
-
+- Added instructions to checkbox questions [ASP-4042]
 - Added support for Python 3.12
-
-## 4.2.0a4 -- 2023-12-11
-
 - Fixed the setting `CACHE_DIR` to expand the user home directory, allowing more flexibility on the path [ASP-4053]
 - Fixed the question `BooleanList` to allow subquestion to have the same name [ASP-4228]
 - Added pagination support for `list` commands [ASP-3966]
-
-## 4.2.0a3 -- 2023-11-30
-
 - Added support for on-site job submissions using the `sbatch` command [ASP-4238]
-
-## 4.2.0a2 -- 2023-11-29
-
-## 4.2.0a1 -- 2023-11-13
-
-- Patched create-job-script command on submit mode when parameter file is provided
-- Added setting to control the timeout on `httpx` requests
-
-## 4.2.0a0 -- 2023-11-09
-
-- Added a new config to change the way job-script files are named to `<job-script-name>.job`, following behavior from jobbergate-legacy
-
-## 4.1.0 -- 2023-11-07
-
-- Added ability to open the login url on browser or copy it to clipboard
-- Added --cluster-name, --execution-directory and --download parameters to create-job-script command on submit mode
-- Change application-id, job-script-id and job-submission-id to have alias when displaying the id on the CLI
-- Added a `create` for Job Scripts to create without Template. (former `create` renamed to `render`)
+- Added setting to control the timeout on `httpx` requests [ASP-3946]
+- Added a new config to change the way job-script files are named to `<job-script-name>.job`, following behavior from jobbergate-legacy [ASP-4069]
+- Added ability to open the login url on a browser or copy it to the user's clipboard [ASP-4053]
+- Added --cluster-name, --execution-directory and --download parameters to `create-job-script` command on submit mode
+- Changed application-id, job-script-id and job-submission-id to have alias when displaying the id on the CLI
+- Added a `create` for Job Scripts to create without Template (former `create` renamed to `render`)
 - Fixed help information for id on `get-job-script`, `download-job-script`, and `get-job-submission` commands
-- Added short arguments for backward compatibility
-- Ignored username and password arguments if provided, aiming to keep backward compatibility
+- Added short arguments in many commands for backward compatibility
+- Added username and password as arguments, they are ignored if provided aiming to keep compatibility with legacy aliases
 - Added support to select applications by identifier in update and delete commands
-- Added show-files command to compat mode
+- Added show-files command to compatibility mode
 - Added support to select all and deselect all options in checkboxes using Ctrl+A and Ctrl+R as shortcuts
 - Added an alternative way to present to login url on narrow terminals
 
