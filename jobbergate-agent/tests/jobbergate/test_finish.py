@@ -78,7 +78,8 @@ async def test_finish_active_jobs():
             dict(id=2, slurm_job_id=22),  # Jobbergate API gives a 400
             dict(id=3, slurm_job_id=33),  # Slurm REST API gives a 400
             dict(id=4, slurm_job_id=44),  # Slurm has no matching job
-            dict(id=5, slurm_job_id=55),  # Unmapped status
+            dict(id=5, slurm_job_id=55),  # Job cancelled
+            dict(id=6, slurm_job_id=66),  # Unmapped status
         ]
     }
 
@@ -98,7 +99,8 @@ async def test_finish_active_jobs():
                 22: "FAILED",
                 33: "COMPLETED",
                 44: "COMPLETED",
-                55: "UNMAPPED_STATUS",
+                55: "CANCELLED",
+                66: "UNMAPPED_STATUS",
             }
             return httpx.Response(
                 status_code=400 if slurm_job_id == 33 else 200,
@@ -126,13 +128,14 @@ async def test_finish_active_jobs():
         def _map_slurm_call(request: httpx.Request):
             return int(request.url.path.split("/")[-1])
 
-        assert slurm_route.call_count == 5
+        assert slurm_route.call_count == 6
         assert [_map_slurm_call(c.request) for c in slurm_route.calls] == [
             11,
             22,
             33,
             44,
             55,
+            66,
         ]
 
         assert fetch_route.call_count == 1
@@ -143,8 +146,9 @@ async def test_finish_active_jobs():
                 json.loads(request.content.decode("utf-8"))["status"],
             )
 
-        assert update_route.call_count == 2
+        assert update_route.call_count == 3
         assert [_map_update_call(c.request) for c in update_route.calls] == [
             (1, JobSubmissionStatus.COMPLETED),
             (2, JobSubmissionStatus.FAILED),
+            (5, JobSubmissionStatus.CANCELLED),
         ]

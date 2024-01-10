@@ -3,6 +3,7 @@
 This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
+- Map job submissions with cancelled status [ASP-4288]
 
 ## 4.2.0 -- 2024-01-08
 
