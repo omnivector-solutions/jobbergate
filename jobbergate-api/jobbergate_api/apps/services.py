@@ -210,7 +210,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         result: Result = await self.session.execute(query)
         instance: CrudModel = enforce_defined(
             result.unique().scalar_one_or_none(),  # type: ignore
-            f"{self.name} row not found by {locator}",
+            f"{self.name} entry was not found by {locator=}",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
@@ -229,7 +229,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         deleted = list(result.scalars())
         require_condition(
             len(deleted) == 1,
-            f"{self.name} row not found by {locator=}",
+            f"{self.name} entry was not found by {locator=}",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
@@ -250,7 +250,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         result: Result = await self.session.execute(query)
         return enforce_defined(
             result.scalar_one_or_none(),
-            f"{self.name} row not found by {locator=}",
+            f"{self.name} entry was not found by {locator=}",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
@@ -576,7 +576,12 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
 
         """
         file_content = await self.get_file_content(instance)
-        template = Template(file_content.decode("utf-8"))
+        with handle_errors(
+            f"Unable to process jinja template filename={instance.filename}",
+            raise_exc_class=ServiceError,
+            raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
+        ):
+            template = Template(file_content.decode("utf-8"))
 
         render_contexts = [parameters, {"data": parameters}]
 

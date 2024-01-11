@@ -707,6 +707,24 @@ class TestFileService:
             == "dummy bar content"
         )
 
+    async def test_render__raises_422_on_bad_template(self, make_upload_file, dummy_file_service):
+        """
+        Test that the ``render()`` method raises a 422 error if the template is invalid.
+        """
+        dummy_upload_file = make_upload_file()
+        with make_upload_file(content="dummy {{ foo } content") as dummy_upload_file:
+            upserted_instance = await dummy_file_service.upsert(
+                13,
+                "file-one.txt",
+                dummy_upload_file,
+            )
+
+        with pytest.raises(HTTPException) as exc_info:
+            await dummy_file_service.render(upserted_instance, parameters=dict(foo="bar"))
+        assert exc_info.value.status_code == 422
+        assert "TemplateSyntaxError" in exc_info.value.detail
+        assert "Unable to process jinja template filename=file-one.txt" in exc_info.value.detail
+
     async def test_render__backward_compatible(self, make_upload_file, dummy_file_service):
         """
         Test that the ``render()`` works in different contexts.

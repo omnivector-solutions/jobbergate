@@ -4,8 +4,10 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+- Improved error handling and reporting [ASP-4095]
 
 ## 4.2.1a0 -- 2024-01-11
+
 - Map job submissions with cancelled status [ASP-4288]
 
 ## 4.2.0 -- 2024-01-08

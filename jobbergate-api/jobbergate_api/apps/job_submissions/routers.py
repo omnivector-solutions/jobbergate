@@ -1,6 +1,7 @@
 """
 Router for the JobSubmission resource.
 """
+from buzz import handle_errors
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import status
@@ -22,6 +23,7 @@ from jobbergate_api.apps.job_submissions.schemas import (
 )
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.apps.schemas import ListParams
+from jobbergate_api.apps.services import ServiceError
 from jobbergate_api.email_notification import notify_submission_rejected
 
 router = APIRouter(prefix="/job-submissions", tags=["Job Submissions"])
@@ -71,9 +73,16 @@ async def job_submission_create(
 
     if create_request.slurm_job_id is None:
         main_file_content = await secure_services.file.job_script.get_file_content(job_script_files[0])
-        execution_parameters = get_job_properties_from_job_script(
-            main_file_content.decode(), **create_request.execution_parameters.dict(exclude_unset=True)
-        )
+
+        with handle_errors(
+            "Failed to parse execution parameters from the job script",
+            raise_exc_class=ServiceError,
+            raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
+        ):
+            execution_parameters = get_job_properties_from_job_script(
+                main_file_content.decode(), **create_request.execution_parameters.dict(exclude_unset=True)
+            )
+
         create_request.execution_parameters = execution_parameters
         submission_status = JobSubmissionStatus.CREATED
     else:

@@ -625,7 +625,7 @@ class TestJobTemplateWorkflowFile:
         original_runtime_config = {"foo": "bar"}
         original_content = "import this"
 
-        synth_services.file.workflow.upsert(
+        await synth_services.file.workflow.upsert(
             parent_id=parent_id,
             filename=WORKFLOW_FILE_NAME,
             upload_content=original_content,

@@ -1,6 +1,7 @@
 """Router for the Job Script Template resource."""
 from typing import cast
 
+from buzz import handle_errors
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Path, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
@@ -23,6 +24,7 @@ from jobbergate_api.apps.job_scripts.schemas import (
 from jobbergate_api.apps.job_scripts.tools import inject_sbatch_params
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.apps.schemas import ListParams
+from jobbergate_api.apps.services import ServiceError
 
 router = APIRouter(prefix="/job-scripts", tags=["Job Scripts"])
 
@@ -97,7 +99,9 @@ async def job_script_create_from_template(
     if len(missing_keys) > 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(f"The template files are missing required files: {missing_keys} for {id_or_identifier}"),
+            detail=("The following required files are missing for job template {}: {}").format(
+                id_or_identifier, ", ".join(missing_keys)
+            ),
         )
 
     mapped_template_files = {
@@ -126,7 +130,12 @@ async def job_script_create_from_template(
         )
 
         if template_file.file_type == FileType.ENTRYPOINT and render_request.sbatch_params:
-            file_content = inject_sbatch_params(file_content, render_request.sbatch_params)
+            with handle_errors(
+                "Failed to inject sbatch params into the entrypoint file",
+                raise_exc_class=ServiceError,
+                raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
+            ):
+                file_content = inject_sbatch_params(file_content, render_request.sbatch_params)
 
         await secure_services.file.job_script.upsert(
             parent_id=job_script.id,
