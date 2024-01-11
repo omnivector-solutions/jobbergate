@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+
+## 4.2.1a0 -- 2024-01-11
 ## 4.2.0 -- 2024-01-08
 
 - Added constraints to prevent long strings from being inserted into the database [ASP-4113]
