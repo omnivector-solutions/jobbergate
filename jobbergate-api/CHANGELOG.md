@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-api
 ## Unreleased
 
 - Improved error handling and reporting [ASP-4095]
+- Fixed `inject_sbatch_params` when no `#SBATCH` directive was found on the file
 
 ## 4.2.1a0 -- 2024-01-11
 
