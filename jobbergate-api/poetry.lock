@@ -3589,6 +3589,17 @@ files = [
 ]
 
 [[package]]
+name = "types-pyyaml"
+version = "6.0.12.12"
+description = "Typing stubs for PyYAML"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-PyYAML-6.0.12.12.tar.gz", hash = "sha256:334373d392fde0fdf95af5c3f1661885fa10c52167b14593eb856289e1855062"},
+    {file = "types_PyYAML-6.0.12.12-py3-none-any.whl", hash = "sha256:c05bc6c158facb0676674b7f11fe3960db4f389718e19e62bd2b84d6205cfd24"},
+]
+
+[[package]]
 name = "types-s3transfer"
 version = "0.7.0"
 description = "Type annotations and code completion for s3transfer"
@@ -3885,4 +3896,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "9edfa84e6ff2048a5ec5104d063ef4dd071f54c27c039ed9dec1dbf725cccb4d"
+content-hash = "6d26e6ff476a1c21f85a9e60b8434a8fb61de8a4042cfec6e41f20cb3b502739"

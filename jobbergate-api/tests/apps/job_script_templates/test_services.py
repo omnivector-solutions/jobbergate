@@ -154,7 +154,7 @@ class TestWorkflowFilesService:
         workflow_file = await synth_services.file.workflow.upsert(
             template_instance.id,
             WORKFLOW_FILE_NAME,
-            "test file content",
+            "print('hello world')",
             runtime_config=dict(foo="bar"),
         )
 
@@ -164,7 +164,7 @@ class TestWorkflowFilesService:
         assert workflow_file.file_key.endswith(WORKFLOW_FILE_NAME)
 
         file_content = await synth_services.file.workflow.get_file_content(workflow_file)
-        assert file_content == "test file content".encode()
+        assert file_content == "print('hello world')".encode()
 
         await synth_services.crud.template.delete(template_instance.id)
         with pytest.raises(HTTPException) as exc_info:
@@ -180,7 +180,7 @@ class TestIntegration:
         workflow_file = await synth_services.file.workflow.upsert(
             template_instance.id,
             WORKFLOW_FILE_NAME,
-            "test file content",
+            "print('hello world')",
             runtime_config=dict(foo="bar"),
         )
 
@@ -204,7 +204,7 @@ class TestIntegration:
         workflow_file = await synth_services.file.workflow.upsert(
             template_instance.id,
             WORKFLOW_FILE_NAME,
-            "test file content",
+            "print('hello world')",
             runtime_config=dict(foo="bar"),
         )
 
@@ -229,7 +229,7 @@ class TestIntegration:
         workflow_file = await synth_services.file.workflow.upsert(
             template_instance.id,
             WORKFLOW_FILE_NAME,
-            "test file content",
+            "print('hello world')",
             runtime_config=dict(foo="bar"),
         )
 
@@ -253,7 +253,7 @@ class TestIntegration:
         workflow_file = await synth_services.file.workflow.upsert(
             template_instance.id,
             WORKFLOW_FILE_NAME,
-            "test file content",
+            "print('hello world')",
             runtime_config=dict(foo="bar"),
         )
 

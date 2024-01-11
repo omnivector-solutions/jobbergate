@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped
 from sqlalchemy.sql.expression import Select
 
+from jobbergate_api.apps.file_validation import check_uploaded_file_syntax
 from jobbergate_api.config import settings
 from jobbergate_api.safe_types import Bucket
 from jobbergate_api.storage import render_sql, search_clause, sort_clause
@@ -549,6 +550,13 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             f"Uploaded files cannot exceed {settings.MAX_UPLOAD_FILE_SIZE} bytes, got {size} bytes",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE),
+        )
+
+        require_condition(
+            check_uploaded_file_syntax(file_obj, filename),
+            f"File {filename=} did not pass the syntax check for its extension",
+            raise_exc_class=ServiceError,
+            raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
         )
 
         # Mypy doesn't like aioboto3 much

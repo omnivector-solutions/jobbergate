@@ -35,7 +35,7 @@ async def test_create_job_submission__on_site_submission(
     """
     base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
 
-    job_script_file_name = "entrypoint.py"
+    job_script_file_name = "entrypoint.sh"
 
     await synth_services.file.job_script.upsert(
         parent_id=base_job_script.id,
@@ -97,7 +97,7 @@ async def test_create_job_submission__on_site_submission_with_execution_paramete
     """
     base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
 
-    job_script_file_name = "entrypoint.py"
+    job_script_file_name = "entrypoint.sh"
 
     await synth_services.file.job_script.upsert(
         parent_id=base_job_script.id,
@@ -145,7 +145,7 @@ async def test_create_job_submission__with_client_id_in_token(
     """
     base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
 
-    job_script_file_name = "entrypoint.py"
+    job_script_file_name = "entrypoint.sh"
 
     await synth_services.file.job_script.upsert(
         parent_id=base_job_script.id,
@@ -231,7 +231,7 @@ async def test_create_job_submission__without_execution_parameters(
     """
     base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
 
-    job_script_file_name = "entrypoint.py"
+    job_script_file_name = "entrypoint.sh"
 
     await synth_services.file.job_script.upsert(
         parent_id=base_job_script.id,
@@ -296,7 +296,7 @@ async def test_create_job_submission__with_client_id_in_request_body(
     """
     base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
 
-    job_script_file_name = "entrypoint.py"
+    job_script_file_name = "entrypoint.sh"
 
     await synth_services.file.job_script.upsert(
         parent_id=base_job_script.id,
@@ -365,7 +365,7 @@ async def test_create_job_submission__with_execution_directory(
     """
     base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
 
-    job_script_file_name = "entrypoint.py"
+    job_script_file_name = "entrypoint.sh"
 
     await synth_services.file.job_script.upsert(
         parent_id=base_job_script.id,
@@ -637,7 +637,7 @@ async def test_get_job_submissions__bad_permission(
     """
     base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
 
-    job_script_file_name = "entrypoint.py"
+    job_script_file_name = "entrypoint.sh"
 
     await synth_services.file.job_script.upsert(
         parent_id=base_job_script.id,
@@ -1354,7 +1354,7 @@ async def test_job_submissions_agent_pending__success(
     base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
 
     inserted_job_script_id = base_job_script.id
-    job_script_file_name = "entrypoint.py"
+    job_script_file_name = "entrypoint.sh"
 
     await synth_services.file.job_script.upsert(
         parent_id=inserted_job_script_id,
