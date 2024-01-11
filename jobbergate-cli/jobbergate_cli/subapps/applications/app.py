@@ -8,8 +8,8 @@ from typing import Any, Dict, Optional, cast
 
 import typer
 
-from jobbergate_cli.constants import OV_CONTACT, SortOrder
-from jobbergate_cli.exceptions import handle_abort
+from jobbergate_cli.constants import SortOrder
+from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext
@@ -178,33 +178,31 @@ def create(
         ),
     )
     application_id = result["id"]
+    result["application_uploaded"] = False
 
-    successful_upload = upload_application(
-        jg_ctx, application_path, application_id=application_id, application_identifier=None
-    )
-    if not successful_upload:
-        result["application_uploaded"] = False
-        terminal_message(
-            f"""
-            The application files could not be uploaded.
+    try:
+        if application_path is not None:
+            upload_application(jg_ctx, application_path, application_id=application_id, application_identifier=None)
+            result["application_uploaded"] = True
+    except Abort as e:
+        raise e
+    finally:
+        if not result["application_uploaded"]:
+            terminal_message(
+                """
+                The application files could not be uploaded.
 
-            Try running the `update` command including the application path to re-upload.
-
-            [yellow]If the problem persists, please contact [bold]{OV_CONTACT}[/bold]
-            for support and trouble-shooting[/yellow]
-            """,
-            subject="File upload failed",
-            color="yellow",
+                Try running the `update` command including the application path to re-upload.
+                """,
+                subject="File upload failed",
+                color="yellow",
+            )
+        render_single_result(
+            jg_ctx,
+            result,
+            hidden_fields=HIDDEN_FIELDS,
+            title="Created Application",
         )
-    else:
-        result["application_uploaded"] = True
-
-    render_single_result(
-        jg_ctx,
-        result,
-        hidden_fields=HIDDEN_FIELDS,
-        title="Created Application",
-    )
 
 
 @app.command()
@@ -259,6 +257,7 @@ def update(
             """,
             subject="Invalid params",
         )
+        raise typer.Exit()
     elif identifier is not None:
         identification = identifier
 
@@ -279,43 +278,36 @@ def update(
     assert jg_ctx.client is not None
 
     if req_data:
-        cast(
-            Dict[str, Any],
-            make_request(
-                jg_ctx.client,
-                f"/jobbergate/job-script-templates/{identification}",
-                "PUT",
-                expect_response=False,
-                abort_message="Request to update application was not accepted by the API",
-                support=True,
-                json=req_data,
-            ),
+        make_request(
+            jg_ctx.client,
+            f"/jobbergate/job-script-templates/{identification}",
+            "PUT",
+            expect_response=False,
+            abort_message="Request to update application was not accepted by the API",
+            support=True,
+            json=req_data,
+            expected_status=200,
         )
 
-    if application_path is not None:
-        successful_upload = upload_application(
-            jg_ctx, application_path, application_id=id, application_identifier=identifier
+    try:
+        if application_path is not None:
+            upload_application(jg_ctx, application_path, application_id=id, application_identifier=identifier)
+    except Abort as e:
+        terminal_message(
+            "The application files could not be uploaded.",
+            subject="File upload failed",
+            color="yellow",
         )
-        if not successful_upload:
-            terminal_message(
-                f"""
-                The application files could not be uploaded.
+        raise e
+    finally:
+        result = fetch_application_data(jg_ctx, id=id, identifier=identifier)
 
-                [yellow]If the problem persists, please contact [bold]{OV_CONTACT}[/bold]
-                for support and trouble-shooting[/yellow]
-                """,
-                subject="File upload failed",
-                color="yellow",
-            )
-
-    result = fetch_application_data(jg_ctx, id=id, identifier=identifier)
-
-    render_single_result(
-        jg_ctx,
-        result,
-        hidden_fields=HIDDEN_FIELDS,
-        title="Updated Application",
-    )
+        render_single_result(
+            jg_ctx,
+            result,
+            hidden_fields=HIDDEN_FIELDS,
+            title="Updated Application",
+        )
 
 
 @app.command()
@@ -357,6 +349,7 @@ def delete(
             """,
             subject="Invalid params",
         )
+        raise typer.Exit()
     elif identifier is not None:
         identification = identifier
 

@@ -4,6 +4,7 @@ from unittest import mock
 import httpx
 import pytest
 
+from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ApplicationResponse
 from jobbergate_cli.subapps.applications.app import (
     HIDDEN_FIELDS,
@@ -139,7 +140,6 @@ def test_create__success(
     )
 
     mocked_upload = mocker.patch("jobbergate_cli.subapps.applications.app.upload_application")
-    mocked_upload.return_value = True
 
     test_app = make_test_app("create", create)
     mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
@@ -207,7 +207,7 @@ def test_create__warns_but_does_not_abort_if_upload_fails(
             )
         ),
     )
-    assert result.exit_code == 0, f"create failed: {result.stdout}"
+    assert result.exit_code == 1, f"create failed: {result.stdout}"
     assert create_route.called
     assert upload_route.called
     assert "application files could not be uploaded" in result.stdout
@@ -427,8 +427,10 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
             json=response_data,
         ),
     )
-    mocked_upload = mocker.patch("jobbergate_cli.subapps.applications.app.upload_application")
-    mocked_upload.return_value = False
+    mocked_upload = mocker.patch(
+        "jobbergate_cli.subapps.applications.app.upload_application",
+        side_effect=Abort("Failed to upload application files"),
+    )
 
     test_app = make_test_app("update", update)
     mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
@@ -444,7 +446,7 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
             )
         ),
     )
-    assert result.exit_code == 0, f"update failed: {result.stdout}"
+    assert result.exit_code == 1, f"update failed: {result.stdout}"
     assert update_route.called
     assert mocked_upload.called
     assert "application files could not be uploaded" in result.stdout
