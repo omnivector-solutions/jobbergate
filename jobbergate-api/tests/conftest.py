@@ -284,7 +284,6 @@ def dummy_template() -> str:
         #SBATCH --partition={{data.partition}}
         #SBATCH --output=sample-%j.out
 
-
         echo $SLURM_TASKS_PER_NODE
         echo $SLURM_SUBMIT_DIR
         """
@@ -324,18 +323,19 @@ def job_script_data_as_string():
     """
     content = dedent(
         """
-                #!/bin/bash
+        #!/bin/bash
 
-                #SBATCH --job-name=rats
-                #SBATCH --partition=debug
-                #SBATCH --time=00:30:00
-                #SBATCH --partition=debug
-                #SBATCH --output=sample-%j.out
+        #SBATCH --job-name=rats
+        #SBATCH --partition=debug
+        #SBATCH --output=sample-%j.out
 
+        # Sbatch params injected at rendering time
+        #SBATCH --partition=debug
+        #SBATCH --time=00:30:00
 
-                echo $SLURM_TASKS_PER_NODE
-                echo $SLURM_SUBMIT_DIR
-                """
+        echo $SLURM_TASKS_PER_NODE
+        echo $SLURM_SUBMIT_DIR
+        """
     ).strip()
     return content
 

@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped
 from sqlalchemy.sql.expression import Select
 
+from jobbergate_api.apps.file_validation import check_uploaded_file_syntax
 from jobbergate_api.config import settings
 from jobbergate_api.safe_types import Bucket
 from jobbergate_api.storage import render_sql, search_clause, sort_clause
@@ -210,7 +211,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         result: Result = await self.session.execute(query)
         instance: CrudModel = enforce_defined(
             result.unique().scalar_one_or_none(),  # type: ignore
-            f"{self.name} row not found by {locator}",
+            f"{self.name} entry was not found by {locator=}",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
@@ -229,7 +230,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         deleted = list(result.scalars())
         require_condition(
             len(deleted) == 1,
-            f"{self.name} row not found by {locator=}",
+            f"{self.name} entry was not found by {locator=}",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
@@ -250,7 +251,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         result: Result = await self.session.execute(query)
         return enforce_defined(
             result.scalar_one_or_none(),
-            f"{self.name} row not found by {locator=}",
+            f"{self.name} entry was not found by {locator=}",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
         )
@@ -551,6 +552,13 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             raise_kwargs=dict(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE),
         )
 
+        require_condition(
+            check_uploaded_file_syntax(file_obj, filename),
+            f"File {filename=} did not pass the syntax check for its extension",
+            raise_exc_class=ServiceError,
+            raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
+        )
+
         # Mypy doesn't like aioboto3 much
         await self.bucket.upload_fileobj(Fileobj=file_obj, Key=instance.file_key)  # type: ignore
         return instance
@@ -576,7 +584,12 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
 
         """
         file_content = await self.get_file_content(instance)
-        template = Template(file_content.decode("utf-8"))
+        with handle_errors(
+            f"Unable to process jinja template filename={instance.filename}",
+            raise_exc_class=ServiceError,
+            raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
+        ):
+            template = Template(file_content.decode("utf-8"))
 
         render_contexts = [parameters, {"data": parameters}]
 

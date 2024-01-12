@@ -4,8 +4,10 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+- Improved error handling and reporting [ASP-4095]
 
 ## 4.2.1a0 -- 2024-01-11
+
 ## 4.2.0 -- 2024-01-08
 
 - Added instructions to checkbox questions [ASP-4042]

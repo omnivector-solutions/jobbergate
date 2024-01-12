@@ -160,7 +160,7 @@ def upload_application(
     application_path: pathlib.Path,
     application_id: Optional[int],
     application_identifier: Optional[str],
-) -> bool:
+):
     """
     Upload an application given an application path and the application id.
 
@@ -169,7 +169,6 @@ def upload_application(
     :param: application_path:       The directory where the application files to upload may be found
     :param: application_id:         The id of the application for which to upload  data
     :param: application_identifier: The identifier of the application for which to upload  data
-    :returns: True if the upload was successful; False otherwise
     """
 
     # Make static type checkers happy
@@ -210,21 +209,16 @@ def upload_application(
 
     logger.debug("Preparing to upload the template configuration")
 
-    response_code = cast(
-        int,
-        make_request(
-            jg_ctx.client,
-            f"/jobbergate/job-script-templates/{identification}",
-            "PUT",
-            expect_response=False,
-            abort_message="Request to upload application configuration was not accepted by the API",
-            support=True,
-            json={"template_vars": application_config.application_config},
-        ),
+    make_request(
+        jg_ctx.client,
+        f"/jobbergate/job-script-templates/{identification}",
+        "PUT",
+        expect_response=False,
+        abort_message="Request to upload application configuration was not accepted by the API",
+        support=True,
+        json={"template_vars": application_config.application_config},
+        expected_status=200,
     )
-
-    if response_code != 200:
-        return False
 
     supporting_files = application_config.jobbergate_config.supporting_files or []
 
@@ -238,42 +232,32 @@ def upload_application(
             else:
                 file_type = FileType.ENTRYPOINT
 
-            response_code = cast(
-                int,
-                make_request(
-                    jg_ctx.client,
-                    f"/jobbergate/job-script-templates/{identification}/upload/template/{file_type.value}",
-                    "PUT",
-                    expect_response=False,
-                    abort_message="Request to upload application files was not accepted by the API",
-                    support=True,
-                    files={"upload_file": (relative_template_path.name, template_file, "text/plain")},
-                ),
+            make_request(
+                jg_ctx.client,
+                f"/jobbergate/job-script-templates/{identification}/upload/template/{file_type.value}",
+                "PUT",
+                expect_response=False,
+                abort_message="Request to upload application files was not accepted by the API",
+                support=True,
+                files={"upload_file": (relative_template_path.name, template_file, "text/plain")},
+                expected_status=200,
             )
-            if response_code != 200:
-                return False
 
     logger.debug(f"Preparing to upload {JOBBERGATE_APPLICATION_MODULE_FILE_NAME}")
     with open(module_file_path, "rb") as module_file:
-        response_code = cast(
-            int,
-            make_request(
-                jg_ctx.client,
-                f"/jobbergate/job-script-templates/{identification}/upload/workflow",
-                "PUT",
-                expect_response=False,
-                abort_message="Request to upload application module was not accepted by the API",
-                support=True,
-                files={
-                    "upload_file": (module_file_path.name, module_file, "text/plain"),
-                },
-                data={"runtime_config": application_config.jobbergate_config.json()},
-            ),
+        make_request(
+            jg_ctx.client,
+            f"/jobbergate/job-script-templates/{identification}/upload/workflow",
+            "PUT",
+            expect_response=False,
+            abort_message="Request to upload application module was not accepted by the API",
+            support=True,
+            files={
+                "upload_file": (module_file_path.name, module_file, "text/plain"),
+            },
+            data={"runtime_config": application_config.jobbergate_config.json()},
+            expected_status=200,
         )
-    if response_code != 200:
-        return False
-
-    return True
 
 
 def save_application_files(

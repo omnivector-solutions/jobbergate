@@ -70,7 +70,7 @@ async def test_render_job_script_from_template(
     """
     base_template = await synth_services.crud.template.create(**fill_job_template_data())
 
-    template_name = "entrypoint.py.j2"
+    template_name = "entrypoint.sh.j2"
     job_script_name = template_name.removesuffix(".j2")
     await synth_services.file.template.upsert(
         parent_id=base_template.id,
@@ -125,7 +125,7 @@ async def test_render_job_script_from_template__no_entrypoint(
     """
     base_template = await synth_services.crud.template.create(**fill_job_template_data())
 
-    template_name = "entrypoint.py.j2"
+    template_name = "entrypoint.sh.j2"
     job_script_name = template_name.removesuffix(".j2")
     await synth_services.file.template.upsert(
         parent_id=base_template.id,
@@ -217,7 +217,7 @@ async def test_render_job_script_from_template__template_file_unavailable(
     """
     base_template = await synth_services.crud.template.create(**fill_job_template_data())
 
-    template_name = "entrypoint.py.j2"
+    template_name = "entrypoint.sh.j2"
     job_script_name = template_name.removesuffix(".j2")
 
     payload = {
@@ -253,7 +253,7 @@ async def test_render_job_script_from_template__bad_permission(
     """
     base_template = await synth_services.crud.template.create(**fill_job_template_data())
 
-    template_name = "entrypoint.py.j2"
+    template_name = "entrypoint.sh.j2"
     job_script_name = template_name.removesuffix(".j2")
     payload = {
         "create_request": fill_job_script_data(),
@@ -283,7 +283,7 @@ async def test_render_job_script_from_template__without_template(
     """
     Test POST /job_scripts/render-from-template can't create a job_script if the template file is unavailable.
     """
-    template_name = "entrypoint.py.j2"
+    template_name = "entrypoint.sh.j2"
     job_script_name = template_name.removesuffix(".j2")
     payload = {
         "create_request": fill_job_script_data(),
@@ -492,7 +492,7 @@ class TestListJobScripts:
 
             id = job_script_data.id
             file_type = "ENTRYPOINT"
-            job_script_filename = "entrypoint.py"
+            job_script_filename = "entrypoint.sh"
 
             await synth_services.file.job_script.upsert(
                 parent_id=id,
@@ -613,7 +613,7 @@ class TestJobScriptFiles:
     ):
         id = job_script_data.id
         file_type = "ENTRYPOINT"
-        dummy_file_path = make_dummy_file("test_template.py", content=job_script_data_as_string)
+        dummy_file_path = make_dummy_file("test_template.sh", content=job_script_data_as_string)
 
         inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
         with open(dummy_file_path, mode="rb") as file:
@@ -624,7 +624,7 @@ class TestJobScriptFiles:
 
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
 
-        job_script_file = await synth_services.file.job_script.get(id, "test_template.py")
+        job_script_file = await synth_services.file.job_script.get(id, "test_template.sh")
 
         assert job_script_file is not None
         assert job_script_file.parent_id == id
@@ -646,7 +646,7 @@ class TestJobScriptFiles:
     ):
         id = job_script_data.id
         file_type = "ENTRYPOINT"
-        dummy_file_path = make_dummy_file("test_template.py", content=job_script_data_as_string)
+        dummy_file_path = make_dummy_file("test_template.sh", content=job_script_data_as_string)
 
         owner_email = tester_email
         requester_email = "another_" + owner_email
@@ -671,7 +671,7 @@ class TestJobScriptFiles:
     ):
         id = job_script_data.id
         file_type = "ENTRYPOINT"
-        job_script_filename = "entrypoint.py"
+        job_script_filename = "entrypoint.sh"
 
         await synth_services.file.job_script.upsert(
             parent_id=id,
@@ -698,7 +698,7 @@ class TestJobScriptFiles:
     ):
         parent_id = job_script_data.id
         file_type = "ENTRYPOINT"
-        job_script_filename = "entrypoint.py"
+        job_script_filename = "entrypoint.sh"
 
         upserted_instance = await synth_services.file.job_script.upsert(
             parent_id=parent_id,
@@ -726,7 +726,7 @@ class TestJobScriptFiles:
     ):
         parent_id = job_script_data.id
         file_type = "ENTRYPOINT"
-        job_script_filename = "entrypoint.py"
+        job_script_filename = "entrypoint.sh"
 
         await synth_services.file.job_script.upsert(
             parent_id=parent_id,

@@ -287,7 +287,7 @@ class TestUploadApplicationFiles:
         mocked_routes,
     ):
         with mocked_routes as routes:
-            result = upload_application(dummy_context, dummy_application_dir, self.application_id, None)
+            upload_application(dummy_context, dummy_application_dir, self.application_id, None)
 
             # Ensure just the filename is included, nothing extra from path
             filename_check = b'filename="jobbergate.py"\r\n'
@@ -297,8 +297,6 @@ class TestUploadApplicationFiles:
             filename_check = b'filename="job-script-template.py.j2"\r\n'
             assert routes["upload_template"].call_count == 1
             assert filename_check in routes["upload_template"].calls[0].request.content
-
-        assert result is True
 
     @respx.mock(assert_all_mocked=True)
     def test_upload_application__fails_directory_does_not_exists(self, dummy_application_dir, dummy_context):

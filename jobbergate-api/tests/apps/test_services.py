@@ -653,6 +653,24 @@ class TestFileService:
         file_data = await dummy_file_service.get_file_content(upserted_instance)
         assert file_data == "dummy bytes content".encode()
 
+    @pytest.mark.parametrize(
+        "filename, content",
+        [
+            ("name.py", "dummy string content"),
+            ("name.yaml", "unbalanced blackets: ]["),
+            ("name.sh.jinja2", "Hello {{ name }!"),
+            ("name.sh.j2", "Hello {{ name }!"),
+        ],
+    )
+    async def test_upsert__raises_400_on_invalid_syntax(self, filename, content, dummy_file_service):
+        """
+        Test that the ``upsert()`` method raises a 400 error if the file syntax is invalid.
+        """
+        with pytest.raises(HTTPException) as exc_info:
+            await dummy_file_service.upsert(13, filename, content)
+        assert exc_info.value.status_code == 400
+        assert "did not pass the syntax check" in exc_info.value.detail
+
     async def test_upsert__raises_500_no_size_attribute(self, make_upload_file, dummy_file_service):
         """
         Test that the ``upsert()`` method raises a 413 error if the file is too large.
@@ -706,6 +724,24 @@ class TestFileService:
             await dummy_file_service.render(upserted_instance, parameters=dict(foo="bar"))
             == "dummy bar content"
         )
+
+    async def test_render__raises_422_on_bad_template(self, make_upload_file, dummy_file_service):
+        """
+        Test that the ``render()`` method raises a 422 error if the template is invalid.
+        """
+        dummy_upload_file = make_upload_file()
+        with make_upload_file(content="dummy {{ foo } content") as dummy_upload_file:
+            upserted_instance = await dummy_file_service.upsert(
+                13,
+                "file-one.txt",
+                dummy_upload_file,
+            )
+
+        with pytest.raises(HTTPException) as exc_info:
+            await dummy_file_service.render(upserted_instance, parameters=dict(foo="bar"))
+        assert exc_info.value.status_code == 422
+        assert "TemplateSyntaxError" in exc_info.value.detail
+        assert "Unable to process jinja template filename=file-one.txt" in exc_info.value.detail
 
     async def test_render__backward_compatible(self, make_upload_file, dummy_file_service):
         """

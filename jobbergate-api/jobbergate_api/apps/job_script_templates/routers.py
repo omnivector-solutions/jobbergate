@@ -50,7 +50,7 @@ async def job_script_template_create(
             **create_request.dict(exclude_unset=True),
         )
     except IntegrityError:
-        message = f"Job script template with the {create_request.identifier=} already exists"
+        message = f"Job script template with the identifier={create_request.identifier} already exists"
         logger.error(message)
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=message)
 

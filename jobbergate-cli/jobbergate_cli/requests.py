@@ -1,8 +1,10 @@
 """
 Provide utilities for making requests against the Jobbergate API.
 """
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Any, Dict, Optional, Type, TypeVar, Union
+from typing import Any, Type, TypeVar, Union
 
 import httpx
 import pydantic
@@ -12,9 +14,43 @@ from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.text_tools import dedent, unwrap
 
 
+def get_possible_solution_to_error(error_code: int) -> str:
+    """
+    Get a possible solution to an error code.
+    """
+    if httpx.codes.is_client_error(error_code):
+        default_solution = "Please check the data on your request and try again"
+    else:
+        default_solution = "Please try again and contact support if the problem persists"
+
+    custom_solutions: dict[int, str] = {
+        # client errors
+        httpx.codes.UNAUTHORIZED: "Please verify your credentials to perform this action with system admin",
+        httpx.codes.FORBIDDEN: "Please notice only the owner of the resource can perform this action",
+        httpx.codes.NOT_FOUND: "Please check the id number or identifier and try again",
+        httpx.codes.REQUEST_TIMEOUT: "Please try again and contact support if the problem persists",
+        # server errors
+        # ...
+    }
+    return custom_solutions.get(error_code, default_solution)
+
+
+def format_response_error(response: httpx.Response, default_text) -> str:
+    """
+    Format a response into a human-readable error message, including the cause, and a possible solution.
+    """
+    message = [default_text]
+    try:
+        message.append(response.json()["detail"])
+    except Exception:
+        pass
+    message.append(get_possible_solution_to_error(response.status_code))
+    return " -- ".join(message)
+
+
 def _deserialize_request_model(
     request_model: pydantic.BaseModel,
-    request_kwargs: Dict[str, Any],
+    request_kwargs: dict[str, Any],
     abort_message: str,
     abort_subject: str,
 ):
@@ -85,16 +121,16 @@ def make_request(
     url_path: str,
     method: str,
     *,
-    expected_status: Optional[int] = None,
+    expected_status: int | None = None,
     expect_response: bool = True,
     abort_message: str = "There was an error communicating with the API",
     abort_subject: str = "REQUEST FAILED",
     support: bool = True,
-    response_model_cls: Optional[Type[ResponseModel]] = None,
-    request_model: Optional[pydantic.BaseModel] = None,
-    save_to_file: Optional[Path] = None,
+    response_model_cls: Type[ResponseModel] | None = None,
+    request_model: pydantic.BaseModel | None = None,
+    save_to_file: Path | None = None,
     **request_kwargs: Any,
-) -> Union[ResponseModel, Dict, int]:
+) -> Union[ResponseModel, dict, int]:
     """
     Make a request against the Jobbergate API.
 
@@ -134,43 +170,55 @@ def make_request(
     try:
         response = client.send(request)
     except httpx.RequestError as err:
+        exception_name = type(err).__name__
         raise Abort(
             unwrap(
                 f"""
                 {abort_message}:
-                Communication with the API failed.
+                Communication with the API failed: {str(err)}.
                 """
             ),
-            subject=abort_subject,
+            subject=f"{abort_subject} - {exception_name}",
             support=support,
-            log_message="There was an error making the request to the API",
+            log_message=f"There was an error on the request -- {str(err)}",
             original_error=err,
         )
 
-    if expected_status is not None and response.status_code != expected_status:
-        if method in ("PATCH", "PUT", "DELETE") and response.status_code == 403 and "does not own" in response.text:
+    if expected_status is not None:
+        if response.is_client_error:
             raise Abort(
-                dedent(
-                    f"""
-                     {abort_message}:
-                     [red]You do not own this resource.[/red]
-                     Please contact the owner if you need it to be modified.
-                     """,
+                format_response_error(response, abort_message),
+                subject=f"{abort_subject} - {response.reason_phrase}",
+                log_message="Request was invalid due to a client-side error ({} -- {}): {}".format(
+                    response.status_code, response.reason_phrase, response.text
                 ),
-                subject=abort_subject,
-                log_message=f"Resource could not be modified by non-owner: {response.text}",
+                support=support if response.status_code != httpx.codes.FORBIDDEN else False,
             )
-        else:
+        elif response.is_server_error:
+            raise Abort(
+                format_response_error(response, abort_message),
+                subject=f"{abort_subject} - {response.reason_phrase}",
+                log_message="Request was invalid due to a server-side error ({} -- {}): {}".format(
+                    response.status_code, response.reason_phrase, response.text
+                ),
+                support=True,
+                sentry_context=dict(
+                    url=request.url, method=method, request_kwargs=request_kwargs, response=response.text
+                ),
+            )
+        elif expected_status != response.status_code:
             raise Abort(
                 unwrap(
                     f"""
-                    {abort_message}:
-                    Received an error response.
-                    """
+                        {abort_message}:
+                        Received an error response.
+                        """
                 ),
                 subject=abort_subject,
                 support=support,
-                log_message=f"Got an error code for request: {response.status_code}: {response.text}",
+                log_message="Got an unexpected error code on request (expected {}, got {}): {}".format(
+                    expected_status, response.status_code, response.text
+                ),
             )
 
     if save_to_file is not None:

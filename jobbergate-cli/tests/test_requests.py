@@ -140,9 +140,9 @@ def test_make_request__raises_Abort_if_client_request_raises_exception(respx_moc
         make_request(
             client, req_path, "GET", abort_message="There was a big problem", abort_subject="BIG PROBLEM", support=True
         )
-    assert err_info.value.subject == "BIG PROBLEM"
+    assert err_info.value.subject == "BIG PROBLEM - RequestError"
     assert err_info.value.support is True
-    assert err_info.value.log_message == "There was an error making the request to the API"
+    assert err_info.value.log_message == "There was an error on the request -- BOOM!"
     assert err_info.value.original_error == original_error
 
 
@@ -162,7 +162,10 @@ def test_make_request__raises_Abort_with_ownership_message_for_403_for_non_owner
         ),
     )
 
-    with pytest.raises(Abort, match="You do not own this resource") as err_info:
+    with pytest.raises(
+        Abort,
+        match="There was a big problem -- This jabroni does not own this whingding -- Please notice only the owner of",
+    ) as err_info:
         make_request(
             client,
             req_path,
@@ -172,9 +175,9 @@ def test_make_request__raises_Abort_with_ownership_message_for_403_for_non_owner
             abort_subject="BIG PROBLEM",
             support=True,
         )
-    assert err_info.value.subject == "BIG PROBLEM"
+    assert err_info.value.subject == "BIG PROBLEM - Forbidden"
     assert err_info.value.support is False
-    assert "Resource could not be modified by non-owner" in err_info.value.log_message
+    assert "Request was invalid due to a client-side error" in err_info.value.log_message
     assert "This jabroni does not own this whingding" in err_info.value.log_message
     assert err_info.value.original_error is None
 
@@ -196,7 +199,9 @@ def test_make_request__raises_Abort_when_expected_status_is_not_None_and_respons
         ),
     )
 
-    with pytest.raises(Abort, match="There was a big problem: Received an error response") as err_info:
+    with pytest.raises(
+        Abort, match="There was a big problem -- Please check the data on your request and try again"
+    ) as err_info:
         make_request(
             client,
             req_path,
@@ -206,9 +211,12 @@ def test_make_request__raises_Abort_when_expected_status_is_not_None_and_respons
             abort_subject="BIG PROBLEM",
             support=True,
         )
-    assert err_info.value.subject == "BIG PROBLEM"
+    assert err_info.value.subject == "BIG PROBLEM - Bad Request"
     assert err_info.value.support is True
-    assert err_info.value.log_message == "Got an error code for request: 400: It blowed up"
+    assert (
+        err_info.value.log_message
+        == "Request was invalid due to a client-side error (400 -- Bad Request): It blowed up"
+    )
     assert err_info.value.original_error is None
 
 
