@@ -99,7 +99,7 @@ async def job_script_create_from_template(
     if len(missing_keys) > 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=("The following required files are missing for job template {}: {}").format(
+            detail="The following required files are missing for job template {}: {}".format(
                 id_or_identifier, ", ".join(missing_keys)
             ),
         )
