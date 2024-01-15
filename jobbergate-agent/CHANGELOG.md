@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
 
+- Added the job property `environment` since it is required when configured to interact with slurm rest `0.0.39`
+
 ## 4.2.0 -- 2024-01-08
 
 - Capture request errors with Slurm API in Sentry notifications [PENG-2000]
