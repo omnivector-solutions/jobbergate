@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+
+## 4.3.0a0 -- 2024-01-15
 - Improved error handling and reporting [ASP-4095]
 - Fixed `inject_sbatch_params` when no `#SBATCH` directive was found on the file
 - Added syntax validation for uploaded files (jinja2, yaml, and Python), ported from Jobbergate-API 3.6
