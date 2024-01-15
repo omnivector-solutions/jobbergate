@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-docs
 
 ## Unreleased
 
+
+## 4.2.1 -- 2024-01-15
 ## 4.2.0 -- 2024-01-08
 
 - Added new page describing the support for on-site job submissions [ASP-4238]
