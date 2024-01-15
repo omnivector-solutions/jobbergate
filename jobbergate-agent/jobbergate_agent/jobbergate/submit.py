@@ -45,6 +45,9 @@ def get_job_parameters(slurm_parameters: Dict[str, Any], **kwargs) -> SlurmJobPa
     values from slurm_parameters.
     """
     merged_parameters = {**kwargs, **slurm_parameters}
+    if SETTINGS.SLURM_RESTD_VERSION == "v0.0.39":
+        # add required environment variable for slurmrestd v0.0.39
+        merged_parameters.setdefault("environment", []).append("FOO=bar")
     return SlurmJobParams.parse_obj(merged_parameters)
 
 
