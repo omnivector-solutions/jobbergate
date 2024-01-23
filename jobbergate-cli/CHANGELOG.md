@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-cli
 ## Unreleased
 
 - Allow methods from `JobbergateBaseApplication` to return None for backward compatibility [ASP-4557]
+- Allow application script to dynamically overwrite job-script's name [ASP-4558]
 
 ## 4.3.0a0 -- 2024-01-15
 

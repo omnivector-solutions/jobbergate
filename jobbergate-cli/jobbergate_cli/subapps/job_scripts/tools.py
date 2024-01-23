@@ -237,6 +237,12 @@ def render_job_script(
     param_dict_flat = flatten_param_dict(app_config.dict())
 
     job_script_name = name if name else app_data.name
+
+    if param_dict_flat.get("job_script_name"):
+        # Possibly overwrite script name if set at runtime by the application
+        job_script_name = param_dict_flat["job_script_name"]
+        logger.debug("Job script name was set by the application at runtime: {}", job_script_name)
+
     request_data = JobScriptRenderRequestData(
         create_request=JobScriptCreateRequest(
             name=job_script_name,
@@ -250,9 +256,6 @@ def render_job_script(
             param_dict={"data": param_dict_flat},
         ),
     )
-
-    if app_config.jobbergate_config.job_script_name is not None:
-        request_data.create_request.name = app_config.jobbergate_config.job_script_name
 
     # Make static type checkers happy
     assert jg_ctx.client is not None
