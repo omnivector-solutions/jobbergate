@@ -4,8 +4,10 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+- Allow methods from `JobbergateBaseApplication` to return None for backward compatibility [ASP-4557]
 
 ## 4.3.0a0 -- 2024-01-15
+
 - Improved error handling and reporting [ASP-4095]
 
 ## 4.2.1a0 -- 2024-01-11
