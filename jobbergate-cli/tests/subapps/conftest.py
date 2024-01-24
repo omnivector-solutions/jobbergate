@@ -240,7 +240,6 @@ def dummy_config_source():
           output_directory: .
           supporting_files_output_name:
           supporting_files:
-          job_script_name:
           user_supplied_key: user-supplied-value
         application_config:
           foo: foo
