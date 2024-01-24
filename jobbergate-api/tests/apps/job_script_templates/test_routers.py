@@ -1,5 +1,4 @@
 """Test the router for the Job Script Template resource."""
-import asyncio
 import json
 
 import pytest
@@ -289,6 +288,138 @@ async def test_delete_job_template__forbidden(
     assert response.status_code == 403
 
     assert (await synth_services.crud.template.count()) == 1
+
+
+async def test_clone_job_template__success(
+    client,
+    fill_job_template_data,
+    inject_security_header,
+    tester_email,
+    synth_services,
+):
+    original_instance = await synth_services.crud.template.create(
+        **fill_job_template_data(owner_email=tester_email, identifier="test-identifier")
+    )
+    parent_id = original_instance.id
+    await synth_services.file.template.upsert(
+        parent_id=parent_id,
+        filename="test_template.py.j2",
+        upload_content="print('dummy file data')",
+        file_type="ENTRYPOINT",
+    )
+    await synth_services.file.template.upsert(
+        parent_id=parent_id,
+        filename="test_template.j2",
+        upload_content="support dummy file data",
+        file_type="SUPPORT",
+    )
+    await synth_services.file.workflow.upsert(
+        parent_id=parent_id,
+        filename="jobbergate.py",
+        upload_content="print('dummy file data')",
+    )
+
+    new_owner_email = "new_" + tester_email
+
+    inject_security_header(new_owner_email, Permissions.JOB_TEMPLATES_EDIT)
+    response = await client.post(f"jobbergate/job-script-templates/clone/{original_instance.id}")
+
+    assert response.status_code == 201, f"Clone failed: {response.text}"
+    response_data = response.json()
+
+    cloned_id = response_data["id"]
+
+    assert cloned_id != original_instance.id
+    assert response_data["name"] == original_instance.name
+    assert response_data["description"] == original_instance.description
+    assert response_data["identifier"] is None
+    assert response_data["template_vars"] == original_instance.template_vars
+    assert response_data["owner_email"] == new_owner_email
+
+    assert {f["filename"] for f in response_data["template_files"]} == {
+        "test_template.py.j2",
+        "test_template.j2",
+    }
+    assert {f["filename"] for f in response_data["workflow_files"]} == {"jobbergate.py"}
+
+
+async def test_clone_job_template__replace_base_values(
+    client,
+    fill_job_template_data,
+    inject_security_header,
+    tester_email,
+    synth_services,
+):
+    original_instance = await synth_services.crud.template.create(
+        **fill_job_template_data(owner_email=tester_email, identifier="test-identifier")
+    )
+
+    new_owner_email = "new_" + tester_email
+
+    payload = dict(
+        name="new_name",
+        description="new_description",
+        identifier="new_identifier",
+        template_vars={"new": "value"},
+    )
+
+    inject_security_header(new_owner_email, Permissions.JOB_TEMPLATES_EDIT)
+    response = await client.post(
+        f"jobbergate/job-script-templates/clone/{original_instance.id}", json=payload
+    )
+
+    assert response.status_code == 201, f"Clone failed: {response.text}"
+    response_data = response.json()
+    assert response_data["name"] == payload["name"]
+    assert response_data["description"] == payload["description"]
+    assert response_data["identifier"] == payload["identifier"]
+    assert response_data["template_vars"] == payload["template_vars"]
+    assert response_data["owner_email"] == new_owner_email
+
+
+async def test_clone_job_template__fail_unauthorized(
+    client,
+    fill_job_template_data,
+    synth_services,
+):
+    original_instance = await synth_services.crud.template.create(**fill_job_template_data())
+
+    response = await client.post(f"jobbergate/job-script-templates/clone/{original_instance.id}")
+
+    assert response.status_code == 401
+
+
+async def test_clone_job_template__fail_not_found(
+    client,
+    inject_security_header,
+    tester_email,
+    synth_services,
+):
+    assert (await synth_services.crud.template.count()) == 0
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+    response = await client.post("jobbergate/job-script-templates/clone/0")
+
+    assert response.status_code == 404
+
+
+async def test_clone_job_template__fail_conflict(
+    client,
+    fill_job_template_data,
+    inject_security_header,
+    tester_email,
+    synth_services,
+):
+    identifier = "test-identifier"
+    original_instance = await synth_services.crud.template.create(
+        **fill_job_template_data(owner_email=tester_email, identifier=identifier)
+    )
+
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+    response = await client.post(
+        f"jobbergate/job-script-templates/clone/{original_instance.id}", json=dict(identifier=identifier)
+    )
+
+    assert response.status_code == 409
 
 
 class TestListJobTemplates:

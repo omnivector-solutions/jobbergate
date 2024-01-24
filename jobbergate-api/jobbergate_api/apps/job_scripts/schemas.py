@@ -89,6 +89,18 @@ class JobScriptCreateRequest(BaseModel):
         schema_extra = job_script_meta_mapper
 
 
+class JobScriptCloneRequest(BaseModel):
+    """
+    Request model for cloning JobScript instances.
+    """
+
+    name: LengthLimitedStr | None
+    description: LengthLimitedStr | None
+
+    class Config:
+        schema_extra = job_script_meta_mapper
+
+
 class RenderFromTemplateRequest(BaseModel):
     """Request model for creating a JobScript entry from a template."""
 

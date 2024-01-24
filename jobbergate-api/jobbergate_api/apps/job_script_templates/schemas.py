@@ -116,6 +116,18 @@ class JobTemplateCreateRequest(BaseModel):
         schema_extra = job_template_meta_mapper
 
 
+class JobTemplateCloneRequest(BaseModel):
+    """Schema for the request to clone a job template."""
+
+    name: LengthLimitedStr | None
+    identifier: LengthLimitedStr | None
+    description: LengthLimitedStr | None
+    template_vars: dict[LengthLimitedStr, Any] | None
+
+    class Config:
+        schema_extra = job_template_meta_mapper
+
+
 class JobTemplateUpdateRequest(BaseModel):
     """Schema for the request to update a job template."""
 

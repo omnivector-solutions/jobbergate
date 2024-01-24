@@ -14,6 +14,7 @@ from jobbergate_api.apps.garbage_collector import garbage_collect
 from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
 from jobbergate_api.apps.job_script_templates.models import JobScriptTemplateFile, WorkflowFile
 from jobbergate_api.apps.job_script_templates.schemas import (
+    JobTemplateCloneRequest,
     JobTemplateCreateRequest,
     JobTemplateDetailedView,
     JobTemplateListView,
@@ -67,6 +68,51 @@ async def job_script_template_get(
     """Get a job script template by id or identifier."""
     logger.info(f"Getting job script template with {id_or_identifier=}")
     return await secure_services.crud.template.get(id_or_identifier, include_files=True)
+
+
+@router.post(
+    "/clone/{id_or_identifier}",
+    status_code=status.HTTP_201_CREATED,
+    response_model=JobTemplateDetailedView,
+    description="Endpoint for cloning a job script template to a new entry owned by the user",
+)
+async def job_script_template_clone(
+    id_or_identifier: int | str = Path(),
+    clone_request: JobTemplateCloneRequest | None = None,
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
+    ),
+):
+    """Clone a job script template by id or identifier."""
+    logger.info(f"Cloning a job script template from {id_or_identifier=} with {clone_request=}")
+
+    if clone_request is None:
+        clone_request = JobTemplateCloneRequest()
+
+    original_instance = await secure_services.crud.template.get(id_or_identifier, include_files=True)
+
+    # Identifier is specifically set to None to avoid conflicts with the original instance
+    new_data = {"identifier": None, **clone_request.dict(exclude_unset=True)}
+    try:
+        cloned_instance = await secure_services.crud.template.clone_instance(
+            original_instance,
+            owner_email=secure_services.identity_payload.email,
+            **new_data,
+        )
+    except IntegrityError:
+        message = "Job script template with the identifier={} already exists".format(
+            clone_request.identifier or original_instance.identifier
+        )
+        logger.error(message)
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=message)
+
+    for file in original_instance.template_files:
+        await secure_services.file.template.clone_instance(file, cloned_instance.id)
+    for file in original_instance.workflow_files:
+        await secure_services.file.workflow.clone_instance(file, cloned_instance.id)
+
+    # Get again to update the file data
+    return await secure_services.crud.template.get(cloned_instance.id, include_files=True)
 
 
 @router.get(

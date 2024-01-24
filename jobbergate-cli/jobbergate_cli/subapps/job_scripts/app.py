@@ -466,3 +466,58 @@ def download_files(
         ),
         subject="Job script download succeeded",
     )
+
+
+@app.command()
+@handle_abort
+def clone(
+    ctx: typer.Context,
+    id: int = typer.Option(
+        ...,
+        "--id",
+        "-i",
+        help="The id of the job script to update",
+    ),
+    name: Optional[str] = typer.Option(
+        None,
+        help="Optional new name of the job script.",
+    ),
+    description: Optional[str] = typer.Option(
+        None,
+        help="Optional new text describing the job script.",
+    ),
+):
+    """
+    Clone an existing job script, so the user can own and modify a copy of it.
+    """
+    jg_ctx: JobbergateContext = ctx.obj
+
+    # Make static type checkers happy
+    assert jg_ctx.client is not None
+
+    update_params: Dict[str, Any] = dict()
+    if name is not None:
+        update_params.update(name=name)
+    if description is not None:
+        update_params.update(description=description)
+
+    job_script_result = cast(
+        JobScriptResponse,
+        make_request(
+            jg_ctx.client,
+            f"/jobbergate/job-scripts/clone/{id}",
+            "POST",
+            expected_status=201,
+            abort_message="Couldn't clone job script",
+            support=True,
+            json=update_params,
+            response_model_cls=JobScriptResponse,
+        ),
+    )
+
+    render_single_result(
+        jg_ctx,
+        job_script_result,
+        hidden_fields=HIDDEN_FIELDS,
+        title="Cloned Job Script",
+    )

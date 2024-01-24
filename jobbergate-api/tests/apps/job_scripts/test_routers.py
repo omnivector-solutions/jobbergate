@@ -51,6 +51,90 @@ async def test_create_stand_alone_job_script(
     assert response_data["parent_template_id"] is None
 
 
+async def test_clone_job_script__success(
+    client, fill_job_script_data, inject_security_header, tester_email, synth_services
+):
+    original_instance = await synth_services.crud.job_script.create(
+        **fill_job_script_data(owner_email=tester_email)
+    )
+    parent_id = original_instance.id
+    await synth_services.file.job_script.upsert(
+        parent_id=parent_id,
+        filename="entrypoint.py",
+        upload_content="print('dummy file data')",
+        file_type="ENTRYPOINT",
+    )
+    await synth_services.file.job_script.upsert(
+        parent_id=parent_id,
+        filename="support.sh",
+        upload_content="echo 'dummy file data'",
+        file_type="SUPPORT",
+    )
+
+    new_owner_email = "new_" + tester_email
+
+    inject_security_header(new_owner_email, Permissions.JOB_SCRIPTS_EDIT)
+    response = await client.post(f"jobbergate/job-scripts/clone/{original_instance.id}")
+
+    assert response.status_code == 201, f"Clone failed: {response.text}"
+    response_data = response.json()
+
+    cloned_id = response_data["id"]
+
+    assert cloned_id != original_instance.id
+    assert response_data["name"] == original_instance.name
+    assert response_data["description"] == original_instance.description
+    assert response_data["owner_email"] == new_owner_email
+
+    assert {f["filename"] for f in response_data["files"]} == {"entrypoint.py", "support.sh"}
+
+
+async def test_clone_job_script__replace_base_values(
+    client, fill_job_script_data, inject_security_header, tester_email, synth_services
+):
+    original_instance = await synth_services.crud.job_script.create(
+        **fill_job_script_data(owner_email=tester_email)
+    )
+
+    new_owner_email = "new_" + tester_email
+
+    payload = dict(
+        name="new name",
+        description="new description",
+    )
+
+    inject_security_header(new_owner_email, Permissions.JOB_SCRIPTS_EDIT)
+    response = await client.post(f"jobbergate/job-scripts/clone/{original_instance.id}", json=payload)
+
+    assert response.status_code == 201, f"Clone failed: {response.text}"
+    response_data = response.json()
+
+    assert response_data["name"] == payload["name"]
+    assert response_data["description"] == payload["description"]
+    assert response_data["owner_email"] == new_owner_email
+
+
+async def test_clone_job_script__fail_unauthorized(client, fill_job_script_data, synth_services):
+    original_instance = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    response = await client.post(f"jobbergate/job-scripts/clone/{original_instance.id}")
+
+    assert response.status_code == 401
+
+
+async def test_clone_job_script__fail_not_found(
+    client,
+    inject_security_header,
+    tester_email,
+    synth_services,
+):
+    assert (await synth_services.crud.job_script.count()) == 0
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
+    response = await client.post("jobbergate/job-scripts/clone/0")
+
+    assert response.status_code == 404
+
+
 async def test_render_job_script_from_template(
     fill_job_template_data,
     fill_job_script_data,

@@ -24,27 +24,27 @@ def test_list_all__makes_request_and_renders_results():
     add_legacy_compatible_commands(test_app)
 
     registered_command_names = [c.name for c in test_app.registered_commands]
-    assert sorted(registered_command_names) == sorted(
-        [
-            "list-applications",
-            "get-application",
-            "create-application",
-            "delete-application",
-            "update-application",
-            "download-application",
-            "list-job-scripts",
-            "get-job-script",
-            "create-job-script",
-            "update-job-script",
-            "delete-job-script",
-            "list-job-submissions",
-            "get-job-submission",
-            "create-job-submission",
-            "delete-job-submission",
-            "download-job-script",
-            "show-job-script-files",
-        ]
-    )
+    assert sorted(registered_command_names) == [
+        "clone-application",
+        "clone-job-script",
+        "create-application",
+        "create-job-script",
+        "create-job-submission",
+        "delete-application",
+        "delete-job-script",
+        "delete-job-submission",
+        "download-application",
+        "download-job-script",
+        "get-application",
+        "get-job-script",
+        "get-job-submission",
+        "list-applications",
+        "list-job-scripts",
+        "list-job-submissions",
+        "show-job-script-files",
+        "update-application",
+        "update-job-script",
+    ]
 
 
 def test_import_appform_from_jobbergate_cli_warns_and_gives_you_questions_instead_when_in_compatibility_mode(
