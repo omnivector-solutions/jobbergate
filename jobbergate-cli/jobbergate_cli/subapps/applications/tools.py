@@ -20,6 +20,7 @@ from jobbergate_cli.constants import (
     FileType,
 )
 from jobbergate_cli.exceptions import Abort
+from jobbergate_cli.render import terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig, JobbergateConfig, JobbergateContext
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
@@ -385,6 +386,15 @@ def execute_application(
     :param: fast_mode:       If true, do not ask the user questions. Just use supplied_params or defaults
     :returns: The configuration values collected from the user by executing the application
     """
-    app_params = gather_param_values(app_module, supplied_params=supplied_params, fast_mode=fast_mode)
+    try:
+        app_params = gather_param_values(app_module, supplied_params=supplied_params, fast_mode=fast_mode)
+    except Exception as err:
+        exception_name = type(err).__name__
+        terminal_message(
+            "The question workflow failed to execute. Please check the traceback bellow for more information.",
+            subject=f"Runtime error on application execution - {exception_name}",
+            color="red",
+        )
+        raise err
     app_config.application_config.update(**app_params)
     return app_params
