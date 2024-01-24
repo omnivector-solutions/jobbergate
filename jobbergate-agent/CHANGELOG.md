@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
 
+
+## 4.3.0a1 -- 2024-01-24
 - Added the job property `environment` since it is required when configured to interact with slurm rest `0.0.39`
 
 ## 4.3.0a0 -- 2024-01-15
