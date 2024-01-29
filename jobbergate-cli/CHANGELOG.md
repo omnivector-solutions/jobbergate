@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+
+## 4.3.0a2 -- 2024-01-29
 - Added commands to clone templates and job scripts [ASP-3335]
 
 ## 4.3.0a1 -- 2024-01-24
