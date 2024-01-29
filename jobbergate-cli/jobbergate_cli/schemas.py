@@ -130,6 +130,8 @@ class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     identifier: Optional[str] = None
     description: Optional[str] = None
     template_vars: Dict[str, Any] = {}
+    is_archived: Optional[bool] = None
+    cloned_from_id: Optional[int] = None
 
     template_files: List[TemplateFileResponse] = []
     workflow_files: List[WorkflowFileResponse] = []
@@ -167,6 +169,8 @@ class JobScriptResponse(
     owner_email: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    is_archived: Optional[bool] = None
+    cloned_from_id: Optional[int] = None
 
     files: List[JobScriptFile] = []
 

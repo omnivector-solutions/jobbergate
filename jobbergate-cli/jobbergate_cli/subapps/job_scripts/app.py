@@ -29,10 +29,12 @@ from jobbergate_cli.text_tools import dedent
 
 # move hidden field logic to the API
 HIDDEN_FIELDS = [
+    "cloned_from_id",
     "created_at",
-    "updated_at",
     "files",
+    "is_archived",
     "template",
+    "updated_at",
 ]
 
 

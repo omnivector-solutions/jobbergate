@@ -85,6 +85,7 @@ async def test_clone_job_script__success(
     assert response_data["name"] == original_instance.name
     assert response_data["description"] == original_instance.description
     assert response_data["owner_email"] == new_owner_email
+    assert response_data["cloned_from_id"] == original_instance.id
 
     assert {f["filename"] for f in response_data["files"]} == {"entrypoint.py", "support.sh"}
 
@@ -112,6 +113,7 @@ async def test_clone_job_script__replace_base_values(
     assert response_data["name"] == payload["name"]
     assert response_data["description"] == payload["description"]
     assert response_data["owner_email"] == new_owner_email
+    assert response_data["cloned_from_id"] == original_instance.id
 
 
 async def test_clone_job_script__fail_unauthorized(client, fill_job_script_data, synth_services):

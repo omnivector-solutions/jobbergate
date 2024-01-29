@@ -3,7 +3,6 @@ import json
 
 import pytest
 from fastapi import status
-from loguru import logger
 
 from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
 from jobbergate_api.apps.job_script_templates.schemas import JobTemplateDetailedView, JobTemplateListView
@@ -335,6 +334,7 @@ async def test_clone_job_template__success(
     assert response_data["identifier"] is None
     assert response_data["template_vars"] == original_instance.template_vars
     assert response_data["owner_email"] == new_owner_email
+    assert response_data["cloned_from_id"] == original_instance.id
 
     assert {f["filename"] for f in response_data["template_files"]} == {
         "test_template.py.j2",
@@ -375,6 +375,7 @@ async def test_clone_job_template__replace_base_values(
     assert response_data["identifier"] == payload["identifier"]
     assert response_data["template_vars"] == payload["template_vars"]
     assert response_data["owner_email"] == new_owner_email
+    assert response_data["cloned_from_id"] == original_instance.id
 
 
 async def test_clone_job_template__fail_unauthorized(

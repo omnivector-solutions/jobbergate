@@ -19,11 +19,12 @@ from jobbergate_cli.subapps.pagination import handle_pagination
 
 # TODO: move hidden field logic to the API
 HIDDEN_FIELDS = [
-    "template_vars",
-    "template_files",
-    "workflow_files",
+    "cloned_from_id",
     "created_at",
+    "template_files",
+    "template_vars",
     "updated_at",
+    "workflow_files",
 ]
 
 ID_NOTE = """

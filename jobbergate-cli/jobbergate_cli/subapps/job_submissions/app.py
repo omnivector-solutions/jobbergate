@@ -20,9 +20,10 @@ from jobbergate_cli.subapps.pagination import handle_pagination
 # move hidden field logic to the API
 HIDDEN_FIELDS = [
     "created_at",
-    "updated_at",
     "execution_parameters",
+    "is_archived",
     "job_script",
+    "updated_at",
 ]
 
 
