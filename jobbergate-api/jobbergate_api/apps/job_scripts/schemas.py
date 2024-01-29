@@ -74,6 +74,10 @@ job_script_meta_mapper = MetaMapper(
         description="Indicates if the job script has been archived.",
         example=False,
     ),
+    cloned_from_id=MetaField(
+        description="Indicates the id this entry has been cloned from, if any.",
+        example=101,
+    ),
 )
 
 
@@ -83,6 +87,18 @@ class JobScriptCreateRequest(BaseModel):
     """
 
     name: LengthLimitedStr
+    description: LengthLimitedStr | None
+
+    class Config:
+        schema_extra = job_script_meta_mapper
+
+
+class JobScriptCloneRequest(BaseModel):
+    """
+    Request model for cloning JobScript instances.
+    """
+
+    name: LengthLimitedStr | None
     description: LengthLimitedStr | None
 
     class Config:
@@ -132,6 +148,7 @@ class JobScriptListView(TableResource):
 
     parent_template_id: int | None
     template: JobTemplateListView | None
+    cloned_from_id: int | None
 
     class Config:
         schema_extra = job_script_meta_mapper

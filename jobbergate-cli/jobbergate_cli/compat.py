@@ -5,12 +5,14 @@ familiar with the old commands
 
 import typer
 
+from jobbergate_cli.subapps.applications.app import clone as clone_application
 from jobbergate_cli.subapps.applications.app import create as create_application
 from jobbergate_cli.subapps.applications.app import delete as delete_application
 from jobbergate_cli.subapps.applications.app import download_files as download_files_application
 from jobbergate_cli.subapps.applications.app import get_one as get_application
 from jobbergate_cli.subapps.applications.app import list_all as list_applications
 from jobbergate_cli.subapps.applications.app import update as update_application
+from jobbergate_cli.subapps.job_scripts.app import clone as clone_job_script
 from jobbergate_cli.subapps.job_scripts.app import delete as delete_job_script
 from jobbergate_cli.subapps.job_scripts.app import download_files as download_files_job_script
 from jobbergate_cli.subapps.job_scripts.app import get_one as get_job_script
@@ -55,6 +57,10 @@ def add_legacy_compatible_commands(app: typer.Typer):
         name="download-application",
         help="Download application files.",
     )(download_files_application)
+    app.command(
+        name="clone-application",
+        help="Clone an application.",
+    )(clone_application)
 
     # Job Scripts
     app.command(
@@ -85,6 +91,10 @@ def add_legacy_compatible_commands(app: typer.Typer):
         name="show-job-script-files",
         help="Show job script files.",
     )(show_files)
+    app.command(
+        name="clone-job-script",
+        help="Clone a job script.",
+    )(clone_job_script)
 
     # Job Submissions
     app.command(

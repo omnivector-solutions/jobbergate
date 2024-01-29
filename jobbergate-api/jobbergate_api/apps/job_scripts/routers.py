@@ -15,6 +15,7 @@ from jobbergate_api.apps.garbage_collector import garbage_collect
 from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate
 from jobbergate_api.apps.job_scripts.models import JobScriptFile
 from jobbergate_api.apps.job_scripts.schemas import (
+    JobScriptCloneRequest,
     JobScriptCreateRequest,
     JobScriptDetailedView,
     JobScriptListView,
@@ -68,6 +69,39 @@ async def job_script_create(
         owner_email=secure_services.identity_payload.email,
         **create_request.dict(exclude_unset=True),
     )
+
+
+@router.post(
+    "/clone/{id}",
+    status_code=status.HTTP_201_CREATED,
+    response_model=JobScriptDetailedView,
+    description="Endpoint for cloning a job script to a new entry owned by the user",
+)
+async def job_script_clone(
+    id: int = Path(),
+    clone_request: JobScriptCloneRequest | None = None,
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_SCRIPTS_EDIT, ensure_email=True)
+    ),
+):
+    """Clone a job script by its id."""
+    logger.info(f"Cloning a job script from {id=} with {clone_request=}")
+
+    if clone_request is None:
+        clone_request = JobScriptCloneRequest()
+
+    original_instance = await secure_services.crud.job_script.get(id, include_files=True)
+    cloned_instance = await secure_services.crud.job_script.clone_instance(
+        original_instance,
+        owner_email=secure_services.identity_payload.email,
+        **clone_request.dict(exclude_unset=True, exclude_none=True),
+    )
+
+    for file in original_instance.files:
+        await secure_services.file.job_script.clone_instance(file, cloned_instance.id)
+
+    # Get again to update the file data
+    return await secure_services.crud.job_script.get(cloned_instance.id, include_files=True)
 
 
 @router.post(

@@ -83,6 +83,42 @@ class TestCrudService:
         assert instance.owner_email == tester_email
         assert isinstance(instance.id, int)
 
+    async def test_clone_instance__success(self, dummy_crud_service, tester_email):
+        """
+        Test that the ``clone_instance`` method successfully clones an instance of the served model.
+        """
+        original_instance = await dummy_crud_service.create(
+            name="test-name",
+            description="test-description",
+            owner_email=tester_email,
+        )
+
+        new_owner_email = "new_" + tester_email
+
+        cloned_instance = await dummy_crud_service.clone_instance(
+            original_instance,
+            owner_email=new_owner_email,
+        )
+
+        assert cloned_instance.id != original_instance.id
+        assert cloned_instance.owner_email == new_owner_email
+        assert cloned_instance.name == original_instance.name
+        assert cloned_instance.description == original_instance.description
+        assert cloned_instance.cloned_from_id == original_instance.id
+
+    async def test_clone_instance__type_error_on_unknown_column(self, dummy_crud_service, tester_email):
+        """
+        Test that the ``clone_instance`` raises a TypeError if an unknown column is passed to it.
+        """
+        instance = await dummy_crud_service.create(
+            name="test-name",
+            description="test-description",
+            owner_email=tester_email,
+        )
+
+        with pytest.raises(TypeError):
+            await dummy_crud_service.clone_instance(instance, foo="bar")
+
     async def test_count__success(
         self,
         tester_email,
@@ -546,6 +582,23 @@ class TestFileService:
         with pytest.raises(HTTPException) as exc_info:
             await dummy_file_service.get(13, "file-one.txt")
         assert exc_info.value.status_code == 404
+
+    async def test_clone_instance__success(self, dummy_file_service):
+        """
+        Test that the ``clone_instance`` method successfully clones an instance of the served model.
+        """
+        filename = "file-one.txt"
+        file_content = b"dummy string content"
+
+        original_instance = await dummy_file_service.upsert(13, filename, file_content)
+
+        cloned_instance = await dummy_file_service.clone_instance(original_instance, 14)
+
+        assert cloned_instance.parent_id != original_instance.parent_id
+        assert cloned_instance.parent_id == 14
+        assert cloned_instance.filename == filename
+        assert cloned_instance.file_key != original_instance.file_key
+        assert await dummy_file_service.get_file_content(cloned_instance) == file_content
 
     async def test_find_children(self, dummy_file_service):
         """

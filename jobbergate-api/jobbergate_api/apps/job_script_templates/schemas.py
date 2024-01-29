@@ -72,6 +72,10 @@ job_template_meta_mapper = MetaMapper(
         description="Indicates if the job script template has been archived.",
         example=False,
     ),
+    cloned_from_id=MetaField(
+        description="Indicates the id this entry has been cloned from, if any.",
+        example=101,
+    ),
 )
 
 
@@ -108,6 +112,18 @@ class JobTemplateCreateRequest(BaseModel):
     """Schema for the request to create a job template."""
 
     name: LengthLimitedStr
+    identifier: LengthLimitedStr | None
+    description: LengthLimitedStr | None
+    template_vars: dict[LengthLimitedStr, Any] | None
+
+    class Config:
+        schema_extra = job_template_meta_mapper
+
+
+class JobTemplateCloneRequest(BaseModel):
+    """Schema for the request to clone a job template."""
+
+    name: LengthLimitedStr | None
     identifier: LengthLimitedStr | None
     description: LengthLimitedStr | None
     template_vars: dict[LengthLimitedStr, Any] | None
@@ -161,6 +177,7 @@ class JobTemplateListView(TableResource):
     """Schema for the response to get a list of entries."""
 
     identifier: Optional[str]
+    cloned_from_id: Optional[int]
 
     class Config:
         schema_extra = job_template_meta_mapper

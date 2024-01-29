@@ -219,6 +219,18 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
             self.ensure_attribute(instance, **ensure_attributes)
         return instance
 
+    async def clone_instance(self, original_instance: CrudModel, **incoming_data) -> CrudModel:
+        """
+        Clone an instance and update it with the supplied data.
+        """
+        table = self.model_type.__table__  # type: ignore
+        non_primary_key_columns = (c.name for c in table.columns if not c.primary_key)
+        data = {c: getattr(original_instance, c) for c in non_primary_key_columns}
+        data.update(incoming_data)
+        data["cloned_from_id"] = original_instance.id
+
+        return await self.create(**data)
+
     async def delete(self, locator: Any) -> None:
         """
         Delete a row by locator.
@@ -518,15 +530,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         """
         Upsert a file instance.
         """
-        instance: FileModel = self.model_type(
-            parent_id=parent_id,
-            filename=filename,
-            **upsert_kwargs,
-        )
-        instance = await self.session.merge(instance)
-        # I'm not sure that this flush is necessary
-        await self.session.flush()
-        await self.session.refresh(instance)
+        instance = await self.add_instance(parent_id, filename, upsert_kwargs)
 
         if isinstance(upload_content, str):
             file_obj: Any = io.BytesIO(upload_content.encode())
@@ -562,6 +566,40 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         # Mypy doesn't like aioboto3 much
         await self.bucket.upload_fileobj(Fileobj=file_obj, Key=instance.file_key)  # type: ignore
         return instance
+
+    async def add_instance(self, parent_id, filename, upsert_kwargs):
+        """
+        Add a file instance to the database.
+        """
+        instance: FileModel = self.model_type(
+            parent_id=parent_id,
+            filename=filename,
+            **upsert_kwargs,
+        )
+        instance = await self.session.merge(instance)
+        await self.session.flush()
+        await self.session.refresh(instance)
+        return instance
+
+    async def clone_instance(self, original_instance: FileModel, new_parent_id: int) -> FileModel:
+        """
+        Clone a file instance and assign it to a new parent-id.
+        """
+        logger.info(f"Cloning file={original_instance.file_key} to {new_parent_id=}")
+        table = self.model_type.__table__  # type: ignore
+        non_primary_key_columns = [c.name for c in table.columns if not c.primary_key]
+        data = {c: getattr(original_instance, c) for c in non_primary_key_columns}
+
+        cloned_instance = await self.add_instance(new_parent_id, original_instance.filename, data)
+
+        copy_source = {"Bucket": self.bucket.name, "Key": original_instance.file_key}
+        with handle_errors(
+            f"{self.model_type.__tablename__} file={original_instance.file_key} could not be copied",
+            raise_exc_class=ServiceError,
+            raise_kwargs=dict(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR),
+        ):
+            await self.bucket.copy(copy_source, cloned_instance.file_key)
+        return cloned_instance
 
     async def delete(self, instance: FileModel) -> None:
         """

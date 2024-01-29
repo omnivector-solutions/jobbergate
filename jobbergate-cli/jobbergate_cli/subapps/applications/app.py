@@ -12,18 +12,19 @@ from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobbergateContext
+from jobbergate_cli.schemas import ApplicationResponse, JobbergateContext
 from jobbergate_cli.subapps.applications.tools import fetch_application_data, save_application_files, upload_application
 from jobbergate_cli.subapps.pagination import handle_pagination
 
 
 # TODO: move hidden field logic to the API
 HIDDEN_FIELDS = [
-    "template_vars",
-    "template_files",
-    "workflow_files",
+    "cloned_from_id",
     "created_at",
+    "template_files",
+    "template_vars",
     "updated_at",
+    "workflow_files",
 ]
 
 ID_NOTE = """
@@ -404,4 +405,94 @@ def download_files(
             )
         ).strip(),
         subject="Application download succeeded",
+    )
+
+
+@app.command()
+@handle_abort
+def clone(
+    ctx: typer.Context,
+    id: Optional[int] = typer.Option(
+        None,
+        help=f"The specific id of the application. {ID_NOTE}",
+    ),
+    identifier: Optional[str] = typer.Option(
+        None,
+        help=f"The human-friendly identifier of the application. {IDENTIFIER_NOTE}",
+    ),
+    application_identifier: Optional[str] = typer.Option(
+        None,
+        help="""
+        Optional new application identifier to override the original.
+
+        Notice this can not match an existing identifier, including the one this entry is going to be cloned from.
+        """,
+    ),
+    application_desc: Optional[str] = typer.Option(
+        None,
+        help="Optional new application description to override the original",
+    ),
+    application_name: Optional[str] = typer.Option(
+        None,
+        help="Optional new application name to override the original",
+    ),
+):
+    """
+    Clone an application, so the user can own and modify a copy of it.
+    """
+    identification: Any = id
+    if id is None and identifier is None:
+        terminal_message(
+            """
+            You must supply either [yellow]id[/yellow] or [yellow]identifier[/yellow].
+            """,
+            subject="Invalid params",
+        )
+        raise typer.Exit()
+    elif id is not None and identifier is not None:
+        terminal_message(
+            """
+            You may not supply both [yellow]id[/yellow] and [yellow]identifier[/yellow].
+            """,
+            subject="Invalid params",
+        )
+        raise typer.Exit()
+    elif identifier is not None:
+        identification = identifier
+
+    req_data = dict()
+
+    if application_identifier:
+        req_data["identifier"] = application_identifier
+
+    if application_desc:
+        req_data["description"] = application_desc
+
+    if application_name:
+        req_data["name"] = application_name
+
+    jg_ctx: JobbergateContext = ctx.obj
+
+    # Make static type checkers happy
+    assert jg_ctx.client is not None
+
+    result = cast(
+        ApplicationResponse,
+        make_request(
+            jg_ctx.client,
+            f"/jobbergate/job-script-templates/clone/{identification}",
+            "POST",
+            json=req_data,
+            expected_status=201,
+            abort_message=f"Couldn't clone application {identification} from API",
+            response_model_cls=ApplicationResponse,
+            support=True,
+        ),
+    )
+
+    render_single_result(
+        jg_ctx,
+        result,
+        hidden_fields=HIDDEN_FIELDS,
+        title="Cloned Application",
     )

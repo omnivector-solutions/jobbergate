@@ -1,9 +1,11 @@
 """Functionalities to be shared by all models."""
 
+from typing import cast
+
 from inflection import tableize
 from pendulum.datetime import DateTime as PendulumDateTime
 from snick import conjoin
-from sqlalchemy import Boolean, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
@@ -58,9 +60,21 @@ class IdMixin:
 
     Attributes:
         id: The id of the job script template.
+        cloned_from: Specify the id of the row that this row was cloned from.
     """
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    @declared_attr
+    def cloned_from_id(cls) -> Mapped[int | None]:
+        """
+        Dynamically create a cloned_from_id column.
+        """
+        return mapped_column(
+            Integer,
+            ForeignKey(cast(Column[int], cls.id), name="clone", ondelete="SET NULL"),
+            nullable=True,
+        )
 
 
 class TimestampMixin:

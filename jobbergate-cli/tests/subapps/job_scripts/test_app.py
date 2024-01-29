@@ -11,6 +11,7 @@ from jobbergate_cli.schemas import ApplicationResponse, JobScriptFile, JobScript
 from jobbergate_cli.subapps.job_scripts.app import (
     HIDDEN_FIELDS,
     JOB_SUBMISSION_HIDDEN_FIELDS,
+    clone,
     create,
     delete,
     download_files,
@@ -663,4 +664,52 @@ class TestDownloadJobScriptFiles:
         mocked_render.assert_called_once_with(
             "A total of 1 job script files were successfully downloaded.",
             subject="Job script download succeeded",
+        )
+
+
+class TestCloneJobScript:
+    def test_clone__success(
+        self,
+        respx_mock,
+        make_test_app,
+        dummy_job_script_data,
+        dummy_domain,
+        dummy_context,
+        cli_runner,
+        mocker,
+    ):
+        """
+        Test that the clone application subcommand works as expected.
+        """
+
+        job_script_data = dummy_job_script_data[0]
+
+        clone_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-scripts/clone/{job_script_data['id']}").mock(
+            return_value=httpx.Response(
+                httpx.codes.CREATED,
+                json=job_script_data,
+            ),
+        )
+        mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
+
+        test_app = make_test_app("clone", clone)
+        result = cli_runner.invoke(
+            test_app,
+            shlex.split(
+                "clone --id={} --name={} --description={}".format(
+                    job_script_data["id"],
+                    shlex.quote(job_script_data["name"]),
+                    shlex.quote(job_script_data["description"]),
+                ),
+            ),
+        )
+
+        assert clone_route.called
+
+        assert result.exit_code == 0, f"clone failed: {result.stdout}"
+        mocked_render.assert_called_once_with(
+            dummy_context,
+            JobScriptResponse(**job_script_data),
+            title="Cloned Job Script",
+            hidden_fields=HIDDEN_FIELDS,
         )
