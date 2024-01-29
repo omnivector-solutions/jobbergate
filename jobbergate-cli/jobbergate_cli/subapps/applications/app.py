@@ -422,7 +422,11 @@ def clone(
     ),
     application_identifier: Optional[str] = typer.Option(
         None,
-        help="Optional new application identifier to override the original",
+        help="""
+        Optional new application identifier to override the original.
+
+        Notice this can not match an existing identifier, including the one this entry is going to be cloned from.
+        """,
     ),
     application_desc: Optional[str] = typer.Option(
         None,
