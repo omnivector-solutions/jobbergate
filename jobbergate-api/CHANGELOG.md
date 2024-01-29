@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+
+## 4.3.0a2 -- 2024-01-29
 - Added clone capability to templates and job scripts [ASP-3335]
 
 ## 4.3.0a1 -- 2024-01-24
