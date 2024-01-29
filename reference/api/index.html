@@ -4207,6 +4207,41 @@ helper functions in the class.</p>
 
 
 
+<h7 id="jobbergate_api.apps.job_script_templates.routers.job_script_template_clone" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">job_script_template_clone</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_script_template_clone</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">clone_request</span><span class="p">:</span> <span class="n">JobTemplateCloneRequest</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="n">secure_services</span><span class="p">(</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>            <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_TEMPLATES_EDIT</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>            <span class="n">ensure_email</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        <span class="p">)</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="p">),</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Clone a job script template by id or identifier.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
 <h7 id="jobbergate_api.apps.job_script_templates.routers.job_script_template_create" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">job_script_template_create</span>
 
@@ -4659,6 +4694,46 @@ helper functions in the class.</p>
 
 
 
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_script_templates.schemas.JobTemplateCloneRequest" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobTemplateCloneRequest</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Schema for the request to clone a job template.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
 
 <div class="doc doc-object doc-class">
 
@@ -5593,6 +5668,40 @@ helper functions in the class.</p>
 
 
 
+<h7 id="jobbergate_api.apps.job_scripts.routers.job_script_clone" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">job_script_clone</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_script_clone</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">clone_request</span><span class="p">:</span> <span class="n">JobScriptCloneRequest</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="n">secure_services</span><span class="p">(</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>            <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_SCRIPTS_EDIT</span><span class="p">,</span> <span class="n">ensure_email</span><span class="o">=</span><span class="kc">True</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="p">)</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="p">),</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Clone a job script by its id.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
 <h7 id="jobbergate_api.apps.job_scripts.routers.job_script_create" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">job_script_create</span>
 
@@ -5960,6 +6069,46 @@ helper functions in the class.</p>
 
 
 
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_scripts.schemas.JobScriptCloneRequest" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobScriptCloneRequest</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Request model for cloning JobScript instances.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
 
 <div class="doc doc-object doc-class">
 
@@ -8532,6 +8681,17 @@ job script, like name or current_working_directory.</p>
             </div>
           </td>
         </tr>
+        <tr>
+          <td><code>cloned_from</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Specify the id of the row that this row was cloned from.</p>
+            </div>
+          </td>
+        </tr>
     </tbody>
   </table>
 
@@ -8547,6 +8707,28 @@ job script, like name or current_working_directory.</p>
 
 
 
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_api.apps.models.IdMixin.cloned_from_id" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">cloned_from_id</span>
+
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">cloned_from_id</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Dynamically create a cloned_from_id column.</p>
+
+  </div>
+
+</div>
 
 
 
@@ -9547,6 +9729,34 @@ additional logic into the query.</p>
 
 
 
+<h7 id="jobbergate_api.apps.services.CrudService.clone_instance" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">clone_instance</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">clone_instance</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">original_instance</span><span class="p">:</span> <span class="n">CrudModel</span><span class="p">,</span> <span class="o">**</span><span class="n">incoming_data</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CrudModel</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Clone an instance and update it with the supplied data.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
 <h7 id="jobbergate_api.apps.services.CrudService.count" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">count</span>
 
@@ -10084,6 +10294,60 @@ information, see this discussion: https://github.com/python/typing/issues/213</p
   <div class="doc doc-contents ">
   
       <p>Initialize the instance with an ORM model type.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_api.apps.services.FileService.add_instance" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">add_instance</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">add_instance</span><span class="p">(</span><span class="n">parent_id</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">upsert_kwargs</span><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Add a file instance to the database.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_api.apps.services.FileService.clone_instance" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">clone_instance</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">clone_instance</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">original_instance</span><span class="p">:</span> <span class="n">FileModel</span><span class="p">,</span> <span class="n">new_parent_id</span><span class="p">:</span> <span class="nb">int</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileModel</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Clone a file instance and assign it to a new parent-id.</p>
 
   </div>
 
