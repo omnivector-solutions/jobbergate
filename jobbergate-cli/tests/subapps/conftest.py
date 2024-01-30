@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional
 
 import httpx
 import pytest
@@ -46,13 +46,18 @@ def dummy_context(dummy_domain):
 
 @pytest.fixture
 def attach_persona(dummy_context):
-    def _helper(email: str, client_id: str = "dummy-client", access_token: str = "foo"):
+    def _helper(
+        email: str, client_id: str = "dummy-client", access_token: str = "foo", organization_id: Optional[str] = None
+    ):
+        identity_data = IdentityData(
+            client_id=client_id,
+            email=email,
+        )
+        if organization_id is not None:
+            identity_data.organization_id = organization_id
         dummy_context.persona = Persona(
             token_set=TokenSet(access_token=access_token),
-            identity_data=IdentityData(
-                client_id=client_id,
-                email=email,
-            ),
+            identity_data=identity_data,
         )
 
     return _helper

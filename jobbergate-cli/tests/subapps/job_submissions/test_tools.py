@@ -239,6 +239,86 @@ def test_create_job_submission__with_default_execution_dir(
     assert payload["execution_directory"] == "/some/fake/path"
 
 
+def test_create_job_submission__in_multitenancy_mode_with_org_id(
+    respx_mock,
+    dummy_job_submission_data,
+    dummy_domain,
+    dummy_context,
+    attach_persona,
+    seed_clusters,
+):
+    job_submission_data = dummy_job_submission_data[0]
+    job_submission_name = job_submission_data["name"]
+    job_submission_description = job_submission_data["description"]
+
+    job_script_id = job_submission_data["job_script_id"]
+
+    create_job_submission_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions")
+    create_job_submission_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.CREATED,
+            json=job_submission_data,
+        ),
+    )
+
+    attach_persona("dummy@dummy.com", organization_id="some-organization")
+    seed_clusters("other-cluster-some-organization")
+
+    new_job_submission = create_job_submission(
+        dummy_context,
+        job_script_id,
+        job_submission_name,
+        description=job_submission_description,
+        cluster_name="other-cluster",
+    )
+    assert new_job_submission == JobSubmissionResponse(**job_submission_data)
+
+    assert (
+        json.loads(create_job_submission_route.calls.last.request.content)["client_id"]
+        == "other-cluster-some-organization"
+    )
+
+
+def test_create_job_submission__in_multitenancy_mode_with_org_id_and_cluster_name_already_has_org_id(
+    respx_mock,
+    dummy_job_submission_data,
+    dummy_domain,
+    dummy_context,
+    attach_persona,
+    seed_clusters,
+):
+    job_submission_data = dummy_job_submission_data[0]
+    job_submission_name = job_submission_data["name"]
+    job_submission_description = job_submission_data["description"]
+
+    job_script_id = job_submission_data["job_script_id"]
+
+    create_job_submission_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions")
+    create_job_submission_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.CREATED,
+            json=job_submission_data,
+        ),
+    )
+
+    attach_persona("dummy@dummy.com", organization_id="some-organization")
+    seed_clusters("other-cluster-some-organization")
+
+    new_job_submission = create_job_submission(
+        dummy_context,
+        job_script_id,
+        job_submission_name,
+        description=job_submission_description,
+        cluster_name="other-cluster-some-organization",
+    )
+    assert new_job_submission == JobSubmissionResponse(**job_submission_data)
+
+    assert (
+        json.loads(create_job_submission_route.calls.last.request.content)["client_id"]
+        == "other-cluster-some-organization"
+    )
+
+
 def test_fetch_job_submission_data__success__using_id(
     respx_mock,
     dummy_context,

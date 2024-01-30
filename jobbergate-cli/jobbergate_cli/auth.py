@@ -94,6 +94,29 @@ def validate_token_and_extract_identity(token_set: TokenSet) -> IdentityData:
             log_message=f"Token data could not be extracted to identity: {err}",
             original_error=err,
         )
+
+    if settings.MULTI_TENANCY_ENABLED:
+        try:
+            org_dict = token_data["organization"]
+            JobbergateCliError.require_condition(
+                len(org_dict) == 1,
+                message="Did not find exactly one organization in token payload",
+            )
+            identity.organization_id = list(org_dict.keys())[0]
+        except Exception as err:
+            raise Abort(
+                """
+                The access token is invalid.
+
+                Please try logging in again.
+                """,
+                subject="Invalid access token",
+                support=True,
+                log_message="Organization payload required in multi-tenancy mode is malformed ",
+                sentry_context=dict(token_data=token_data),
+                original_error=err,
+            )
+
     return identity
 
 

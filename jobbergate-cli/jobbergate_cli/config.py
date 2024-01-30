@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     OIDC_USE_HTTPS: bool = True
     OIDC_MAX_POLL_TIME: int = 5 * 60  # 5 Minutes
 
+    # Enable multi-tenancy to fix cluster name mapping by client_id
+    MULTI_TENANCY_ENABLED: bool = False
+
     @root_validator(skip_on_failure=True)
     def compute_extra_settings(cls, values):
         """

@@ -71,9 +71,11 @@ def test_list_all__renders_paginated_results(
     dummy_context,
     cli_runner,
     mocker,
+    attach_persona,
 ):
     test_app = make_test_app("list-all", list_all)
     mocked_pagination = mocker.patch("jobbergate_cli.subapps.job_submissions.app.handle_pagination")
+    attach_persona("dummy@dummy.com")
     result = cli_runner.invoke(test_app, ["list-all"])
     assert result.exit_code == 0, f"list-all failed: {result.stdout}"
     mocked_pagination.assert_called_once_with(
@@ -84,6 +86,8 @@ def test_list_all__renders_paginated_results(
         title="Job Submission List",
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,
+        nested_response_model_cls=JobSubmissionResponse,
+        value_mappers=None,
     )
 
 
@@ -104,7 +108,9 @@ def test_get_one__success(
     mocker,
     flag_id,
     separator,
+    attach_persona,
 ):
+    attach_persona("dummy@dummy.com")
     respx_mock.get(f"{dummy_domain}/jobbergate/job-submissions/1").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -120,6 +126,7 @@ def test_get_one__success(
         JobSubmissionResponse(**dummy_job_submission_data[0]),
         title="Job Submission",
         hidden_fields=HIDDEN_FIELDS,
+        value_mappers=None,
     )
 
 

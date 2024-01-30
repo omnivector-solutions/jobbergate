@@ -47,8 +47,10 @@ def tweak_settings():
         for key, value in kwargs.items():
             previous_values[key] = getattr(settings, key)
             setattr(settings, key, value)
-        yield
-        for key, value in previous_values.items():
-            setattr(settings, key, value)
+        try:
+            yield
+        finally:
+            for key, value in previous_values.items():
+                setattr(settings, key, value)
 
     return _helper

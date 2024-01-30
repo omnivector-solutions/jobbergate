@@ -3,7 +3,7 @@ Provide helpers to render output for users.
 """
 
 import json
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 import pydantic
 from rich import print_json
@@ -182,6 +182,7 @@ def render_single_result(
     result: Union[Dict[str, Any], pydantic.BaseModel],
     hidden_fields: Optional[List[str]] = None,
     title: str = "Result",
+    value_mappers: Optional[Dict[str, Callable[[Any], Any]]] = None,
 ):
     """
     Render a single data item in a ``rich`` ``Table.
@@ -190,11 +191,16 @@ def render_single_result(
     :param: result:        The data item to display. May be a dict or a pydantic model.
     :param: hidden_fields: Rows that should (if not using ``full`` mode) be hidden in the ``Table`` output
     :param: title:         The title header to include above the ``Tale`` output
+    :param: value_mappers: Mapping functions to change fields before rendering
     """
     if isinstance(result, pydantic.BaseModel):
         result_model = cast(pydantic.BaseModel, result)
         result_dict = json.loads(result_model.json())
         result = cast(Dict[str, Any], result_dict)
+
+    if value_mappers is not None:
+        for key, mapper in value_mappers.items():
+            result[key] = mapper(result[key])
 
     if ctx.raw_output:
         print_json(json.dumps(result))
@@ -208,16 +214,21 @@ def render_paginated_list_results(
     ctx: JobbergateContext,
     envelope: ListResponseEnvelope,
     title: str = "Results List",
-    style_mapper: StyleMapper = None,
-    hidden_fields: List[str] = None,
+    style_mapper: Optional[StyleMapper] = None,
+    hidden_fields: Optional[List[str]] = None,
+    value_mappers: Optional[Dict[str, Callable[[Any], Any]]] = None,
 ):
+    # Serialize envelope for rendering
+    # This is needed because ListResponseEnvelope may have a nested model or it may have a dict
+    # After serialization, we have a consistency in a list of dicts
+    serialized = envelope.json()
+    deserialized = json.loads(serialized)
+
     if envelope.total == 0:
         terminal_message("There are no results to display", subject="Nothing here...")
         return
 
     if ctx.raw_output:
-        serialized = envelope.json()
-        deserialized = json.loads(serialized)
         render_json(deserialized["items"])
         return
 
@@ -225,22 +236,29 @@ def render_paginated_list_results(
     total_pages = envelope.pages
 
     if ctx.full_output or hidden_fields is None:
-        filtered_results = envelope.items
+        filtered_results = deserialized["items"]
     else:
-        filtered_results = [{k: v for (k, v) in d.items() if k not in hidden_fields} for d in envelope.items]
+        filtered_results = [{k: v for (k, v) in d.items() if k not in hidden_fields} for d in deserialized["items"]]
 
-    first_row = filtered_results[0]
+    # Apply the value mappers over each key defined in the dict
+    mapped_results = filtered_results
+    if value_mappers is not None:
+        for row in filtered_results:
+            for key, mapper in value_mappers.items():
+                row[key] = mapper(row[key])
+
+    first_row = mapped_results[0]
 
     table = Table(
         title=title,
-        caption=f"Page: {current_page} of {total_pages} - Items: {len(filtered_results)} of {envelope.total}",
+        caption=f"Page: {current_page} of {total_pages} - Items: {len(mapped_results)} of {envelope.total}",
     )
     if style_mapper is None:
         style_mapper = StyleMapper()
     for key in first_row.keys():
         table.add_column(key, **style_mapper.map_style(key))
 
-    for row in filtered_results:
+    for row in mapped_results:
         table.add_row(*[str(v) for v in row.values()])
 
     console = Console()

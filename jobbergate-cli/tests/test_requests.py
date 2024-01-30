@@ -7,6 +7,7 @@ import pytest
 
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import _deserialize_request_model, make_request
+from jobbergate_cli.schemas import ListResponseEnvelope
 
 
 DEFAULT_DOMAIN = "https://dummy-domain.com"
@@ -384,6 +385,55 @@ def test_make_request__uses_request_model_instance_for_request_body_if_passed(re
     assert isinstance(dummy_response_instance, DummyResponseModel)
     assert dummy_response_instance.foo == 1
     assert dummy_response_instance.bar == "one"
+
+    assert dummy_route.calls.last.request.content == json.dumps(dict(foo=1, bar="one")).encode("utf-8")
+    assert dummy_route.calls.last.request.headers["Content-Type"] == "application/json"
+
+
+def test_make_request__can_use_unpack_response_into_ListResponseEnvelope(respx_mock, dummy_client):
+    """
+    Validate that the ``make_request()`` function will use a pydantic model instance to build the body of the request if
+    the ``request_model`` argument is passed.
+    """
+
+    client = dummy_client(headers={"content-type": "garbage"})
+    req_path = "/fake-path"
+
+    dummy_route = respx_mock.post(f"{DEFAULT_DOMAIN}{req_path}")
+    dummy_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.CREATED,
+            json=dict(
+                items=[
+                    dict(foo=1, bar="one"),
+                    dict(foo=2, bar="two"),
+                    dict(foo=3, bar="three"),
+                ],
+                total=3,
+                page=0,
+                size=5,
+                pages=1,
+            ),
+        ),
+    )
+    dummy_response_instance = make_request(
+        client,
+        req_path,
+        "POST",
+        expected_status=201,
+        response_model_cls=ListResponseEnvelope[DummyResponseModel],
+        request_model=DummyResponseModel(foo=1, bar="one"),
+    )
+    assert isinstance(dummy_response_instance, ListResponseEnvelope)
+    assert dummy_response_instance.items == [
+        DummyResponseModel(foo=1, bar="one"),
+        DummyResponseModel(foo=2, bar="two"),
+        DummyResponseModel(foo=3, bar="three"),
+    ]
+    assert dummy_response_instance.total == 3
+    assert dummy_response_instance.page == 0
+    assert dummy_response_instance.size == 5
+    assert dummy_response_instance.pages == 1
 
     assert dummy_route.calls.last.request.content == json.dumps(dict(foo=1, bar="one")).encode("utf-8")
     assert dummy_route.calls.last.request.headers["Content-Type"] == "application/json"
