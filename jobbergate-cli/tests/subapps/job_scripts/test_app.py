@@ -301,7 +301,6 @@ def test_render__non_fast_mode_and_job_submission(
                     "output_directory": ".",
                     "supporting_files_output_name": None,
                     "supporting_files": None,
-                    "job_script_name": None,
                 }
             },
         },
@@ -420,7 +419,6 @@ def test_render__with_fast_mode_and_no_job_submission(
                     "output_directory": ".",
                     "supporting_files_output_name": None,
                     "supporting_files": None,
-                    "job_script_name": None,
                 }
             },
         },

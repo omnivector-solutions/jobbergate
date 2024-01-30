@@ -264,6 +264,38 @@ def test_gather_config_values__basic(dummy_render_class, mocker):
     )
 
 
+def test_gather_config_values__returning_none(dummy_render_class, mocker):
+    """
+    Test that gather_param_values raises no error when a method returns None.
+
+    Due to differences on the implementation details, jobbergate-legacy does not raise an error in this case
+    and so legacy applications expect the same from next-gen Jobbergate.
+    """
+    variablename1 = "foo"
+    question1 = Text(variablename1, message="gimme the foo!")
+
+    variablename2 = "bar"
+    question2 = Text(variablename2, message="gimme the bar!")
+
+    class DummyApplication:
+        def mainflow(self, data):
+            data["nextworkflow"] = "subflow"
+            return [question1, question2]
+
+        def subflow(self, data):
+            return None
+
+    dummy_render_class.prepared_input = dict(
+        foo="FOO",
+        bar="BAR",
+        baz="BAZ",
+    )
+
+    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+    params = gather_param_values(DummyApplication())
+    assert params == dict(foo="FOO", bar="BAR")
+
+
 def test_gather_config_values__fast_mode(dummy_render_class, mocker):
     variablename1 = "foo"
     question1 = Text(variablename1, message="gimme the foo!", default="oof")

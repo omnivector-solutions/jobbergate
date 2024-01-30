@@ -18,6 +18,7 @@ from typing import Any, Callable, Dict, Optional, Type, TypeVar, cast
 import inquirer
 import inquirer.errors
 import inquirer.questions
+from loguru import logger
 
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import render_dict
@@ -347,6 +348,12 @@ def gather_param_values(
 
         prompts = []
         auto_answers = {}
+
+        if workflow_questions is None:
+            logger.warning(
+                "Deprecation warning: Application method {} returned None while a list is expected", next_method
+            )
+            workflow_questions = []
 
         for question in workflow_questions:
             if question.variablename in supplied_params:
