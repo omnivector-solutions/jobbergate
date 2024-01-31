@@ -4,11 +4,14 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+- Fixed performance issue with the list endpoints dispatching additional select queries [PENG-2059]
 
 ## 4.3.0a2 -- 2024-01-29
+
 - Added clone capability to templates and job scripts [ASP-3335]
 
 ## 4.3.0a1 -- 2024-01-24
+
 ## 4.3.0a0 -- 2024-01-15
 
 - Improved error handling and reporting [ASP-4095]

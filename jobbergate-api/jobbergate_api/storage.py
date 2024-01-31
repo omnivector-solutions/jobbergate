@@ -21,7 +21,7 @@ from sqlalchemy.sql.expression import Case, ColumnElement, UnaryExpression
 from starlette import status
 from yarl import URL
 
-from jobbergate_api.config import settings
+from jobbergate_api.config import LogLevelEnum, settings
 from jobbergate_api.security import IdentityPayload, PermissionMode, lockdown_with_identity
 
 INTEGRITY_CHECK_EXCEPTIONS = (UniqueViolationError,)
@@ -100,6 +100,8 @@ class EngineFactory:
                 pool_size=settings.DATABASE_POOL_SIZE,
                 pool_pre_ping=settings.DATABASE_POOL_PRE_PING,
                 max_overflow=settings.DATABASE_POOL_MAX_OVERFLOW,
+                logging_name="sqlalchemy.engine",
+                echo=settings.LOG_LEVEL == LogLevelEnum.TRACE,
             )
         return self.engine_map[db_url]
 

@@ -73,11 +73,7 @@ class JobScript(CrudMixin, Base):
         """
         Include custom options on a query to eager load parent data.
         """
-        return query.options(
-            selectinload(cls.template).load_only(
-                JobScriptTemplateModel.id, JobScriptTemplateModel.identifier, JobScriptTemplateModel.name
-            )
-        )
+        return query.options(selectinload(cls.template).defer(JobScriptTemplateModel.template_vars))
 
 
 class JobScriptFile(FileMixin, Base):
