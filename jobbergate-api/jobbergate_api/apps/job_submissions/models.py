@@ -93,4 +93,6 @@ class JobSubmission(CrudMixin, Base):
         """
         Include custom options on a query to eager load parent data.
         """
-        return query.options(selectinload(cls.job_script).load_only(JobScriptModel.id, JobScriptModel.name))
+        return query.options(
+            selectinload(cls.job_script).load_only(JobScriptModel.id, JobScriptModel.name, raiseload=True)
+        )

@@ -16,6 +16,7 @@ class LogLevelEnum(str, Enum):
     Provide an enumeration class describing the available log levels.
     """
 
+    TRACE = "TRACE"
     DEBUG = "DEBUG"
     INFO = "INFO"
     WARNING = "WARNING"
