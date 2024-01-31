@@ -4,8 +4,10 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+- Fixed issue with list job-submissions with parent data created on previous prerelease [PENG-2059]
 
 ## 4.3.0a3 -- 2024-01-31
+
 - Fixed performance issue with the list endpoints dispatching additional select queries [PENG-2059]
 
 ## 4.3.0a2 -- 2024-01-29
