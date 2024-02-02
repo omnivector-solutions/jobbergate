@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-api
 ## Unreleased
 
 
+## 4.3.0a5 -- 2024-02-02
 ## 4.3.0a4 -- 2024-01-31
 - Fixed issue with list job-submissions with parent data created on previous prerelease [PENG-2059]
 
