@@ -7,6 +7,7 @@ from loguru import logger
 
 from alembic.command import revision as sqla_migrate
 from alembic.command import upgrade as sqla_upgrade
+from alembic.command import downgrade as sqla_downgrade
 from alembic.config import Config
 from jobbergate_api.storage import build_db_url
 
@@ -39,3 +40,12 @@ def upgrade(target: str = typer.Option("head", help="The migration to which the 
 
     config = Config(file_="alembic/alembic.ini")
     sqla_upgrade(config, target)
+
+
+@app.command()
+def downgrade(target: str = typer.Option("-1", help="The migration to which the db should be downgraded.")):
+    """Revert alembic migrations to a local database."""
+    logger.debug("Downgrading database...")
+
+    config = Config(file_="alembic/alembic.ini")
+    sqla_downgrade(config, target)

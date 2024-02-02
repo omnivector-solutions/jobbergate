@@ -45,6 +45,7 @@ snick = "^1.3.0"
 sqlalchemy = { extras = ["mypy"], version = "^2.0.19" }
 uvicorn = "^0.23.0"
 yarl = "^1.7.2"
+auto-name-enum = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 asgi-lifespan = "^1.0.1"

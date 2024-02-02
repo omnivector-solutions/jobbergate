@@ -1,6 +1,8 @@
 """
 Router for the JobSubmission resource.
 """
+from typing import Any
+
 from buzz import handle_errors
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi import Response as FastAPIResponse
@@ -10,10 +12,12 @@ from loguru import logger
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.dependencies import SecureService, secure_services
-from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
+from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus, slurm_job_state_details
 from jobbergate_api.apps.job_submissions.properties_parser import get_job_properties_from_job_script
 from jobbergate_api.apps.job_submissions.schemas import (
     ActiveJobSubmission,
+    JobSubmissionAgentRejectedRequest,
+    JobSubmissionAgentSubmittedRequest,
     JobSubmissionAgentUpdateRequest,
     JobSubmissionCreateRequest,
     JobSubmissionDetailedView,
@@ -207,9 +211,8 @@ async def job_submission_update(
 # The "agent" routes are used for agents to fetch pending job submissions and update their statuses
 @router.put(
     "/agent/{id}",
-    status_code=200,
+    status_code=status.HTTP_202_ACCEPTED,
     description="Endpoint for an agent to update the status of a job_submission",
-    response_model=JobSubmissionDetailedView,
     tags=["Agent"],
 )
 async def job_submission_agent_update(
@@ -220,28 +223,126 @@ async def job_submission_agent_update(
     ),
 ):
     """
-    Update a job_submission with a new status.
+    Update a job_submission with slurm_job_state and slurm_job_info.
 
-    Make a put request to this endpoint with the new status to update a job_submission.
+    Note that if the new slurm_job_state is a termination state, the job submission status will be updated.
     """
     logger.debug(f"Agent is requesting to update {id=}")
 
+    job_submission = await secure_services.crud.job_submission.get(
+        id, ensure_attributes={"client_id": secure_services.identity_payload.client_id}
+    )
+
+    if job_submission.status != JobSubmissionStatus.SUBMITTED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only SUBMITTED jobs may be updated by the agent",
+        )
+
+    if job_submission.slurm_job_id != update_params.slurm_job_id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Update slurm job id does not match the job id on record for job submission {id}",
+        )
+
     logger.info(
-        f"Setting status to: {update_params.status} "
+        f"Setting slurm job state status to: {update_params.slurm_job_state} "
         f"for job_submission: {id} "
         f"on client_id: {secure_services.identity_payload.client_id}"
     )
-    await secure_services.crud.job_submission.get(
-        id, ensure_attributes={"client_id": secure_services.identity_payload.client_id}
-    )
-    job_submission = await secure_services.crud.job_submission.update(
-        id, **update_params.dict(exclude_unset=True)
+
+    update_dict: dict[str, Any] = dict(
+        slurm_job_id=update_params.slurm_job_id,
+        slurm_job_state=update_params.slurm_job_state,
+        slurm_job_info=update_params.slurm_job_info,
     )
 
-    if update_params.report_message and update_params.status == JobSubmissionStatus.REJECTED:
-        notify_submission_rejected(id, update_params.report_message, job_submission.owner_email)
+    job_state_details = slurm_job_state_details[update_params.slurm_job_state]
+    if job_state_details.is_abort_status:
+        # The job is aborted and should notify the user...when we have notifications for Jobbergate
+        update_dict["status"] = JobSubmissionStatus.ABORTED
+        update_dict["report_message"] = update_params.slurm_job_state_reason
+    elif job_state_details.is_done_status:
+        # The job is completed and should notify the user...when we have notifications for Jobbergate
+        update_dict["status"] = JobSubmissionStatus.DONE
 
-    return job_submission
+    job_submission = await secure_services.crud.job_submission.update(id, **update_dict)
+
+    return FastAPIResponse(status_code=status.HTTP_202_ACCEPTED)
+
+
+@router.post(
+    "/agent/submitted",
+    description="Endpoint to report that a pending job_submission was submitted",
+    tags=["Agent"],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def job_submissions_agent_submitted(
+    submitted_request: JobSubmissionAgentSubmittedRequest,
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_SUBMISSIONS_EDIT, ensure_client_id=True)
+    ),
+):
+    """Update a job_submission to indicate that it was submitted to Slurm."""
+    logger.debug("Agent is reporting that a pending job has been submitted")
+
+    job_submission = await secure_services.crud.job_submission.get(
+        submitted_request.id, ensure_attributes={"client_id": secure_services.identity_payload.client_id}
+    )
+    if job_submission.status != JobSubmissionStatus.CREATED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only CREATED Job Submissions can be marked as SUBMITTED",
+        )
+
+    logger.info(f"Marking job_submissions {submitted_request.id} as SUBMITTED")
+
+    await secure_services.crud.job_submission.update(
+        submitted_request.id,
+        slurm_job_id=submitted_request.slurm_job_id,
+        status=JobSubmissionStatus.SUBMITTED,
+    )
+    return FastAPIResponse(status_code=status.HTTP_202_ACCEPTED)
+
+
+@router.post(
+    "/agent/rejected",
+    description="Endpoint to report that a pending job_submission was rejected by Slurm",
+    tags=["Agent"],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def job_submissions_agent_rejected(
+    rejected_request: JobSubmissionAgentRejectedRequest,
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.JOB_SUBMISSIONS_EDIT, ensure_client_id=True)
+    ),
+):
+    """Update a job_submission to indicate that it was rejected by Slurm."""
+    logger.debug("Agent is reporting that a pending job has been rejected")
+
+    job_submission = await secure_services.crud.job_submission.get(
+        rejected_request.id, ensure_attributes={"client_id": secure_services.identity_payload.client_id}
+    )
+    if job_submission.status != JobSubmissionStatus.CREATED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only CREATED Job Submissions can be marked as REJECTED",
+        )
+
+    logger.info(f"Marking job_submissions {rejected_request.id} as REJECTED")
+
+    await secure_services.crud.job_submission.update(
+        rejected_request.id,
+        status=JobSubmissionStatus.REJECTED,
+        report_message=rejected_request.report_message,
+    )
+    notify_submission_rejected(
+        rejected_request.id,
+        rejected_request.report_message,
+        job_submission.owner_email,
+    )
+
+    return FastAPIResponse(status_code=status.HTTP_202_ACCEPTED)
 
 
 @router.get(

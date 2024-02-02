@@ -3,13 +3,13 @@ Define tests for the submission functions of the jobbergate section.
 """
 
 import json
+import re
 
 import httpx
 import pytest
 import respx
 from pydantic import ValidationError
 
-from jobbergate_agent.jobbergate.constants import JobSubmissionStatus
 from jobbergate_agent.jobbergate.schemas import (
     JobScriptFile,
     PendingJobSubmission,
@@ -18,8 +18,11 @@ from jobbergate_agent.jobbergate.schemas import (
     SlurmSubmitResponse,
 )
 from jobbergate_agent.jobbergate.submit import (
+    fetch_pending_submissions,
     get_job_parameters,
     get_job_script_file,
+    mark_as_rejected,
+    mark_as_submitted,
     process_supporting_files,
     retrieve_submission_file,
     submit_job_script,
@@ -28,10 +31,27 @@ from jobbergate_agent.jobbergate.submit import (
     write_submission_file,
 )
 from jobbergate_agent.settings import SETTINGS
-from jobbergate_agent.utils.exception import JobSubmissionError, SlurmrestdError
-from jobbergate_agent.utils.user_mapper import SingleUserMapper
+from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError, SlurmrestdError
+from jobbergate_agent.utils.user_mapper import SingleUserMapper, SlurmUserMapper, manufacture
 
 
+class RegexArgMatcher:
+    """
+    Specialty class to be used as a matcher for partial args with mock call assertions.
+    """
+
+    def __init__(self, pattern, flags=0):
+        self.pattern = pattern
+        self.flags = flags
+
+    def __eq__(self, other):
+        return re.match(self.pattern, other, self.flags)
+
+    def __repr__(self):
+        return f"regex='{self.pattern}' (flags={self.flags})"
+
+
+@pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
 @pytest.mark.asyncio
 async def test_retrieve_submission_file__success():
@@ -244,13 +264,168 @@ async def test_get_job_script_file__success_without_write(
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
+async def test_fetch_pending_submissions__success(dummy_job_script_files):
+    """
+    Test that the ``fetch_pending_submissions()`` function can successfully retrieve
+    PendingJobSubmission objects from the API.
+    """
+    pending_job_submissions_data = {
+        "items": [
+            dict(
+                id=1,
+                name="sub1",
+                owner_email="email1@dummy.com",
+                job_script={"files": dummy_job_script_files},
+                slurm_job_id=111,
+            ),
+            dict(
+                id=2,
+                name="sub2",
+                owner_email="email2@dummy.com",
+                job_script={"files": dummy_job_script_files},
+                slurm_job_id=222,
+            ),
+            dict(
+                id=3,
+                name="sub3",
+                owner_email="email3@dummy.com",
+                job_script={"files": dummy_job_script_files},
+                slurm_job_id=333,
+            ),
+        ]
+    }
+    async with respx.mock:
+        respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/pending").mock(
+            return_value=httpx.Response(
+                status_code=200,
+                json=pending_job_submissions_data,
+            )
+        )
+
+        pending_job_submissions = await fetch_pending_submissions()
+        for i, pending_job_submission in enumerate(pending_job_submissions):
+            assert isinstance(pending_job_submission, PendingJobSubmission)
+            assert i + 1 == pending_job_submission.id
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
+async def test_fetch_pending_submissions__raises_JobbergateApiError_if_response_is_not_200():  # noqa
+    """
+    Test that the ``fetch_pending_submissions()`` function will raise a
+    JobbergateApiError if the response from the API is not OK (200).
+    """
+    with respx.mock:
+        respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/pending").mock(
+            return_value=httpx.Response(status_code=400)
+        )
+
+        with pytest.raises(JobbergateApiError, match="Failed to fetch pending"):
+            await fetch_pending_submissions()
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
+async def test_fetch_pending_submissions__raises_JobbergateApiError_if_response_cannot_be_deserialized():  # noqa
+    """
+    Test that the ``fetch_pending_submissions()`` function will raise a
+    JobbergateApiError if it fails to convert the response to a PendingJobSubmission.
+    """
+    pending_job_submissions_data = [
+        dict(bad="data"),
+    ]
+    with respx.mock:
+        respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/pending").mock(
+            return_value=httpx.Response(
+                status_code=200,
+                json=pending_job_submissions_data,
+            )
+        )
+
+        with pytest.raises(JobbergateApiError, match="Failed to fetch pending"):
+            await fetch_pending_submissions()
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
+async def test_mark_as_submitted__success():
+    """
+    Test that ``mark_as_submitted()`` can successfully report a job submission as submitted to the Jobbergate API
+    with its ``slurm_job_id``.
+    """
+    with respx.mock:
+        update_route = respx.post(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/submitted")
+        update_route.mock(return_value=httpx.Response(status_code=200))
+
+        await mark_as_submitted(1, 111)
+        assert update_route.called
+        last_request = update_route.calls.last.request
+        assert json.loads(last_request.content) == dict(id=1, slurm_job_id=111)
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
+async def test_mark_as_submitted__raises_JobbergateApiError_if_the_response_is_not_200():
+    """
+    Test that the ``mark_as_submitted()`` function will raise a JobbergateApiError if
+    the response from the API is not OK (200).
+    """
+    with respx.mock:
+        update_route = respx.post(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/submitted")
+        update_route.mock(return_value=httpx.Response(status_code=400))
+
+        with pytest.raises(
+            JobbergateApiError,
+            match="Could not mark job submission 1 as submitted",
+        ):
+            await mark_as_submitted(1, 111)
+        assert update_route.called
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
+async def test_mark_as_rejected__success():
+    """
+    Test that ``mark_as_rejected()`` can successfully report a job submission as rejected to the Jobbergate API
+    with its ``report_message``.
+    """
+    with respx.mock:
+        update_route = respx.post(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/rejected")
+        update_route.mock(return_value=httpx.Response(status_code=200))
+
+        await mark_as_rejected(1, "something went wrong")
+        assert update_route.called
+        last_request = update_route.calls.last.request
+        assert json.loads(last_request.content) == dict(id=1, report_message="something went wrong")
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
+async def test_mark_as_rejected__raises_JobbergateApiError_if_the_response_is_not_200():
+    """
+    Test that the ``mark_as_rejected()`` function will raise a JobbergateApiError if
+    the response from the API is not OK (200).
+    """
+    with respx.mock:
+        update_route = respx.post(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/rejected")
+        update_route.mock(return_value=httpx.Response(status_code=400))
+
+        with pytest.raises(
+            JobbergateApiError,
+            match="Could not mark job submission 1 as rejected",
+        ):
+            await mark_as_rejected(1, "something went wrong")
+        assert update_route.called
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 async def test_submit_job_script__success(dummy_pending_job_submission_data, dummy_template_source):
     """
     Test that the ``submit_job_script()`` successfully submits a job.
 
     Verifies that a PendingJobSubmission instance is submitted via the Slurm REST API
-    and that a ``slurm_job_id`` is returned. Verifies that LDAP was used to retrieve
-    the username.
+    and that a ``slurm_job_id`` is returned.
     """
     user_mapper = SingleUserMapper("dummy-user")
 
@@ -366,7 +541,6 @@ async def test_submit_job_script__with_non_default_execution_directory(
         )
 
 
-@pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
 async def test_submit_job_script__raises_exception_if_no_executable_script_was_found(
     dummy_pending_job_submission_data, mocker
@@ -374,10 +548,12 @@ async def test_submit_job_script__raises_exception_if_no_executable_script_was_f
     """
     Test that the ``submit_job_script()`` will raise a JobSubmissionError if it cannot
     find an executable job script in the retrieved pending job submission data
-    and that the job submission status is updated to rejected.
+    and that the ``mark_as_rejected`` method is called for the job submission.
     """
     pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
     pending_job_submission.job_script.files = []
+
+    mock_mark_as_rejected = mocker.patch("jobbergate_agent.jobbergate.submit.mark_as_rejected")
 
     async with respx.mock:
         respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/oauth/token").mock(
@@ -386,15 +562,14 @@ async def test_submit_job_script__raises_exception_if_no_executable_script_was_f
                 json=dict(access_token="dummy-token"),
             )
         )
-        update_route = respx.put(
-            f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/{pending_job_submission.id}"
-        )
-        update_route.mock(return_value=httpx.Response(status_code=200))
 
         with pytest.raises(JobSubmissionError, match="Could not find an executable"):
             await submit_job_script(pending_job_submission, SingleUserMapper())
 
-    assert update_route.call_count == 1
+    mock_mark_as_rejected.assert_called_once_with(
+        dummy_pending_job_submission_data["id"],
+        RegexArgMatcher(".*Could not find an executable.*"),
+    )
 
 
 @pytest.mark.asyncio
@@ -405,11 +580,13 @@ async def test_submit_job_script__raises_exception_if_submit_call_response_is_no
     """
     Test that ``submit_job_script()`` raises an exception if the response from Slurm
     REST API is nota 200. Verifies that the error message is included in the raised
-    exception and that the job submission status is updated to rejected.
+    exception and that the ``mark_as_rejected`` method is called for the job submission.
     """
     user_mapper = SingleUserMapper("dummy-user")
 
     pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
+
+    mock_mark_as_rejected = mocker.patch("jobbergate_agent.jobbergate.submit.mark_as_rejected")
 
     async with respx.mock:
         respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/oauth/token").mock(
@@ -418,10 +595,6 @@ async def test_submit_job_script__raises_exception_if_submit_call_response_is_no
                 json=dict(access_token="dummy-token"),
             )
         )
-        update_route = respx.put(
-            f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/{pending_job_submission.id}"
-        )
-        update_route.mock(return_value=httpx.Response(status_code=200))
 
         submit_route = respx.post(f"{SETTINGS.SLURM_RESTD_VERSIONED_URL}/job/submit")
         submit_route.mock(
@@ -452,8 +625,12 @@ async def test_submit_job_script__raises_exception_if_submit_call_response_is_no
         ):
             await submit_job_script(pending_job_submission, user_mapper)
 
-    assert update_route.call_count == 1
     assert download_route.call_count == 1
+
+    mock_mark_as_rejected.assert_called_once_with(
+        dummy_pending_job_submission_data["id"],
+        RegexArgMatcher(".*Failed to submit job to slurm.*BOOM!.*"),
+    )
 
 
 @pytest.mark.asyncio
@@ -466,11 +643,13 @@ async def test_submit_job_script__raises_exception_if_response_cannot_be_unpacke
     """
     Test that ``submit_job_script()`` raises an exception if the response from Slurm
     REST API is nota 200. Verifies that the error message is included in the raised
-    exception and that the job submission status is updated to rejected.
+    exception and that the ``mark_as_rejected`` method is called for the job submission.
     """
     user_mapper = SingleUserMapper("dummy-user")
 
     pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
+
+    mock_mark_as_rejected = mocker.patch("jobbergate_agent.jobbergate.submit.mark_as_rejected")
 
     async with respx.mock:
         respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/oauth/token").mock(
@@ -479,10 +658,6 @@ async def test_submit_job_script__raises_exception_if_response_cannot_be_unpacke
                 json=dict(access_token="dummy-token"),
             )
         )
-        update_route = respx.put(
-            f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/{pending_job_submission.id}"
-        )
-        update_route.mock(return_value=httpx.Response(status_code=200))
 
         submit_route = respx.post(f"{SETTINGS.SLURM_RESTD_VERSIONED_URL}/job/submit")
         submit_route.mock(
@@ -503,8 +678,12 @@ async def test_submit_job_script__raises_exception_if_response_cannot_be_unpacke
         with pytest.raises(SlurmrestdError, match="Failed to submit job to slurm"):
             await submit_job_script(pending_job_submission, user_mapper)
 
-    assert update_route.call_count == 1
     assert download_route.call_count == 1
+
+    mock_mark_as_rejected.assert_called_once_with(
+        dummy_pending_job_submission_data["id"],
+        RegexArgMatcher(".*Failed to submit job to slurm.*BAD DATA.*", flags=re.DOTALL),
+    )
 
 
 @pytest.mark.asyncio
@@ -513,101 +692,76 @@ async def test_submit_pending_jobs(
     dummy_job_script_files,
     tweak_settings,
     dummy_template_source,
+    mocker,
 ):
     """
     Test that the ``submit_pending_jobs()`` function can fetch pending job submissions,
     submit each to slurm via the Slurm REST API, and update the job submission via the
     Jobbergate API.
     """
-    pending_job_submissions_data = {
-        "items": [
-            dict(
-                id=1,
-                name="sub1",
-                owner_email="email1@dummy.com",
-                job_script={"files": dummy_job_script_files},
-            ),
-            dict(
-                id=2,
-                name="sub2",
-                owner_email="email2@dummy.com",
-                job_script={"files": dummy_job_script_files},
-            ),
-            dict(
-                id=3,
-                name="sub3",
-                owner_email="email3@dummy.com",
-                job_script={"files": dummy_job_script_files},
-            ),
+
+    pending_submissions = [
+        PendingJobSubmission(
+            id=1,
+            name="sub1",
+            owner_email="email1@dummy.com",
+            job_script={"files": dummy_job_script_files},
+        ),
+        PendingJobSubmission(
+            id=2,
+            name="sub2",
+            owner_email="email2@dummy.com",
+            job_script={"files": dummy_job_script_files},
+        ),
+        PendingJobSubmission(
+            id=3,
+            name="sub3",
+            owner_email="email3@dummy.com",
+            job_script={"files": dummy_job_script_files},
+        ),
+    ]
+
+    mocker.patch(
+        "jobbergate_agent.jobbergate.submit.fetch_pending_submissions",
+        return_value=pending_submissions,
+    )
+
+    def _mocked_submit_job_script(pending_job_submission: PendingJobSubmission, user_mapper: SlurmUserMapper):
+        if pending_job_submission.id == 3:
+            raise Exception("BOOM!")
+        return pending_job_submission.id * 11
+
+    def _mocked_mark_as_submitted(job_submission_id: int, slurm_job_id: int):
+        if job_submission_id == 2:
+            raise Exception("BANG!")
+
+    mock_submit = mocker.patch(
+        "jobbergate_agent.jobbergate.submit.submit_job_script", side_effect=_mocked_submit_job_script
+    )
+    mock_mark = mocker.patch(
+        "jobbergate_agent.jobbergate.submit.mark_as_submitted", side_effect=_mocked_mark_as_submitted
+    )
+
+    test_mapper = manufacture()
+
+    await submit_pending_jobs()
+
+    mock_submit.assert_has_calls(
+        [
+            mocker.call(pending_submissions[0], test_mapper),
+            mocker.call(pending_submissions[1], test_mapper),
+            mocker.call(pending_submissions[2], test_mapper),
         ]
-    }
-    async with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(status_code=200, json=dict(access_token="dummy-token"))
-        )
-        fetch_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/pending")
-        fetch_route.mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=pending_job_submissions_data,
-            )
-        )
-        update_1_route = respx.put(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/1")
-        update_1_route.mock(return_value=httpx.Response(status_code=200))
+    )
+    assert mock_submit.call_count == 3
 
-        update_2_route = respx.put(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/2")
-        update_2_route.mock(return_value=httpx.Response(status_code=400))
-
-        update_3_route = respx.put(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/3")
-        update_3_route.mock(return_value=httpx.Response(status_code=200))
-
-        download_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh")
-        download_route.mock(
-            return_value=httpx.Response(
-                status_code=200,
-                content=dummy_template_source.encode("utf-8"),
-            ),
-        )
-
-        def _submit_side_effect(request):
-            req_data = request.content.decode("utf-8")
-            name = json.loads(req_data)["job"]["name"]
-            fake_slurm_job_id = int(name.replace("sub", "")) * 11
-            if name == "sub3":
-                return httpx.Response(
-                    status_code=400,
-                    json=dict(errors=dict(error="BOOM!")),
-                )
-            else:
-                return httpx.Response(
-                    status_code=200,
-                    json=dict(job_id=fake_slurm_job_id),
-                )
-
-        submit_route = respx.post(f"{SETTINGS.SLURM_RESTD_VERSIONED_URL}/job/submit")
-        submit_route.mock(side_effect=_submit_side_effect)
-
-        with tweak_settings(SINGLE_USER_SUBMITTER="dummy-user"):
-            await submit_pending_jobs()
-
-        assert update_1_route.call_count == 1
-        assert update_1_route.calls.last.request.content == json.dumps(
-            dict(
-                status=JobSubmissionStatus.SUBMITTED,
-                slurm_job_id=11,
-            )
-        ).encode("utf-8")
-
-        assert update_2_route.call_count == 1
-        assert update_2_route.calls.last.request.content == json.dumps(
-            dict(
-                status=JobSubmissionStatus.SUBMITTED,
-                slurm_job_id=22,
-            )
-        ).encode("utf-8")
-
-        assert update_3_route.call_count == 1  # called to notify the job was rejected
-        assert download_route.call_count == len(pending_job_submissions_data["items"])
+    mock_mark.assert_has_calls(
+        [
+            mocker.call(1, 11),
+            mocker.call(2, 22),
+        ]
+    )
+    assert mock_mark.call_count == 2
 
 
 class TestGetJobParameters:

@@ -342,7 +342,7 @@ jobbergate job-submissions create --help
 For the tutorial, we need to issue the following command:
 
 ```shell
-jobbergate job-submissions create --name=tutorial --job-script-id=1 --cluster-name=local-slurm
+jobbergate job-submissions create --name=tutorial --job-script-id=1 --cluster-name=local-slurm --execution-directory=/nfs
 ```
 
 The command should produce output that looks like this:
@@ -374,6 +374,13 @@ The command should produce output that looks like this:
 
     Again, be careful to use the correct `id` produced by this command for the remainder of the tutorial!
 
+!!! Note
+
+    The `exeuction-directory` parameter must be set for jobs that will be sumbitted remotely because it defaults to the
+    current working directory wherever you run jobbergate-cli. Chances are that you are running in a directory that does
+    not exists on the compute nodes of whatever cluster you are submitting to. Thus, you should choose a directory that
+    you know exists on the cluster. For the jobbergate-composed cluster, we know that `/nfs` exists and is writable.
+
 ### Check the status of the submitted job
 
 We can look up the status of a Job Submission using the following command:
@@ -393,6 +400,7 @@ This command should produce output that looks like:
 │ job_script_id              │ 1                           │
 │ client_id                  │ local-slurm                 │
 │ slurm_job_id               │ 1                           │
+│ slurm_job_state            │ RUNNING                     │
 │ execution_directory        │ None                        │
 │ job_submission_name        │ tutorial                    │
 │ job_submission_description │ None                        │
