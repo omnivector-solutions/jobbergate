@@ -4,10 +4,11 @@ Provide Pydantic models for various data items.
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 import httpx
 import pydantic
+import pydantic.generics
 
 
 class TokenSet(pydantic.BaseModel, extra=pydantic.Extra.ignore):
@@ -26,6 +27,7 @@ class IdentityData(pydantic.BaseModel):
 
     email: str
     client_id: str
+    organization_id: Optional[str]
 
 
 class Persona(pydantic.BaseModel):
@@ -244,12 +246,15 @@ class JobSubmissionCreateRequestData(pydantic.BaseModel):
     execution_parameters: Dict[str, Any] = pydantic.Field(default_factory=dict)
 
 
-class ListResponseEnvelope(pydantic.BaseModel):
+EnvelopeT = TypeVar("EnvelopeT")
+
+
+class ListResponseEnvelope(pydantic.generics.GenericModel, Generic[EnvelopeT]):
     """
     A model describing the structure of response envelopes from "list" endpoints.
     """
 
-    items: List[Dict[str, Any]]
+    items: List[EnvelopeT]
     total: int
     page: int
     size: int

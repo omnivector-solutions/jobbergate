@@ -47,7 +47,7 @@ class Abort(buzz.Buzz):
         **kwargs,
     ):
         """
-        Initialize the Abort errror.
+        Initialize the Abort error.
         """
         self.subject = subject
         self.support = support

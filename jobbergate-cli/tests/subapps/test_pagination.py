@@ -32,6 +32,7 @@ def test_handle_pagination__one_page(respx_mock, dummy_domain, dummy_context, du
         title="Applications List",
         style_mapper=None,
         hidden_fields=None,
+        value_mappers=None,
     )
 
 
@@ -71,6 +72,7 @@ def test_handle_pagination__show_next_page(respx_mock, dummy_domain, dummy_conte
         title="Applications List",
         style_mapper=None,
         hidden_fields=None,
+        value_mappers=None,
     )
     assert mock_render_paginated.call_args_list[1] == mocker.call(
         dummy_context,
@@ -78,6 +80,7 @@ def test_handle_pagination__show_next_page(respx_mock, dummy_domain, dummy_conte
         title="Applications List",
         style_mapper=None,
         hidden_fields=None,
+        value_mappers=None,
     )
 
 
@@ -123,6 +126,7 @@ def test_handle_pagination__show_previous_page(
         title="Applications List",
         style_mapper=None,
         hidden_fields=None,
+        value_mappers=None,
     )
     assert mock_render_paginated.call_args_list[1] == mocker.call(
         dummy_context,
@@ -130,6 +134,7 @@ def test_handle_pagination__show_previous_page(
         title="Applications List",
         style_mapper=None,
         hidden_fields=None,
+        value_mappers=None,
     )
     assert mock_render_paginated.call_args_list[2] == mocker.call(
         dummy_context,
@@ -137,4 +142,5 @@ def test_handle_pagination__show_previous_page(
         title="Applications List",
         style_mapper=None,
         hidden_fields=None,
+        value_mappers=None,
     )

@@ -1,6 +1,9 @@
-from typing import Any, Dict, List, Optional, cast
+from __future__ import annotations
+
+from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
 
 import inquirer
+import pydantic
 
 from jobbergate_cli.constants import PaginationChoices
 from jobbergate_cli.render import StyleMapper, render_paginated_list_results
@@ -14,8 +17,10 @@ def handle_pagination(
     abort_message: str = "There was an error communicating with the API",
     params: Optional[Dict[str, Any]] = None,
     title: str = "Results List",
-    style_mapper: StyleMapper = None,
-    hidden_fields: Optional[List[str]] = None,
+    style_mapper: StyleMapper | None = None,
+    hidden_fields: List[str] | None = None,
+    nested_response_model_cls: Type[pydantic.BaseModel] | None = None,
+    value_mappers: Optional[Dict[str, Callable[[Any], Any]]] = None,
 ):
     assert jg_ctx is not None
     assert jg_ctx.client is not None
@@ -28,7 +33,7 @@ def handle_pagination(
         params["page"] = current_page
 
         envelope = cast(
-            ListResponseEnvelope,
+            Union[ListResponseEnvelope[Dict[str, Any]], ListResponseEnvelope[pydantic.BaseModel]],
             make_request(
                 jg_ctx.client,
                 url_path,
@@ -36,7 +41,13 @@ def handle_pagination(
                 expected_status=200,
                 abort_message=abort_message,
                 support=True,
-                response_model_cls=ListResponseEnvelope,
+                response_model_cls=(
+                    ListResponseEnvelope[dict]
+                    if nested_response_model_cls is None
+                    # mypy doesn't accept dynamic creation of a type in this way
+                    # but pydantic requires this to unpack the results correctly
+                    else ListResponseEnvelope[nested_response_model_cls]  # type: ignore
+                ),
                 params=params,
             ),
         )
@@ -47,6 +58,7 @@ def handle_pagination(
             title=title,
             style_mapper=style_mapper,
             hidden_fields=hidden_fields,
+            value_mappers=value_mappers,
         )
 
         if envelope.pages <= 1:

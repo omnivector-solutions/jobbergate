@@ -250,7 +250,7 @@ def make_request(
     if response_model_cls is None:
         return data
 
-    logger.debug("Validating response data with ResponseModel")
+    logger.debug(f"Validating response data with {response_model_cls}")
     try:
         return response_model_cls(**data)
     except pydantic.ValidationError as err:

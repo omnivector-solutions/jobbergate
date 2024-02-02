@@ -54,6 +54,26 @@ def sbatch_run(filename: str, *argv) -> int:
     return slurm_job_id
 
 
+def _map_cluster_name(
+    jg_ctx: JobbergateContext,
+    base_cluster_name: str,
+):
+    """
+    Injects the organization name into the cluster name for multi-tenancy mode.
+
+    If the organization is undefined (multi-tenancy is disabled) or the cluster_name already includes the
+    organization_id, use the base_cluster_name.
+    """
+    # Make static type checkers happy
+    assert jg_ctx.persona is not None, "jg_ctx.persona is uninitialized"
+
+    org_id = jg_ctx.persona.identity_data.organization_id
+    if org_id is None or base_cluster_name.endswith(org_id):
+        return base_cluster_name
+
+    return f"{base_cluster_name}-{jg_ctx.persona.identity_data.organization_id}"
+
+
 def create_job_submission(
     jg_ctx: JobbergateContext,
     job_script_id: int,
@@ -113,7 +133,7 @@ def create_job_submission(
         name=name,
         description=description,
         job_script_id=job_script_id,
-        cluster_name=cluster_name,
+        cluster_name=_map_cluster_name(jg_ctx, cluster_name),
         execution_directory=execution_directory,
     )
 

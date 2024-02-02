@@ -1,3 +1,4 @@
+import typing
 from pathlib import Path
 
 import httpx
@@ -53,7 +54,13 @@ def make_token():
     Provide a fixture that returns a helper function for creating an access_token for testing.
     """
 
-    def _helper(azp: str = None, email: str = None, expires=plummet.AGGREGATE_TYPE) -> str:
+    def _helper(
+        azp: typing.Optional[str] = None,
+        email: typing.Optional[str] = None,
+        expires: plummet.AGGREGATE_TYPE = pendulum.now(tz="UTC"),
+        organization_id: typing.Optional[str] = None,
+        **extras,
+    ) -> str:
         """
         Create an access_token with a given user email, org name, and expiration moment.
         """
@@ -64,6 +71,15 @@ def make_token():
             extra_claims["azp"] = azp
         if email is not None:
             extra_claims["email"] = email
+        if organization_id is not None:
+            extra_claims["organization"] = {
+                organization_id: {
+                    "name": "Dummy Organization",
+                }
+            }
+
+        for k, v in extras.items():
+            extra_claims[k] = v
 
         return jwt.encode(
             {
@@ -138,6 +154,72 @@ def test_validate_token_and_extract_identity__raises_abort_if_token_is_missing_i
     with plummet.frozen_time("2022-02-16 21:30:00"):
         with pytest.raises(Abort, match="error extracting the user's identity"):
             validate_token_and_extract_identity(TokenSet(access_token=access_token))
+
+
+def test_validate_token_and_extract_identity__includes_org_id_in_multitenant_mode(make_token, tweak_settings):
+    """
+    Validate that the ``validate_token_and_extract_identity()`` function can successfully validate a good
+    access token that includes the organization_id and extract it when multi-tenancy mode is enabled.
+    """
+    access_token = make_token(
+        azp="dummy-client",
+        email="good@email.com",
+        expires="2022-02-16 22:30:00",
+        organization_id="some-org",
+    )
+    with tweak_settings(MULTI_TENANCY_ENABLED=True):
+        with plummet.frozen_time("2022-02-16 21:30:00"):
+            identity_data = validate_token_and_extract_identity(TokenSet(access_token=access_token))
+    assert identity_data.client_id == "dummy-client"
+    assert identity_data.email == "good@email.com"
+    assert identity_data.organization_id == "some-org"
+
+
+def test_validate_token_and_extract_identity__raises_exception_for_malformed_organization_in_multitenant_mode(
+    make_token, tweak_settings
+):
+    """
+    Validate that the ``validate_token_and_extract_identity()`` function will raise an Abort if the organization
+    payload is malformed when multi-tenancy mode is enabled.
+    """
+    # Case when the organization payload is garbage
+    access_token = make_token(
+        azp="dummy-client",
+        email="good@email.com",
+        expires="2022-02-16 22:30:00",
+        organization="some-org",
+    )
+    with pytest.raises(Abort, match="The access token is invalid"):
+        with tweak_settings(MULTI_TENANCY_ENABLED=True):
+            with plummet.frozen_time("2022-02-16 21:30:00"):
+                validate_token_and_extract_identity(TokenSet(access_token=access_token))
+
+    # Case when no organizations are embedded
+    access_token = make_token(
+        azp="dummy-client",
+        email="good@email.com",
+        expires="2022-02-16 22:30:00",
+        organization={},
+    )
+    with pytest.raises(Abort, match="The access token is invalid"):
+        with tweak_settings(MULTI_TENANCY_ENABLED=True):
+            with plummet.frozen_time("2022-02-16 21:30:00"):
+                validate_token_and_extract_identity(TokenSet(access_token=access_token))
+
+    # Case when multiple organizations are embedded
+    access_token = make_token(
+        azp="dummy-client",
+        email="good@email.com",
+        expires="2022-02-16 22:30:00",
+        organization={
+            "some-org": {},
+            "some-other-org": {},
+        },
+    )
+    with pytest.raises(Abort, match="The access token is invalid"):
+        with tweak_settings(MULTI_TENANCY_ENABLED=True):
+            with plummet.frozen_time("2022-02-16 21:30:00"):
+                validate_token_and_extract_identity(TokenSet(access_token=access_token))
 
 
 def test_load_tokens_from_cache__success(make_token, tmp_path, mocker):

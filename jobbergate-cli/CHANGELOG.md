@@ -3,6 +3,7 @@
 This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
+-  Fixed cluster_name presentation in multi-tenancy mode [PENG-2045]
 
 
 ## 4.3.0a4 -- 2024-01-31

@@ -12,7 +12,7 @@ from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import handle_abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobbergateContext
+from jobbergate_cli.schemas import JobbergateContext, JobSubmissionResponse
 from jobbergate_cli.subapps.job_submissions.tools import create_job_submission, fetch_job_submission_data
 from jobbergate_cli.subapps.pagination import handle_pagination
 
@@ -90,9 +90,6 @@ def create(
     """
     jg_ctx: JobbergateContext = ctx.obj
 
-    # Make static type checkers happy
-    assert jg_ctx.client is not None, "Client is uninitialized"
-
     result = create_job_submission(
         jg_ctx,
         job_script_id,
@@ -137,6 +134,7 @@ def list_all(
     # Make static type checkers happy
     assert jg_ctx is not None, "JobbergateContext is uninitialized"
     assert jg_ctx.client is not None, "Client is uninitialized"
+    assert jg_ctx.persona is not None, "Persona is uninitialized"
 
     params: Dict[str, Any] = dict(user_only=not show_all)
     if search is not None:
@@ -148,6 +146,11 @@ def list_all(
     if from_job_script_id is not None:
         params["from_job_script_id"] = from_job_script_id
 
+    value_mappers = None
+    organization_id = jg_ctx.persona.identity_data.organization_id
+    if organization_id is not None:
+        value_mappers = dict(cluster_name=lambda cn: cn.replace(f"-{organization_id}", ""))
+
     handle_pagination(
         jg_ctx=jg_ctx,
         url_path="/jobbergate/job-submissions",
@@ -156,6 +159,8 @@ def list_all(
         title="Job Submission List",
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,
+        nested_response_model_cls=JobSubmissionResponse,
+        value_mappers=value_mappers,
     )
 
 
@@ -169,12 +174,23 @@ def get_one(
     Get a single job submission by id
     """
     jg_ctx: JobbergateContext = ctx.obj
+
+    # Make static type checkers happy
+    assert jg_ctx is not None, "JobbergateContext is uninitialized"
+    assert jg_ctx.persona is not None, "Persona is uninitialized"
+
+    value_mappers = None
+    organization_id = jg_ctx.persona.identity_data.organization_id
+    if organization_id is not None:
+        value_mappers = dict(cluster_name=lambda cn: cn.replace(f"-{organization_id}", ""))
+
     result = fetch_job_submission_data(jg_ctx, id)
     render_single_result(
         jg_ctx,
         result,
         hidden_fields=HIDDEN_FIELDS,
         title="Job Submission",
+        value_mappers=value_mappers,
     )
 
 
