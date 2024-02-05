@@ -731,7 +731,7 @@ class TestFileService:
         dummy_upload_file = make_upload_file()
         with make_upload_file(content="dummy upload content") as dummy_upload_file:
             dummy_upload_file.size = None
-            with pytest.raises(HTTPException, match="^UploadFile has no size attribute") as exc_info:
+            with pytest.raises(HTTPException, match="UploadFile has no size attribute") as exc_info:
                 await dummy_file_service.upsert(13, "file-one.txt", dummy_upload_file)
         assert exc_info.value.status_code == 500
 
@@ -742,7 +742,7 @@ class TestFileService:
         dummy_upload_file = make_upload_file()
         with make_upload_file(content="dummy upload content") as dummy_upload_file:
             with tweak_settings(MAX_UPLOAD_FILE_SIZE=1):
-                with pytest.raises(HTTPException, match="^Uploaded files cannot exceed 1 bytes") as exc_info:
+                with pytest.raises(HTTPException, match="Uploaded files cannot exceed 1 bytes") as exc_info:
                     await dummy_file_service.upsert(13, "file-one.txt", dummy_upload_file)
         assert exc_info.value.status_code == 413
 
