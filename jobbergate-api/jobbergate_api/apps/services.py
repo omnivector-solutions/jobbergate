@@ -567,7 +567,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         await self.bucket.upload_fileobj(Fileobj=file_obj, Key=instance.file_key)  # type: ignore
         return instance
 
-    async def add_instance(self, parent_id, filename, upsert_kwargs):
+    async def add_instance(self, parent_id, filename, upsert_kwargs) -> FileModel:
         """
         Add a file instance to the database.
         """
