@@ -31,6 +31,17 @@ jobs:
           poetry env use "3.8"
           make qa
 
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          working-directory: jobbergate-core
+          flags: core
+          env_vars: OS,PYTHON
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: tests/coverage.xml
+          disable_search: true
+          fail_ci_if_error: true
+
   api-tests:
     name: "jobbergate-api tests"
     runs-on: "ubuntu-20.04"
@@ -40,6 +51,17 @@ jobs:
       - name: Run QA
         working-directory: ./jobbergate-composed
         run: docker-compose build jobbergate-api-qa && docker-compose run --rm jobbergate-api-qa
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          working-directory: jobbergate-api
+          flags: api
+          env_vars: OS,PYTHON
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: tests/coverage.xml
+          disable_search: true
+          fail_ci_if_error: true
 
   cli-tests:
     name: "jobbergate-cli tests"
@@ -64,6 +86,17 @@ jobs:
           poetry env use "3.8"
           make qa
 
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          working-directory: jobbergate-cli
+          flags: cli
+          env_vars: OS,PYTHON
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: tests/coverage.xml
+          disable_search: true
+          fail_ci_if_error: true
+
   agent-tests:
     name: "jobbergate-agent tests"
     runs-on: "ubuntu-20.04"
@@ -86,3 +119,14 @@ jobs:
         run: |
           poetry env use "3.8"
           make qa
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          working-directory: jobbergate-agent
+          flags: agent
+          env_vars: OS,PYTHON
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: tests/coverage.xml
+          disable_search: true
+          fail_ci_if_error: true

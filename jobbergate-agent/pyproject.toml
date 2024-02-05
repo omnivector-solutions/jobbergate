@@ -62,7 +62,7 @@ freezegun = "^1.2.2"
 isort = "^5.9.3"
 mypy = "^0.931"
 pytest-asyncio = "^0.18.2"
-pytest-cov = "^3.0.0"
+pytest-cov = "^4.0.0"
 pytest-env = "^0.6.2"
 pytest-mock = "^3.7.0"
 pytest-random-order = "^1.0.4"
@@ -75,8 +75,7 @@ asyncio_mode = "auto"
 addopts = [
     "--random-order",
     "--cov=jobbergate_agent",
-    "--cov-report=term-missing",
-    "--cov-fail-under=90",
+    "--cov-report=xml:tests/coverage.xml",
 ]
 env = [
     "JOBBERGATE_AGENT_OIDC_DOMAIN = auth.com",
@@ -84,6 +83,10 @@ env = [
     "JOBBERGATE_AGENT_OIDC_CLIENT_SECRET = DUMMY-TEST-CLIENT-SECRET",
     "JOBBERGATE_AGENT_SLURMRESTD_JWT_KEY_STRING = DUMMY-JWT-SECRET",
 ]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
 
 [tool.black]
 line-length = 120
