@@ -139,6 +139,37 @@ class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     workflow_files: List[WorkflowFileResponse] = []
 
 
+class LocalTemplateFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+    """
+    Template file retrieved from a local folder.
+    """
+
+    filename: str
+    path: Path
+    file_type: str
+
+
+class LocalWorkflowFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+    """
+    Workflow file retrived from a local folder.
+    """
+
+    filename: str
+    path: Path
+    runtime_config: Dict[str, Any] = {}
+
+
+class LocalApplication(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+    """
+    Application retrieved from a local folder.
+    """
+
+    template_vars: Dict[str, Any] = {}
+
+    template_files: List[LocalTemplateFile] = []
+    workflow_files: List[WorkflowFileResponse] = []
+
+
 class JobScriptFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     """
     Model containing job-script files.
