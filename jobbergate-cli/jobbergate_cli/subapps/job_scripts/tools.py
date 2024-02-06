@@ -25,9 +25,15 @@ from jobbergate_cli.schemas import (
     JobScriptFile,
     JobScriptRenderRequestData,
     JobScriptResponse,
+    LocalApplication,
     RenderFromTemplateRequest,
 )
-from jobbergate_cli.subapps.applications.tools import execute_application, fetch_application_data, load_application_data
+from jobbergate_cli.subapps.applications.tools import (
+    execute_application,
+    fetch_application_data,
+    fetch_application_data_locally,
+    load_application_data,
+)
 
 
 def validate_parameter_file(parameter_path: pathlib.Path) -> Dict[str, Any]:
@@ -180,6 +186,58 @@ def get_template_output_name_mapping(config: JobbergateConfig, job_name: str) ->
     return {remove_prefix(k): v.as_posix() for k, v in output_name_mapping.items()}
 
 
+def render_job_script_locally(
+    jg_ctx: JobbergateContext,
+    job_script_name: str,
+    application_path: Optional[pathlib.Path] = None,
+    templates_path: Optional[pathlib.Path] = None,
+    sbatch_params: Optional[List[str]] = None,
+    param_file: Optional[pathlib.Path] = None,
+    fast: bool = False,
+):
+    """
+    Render a new job script from an application in a local directory.
+
+    :param str job_script_name: Name of the new job script.
+    :param Optional[pathlib.Path] application_path: Path to the base application.
+    :param Optional[List[str]] sbatch_params: List of sbatch parameters.
+    :param Optional[pathlib.Path] param_file: Path to a parameters file.
+    :param bool fast: Whether to use default answers (when available) instead of asking the user.
+    :param JobbergateContext jg_ctx: The Jobbergate context.
+    :return JobScriptResponse: The new job script.
+    """
+    # Make static type checkers happy
+    assert jg_ctx.client is not None
+
+    app_data = fetch_application_data_locally(application_path, templates_path)
+
+    if not app_data.workflow_files:
+        raise Abort(
+            f"Application {app_data.application_id} does not have a workflow file",
+            subject="Workflow file not found",
+            log_message="Application does not have a workflow file",
+        )
+
+    application_source_code = app_data.workflow_files[0].path.read_text()
+
+    (app_config, app_module) = load_application_data(app_data, application_source_code)
+
+    supplied_params = validate_parameter_file(param_file) if param_file else dict()
+    execute_application(app_module, app_config, supplied_params, fast_mode=fast)
+    update_template_files_information(app_data, app_config)
+
+    param_dict_flat = flatten_param_dict(app_config.dict())
+
+    if param_dict_flat.get("job_script_name"):
+        job_script_name = param_dict_flat["job_script_name"]
+
+    # Render templates
+
+    # Inject SBATCH params
+
+    # Save files locally
+
+
 def render_job_script(
     jg_ctx: JobbergateContext,
     name: Optional[str] = None,
@@ -277,7 +335,9 @@ def render_job_script(
     return job_script_result
 
 
-def update_template_files_information(app_data: ApplicationResponse, app_config: JobbergateApplicationConfig):
+def update_template_files_information(
+    app_data: ApplicationResponse | LocalApplication, app_config: JobbergateApplicationConfig
+):
     """Update the information about the template files if not already present in the configuration."""
     if not app_config.jobbergate_config.default_template:
         list_of_entrypoints = [i.filename for i in app_data.template_files if i.file_type.upper() == "ENTRYPOINT"]
