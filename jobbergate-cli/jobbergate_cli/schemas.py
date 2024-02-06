@@ -126,10 +126,10 @@ class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
 
     application_id: int = pydantic.Field(alias="id")
     name: str
+    identifier: Optional[str] = None
     owner_email: str
     created_at: datetime
     updated_at: datetime
-    identifier: Optional[str] = None
     description: Optional[str] = None
     template_vars: Dict[str, Any] = {}
     is_archived: Optional[bool] = None
@@ -165,8 +165,8 @@ class JobScriptResponse(
     """
 
     job_script_id: int = pydantic.Field(alias="id")
-    application_id: Optional[int] = pydantic.Field(None, alias="parent_template_id")
     name: str
+    application_id: Optional[int] = pydantic.Field(None, alias="parent_template_id")
     description: Optional[str] = None
     owner_email: str
     created_at: Optional[datetime] = None
@@ -192,12 +192,12 @@ class JobSubmissionResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     """
 
     job_submission_id: int = pydantic.Field(alias="id")
-    job_script_id: int
-    cluster_name: Optional[str] = pydantic.Field(alias="client_id")
-    slurm_job_id: Optional[int]
-    execution_directory: Optional[Path]
     name: str
+    slurm_job_id: Optional[int]
+    job_script_id: Optional[int]
+    cluster_name: Optional[str] = pydantic.Field(alias="client_id")
     description: Optional[str] = None
+    execution_directory: Optional[Path]
     owner_email: str
     status: str
     created_at: Optional[datetime]

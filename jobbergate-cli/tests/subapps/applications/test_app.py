@@ -39,6 +39,7 @@ def test_list_all__renders_paginated_results(
         title="Applications List",
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,
+        nested_response_model_cls=ApplicationResponse,
     )
 
 

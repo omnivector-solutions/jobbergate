@@ -39,8 +39,8 @@ HIDDEN_FIELDS = [
 
 
 style_mapper = StyleMapper(
-    id="green",
-    job_script_name="cyan",
+    job_script_id="green",
+    name="cyan",
 )
 
 
@@ -87,6 +87,7 @@ def list_all(
         title="Job Scripts List",
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,
+        nested_response_model_cls=JobScriptResponse,
     )
 
 

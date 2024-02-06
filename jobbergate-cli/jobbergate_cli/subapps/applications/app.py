@@ -21,6 +21,7 @@ from jobbergate_cli.subapps.pagination import handle_pagination
 HIDDEN_FIELDS = [
     "cloned_from_id",
     "created_at",
+    "is_archived",
     "template_files",
     "template_vars",
     "updated_at",
@@ -47,9 +48,9 @@ IDENTIFIER_NOTE = """
 
 
 style_mapper = StyleMapper(
-    id="green",
-    application_name="cyan",
-    application_identifier="magenta",
+    application_id="green",
+    name="cyan",
+    identifier="magenta",
 )
 
 
@@ -94,6 +95,7 @@ def list_all(
         title="Applications List",
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,
+        nested_response_model_cls=ApplicationResponse,
     )
 
 
