@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+
+## 4.3.0a6 -- 2024-02-06
 - Fixed JobSubmissionsResponse schema to allow for `None` values in `job_script_id`
 - Reviewed how columns are sorted and colored on listing commands
 
