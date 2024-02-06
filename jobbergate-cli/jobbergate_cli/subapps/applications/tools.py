@@ -22,7 +22,15 @@ from jobbergate_cli.constants import (
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import ApplicationResponse, JobbergateApplicationConfig, JobbergateConfig, JobbergateContext
+from jobbergate_cli.schemas import (
+    ApplicationResponse,
+    JobbergateApplicationConfig,
+    JobbergateConfig,
+    JobbergateContext,
+    LocalApplication,
+    LocalTemplateFile,
+    LocalWorkflowFile,
+)
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.questions import gather_param_values
 
@@ -32,6 +40,65 @@ def load_default_config() -> Dict[str, Any]:
     Load the default config for an application.
     """
     return copy.deepcopy(JOBBERGATE_APPLICATION_CONFIG)
+
+
+def fetch_application_data_locally(
+    application_path: pathlib.Path,
+    templates_path: Optional[pathlib.Path] = None,
+) -> LocalApplication:
+    """
+    Retrieve an application from a local directory.
+
+    :param: application_path: The directory containing the application files
+    :returns: A LocalApplication instance containing the application data
+    """
+    Abort.require_condition(application_path.is_dir(), f"Application directory {application_path} does not exist")
+
+    config_file_path = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
+    Abort.require_condition(config_file_path.is_file(), f"Application config file {config_file_path} does not exist")
+
+    module_file_path = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+    Abort.require_condition(module_file_path.is_file(), f"Application module file {module_file_path} does not exist")
+
+    if templates_path is None:
+        templates_path = application_path / "templates"
+
+    template_files_set = set(templates_path.rglob("*.j2")) | set(templates_path.rglob("*.jinja2"))
+    Abort.require_condition(template_files_set, f"No template files found in {templates_path}")
+
+    application_config = load_application_config_from_source(config_file_path.read_text())
+
+    supporting_files = application_config.jobbergate_config.supporting_files or []
+
+    template_files = []
+
+    for complete_template_path in template_files_set:
+        relative_template_path = complete_template_path.relative_to(application_path)
+
+        if relative_template_path.as_posix() in supporting_files:
+            file_type = FileType.SUPPORT
+        else:
+            file_type = FileType.ENTRYPOINT
+
+        template_files.append(
+            LocalTemplateFile(
+                filename=relative_template_path.name,
+                path=complete_template_path,
+                file_type=file_type,
+            )
+        )
+
+    workflow_file = LocalWorkflowFile(
+        filename=module_file_path.name,
+        path=module_file_path,
+        runtime_config=application_config.jobbergate_config.json(),
+    )
+
+    return LocalApplication(
+        template_vars=application_config.application_config,
+        template_files=template_files,
+        workflow_files=[workflow_file],
+    )
 
 
 def fetch_application_data(
@@ -86,7 +153,7 @@ def fetch_application_data(
 
 
 def load_application_data(
-    app_data: ApplicationResponse,
+    app_data: ApplicationResponse | LocalApplication,
     application_source_file: str,
 ) -> Tuple[JobbergateApplicationConfig, JobbergateApplicationBase]:
     """
