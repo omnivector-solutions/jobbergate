@@ -4,14 +4,19 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+- Fixed JobSubmissionsResponse schema to allow for `None` values in `job_script_id`
+- Reviewed how columns are sorted and colored on listing commands
 
 ## 4.3.0a5 -- 2024-02-02
--  Fixed cluster_name presentation in multi-tenancy mode [PENG-2045]
 
+- Fixed cluster_name presentation in multi-tenancy mode [PENG-2045]
 
 ## 4.3.0a4 -- 2024-01-31
+
 ## 4.3.0a3 -- 2024-01-31
+
 ## 4.3.0a2 -- 2024-01-29
+
 - Added commands to clone templates and job scripts [ASP-3335]
 
 ## 4.3.0a1 -- 2024-01-24

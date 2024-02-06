@@ -20,14 +20,16 @@ from jobbergate_cli.subapps.pagination import handle_pagination
 # move hidden field logic to the API
 HIDDEN_FIELDS = [
     "created_at",
+    "execution_directory",
     "execution_parameters",
     "is_archived",
     "job_script",
+    "report_message",
     "updated_at",
 ]
 
 
-style_mapper = StyleMapper(id="green", job_script_name="cyan", slurm_job_id="dark_orange")
+style_mapper = StyleMapper(job_submission_id="green", name="cyan", slurm_job_id="dark_orange")
 
 
 app = typer.Typer(help="Commands to interact with job submissions")

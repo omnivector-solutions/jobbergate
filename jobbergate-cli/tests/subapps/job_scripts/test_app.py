@@ -44,6 +44,7 @@ def test_list_all__renders_paginated_results(
         title="Job Scripts List",
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,
+        nested_response_model_cls=JobScriptResponse,
     )
 
 
