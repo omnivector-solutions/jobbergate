@@ -50,7 +50,6 @@ auto-name-enum = "^2.0.0"
 [tool.poetry.group.dev.dependencies]
 asgi-lifespan = "^1.0.1"
 black = "^23"
-coverage = { extras = ["toml"], version = "^7.2.7" }
 flake8-docstrings = "^1.6.0"
 ipython = "^7.31.1"
 isort = "^5.9.3"
@@ -93,8 +92,12 @@ ignore = "W503,D200,D106,D402"
 
 
 [tool.pytest.ini_options]
-minversion = "6.0"
-addopts = ["--random-order", "--cov=jobbergate_api"]
+minversion = "7.0"
+addopts = [
+    "--random-order",
+    "--cov=jobbergate_api",
+    "--cov-report=xml:tests/coverage.xml",
+]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 env = [
@@ -114,9 +117,6 @@ concurrency = ["greenlet", "thread"]
 [tool.coverage.report]
 fail_under = 90
 show_missing = true
-
-[tool.coverage.html]
-show_contexts = true
 
 [tool.mypy]
 plugins = ["pydantic.mypy", "sqlalchemy.ext.mypy.plugin"]
