@@ -1051,8 +1051,8 @@ provided in tandem with the Job Script at submission time.</p>
 If there is an error during the submission process, the Agent sets the Job Submission
 status to <code>REJECTED</code>.</p>
 <p>Upon completion of the job by the Slurm cluster, the Agent updates the status either to
-<code>COMPLETE</code> if successful, or <code>FAILED</code> if the job could not complete. This signifies the conclusion
-of tasks related to that particular Job Submission.</p>
+<code>DONE</code> if successful, or <code>ABORTED</code> if the job terminated without completion for any reason.
+This signifies the conclusion of tasks related to that particular Job Submission.</p>
 <h1 id="usage">Usage</h1>
 <p>The Jobbergate Agent operates in the background; it's designed to be initiated and left uninterrupted.</p>
 <p>For insights into its ongoing operations, the Agent offers detailed logging which can be analyzed.</p>

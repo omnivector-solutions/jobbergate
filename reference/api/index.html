@@ -6769,7 +6769,7 @@ deleted before the agent handles its submissions.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code>str</code>, <code><span title="enum.Enum">Enum</span></code></p>
+            Bases: <code><span title="auto_name_enum.AutoNameEnum">AutoNameEnum</span></code></p>
 
   
       <p>Defines the set of possible statuses for a Job Submission.</p>
@@ -6788,30 +6788,86 @@ deleted before the agent handles its submissions.</p>
 
 
 
-<div class="doc doc-object doc-function">
 
-
-
-
-<h8 id="jobbergate_api.apps.job_submissions.constants.JobSubmissionStatus.pretty_list" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">pretty_list</span>
-
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
-  </span>
-
-</h8>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">pretty_list</span><span class="p">()</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Return a comma-separated list of possible statuses.</p>
+  </div>
 
   </div>
 
 </div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.constants.SlurmJobState" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">SlurmJobState</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="auto_name_enum.AutoNameEnum">AutoNameEnum</span></code></p>
+
+  
+      <p>Defines the set of possible states for a job submitted to Slurm.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.constants.SlurmJobStateDetails" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">SlurmJobStateDetails</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Defines the details for a given SlurmJobState including abbreviation and description.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
 
 
 
@@ -6920,6 +6976,28 @@ helper functions in the class.</p>
           <td>
             <div class="doc-md-description">
               <p>The id of the job in the slurm queue.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>slurm_job_state</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[<a class="autorefs autorefs-internal" title="jobbergate_api.apps.job_submissions.constants.SlurmJobState" href="#jobbergate_api.apps.job_submissions.constants.SlurmJobState">SlurmJobState</a>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The Slurm Job state as reported by the agent</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>slurm_job_info</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[str]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Detailed information about the  Slurm Job as reported by the agent</p>
             </div>
           </td>
         </tr>
@@ -7450,8 +7528,8 @@ job script, like name or current_working_directory.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Update a job_submission with a new status.</p>
-<p>Make a put request to this endpoint with the new status to update a job_submission.</p>
+      <p>Update a job_submission with slurm_job_state and slurm_job_info.</p>
+<p>Note that if the new slurm_job_state is a termination state, the job submission status will be updated.</p>
 
   </div>
 
@@ -7714,6 +7792,74 @@ job script, like name or current_working_directory.</p>
 </div>
 
 
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.routers.job_submissions_agent_rejected" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">job_submissions_agent_rejected</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_submissions_agent_rejected</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">rejected_request</span><span class="p">:</span> <span class="n">JobSubmissionAgentRejectedRequest</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="n">secure_services</span><span class="p">(</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>            <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_SUBMISSIONS_EDIT</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>            <span class="n">ensure_client_id</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="p">)</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="p">),</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Update a job_submission to indicate that it was rejected by Slurm.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.routers.job_submissions_agent_submitted" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">job_submissions_agent_submitted</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_submissions_agent_submitted</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">submitted_request</span><span class="p">:</span> <span class="n">JobSubmissionAgentSubmittedRequest</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="n">secure_services</span><span class="p">(</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>            <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_SUBMISSIONS_EDIT</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>            <span class="n">ensure_client_id</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="p">)</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="p">),</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Update a job_submission to indicate that it was submitted to Slurm.</p>
+
+  </div>
+
+</div>
+
+
 
   </div>
 
@@ -7806,6 +7952,86 @@ job script, like name or current_working_directory.</p>
   
       <p>Specialized model for job properties.</p>
 <p>See more details at: https://slurm.schedmd.com/rest_api.html</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.schemas.JobSubmissionAgentRejectedRequest" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobSubmissionAgentRejectedRequest</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Request model for marking JobSubmission instances as REJECTED.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.schemas.JobSubmissionAgentSubmittedRequest" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobSubmissionAgentSubmittedRequest</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Request model for marking JobSubmission instances as SUBMITTED.</p>
 
 
   

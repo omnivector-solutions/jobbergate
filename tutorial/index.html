@@ -1621,7 +1621,7 @@ options available for this command, we can use the <code>--help</code> option ag
 <div class="language-shell highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>jobbergate<span class="w"> </span>job-submissions<span class="w"> </span>create<span class="w"> </span>--help
 </span></code></pre></div>
 <p>For the tutorial, we need to issue the following command:</p>
-<div class="language-shell highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>jobbergate<span class="w"> </span>job-submissions<span class="w"> </span>create<span class="w"> </span>--name<span class="o">=</span>tutorial<span class="w"> </span>--job-script-id<span class="o">=</span><span class="m">1</span><span class="w"> </span>--cluster-name<span class="o">=</span>local-slurm
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>jobbergate<span class="w"> </span>job-submissions<span class="w"> </span>create<span class="w"> </span>--name<span class="o">=</span>tutorial<span class="w"> </span>--job-script-id<span class="o">=</span><span class="m">1</span><span class="w"> </span>--cluster-name<span class="o">=</span>local-slurm<span class="w"> </span>--execution-directory<span class="o">=</span>/nfs
 </span></code></pre></div>
 <p>The command should produce output that looks like this:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>                   Created Job Submission
@@ -1649,6 +1649,13 @@ from the API and submits them to Slurm one by one.</p>
 <p class="admonition-title">Note</p>
 <p>Again, be careful to use the correct <code>id</code> produced by this command for the remainder of the tutorial!</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code>exeuction-directory</code> parameter must be set for jobs that will be sumbitted remotely because it defaults to the
+current working directory wherever you run jobbergate-cli. Chances are that you are running in a directory that does
+not exists on the compute nodes of whatever cluster you are submitting to. Thus, you should choose a directory that
+you know exists on the cluster. For the jobbergate-composed cluster, we know that <code>/nfs</code> exists and is writable.</p>
+</div>
 <h3 id="check-the-status-of-the-submitted-job">Check the status of the submitted job</h3>
 <p>We can look up the status of a Job Submission using the following command:</p>
 <div class="language-shell highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>jobbergate<span class="w"> </span>job-submissions<span class="w"> </span>get-one<span class="w"> </span>--id<span class="o">=</span><span class="m">1</span>
@@ -1662,12 +1669,13 @@ from the API and submits them to Slurm one by one.</p>
 </span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>│ job_script_id              │ 1                           │
 </span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>│ client_id                  │ local-slurm                 │
 </span><span id="__span-24-8"><a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a>│ slurm_job_id               │ 1                           │
-</span><span id="__span-24-9"><a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a>│ execution_directory        │ None                        │
-</span><span id="__span-24-10"><a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a>│ job_submission_name        │ tutorial                    │
-</span><span id="__span-24-11"><a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a>│ job_submission_description │ None                        │
-</span><span id="__span-24-12"><a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a>│ job_submission_owner_email │ local-user@jobbergate.local │
-</span><span id="__span-24-13"><a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a>│ status                     │ SUBMITTED                   │
-</span><span id="__span-24-14"><a id="__codelineno-24-14" name="__codelineno-24-14" href="#__codelineno-24-14"></a>└────────────────────────────┴─────────────────────────────┘
+</span><span id="__span-24-9"><a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a>│ slurm_job_state            │ RUNNING                     │
+</span><span id="__span-24-10"><a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a>│ execution_directory        │ None                        │
+</span><span id="__span-24-11"><a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a>│ job_submission_name        │ tutorial                    │
+</span><span id="__span-24-12"><a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a>│ job_submission_description │ None                        │
+</span><span id="__span-24-13"><a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a>│ job_submission_owner_email │ local-user@jobbergate.local │
+</span><span id="__span-24-14"><a id="__codelineno-24-14" name="__codelineno-24-14" href="#__codelineno-24-14"></a>│ status                     │ SUBMITTED                   │
+</span><span id="__span-24-15"><a id="__codelineno-24-15" name="__codelineno-24-15" href="#__codelineno-24-15"></a>└────────────────────────────┴─────────────────────────────┘
 </span></code></pre></div>
 <p>If the <code>status</code> reported by your command is <code>CREATED</code>, don't worry! The Jobbergate Agent just hasn't retrieved and
 submitted the job script yet. Wait a few more seconds and try again. You should now see the status change to
