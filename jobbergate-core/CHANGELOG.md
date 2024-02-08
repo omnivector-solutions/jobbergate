@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-core
 ## Unreleased
 
 
+## 4.3.0a7 -- 2024-02-08
 ## 4.3.0a6 -- 2024-02-06
 ## 4.3.0a5 -- 2024-02-02
 ## 4.3.0a4 -- 2024-01-31

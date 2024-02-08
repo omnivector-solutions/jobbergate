@@ -3,6 +3,9 @@
 This file keeps track of all notable changes to jobbergate-docs
 
 ## Unreleased
+
+
+## 4.3.0a7 -- 2024-02-08
 - Revamped job_submissions statuses and tracked more details slurm job_state [PENG-2064]
   - Slight docs updates for the agent app
   - Slight docs updates for the tutorial

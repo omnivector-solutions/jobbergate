@@ -3,6 +3,9 @@
 This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
+
+
+## 4.3.0a7 -- 2024-02-08
 - Revamped job_submissions statuses and tracked more details slurm job_state [PENG-2064]
   - Added columns for slurm_job_state and slurm_job_info
   - Added mappings for slurm_job_state details (long descriptions and
