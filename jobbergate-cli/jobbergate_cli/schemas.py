@@ -194,6 +194,8 @@ class JobSubmissionResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     job_submission_id: int = pydantic.Field(alias="id")
     name: str
     slurm_job_id: Optional[int]
+    slurm_job_state: Optional[str]
+    slurm_job_info: Optional[str]
     job_script_id: Optional[int]
     cluster_name: Optional[str] = pydantic.Field(alias="client_id")
     description: Optional[str] = None

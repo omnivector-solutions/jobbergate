@@ -6,7 +6,7 @@ from unittest import mock
 import pytest
 from fastapi import status
 
-from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
+from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus, SlurmJobState
 from jobbergate_api.apps.job_submissions.schemas import JobProperties
 from jobbergate_api.apps.permissions import Permissions
 
@@ -808,7 +808,7 @@ async def test_get_job_submissions__with_status_param(
         **fill_job_submission_data(
             name="sub3",
             owner_email="owner1@org.com",
-            status=JobSubmissionStatus.COMPLETED,
+            status=JobSubmissionStatus.DONE,
         ),
     )
 
@@ -895,8 +895,8 @@ async def test_get_job_submissions_with_sort_params(
 
     submission_list = fill_all_job_submission_data(
         dict(name="Z", owner_email="admin@org.com", status=JobSubmissionStatus.REJECTED),
-        dict(name="Y", owner_email="admin@org.com", status=JobSubmissionStatus.COMPLETED),
-        dict(name="X", owner_email="admin@org.com", status=JobSubmissionStatus.FAILED),
+        dict(name="Y", owner_email="admin@org.com", status=JobSubmissionStatus.DONE),
+        dict(name="X", owner_email="admin@org.com", status=JobSubmissionStatus.ABORTED),
     )
 
     for item in submission_list:
@@ -914,7 +914,7 @@ async def test_get_job_submissions_with_sort_params(
     assert unpack_response(response, key="name") == ["X", "Y", "Z"]
 
     response = await client.get("/jobbergate/job-submissions?sort_field=status")
-    assert unpack_response(response, key="name") == ["Y", "X", "Z"]
+    assert unpack_response(response, key="name") == ["X", "Y", "Z"]
 
     response = await client.get("/jobbergate/job-submissions?all=true&sort_field=description")
     assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -1379,7 +1379,7 @@ async def test_job_submissions_agent_pending__success(
             job_script_id=inserted_job_script_id,
             name="sub2",
             owner_email="email2@dummy.com",
-            status=JobSubmissionStatus.COMPLETED,
+            status=JobSubmissionStatus.DONE,
             client_id="dummy-client",
             execution_parameters={
                 "name": "job-submission-name-2",
@@ -1452,7 +1452,7 @@ async def test_job_submissions_agent_pending__returns_400_if_token_does_not_carr
     assert "Access token does not contain\\n  1: client_id" in response.text
 
 
-async def test_job_submissions_agent_update__success(
+async def test_job_submissions_agent_submitted__success(
     fill_job_script_data,
     fill_job_submission_data,
     client,
@@ -1460,55 +1460,12 @@ async def test_job_submissions_agent_update__success(
     synth_services,
 ):
     """
-    Test PUT /job-submissions/agent/{job_submission_id} correctly updates a job_submission status.
+    Test POST /job-submissions/agent/submitted correctly updates a marks a job_submission as SUBMITTED.
 
-    This test proves that a job_submission is successfully updated via a PUT request to the
-    /job-submissions/{job_submission_id} endpoint. We show this by asserting that the job_submission is
-    updated in the database after the post request is made, the correct status code (200) is returned.
-    We also show that the ``status`` column is set to the new status value.
-    """
-    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
-
-    inserted_job_script_id = base_job_script.id
-
-    inserted_submission = await synth_services.crud.job_submission.create(
-        job_script_id=inserted_job_script_id, **fill_job_submission_data(client_id="dummy-client")
-    )
-    inserted_job_submission_id = inserted_submission.id
-
-    payload = dict(status=JobSubmissionStatus.SUBMITTED.value, slurm_job_id=111)
-
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
-    response = await client.put(
-        f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}", json=payload
-    )
-    assert response.status_code == status.HTTP_200_OK
-
-    response_data = response.json()
-    assert response_data["id"] == inserted_job_submission_id
-    assert response_data["status"] == payload["status"]
-    assert response_data["slurm_job_id"] == payload["slurm_job_id"]
-
-    instance = await synth_services.crud.job_submission.get(inserted_job_submission_id)
-    assert instance.id == inserted_job_submission_id
-    assert instance.status == payload["status"]
-    assert instance.slurm_job_id == payload["slurm_job_id"]
-
-
-async def test_job_submissions_agent_update__job_rejected(
-    fill_job_script_data,
-    fill_job_submission_data,
-    client,
-    inject_security_header,
-    synth_services,
-):
-    """
-    Test PUT /job-submissions/{job_submission_id} correctly updates a job_submission status to rejected.
-
-    This test proves that a job_submission is successfully updated via a PUT request to the
-    /job-submissions/{job_submission_id} endpoint. We show this by asserting that the job_submission is
-    updated in the database after the post request is made, the correct status code (200) is returned.
-    We also show that the ``status`` column is set to the new status value.
+    This test proves that a job_submission is successfully updated via a POST request to the
+    /job-submissions/submitted endpoint. We show this by asserting that the job_submission is
+    updated in the database after the post request is made, the correct status code (202) is returned.
+    We also show that the ``status`` column is set to SUBMITTED.
     """
     base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
 
@@ -1520,27 +1477,348 @@ async def test_job_submissions_agent_update__job_rejected(
     inserted_job_submission_id = inserted_submission.id
 
     payload = dict(
-        status=JobSubmissionStatus.REJECTED.value,
-        report_message="Job rejected by the system due to test-test",
+        id=inserted_job_submission_id,
+        slurm_job_id=111,
     )
 
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
-    response = await client.put(
-        f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}", json=payload
-    )
-    assert response.status_code == status.HTTP_200_OK
-
-    response_data = response.json()
-    assert response_data["id"] == inserted_job_submission_id
-    assert response_data["status"] == payload["status"]
-    assert response_data["slurm_job_id"] is None
-    assert response_data["report_message"] == "Job rejected by the system due to test-test"
+    response = await client.post(f"/jobbergate/job-submissions/agent/submitted", json=payload)
+    assert response.status_code == status.HTTP_202_ACCEPTED
 
     instance = await synth_services.crud.job_submission.get(inserted_job_submission_id)
     assert instance.id == inserted_job_submission_id
-    assert instance.status == payload["status"]
-    assert instance.slurm_job_id is None
-    assert instance.report_message == "Job rejected by the system due to test-test"
+    assert instance.status == JobSubmissionStatus.SUBMITTED
+    assert instance.slurm_job_id == payload["slurm_job_id"]
+
+
+async def test_job_submissions_agent_submitted__fails_if_status_is_not_CREATED(
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+):
+    """
+    Test POST /job-submissions/agent/submitted returns a 400 if the status is not CREATED.
+
+    This test proves that a job_submission can only be marked as SUBMITTED if it is in the CREATED status. We
+    do this by asserting that the response code for such a request is a 400.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.DONE,
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    payload = dict(
+        id=inserted_job_submission_id,
+        slurm_job_id=111,
+    )
+
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
+    response = await client.post(f"/jobbergate/job-submissions/agent/submitted", json=payload)
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "Only CREATED Job Submissions can be marked as SUBMITTED" in response.text
+
+
+async def test_job_submissions_agent_submitted__fails_if_token_does_not_carry_client_id(
+    client,
+    inject_security_header,
+):
+    """
+    Test PUT /job-submissions/agent/submitted returns 400 if client_id not in token payload.
+
+    This test proves that PUT /job-submissions/agent/submitted returns a 400 status if the access
+    token used to query the route does not include a ``client_id``.
+    """
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT)
+    response = await client.put(
+        "/jobbergate/job-submissions/agent/1",
+        json=dict(status=JobSubmissionStatus.SUBMITTED, slurm_job_id=111),
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "Checked expressions failed: Access token does not contain\\n  1: client_id" in response.text
+
+
+async def test_job_submissions_agent_submitted__fails_if_client_id_does_not_match(
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+):
+    """
+    Test PUT /job-submissions/agent/submitted returns 403 if the client_id does not match the job_submission.
+
+    This test proves that PUT /job-submissions/agent/submitted returns a 403 status if the access
+    token used to query the route has a ``client_id`` that does not match the one carried by the
+    job_submission.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id, **fill_job_submission_data(client_id="dummy-client")
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    payload = dict(
+        id=inserted_job_submission_id,
+        slurm_job_id=111,
+    )
+
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="stupid-client")
+    response = await client.post(f"/jobbergate/job-submissions/agent/submitted", json=payload)
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+async def test_job_submissions_agent_rejected__success(
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+):
+    """
+    Test POST /job-submissions/agent/rejected correctly updates a marks a job_submission as REJECTED.
+
+    This test proves that a job_submission is successfully updated via a POST request to the
+    /job-submissions/rejected endpoint. We show this by asserting that the job_submission is
+    updated in the database after the post request is made, the correct status code (202) is returned.
+    We also show that the ``status`` column is set to REJECTED.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id, **fill_job_submission_data(client_id="dummy-client")
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    payload = dict(
+        id=inserted_job_submission_id,
+        report_message="Something went wrong",
+    )
+
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
+    response = await client.post(f"/jobbergate/job-submissions/agent/rejected", json=payload)
+    assert response.status_code == status.HTTP_202_ACCEPTED
+
+    instance = await synth_services.crud.job_submission.get(inserted_job_submission_id)
+    assert instance.id == inserted_job_submission_id
+    assert instance.status == JobSubmissionStatus.REJECTED
+    assert instance.report_message == payload["report_message"]
+
+
+async def test_job_submissions_agent_rejected__fails_if_status_is_not_CREATED(
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+):
+    """
+    Test POST /job-submissions/agent/rejected returns a 400 if the status is not CREATED.
+
+    This test proves that a job_submission can only be marked as REJECTED if it is in the CREATED status. We
+    do this by asserting that the response code for such a request is a 400.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.DONE,
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    payload = dict(
+        id=inserted_job_submission_id,
+        report_message="Something went wrong",
+    )
+
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
+    response = await client.post(f"/jobbergate/job-submissions/agent/rejected", json=payload)
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "Only CREATED Job Submissions can be marked as REJECTED" in response.text
+
+
+async def test_job_submissions_agent_update__success(
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+):
+    """
+    Test PUT /job-submissions/agent/{job_submission_id} correctly updates a job_submission.
+
+    This test proves that a job_submission is successfully updated via a PUT request to the
+    /job-submissions/{job_submission_id} endpoint. We show this by asserting that the job_submission is
+    updated in the database after the post request is made, the correct status code (200) is returned.
+    We also show that the ``slurm_job_state`` and ``slurm_job_info`` columns are set.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
+    response = await client.put(
+        f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
+        json=dict(
+            slurm_job_state=SlurmJobState.RUNNING,
+            slurm_job_info="Dummy slurm job info",
+            slurm_job_id=111,
+        ),
+    )
+    assert response.status_code == status.HTTP_202_ACCEPTED
+
+    instance = await synth_services.crud.job_submission.get(inserted_job_submission_id)
+    assert instance.id == inserted_job_submission_id
+    assert instance.status == JobSubmissionStatus.SUBMITTED
+    assert instance.slurm_job_state == SlurmJobState.RUNNING
+    assert instance.slurm_job_info == "Dummy slurm job info"
+    assert instance.slurm_job_id == 111
+
+
+@pytest.mark.parametrize(
+    "slurm_job_state",
+    [
+        SlurmJobState.BOOT_FAIL,
+        SlurmJobState.CANCELLED,
+        SlurmJobState.DEADLINE,
+        SlurmJobState.FAILED,
+        SlurmJobState.NODE_FAIL,
+        SlurmJobState.PREEMPTED,
+        SlurmJobState.SPECIAL_EXIT,
+        SlurmJobState.TIMEOUT,
+        SlurmJobState.UNKNOWN,
+    ],
+)
+async def test_job_submissions_agent_update__sets_aborted_status(
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+    slurm_job_state,
+):
+    """
+    Test PUT /job-submissions/agent/{job_submission_id} correctly sets the status to aborted.
+
+    This test proves that a job_submission is successfully updated via a PUT request to the
+    /job-submissions/{job_submission_id} endpoint and that its new status is set to ABORTED if the
+    slurm_job_state that is reported is one of the "abort" statuses.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
+    response = await client.put(
+        f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
+        json=dict(
+            slurm_job_state=slurm_job_state,
+            slurm_job_info="Dummy slurm job info",
+            slurm_job_id=111,
+            slurm_job_state_reason="User cancelled",
+        ),
+    )
+    assert response.status_code == status.HTTP_202_ACCEPTED
+
+    instance = await synth_services.crud.job_submission.get(inserted_job_submission_id)
+    assert instance.id == inserted_job_submission_id
+    assert instance.status == JobSubmissionStatus.ABORTED
+    assert instance.slurm_job_state == slurm_job_state
+    assert instance.slurm_job_info == "Dummy slurm job info"
+    assert instance.slurm_job_id == 111
+    assert instance.report_message == "User cancelled"
+
+
+async def test_job_submissions_agent_update__sets_done_status(
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+):
+    """
+    Test PUT /job-submissions/agent/{job_submission_id} correctly sets the status to done.
+
+    This test proves that a job_submission is successfully updated via a PUT request to the
+    /job-submissions/{job_submission_id} endpoint and that its new status is set to DONE if the
+    slurm_job_state that is reported is one of the "done" statuses.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
+    response = await client.put(
+        f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
+        json=dict(
+            slurm_job_state=SlurmJobState.COMPLETED,
+            slurm_job_info="Dummy slurm job info",
+            slurm_job_id=111,
+        ),
+    )
+    assert response.status_code == status.HTTP_202_ACCEPTED
+
+    instance = await synth_services.crud.job_submission.get(inserted_job_submission_id)
+    assert instance.id == inserted_job_submission_id
+    assert instance.status == JobSubmissionStatus.DONE
+    assert instance.slurm_job_state == SlurmJobState.COMPLETED
+    assert instance.slurm_job_info == "Dummy slurm job info"
+    assert instance.slurm_job_id == 111
 
 
 async def test_job_submissions_agent_update__returns_400_if_token_does_not_carry_client_id(
@@ -1572,29 +1850,70 @@ async def test_job_submissions_agent_update__returns_403_if_client_id_differs(
     """
     Test PUT /job-submissions/agent/{job_submission_id} returns 403 if client_id does not match the database.
     """
-    original_client_id = "dummy-client"
-    requester_client_id = "another_" + original_client_id
-
     base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
 
     inserted_job_script_id = base_job_script.id
 
     inserted_submission = await synth_services.crud.job_submission.create(
-        job_script_id=inserted_job_script_id, **fill_job_submission_data(client_id=original_client_id)
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
     )
     inserted_job_submission_id = inserted_submission.id
 
-    payload = dict(
-        status=JobSubmissionStatus.REJECTED.value,
-        report_message="Job rejected by the system due to test-test",
-    )
-
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id=requester_client_id)
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="stupid-client")
     response = await client.put(
-        f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}", json=payload
+        f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
+        json=dict(
+            slurm_job_state=SlurmJobState.RUNNING,
+            slurm_job_info="Dummy slurm job info",
+            slurm_job_id=111,
+        ),
     )
-
     assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+async def test_job_submissions_agent_update__returns_409_if_slurm_job_id_differs(
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+):
+    """
+    Test PUT /job-submissions/agent/{job_submission_id} returns 409 if slurm_job_id does not match.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
+    response = await client.put(
+        f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
+        json=dict(
+            slurm_job_state=SlurmJobState.RUNNING,
+            slurm_job_info="Dummy slurm job info",
+            slurm_job_id=222,
+        ),
+    )
+    assert response.status_code == status.HTTP_409_CONFLICT
 
 
 async def test_job_submissions_agent_active__success(

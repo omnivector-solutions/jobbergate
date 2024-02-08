@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
 from sqlalchemy.sql.expression import Select
 
 from jobbergate_api.apps.job_scripts.models import JobScript as JobScriptModel
-from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
+from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus, SlurmJobState
 from jobbergate_api.apps.models import Base, CrudMixin
 from jobbergate_api.safe_types import JobScript
 
@@ -29,6 +29,8 @@ class JobSubmission(CrudMixin, Base):
         job_script_id: Id number of the job scrip this submissions is based on.
         execution_directory: The directory where the job is executed.
         slurm_job_id: The id of the job in the slurm queue.
+        slurm_job_state: The Slurm Job state as reported by the agent
+        slurm_job_info: Detailed information about the  Slurm Job as reported by the agent
         client_id: The id of the custer this submission runs on.
         status: The status of the job submission.
         report_message: The message returned by the job.
@@ -38,15 +40,27 @@ class JobSubmission(CrudMixin, Base):
     """
 
     job_script_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("job_scripts.id", ondelete="SET NULL"), nullable=True
+        Integer,
+        ForeignKey("job_scripts.id", ondelete="SET NULL"),
+        nullable=True,
     )
     execution_directory: Mapped[str] = mapped_column(String, default=None, nullable=True)
+
     slurm_job_id: Mapped[int] = mapped_column(Integer, default=None, nullable=True)
+    slurm_job_state: Mapped[SlurmJobState] = mapped_column(
+        Enum(SlurmJobState, native_enum=False),
+        nullable=True,
+    )
+    slurm_job_info: Mapped[str] = mapped_column(String, default=None, nullable=True)
+
     client_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
     status: Mapped[JobSubmissionStatus] = mapped_column(
-        Enum(JobSubmissionStatus, native_enum=False), nullable=False, index=True
+        Enum(JobSubmissionStatus, native_enum=False),
+        nullable=False,
+        index=True,
     )
     report_message: Mapped[str] = mapped_column(String, nullable=True)
+
     execution_parameters: Mapped[dict[str, Any]] = mapped_column(
         "template_vars",
         JSONB,

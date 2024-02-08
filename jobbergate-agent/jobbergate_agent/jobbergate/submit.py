@@ -1,16 +1,15 @@
 import asyncio
 import json
 from pathlib import Path
-from typing import Any, Dict, cast
+from typing import Any, Dict, List, cast
 
-from buzz import handle_errors
+from buzz import DoExceptParams, handle_errors
 from loguru import logger
 
-from jobbergate_agent.clients.cluster_api import backend_client
+from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
 from jobbergate_agent.clients.slurmrestd import backend_client as slurmrestd_client
 from jobbergate_agent.clients.slurmrestd import inject_token
-from jobbergate_agent.jobbergate.api import SubmissionNotifier, fetch_pending_submissions, mark_as_submitted
-from jobbergate_agent.jobbergate.constants import FileType, JobSubmissionStatus
+from jobbergate_agent.jobbergate.constants import FileType
 from jobbergate_agent.jobbergate.schemas import (
     JobScriptFile,
     PendingJobSubmission,
@@ -20,6 +19,7 @@ from jobbergate_agent.jobbergate.schemas import (
 )
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import (
+    JobbergateApiError,
     JobSubmissionError,
     SlurmParameterParserError,
     SlurmrestdError,
@@ -55,7 +55,7 @@ async def retrieve_submission_file(file: JobScriptFile) -> str:
     """
     Get a submission file from the backend and return the decoded file content.
     """
-    response = await backend_client.get(file.path)
+    response = await jobbergate_api_client.get(file.path)
     response.raise_for_status()
 
     return response.content.decode("utf-8")
@@ -136,6 +136,62 @@ async def get_job_script_file(pending_job_submission: PendingJobSubmission, subm
     return job_script
 
 
+async def fetch_pending_submissions() -> List[PendingJobSubmission]:
+    """
+    Retrieve a list of pending job_submissions.
+    """
+    with JobbergateApiError.handle_errors(
+        "Failed to fetch pending job submissions",
+        do_except=log_error,
+    ):
+        response = await jobbergate_api_client.get("/jobbergate/job-submissions/agent/pending")
+        response.raise_for_status()
+        pending_job_submissions = [PendingJobSubmission(**pjs) for pjs in response.json().get("items", [])]
+
+    logger.debug(f"Retrieved {len(pending_job_submissions)} pending job submissions")
+    return pending_job_submissions
+
+
+async def mark_as_submitted(job_submission_id: int, slurm_job_id: int):
+    """
+    Mark job_submission as submitted in the Jobbergate API.
+    """
+    logger.debug(f"Marking job submission {job_submission_id=} as submitted ({slurm_job_id=})")
+
+    with JobbergateApiError.handle_errors(
+        f"Could not mark job submission {job_submission_id} as submitted via the Jobbergate API",
+        do_except=log_error,
+    ):
+        response = await jobbergate_api_client.post(
+            "jobbergate/job-submissions/agent/submitted",
+            json=dict(
+                id=job_submission_id,
+                slurm_job_id=slurm_job_id,
+            ),
+        )
+        response.raise_for_status()
+
+
+async def mark_as_rejected(job_submission_id: int, report_message: str):
+    """
+    Mark job_submission as rejected in the Jobbergate API.
+    """
+    logger.debug(f"Marking job submission {job_submission_id} as rejected")
+
+    with JobbergateApiError.handle_errors(
+        f"Could not mark job submission {job_submission_id} as rejected via the Jobbergate API",
+        do_except=log_error,
+    ):
+        response = await jobbergate_api_client.post(
+            "jobbergate/job-submissions/agent/rejected",
+            json=dict(
+                id=job_submission_id,
+                report_message=report_message,
+            ),
+        )
+        response.raise_for_status()
+
+
 async def submit_job_script(
     pending_job_submission: PendingJobSubmission,
     user_mapper: SlurmUserMapper,
@@ -147,12 +203,19 @@ async def submit_job_script(
     :returns: The ``slurm_job_id`` for the submitted job
     """
 
-    notify_submission_rejected = SubmissionNotifier(pending_job_submission.id, JobSubmissionStatus.REJECTED)
+    async def _reject_handler(params: DoExceptParams):
+        """
+        Use for the ``do_except`` parameter of a ``handle_errors``.
+
+        Logs the error and then invokes job rejection on the Jobbergate API.
+        """
+        log_error(params)
+        await mark_as_rejected(pending_job_submission.id, params.final_message)
 
     async with handle_errors_async(
         "Username could not be resolved",
         raise_exc_class=JobSubmissionError,
-        do_except=notify_submission_rejected.report_error,
+        do_except=_reject_handler,
     ):
         email = pending_job_submission.owner_email
         name = pending_job_submission.name
@@ -164,7 +227,7 @@ async def submit_job_script(
     async with handle_errors_async(
         "Error processing job-script files",
         raise_exc_class=JobSubmissionError,
-        do_except=notify_submission_rejected.report_error,
+        do_except=_reject_handler,
     ):
         submit_dir = pending_job_submission.execution_directory or SETTINGS.DEFAULT_SLURM_WORK_DIR
 
@@ -177,7 +240,7 @@ async def submit_job_script(
     async with handle_errors_async(
         "Failed to extract Slurm parameters",
         raise_exc_class=SlurmParameterParserError,
-        do_except=notify_submission_rejected.report_error,
+        do_except=_reject_handler,
     ):
         job_parameters = get_job_parameters(
             pending_job_submission.execution_parameters,
@@ -199,7 +262,7 @@ async def submit_job_script(
     async with handle_errors_async(
         "Failed to submit job to slurm",
         raise_exc_class=SlurmrestdError,
-        do_except=notify_submission_rejected.report_error,
+        do_except=_reject_handler,
     ):
         logger.debug(f"Slurmrestd response: {response.text}")
         sub_data = SlurmSubmitResponse.parse_raw(response.content)

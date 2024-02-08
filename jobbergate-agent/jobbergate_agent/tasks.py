@@ -7,8 +7,8 @@ from buzz import handle_errors
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client
-from jobbergate_agent.jobbergate.finish import finish_active_jobs
 from jobbergate_agent.jobbergate.submit import submit_pending_jobs
+from jobbergate_agent.jobbergate.update import update_active_jobs
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.logging import log_error, logger_wraps
 from jobbergate_agent.utils.scheduler import BaseScheduler, Job
@@ -18,7 +18,7 @@ def active_submissions_task(scheduler: BaseScheduler) -> Job:
     """
     Schedule a task to handle active jobs every ``TASK_JOBS_INTERVAL_SECONDS`` seconds.
     """
-    return scheduler.add_job(finish_active_jobs, "interval", seconds=SETTINGS.TASK_JOBS_INTERVAL_SECONDS)
+    return scheduler.add_job(update_active_jobs, "interval", seconds=SETTINGS.TASK_JOBS_INTERVAL_SECONDS)
 
 
 def pending_submissions_task(scheduler: BaseScheduler) -> Job:

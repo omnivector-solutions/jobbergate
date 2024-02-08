@@ -3,6 +3,15 @@
 This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
+- Revamped job_submissions statuses and tracked more details slurm job_state [PENG-2064]
+  - Added columns for slurm_job_state and slurm_job_info
+  - Added mappings for slurm_job_state details (long descriptions and
+    abbreviations)
+  - Updated schemas for job payloads
+  - Created specialized submit and reject endpoints so that agent
+    doesn't need to understand job_submission statuses
+  - Added a migration for the database changes including existing status mapping
+  - Updated and added unit tests
 
 
 ## 4.3.0a6 -- 2024-02-06

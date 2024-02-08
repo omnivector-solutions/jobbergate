@@ -3,7 +3,12 @@
 This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
-
+- Revamped job_submissions statuses and tracked more details slurm job_state [PENG-2064]
+  - Renamed the finish.py module to update.py
+  - Changed logic such that all active jobs have their job state updated on each pass
+  - Moved all logic from the api.py module to update.py and submit.py
+  - Updated schemas for revised job payloads
+  - Updated and added unit tests
 
 ## 4.3.0a6 -- 2024-02-06
 ## 4.3.0a5 -- 2024-02-02

@@ -26,6 +26,7 @@ HIDDEN_FIELDS = [
     "job_script",
     "report_message",
     "updated_at",
+    "slurm_job_info",
 ]
 
 

@@ -37,8 +37,8 @@ If there is an error during the submission process, the Agent sets the Job Submi
 status to `REJECTED`.
 
 Upon completion of the job by the Slurm cluster, the Agent updates the status either to
-`COMPLETE` if successful, or `FAILED` if the job could not complete. This signifies the conclusion
-of tasks related to that particular Job Submission.
+`DONE` if successful, or `ABORTED` if the job terminated without completion for any reason.
+This signifies the conclusion of tasks related to that particular Job Submission.
 
 
 # Usage

@@ -8,7 +8,7 @@ from typing import Dict, List, Literal, Optional
 from pydantic import BaseModel, Extra, Field, NonNegativeInt, validator
 
 from jobbergate_api.apps.job_scripts.schemas import JobScriptDetailedView, JobScriptListView
-from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
+from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus, SlurmJobState
 from jobbergate_api.apps.schemas import LengthLimitedStr, TableResource
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
@@ -60,6 +60,42 @@ job_submission_meta_mapper = MetaMapper(
     report_message=MetaField(
         description="The report message received from cluster-agent when a job submission is rejected",
         example="Unrecognized SBATCH arguments",
+    ),
+    slurm_job_state=MetaField(
+        description="The Slurm Job state as reported by the agent.example",
+        example="PENDING",
+    ),
+    slurm_job_info=MetaField(
+        description="Detailed information about the Slurm Job as reported by the agent",
+        example="""
+            JobId=2 JobName=apptainer-test
+            UserId=ubuntu(1000) GroupId=ubuntu(1000) MCS_label=N/A
+            Priority=4294901758 Nice=0 Account=(null) QOS=normal
+            JobState=RUNNING Reason=None Dependency=(null)
+            Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0
+            RunTime=00:01:57 TimeLimit=UNLIMITED TimeMin=N/A
+            SubmitTime=2024-01-29T17:42:15 EligibleTime=2024-01-29T17:42:15
+            AccrueTime=2024-01-29T17:42:15
+            StartTime=2024-01-29T17:42:15 EndTime=Unknown Deadline=N/A
+            SuspendTime=None SecsPreSuspend=0 LastSchedEval=2024-01-29T17:42:15 Scheduler=Main
+            Partition=compute AllocNode:Sid=10.122.188.182:1278
+            ReqNodeList=(null) ExcNodeList=(null)
+            NodeList=democluster
+            BatchHost=democluster
+            NumNodes=1 NumCPUs=6 NumTasks=6 CPUs/Task=1 ReqB:S:C:T=0:0:*:*
+            ReqTRES=cpu=6,mem=3903M,node=1,billing=6
+            AllocTRES=cpu=6,node=1,billing=6
+            Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=*
+            MinCPUsNode=1 MinMemoryNode=0 MinTmpDiskNode=0
+            Features=(null) DelayBoot=00:00:00
+            OverSubscribe=OK Contiguous=0 Licenses=(null) Network=(null)
+            Command=(null)
+            WorkDir=/tmp
+            StdErr=/home/ubuntu/democluster/job.%J.err
+            StdIn=/dev/null
+            StdOut=/home/ubuntu/democluster/job.%J.out
+            Power=
+        """,
     ),
     execution_parameters=MetaField(
         description=(
@@ -345,17 +381,6 @@ class JobSubmissionUpdateRequest(BaseModel):
         schema_extra = job_submission_meta_mapper
 
 
-class JobSubmissionAgentUpdateRequest(BaseModel):
-    """Request model for updating JobSubmission instances."""
-
-    status: JobSubmissionStatus
-    slurm_job_id: Optional[NonNegativeInt]
-    report_message: Optional[LengthLimitedStr]
-
-    class Config:
-        schema_extra = job_submission_meta_mapper
-
-
 class JobSubmissionListView(TableResource):
     """
     Partial model to match the database for the JobSubmission resource.
@@ -365,6 +390,7 @@ class JobSubmissionListView(TableResource):
     slurm_job_id: Optional[int]
     client_id: str
     status: JobSubmissionStatus
+    slurm_job_state: Optional[SlurmJobState]
 
     job_script: Optional[JobScriptListView]
 
@@ -380,6 +406,7 @@ class JobSubmissionDetailedView(JobSubmissionListView):
     execution_directory: Optional[Path]
     report_message: Optional[str]
     execution_parameters: Optional[JobProperties]
+    slurm_job_info: Optional[str]
 
 
 class PendingJobSubmission(BaseModel):
@@ -414,3 +441,35 @@ class ActiveJobSubmission(BaseModel):
     class Config:
         orm_mode = True
         extra = Extra.ignore
+
+
+class JobSubmissionAgentSubmittedRequest(BaseModel):
+    """Request model for marking JobSubmission instances as SUBMITTED."""
+
+    id: int
+    slurm_job_id: Optional[NonNegativeInt]
+
+    class Config:
+        schema_extra = job_submission_meta_mapper
+
+
+class JobSubmissionAgentRejectedRequest(BaseModel):
+    """Request model for marking JobSubmission instances as REJECTED."""
+
+    id: int
+    report_message: str
+
+    class Config:
+        schema_extra = job_submission_meta_mapper
+
+
+class JobSubmissionAgentUpdateRequest(BaseModel):
+    """Request model for updating JobSubmission instances."""
+
+    slurm_job_id: NonNegativeInt
+    slurm_job_state: SlurmJobState
+    slurm_job_info: str
+    slurm_job_state_reason: Optional[str]
+
+    class Config:
+        schema_extra = job_submission_meta_mapper

@@ -1,31 +1,8 @@
-from collections import defaultdict
-from enum import Enum
-from typing import DefaultDict
+from auto_name_enum import AutoNameEnum, auto
 
 
-class FileType(str, Enum):
+class FileType(AutoNameEnum):
     """File type enum."""
 
-    ENTRYPOINT = "ENTRYPOINT"
-    SUPPORT = "SUPPORT"
-
-
-class JobSubmissionStatus(str, Enum):
-    """
-    Enumeration of possible job_submission statuses.
-    """
-
-    CREATED = "CREATED"
-    SUBMITTED = "SUBMITTED"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    CANCELLED = "CANCELLED"
-    REJECTED = "REJECTED"
-
-
-status_map: DefaultDict[str, JobSubmissionStatus] = defaultdict(
-    lambda: JobSubmissionStatus.SUBMITTED,
-    COMPLETED=JobSubmissionStatus.COMPLETED,
-    FAILED=JobSubmissionStatus.FAILED,
-    CANCELLED=JobSubmissionStatus.CANCELLED,
-)
+    ENTRYPOINT = auto()
+    SUPPORT = auto()
