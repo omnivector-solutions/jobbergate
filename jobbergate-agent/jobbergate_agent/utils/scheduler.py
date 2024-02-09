@@ -18,35 +18,23 @@ from jobbergate_agent.utils.logging import logger, logger_wraps
 from jobbergate_agent.utils.plugin import load_plugins
 
 
-class JobbergateTask(Protocol):
-    """Protocol to be implemented by any task that is expected to run on the scheduler."""
-
-    def __call__(self, scheduler: BaseScheduler) -> Union[Job, None]:
-        """
-        Specify a callable used to schedule a task and return the resulting job.
-
-        This is handled to client code to give them the opportunity to handle
-        their own configuration and to access the rich flexibility of the scheduler API.
-
-        None can also be returned if no task is going to be scheduled due to internal business logic.
-        """
-        ...
-
-
 @logger_wraps()
 def schedule_tasks(scheduler: BaseScheduler) -> None:
     """Discovery and schedule all tasks to be run by the agent."""
 
-    for name, task_function in load_plugins("tasks").items():
+    for name, task_class in sorted(load_plugins("tasks").items(), key=lambda i: i[1].priority):
         with handle_errors(
             f"Failed to execute and thus to schedule the task {name=}",
             raise_exc_class=RuntimeError,
             do_except=lambda params: logger.error(params.final_message),
         ):
-            job = task_function(scheduler=scheduler)
-
-        if job is not None:
-            job.name = name
+            task = task_class()
+            if task.enabled:
+                job = scheduler.add_job(
+                    task.function,
+                    **task.scheduler_kwargs,
+                )
+                job.name = name
 
 
 @logger_wraps()
