@@ -167,7 +167,7 @@ class LocalApplication(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     template_vars: Dict[str, Any] = {}
 
     template_files: List[LocalTemplateFile] = []
-    workflow_files: List[WorkflowFileResponse] = []
+    workflow_files: List[LocalWorkflowFile] = []
 
 
 class JobScriptFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):
