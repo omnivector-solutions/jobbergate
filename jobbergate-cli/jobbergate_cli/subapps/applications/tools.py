@@ -44,7 +44,6 @@ def load_default_config() -> Dict[str, Any]:
 
 def fetch_application_data_locally(
     application_path: pathlib.Path,
-    templates_path: Optional[pathlib.Path] = None,
 ) -> LocalApplication:
     """
     Retrieve an application from a local directory.
@@ -60,11 +59,8 @@ def fetch_application_data_locally(
     module_file_path = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
     Abort.require_condition(module_file_path.is_file(), f"Application module file {module_file_path} does not exist")
 
-    if templates_path is None:
-        templates_path = application_path / "templates"
-
-    template_files_set = set(templates_path.rglob("*.j2")) | set(templates_path.rglob("*.jinja2"))
-    Abort.require_condition(template_files_set, f"No template files found in {templates_path}")
+    template_files_set = set(application_path.rglob("*.j2")) | set(application_path.rglob("*.jinja2"))
+    Abort.require_condition(template_files_set, f"No template files found in {application_path}")
 
     application_config = load_application_config_from_source(config_file_path.read_text())
 
