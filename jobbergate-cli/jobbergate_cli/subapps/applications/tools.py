@@ -87,7 +87,7 @@ def fetch_application_data_locally(
     workflow_file = LocalWorkflowFile(
         filename=module_file_path.name,
         path=module_file_path,
-        runtime_config=application_config.jobbergate_config.json(),
+        runtime_config=json.loads(application_config.jobbergate_config.json()),
     )
 
     return LocalApplication(
@@ -409,6 +409,7 @@ def load_application_from_source(app_source: str, app_config: JobbergateApplicat
     :param: app_source: The JobbergateApplication source code to load
     :param: app_config: The JobbergateApplicationConfig needed to instantiate the JobbergateApplication
     """
+    breakpoint()
     app_locals: Dict[str, Any] = dict()
     exec(app_source, app_locals, app_locals)
     jobbergate_application_class = app_locals["JobbergateApplication"]
