@@ -3,6 +3,7 @@
 This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
+- Added notifications via rabbitmq for job status updates [PENG-2039]
 
 
 ## 4.4.0a1 -- 2024-02-21

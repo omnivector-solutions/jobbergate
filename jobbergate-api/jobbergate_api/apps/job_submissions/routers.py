@@ -29,6 +29,7 @@ from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.apps.schemas import ListParams
 from jobbergate_api.apps.services import ServiceError
 from jobbergate_api.email_notification import notify_submission_rejected
+from jobbergate_api.rabbitmq_notification import publish_status_change
 
 router = APIRouter(prefix="/job-submissions", tags=["Job Submissions"])
 
@@ -259,14 +260,21 @@ async def job_submission_agent_update(
 
     job_state_details = slurm_job_state_details[update_params.slurm_job_state]
     if job_state_details.is_abort_status:
-        # The job is aborted and should notify the user...when we have notifications for Jobbergate
         update_dict["status"] = JobSubmissionStatus.ABORTED
         update_dict["report_message"] = update_params.slurm_job_state_reason
     elif job_state_details.is_done_status:
-        # The job is completed and should notify the user...when we have notifications for Jobbergate
         update_dict["status"] = JobSubmissionStatus.DONE
 
     job_submission = await secure_services.crud.job_submission.update(id, **update_dict)
+
+    if job_submission.status in (
+        JobSubmissionStatus.ABORTED,
+        JobSubmissionStatus.DONE,
+    ):
+        await publish_status_change(
+            job_submission,
+            organization_id=secure_services.identity_payload.organization_id,
+        )
 
     return FastAPIResponse(status_code=status.HTTP_202_ACCEPTED)
 
@@ -340,6 +348,11 @@ async def job_submissions_agent_rejected(
         rejected_request.id,
         rejected_request.report_message,
         job_submission.owner_email,
+    )
+
+    await publish_status_change(
+        job_submission,
+        organization_id=secure_services.identity_payload.organization_id,
     )
 
     return FastAPIResponse(status_code=status.HTTP_202_ACCEPTED)
