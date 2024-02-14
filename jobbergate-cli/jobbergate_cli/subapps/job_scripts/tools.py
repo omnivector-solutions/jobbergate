@@ -232,6 +232,9 @@ def render_template(
     :param str template_path: The path to the template file.
     :param Dict[str, Any] parameters: The parameters to use for rendering the template.
     """
+
+    Abort.require_condition(template_path.is_file(), f"Template file {template_path} does not exist or is not a file")
+
     with open(template_path, "r") as f:
         file_content = f.read()
 

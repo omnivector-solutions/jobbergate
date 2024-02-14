@@ -54,10 +54,14 @@ def fetch_application_data_locally(
     Abort.require_condition(application_path.is_dir(), f"Application directory {application_path} does not exist")
 
     config_file_path = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-    Abort.require_condition(config_file_path.is_file(), f"Application config file {config_file_path} does not exist")
+    Abort.require_condition(
+        config_file_path.is_file(), f"Application config file {JOBBERGATE_APPLICATION_CONFIG_FILE_NAME} does not exist"
+    )
 
     module_file_path = application_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-    Abort.require_condition(module_file_path.is_file(), f"Application module file {module_file_path} does not exist")
+    Abort.require_condition(
+        module_file_path.is_file(), f"Application module file {JOBBERGATE_APPLICATION_MODULE_FILE_NAME} does not exist"
+    )
 
     template_files_set = set(application_path.rglob("*.j2")) | set(application_path.rglob("*.jinja2"))
     Abort.require_condition(template_files_set, f"No template files found in {application_path}")
@@ -87,7 +91,7 @@ def fetch_application_data_locally(
     workflow_file = LocalWorkflowFile(
         filename=module_file_path.name,
         path=module_file_path,
-        runtime_config=json.loads(application_config.jobbergate_config.json()),
+        runtime_config=application_config.jobbergate_config.dict(),
     )
 
     return LocalApplication(
