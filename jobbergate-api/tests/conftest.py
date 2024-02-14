@@ -4,6 +4,7 @@ import contextlib
 import dataclasses
 import datetime
 import random
+import socket
 import string
 import typing
 from contextlib import asynccontextmanager
@@ -12,11 +13,9 @@ from unittest.mock import patch
 
 import aio_pika
 import pytest
-import socket
 from fastapi import status
 from httpx import AsyncClient, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-
 
 from jobbergate_api.apps.dependencies import get_bucket_name, get_bucket_url, s3_bucket, service_factory
 from jobbergate_api.apps.models import Base

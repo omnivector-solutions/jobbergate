@@ -1,8 +1,6 @@
-# fmt: off
-import nest_asyncio
-
-nest_asyncio.apply()
-# fmt: on
+"""
+RabbitMQ notification system for Jobbergate.
+"""
 
 import asyncio
 import json
@@ -13,8 +11,8 @@ from typing import Optional
 import aio_pika
 from loguru import logger
 
-from jobbergate_api.config import settings
 from jobbergate_api.apps.job_submissions.models import JobSubmission
+from jobbergate_api.config import settings
 
 
 @asynccontextmanager
@@ -22,6 +20,9 @@ async def rabbitmq_connect(
     exchange_name=None,
     do_purge=False,
 ):
+    """
+    Connect to a RabbitMQ queue and exchange.
+    """
     if exchange_name is None:
         exchange_name = settings.RABBITMQ_DEFAULT_EXCHANGE
 
@@ -58,6 +59,9 @@ async def publish_status_change(
     job_submission: JobSubmission,
     organization_id: Optional[str] = None,
 ):
+    """
+    Publish a status change for a JobSubmission to the RabbitMQ exchange used for notifications.
+    """
     if settings.RABBITMQ_HOST is None:
         return
 

@@ -7,7 +7,6 @@ from unittest import mock
 import pytest
 from fastapi import status
 
-
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus, SlurmJobState
 from jobbergate_api.apps.job_submissions.schemas import JobProperties
 from jobbergate_api.apps.permissions import Permissions

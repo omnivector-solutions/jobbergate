@@ -7,8 +7,8 @@ from unittest.mock import patch
 
 import pytest
 
-from jobbergate_api.config import settings
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus, SlurmJobState
+from jobbergate_api.config import settings
 from jobbergate_api.rabbitmq_notification import publish_status_change, rabbitmq_connect
 
 

@@ -58,6 +58,9 @@ services:
       - TEST_DATABASE_PORT=5432
       - TEST_S3_ENDPOINT_URL=http://minio:9000
       - TEST_LOG_LEVEL=CRITICAL
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USERNAME=local-user
+      - RABBITMQ_PASSWORD=local-pswd
     volumes:
       - ../jobbergate-api/jobbergate_api/:/app/jobbergate_api/
       - ../jobbergate-api/dev_tools/:/app/dev_tools/
