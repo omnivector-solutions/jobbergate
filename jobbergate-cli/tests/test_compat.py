@@ -24,9 +24,11 @@ def test_list_all__makes_request_and_renders_results():
     add_legacy_compatible_commands(test_app)
 
     registered_command_names = [c.name for c in test_app.registered_commands]
+
     assert sorted(registered_command_names) == [
         "clone-application",
         "clone-job-script",
+        "render-job-script-locally",
         "create-application",
         "create-job-script",
         "create-job-submission",
@@ -45,7 +47,6 @@ def test_list_all__makes_request_and_renders_results():
         "update-application",
         "update-job-script",
     ]
-
 
 def test_import_appform_from_jobbergate_cli_warns_and_gives_you_questions_instead_when_in_compatibility_mode(
     tweak_settings, cleanup_deprecated
