@@ -269,6 +269,7 @@ def render_template(
 
 def render_job_script_locally(
     jg_ctx: JobbergateContext,
+    job_script_name: str,
     application_path: pathlib.Path,
     output_path: pathlib.Path,
     sbatch_params: Optional[List[str]] = None,

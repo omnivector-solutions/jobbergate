@@ -171,6 +171,10 @@ def render_locally(
         ...,
         help="The path to the application directory to use as a template for the job script.",
     ),
+    job_script_name: str = typer.Option(
+        ...,
+        help="The name of the job script to render locally.",
+    ),
     output_path: pathlib.Path = typer.Option(
         ...,
         help="The path to the directory where the rendered job script should be saved.",
@@ -204,6 +208,7 @@ def render_locally(
 
     render_job_script_locally(
         jg_ctx,
+        job_script_name,
         application_path,
         output_path,
         sbatch_params,
