@@ -4,21 +4,12 @@ This file keeps track of all notable changes to jobbergate-docs
 
 ## Unreleased
 
+## 4.3.0 -- 2024-02-14
 
-## 4.3.0a7 -- 2024-02-08
 - Revamped job_submissions statuses and tracked more details slurm job_state [PENG-2064]
   - Slight docs updates for the agent app
   - Slight docs updates for the tutorial
 
-
-## 4.3.0a6 -- 2024-02-06
-## 4.3.0a5 -- 2024-02-02
-## 4.3.0a4 -- 2024-01-31
-## 4.3.0a3 -- 2024-01-31
-## 4.3.0a2 -- 2024-01-29
-## 4.3.0a1 -- 2024-01-24
-## 4.3.0a0 -- 2024-01-15
-## 4.2.1a0 -- 2024-01-11
 ## 4.2.0 -- 2024-01-08
 
 - Added new page describing the support for on-site job submissions [ASP-4238]

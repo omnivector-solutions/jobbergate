@@ -4,26 +4,15 @@ This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
 
+## 4.3.0 -- 2024-02-14
 
-## 4.3.0a7 -- 2024-02-08
 - Revamped job_submissions statuses and tracked more details slurm job_state [PENG-2064]
   - Renamed the finish.py module to update.py
   - Changed logic such that all active jobs have their job state updated on each pass
   - Moved all logic from the api.py module to update.py and submit.py
   - Updated schemas for revised job payloads
   - Updated and added unit tests
-
-## 4.3.0a6 -- 2024-02-06
-## 4.3.0a5 -- 2024-02-02
-## 4.3.0a4 -- 2024-01-31
-## 4.3.0a3 -- 2024-01-31
-## 4.3.0a2 -- 2024-01-29
-## 4.3.0a1 -- 2024-01-24
 - Added the job property `environment` since it is required when configured to interact with slurm rest `0.0.39`
-
-## 4.3.0a0 -- 2024-01-15
-## 4.2.1a0 -- 2024-01-11
-
 - Map job submissions with cancelled status [ASP-4288]
 
 ## 4.2.0 -- 2024-01-08
