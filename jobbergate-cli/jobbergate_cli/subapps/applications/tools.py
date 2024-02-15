@@ -7,7 +7,7 @@ import copy
 import io
 import json
 import pathlib
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import yaml
 from loguru import logger
@@ -153,7 +153,7 @@ def fetch_application_data(
 
 
 def load_application_data(
-    app_data: ApplicationResponse | LocalApplication,
+    app_data: Union[ApplicationResponse, LocalApplication],
     application_source_file: str,
 ) -> Tuple[JobbergateApplicationConfig, JobbergateApplicationBase]:
     """

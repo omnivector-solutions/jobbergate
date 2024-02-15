@@ -8,7 +8,7 @@ import re
 import tempfile
 from concurrent import futures
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 from jinja2 import Template
 from jinja2.exceptions import UndefinedError
@@ -188,7 +188,7 @@ def get_template_output_name_mapping(config: JobbergateConfig, job_name: str) ->
     return {remove_prefix(k): v.as_posix() for k, v in output_name_mapping.items()}
 
 
-def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: list[str]) -> str:
+def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str]) -> str:
     """
     Inject sbatch params into job script.
 
@@ -433,7 +433,7 @@ def render_job_script(
 
 
 def update_template_files_information(
-    app_data: ApplicationResponse | LocalApplication, app_config: JobbergateApplicationConfig
+    app_data: Union[ApplicationResponse, LocalApplication], app_config: JobbergateApplicationConfig
 ):
     """Update the information about the template files if not already present in the configuration."""
     if not app_config.jobbergate_config.default_template:
