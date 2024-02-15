@@ -1,3 +1,8 @@
+coverage:
+  # Turn off coverage checks on the project level, since they are handled per flag
+  status:
+    project: false
+    patch: false
 flag_management:
   default_rules: # the rules that will be followed for any flag added, generally
     carryforward: true
