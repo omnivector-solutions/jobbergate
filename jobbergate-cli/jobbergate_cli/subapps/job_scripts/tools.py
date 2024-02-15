@@ -310,13 +310,28 @@ def render_job_script_locally(
 
     param_dict_flat = flatten_param_dict(app_config.dict())
 
-    for template_file in app_data.template_files:
+    if not app_config.jobbergate_config.default_template:
+        raise Abort(
+            "Default template was not specified",
+            subject="Entry point is unspecified",
+            log_message="Entry point file not specified",
+        )
+
+    template_name_mapping = get_template_output_name_mapping(app_config.jobbergate_config, job_script_name)
+
+    mapped_template_files = {
+        new_filename: file
+        for file in app_data.template_files
+        if (new_filename := template_name_mapping.get(file.filename, None))
+    }
+
+    for new_filename, template_file in mapped_template_files.items():
         file_content = render_template(template_file.path, param_dict_flat)
 
         if template_file.file_type.upper() == "ENTRYPOINT" and sbatch_params:
             file_content = inject_sbatch_params(file_content, sbatch_params)
 
-        with open(output_path / remove_prefix_suffix(template_file.filename), "w") as f:
+        with open(output_path / new_filename, "w") as f:
             f.write(file_content)
 
 
