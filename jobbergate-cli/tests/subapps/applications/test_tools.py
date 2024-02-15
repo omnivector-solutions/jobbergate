@@ -243,8 +243,8 @@ def test_load_application_from_source__success(dummy_module_source, dummy_jobber
     assert isinstance(application, JobbergateApplicationBase)
     assert application.mainflow
     assert application.jobbergate_config == dict(
-        default_template="test-job-script.py.j2",
-        template_files=[pathlib.Path("test-job-script.py.j2")],
+        default_template="job-script-template.py.j2",
+        template_files=[pathlib.Path("job-script-template.py.j2")],
         output_directory=pathlib.Path("."),
         supporting_files=None,
         supporting_files_output_name=None,

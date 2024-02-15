@@ -197,7 +197,7 @@ def test_render_job_script_locally__success(
 
     write_mock = mocker.patch("builtins.open", mocker.mock_open())
 
-    render_job_script_locally(dummy_context, dummy_application_dir, tmp_path, fast=True)
+    render_job_script_locally(dummy_context, "dummy-job-script", dummy_application_dir, tmp_path, fast=True)
 
     write_mock().write.assert_called_once_with(expected_template_data)
 

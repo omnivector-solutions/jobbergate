@@ -28,7 +28,6 @@ def test_list_all__makes_request_and_renders_results():
     assert sorted(registered_command_names) == [
         "clone-application",
         "clone-job-script",
-        "render-job-script-locally",
         "create-application",
         "create-job-script",
         "create-job-submission",
@@ -43,10 +42,12 @@ def test_list_all__makes_request_and_renders_results():
         "list-applications",
         "list-job-scripts",
         "list-job-submissions",
+        "render-job-script-locally",
         "show-job-script-files",
         "update-application",
         "update-job-script",
     ]
+
 
 def test_import_appform_from_jobbergate_cli_warns_and_gives_you_questions_instead_when_in_compatibility_mode(
     tweak_settings, cleanup_deprecated
