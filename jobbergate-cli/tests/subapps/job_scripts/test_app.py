@@ -19,6 +19,7 @@ from jobbergate_cli.subapps.job_scripts.app import (
     list_all,
     pathlib,
     render,
+    render_locally,
     show_files,
     style_mapper,
     update,
@@ -504,6 +505,46 @@ def test_render__submit_is_none_and_cluster_name_is_defined(
 
     assert result.exit_code == 1, f"render failed: {result.stdout}"
     assert "Incorrect parameters" in result.stdout
+
+
+def test_render_job_script_locally__success(
+    dummy_render_class, dummy_application_dir, make_test_app, cli_runner, mocker
+):
+    test_app = make_test_app("render-locally", render_locally)
+
+    dummy_render_class.prepared_input = dict(
+        foo="FOO",
+        bar="BAR",
+        baz="BAZ",
+    )
+    mocker.patch.object(
+        importlib.import_module("inquirer.prompt"),
+        "ConsoleRender",
+        new=dummy_render_class,
+    )
+
+    mocked_terminal_message = mocker.patch("jobbergate_cli.subapps.job_scripts.app.terminal_message")
+
+    result = cli_runner.invoke(
+        test_app,
+        shlex.split(
+            unwrap(
+                f"""
+            render-locally
+            --job-script-name=dummy-name
+            --application-path={dummy_application_dir}
+            --output-path={dummy_application_dir}
+            """
+            )
+        ),
+    )
+
+    assert result.exit_code == 0, f"render-locally failed: {result.stdout}"
+
+    mocked_terminal_message.assert_called_once_with(
+        "The job script was successfully rendered locally.",
+        subject="Job script render succeeded",
+    )
 
 
 @pytest.mark.parametrize("id_flag,separator", [("--id", "="), ("-i", " ")])

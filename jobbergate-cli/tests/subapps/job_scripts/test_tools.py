@@ -9,7 +9,7 @@ import pytest
 import respx
 
 from jobbergate_cli.exceptions import Abort, JobbergateCliError
-from jobbergate_cli.schemas import ApplicationResponse, JobScriptResponse
+from jobbergate_cli.schemas import ApplicationResponse, JobScriptResponse, LocalApplication
 from jobbergate_cli.subapps.job_scripts.tools import (
     JobbergateConfig,
     download_job_script_files,
@@ -134,6 +134,31 @@ def test_inject_sbatch_params__no_sbatch_flag():
     assert actual_result == expected_result
 
 
+def test_inject_sbatch_params__empty_list():
+    sbatch_params = []
+
+    job_script_data_as_string = dedent(
+        """
+        #!/bin/bash
+
+        echo $SLURM_TASKS_PER_NODE
+        echo $SLURM_SUBMIT_DIR
+        """
+    )
+
+    expected_result = dedent(
+        """
+        #!/bin/bash
+
+        echo $SLURM_TASKS_PER_NODE
+        echo $SLURM_SUBMIT_DIR
+        """
+    )
+
+    actual_result = inject_sbatch_params(job_script_data_as_string, sbatch_params)
+    assert actual_result == expected_result
+
+
 def test_render_template__success(tmp_path):
     template_path = tmp_path / "dummy.j2"
     template_path.write_text("{{ foo }} {{ bar }} {{ baz }}")
@@ -147,6 +172,16 @@ def test_render_template__success(tmp_path):
     expected_output = "FOO BAR BAZ"
 
     assert render_template(template_path, parameters) == expected_output
+
+
+def test_render_template__fail_when_unable_to_render(tmp_path):
+    template_path = tmp_path / "dummy.j2"
+    template_path.write_text("{{ foo + 42 }}")
+
+    parameters = dict(not_a_key="bla")
+
+    with pytest.raises(Abort, match="Unable to render"):
+        render_template(template_path, parameters)
 
 
 def test_render_template__fails_if_template_does_not_exist(tmp_path):
@@ -200,6 +235,62 @@ def test_render_job_script_locally__success(
     render_job_script_locally(dummy_context, "dummy-job-script", dummy_application_dir, tmp_path, fast=True)
 
     write_mock().write.assert_called_once_with(expected_template_data)
+
+
+def test_render_job_script_locally__fail_when_no_workflow_file_specified(tmp_path, dummy_context, mocker):
+    app_data_without_workflow = LocalApplication(
+        template_vars={},
+        template_files=[],
+        workflow_files=[],
+    )
+
+    mocker.patch(
+        "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data_locally",
+        return_value=app_data_without_workflow,
+    )
+
+    with pytest.raises(Abort, match="Application does not have a workflow file"):
+        render_job_script_locally(dummy_context, "dummy-job-script", tmp_path, tmp_path, fast=True)
+
+
+def test_render_job_script_locally__with_sbatch_params(
+    dummy_render_class, dummy_context, dummy_application_dir, mocker
+):
+    dummy_render_class.prepared_input = dict(
+        foo="FOO",
+        bar="BAR",
+        baz="BAZ",
+    )
+    mocker.patch.object(
+        importlib.import_module("inquirer.prompt"),
+        "ConsoleRender",
+        new=dummy_render_class,
+    )
+
+    render_job_script_locally(
+        dummy_context,
+        "dummy-job-script",
+        dummy_application_dir,
+        dummy_application_dir,
+        sbatch_params=["--comment=some_comment", "--nice=-1", "-N 10"],
+    )
+
+    assert (dummy_application_dir / "job-script-template.py").read_text() == dedent(
+        """\
+        #!/bin/python3
+
+        #SBATCH -J dummy_job
+        #SBATCH -t 60
+        # Sbatch params injected at rendering time
+        #SBATCH --comment=some_comment
+        #SBATCH --nice=-1
+        #SBATCH -N 10
+
+        print("I am a very, very dumb job script")
+        print(f"foo='FOO'")
+        print(f"bar='BAR'")
+        print(f"baz='BAZ'")"""
+    )
 
 
 def test_render_job_script__providing_a_name(
