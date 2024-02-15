@@ -4,8 +4,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+## 4.3.0 -- 2024-02-14
 
-## 4.3.0a7 -- 2024-02-08
 - Revamped job_submissions statuses and tracked more details slurm job_state [PENG-2064]
   - Added columns for slurm_job_state and slurm_job_info
   - Added mappings for slurm_job_state details (long descriptions and
@@ -15,31 +15,11 @@ This file keeps track of all notable changes to jobbergate-api
     doesn't need to understand job_submission statuses
   - Added a migration for the database changes including existing status mapping
   - Updated and added unit tests
-
-
-## 4.3.0a6 -- 2024-02-06
-## 4.3.0a5 -- 2024-02-02
-## 4.3.0a4 -- 2024-01-31
-- Fixed issue with list job-submissions with parent data created on previous prerelease [PENG-2059]
-
-## 4.3.0a3 -- 2024-01-31
-
 - Fixed performance issue with the list endpoints dispatching additional select queries [PENG-2059]
-
-## 4.3.0a2 -- 2024-01-29
-
 - Added clone capability to templates and job scripts [ASP-3335]
-
-## 4.3.0a1 -- 2024-01-24
-
-## 4.3.0a0 -- 2024-01-15
-
 - Improved error handling and reporting [ASP-4095]
 - Fixed `inject_sbatch_params` when no `#SBATCH` directive was found on the file
 - Added syntax validation for uploaded files (jinja2, yaml, and Python), ported from Jobbergate-API 3.6
-
-## 4.2.1a0 -- 2024-01-11
-
 - Map job submissions with cancelled status [ASP-4288]
 
 ## 4.2.0 -- 2024-01-08
