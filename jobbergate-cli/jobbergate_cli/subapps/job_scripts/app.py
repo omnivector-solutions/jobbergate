@@ -167,17 +167,19 @@ def create(
 @handle_abort
 def render_locally(
     ctx: typer.Context,
-    application_path: pathlib.Path = typer.Option(
-        ...,
+    application_path: pathlib.Path = typer.Argument(
+        pathlib.Path("."),
         help="The path to the application directory to use as a template for the job script.",
+        dir_okay=True,
     ),
     job_script_name: str = typer.Option(
-        ...,
+        "job_script",
         help="The name of the job script to render locally.",
     ),
     output_path: pathlib.Path = typer.Option(
-        ...,
+        pathlib.Path("."),
         help="The path to the directory where the rendered job script should be saved.",
+        dir_okay=True,
     ),
     sbatch_params: Optional[List[str]] = typer.Option(
         None,

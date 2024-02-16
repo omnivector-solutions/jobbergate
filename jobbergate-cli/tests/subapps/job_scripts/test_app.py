@@ -527,16 +527,7 @@ def test_render_job_script_locally__success(
 
     result = cli_runner.invoke(
         test_app,
-        shlex.split(
-            unwrap(
-                f"""
-            render-locally
-            --job-script-name=dummy-name
-            --application-path={dummy_application_dir}
-            --output-path={dummy_application_dir}
-            """
-            )
-        ),
+        shlex.split(f"render-locally {dummy_application_dir} --output-path={dummy_application_dir}"),
     )
 
     assert result.exit_code == 0, f"render-locally failed: {result.stdout}"
