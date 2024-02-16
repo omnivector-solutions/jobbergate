@@ -1,4 +1,5 @@
 """Router for the Job Script Template resource."""
+
 from typing import cast
 
 from buzz import handle_errors
@@ -202,8 +203,7 @@ async def job_script_get(
 )
 async def job_script_get_list(
     list_params: ListParams = Depends(),
-    from_job_script_template_id: int
-    | None = Query(
+    from_job_script_template_id: int | None = Query(
         None,
         description="Filter job-scripts by the job-script-template-id they were created from.",
     ),
@@ -295,30 +295,47 @@ async def job_script_get_file(
 async def job_script_upload_file(
     id: int = Path(...),
     file_type: FileType = Path(...),
-    upload_file: UploadFile = File(..., description="File to upload"),
+    filename: str = Query(..., max_length=255),
+    upload_file: UploadFile | None = File(None, description="File to upload"),
+    previous_filename: str | None = Query(
+        None, description="Previous name of the file in case a rename is needed", max_length=255
+    ),
     secure_services: SecureService = Depends(
         secure_services(Permissions.JOB_SCRIPTS_EDIT, ensure_email=True)
     ),
 ):
     """Upload a file to a job script."""
-    if upload_file.filename is None:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="The upload file has no filename",
-        )
-
-    logger.debug(f"Uploading file {upload_file.filename} to job script {id=}")
-
     job_script = await secure_services.crud.job_script.get(
         id, ensure_attributes={"owner_email": secure_services.identity_payload.email}
     )
 
-    await secure_services.file.job_script.upsert(
+    if upload_file is None and previous_filename is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Either a file or a previous filename must be provided",
+        )
+    elif previous_filename == filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The previous filename must be different from the new one",
+        )
+
+    if previous_filename is None:
+        previous_file = None
+    else:
+        previous_file = await secure_services.file.job_script.get(job_script.id, previous_filename)
+
+    new_file = await secure_services.file.job_script.upsert(
         parent_id=job_script.id,
-        filename=upload_file.filename,
+        filename=filename,
         upload_content=upload_file,
         file_type=file_type,
     )
+
+    if previous_file is not None:
+        if upload_file is None:
+            await secure_services.file.job_script.copy_file_content(previous_file, new_file)
+        await secure_services.file.job_script.delete(previous_file)
 
 
 @router.delete(

@@ -524,7 +524,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         self,
         parent_id: int,
         filename: str,
-        upload_content: str | bytes | UploadFile,
+        upload_content: str | bytes | UploadFile | None,
         **upsert_kwargs,
     ) -> FileModel:
         """
@@ -532,7 +532,9 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         """
         instance = await self.add_instance(parent_id, filename, upsert_kwargs)
 
-        if isinstance(upload_content, str):
+        if upload_content is None:
+            return instance
+        elif isinstance(upload_content, str):
             file_obj: Any = io.BytesIO(upload_content.encode())
             size = file_obj.getbuffer().nbytes
         elif isinstance(upload_content, bytes):
@@ -592,14 +594,17 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
 
         cloned_instance = await self.add_instance(new_parent_id, original_instance.filename, data)
 
-        copy_source = {"Bucket": self.bucket.name, "Key": original_instance.file_key}
+        await self.copy_file_content(original_instance, cloned_instance)
+        return cloned_instance
+
+    async def copy_file_content(self, source_instance: FileModel, destination_instance: FileModel) -> None:
+        copy_source = {"Bucket": self.bucket.name, "Key": source_instance.file_key}
         with handle_errors(
-            f"{self.model_type.__tablename__} file={original_instance.file_key} could not be copied",
+            f"{self.model_type.__tablename__} file={source_instance.file_key} could not be copied",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR),
         ):
-            await self.bucket.copy(copy_source, cloned_instance.file_key)
-        return cloned_instance
+            await self.bucket.copy(copy_source, destination_instance.file_key)
 
     async def delete(self, instance: FileModel) -> None:
         """

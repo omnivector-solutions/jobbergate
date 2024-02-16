@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+- Allow files to be renamed in upsert routes  in Jobbergate API [PENG-2070]
+
 ## 4.3.0 -- 2024-02-14
 
 - Revamped job_submissions statuses and tracked more details slurm job_state [PENG-2064]

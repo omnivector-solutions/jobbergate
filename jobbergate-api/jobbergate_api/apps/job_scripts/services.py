@@ -1,4 +1,5 @@
 """Services for the job_scripts resource, including module specific business logic."""
+
 from typing import Any, NamedTuple
 
 from buzz import enforce_defined, require_condition
@@ -122,7 +123,7 @@ class JobScriptFileService(FileService):
         self,
         parent_id: int,
         filename: str,
-        upload_content: str | bytes | UploadFile,
+        upload_content: str | bytes | UploadFile | None,
         **upsert_kwargs,
     ) -> FileModel:
         """
