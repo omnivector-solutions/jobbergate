@@ -1,7 +1,7 @@
 """Tests for the /job-scripts/ endpoint."""
 
 import pytest
-from fastapi import HTTPException, status
+from fastapi import status
 from loguru import logger
 
 from jobbergate_api.apps.permissions import Permissions
@@ -834,7 +834,7 @@ class TestJobScriptFiles:
             (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.ADMIN]),
         ],
     )
-    async def test_create__success(
+    async def test_upsert_new_file(
         self,
         client,
         inject_security_header,
@@ -872,6 +872,167 @@ class TestJobScriptFiles:
         file_content = await synth_services.file.job_script.get_file_content(job_script_file)
         assert file_content.decode() == job_script_data_as_string
 
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_SCRIPTS_CREATE]),
+            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.ADMIN]),
+        ],
+    )
+    async def test_upsert_replace_content(
+        self,
+        client,
+        inject_security_header,
+        job_script_data,
+        make_dummy_file,
+        synth_services,
+        is_owner,
+        permissions,
+    ):
+        id = job_script_data.id
+        file_type = "ENTRYPOINT"
+        job_script_filename = "entrypoint.sh"
+
+        await synth_services.file.job_script.upsert(
+            parent_id=id,
+            filename=job_script_filename,
+            upload_content="original_content",
+            file_type=file_type,
+        )
+
+        new_content = "new_content"
+        dummy_file_path = make_dummy_file(job_script_filename, content=new_content)
+
+        owner_email = job_script_data.owner_email
+        requester_email = owner_email if is_owner else "another_" + owner_email
+        inject_security_header(requester_email, *permissions)
+        with open(dummy_file_path, mode="rb") as file:
+            response = await client.put(
+                f"jobbergate/job-scripts/{id}/upload/{file_type}",
+                files={"upload_file": (dummy_file_path.name, file, "text/plain")},
+            )
+
+        assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
+
+        job_script_file = await synth_services.file.job_script.get(id, job_script_filename)
+
+        assert job_script_file is not None
+        assert job_script_file.parent_id == id
+        assert job_script_file.filename == job_script_filename
+        assert job_script_file.file_type == file_type
+        assert job_script_file.file_key == f"job_script_files/{id}/{dummy_file_path.name}"
+
+        file_content = await synth_services.file.job_script.get_file_content(job_script_file)
+        assert file_content.decode() == new_content
+
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_SCRIPTS_CREATE]),
+            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.ADMIN]),
+        ],
+    )
+    async def test_upsert_rename_file(
+        self,
+        client,
+        inject_security_header,
+        job_script_data,
+        synth_services,
+        is_owner,
+        permissions,
+    ):
+        id = job_script_data.id
+        file_type = "ENTRYPOINT"
+        job_script_filename = "entrypoint.sh"
+
+        await synth_services.file.job_script.upsert(
+            parent_id=id,
+            filename=job_script_filename,
+            upload_content="original_content",
+            file_type=file_type,
+        )
+
+        new_filename = "new_filename.sh"
+
+        owner_email = job_script_data.owner_email
+        requester_email = owner_email if is_owner else "another_" + owner_email
+        inject_security_header(requester_email, *permissions)
+        response = await client.put(
+            f"jobbergate/job-scripts/{id}/upload/{file_type}",
+            params={"filename": new_filename, "previous_filename": job_script_filename},
+        )
+
+        assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
+
+        job_script_file = await synth_services.file.job_script.get(id, new_filename)
+
+        assert job_script_file is not None
+        assert job_script_file.parent_id == id
+        assert job_script_file.filename == new_filename
+        assert job_script_file.file_type == file_type
+        assert job_script_file.file_key == f"job_script_files/{id}/{new_filename}"
+
+        file_content = await synth_services.file.job_script.get_file_content(job_script_file)
+        assert file_content.decode() == "original_content"
+
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_SCRIPTS_CREATE]),
+            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.ADMIN]),
+        ],
+    )
+    async def test_upsert_replace_content_and_rename(
+        self,
+        client,
+        inject_security_header,
+        job_script_data,
+        make_dummy_file,
+        synth_services,
+        is_owner,
+        permissions,
+    ):
+        id = job_script_data.id
+        file_type = "ENTRYPOINT"
+        job_script_filename = "entrypoint.sh"
+
+        await synth_services.file.job_script.upsert(
+            parent_id=id,
+            filename=job_script_filename,
+            upload_content="original_content",
+            file_type=file_type,
+        )
+
+        new_content = "new_content"
+        new_filename = "new_filename.sh"
+
+        dummy_file_path = make_dummy_file(new_filename, content=new_content)
+        owner_email = job_script_data.owner_email
+        requester_email = owner_email if is_owner else "another_" + owner_email
+        inject_security_header(requester_email, *permissions)
+        with open(dummy_file_path, mode="rb") as file:
+            response = await client.put(
+                f"jobbergate/job-scripts/{id}/upload/{file_type}",
+                files={"upload_file": (dummy_file_path.name, file, "text/plain")},
+                params={
+                    "filename": dummy_file_path.name,
+                    "previous_filename": job_script_filename,
+                },
+            )
+
+        assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
+
+        job_script_file = await synth_services.file.job_script.get(id, new_filename)
+
+        assert job_script_file is not None
+        assert job_script_file.parent_id == id
+        assert job_script_file.filename == new_filename
+        assert job_script_file.file_type == file_type
+        assert job_script_file.file_key == f"job_script_files/{id}/{new_filename}"
+
+        file_content = await synth_services.file.job_script.get_file_content(job_script_file)
+        assert file_content.decode() == new_content
+
     async def test_create__fail_forbidden(
         self,
         client,
@@ -893,6 +1054,7 @@ class TestJobScriptFiles:
             response = await client.put(
                 f"jobbergate/job-scripts/{id}/upload/{file_type}",
                 files={"upload_file": (dummy_file_path.name, file, "text/plain")},
+                params={"filename": dummy_file_path.name},
             )
 
         assert response.status_code == status.HTTP_403_FORBIDDEN

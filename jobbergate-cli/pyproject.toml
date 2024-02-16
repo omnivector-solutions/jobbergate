@@ -64,6 +64,7 @@ minversion = "7.0"
 addopts = [
     "--random-order",
     "--cov=jobbergate_cli",
+    "--cov-report=term",
     "--cov-report=xml:tests/coverage.xml",
 ]
 env = [

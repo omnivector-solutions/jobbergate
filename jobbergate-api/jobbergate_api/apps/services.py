@@ -524,14 +524,44 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         self,
         parent_id: int,
         filename: str,
-        upload_content: str | bytes | UploadFile,
+        upload_content: str | bytes | UploadFile | None,
+        previous_filename: str | None = None,
         **upsert_kwargs,
     ) -> FileModel:
         """
         Upsert a file instance.
-        """
-        instance = await self.add_instance(parent_id, filename, upsert_kwargs)
 
+        This method will either create a new file instance or update an existing one.
+
+        If a 'previous_filename' is provided, it is replaced by the new one, being deleted in the process.
+        In this case, the 'upload_content' is optional, as the content can be copied from the previous file.
+        """
+        upsert_instance = await self.add_instance(parent_id, filename, upsert_kwargs)
+
+        if previous_filename == filename:
+            previous_filename = None
+
+        if upload_content:
+            await self.upload_file_content(upsert_instance, upload_content)
+            if not previous_filename:
+                return upsert_instance
+        if previous_filename:
+            previous_instance = await self.get(parent_id, previous_filename)
+            if not upload_content:
+                await self.copy_file_content(previous_instance, upsert_instance)
+            await self.delete(previous_instance)
+            return upsert_instance
+
+        raise ServiceError(
+            "Either a file or a previous filename must be provided", status_code=status.HTTP_400_BAD_REQUEST
+        )
+
+    async def upload_file_content(
+        self, instance: FileModel, upload_content: str | bytes | UploadFile
+    ) -> None:
+        """
+        Upload the content of a file to s3.
+        """
         if isinstance(upload_content, str):
             file_obj: Any = io.BytesIO(upload_content.encode())
             size = file_obj.getbuffer().nbytes
@@ -557,15 +587,14 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         )
 
         require_condition(
-            check_uploaded_file_syntax(file_obj, filename),
-            f"File {filename=} did not pass the syntax check for its extension",
+            check_uploaded_file_syntax(file_obj, instance.filename),
+            f"File {instance.filename} did not pass the syntax check for its extension",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
         )
 
         # Mypy doesn't like aioboto3 much
         await self.bucket.upload_fileobj(Fileobj=file_obj, Key=instance.file_key)  # type: ignore
-        return instance
 
     async def add_instance(self, parent_id, filename, upsert_kwargs) -> FileModel:
         """
@@ -592,14 +621,20 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
 
         cloned_instance = await self.add_instance(new_parent_id, original_instance.filename, data)
 
-        copy_source = {"Bucket": self.bucket.name, "Key": original_instance.file_key}
+        await self.copy_file_content(original_instance, cloned_instance)
+        return cloned_instance
+
+    async def copy_file_content(self, source_instance: FileModel, destination_instance: FileModel) -> None:
+        """
+        Copy the content of a file from one instance to another.
+        """
+        copy_source = {"Bucket": self.bucket.name, "Key": source_instance.file_key}
         with handle_errors(
-            f"{self.model_type.__tablename__} file={original_instance.file_key} could not be copied",
+            f"{self.model_type.__tablename__} file={source_instance.file_key} could not be copied",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR),
         ):
-            await self.bucket.copy(copy_source, cloned_instance.file_key)
-        return cloned_instance
+            await self.bucket.copy(copy_source, destination_instance.file_key)
 
     async def delete(self, instance: FileModel) -> None:
         """
