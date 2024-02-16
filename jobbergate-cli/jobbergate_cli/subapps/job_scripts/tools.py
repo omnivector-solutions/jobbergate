@@ -327,6 +327,8 @@ def render_job_script_locally(
         with open(output_path / new_filename, "w") as f:
             f.write(file_content)
 
+        logger.debug(f"Rendered template file {new_filename} to path {output_path}")
+
 
 def render_job_script(
     jg_ctx: JobbergateContext,
