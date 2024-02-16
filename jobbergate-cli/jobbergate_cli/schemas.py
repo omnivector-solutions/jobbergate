@@ -10,6 +10,8 @@ import httpx
 import pydantic
 import pydantic.generics
 
+from jobbergate_cli.constants import FileType
+
 
 class TokenSet(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     """
@@ -146,7 +148,7 @@ class LocalTemplateFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):
 
     filename: str
     path: Path
-    file_type: str
+    file_type: FileType
 
 
 class LocalWorkflowFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):

@@ -321,7 +321,7 @@ def render_job_script_locally(
     for new_filename, template_file in mapped_template_files.items():
         file_content = render_template(template_file.path, param_dict_flat)
 
-        if template_file.file_type.upper() == "ENTRYPOINT" and sbatch_params:
+        if template_file.file_type == FileType.ENTRYPOINT and sbatch_params:
             file_content = inject_sbatch_params(file_content, sbatch_params)
 
         with open(output_path / new_filename, "w") as f:
