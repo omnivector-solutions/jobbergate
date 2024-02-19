@@ -310,6 +310,11 @@ def render_job_script_locally(
 
     param_dict_flat = flatten_param_dict(app_config.dict())
 
+    if param_dict_flat.get("job_script_name"):
+        # Possibly overwrite script name if set at runtime by the application
+        job_script_name = param_dict_flat["job_script_name"]
+        logger.debug("Job script name was set by the application at runtime: {}", job_script_name)
+
     template_name_mapping = get_template_output_name_mapping(app_config.jobbergate_config, job_script_name)
 
     mapped_template_files = {
