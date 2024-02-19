@@ -3,6 +3,9 @@
 This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
+
+
+## 4.4.0a0 -- 2024-02-19
 - Added command to render an application into a job script locally [ASP-3326]
 
 ## 4.3.0 -- 2024-02-14
