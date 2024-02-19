@@ -1490,6 +1490,27 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_cli.schemas.LocalApplication" class="md-nav__link">
+    LocalApplication
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.schemas.LocalTemplateFile" class="md-nav__link">
+    LocalTemplateFile
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.schemas.LocalWorkflowFile" class="md-nav__link">
+    LocalWorkflowFile
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_cli.schemas.Persona" class="md-nav__link">
     Persona
   </a>
@@ -2425,6 +2446,27 @@
           <li class="md-nav__item">
   <a href="#jobbergate_cli.schemas.ListResponseEnvelope" class="md-nav__link">
     ListResponseEnvelope
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.schemas.LocalApplication" class="md-nav__link">
+    LocalApplication
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.schemas.LocalTemplateFile" class="md-nav__link">
+    LocalTemplateFile
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.schemas.LocalWorkflowFile" class="md-nav__link">
+    LocalWorkflowFile
   </a>
   
 </li>
@@ -4994,6 +5036,126 @@ JobbergateApplicationConfig model.</p>
 
 
 
+<h5 id="jobbergate_cli.schemas.LocalApplication" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">LocalApplication</span>
+
+
+</h5>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Application retrieved from a local folder.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h5 id="jobbergate_cli.schemas.LocalTemplateFile" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">LocalTemplateFile</span>
+
+
+</h5>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Template file retrieved from a local folder.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h5 id="jobbergate_cli.schemas.LocalWorkflowFile" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">LocalWorkflowFile</span>
+
+
+</h5>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Workflow file retrived from a local folder.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
 <h5 id="jobbergate_cli.schemas.Persona" class="doc doc-heading">
           <span class="doc doc-object-name doc-class-name">Persona</span>
 
@@ -6650,6 +6812,32 @@ to True.</p>
 
 
 
+<h7 id="jobbergate_cli.subapps.applications.tools.fetch_application_data_locally" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">fetch_application_data_locally</span>
+
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">fetch_application_data_locally</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">application_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LocalApplication</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Retrieve an application from a local directory.</p>
+<p>:param: application_path: The directory containing the application files
+:returns: A LocalApplication instance containing the application data</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
 <h7 id="jobbergate_cli.subapps.applications.tools.get_upload_files" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">get_upload_files</span>
 
@@ -6706,7 +6894,7 @@ multi-part file uploads with the client.</p>
 
 </h7>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">load_application_data</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">app_data</span><span class="p">:</span> <span class="n">ApplicationResponse</span><span class="p">,</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">app_data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ApplicationResponse</span><span class="p">,</span> <span class="n">LocalApplication</span><span class="p">],</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">application_source_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">JobbergateApplicationConfig</span><span class="p">,</span> <span class="n">JobbergateApplicationBase</span>
@@ -7287,6 +7475,61 @@ make API calls
 
 
 
+<h7 id="jobbergate_cli.subapps.job_scripts.app.render_locally" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">render_locally</span>
+
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_locally</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">ctx</span><span class="p">:</span> <span class="n">typer</span><span class="o">.</span><span class="n">Context</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">application_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Argument</span><span class="p">(</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The path to the application directory to use as a template for the job script.&quot;</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="n">dir_okay</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="p">),</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">job_script_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="s2">&quot;job_script&quot;</span><span class="p">,</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The name of the job script to render locally.&quot;</span><span class="p">,</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="p">),</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">output_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">),</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The path to the directory where the rendered job script should be saved.&quot;</span><span class="p">,</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>        <span class="n">dir_okay</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="p">),</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="n">sbatch_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>        <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Optional parameter to submit raw sbatch parameters.&quot;</span><span class="p">,</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    <span class="p">),</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>    <span class="n">param_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>        <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>        <span class="n">help</span><span class="o">=</span><span class="n">dedent</span><span class="p">(</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">            Supply a json file that contains the parameters for populating templates.</span><span class="se">\n</span><span class="s2">            If this is not supplied, the question asking in the application is triggered.</span><span class="se">\n</span><span class="s2">            &quot;</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>        <span class="p">),</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>    <span class="p">),</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>    <span class="n">fast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>        <span class="kc">False</span><span class="p">,</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>        <span class="s2">&quot;--fast&quot;</span><span class="p">,</span>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>        <span class="s2">&quot;-f&quot;</span><span class="p">,</span>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Use default answers (when available) instead of asking the user.&quot;</span><span class="p">,</span>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>    <span class="p">),</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Render a new job-script from an application locally.</p>
+<p>The templates will be overwritten with the rendered files.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
 <h7 id="jobbergate_cli.subapps.job_scripts.app.show_files" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">show_files</span>
 
@@ -7521,6 +7764,31 @@ print(flat_param_dict)
 
 
 
+<h7 id="jobbergate_cli.subapps.job_scripts.tools.inject_sbatch_params" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">inject_sbatch_params</span>
+
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">inject_sbatch_params</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_script_data_as_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sbatch_params</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Inject sbatch params into job script.</p>
+<p>Given the job script as job_script_data_as_string, inject the sbatch params in the correct location.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
 <h7 id="jobbergate_cli.subapps.job_scripts.tools.question_helper" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">question_helper</span>
 
@@ -7642,6 +7910,70 @@ Otherwise, the question will be prompted to the user.</p>
 
 
 
+<h7 id="jobbergate_cli.subapps.job_scripts.tools.render_job_script_locally" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">render_job_script_locally</span>
+
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_job_script_locally</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">jg_ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">job_script_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">application_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">output_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">sbatch_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">param_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">fast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Render a new job script from an application in a local directory.</p>
+<p>:param str job_script_name: Name of the new job script.
+:param pathlib.Path application_path: Path to the base application.
+:param pathlib.Path output_path: Path to the output the rendered job script.
+:param Optional[List[str]] sbatch_params: List of sbatch parameters.
+:param Optional[pathlib.Path] param_file: Path to a parameters file.
+:param bool fast: Whether to use default answers (when available) instead of asking the user.
+:param JobbergateContext jg_ctx: The Jobbergate context.
+:return JobScriptResponse: The new job script.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_cli.subapps.job_scripts.tools.render_template" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">render_template</span>
+
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_template</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">template_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Render a template file and save it to the output directory.</p>
+<p>:param str template_path: The path to the template file.
+:param Dict[str, Any] parameters: The parameters to use for rendering the template.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
 <h7 id="jobbergate_cli.subapps.job_scripts.tools.save_job_script_file" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">save_job_script_file</span>
 
@@ -7674,7 +8006,7 @@ Otherwise, the question will be prompted to the user.</p>
 
 </h7>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">update_template_files_information</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">app_data</span><span class="p">:</span> <span class="n">ApplicationResponse</span><span class="p">,</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">app_data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ApplicationResponse</span><span class="p">,</span> <span class="n">LocalApplication</span><span class="p">],</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">app_config</span><span class="p">:</span> <span class="n">JobbergateApplicationConfig</span><span class="p">,</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span>
 </span></code></pre></div>
