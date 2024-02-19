@@ -19,6 +19,7 @@ from jobbergate_cli.subapps.job_scripts.tools import (
     fetch_job_script_data,
     question_helper,
     render_job_script,
+    render_job_script_locally,
     upload_job_script_files,
 )
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
@@ -159,6 +160,67 @@ def create(
         job_script_result,
         hidden_fields=HIDDEN_FIELDS,
         title="Created Job Script",
+    )
+
+
+@app.command()
+@handle_abort
+def render_locally(
+    ctx: typer.Context,
+    application_path: pathlib.Path = typer.Argument(
+        pathlib.Path("."),
+        help="The path to the application directory to use as a template for the job script.",
+        dir_okay=True,
+    ),
+    job_script_name: str = typer.Option(
+        "job_script",
+        help="The name of the job script to render locally.",
+    ),
+    output_path: pathlib.Path = typer.Option(
+        pathlib.Path("."),
+        help="The path to the directory where the rendered job script should be saved.",
+        dir_okay=True,
+    ),
+    sbatch_params: Optional[List[str]] = typer.Option(
+        None,
+        help="Optional parameter to submit raw sbatch parameters.",
+    ),
+    param_file: Optional[pathlib.Path] = typer.Option(
+        None,
+        help=dedent(
+            """
+            Supply a json file that contains the parameters for populating templates.
+            If this is not supplied, the question asking in the application is triggered.
+            """
+        ),
+    ),
+    fast: bool = typer.Option(
+        False,
+        "--fast",
+        "-f",
+        help="Use default answers (when available) instead of asking the user.",
+    ),
+):
+    """
+    Render a new job-script from an application locally.
+
+    The templates will be overwritten with the rendered files.
+    """
+    jg_ctx: JobbergateContext = ctx.obj
+
+    render_job_script_locally(
+        jg_ctx,
+        job_script_name,
+        application_path,
+        output_path,
+        sbatch_params,
+        param_file,
+        fast,
+    )
+
+    terminal_message(
+        "The job script was successfully rendered locally.",
+        subject="Job script render succeeded",
     )
 
 

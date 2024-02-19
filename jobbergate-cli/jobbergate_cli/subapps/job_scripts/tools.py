@@ -8,8 +8,10 @@ import re
 import tempfile
 from concurrent import futures
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
+from jinja2 import Template
+from jinja2.exceptions import UndefinedError
 from loguru import logger
 
 from jobbergate_cli.config import settings
@@ -25,9 +27,15 @@ from jobbergate_cli.schemas import (
     JobScriptFile,
     JobScriptRenderRequestData,
     JobScriptResponse,
+    LocalApplication,
     RenderFromTemplateRequest,
 )
-from jobbergate_cli.subapps.applications.tools import execute_application, fetch_application_data, load_application_data
+from jobbergate_cli.subapps.applications.tools import (
+    execute_application,
+    fetch_application_data,
+    fetch_application_data_locally,
+    load_application_data,
+)
 
 
 def validate_parameter_file(parameter_path: pathlib.Path) -> Dict[str, Any]:
@@ -180,6 +188,153 @@ def get_template_output_name_mapping(config: JobbergateConfig, job_name: str) ->
     return {remove_prefix(k): v.as_posix() for k, v in output_name_mapping.items()}
 
 
+def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str]) -> str:
+    """
+    Inject sbatch params into job script.
+
+    Given the job script as job_script_data_as_string, inject the sbatch params in the correct location.
+    """
+    logger.debug("Preparing to inject sbatch params into job script")
+
+    if not sbatch_params:
+        logger.warning("Sbatch param list is empty")
+        return job_script_data_as_string
+
+    # Find the first non-blank, non-comment line
+    match = re.search(r"^[^#\n]", job_script_data_as_string, re.MULTILINE)
+    if match:
+        insert_index = match.start()
+    else:
+        # If no such line is found, append at the end
+        insert_index = len(job_script_data_as_string)
+
+    inner_string = "# Sbatch params injected at rendering time\n"
+    for parameter in sbatch_params:
+        inner_string += f"#SBATCH {parameter}\n"
+    else:
+        inner_string += "\n"
+
+    new_job_script_data_as_string = (
+        job_script_data_as_string[:insert_index] + inner_string + job_script_data_as_string[insert_index:]
+    )
+
+    logger.debug("Done injecting sbatch params into job script")
+    return new_job_script_data_as_string
+
+
+def render_template(
+    template_path: pathlib.Path,
+    parameters: Dict[str, Any],
+) -> str:
+    """
+    Render a template file and save it to the output directory.
+
+    :param str template_path: The path to the template file.
+    :param Dict[str, Any] parameters: The parameters to use for rendering the template.
+    """
+
+    Abort.require_condition(template_path.is_file(), f"Template file {template_path} does not exist or is not a file")
+
+    with open(template_path, "r") as f:
+        file_content = f.read()
+
+    with Abort.handle_errors(
+        f"Unable to process jinja template filename={template_path}",
+        raise_kwargs=dict(
+            subject="Unable to process jinja template",
+            log_message=f"Unable to process jinja template filename={template_path}",
+        ),
+    ):
+        template = Template(file_content)
+
+    render_contexts = [parameters, {"data": parameters}]
+
+    for context in render_contexts:
+        try:
+            return template.render(**context)
+        except UndefinedError as e:
+            logger.debug(
+                "Unable to render filename={} with context={} -- Error: {}",
+                template_path,
+                context,
+                str(e),
+            )
+
+    raise Abort(
+        f"Unable to render filename={template} with context={context}",
+        subject="Unable to render jinja template",
+        log_message=f"Unable to render filename={template} with context={context}",
+    )
+
+
+def render_job_script_locally(
+    jg_ctx: JobbergateContext,
+    job_script_name: str,
+    application_path: pathlib.Path,
+    output_path: pathlib.Path,
+    sbatch_params: Optional[List[str]] = None,
+    param_file: Optional[pathlib.Path] = None,
+    fast: bool = False,
+):
+    """
+    Render a new job script from an application in a local directory.
+
+    :param str job_script_name: Name of the new job script.
+    :param pathlib.Path application_path: Path to the base application.
+    :param pathlib.Path output_path: Path to the output the rendered job script.
+    :param Optional[List[str]] sbatch_params: List of sbatch parameters.
+    :param Optional[pathlib.Path] param_file: Path to a parameters file.
+    :param bool fast: Whether to use default answers (when available) instead of asking the user.
+    :param JobbergateContext jg_ctx: The Jobbergate context.
+    :return JobScriptResponse: The new job script.
+    """
+    # Make static type checkers happy
+    assert jg_ctx.client is not None
+
+    app_data = fetch_application_data_locally(application_path)
+
+    if not app_data.workflow_files:
+        raise Abort(
+            "Application does not have a workflow file",
+            subject="Workflow file not found",
+            log_message="Application does not have a workflow file",
+        )
+
+    application_source_code = app_data.workflow_files[0].path.read_text()
+
+    (app_config, app_module) = load_application_data(app_data, application_source_code)
+
+    supplied_params = validate_parameter_file(param_file) if param_file else dict()
+    execute_application(app_module, app_config, supplied_params, fast_mode=fast)
+    update_template_files_information(app_data, app_config)
+
+    param_dict_flat = flatten_param_dict(app_config.dict())
+
+    if param_dict_flat.get("job_script_name"):
+        # Possibly overwrite script name if set at runtime by the application
+        job_script_name = param_dict_flat["job_script_name"]
+        logger.debug("Job script name was set by the application at runtime: {}", job_script_name)
+
+    template_name_mapping = get_template_output_name_mapping(app_config.jobbergate_config, job_script_name)
+
+    mapped_template_files = {
+        new_filename: file
+        for file in app_data.template_files
+        if (new_filename := template_name_mapping.get(file.filename, None))
+    }
+
+    for new_filename, template_file in mapped_template_files.items():
+        file_content = render_template(template_file.path, param_dict_flat)
+
+        if template_file.file_type == FileType.ENTRYPOINT and sbatch_params:
+            file_content = inject_sbatch_params(file_content, sbatch_params)
+
+        with open(output_path / new_filename, "w") as f:
+            f.write(file_content)
+
+        logger.debug(f"Rendered template file {new_filename} to path {output_path}")
+
+
 def render_job_script(
     jg_ctx: JobbergateContext,
     name: Optional[str] = None,
@@ -277,14 +432,16 @@ def render_job_script(
     return job_script_result
 
 
-def update_template_files_information(app_data: ApplicationResponse, app_config: JobbergateApplicationConfig):
+def update_template_files_information(
+    app_data: Union[ApplicationResponse, LocalApplication], app_config: JobbergateApplicationConfig
+):
     """Update the information about the template files if not already present in the configuration."""
     if not app_config.jobbergate_config.default_template:
         list_of_entrypoints = [i.filename for i in app_data.template_files if i.file_type.upper() == "ENTRYPOINT"]
         if len(list_of_entrypoints) != 1:
             raise Abort(
                 f"""
-                Application {app_data.application_id} does not have one entry point, found {len(list_of_entrypoints)}",
+                Application does not have one entry point, found {len(list_of_entrypoints)}",
                 """,
                 subject="Entry point is unspecified",
                 log_message="Entry point file not specified",

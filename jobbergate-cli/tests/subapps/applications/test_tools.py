@@ -10,11 +10,15 @@ from jobbergate_cli.constants import (
     JOBBERGATE_APPLICATION_CONFIG,
     JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
     JOBBERGATE_APPLICATION_MODULE_FILE_NAME,
+    FileType,
 )
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import (
     ApplicationResponse,
     JobbergateApplicationConfig,
+    LocalApplication,
+    LocalTemplateFile,
+    LocalWorkflowFile,
     TemplateFileResponse,
     WorkflowFileResponse,
 )
@@ -22,6 +26,7 @@ from jobbergate_cli.subapps.applications.application_base import JobbergateAppli
 from jobbergate_cli.subapps.applications.tools import (
     execute_application,
     fetch_application_data,
+    fetch_application_data_locally,
     load_application_config_from_source,
     load_application_data,
     load_application_from_source,
@@ -159,13 +164,87 @@ def test_load_application_data__fails_if_application_config_is_not_valid_YAML(
         load_application_data(application_data, dummy_module_source)
 
 
+def test_fetch_application_data_locally__success(
+    dummy_module_source, dummy_config_source, dummy_template_source, tmp_path
+):
+    expected_config = load_application_config_from_source(dummy_config_source)
+
+    config_file_path = tmp_path / "jobbergate.yaml"
+    config_file_path.write_text(dummy_config_source)
+
+    module_file_path = tmp_path / "jobbergate.py"
+    module_file_path.write_text(dummy_module_source)
+
+    template_file_path = tmp_path / "test-job-script.py.j2"
+    template_file_path.write_text(dummy_template_source)
+
+    result = fetch_application_data_locally(tmp_path)
+
+    assert result == LocalApplication(
+        template_vars=expected_config.application_config,
+        template_files=[
+            LocalTemplateFile(filename="test-job-script.py.j2", path=template_file_path, file_type=FileType.ENTRYPOINT)
+        ],
+        workflow_files=[
+            LocalWorkflowFile(
+                filename="jobbergate.py",
+                path=module_file_path,
+                runtime_config=expected_config.jobbergate_config.dict(),
+            )
+        ],
+    )
+
+
+def test_fetch_application_data_locally__fails_if_application_path_doesnt_exist():
+    non_exist = pathlib.Path("/does/not/exist")
+    with pytest.raises(Abort, match=f"Application directory {non_exist} does not exist"):
+        fetch_application_data_locally(non_exist)
+
+
+def test_fetch_application_data_locally_fails_if_config_file_not_found(tmp_path):
+    module_file_path = tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+    module_file_path.write_text("")
+
+    template_file_path = tmp_path / "test-job-script.py.j2"
+    template_file_path.write_text("")
+
+    with pytest.raises(
+        Abort, match=f"Application config file {JOBBERGATE_APPLICATION_CONFIG_FILE_NAME} does not exist"
+    ):
+        fetch_application_data_locally(tmp_path)
+
+
+def test_fetch_application_data_locally_fails_if_module_file_not_found(tmp_path):
+    config_file_path = tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
+    config_file_path.write_text("")
+
+    template_file_path = tmp_path / "test-job-script.py.j2"
+    template_file_path.write_text("")
+
+    with pytest.raises(
+        Abort, match=f"Application module file {JOBBERGATE_APPLICATION_MODULE_FILE_NAME} does not exist"
+    ):
+        fetch_application_data_locally(tmp_path)
+
+
+def test_fetch_application_data_locally_fails_if_no_template_files_found(tmp_path):
+    config_file_path = tmp_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
+    config_file_path.write_text("")
+
+    module_file_path = tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+    module_file_path.write_text("")
+
+    with pytest.raises(Abort, match="No template files found in"):
+        fetch_application_data_locally(tmp_path)
+
+
 def test_load_application_from_source__success(dummy_module_source, dummy_jobbergate_application_config):
     application = load_application_from_source(dummy_module_source, dummy_jobbergate_application_config)
     assert isinstance(application, JobbergateApplicationBase)
     assert application.mainflow
     assert application.jobbergate_config == dict(
-        default_template="test-job-script.py.j2",
-        template_files=[pathlib.Path("test-job-script.py.j2")],
+        default_template="job-script-template.py.j2",
+        template_files=[pathlib.Path("job-script-template.py.j2")],
         output_directory=pathlib.Path("."),
         supporting_files=None,
         supporting_files_output_name=None,

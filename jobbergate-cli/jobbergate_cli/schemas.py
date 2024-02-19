@@ -10,6 +10,8 @@ import httpx
 import pydantic
 import pydantic.generics
 
+from jobbergate_cli.constants import FileType
+
 
 class TokenSet(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     """
@@ -137,6 +139,37 @@ class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
 
     template_files: List[TemplateFileResponse] = []
     workflow_files: List[WorkflowFileResponse] = []
+
+
+class LocalTemplateFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+    """
+    Template file retrieved from a local folder.
+    """
+
+    filename: str
+    path: Path
+    file_type: FileType
+
+
+class LocalWorkflowFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+    """
+    Workflow file retrived from a local folder.
+    """
+
+    filename: str
+    path: Path
+    runtime_config: Dict[str, Any] = {}
+
+
+class LocalApplication(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+    """
+    Application retrieved from a local folder.
+    """
+
+    template_vars: Dict[str, Any] = {}
+
+    template_files: List[LocalTemplateFile] = []
+    workflow_files: List[LocalWorkflowFile] = []
 
 
 class JobScriptFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):

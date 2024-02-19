@@ -1,6 +1,7 @@
 import importlib
 import json
 import pathlib
+from textwrap import dedent
 from unittest import mock
 
 import httpx
@@ -8,16 +9,19 @@ import pytest
 import respx
 
 from jobbergate_cli.exceptions import Abort, JobbergateCliError
-from jobbergate_cli.schemas import ApplicationResponse, JobScriptResponse
+from jobbergate_cli.schemas import ApplicationResponse, JobScriptResponse, LocalApplication
 from jobbergate_cli.subapps.job_scripts.tools import (
     JobbergateConfig,
     download_job_script_files,
     fetch_job_script_data,
     flatten_param_dict,
     get_template_output_name_mapping,
+    inject_sbatch_params,
     question_helper,
     remove_prefix_suffix,
     render_job_script,
+    render_job_script_locally,
+    render_template,
     upload_job_script_files,
     validate_parameter_file,
 )
@@ -60,6 +64,233 @@ def test_fetch_job_script_data__success(
     )
     job_script = fetch_job_script_data(dummy_context, 1)
     assert job_script == JobScriptResponse.parse_obj(dummy_job_script_data[0])
+
+
+def test_inject_sbatch_params():
+    sbatch_params = ["--comment=some_comment", "--nice=-1", "-N 10"]
+
+    job_script_data_as_string = dedent(
+        """
+        #!/bin/bash
+
+        #SBATCH --job-name=rats
+        #SBATCH --partition=debug
+        #SBATCH --output=sample-%j.out
+
+        echo $SLURM_TASKS_PER_NODE
+        echo $SLURM_SUBMIT_DIR
+        """
+    )
+
+    expected_result = dedent(
+        """
+        #!/bin/bash
+
+        #SBATCH --job-name=rats
+        #SBATCH --partition=debug
+        #SBATCH --output=sample-%j.out
+
+        # Sbatch params injected at rendering time
+        #SBATCH --comment=some_comment
+        #SBATCH --nice=-1
+        #SBATCH -N 10
+
+        echo $SLURM_TASKS_PER_NODE
+        echo $SLURM_SUBMIT_DIR
+        """
+    )
+
+    actual_result = inject_sbatch_params(job_script_data_as_string, sbatch_params)
+    assert actual_result == expected_result
+
+
+def test_inject_sbatch_params__no_sbatch_flag():
+    sbatch_params = ["--comment=some_comment", "--nice=-1", "-N 10"]
+
+    job_script_data_as_string = dedent(
+        """
+        #!/bin/bash
+
+        echo $SLURM_TASKS_PER_NODE
+        echo $SLURM_SUBMIT_DIR
+        """
+    )
+
+    expected_result = dedent(
+        """
+        #!/bin/bash
+
+        # Sbatch params injected at rendering time
+        #SBATCH --comment=some_comment
+        #SBATCH --nice=-1
+        #SBATCH -N 10
+
+        echo $SLURM_TASKS_PER_NODE
+        echo $SLURM_SUBMIT_DIR
+        """
+    )
+
+    actual_result = inject_sbatch_params(job_script_data_as_string, sbatch_params)
+    assert actual_result == expected_result
+
+
+def test_inject_sbatch_params__empty_list():
+    sbatch_params = []
+
+    job_script_data_as_string = dedent(
+        """
+        #!/bin/bash
+
+        echo $SLURM_TASKS_PER_NODE
+        echo $SLURM_SUBMIT_DIR
+        """
+    )
+
+    expected_result = dedent(
+        """
+        #!/bin/bash
+
+        echo $SLURM_TASKS_PER_NODE
+        echo $SLURM_SUBMIT_DIR
+        """
+    )
+
+    actual_result = inject_sbatch_params(job_script_data_as_string, sbatch_params)
+    assert actual_result == expected_result
+
+
+def test_render_template__success(tmp_path):
+    template_path = tmp_path / "dummy.j2"
+    template_path.write_text("{{ foo }} {{ bar }} {{ baz }}")
+
+    parameters = dict(
+        foo="FOO",
+        bar="BAR",
+        baz="BAZ",
+    )
+
+    expected_output = "FOO BAR BAZ"
+
+    assert render_template(template_path, parameters) == expected_output
+
+
+def test_render_template__fail_when_unable_to_render(tmp_path):
+    template_path = tmp_path / "dummy.j2"
+    template_path.write_text("{{ foo + 42 }}")
+
+    parameters = dict(not_a_key="bla")
+
+    with pytest.raises(Abort, match="Unable to render"):
+        render_template(template_path, parameters)
+
+
+def test_render_template__fails_if_template_does_not_exist(tmp_path):
+    non_exist = tmp_path / "does/not/exist"
+    with pytest.raises(Abort, match=f"Template file {non_exist} does not exist"):
+        render_template(non_exist, {})
+
+
+def test_render_template__fails_if_template_is_invalid(tmp_path):
+    invalid_template = tmp_path / "invalid.j2"
+    invalid_template.write_text("{{ foo")
+
+    with pytest.raises(Abort, match=f"Unable to process jinja template filename={invalid_template}"):
+        render_template(invalid_template, {})
+
+
+def test_render_job_script_locally__success(
+    dummy_context,
+    dummy_application_dir,
+    dummy_render_class,
+    tmp_path,
+    mocker,
+):
+    expected_template_data = dedent(
+        """
+        #!/bin/python3
+
+        #SBATCH -J dummy_job
+        #SBATCH -t 60
+        print("I am a very, very dumb job script")
+        print(f"foo='FOO'")
+        print(f"bar='BAR'")
+        print(f"baz='BAZ'")
+        """
+    )
+    mocker.patch("jobbergate_cli.subapps.job_scripts.tools.render_template", return_value=expected_template_data)
+
+    dummy_render_class.prepared_input = dict(
+        foo="FOO",
+        bar="BAR",
+        baz="BAZ",
+    )
+    mocker.patch.object(
+        importlib.import_module("inquirer.prompt"),
+        "ConsoleRender",
+        new=dummy_render_class,
+    )
+
+    write_mock = mocker.patch("builtins.open", mocker.mock_open())
+
+    render_job_script_locally(dummy_context, "dummy-job-script", dummy_application_dir, tmp_path, fast=True)
+
+    write_mock().write.assert_called_once_with(expected_template_data)
+
+
+def test_render_job_script_locally__fail_when_no_workflow_file_specified(tmp_path, dummy_context, mocker):
+    app_data_without_workflow = LocalApplication(
+        template_vars={},
+        template_files=[],
+        workflow_files=[],
+    )
+
+    mocker.patch(
+        "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data_locally",
+        return_value=app_data_without_workflow,
+    )
+
+    with pytest.raises(Abort, match="Application does not have a workflow file"):
+        render_job_script_locally(dummy_context, "dummy-job-script", tmp_path, tmp_path, fast=True)
+
+
+def test_render_job_script_locally__with_sbatch_params(
+    dummy_render_class, dummy_context, dummy_application_dir, mocker
+):
+    dummy_render_class.prepared_input = dict(
+        foo="FOO",
+        bar="BAR",
+        baz="BAZ",
+    )
+    mocker.patch.object(
+        importlib.import_module("inquirer.prompt"),
+        "ConsoleRender",
+        new=dummy_render_class,
+    )
+
+    render_job_script_locally(
+        dummy_context,
+        "dummy-job-script",
+        dummy_application_dir,
+        dummy_application_dir,
+        sbatch_params=["--comment=some_comment", "--nice=-1", "-N 10"],
+    )
+
+    assert (dummy_application_dir / "job-script-template.py").read_text() == dedent(
+        """\
+        #!/bin/python3
+
+        #SBATCH -J dummy_job
+        #SBATCH -t 60
+        # Sbatch params injected at rendering time
+        #SBATCH --comment=some_comment
+        #SBATCH --nice=-1
+        #SBATCH -N 10
+
+        print("I am a very, very dumb job script")
+        print(f"foo='FOO'")
+        print(f"bar='BAR'")
+        print(f"baz='BAZ'")"""
+    )
 
 
 def test_render_job_script__providing_a_name(

@@ -239,9 +239,9 @@ def dummy_config_source():
     return dedent(
         """
         jobbergate_config:
-          default_template: test-job-script.py.j2
+          default_template: job-script-template.py.j2
           template_files:
-            - test-job-script.py.j2
+            - job-script-template.py.j2
           output_directory: .
           supporting_files_output_name:
           supporting_files:

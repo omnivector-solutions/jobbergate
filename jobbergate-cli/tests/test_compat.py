@@ -24,6 +24,7 @@ def test_list_all__makes_request_and_renders_results():
     add_legacy_compatible_commands(test_app)
 
     registered_command_names = [c.name for c in test_app.registered_commands]
+
     assert sorted(registered_command_names) == [
         "clone-application",
         "clone-job-script",
@@ -41,6 +42,7 @@ def test_list_all__makes_request_and_renders_results():
         "list-applications",
         "list-job-scripts",
         "list-job-submissions",
+        "render-job-script-locally",
         "show-job-script-files",
         "update-application",
         "update-job-script",
