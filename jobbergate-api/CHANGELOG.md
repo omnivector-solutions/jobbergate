@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+- Downgrade FastAPI to 0.99.1 to patch issue on the file endpoints
+
 ## 4.3.0 -- 2024-02-14
 
 - Revamped job_submissions statuses and tracked more details slurm job_state [PENG-2064]

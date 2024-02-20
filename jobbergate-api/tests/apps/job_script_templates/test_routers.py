@@ -897,6 +897,30 @@ class TestJobTemplateWorkflowFile:
         assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
         assert response.content.decode() == "import this"
 
+    async def test_get___large_file_success(
+        self, client, tester_email, inject_security_header, job_template_data, synth_services
+    ):
+        """
+        Ensure that large files can be retrieved with no problem.
+
+        This was created after strange issues were identified running on FastAPI 0.109.2.
+        """
+        large_string = "print(1)\n" * 5000
+
+        parent_id = job_template_data.id
+        await synth_services.file.workflow.upsert(
+            parent_id=parent_id,
+            filename=WORKFLOW_FILE_NAME,
+            upload_content=large_string,
+            runtime_config=dict(foo="bar"),
+        )
+
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
+        response = await client.get(f"jobbergate/job-script-templates/{parent_id}/upload/workflow")
+
+        assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
+        assert response.content.decode() == large_string
+
     async def test_delete__success(
         self,
         client,
