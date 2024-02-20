@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+
+## 4.3.1 -- 2024-02-20
 - Downgrade FastAPI to 0.99.1 to patch issue on the file endpoints
 
 ## 4.3.0 -- 2024-02-14

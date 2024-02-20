@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+
+## 4.3.1 -- 2024-02-20
 ## 4.3.0 -- 2024-02-14
 
 - Revamped job_submissions statuses and tracked more details slurm job_state [PENG-2064]
