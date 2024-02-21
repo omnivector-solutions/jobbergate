@@ -4,7 +4,6 @@ import pytest
 from inquirer import prompt
 from inquirer.errors import ValidationError
 
-from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.subapps.applications.questions import (
     BooleanList,
     Checkbox,
@@ -15,7 +14,6 @@ from jobbergate_cli.subapps.applications.questions import (
     Integer,
     List,
     Text,
-    gather_param_values,
 )
 
 
@@ -229,156 +227,3 @@ def test_BooleanList__same_variable_name(dummy_render_class, parent_answer):
     expected_ignored_questions = [False, not parent_answer, parent_answer]
     actual_ignored_questions = [q.ignore for q in prompts]
     assert actual_ignored_questions == expected_ignored_questions
-
-
-def test_gather_config_values__basic(dummy_render_class, mocker):
-    variablename1 = "foo"
-    question1 = Text(variablename1, message="gimme the foo!")
-
-    variablename2 = "bar"
-    question2 = Text(variablename2, message="gimme the bar!")
-
-    variablename3 = "baz"
-    question3 = Text(variablename3, message="gimme the baz!")
-
-    class DummyApplication:
-        def mainflow(self, data):
-            data["nextworkflow"] = "subflow"
-            return [question1, question2]
-
-        def subflow(self, data):
-            return [question3]
-
-    dummy_render_class.prepared_input = dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
-
-    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
-    params = gather_param_values(DummyApplication())
-    assert params == dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
-
-
-def test_gather_config_values__returning_none(dummy_render_class, mocker):
-    """
-    Test that gather_param_values raises no error when a method returns None.
-
-    Due to differences on the implementation details, jobbergate-legacy does not raise an error in this case
-    and so legacy applications expect the same from next-gen Jobbergate.
-    """
-    variablename1 = "foo"
-    question1 = Text(variablename1, message="gimme the foo!")
-
-    variablename2 = "bar"
-    question2 = Text(variablename2, message="gimme the bar!")
-
-    class DummyApplication:
-        def mainflow(self, data):
-            data["nextworkflow"] = "subflow"
-            return [question1, question2]
-
-        def subflow(self, data):
-            return None
-
-    dummy_render_class.prepared_input = dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
-
-    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
-    params = gather_param_values(DummyApplication())
-    assert params == dict(foo="FOO", bar="BAR")
-
-
-def test_gather_config_values__fast_mode(dummy_render_class, mocker):
-    variablename1 = "foo"
-    question1 = Text(variablename1, message="gimme the foo!", default="oof")
-
-    variablename2 = "bar"
-    question2 = Text(variablename2, message="gimme the bar!")
-
-    variablename3 = "baz"
-    question3 = Text(variablename3, message="gimme the baz!")
-
-    class DummyApplication:
-        def mainflow(self, data):
-            data["nextworkflow"] = "subflow"
-            return [question1, question2]
-
-        def subflow(self, data):
-            return [question3]
-
-    dummy_render_class.prepared_input = dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
-
-    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
-    params = gather_param_values(DummyApplication(), fast_mode=True)
-    assert params == dict(
-        foo="oof",
-        bar="BAR",
-        baz="BAZ",
-    )
-
-
-def test_gather_config_values__skips_supplied_params(dummy_render_class, mocker):
-    variablename1 = "foo"
-    question1 = Text(variablename1, message="gimme the foo!", default="oof")
-
-    variablename2 = "bar"
-    question2 = Text(variablename2, message="gimme the bar!")
-
-    variablename3 = "baz"
-    question3 = Text(variablename3, message="gimme the baz!")
-
-    class DummyApplication:
-        def mainflow(self, data):
-            data["nextworkflow"] = "subflow"
-            return [question1, question2]
-
-        def subflow(self, data):
-            return [question3]
-
-    dummy_render_class.prepared_input = dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
-
-    supplied_params = dict(bar="rab")
-    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
-    params = gather_param_values(DummyApplication(), supplied_params=supplied_params)
-    assert params == dict(
-        foo="FOO",
-        bar="rab",
-        baz="BAZ",
-    )
-
-
-def test_gather_config_values__raises_Abort_if_method_not_implemented(dummy_render_class, mocker):
-    variablename1 = "foo"
-    question1 = Text(variablename1, message="gimme the foo!")
-
-    class DummyApplication:
-        def mainflow(self, data):
-            data["nextworkflow"] = "subflow"
-            return [question1]
-
-        def subflow(self, data):
-            raise NotImplementedError("BOOM!")
-
-    dummy_render_class.prepared_input = dict(
-        foo="FOO",
-    )
-
-    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
-    with pytest.raises(Abort, match="not implemented"):
-        gather_param_values(DummyApplication())
