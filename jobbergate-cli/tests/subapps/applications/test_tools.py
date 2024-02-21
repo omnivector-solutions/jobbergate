@@ -23,8 +23,9 @@ from jobbergate_cli.schemas import (
     WorkflowFileResponse,
 )
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
+from jobbergate_cli.subapps.applications.questions import Text
 from jobbergate_cli.subapps.applications.tools import (
-    execute_application,
+    ApplicationRuntime,
     fetch_application_data,
     fetch_application_data_locally,
     load_application_config_from_source,
@@ -257,80 +258,6 @@ def test_load_application_from_source__success(dummy_module_source, dummy_jobber
     )
 
 
-def test_execute_application__basic(
-    dummy_render_class,
-    dummy_jobbergate_application_config,
-    dummy_jobbergate_application_module,
-    mocker,
-):
-    dummy_render_class.prepared_input = dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
-
-    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
-    app_params = execute_application(
-        dummy_jobbergate_application_module,
-        dummy_jobbergate_application_config,
-    )
-    assert app_params == dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
-
-
-def test_execute_application__with_supplied_params(
-    dummy_render_class,
-    dummy_jobbergate_application_config,
-    dummy_jobbergate_application_module,
-    mocker,
-):
-    dummy_render_class.prepared_input = dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
-
-    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
-    app_params = execute_application(
-        dummy_jobbergate_application_module,
-        dummy_jobbergate_application_config,
-        supplied_params=dict(foo="oof"),
-    )
-    assert app_params == dict(
-        foo="oof",
-        bar="BAR",
-        baz="BAZ",
-    )
-
-
-def test_execute_application__with_fast_mode(
-    dummy_render_class,
-    dummy_jobbergate_application_config,
-    dummy_jobbergate_application_module,
-    mocker,
-):
-    dummy_render_class.prepared_input = dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
-
-    mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
-    app_params = execute_application(
-        dummy_jobbergate_application_module,
-        dummy_jobbergate_application_config,
-        fast_mode=True,
-    )
-    assert app_params == dict(
-        foo="FOO",
-        bar="BAR",
-        baz="zab",  # Only 'baz' has a default value, so it should be used
-    )
-
-
 class TestUploadApplicationFiles:
     """Test the upload_application_files function."""
 
@@ -500,3 +427,267 @@ class TestDownloadApplicationFiles:
         assert actual_application_config == application_config
         assert (tmp_path / JOBBERGATE_APPLICATION_MODULE_FILE_NAME).read_text() == dummy_module_source
         assert (tmp_path / "templates" / "test-job-script.py.j2").read_text() == dummy_template_source
+
+
+class TestApplicationRuntime:
+    @pytest.fixture(scope="function")
+    def application_runtime(self, dummy_module_source, dummy_application_data):
+        return ApplicationRuntime(
+            ApplicationResponse.parse_obj(dummy_application_data[0]),
+            dummy_module_source,
+        )
+
+    def test_flatten_param_dict__success(self, application_runtime):
+        actual_result = application_runtime.as_flatten_param_dict()
+        expected_result = {
+            "template_files": None,
+            "output_directory": pathlib.PosixPath("."),
+            "supporting_files_output_name": None,
+            "supporting_files": None,
+            "default_template": "test-job-script.py.j2",
+        }
+
+        assert actual_result == expected_result
+
+    def test_execute_application__basic(
+        self,
+        application_runtime,
+        dummy_render_class,
+        mocker,
+    ):
+        dummy_render_class.prepared_input = dict(
+            foo="FOO",
+            bar="BAR",
+            baz="BAZ",
+        )
+        mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+
+        application_runtime.execute_application()
+        assert application_runtime.answers == dict(
+            foo="FOO",
+            bar="BAR",
+            baz="BAZ",
+        )
+
+    def test_execute_application__with_supplied_params(
+        self,
+        application_runtime,
+        dummy_render_class,
+        mocker,
+    ):
+        dummy_render_class.prepared_input = dict(
+            foo="FOO",
+            bar="BAR",
+            baz="BAZ",
+        )
+        mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+
+        application_runtime.supplied_params = dict(foo="oof")
+        application_runtime.execute_application()
+        assert application_runtime.answers == dict(
+            foo="oof",
+            bar="BAR",
+            baz="BAZ",
+        )
+
+    def test_execute_application__with_fast_mode(
+        self,
+        application_runtime,
+        dummy_render_class,
+        mocker,
+    ):
+        dummy_render_class.prepared_input = dict(
+            foo="FOO",
+            bar="BAR",
+            baz="BAZ",
+        )
+        mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+
+        application_runtime.fast_mode = True
+
+        application_runtime.execute_application()
+        assert application_runtime.answers == dict(
+            foo="FOO",
+            bar="BAR",
+            baz="zab",  # Only 'baz' has a default value, so it should be used
+        )
+
+    def test_set_name_dynamically(self, application_runtime):
+        class DummyApplication(JobbergateApplicationBase):
+            def mainflow(self, data):
+                self.jobbergate_config["job_script_name"] = "very-unique-name"
+
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.execute_application()
+
+        assert application_runtime.as_flatten_param_dict()["job_script_name"] == "very-unique-name"
+
+    def test_set_name_dynamically__legacy(self, application_runtime):
+        class DummyApplication(JobbergateApplicationBase):
+            def mainflow(self, data):
+                data["job_script_name"] = "very-unique-name"
+
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.execute_application()
+
+        assert application_runtime.as_flatten_param_dict()["job_script_name"] == "very-unique-name"
+
+    def test_choose_default_template(self, application_runtime):
+        class DummyApplication(JobbergateApplicationBase):
+            def mainflow(self, data):
+                self.jobbergate_config["default_template"] = "very-unique-template"
+
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.execute_application()
+
+        assert application_runtime.as_flatten_param_dict()["default_template"] == "very-unique-template"
+
+    def test_choose_default_template__legacy(self, application_runtime):
+        class DummyApplication(JobbergateApplicationBase):
+            def mainflow(self, data):
+                data["default_template"] = "very-unique-template"
+
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.execute_application()
+
+        assert application_runtime.as_flatten_param_dict()["default_template"] == "very-unique-template"
+
+    def test_gather_config_values__basic(self, application_runtime, dummy_render_class, mocker):
+        variablename1 = "foo"
+        question1 = Text(variablename1, message="gimme the foo!")
+
+        variablename2 = "bar"
+        question2 = Text(variablename2, message="gimme the bar!")
+
+        variablename3 = "baz"
+        question3 = Text(variablename3, message="gimme the baz!")
+
+        class DummyApplication(JobbergateApplicationBase):
+            def mainflow(self, data):
+                data["nextworkflow"] = "subflow"
+                return [question1, question2]
+
+            def subflow(self, data):
+                return [question3]
+
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        dummy_render_class.prepared_input = dict(
+            foo="FOO",
+            bar="BAR",
+            baz="BAZ",
+        )
+
+        mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+        application_runtime._gather_answers()
+        assert application_runtime.answers == dict(
+            foo="FOO",
+            bar="BAR",
+            baz="BAZ",
+        )
+
+    def test_gather_config_values__returning_none(self, application_runtime, dummy_render_class, mocker):
+        """
+        Test that gather_param_values raises no error when a method returns None.
+
+        Due to differences on the implementation details, jobbergate-legacy does not raise an error in this case
+        and so legacy applications expect the same from next-gen Jobbergate.
+        """
+        variablename1 = "foo"
+        question1 = Text(variablename1, message="gimme the foo!")
+
+        variablename2 = "bar"
+        question2 = Text(variablename2, message="gimme the bar!")
+
+        class DummyApplication(JobbergateApplicationBase):
+            def mainflow(self, data):
+                data["nextworkflow"] = "subflow"
+                return [question1, question2]
+
+            def subflow(self, data):
+                return None
+
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        dummy_render_class.prepared_input = dict(foo="FOO", bar="BAR", baz="BAZ")
+
+        mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+        application_runtime._gather_answers()
+        assert application_runtime.answers == dict(foo="FOO", bar="BAR")
+
+    def test_gather_config_values__fast_mode(self, application_runtime, dummy_render_class, mocker):
+        variablename1 = "foo"
+        question1 = Text(variablename1, message="gimme the foo!", default="oof")
+
+        variablename2 = "bar"
+        question2 = Text(variablename2, message="gimme the bar!")
+
+        variablename3 = "baz"
+        question3 = Text(variablename3, message="gimme the baz!")
+
+        class DummyApplication(JobbergateApplicationBase):
+            def mainflow(self, data):
+                data["nextworkflow"] = "subflow"
+                return [question1, question2]
+
+            def subflow(self, data):
+                return [question3]
+
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.fast_mode = True
+        dummy_render_class.prepared_input = dict(foo="FOO", bar="BAR", baz="BAZ")
+
+        mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+        application_runtime._gather_answers()
+        assert application_runtime.answers == dict(foo="oof", bar="BAR", baz="BAZ")
+
+    def test_gather_config_values__skips_supplied_params(self, application_runtime, dummy_render_class, mocker):
+        variablename1 = "foo"
+        question1 = Text(variablename1, message="gimme the foo!", default="oof")
+
+        variablename2 = "bar"
+        question2 = Text(variablename2, message="gimme the bar!")
+
+        variablename3 = "baz"
+        question3 = Text(variablename3, message="gimme the baz!")
+
+        class DummyApplication(JobbergateApplicationBase):
+            def mainflow(self, data):
+                data["nextworkflow"] = "subflow"
+                return [question1, question2]
+
+            def subflow(self, data):
+                return [question3]
+
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.supplied_params = dict(bar="rab")
+        dummy_render_class.prepared_input = dict(
+            foo="FOO",
+            bar="BAR",
+            baz="BAZ",
+        )
+
+        mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+        application_runtime._gather_answers()
+        assert application_runtime.answers == dict(foo="FOO", bar="rab", baz="BAZ")
+
+    def test_gather_config_values__raises_Abort_if_method_not_implemented(
+        self, application_runtime, dummy_render_class, mocker
+    ):
+        variablename1 = "foo"
+        question1 = Text(variablename1, message="gimme the foo!")
+
+        class DummyApplication(JobbergateApplicationBase):
+            def mainflow(self, data):
+                data["nextworkflow"] = "subflow"
+                return [question1]
+
+            def subflow(self, data):
+                raise NotImplementedError("BOOM!")
+
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        dummy_render_class.prepared_input = dict(
+            foo="FOO",
+        )
+
+        mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
+        with pytest.raises(Abort, match="not implemented"):
+            application_runtime._gather_answers()

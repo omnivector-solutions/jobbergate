@@ -97,6 +97,7 @@ def dummy_application_data():
                     "parent_id": 1,
                     "created_at": "2022-03-01 17:31:00",
                     "updated_at": "2022-03-01 17:31:00",
+                    "runtime_config": {"default_template": "test-job-script.py.j2"},
                 },
             ],
         ),

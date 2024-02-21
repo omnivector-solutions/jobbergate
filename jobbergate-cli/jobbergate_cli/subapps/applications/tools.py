@@ -7,6 +7,7 @@ import copy
 import io
 import json
 import pathlib
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import yaml
@@ -20,7 +21,7 @@ from jobbergate_cli.constants import (
     FileType,
 )
 from jobbergate_cli.exceptions import Abort
-from jobbergate_cli.render import terminal_message
+from jobbergate_cli.render import render_dict, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import (
     ApplicationResponse,
@@ -32,7 +33,7 @@ from jobbergate_cli.schemas import (
     LocalWorkflowFile,
 )
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
-from jobbergate_cli.subapps.applications.questions import gather_param_values
+from jobbergate_cli.subapps.applications.questions import inquirer
 
 
 def load_default_config() -> Dict[str, Any]:
@@ -420,32 +421,125 @@ def load_application_from_source(app_source: str, app_config: JobbergateApplicat
     return application
 
 
-def execute_application(
-    app_module: JobbergateApplicationBase,
-    app_config: JobbergateApplicationConfig,
-    supplied_params: Optional[Dict[str, Any]] = None,
-    fast_mode: bool = False,
-):
+@dataclass
+class ApplicationRuntime:
     """
-    Execute the jobbergate application python module.
+    Prepare and execute a Jobbergate application gathering the answers to the questions.
 
-    Updates the app_config with values gathered in the question workflow
-
-    :param: app_module:      The source code for the application to execute
-    :param: app_config:      The configuration for the JobbergateApplication
-    :param: supplied_params: Pre-set values for the parameters. Any questions about these values will be skipped.
-    :param: fast_mode:       If true, do not ask the user questions. Just use supplied_params or defaults
-    :returns: The configuration values collected from the user by executing the application
+    :param app_data: The application data, can be either an ApplicationResponse or a LocalApplication.
+    :param app_source_code: The source code of the application, often coming from jobbergate.py file.
+    :param supplied_params: The parameters supplied to the application, defaults to an empty dictionary.
+    :param fast_mode: A flag indicating whether the application is in fast mode, defaults to False.
     """
-    try:
-        app_params = gather_param_values(app_module, supplied_params=supplied_params, fast_mode=fast_mode)
-    except Exception as err:
-        exception_name = type(err).__name__
-        terminal_message(
-            "The question workflow failed to execute. Please check the traceback bellow for more information.",
-            subject=f"Runtime error on application execution - {exception_name}",
-            color="red",
+
+    app_data: Union[ApplicationResponse, LocalApplication]
+    app_source_code: str
+    supplied_params: Dict[str, Any] = field(default_factory=dict)
+    fast_mode: bool = False
+
+    def __post_init__(self):
+        self.app_config, self.app_module = load_application_data(self.app_data, self.app_source_code)
+        self.answers: Dict[str, Any] = dict()
+
+    def execute_application(self):
+        """Execute the jobbergate application python module."""
+        try:
+            self._gather_answers()
+        except Exception as err:
+            exception_name = type(err).__name__
+            terminal_message(
+                "The question workflow failed to execute. Please check the traceback bellow for more information.",
+                subject=f"Runtime error on application execution - {exception_name}",
+                color="red",
+            )
+            raise err
+
+        self._update_template_files_information()
+
+    def as_flatten_param_dict(self) -> Dict[str, Any]:
+        """Flatten the internal data to support the rendering process."""
+        param_dict_flat = {}
+        for outer_value in self.app_config.dict().values():
+            for nest_key, nest_value in outer_value.items():
+                param_dict_flat[nest_key] = nest_value
+        return param_dict_flat
+
+    def _gather_answers(self):
+        """Gather the parameter values by executing the application methods."""
+        self.answers.update(self.supplied_params)
+        # config should be self.answers ideally
+        # but we use self.app_module.jobbergate_config for backward compatibility with v1
+        config = self.app_module.jobbergate_config
+        config.update(self.supplied_params)
+
+        next_method = "mainflow"
+
+        while next_method is not None:
+            method_to_call = getattr(self.app_module, next_method)
+
+            try:
+                workflow_questions = method_to_call(data=config)
+            except NotImplementedError:
+                raise Abort(
+                    f"""
+                    Abstract method not implemented.
+
+                    Please implement {method_to_call.__name__} in your class.",
+                    """,
+                    subject="Invalid application module",
+                )
+
+            prompts = []
+            auto_answers = {}
+
+            if workflow_questions is None:
+                logger.warning(
+                    "Deprecation warning: Application method {} returned None while a list is expected", next_method
+                )
+                workflow_questions = []
+
+            for question in workflow_questions:
+                if question.variablename in self.supplied_params:
+                    continue
+                elif self.fast_mode and question.default is not None:
+                    auto_answers[question.variablename] = question.default
+                else:
+                    prompts.extend(question.make_prompts())
+
+            workflow_answers = cast(Dict[str, Any], inquirer.prompt(prompts, raise_keyboard_interrupt=True))
+            workflow_answers.update(auto_answers)
+            config.update(workflow_answers)
+            self.answers.update(workflow_answers)
+            if len(auto_answers) > 0:
+                render_dict(auto_answers, title="Default values used")
+
+            next_method = config.pop("nextworkflow", None)
+
+        # Legacy applications change the values at runtime, so we need to update the config
+        self.app_config = JobbergateApplicationConfig(
+            application_config=dict(self.app_module.application_config),
+            jobbergate_config=JobbergateConfig.parse_obj(self.app_module.jobbergate_config),
         )
-        raise err
-    app_config.application_config.update(**app_params)
-    return app_params
+
+    def _update_template_files_information(self):
+        """Update the information about the template files if not already present in the configuration."""
+        if not self.app_config.jobbergate_config.default_template:
+            list_of_entrypoints = [
+                i.filename for i in self.app_data.template_files if i.file_type.upper() == "ENTRYPOINT"
+            ]
+            if len(list_of_entrypoints) != 1:
+                raise Abort(
+                    f"""
+                    Application does not have one entry point, found {len(list_of_entrypoints)}",
+                    """,
+                    subject="Entry point is unspecified",
+                    log_message="Entry point file not specified",
+                )
+            self.app_config.jobbergate_config.default_template = list_of_entrypoints[0]
+
+        if not self.app_config.jobbergate_config.supporting_files:
+            list_of_supporting_files = [
+                i.filename for i in self.app_data.template_files if i.file_type.upper() == "SUPPORT"
+            ]
+            if list_of_supporting_files:
+                self.app_config.jobbergate_config.supporting_files = list_of_supporting_files

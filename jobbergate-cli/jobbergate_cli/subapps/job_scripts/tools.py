@@ -8,7 +8,7 @@ import re
 import tempfile
 from concurrent import futures
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import Any, Callable, Dict, List, Optional, cast
 
 from jinja2 import Template
 from jinja2.exceptions import UndefinedError
@@ -19,22 +19,18 @@ from jobbergate_cli.constants import FileType
 from jobbergate_cli.exceptions import Abort, JobbergateCliError
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import (
-    ApplicationResponse,
-    JobbergateApplicationConfig,
     JobbergateConfig,
     JobbergateContext,
     JobScriptCreateRequest,
     JobScriptFile,
     JobScriptRenderRequestData,
     JobScriptResponse,
-    LocalApplication,
     RenderFromTemplateRequest,
 )
 from jobbergate_cli.subapps.applications.tools import (
-    execute_application,
+    ApplicationRuntime,
     fetch_application_data,
     fetch_application_data_locally,
-    load_application_data,
 )
 
 
@@ -93,49 +89,6 @@ def fetch_job_script_data(
             response_model_cls=JobScriptResponse,
         ),
     )
-
-
-def flatten_param_dict(param_dict: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Flatten an input dictionary to support the rendering process.
-
-    See the example:
-
-    >>> param_dict = {
-    ...     "application_config": {"job_name": "rats", "partitions": [...]},
-    ...     "jobbergate_config": {
-    ...         "default_template": "test_job_script.sh",
-    ...         "supporting_files": [...],
-    ...         "supporting_files_output_name": {...},
-    ...         "template_files": [...],
-    ...         "job_script_name": None,
-    ...         "output_directory": ".",
-    ...         "partition": "debug",
-    ...         "job_name": "rats",
-    ...     },
-    ... }
-    >>> flat_param_dict = flatten_param_dict(param_dict)
-    >>> print(flat_param_dict)
-    {
-        "job_name": "rats",
-        "partitions": ["debug", "partition1"],
-        "default_template": "test_job_script.sh",
-        "supporting_files": ["test_job_script.sh"],
-        "supporting_files_output_name": {"test_job_script.sh": [...]},
-        "template_files": ["templates/test_job_script.sh"],
-        "job_script_name": None,
-        "output_directory": ".",
-        "partition": "debug",
-    }
-    """
-    param_dict_flat = {}
-    for key, value in param_dict.items():
-        if isinstance(value, dict):
-            for nest_key, nest_value in value.items():
-                param_dict_flat[nest_key] = nest_value
-        else:
-            param_dict_flat[key] = value
-    return param_dict_flat
 
 
 def remove_prefix(s: str) -> str:
@@ -302,20 +255,23 @@ def render_job_script_locally(
 
     application_source_code = app_data.workflow_files[0].path.read_text()
 
-    (app_config, app_module) = load_application_data(app_data, application_source_code)
-
-    supplied_params = validate_parameter_file(param_file) if param_file else dict()
-    execute_application(app_module, app_config, supplied_params, fast_mode=fast)
-    update_template_files_information(app_data, app_config)
-
-    param_dict_flat = flatten_param_dict(app_config.dict())
+    application_runtime = ApplicationRuntime(
+        app_data,
+        application_source_code,
+        fast_mode=fast,
+        supplied_params=validate_parameter_file(param_file) if param_file else dict(),
+    )
+    application_runtime.execute_application()
+    param_dict_flat = application_runtime.as_flatten_param_dict()
 
     if param_dict_flat.get("job_script_name"):
         # Possibly overwrite script name if set at runtime by the application
         job_script_name = param_dict_flat["job_script_name"]
         logger.debug("Job script name was set by the application at runtime: {}", job_script_name)
 
-    template_name_mapping = get_template_output_name_mapping(app_config.jobbergate_config, job_script_name)
+    template_name_mapping = get_template_output_name_mapping(
+        application_runtime.app_config.jobbergate_config, job_script_name
+    )
 
     mapped_template_files = {
         new_filename: file
@@ -383,13 +339,14 @@ def render_job_script(
 
         application_source_code = tmp_file_path.read_text()
 
-    (app_config, app_module) = load_application_data(app_data, application_source_code)
-
-    supplied_params = validate_parameter_file(param_file) if param_file else dict()
-    execute_application(app_module, app_config, supplied_params, fast_mode=fast)
-    update_template_files_information(app_data, app_config)
-
-    param_dict_flat = flatten_param_dict(app_config.dict())
+    application_runtime = ApplicationRuntime(
+        app_data,
+        application_source_code,
+        fast_mode=fast,
+        supplied_params=validate_parameter_file(param_file) if param_file else dict(),
+    )
+    application_runtime.execute_application()
+    param_dict_flat = application_runtime.as_flatten_param_dict()
 
     job_script_name = name if name else app_data.name
 
@@ -405,7 +362,7 @@ def render_job_script(
         ),
         render_request=RenderFromTemplateRequest(
             template_output_name_mapping=get_template_output_name_mapping(
-                app_config.jobbergate_config, job_script_name
+                application_runtime.app_config.jobbergate_config, job_script_name
             ),
             sbatch_params=sbatch_params,
             param_dict={"data": param_dict_flat},
@@ -430,28 +387,6 @@ def render_job_script(
     )
 
     return job_script_result
-
-
-def update_template_files_information(
-    app_data: Union[ApplicationResponse, LocalApplication], app_config: JobbergateApplicationConfig
-):
-    """Update the information about the template files if not already present in the configuration."""
-    if not app_config.jobbergate_config.default_template:
-        list_of_entrypoints = [i.filename for i in app_data.template_files if i.file_type.upper() == "ENTRYPOINT"]
-        if len(list_of_entrypoints) != 1:
-            raise Abort(
-                f"""
-                Application does not have one entry point, found {len(list_of_entrypoints)}",
-                """,
-                subject="Entry point is unspecified",
-                log_message="Entry point file not specified",
-            )
-        app_config.jobbergate_config.default_template = list_of_entrypoints[0]
-
-    if not app_config.jobbergate_config.supporting_files:
-        list_of_supporting_files = [i.filename for i in app_data.template_files if i.file_type.upper() == "SUPPORT"]
-        if list_of_supporting_files:
-            app_config.jobbergate_config.supporting_files = list_of_supporting_files
 
 
 def upload_job_script_files(

@@ -10,19 +10,15 @@ to True.
 Questions will also resolve to their default values if running in "fast mode".
 """
 
-from copy import deepcopy
 from functools import partial
 from itertools import chain
-from typing import Any, Callable, Dict, Optional, Type, TypeVar, cast
+from typing import Any, Callable, Dict, Optional, Type, TypeVar
 
 import inquirer
 import inquirer.errors
 import inquirer.questions
-from loguru import logger
 
 from jobbergate_cli.exceptions import Abort
-from jobbergate_cli.render import render_dict
-from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 
 
 TInquirerType = TypeVar("TInquirerType", bound=inquirer.questions.Question)
@@ -305,70 +301,3 @@ class Const(Text):
         Create ``inquirer`` prompts from this instance of ``Const``.
         """
         return super().make_prompts(ignore=True)
-
-
-def gather_param_values(
-    application: JobbergateApplicationBase,
-    supplied_params: Optional[Dict[str, Any]] = None,
-    fast_mode: bool = False,
-) -> Dict[str, Any]:
-    """
-    Gather the parameter values by executing the application methods.
-
-    Prompt users for answers or use defaults as needed.
-
-    :param: application:     The application instance to pull questions from
-    :param: supplied_params: Pre-supplied parameters.
-                             Any questions where the variablename matches a pre-supplied key in the dict
-                             at the start of execution will be skipped.
-    :param: fast_mode:       Do not ask the user questions. Just use the supplied params and defaults.
-    :returns: A dict of the gathered parameter values
-    """
-    if supplied_params is None:
-        supplied_params = dict()
-
-    config = deepcopy(supplied_params)
-
-    next_method = "mainflow"
-
-    while next_method is not None:
-        method_to_call = getattr(application, next_method)
-
-        try:
-            workflow_questions = method_to_call(data=config)
-        except NotImplementedError:
-            raise Abort(
-                f"""
-                Abstract method not implemented.
-
-                Please implement {method_to_call.__name__} in your class.",
-                """,
-                subject="Invalid application module",
-            )
-
-        prompts = []
-        auto_answers = {}
-
-        if workflow_questions is None:
-            logger.warning(
-                "Deprecation warning: Application method {} returned None while a list is expected", next_method
-            )
-            workflow_questions = []
-
-        for question in workflow_questions:
-            if question.variablename in supplied_params:
-                continue
-            elif fast_mode and question.default is not None:
-                auto_answers[question.variablename] = question.default
-            else:
-                prompts.extend(question.make_prompts())
-
-        workflow_answers = cast(Dict[str, Any], inquirer.prompt(prompts, raise_keyboard_interrupt=True))
-        config.update(workflow_answers)
-        config.update(auto_answers)
-        if len(auto_answers) > 0:
-            render_dict(auto_answers, title="Default values used")
-
-        next_method = config.pop("nextworkflow", None)
-
-    return config

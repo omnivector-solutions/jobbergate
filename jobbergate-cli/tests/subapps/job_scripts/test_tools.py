@@ -14,7 +14,6 @@ from jobbergate_cli.subapps.job_scripts.tools import (
     JobbergateConfig,
     download_job_script_files,
     fetch_job_script_data,
-    flatten_param_dict,
     get_template_output_name_mapping,
     inject_sbatch_params,
     question_helper,
@@ -687,36 +686,6 @@ class TestDownloadJobScriptFiles:
         assert all(r.called for r in get_file_routes)
 
         assert all(p.read_text() == dummy_template_source for p in list_of_files)
-
-
-def test_flatten_param_dict__success():
-    param_dict = {
-        "application_config": {"job_name": "rats", "partitions": ["foo", "bar"]},
-        "jobbergate_config": {
-            "default_template": "test_job_script.sh.j2",
-            "supporting_files": ["support-1.j2", "support-2.j2"],
-            "supporting_files_output_name": {"support-1.j2": "support-10", "support-2.j2": "support-20"},
-            "template_files": ["test_job_script.sh.j2", "support-1.j2", "support-2.j2"],
-            "job_script_name": None,
-            "output_directory": ".",
-            "partition": "debug",
-            "job_name": "rats",
-        },
-    }
-    actual_result = flatten_param_dict(param_dict)
-    expected_result = {
-        "default_template": "test_job_script.sh.j2",
-        "job_name": "rats",
-        "job_script_name": None,
-        "output_directory": ".",
-        "partition": "debug",
-        "partitions": ["foo", "bar"],
-        "supporting_files": ["support-1.j2", "support-2.j2"],
-        "supporting_files_output_name": {"support-1.j2": "support-10", "support-2.j2": "support-20"},
-        "template_files": ["test_job_script.sh.j2", "support-1.j2", "support-2.j2"],
-    }
-
-    assert actual_result == expected_result
 
 
 @pytest.mark.parametrize(
