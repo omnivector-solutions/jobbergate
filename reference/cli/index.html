@@ -6676,39 +6676,6 @@ to True.</p>
 
 
 
-<div class="doc doc-object doc-function">
-
-
-
-
-<h7 id="jobbergate_cli.subapps.applications.questions.gather_param_values" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">gather_param_values</span>
-
-
-</h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">gather_param_values</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">application</span><span class="p">:</span> <span class="n">JobbergateApplicationBase</span><span class="p">,</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">supplied_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">fast_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Gather the parameter values by executing the application methods.</p>
-<p>Prompt users for answers or use defaults as needed.</p>
-<p>:param: application:     The application instance to pull questions from
-:param: supplied_params: Pre-supplied parameters.
-                         Any questions where the variablename matches a pre-supplied key in the dict
-                         at the start of execution will be skipped.
-:param: fast_mode:       Do not ask the user questions. Just use the supplied params and defaults.
-:returns: A dict of the gathered parameter values</p>
-
-  </div>
-
-</div>
-
-
 
   </div>
 
@@ -6742,6 +6709,43 @@ to True.</p>
 
 
 
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_cli.subapps.applications.tools.ApplicationRuntime" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">ApplicationRuntime</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Prepare and execute a Jobbergate application gathering the answers to the questions.</p>
+<p>:param app_data: The application data, can be either an ApplicationResponse or a LocalApplication.
+:param app_source_code: The source code of the application, often coming from jobbergate.py file.
+:param supplied_params: The parameters supplied to the application, defaults to an empty dictionary.
+:param fast_mode: A flag indicating whether the application is in fast mode, defaults to False.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
 
 
 <div class="doc doc-object doc-function">
@@ -6749,32 +6753,52 @@ to True.</p>
 
 
 
-<h7 id="jobbergate_cli.subapps.applications.tools.execute_application" class="doc doc-heading">
+<h8 id="jobbergate_cli.subapps.applications.tools.ApplicationRuntime.as_flatten_param_dict" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">as_flatten_param_dict</span>
+
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">as_flatten_param_dict</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Flatten the internal data to support the rendering process.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_cli.subapps.applications.tools.ApplicationRuntime.execute_application" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">execute_application</span>
 
 
-</h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">execute_application</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">app_module</span><span class="p">:</span> <span class="n">JobbergateApplicationBase</span><span class="p">,</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">app_config</span><span class="p">:</span> <span class="n">JobbergateApplicationConfig</span><span class="p">,</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">supplied_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">fast_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">)</span>
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">execute_application</span><span class="p">()</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Execute the jobbergate application python module.</p>
-<p>Updates the app_config with values gathered in the question workflow</p>
-<p>:param: app_module:      The source code for the application to execute
-:param: app_config:      The configuration for the JobbergateApplication
-:param: supplied_params: Pre-set values for the parameters. Any questions about these values will be skipped.
-:param: fast_mode:       If true, do not ask the user questions. Just use supplied_params or defaults
-:returns: The configuration values collected from the user by executing the application</p>
 
   </div>
 
 </div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
 
 
 <div class="doc doc-object doc-function">
@@ -7682,63 +7706,6 @@ make API calls
 
 
 
-<h7 id="jobbergate_cli.subapps.job_scripts.tools.flatten_param_dict" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">flatten_param_dict</span>
-
-
-</h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">flatten_param_dict</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">param_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Flatten an input dictionary to support the rendering process.</p>
-<p>See the example:</p>
-<blockquote>
-<blockquote>
-<blockquote>
-<p>param_dict = {
-...     "application_config": {"job_name": "rats", "partitions": [...]},
-...     "jobbergate_config": {
-...         "default_template": "test_job_script.sh",
-...         "supporting_files": [...],
-...         "supporting_files_output_name": {...},
-...         "template_files": [...],
-...         "job_script_name": None,
-...         "output_directory": ".",
-...         "partition": "debug",
-...         "job_name": "rats",
-...     },
-... }
-flat_param_dict = flatten_param_dict(param_dict)
-print(flat_param_dict)
-{
-    "job_name": "rats",
-    "partitions": ["debug", "partition1"],
-    "default_template": "test_job_script.sh",
-    "supporting_files": ["test_job_script.sh"],
-    "supporting_files_output_name": {"test_job_script.sh": [...]},
-    "template_files": ["templates/test_job_script.sh"],
-    "job_script_name": None,
-    "output_directory": ".",
-    "partition": "debug",
-}</p>
-</blockquote>
-</blockquote>
-</blockquote>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
 <h7 id="jobbergate_cli.subapps.job_scripts.tools.get_template_output_name_mapping" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">get_template_output_name_mapping</span>
 
@@ -7989,31 +7956,6 @@ Otherwise, the question will be prompted to the user.</p>
   <div class="doc doc-contents ">
   
       <p>Save a job script file from the API response to the destination path.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h7 id="jobbergate_cli.subapps.job_scripts.tools.update_template_files_information" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">update_template_files_information</span>
-
-
-</h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">update_template_files_information</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">app_data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ApplicationResponse</span><span class="p">,</span> <span class="n">LocalApplication</span><span class="p">],</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">app_config</span><span class="p">:</span> <span class="n">JobbergateApplicationConfig</span><span class="p">,</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Update the information about the template files if not already present in the configuration.</p>
 
   </div>
 
