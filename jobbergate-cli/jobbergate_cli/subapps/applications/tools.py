@@ -427,13 +427,9 @@ class ApplicationRuntime:
     Prepare and execute a Jobbergate application gathering the answers to the questions.
 
     :param app_data: The application data, can be either an ApplicationResponse or a LocalApplication.
-    :type app_data: Union[ApplicationResponse, LocalApplication]
     :param app_source_code: The source code of the application, often coming from jobbergate.py file.
-    :type app_source_code: str
     :param supplied_params: The parameters supplied to the application, defaults to an empty dictionary.
-    :type supplied_params: Dict[str, Any], optional
     :param fast_mode: A flag indicating whether the application is in fast mode, defaults to False.
-    :type fast_mode: bool, optional
     """
 
     app_data: Union[ApplicationResponse, LocalApplication]
