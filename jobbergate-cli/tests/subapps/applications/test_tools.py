@@ -512,6 +512,46 @@ class TestApplicationRuntime:
             baz="zab",  # Only 'baz' has a default value, so it should be used
         )
 
+    def test_set_name_dynamically(self, application_runtime):
+        class DummyApplication(JobbergateApplicationBase):
+            def mainflow(self, data):
+                self.jobbergate_config["job_script_name"] = "very-unique-name"
+
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.execute_application()
+
+        assert application_runtime.as_flatten_param_dict()["job_script_name"] == "very-unique-name"
+
+    def test_set_name_dynamically__legacy(self, application_runtime):
+        class DummyApplication(JobbergateApplicationBase):
+            def mainflow(self, data):
+                data["job_script_name"] = "very-unique-name"
+
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.execute_application()
+
+        assert application_runtime.as_flatten_param_dict()["job_script_name"] == "very-unique-name"
+
+    def test_choose_default_template(self, application_runtime):
+        class DummyApplication(JobbergateApplicationBase):
+            def mainflow(self, data):
+                self.jobbergate_config["default_template"] = "very-unique-template"
+
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.execute_application()
+
+        assert application_runtime.as_flatten_param_dict()["default_template"] == "very-unique-template"
+
+    def test_choose_default_template__legacy(self, application_runtime):
+        class DummyApplication(JobbergateApplicationBase):
+            def mainflow(self, data):
+                data["default_template"] = "very-unique-template"
+
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.execute_application()
+
+        assert application_runtime.as_flatten_param_dict()["default_template"] == "very-unique-template"
+
     def test_gather_config_values__basic(self, application_runtime, dummy_render_class, mocker):
         variablename1 = "foo"
         question1 = Text(variablename1, message="gimme the foo!")
@@ -522,7 +562,7 @@ class TestApplicationRuntime:
         variablename3 = "baz"
         question3 = Text(variablename3, message="gimme the baz!")
 
-        class DummyApplication:
+        class DummyApplication(JobbergateApplicationBase):
             def mainflow(self, data):
                 data["nextworkflow"] = "subflow"
                 return [question1, question2]
@@ -530,7 +570,7 @@ class TestApplicationRuntime:
             def subflow(self, data):
                 return [question3]
 
-        application_runtime.app_module = DummyApplication()
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
         dummy_render_class.prepared_input = dict(
             foo="FOO",
             bar="BAR",
@@ -558,7 +598,7 @@ class TestApplicationRuntime:
         variablename2 = "bar"
         question2 = Text(variablename2, message="gimme the bar!")
 
-        class DummyApplication:
+        class DummyApplication(JobbergateApplicationBase):
             def mainflow(self, data):
                 data["nextworkflow"] = "subflow"
                 return [question1, question2]
@@ -566,7 +606,7 @@ class TestApplicationRuntime:
             def subflow(self, data):
                 return None
 
-        application_runtime.app_module = DummyApplication()
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
         dummy_render_class.prepared_input = dict(foo="FOO", bar="BAR", baz="BAZ")
 
         mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
@@ -583,7 +623,7 @@ class TestApplicationRuntime:
         variablename3 = "baz"
         question3 = Text(variablename3, message="gimme the baz!")
 
-        class DummyApplication:
+        class DummyApplication(JobbergateApplicationBase):
             def mainflow(self, data):
                 data["nextworkflow"] = "subflow"
                 return [question1, question2]
@@ -591,7 +631,7 @@ class TestApplicationRuntime:
             def subflow(self, data):
                 return [question3]
 
-        application_runtime.app_module = DummyApplication()
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
         application_runtime.fast_mode = True
         dummy_render_class.prepared_input = dict(foo="FOO", bar="BAR", baz="BAZ")
 
@@ -609,7 +649,7 @@ class TestApplicationRuntime:
         variablename3 = "baz"
         question3 = Text(variablename3, message="gimme the baz!")
 
-        class DummyApplication:
+        class DummyApplication(JobbergateApplicationBase):
             def mainflow(self, data):
                 data["nextworkflow"] = "subflow"
                 return [question1, question2]
@@ -617,7 +657,7 @@ class TestApplicationRuntime:
             def subflow(self, data):
                 return [question3]
 
-        application_runtime.app_module = DummyApplication()
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
         application_runtime.supplied_params = dict(bar="rab")
         dummy_render_class.prepared_input = dict(
             foo="FOO",
@@ -635,7 +675,7 @@ class TestApplicationRuntime:
         variablename1 = "foo"
         question1 = Text(variablename1, message="gimme the foo!")
 
-        class DummyApplication:
+        class DummyApplication(JobbergateApplicationBase):
             def mainflow(self, data):
                 data["nextworkflow"] = "subflow"
                 return [question1]
@@ -643,7 +683,7 @@ class TestApplicationRuntime:
             def subflow(self, data):
                 raise NotImplementedError("BOOM!")
 
-        application_runtime.app_module = DummyApplication()
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
         dummy_render_class.prepared_input = dict(
             foo="FOO",
         )

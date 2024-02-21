@@ -423,6 +423,19 @@ def load_application_from_source(app_source: str, app_config: JobbergateApplicat
 
 @dataclass
 class ApplicationRuntime:
+    """
+    Prepare and execute a Jobbergate application gathering the answers to the questions.
+
+    :param app_data: The application data, can be either an ApplicationResponse or a LocalApplication.
+    :type app_data: Union[ApplicationResponse, LocalApplication]
+    :param app_source_code: The source code of the application, often coming from jobbergate.py file.
+    :type app_source_code: str
+    :param supplied_params: The parameters supplied to the application, defaults to an empty dictionary.
+    :type supplied_params: Dict[str, Any], optional
+    :param fast_mode: A flag indicating whether the application is in fast mode, defaults to False.
+    :type fast_mode: bool, optional
+    """
+
     app_data: Union[ApplicationResponse, LocalApplication]
     app_source_code: str
     supplied_params: Dict[str, Any] = field(default_factory=dict)
@@ -445,34 +458,23 @@ class ApplicationRuntime:
             )
             raise err
 
-        self.app_config.application_config.update(**self.answers)
         self._update_template_files_information()
 
     def as_flatten_param_dict(self) -> Dict[str, Any]:
         """Flatten the internal data to support the rendering process."""
         param_dict_flat = {}
-        for key, value in self.app_config.dict().items():
-            if isinstance(value, dict):
-                for nest_key, nest_value in value.items():
-                    param_dict_flat[nest_key] = nest_value
-            else:
-                param_dict_flat[key] = value
+        for outer_value in self.app_config.dict().values():
+            for nest_key, nest_value in outer_value.items():
+                param_dict_flat[nest_key] = nest_value
         return param_dict_flat
 
     def _gather_answers(self):
-        """
-        Gather the parameter values by executing the application methods.
-
-        Prompt users for answers or use defaults as needed.
-
-        :param: application:     The application instance to pull questions from
-        :param: supplied_params: Pre-supplied parameters.
-                                Any questions where the variablename matches a pre-supplied key in the dict
-                                at the start of execution will be skipped.
-        :param: fast_mode:       Do not ask the user questions. Just use the supplied params and defaults.
-        :returns: A dict of the gathered parameter values
-        """
-        config = copy.deepcopy(self.supplied_params)
+        """Gather the parameter values by executing the application methods."""
+        self.answers.update(self.supplied_params)
+        # config should be self.answers ideally
+        # but we use self.app_module.jobbergate_config for backward compatibility with v1
+        config = self.app_module.jobbergate_config
+        config.update(self.supplied_params)
 
         next_method = "mainflow"
 
@@ -509,14 +511,19 @@ class ApplicationRuntime:
                     prompts.extend(question.make_prompts())
 
             workflow_answers = cast(Dict[str, Any], inquirer.prompt(prompts, raise_keyboard_interrupt=True))
+            workflow_answers.update(auto_answers)
             config.update(workflow_answers)
-            config.update(auto_answers)
+            self.answers.update(workflow_answers)
             if len(auto_answers) > 0:
                 render_dict(auto_answers, title="Default values used")
 
             next_method = config.pop("nextworkflow", None)
 
-        self.answers = config
+        # Legacy applications change the values at runtime, so we need to update the config
+        self.app_config = JobbergateApplicationConfig(
+            application_config=dict(self.app_module.application_config),
+            jobbergate_config=JobbergateConfig.parse_obj(self.app_module.jobbergate_config),
+        )
 
     def _update_template_files_information(self):
         """Update the information about the template files if not already present in the configuration."""
