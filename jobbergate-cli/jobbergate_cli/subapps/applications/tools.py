@@ -466,6 +466,7 @@ class ApplicationRuntime:
 
     def _gather_answers(self):
         """Gather the parameter values by executing the application methods."""
+        logger.debug("Gathering answers from the application")
         self.answers.update(self.supplied_params)
         # config should be self.answers ideally
         # but we use self.app_module.jobbergate_config for backward compatibility with v1
@@ -476,7 +477,7 @@ class ApplicationRuntime:
 
         while next_method is not None:
             method_to_call = getattr(self.app_module, next_method)
-
+            logger.debug(f"Calling method {next_method}")
             try:
                 workflow_questions = method_to_call(data=config)
             except NotImplementedError:
@@ -484,7 +485,7 @@ class ApplicationRuntime:
                     f"""
                     Abstract method not implemented.
 
-                    Please implement {method_to_call.__name__} in your class.",
+                    Please implement {next_method} in your class.",
                     """,
                     subject="Invalid application module",
                 )
@@ -508,6 +509,9 @@ class ApplicationRuntime:
 
             workflow_answers = cast(Dict[str, Any], inquirer.prompt(prompts, raise_keyboard_interrupt=True))
             workflow_answers.update(auto_answers)
+
+            logger.debug(f"Answers gathered from {next_method}: {workflow_answers}")
+
             config.update(workflow_answers)
             self.answers.update(workflow_answers)
             if len(auto_answers) > 0:
@@ -520,6 +524,7 @@ class ApplicationRuntime:
             application_config=dict(self.app_module.application_config),
             jobbergate_config=JobbergateConfig.parse_obj(self.app_module.jobbergate_config),
         )
+        logger.debug(f"Concluded getting answers: {self.answers}")
 
     def _update_template_files_information(self):
         """Update the information about the template files if not already present in the configuration."""
