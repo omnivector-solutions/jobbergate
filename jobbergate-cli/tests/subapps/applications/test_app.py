@@ -311,7 +311,7 @@ def test_update__success_by_identifier(
     mocked_upload = mocker.patch("jobbergate_cli.subapps.applications.app.upload_application")
     mocked_upload.return_value = True
 
-    get_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{application_identifier}")
+    get_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/dummy-identifier")
     get_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
