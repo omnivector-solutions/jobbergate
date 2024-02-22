@@ -109,7 +109,7 @@ def get_template_output_name_mapping(config: JobbergateConfig, job_name: str) ->
 
     This provides the mapping as expected by the API v4 from the configuration on CLI v3.
     """
-    output_dir = config.output_directory
+    output_dir = pathlib.Path(".")
 
     if not config.default_template:
         raise Abort(
@@ -186,6 +186,8 @@ def render_template(
     :param Dict[str, Any] parameters: The parameters to use for rendering the template.
     """
 
+    logger.debug("Rendering template file: {} with parameters={}", template_path, parameters)
+
     Abort.require_condition(template_path.is_file(), f"Template file {template_path} does not exist or is not a file")
 
     with open(template_path, "r") as f:
@@ -214,7 +216,7 @@ def render_template(
             )
 
     raise Abort(
-        f"Unable to render filename={template} with context={context}",
+        f"Unable to render filename={template}",
         subject="Unable to render jinja template",
         log_message=f"Unable to render filename={template} with context={context}",
     )
@@ -288,7 +290,7 @@ def render_job_script_locally(
         with open(output_path / new_filename, "w") as f:
             f.write(file_content)
 
-        logger.debug(f"Rendered template file {new_filename} to path {output_path}")
+        logger.debug("Rendered template file {} to: {}", template_file.filename, new_filename)
 
 
 def render_job_script(

@@ -1,4 +1,5 @@
 """Configuration of pytest."""
+
 import asyncio
 import contextlib
 import dataclasses
@@ -304,7 +305,6 @@ def dummy_application_config() -> str:
                 - partition1
         jobbergate_config:
             default_template: test_job_script.sh
-            output_directory: .
             supporting_files:
                 - test_job_script.sh
             supporting_files_output_name:

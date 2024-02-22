@@ -246,7 +246,6 @@ def test_load_application_from_source__success(dummy_module_source, dummy_jobber
     assert application.jobbergate_config == dict(
         default_template="job-script-template.py.j2",
         template_files=[pathlib.Path("job-script-template.py.j2")],
-        output_directory=pathlib.Path("."),
         supporting_files=None,
         supporting_files_output_name=None,
         user_supplied_key="user-supplied-value",
@@ -441,7 +440,6 @@ class TestApplicationRuntime:
         actual_result = application_runtime.as_flatten_param_dict()
         expected_result = {
             "template_files": None,
-            "output_directory": pathlib.PosixPath("."),
             "supporting_files_output_name": None,
             "supporting_files": None,
             "default_template": "test-job-script.py.j2",

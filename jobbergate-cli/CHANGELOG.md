@@ -4,8 +4,10 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+- Removed `output_directory` from the schema `JobbergateConfig` for backward compatibility with jobbergate-legacy [ASP-4322]
 
 ## 4.4.0a1 -- 2024-02-21
+
 - Modified the Question/Answer workflow to make it behave like jobbergate-legacy [ASP-4332]
 
 ## 4.4.0a0 -- 2024-02-19

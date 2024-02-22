@@ -15,7 +15,6 @@ def param_dict():
         "jobbergate_config": {
             "default_template": "test_job_script.sh",
             "job_name": "rats",
-            "output_directory": ".",
             "partition": "debug",
             "supporting_files": ["test_job_script.sh"],
             "supporting_files_output_name": {"test_job_script.sh": ["support_file_b.py"]},
@@ -33,7 +32,6 @@ def param_dict_flat():
         "job_name": "rats",
         "partitions": ["debug", "partition1"],
         "default_template": "test_job_script.sh",
-        "output_directory": ".",
         "partition": "debug",
         "supporting_files": ["test_job_script.sh"],
         "supporting_files_output_name": {"test_job_script.sh": ["support_file_b.py"]},
