@@ -44,6 +44,19 @@ def test_get_running_jobs(mocker):
 
     mocked_run.reset_mock()
 
+    # squeue found no jobs
+    mocked_output.stdout = "".encode("utf-8")
+    mocked_run.return_value = mocked_output
+
+    assert get_running_jobs() == []
+    mocked_run.assert_called_once_with(
+        shlex.split("""squeue --format="%.8A %j" --noheader --user=dummy-user"""),
+        capture_output=True,
+        check=True,
+    )
+
+    mocked_run.reset_mock()
+
     get_running_jobs(user_only=False)
     mocked_run.assert_called_once_with(
         shlex.split("""squeue --format="%.8A %j" --noheader"""),

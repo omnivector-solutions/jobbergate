@@ -22,7 +22,7 @@ def get_running_jobs(user_only=True):
     try:
         cmd_results = subprocess.run(cmd_args, capture_output=True, check=True)
         # Skip last line (empty), strip quotation marks
-        output_lines = cmd_results.stdout.decode("utf-8").strip().split("\n")[:-1]
+        output_lines = cmd_results.stdout.decode("utf-8").split("\n")[:-1]
         ID_alternatives = [ln.replace('"', "").strip() for ln in output_lines]
     except Exception:
         print("Could not retrieve queue information from SLURM.")
