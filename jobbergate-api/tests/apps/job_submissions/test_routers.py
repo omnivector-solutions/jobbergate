@@ -1,6 +1,7 @@
 """
 Tests for the /job-submissions/ endpoint.
 """
+import json
 from unittest import mock
 
 import pytest
@@ -9,6 +10,7 @@ from fastapi import status
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus, SlurmJobState
 from jobbergate_api.apps.job_submissions.schemas import JobProperties
 from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.rabbitmq_notification import rabbitmq_connect
 
 # Not using the synth_session fixture in a route that needs the database is unsafe
 pytest.mark.usefixtures("synth_session")
@@ -1600,7 +1602,11 @@ async def test_job_submissions_agent_rejected__success(
     inserted_job_script_id = base_job_script.id
 
     inserted_submission = await synth_services.crud.job_submission.create(
-        job_script_id=inserted_job_script_id, **fill_job_submission_data(client_id="dummy-client")
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            slurm_job_state=None,
+        ),
     )
     inserted_job_submission_id = inserted_submission.id
 
@@ -1609,7 +1615,12 @@ async def test_job_submissions_agent_rejected__success(
         report_message="Something went wrong",
     )
 
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
+    inject_security_header(
+        "who@cares.com",
+        Permissions.JOB_SUBMISSIONS_EDIT,
+        client_id="dummy-client",
+        organization_id="dummy-org",
+    )
     response = await client.post(f"/jobbergate/job-submissions/agent/rejected", json=payload)
     assert response.status_code == status.HTTP_202_ACCEPTED
 
@@ -1617,6 +1628,66 @@ async def test_job_submissions_agent_rejected__success(
     assert instance.id == inserted_job_submission_id
     assert instance.status == JobSubmissionStatus.REJECTED
     assert instance.report_message == payload["report_message"]
+
+
+@pytest.mark.flaky(max_runs=3)
+async def test_job_submissions_agent_rejected__publishes_status_change_to_rabbitmq_when_enabled(
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+    tester_email,
+):
+    """
+    Test POST /job-submissions/agent/rejected publishes a status change to rabbitmq.
+
+    This test proves that when a job_submission is REJECTED, a notification is sent to rabbitmq.
+
+    This is an unstable test that may break when run with other tests that use rabbitmq. Thus,
+    it is marked flaky.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            slurm_job_state=None,
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    payload = dict(
+        id=inserted_job_submission_id,
+        report_message="Something went wrong",
+    )
+
+    inject_security_header(
+        "who@cares.com",
+        Permissions.JOB_SUBMISSIONS_EDIT,
+        client_id="dummy-client",
+        organization_id="dummy-org",
+    )
+    response = await client.post(f"/jobbergate/job-submissions/agent/rejected", json=payload)
+    assert response.status_code == status.HTTP_202_ACCEPTED
+
+    async with rabbitmq_connect(exchange_name="dummy-org", do_purge=True) as (_, queue):
+        message = await queue.get(timeout=1, no_ack=True)
+
+    assert message
+    assert message.headers == dict(organization="dummy-org")
+    assert json.loads(message.body.decode()) == dict(
+        path=f"jobs.job_submissions.{inserted_submission.id}",
+        user_email=tester_email,
+        action="status",
+        additional_context=dict(
+            status=JobSubmissionStatus.REJECTED,
+            slurm_job_state=None,
+        ),
+    )
 
 
 async def test_job_submissions_agent_rejected__fails_if_status_is_not_CREATED(
@@ -1819,6 +1890,82 @@ async def test_job_submissions_agent_update__sets_done_status(
     assert instance.slurm_job_state == SlurmJobState.COMPLETED
     assert instance.slurm_job_info == "Dummy slurm job info"
     assert instance.slurm_job_id == 111
+
+
+@pytest.mark.parametrize(
+    "slurm_job_state,expected_status",
+    [
+        (SlurmJobState.COMPLETED, JobSubmissionStatus.DONE),
+        (SlurmJobState.CANCELLED, JobSubmissionStatus.ABORTED),
+    ],
+)
+@pytest.mark.flaky(max_runs=3)
+async def test_job_submissions_agent_update__publishes_status_change_to_rabbitmq_when_enabled(
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+    tester_email,
+    slurm_job_state,
+    expected_status,
+):
+    """
+    Test PUT /job-submissions/agent/{job_submission_id} publishes status changes to rabbitmq.
+
+    This test proves that when a job_submission is successfully updated to a DONE or ABORTED
+    status, a notification is sent to rabbitmq.
+
+    This is an unstable test that may break when run with other tests that use rabbitmq. Thus,
+    it is marked flaky.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    inject_security_header(
+        "who@cares.com",
+        Permissions.JOB_SUBMISSIONS_EDIT,
+        client_id="dummy-client",
+        organization_id="dummy-org",
+    )
+
+    response = await client.put(
+        f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
+        json=dict(
+            slurm_job_state=slurm_job_state,
+            slurm_job_info="Dummy slurm job info",
+            slurm_job_id=111,
+        ),
+    )
+    assert response.status_code == status.HTTP_202_ACCEPTED
+
+    async with rabbitmq_connect(exchange_name="dummy-org", do_purge=True) as (_, queue):
+        message = await queue.get(timeout=1, no_ack=True)
+
+    assert message
+    assert message.headers == dict(organization="dummy-org")
+    assert json.loads(message.body.decode()) == dict(
+        path=f"jobs.job_submissions.{inserted_submission.id}",
+        user_email=tester_email,
+        action="status",
+        additional_context=dict(
+            status=expected_status,
+            slurm_job_state=slurm_job_state,
+        ),
+    )
 
 
 async def test_job_submissions_agent_update__returns_400_if_token_does_not_carry_client_id(

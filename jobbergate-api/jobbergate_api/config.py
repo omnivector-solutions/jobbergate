@@ -67,6 +67,12 @@ class Settings(BaseSettings):
     TEST_S3_BUCKET_NAME: str = Field("test-jobbergate-resources")
     TEST_S3_ENDPOINT_URL: str = Field("http://localhost:9000")
 
+    # RabbitMQ configuration
+    RABBITMQ_HOST: Optional[str]
+    RABBITMQ_USERNAME: Optional[str]
+    RABBITMQ_PASSWORD: Optional[str]
+    RABBITMQ_DEFAULT_EXCHANGE: str = "default"
+
     # Security Settings. For details, see https://github.com/omnivector-solutions/armasec
     ARMASEC_DOMAIN: str
     ARMASEC_USE_HTTPS: bool = Field(True)

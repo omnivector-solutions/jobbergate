@@ -19,6 +19,9 @@ services:
       - DATABASE_PORT=5432
       - S3_ENDPOINT_URL=http://minio:9000
       - S3_BUCKET_NAME=jobbergate-resources
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USERNAME=local-user
+      - RABBITMQ_PASSWORD=local-pswd
       - AWS_ACCESS_KEY_ID=compose-s3-key
       - AWS_SECRET_ACCESS_KEY=compose-s3-secret
       - ARMASEC_DOMAIN=keycloak.local:8080/realms/jobbergate-local
@@ -40,6 +43,8 @@ services:
         condition: service_healthy
       minio-create-bucket:
         condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
 
   jobbergate-api-qa:
     build:
@@ -53,6 +58,9 @@ services:
       - TEST_DATABASE_PORT=5432
       - TEST_S3_ENDPOINT_URL=http://minio:9000
       - TEST_LOG_LEVEL=CRITICAL
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USERNAME=local-user
+      - RABBITMQ_PASSWORD=local-pswd
     volumes:
       - ../jobbergate-api/jobbergate_api/:/app/jobbergate_api/
       - ../jobbergate-api/dev_tools/:/app/dev_tools/
@@ -64,6 +72,8 @@ services:
         condition: service_healthy
       minio-create-bucket:
         condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
 
   jobbergate-cli:
     build:
@@ -174,6 +184,24 @@ services:
       retries: 10
       timeout: 5s
     command: ["server", "--compat", "--console-address", ':9001', "/data"]
+
+  rabbitmq:
+    image: rabbitmq:3.8-management-alpine
+    networks:
+      - jobbergate-net
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=local-user
+      - RABBITMQ_DEFAULT_PASS=local-pswd
+    ports:
+      - 5672:5672
+      - 15672:15672
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 30s
+      retries: 3
 
   minio-create-bucket:
     image: minio/mc
@@ -334,6 +362,7 @@ services:
 volumes:
   postgres_data:
   minio_data:
+  rabbitmq_data:
   kc-realm-files:
   etc_munge:
   var_lib_mysql:

@@ -4,12 +4,14 @@ import contextlib
 import dataclasses
 import datetime
 import random
+import socket
 import string
 import typing
 from contextlib import asynccontextmanager
 from textwrap import dedent
 from unittest.mock import patch
 
+import aio_pika
 import pytest
 from fastapi import status
 from httpx import AsyncClient, Response
