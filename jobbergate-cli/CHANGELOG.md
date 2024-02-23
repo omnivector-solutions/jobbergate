@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+
+## 4.5.0a2 -- 2024-02-23
 ## 4.5.0a1 -- 2024-02-22
 
 ## 4.4.0a1 -- 2024-02-21
