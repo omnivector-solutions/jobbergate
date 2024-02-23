@@ -1647,6 +1647,33 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_api.rabbitmq_notification" class="md-nav__link">
+    rabbitmq_notification
+  </a>
+  
+    <nav class="md-nav" aria-label="rabbitmq_notification">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.rabbitmq_notification.publish_status_change" class="md-nav__link">
+    publish_status_change()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.rabbitmq_notification.rabbitmq_connect" class="md-nav__link">
+    rabbitmq_connect()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_api.safe_types" class="md-nav__link">
     safe_types
   </a>
@@ -2668,6 +2695,33 @@
         
       </ul>
     </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.rabbitmq_notification" class="md-nav__link">
+    rabbitmq_notification
+  </a>
+  
+    <nav class="md-nav" aria-label="rabbitmq_notification">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.rabbitmq_notification.publish_status_change" class="md-nav__link">
+    publish_status_change()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.rabbitmq_notification.rabbitmq_connect" class="md-nav__link">
+    rabbitmq_connect()
+  </a>
   
 </li>
         
@@ -11505,6 +11559,96 @@ MetaField will be accepted.</p>
 
 </div>
 
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h4 id="jobbergate_api.rabbitmq_notification" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">rabbitmq_notification</span>
+
+
+</h4>
+
+  <div class="doc doc-contents ">
+  
+      <p>RabbitMQ notification system for Jobbergate.</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h5 id="jobbergate_api.rabbitmq_notification.publish_status_change" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">publish_status_change</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h5>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">publish_status_change</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_submission</span><span class="p">:</span> <span class="n">JobSubmission</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">organization_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Publish a status change for a JobSubmission to the RabbitMQ exchange used for notifications.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h5 id="jobbergate_api.rabbitmq_notification.rabbitmq_connect" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">rabbitmq_connect</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h5>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">rabbitmq_connect</span><span class="p">(</span><span class="n">exchange_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">do_purge</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Connect to a RabbitMQ queue and exchange.</p>
+
+  </div>
+
+</div>
 
 
 
