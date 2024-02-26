@@ -1,14 +1,13 @@
 """
 Tests for the /job-submissions/ endpoint.
 """
+
 import json
-from unittest import mock
 
 import pytest
 from fastapi import status
 
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus, SlurmJobState
-from jobbergate_api.apps.job_submissions.schemas import JobProperties
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.rabbitmq_notification import rabbitmq_connect
 
@@ -33,7 +32,7 @@ async def test_create_job_submission__on_site_submission(
     This test proves that a job_submission is successfully created via a POST request to the /job-submissions/
     endpoint. We show this by asserting that the job_submission is created in the database after the post
     request is made, the correct status code (201) is returned. We also show that the ``status``
-    is ``SUBMITTED`` and the ``execution_parameters`` were not processed.
+    is ``SUBMITTED``.
     """
     base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
 
@@ -55,13 +54,8 @@ async def test_create_job_submission__on_site_submission(
     # Removed defaults to make sure these are correctly set by other mechanisms
     create_data.pop("status", None)
     create_data.pop("client_id", None)
-    create_data.pop("execution_parameters", None)
 
-    with mock.patch(
-        "jobbergate_api.apps.job_submissions.routers.get_job_properties_from_job_script"
-    ) as mocked:
-        response = await client.post("/jobbergate/job-submissions", json=create_data)
-    mocked.assert_not_called()
+    response = await client.post("/jobbergate/job-submissions", json=create_data)
 
     assert response.status_code == status.HTTP_201_CREATED, f"Create failed: {response.text}"
 
@@ -78,52 +72,6 @@ async def test_create_job_submission__on_site_submission(
     assert response_data["execution_directory"] is None
     assert response_data["client_id"] == "dummy-cluster-client"
     assert response_data["status"] == JobSubmissionStatus.SUBMITTED
-
-    assert isinstance(response_data["execution_parameters"], dict)
-    assert {k: v for k, v in response_data["execution_parameters"].items() if v is not None} == {}
-
-
-async def test_create_job_submission__on_site_submission_with_execution_parameters(
-    fill_job_script_data,
-    fill_job_submission_data,
-    client,
-    inject_security_header,
-    tester_email,
-    job_script_data_as_string,
-    synth_session,
-    synth_bucket,
-    synth_services,
-):
-    """
-    Test POST /job-submissions/ correctly creates a job_submission.
-    """
-    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
-
-    job_script_file_name = "entrypoint.sh"
-
-    await synth_services.file.job_script.upsert(
-        parent_id=base_job_script.id,
-        filename=job_script_file_name,
-        upload_content=job_script_data_as_string,
-        file_type="ENTRYPOINT",
-    )
-
-    inserted_job_script_id = base_job_script.id
-    slurm_job_id = 1234
-
-    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-cluster-client")
-    create_data = fill_job_submission_data(
-        job_script_id=inserted_job_script_id, slurm_job_id=slurm_job_id, execution_parameters={"name": "foo"}
-    )
-
-    # Removed defaults to make sure these are correctly set by other mechanisms
-    create_data.pop("status", None)
-    create_data.pop("client_id", None)
-
-    response = await client.post("/jobbergate/job-submissions", json=create_data)
-
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "Execution parameters are not allowed for on-site job submissions" in response.text
 
 
 async def test_create_job_submission__with_client_id_in_token(
@@ -165,15 +113,7 @@ async def test_create_job_submission__with_client_id_in_token(
     create_data.pop("status", None)
     create_data.pop("client_id", None)
 
-    with mock.patch(
-        "jobbergate_api.apps.job_submissions.routers.get_job_properties_from_job_script"
-    ) as mocked:
-        mocked.return_value = JobProperties.parse_obj(create_data["execution_parameters"])
-        response = await client.post("/jobbergate/job-submissions", json=create_data)
-    mocked.assert_called_once_with(
-        job_script_data_as_string,
-        **create_data["execution_parameters"],
-    )
+    response = await client.post("/jobbergate/job-submissions", json=create_data)
 
     assert response.status_code == status.HTTP_201_CREATED, f"Create failed: {response.text}"
 
@@ -191,10 +131,6 @@ async def test_create_job_submission__with_client_id_in_token(
     assert response_data["client_id"] == "dummy-cluster-client"
     assert response_data["status"] == JobSubmissionStatus.CREATED
 
-    assert response_data["execution_parameters"] is not None
-    assert response_data["execution_parameters"]["name"] == "job-submission-name"
-    assert response_data["execution_parameters"]["comment"] == "I am a comment"
-
     created_id = response_data["id"]
 
     # Make sure that the data can be retrieved with a GET request
@@ -209,74 +145,6 @@ async def test_create_job_submission__with_client_id_in_token(
     assert response_data["execution_directory"] is None
     assert response_data["client_id"] == "dummy-cluster-client"
     assert response_data["status"] == JobSubmissionStatus.CREATED
-
-
-async def test_create_job_submission__without_execution_parameters(
-    fill_job_script_data,
-    fill_job_submission_data,
-    client,
-    inject_security_header,
-    tester_email,
-    job_script_data_as_string,
-    synth_services,
-):
-    """
-    Test POST /job-submissions/ correctly creates a job_submission.
-
-    This test proves that a job_submission is successfully created via a POST request to the /job-submissions/
-    endpoint. We show this by asserting that the job_submission is created in the database after the post
-    request is made, the correct status code (201) is returned. We also show that the ``client_id``
-    is pulled from the token and the created job_submission is connected to that client id.
-
-    This test is the same as the previous one, but it does not include the ``execution_parameters``
-    in the payload, since they are optional.
-    """
-    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
-
-    job_script_file_name = "entrypoint.sh"
-
-    await synth_services.file.job_script.upsert(
-        parent_id=base_job_script.id,
-        filename=job_script_file_name,
-        upload_content=job_script_data_as_string,
-        file_type="ENTRYPOINT",
-    )
-
-    inserted_job_script_id = base_job_script.id
-
-    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-cluster-client")
-    create_data = fill_job_submission_data(job_script_id=inserted_job_script_id)
-
-    # This test aims to prove that the execution_parameters are optional
-    create_data.pop("execution_parameters", None)
-
-    # Removed defaults to make sure these are correctly set by other mechanisms
-    create_data.pop("status", None)
-    create_data.pop("client_id", None)
-
-    with mock.patch(
-        "jobbergate_api.apps.job_submissions.routers.get_job_properties_from_job_script"
-    ) as mocked:
-        mocked.return_value = JobProperties()
-        response = await client.post("/jobbergate/job-submissions", json=create_data)
-        mocked.assert_called_once_with(job_script_data_as_string)
-
-    assert response.status_code == status.HTTP_201_CREATED, f"Create failed: {response.text}"
-
-    assert (await synth_services.crud.job_submission.count()) == 1
-
-    response_data = response.json()
-
-    # Check that each field is correctly set
-    assert response_data["name"] == create_data["name"]
-    assert response_data["owner_email"] == tester_email
-    assert response_data["description"] == create_data["description"]
-    assert response_data["job_script_id"] == inserted_job_script_id
-    assert response_data["execution_directory"] is None
-    assert response_data["client_id"] == "dummy-cluster-client"
-    assert response_data["status"] == JobSubmissionStatus.CREATED
-
-    assert response_data["execution_parameters"] is not None
 
 
 async def test_create_job_submission__with_client_id_in_request_body(
@@ -318,15 +186,7 @@ async def test_create_job_submission__with_client_id_in_request_body(
     # Change the client_id
     create_data["client_id"] = "silly-cluster-client"
 
-    with mock.patch(
-        "jobbergate_api.apps.job_submissions.routers.get_job_properties_from_job_script"
-    ) as mocked:
-        mocked.return_value = JobProperties.parse_obj(create_data["execution_parameters"])
-        response = await client.post("/jobbergate/job-submissions", json=create_data)
-    mocked.assert_called_once_with(
-        job_script_data_as_string,
-        **create_data["execution_parameters"],
-    )
+    response = await client.post("/jobbergate/job-submissions", json=create_data)
 
     assert response.status_code == status.HTTP_201_CREATED, f"Create failed: {response.text}"
 
@@ -342,10 +202,6 @@ async def test_create_job_submission__with_client_id_in_request_body(
     assert response_data["execution_directory"] is None
     assert response_data["client_id"] == "silly-cluster-client"
     assert response_data["status"] == JobSubmissionStatus.CREATED
-
-    assert response_data["execution_parameters"] is not None
-    assert response_data["execution_parameters"]["name"] == "job-submission-name"
-    assert response_data["execution_parameters"]["comment"] == "I am a comment"
 
 
 async def test_create_job_submission__with_execution_directory(
@@ -388,15 +244,7 @@ async def test_create_job_submission__with_execution_directory(
     create_data.pop("status", None)
     create_data.pop("client_id", None)
 
-    with mock.patch(
-        "jobbergate_api.apps.job_submissions.routers.get_job_properties_from_job_script"
-    ) as mocked:
-        mocked.return_value = JobProperties.parse_obj(create_data["execution_parameters"])
-        response = await client.post("/jobbergate/job-submissions", json=create_data)
-        mocked.assert_called_once_with(
-            job_script_data_as_string,
-            **create_data["execution_parameters"],
-        )
+    response = await client.post("/jobbergate/job-submissions", json=create_data)
 
     assert response.status_code == status.HTTP_201_CREATED, f"Create failed: {response.text}"
 
@@ -412,10 +260,6 @@ async def test_create_job_submission__with_execution_directory(
     assert response_data["execution_directory"] == "/some/fake/path"
     assert response_data["client_id"] == "dummy-cluster-client"
     assert response_data["status"] == JobSubmissionStatus.CREATED
-
-    assert response_data["execution_parameters"] is not None
-    assert response_data["execution_parameters"]["name"] == "job-submission-name"
-    assert response_data["execution_parameters"]["comment"] == "I am a comment"
 
 
 async def test_create_job_submission_without_job_script(
@@ -525,9 +369,6 @@ async def test_get_job_submission_by_id(
     assert response_data["owner_email"] == tester_email
     assert response_data["job_script_id"] is None
 
-    assert response_data["execution_parameters"]["name"] == "job-submission-name"
-    assert response_data["execution_parameters"]["comment"] == "I am a comment"
-
 
 async def test_get_job_submission_by_id_bad_permission(
     client,
@@ -588,28 +429,16 @@ async def test_get_job_submissions__no_param(
             job_script_id=inserted_job_script_id,
             name="sub1",
             owner_email="owner1@org.com",
-            execution_parameters={
-                "name": "job-submission-name-1",
-                "comment": "I am a comment",
-            },
         ),
         dict(
             job_script_id=inserted_job_script_id,
             name="sub2",
             owner_email="owner999@org.com",
-            execution_parameters={
-                "name": "job-submission-name-2",
-                "comment": "I am a comment",
-            },
         ),
         dict(
             job_script_id=inserted_job_script_id,
             name="sub3",
             owner_email="owner1@org.com",
-            execution_parameters={
-                "name": "job-submission-name-3",
-                "comment": "I am a comment",
-            },
         ),
     )
 
@@ -686,28 +515,16 @@ async def test_get_job_submissions__user_only(
             job_script_id=inserted_job_script_id,
             name="sub1",
             owner_email="owner1@org.com",
-            execution_parameters={
-                "name": "job-submission-name-1",
-                "comment": "I am a comment",
-            },
         ),
         dict(
             job_script_id=inserted_job_script_id,
             name="sub2",
             owner_email="owner999@org.com",
-            execution_parameters={
-                "name": "job-submission-name-2",
-                "comment": "I am a comment",
-            },
         ),
         dict(
             job_script_id=inserted_job_script_id,
             name="sub3",
             owner_email="owner1@org.com",
-            execution_parameters={
-                "name": "job-submission-name-3",
-                "comment": "I am a comment",
-            },
         ),
     )
 
@@ -1372,10 +1189,6 @@ async def test_job_submissions_agent_pending__success(
             owner_email="email1@dummy.com",
             status=JobSubmissionStatus.CREATED,
             client_id="dummy-client",
-            execution_parameters={
-                "name": "job-submission-name-1",
-                "comment": "I am a comment",
-            },
         ),
         dict(
             job_script_id=inserted_job_script_id,
@@ -1383,10 +1196,6 @@ async def test_job_submissions_agent_pending__success(
             owner_email="email2@dummy.com",
             status=JobSubmissionStatus.DONE,
             client_id="dummy-client",
-            execution_parameters={
-                "name": "job-submission-name-2",
-                "comment": "I am a comment",
-            },
         ),
         dict(
             job_script_id=inserted_job_script_id,
@@ -1394,10 +1203,6 @@ async def test_job_submissions_agent_pending__success(
             owner_email="email3@dummy.com",
             status=JobSubmissionStatus.CREATED,
             client_id="silly-client",
-            execution_parameters={
-                "name": "job-submission-name-3",
-                "comment": "I am a comment",
-            },
         ),
         dict(
             job_script_id=inserted_job_script_id,
@@ -1405,10 +1210,6 @@ async def test_job_submissions_agent_pending__success(
             owner_email="email4@dummy.com",
             status=JobSubmissionStatus.CREATED,
             client_id="dummy-client",
-            execution_parameters={
-                "name": "job-submission-name-4",
-                "comment": "I am a comment",
-            },
         ),
     )
 
