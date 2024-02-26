@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jobbergate-api"
-version = "4.5.0a2"
+version = "4.4.0a1"
 description = "Jobbergate API"
 authors = ["Omnivector Solutions <info@omnivector.solutions>"]
 license = "MIT"
@@ -105,16 +105,16 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 
 [tool.pytest_env]
-DEPLOY_ENV = "TEST"                         # Enforces that test database env vars will be used
-ARMASEC_DOMAIN = "armasec.dev"              # Must align with the rs256_domain fixture in armasec's pytest extension
-ARMASEC_DEBUG = false                       # Set this to True to debug armasec issues by seeing verbose logging
+DEPLOY_ENV = "TEST"                                              # Enforces that test database env vars will be used
+ARMASEC_DOMAIN = "armasec.dev"                                   # Must align with the rs256_domain fixture in armasec's pytest extension
+ARMASEC_DEBUG = false                                            # Set this to True to debug armasec issues by seeing verbose logging
 SENDGRID_FROM_EMAIL = "info@pytesting.com"
 SENDGRID_API_KEY = "test-api-key"
 AWS_ACCESS_KEY_ID = "compose-s3-key"
 AWS_SECRET_ACCESS_KEY = "compose-s3-secret"
-RABBITMQ_HOST = {value = "localhost", skip_if_set = true}
-RABBITMQ_USERNAME = {value = "local-user", skip_if_set = true}
-RABBITMQ_PASSWORD = {value = "local-pswd", skip_if_set = true}
+RABBITMQ_HOST = { value = "localhost", skip_if_set = true }
+RABBITMQ_USERNAME = { value = "local-user", skip_if_set = true }
+RABBITMQ_PASSWORD = { value = "local-pswd", skip_if_set = true }
 
 [tool.coverage.run]
 omit = ["jobbergate_api/main.py", "jobbergate_api/safe_types.py"]
