@@ -71,7 +71,6 @@ class JobbergateConfig(pydantic.BaseModel, extra=pydantic.Extra.allow):
 
     template_files: Optional[List[Path]]
     default_template: Optional[str] = None
-    output_directory: Path = Path(".")
     supporting_files_output_name: Optional[Dict[str, List[str]]] = None
     supporting_files: Optional[List[str]] = None
 

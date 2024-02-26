@@ -708,7 +708,6 @@ class TestGetTemplateOutputNameMapping:
     def test_default_template_valid_output_name(self):
         config = JobbergateConfig(
             default_template="templates/template.j2",
-            output_directory=pathlib.Path("."),
             supporting_files=None,
             supporting_files_output_name=None,
         )
@@ -719,7 +718,6 @@ class TestGetTemplateOutputNameMapping:
     def test_default_template_valid_output_name__legacy_mode(self, tweak_settings):
         config = JobbergateConfig(
             default_template="templates/template.j2",
-            output_directory=pathlib.Path("."),
             supporting_files=None,
             supporting_files_output_name=None,
         )
@@ -732,7 +730,6 @@ class TestGetTemplateOutputNameMapping:
         config = JobbergateConfig(
             template_files=[pathlib.Path("templates/template1.j2"), pathlib.Path("templates/template2.j2")],
             default_template="templates/template1.j2",
-            output_directory=pathlib.Path("."),
             supporting_files=["templates/support1.j2", "templates/support2.j2"],
             supporting_files_output_name={
                 "templates/support1.j2": ["output1.txt"],
@@ -747,7 +744,6 @@ class TestGetTemplateOutputNameMapping:
     def test_default_template_not_specified(self):
         config = JobbergateConfig(
             template_files=[],
-            output_directory=pathlib.Path("."),
             supporting_files_output_name=None,
             supporting_files=None,
         )

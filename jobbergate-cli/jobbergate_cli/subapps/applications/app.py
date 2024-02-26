@@ -303,6 +303,9 @@ def update(
         )
         raise e
     finally:
+        if not id and update_identifier:
+            # We need to fetch from new identifier if it was updated
+            identifier = update_identifier
         result = fetch_application_data(jg_ctx, id=id, identifier=identifier)
 
         render_single_result(

@@ -301,7 +301,6 @@ def test_render__non_fast_mode_and_job_submission(
                     "baz": "BAZ",
                     "template_files": None,
                     "default_template": "test-job-script.py.j2",
-                    "output_directory": ".",
                     "supporting_files_output_name": None,
                     "supporting_files": None,
                 }
@@ -419,7 +418,6 @@ def test_render__with_fast_mode_and_no_job_submission(
                     "baz": "zab",
                     "template_files": None,
                     "default_template": "test-job-script.py.j2",
-                    "output_directory": ".",
                     "supporting_files_output_name": None,
                     "supporting_files": None,
                 }

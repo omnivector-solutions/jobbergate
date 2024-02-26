@@ -243,7 +243,6 @@ def dummy_config_source():
           default_template: job-script-template.py.j2
           template_files:
             - job-script-template.py.j2
-          output_directory: .
           supporting_files_output_name:
           supporting_files:
           user_supplied_key: user-supplied-value
