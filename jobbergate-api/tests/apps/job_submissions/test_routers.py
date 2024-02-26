@@ -1219,6 +1219,7 @@ async def test_job_submissions_agent_pending__success(
     )
 
     for item in submission_list:
+        item["sbatch_arguments"] = f"--comment={item['name']}"
         await synth_services.crud.job_submission.create(**item)
 
     inject_security_header(
@@ -1237,6 +1238,7 @@ async def test_job_submissions_agent_pending__success(
         "email4@dummy.com",
     ]
     assert [i["job_script"]["id"] for i in data["items"]] == [inserted_job_script_id] * 2
+    assert [i["sbatch_arguments"] for i in data["items"]] == [i["sbatch_arguments"] for i in data["items"]]
 
     assert all(len(i["job_script"]["files"]) >= 1 for i in data["items"])
 
