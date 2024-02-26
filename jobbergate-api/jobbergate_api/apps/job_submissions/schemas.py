@@ -100,6 +100,10 @@ job_submission_meta_mapper = MetaMapper(
         description="Indicates if the job submission has been archived.",
         example=False,
     ),
+    sbatch_arguments=MetaField(
+        description="The arguments used to submit the job to the slurm queue",
+        example="--ntasks=1 --cpus-per-task=1 --mem=4G --partition=compute",
+    ),
 )
 
 
@@ -114,6 +118,7 @@ class JobSubmissionCreateRequest(BaseModel):
     slurm_job_id: Optional[NonNegativeInt]
     execution_directory: Optional[LengthLimitedStr]
     client_id: Optional[LengthLimitedStr]
+    sbatch_arguments: Optional[str] = Field(default=None, max_length=1024)
 
     @validator("execution_directory", pre=True, always=True)
     def empty_str_to_none(cls, v):
@@ -168,6 +173,7 @@ class JobSubmissionDetailedView(JobSubmissionListView):
     execution_directory: Optional[str]
     report_message: Optional[str]
     slurm_job_info: Optional[str]
+    sbatch_arguments: Optional[str]
 
 
 class PendingJobSubmission(BaseModel):
@@ -183,6 +189,7 @@ class PendingJobSubmission(BaseModel):
     execution_directory: Optional[str]
     execution_parameters: dict = Field(default_factory=dict)
     job_script: JobScriptDetailedView
+    sbatch_arguments: Optional[str]
 
     class Config:
         orm_mode = True
