@@ -29,6 +29,7 @@ services:
       - ARMASEC_DEBUG=false
       - ARMASEC_USE_HTTPS=false
       - LOG_LEVEL=DEBUG
+      - SQL_LOG_LEVEL=DEBUG
     ports:
       - 8000:80
     healthcheck:

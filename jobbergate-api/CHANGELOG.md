@@ -4,6 +4,9 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+- Removed SQL savepoints for auto-sessions
+- Added configurable SQL logging
+
 
 ## 4.4.0a2 -- 2024-03-08
 - Pinned aio-pika dependency to avoid issues with opentelemetry [PENG-2111]
