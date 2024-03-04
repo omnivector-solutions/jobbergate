@@ -72,7 +72,7 @@ async def test_create_job_submission__on_site_submission(
     assert response_data["execution_directory"] is None
     assert response_data["client_id"] == "dummy-cluster-client"
     assert response_data["status"] == JobSubmissionStatus.SUBMITTED
-    assert response_data["sbatch_arguments"] == "--name foo --comment=bar"
+    assert response_data["sbatch_arguments"] == ["--name foo", "--comment=bar"]
 
 
 async def test_create_job_submission__with_client_id_in_token(
@@ -131,7 +131,7 @@ async def test_create_job_submission__with_client_id_in_token(
     assert response_data["execution_directory"] is None
     assert response_data["client_id"] == "dummy-cluster-client"
     assert response_data["status"] == JobSubmissionStatus.CREATED
-    assert response_data["sbatch_arguments"] == "--name foo --comment=bar"
+    assert response_data["sbatch_arguments"] == ["--name foo", "--comment=bar"]
 
     created_id = response_data["id"]
 
@@ -147,7 +147,7 @@ async def test_create_job_submission__with_client_id_in_token(
     assert response_data["execution_directory"] is None
     assert response_data["client_id"] == "dummy-cluster-client"
     assert response_data["status"] == JobSubmissionStatus.CREATED
-    assert response_data["sbatch_arguments"] == "--name foo --comment=bar"
+    assert response_data["sbatch_arguments"] == ["--name foo", "--comment=bar"]
 
 
 async def test_create_job_submission__with_client_id_in_request_body(
@@ -205,7 +205,7 @@ async def test_create_job_submission__with_client_id_in_request_body(
     assert response_data["execution_directory"] is None
     assert response_data["client_id"] == "silly-cluster-client"
     assert response_data["status"] == JobSubmissionStatus.CREATED
-    assert response_data["sbatch_arguments"] == "--name foo --comment=bar"
+    assert response_data["sbatch_arguments"] == ["--name foo", "--comment=bar"]
 
 
 async def test_create_job_submission__with_execution_directory(
@@ -264,7 +264,7 @@ async def test_create_job_submission__with_execution_directory(
     assert response_data["execution_directory"] == "/some/fake/path"
     assert response_data["client_id"] == "dummy-cluster-client"
     assert response_data["status"] == JobSubmissionStatus.CREATED
-    assert response_data["sbatch_arguments"] == "--name foo --comment=bar"
+    assert response_data["sbatch_arguments"] == ["--name foo", "--comment=bar"]
 
 
 async def test_create_job_submission_without_job_script(

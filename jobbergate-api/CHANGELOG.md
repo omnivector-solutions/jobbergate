@@ -6,7 +6,7 @@ This file keeps track of all notable changes to jobbergate-api
 
 - Modified the interface with slurm from slurmrestd to sbatch command [ASP-4584]
   - Removed database column `JobSubmission.execution_parameters`
-  - Added database column `JobSubmission.sbatch_arguments`
+  - Added database column `JobSubmission.sbatch_arguments` as a list of strings
 
 ## 4.5.0a1 -- 2024-02-22
 

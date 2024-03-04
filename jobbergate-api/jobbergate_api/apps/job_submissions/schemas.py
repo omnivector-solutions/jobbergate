@@ -103,7 +103,7 @@ job_submission_meta_mapper = MetaMapper(
     ),
     sbatch_arguments=MetaField(
         description="The arguments used to submit the job to the slurm queue",
-        example="--ntasks=1 --cpus-per-task=1 --mem=4G --partition=compute",
+        example=["--exclusive", "--job-name=example-job"],
     ),
 )
 
@@ -119,7 +119,7 @@ class JobSubmissionCreateRequest(BaseModel):
     slurm_job_id: Optional[NonNegativeInt]
     execution_directory: Optional[LengthLimitedStr]
     client_id: Optional[LengthLimitedStr]
-    sbatch_arguments: Optional[str] = Field(default=None, max_length=1024)
+    sbatch_arguments: Optional[list[LengthLimitedStr]] = Field(None, max_items=50)
 
     class Config:
         schema_extra = job_submission_meta_mapper
@@ -164,7 +164,7 @@ class JobSubmissionDetailedView(JobSubmissionListView):
     execution_directory: Optional[Path]
     report_message: Optional[str]
     slurm_job_info: Optional[str]
-    sbatch_arguments: Optional[str]
+    sbatch_arguments: Optional[list[str]]
 
 
 class PendingJobSubmission(BaseModel):
@@ -179,7 +179,7 @@ class PendingJobSubmission(BaseModel):
     owner_email: str
     execution_directory: Optional[Path]
     job_script: JobScriptDetailedView
-    sbatch_arguments: Optional[str]
+    sbatch_arguments: Optional[list[str]]
 
     class Config:
         orm_mode = True
