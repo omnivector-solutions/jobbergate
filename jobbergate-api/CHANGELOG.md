@@ -7,7 +7,7 @@ This file keeps track of all notable changes to jobbergate-api
 - Fixed a bug when an empty string is passed as a value for `execution_directory` on job submissions
 - Modified the interface with slurm from slurmrestd to sbatch command [ASP-4584]
   - Removed database column `JobSubmission.execution_parameters`
-  - Added database column `JobSubmission.sbatch_arguments`
+  - Added database column `JobSubmission.sbatch_arguments` as a list of strings
 
 ## 4.4.0 -- 2024-03-19
 

@@ -4,7 +4,7 @@ Database model for the JobSubmission resource.
 
 from __future__ import annotations
 
-from sqlalchemy import Enum, ForeignKey, Integer, String
+from sqlalchemy import ARRAY, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
 from sqlalchemy.sql.expression import Select
 
@@ -57,7 +57,7 @@ class JobSubmission(CrudMixin, Base):
         index=True,
     )
     report_message: Mapped[str] = mapped_column(String, nullable=True)
-    sbatch_arguments: Mapped[str] = mapped_column(String, nullable=True)
+    sbatch_arguments: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=True)
 
     job_script: Mapped[JobScript] = relationship(
         "JobScript",
