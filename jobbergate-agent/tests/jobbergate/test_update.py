@@ -1,4 +1,5 @@
 import json
+from unittest import mock
 
 import httpx
 import pytest
@@ -12,7 +13,7 @@ from jobbergate_agent.jobbergate.update import (
     update_job_data,
 )
 from jobbergate_agent.settings import SETTINGS
-from jobbergate_agent.utils.exception import JobbergateApiError, SlurmrestdError
+from jobbergate_agent.utils.exception import JobbergateApiError
 
 
 @pytest.mark.asyncio
@@ -22,48 +23,28 @@ async def test_fetch_job_data__success():
     Test that the ``fetch_job_data()`` function can successfully retrieve
     job data from Slurm as a ``SlurmJobData``.
     """
-    async with respx.mock:
-        respx.get(f"{SETTINGS.SLURM_RESTD_VERSIONED_URL}/job/123").mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(
-                    jobs=[
-                        dict(
-                            job_state="FAILED",
-                            job_id=123,
-                            state_reason="NonZeroExitCode",
-                            foo="bar",
-                        ),
-                    ],
-                ),
-            )
-        )
-
-        result: SlurmJobData = await fetch_job_data(123)
-
-        assert result.job_id == 123
-        assert result.job_state == "FAILED"
-        assert result.state_reason == "NonZeroExitCode"
-        assert result.job_info is not None
-        assert json.loads(result.job_info) == dict(
+    mocked_sbatch = mock.MagicMock()
+    mocked_sbatch.get_job_info.return_value = json.dumps(
+        dict(
             job_state="FAILED",
             job_id=123,
             state_reason="NonZeroExitCode",
             foo="bar",
         )
+    )
 
+    result: SlurmJobData = await fetch_job_data(123, mocked_sbatch)
 
-@pytest.mark.asyncio
-@pytest.mark.usefixtures("mock_access_token")
-async def test_fetch_job_data__raises_error_if_slurm_request_fails():
-    """
-    Test that the ``fetch_job_data()`` function raises an error if the slurm api request does not return 200.
-    """
-    async with respx.mock:
-        respx.get(f"{SETTINGS.SLURM_RESTD_VERSIONED_URL}/job/123").mock(return_value=httpx.Response(status_code=400))
-
-        with pytest.raises(SlurmrestdError, match="Failed to fetch job state from slurm"):
-            await fetch_job_data(123)
+    assert result.job_id == 123
+    assert result.job_state == "FAILED"
+    assert result.state_reason == "NonZeroExitCode"
+    assert result.job_info is not None
+    assert json.loads(result.job_info) == dict(
+        job_state="FAILED",
+        job_id=123,
+        state_reason="NonZeroExitCode",
+        foo="bar",
+    )
 
 
 @pytest.mark.asyncio
@@ -72,19 +53,15 @@ async def test_fetch_job_data__reports_status_as_UNKOWN_if_slurm_job_id_is_not_f
     """
     Test that the ``fetch_job_data()`` reports the job state as UNKNOWN if the job matching job id is not found.
     """
-    async with respx.mock:
-        respx.get(f"{SETTINGS.SLURM_RESTD_VERSIONED_URL}/job/123").mock(
-            return_value=httpx.Response(
-                status_code=404,
-            )
-        )
+    mocked_sbatch = mock.MagicMock()
+    mocked_sbatch.get_job_info.side_effect = RuntimeError("Job not found")
 
-        result: SlurmJobData = await fetch_job_data(123)
+    result: SlurmJobData = await fetch_job_data(123, mocked_sbatch)
 
-        assert result.job_id == 123
-        assert result.job_info == "{}"
-        assert result.job_state == "UNKNOWN"
-        assert result.state_reason == "Slurm did not find a job matching id 123"
+    assert result.job_id == 123
+    assert result.job_info == "{}"
+    assert result.job_state == "UNKNOWN"
+    assert result.state_reason == "Slurm did not find a job matching id 123"
 
 
 @pytest.mark.asyncio
@@ -225,6 +202,9 @@ async def test_update_active_jobs(mocker):
     retrieve the job data from slurm, and update the slurm job data on the submission via the API.
     """
 
+    mocked_sbatch = mock.MagicMock()
+    mocker.patch("jobbergate_agent.jobbergate.update.SbatchHandler", return_value=mocked_sbatch)
+
     mocker.patch(
         "jobbergate_agent.jobbergate.update.fetch_active_submissions",
         return_value=[
@@ -234,7 +214,7 @@ async def test_update_active_jobs(mocker):
         ],
     )
 
-    def _mocked_fetch_job_data(slurm_job_id):
+    def _mocked_fetch_job_data(slurm_job_id, *args, **kwargs):
         if slurm_job_id == 22:
             raise Exception("BOOM!")
         return {
@@ -263,7 +243,9 @@ async def test_update_active_jobs(mocker):
 
     await update_active_jobs()
 
-    mock_fetch.assert_has_calls([mocker.call(11), mocker.call(22), mocker.call(33)])
+    mock_fetch.assert_has_calls(
+        [mocker.call(11, mocked_sbatch), mocker.call(22, mocked_sbatch), mocker.call(33, mocked_sbatch)]
+    )
     assert mock_fetch.call_count == 3
 
     mock_update.assert_has_calls(

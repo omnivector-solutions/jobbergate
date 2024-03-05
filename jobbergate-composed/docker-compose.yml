@@ -110,7 +110,6 @@ services:
       - ./slurm-work-dir:/slurm-work-dir/
     command: ["jg-run"]
     environment:
-      - JOBBERGATE_AGENT_BASE_SLURMRESTD_URL=http://slurmrestd:6820
       - JOBBERGATE_AGENT_X_SLURM_USER_NAME=local-user
       - JOBBERGATE_AGENT_DEFAULT_SLURM_WORK_DIR=/slurm-work-dir
       - JOBBERGATE_AGENT_BASE_API_URL=http://jobbergate-api:80
@@ -120,7 +119,6 @@ services:
       - JOBBERGATE_AGENT_OIDC_CLIENT_SECRET=SVkaJ2f9xeYfOVzQPHXYyiwr12za4xGF
       - JOBBERGATE_AGENT_OIDC_USE_HTTPS=false
       - JOBBERGATE_AGENT_CACHE_DIR=/cache
-      - JOBBERGATE_AGENT_SLURMRESTD_JWT_KEY_STRING=${JWT_SECRET:-supersecret}
       - JOBBERGATE_AGENT_TASK_JOBS_INTERVAL_SECONDS=15
       - JOBBERGATE_AGENT_SLURM_RESTD_VERSION=v0.0.37
     depends_on:
@@ -331,31 +329,6 @@ services:
       - ./slurm-work-dir:/slurm-work-dir
     expose:
       - "6818"
-    depends_on:
-      - slurmctld
-
-  slurmrestd:
-    build:
-      context: .
-      dockerfile: Dockerfile-slurm
-    image: slurm-docker-cluster
-    networks:
-      - jobbergate-net
-    command: ["slurmrestd"]
-    environment:
-      - SLURMRESTD_SECURITY=disable_unshare_files,disable_unshare_sysv,disable_user_check
-      - SLURM_JWT=daemon
-    container_name: slurmrestd
-    hostname: slurmrestd
-    volumes:
-      - etc_munge:/etc/munge
-      - var_log_slurm:/var/log/slurm
-      - ./slurm-fake-nfs:/nfs
-      - ./slurm-work-dir:/slurm-work-dir
-    expose:
-      - "6820"
-    ports:
-      - 6820:6820
     depends_on:
       - slurmctld
 

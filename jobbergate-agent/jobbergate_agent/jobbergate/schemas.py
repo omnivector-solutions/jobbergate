@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import pydantic
 
@@ -34,7 +34,7 @@ class PendingJobSubmission(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     name: str
     owner_email: str
     execution_directory: Optional[Path]
-    execution_parameters: Dict[str, Any] = pydantic.Field(default_factory=dict)
+    sbatch_parameters: List[str] = pydantic.Field(default_factory=list)
     job_script: JobScript
 
 

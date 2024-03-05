@@ -4,22 +4,15 @@ Define tests for the submission functions of the jobbergate section.
 
 import json
 import re
+from unittest import mock
 
 import httpx
 import pytest
 import respx
-from pydantic import ValidationError
 
-from jobbergate_agent.jobbergate.schemas import (
-    JobScriptFile,
-    PendingJobSubmission,
-    SlurmJobParams,
-    SlurmJobSubmission,
-    SlurmSubmitResponse,
-)
+from jobbergate_agent.jobbergate.schemas import JobScriptFile, PendingJobSubmission
 from jobbergate_agent.jobbergate.submit import (
     fetch_pending_submissions,
-    get_job_parameters,
     get_job_script_file,
     mark_as_rejected,
     mark_as_submitted,
@@ -27,11 +20,10 @@ from jobbergate_agent.jobbergate.submit import (
     retrieve_submission_file,
     submit_job_script,
     submit_pending_jobs,
-    unpack_error_from_slurm_response,
     write_submission_file,
 )
 from jobbergate_agent.settings import SETTINGS
-from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError, SlurmrestdError
+from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError
 from jobbergate_agent.utils.user_mapper import SingleUserMapper, SlurmUserMapper, manufacture
 
 
@@ -420,7 +412,7 @@ async def test_mark_as_rejected__raises_JobbergateApiError_if_the_response_is_no
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
-async def test_submit_job_script__success(dummy_pending_job_submission_data, dummy_template_source):
+async def test_submit_job_script__success(mocker, dummy_pending_job_submission_data, dummy_template_source):
     """
     Test that the ``submit_job_script()`` successfully submits a job.
 
@@ -430,17 +422,12 @@ async def test_submit_job_script__success(dummy_pending_job_submission_data, dum
     user_mapper = SingleUserMapper("dummy-user")
 
     pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
-    name = pending_job_submission.name
+
+    mocked_sbatch = mock.MagicMock()
+    mocked_sbatch.run = lambda *args, **kwargs: 13
+    mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
 
     async with respx.mock:
-        submit_route = respx.post(f"{SETTINGS.SLURM_RESTD_VERSIONED_URL}/job/submit")
-        submit_route.mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(job_id=13),
-            )
-        )
-
         download_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh")
         download_route.mock(
             return_value=httpx.Response(
@@ -452,24 +439,7 @@ async def test_submit_job_script__success(dummy_pending_job_submission_data, dum
         slurm_job_id = await submit_job_script(pending_job_submission, user_mapper)
 
         assert slurm_job_id == 13
-        assert submit_route.call_count == 1
         assert download_route.call_count == 1
-        last_request = submit_route.calls.last.request
-        assert last_request.method == "POST"
-        assert last_request.headers["x-slurm-user-name"] == "dummy-user"
-        assert last_request.headers["x-slurm-user-token"] == "default-dummy-token"
-        actual_response = last_request.content.decode("utf-8")
-        expected_response = SlurmJobSubmission(
-            script=dummy_template_source,
-            job=SlurmJobParams(
-                name=name,
-                current_working_directory=SETTINGS.DEFAULT_SLURM_WORK_DIR,
-                standard_output=SETTINGS.DEFAULT_SLURM_WORK_DIR / f"{name}.out",
-                standard_error=SETTINGS.DEFAULT_SLURM_WORK_DIR / f"{name}.err",
-            ),
-        ).json()
-
-        assert actual_response == expected_response
 
 
 @pytest.mark.asyncio
@@ -489,32 +459,18 @@ async def test_submit_job_script__with_non_default_execution_directory(
     """
     user_mapper = SingleUserMapper("dummy-user")
 
-    mocker.patch("jobbergate_agent.clients.slurmrestd.acquire_token", return_value="dummy-token")
     exe_path = tmp_path / "exec"
     exe_path.mkdir()
     pending_job_submission = PendingJobSubmission(
         **dummy_pending_job_submission_data,
         execution_directory=exe_path,
     )
-    name = pending_job_submission.name
 
-    job_parameters = get_job_parameters(
-        pending_job_submission.execution_parameters,
-        name=name,
-        current_working_directory=exe_path,
-        standard_output=exe_path / f"{name}.out",
-        standard_error=exe_path / f"{name}.err",
-    )
+    mocked_sbatch = mock.MagicMock()
+    mocked_sbatch.run = lambda *args, **kwargs: 13
+    mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
 
     async with respx.mock:
-        submit_route = respx.post(f"{SETTINGS.SLURM_RESTD_VERSIONED_URL}/job/submit")
-        submit_route.mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(job_id=13),
-            )
-        )
-
         download_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh")
         download_route.mock(
             return_value=httpx.Response(
@@ -526,19 +482,7 @@ async def test_submit_job_script__with_non_default_execution_directory(
         slurm_job_id = await submit_job_script(pending_job_submission, user_mapper)
 
         assert slurm_job_id == 13
-        assert submit_route.call_count == 1
         assert download_route.call_count == 1
-        last_request = submit_route.calls.last.request
-        assert last_request.method == "POST"
-        assert last_request.headers["x-slurm-user-name"] == "dummy-user"
-        assert last_request.headers["x-slurm-user-token"] == "dummy-token"
-        assert (
-            last_request.content.decode("utf-8")
-            == SlurmJobSubmission(
-                script=dummy_template_source,
-                job=job_parameters,
-            ).json()
-        )
 
 
 @pytest.mark.usefixtures("mock_access_token")
@@ -555,16 +499,11 @@ async def test_submit_job_script__raises_exception_if_no_executable_script_was_f
 
     mock_mark_as_rejected = mocker.patch("jobbergate_agent.jobbergate.submit.mark_as_rejected")
 
-    async with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/oauth/token").mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(access_token="dummy-token"),
-            )
-        )
+    mocked_sbatch = mock.MagicMock()
+    mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
 
-        with pytest.raises(JobSubmissionError, match="Could not find an executable"):
-            await submit_job_script(pending_job_submission, SingleUserMapper())
+    with pytest.raises(JobSubmissionError, match="Could not find an executable"):
+        await submit_job_script(pending_job_submission, SingleUserMapper())
 
     mock_mark_as_rejected.assert_called_once_with(
         dummy_pending_job_submission_data["id"],
@@ -574,12 +513,12 @@ async def test_submit_job_script__raises_exception_if_no_executable_script_was_f
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
-async def test_submit_job_script__raises_exception_if_submit_call_response_is_not_200(
+async def test_submit_job_script__raises_exception_if_sbatch_fails(
     dummy_pending_job_submission_data, mocker, dummy_template_source
 ):
     """
-    Test that ``submit_job_script()`` raises an exception if the response from Slurm
-    REST API is nota 200. Verifies that the error message is included in the raised
+    Test that ``submit_job_script()`` raises an exception if the response from sbatch
+    is not 0. Verifies that the error message is included in the raised
     exception and that the ``mark_as_rejected`` method is called for the job submission.
     """
     user_mapper = SingleUserMapper("dummy-user")
@@ -588,26 +527,15 @@ async def test_submit_job_script__raises_exception_if_submit_call_response_is_no
 
     mock_mark_as_rejected = mocker.patch("jobbergate_agent.jobbergate.submit.mark_as_rejected")
 
+    mocked_sbatch = mock.MagicMock()
+    mocked_sbatch.run.side_effect = RuntimeError("BOOM!")
+    mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
+
     async with respx.mock:
         respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/oauth/token").mock(
             return_value=httpx.Response(
                 status_code=200,
                 json=dict(access_token="dummy-token"),
-            )
-        )
-
-        submit_route = respx.post(f"{SETTINGS.SLURM_RESTD_VERSIONED_URL}/job/submit")
-        submit_route.mock(
-            return_value=httpx.Response(
-                status_code=400,
-                json=dict(
-                    errors=[
-                        dict(
-                            error="BOOM!",
-                            errno=13,
-                        ),
-                    ],
-                ),
             )
         )
 
@@ -620,7 +548,7 @@ async def test_submit_job_script__raises_exception_if_submit_call_response_is_no
         )
 
         with pytest.raises(
-            SlurmrestdError,
+            JobSubmissionError,
             match="Failed to submit job to slurm",
         ):
             await submit_job_script(pending_job_submission, user_mapper)
@@ -635,62 +563,8 @@ async def test_submit_job_script__raises_exception_if_submit_call_response_is_no
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
-async def test_submit_job_script__raises_exception_if_response_cannot_be_unpacked(
-    dummy_pending_job_submission_data,
-    mocker,
-    dummy_template_source,
-):
-    """
-    Test that ``submit_job_script()`` raises an exception if the response from Slurm
-    REST API is nota 200. Verifies that the error message is included in the raised
-    exception and that the ``mark_as_rejected`` method is called for the job submission.
-    """
-    user_mapper = SingleUserMapper("dummy-user")
-
-    pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
-
-    mock_mark_as_rejected = mocker.patch("jobbergate_agent.jobbergate.submit.mark_as_rejected")
-
-    async with respx.mock:
-        respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/oauth/token").mock(
-            return_value=httpx.Response(
-                status_code=200,
-                json=dict(access_token="dummy-token"),
-            )
-        )
-
-        submit_route = respx.post(f"{SETTINGS.SLURM_RESTD_VERSIONED_URL}/job/submit")
-        submit_route.mock(
-            return_value=httpx.Response(
-                status_code=200,
-                content="BAD DATA",
-            )
-        )
-
-        download_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh")
-        download_route.mock(
-            return_value=httpx.Response(
-                status_code=200,
-                content=dummy_template_source.encode("utf-8"),
-            ),
-        )
-
-        with pytest.raises(SlurmrestdError, match="Failed to submit job to slurm"):
-            await submit_job_script(pending_job_submission, user_mapper)
-
-    assert download_route.call_count == 1
-
-    mock_mark_as_rejected.assert_called_once_with(
-        dummy_pending_job_submission_data["id"],
-        RegexArgMatcher(".*Failed to submit job to slurm.*BAD DATA.*", flags=re.DOTALL),
-    )
-
-
-@pytest.mark.asyncio
-@pytest.mark.usefixtures("mock_access_token")
 async def test_submit_pending_jobs(
     dummy_job_script_files,
-    tweak_settings,
     dummy_template_source,
     mocker,
 ):
@@ -762,84 +636,3 @@ async def test_submit_pending_jobs(
         ]
     )
     assert mock_mark.call_count == 2
-
-
-class TestGetJobParameters:
-    """
-    Test the ``get_job_parameters()`` function.
-    """
-
-    def test_base_case__fail(self):
-        """
-        Base case should fail, since name is a required field.
-        """
-        with pytest.raises(
-            ValidationError,
-            match="1 validation error for SlurmJobParams\nname\n  field required.*",
-        ):
-            get_job_parameters(slurm_parameters={})
-
-    def test_base_case__success(self):
-        """
-        Base case should succeed with a valid name.
-        """
-        desired_value = SlurmJobParams(name="test-test")
-
-        actual_value = get_job_parameters(slurm_parameters={}, name="test-test")
-
-        assert actual_value == desired_value
-
-    def test_priority(self):
-        """
-        Test that slurm parameters have priority over extra keyword arguments.
-        """
-        desired_value = SlurmJobParams(name="high-priority")
-
-        actual_value = get_job_parameters(slurm_parameters=dict(name="high-priority"), name="test-test")
-
-        assert actual_value == desired_value
-
-    def test_extra_arguments(self):
-        """
-        Test that SlurmJobParams can be constructed with extra keyword arguments.
-        """
-        desired_value = SlurmJobParams(foo="bar", name="test-test")
-
-        actual_value = get_job_parameters(slurm_parameters=dict(foo="bar"), name="test-test")
-
-        assert actual_value == desired_value
-
-
-def test_unpack_error_from_slurm_response():
-    """
-    Test that the function ``unpack_error_from_slurm_response()`` returns the correct error.
-    """
-    response = httpx.Response(
-        status_code=400,
-        json={
-            "meta": {
-                "plugin": {"type": "openapi/v0.0.36", "name": "REST v0.0.36"},
-                "Slurm": {
-                    "version": {"major": 21, "micro": 6, "minor": 8},
-                    "release": "21.08.6",
-                },
-            },
-            "errors": [
-                {"error": "Unable to read integer value", "error_code": 9202},
-                {
-                    "error": "process failed for key wait_all_nodes with error: Unspecified error",
-                    "error_code": 1,
-                },
-                {"error_code": 9001, "error": "Failure during parsing"},
-            ],
-        },
-    )
-
-    desired_message = (
-        "Unable to read integer value;"
-        " process failed for key wait_all_nodes with error: Unspecified error;"
-        " Failure during parsing"
-    )
-    actual_error = unpack_error_from_slurm_response(SlurmSubmitResponse.parse_raw(response.content))
-
-    assert actual_error == desired_message
