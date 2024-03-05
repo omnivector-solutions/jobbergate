@@ -3,10 +3,9 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List
 
 from buzz import DoExceptParams
-from jobbergate_core.tools.sbatch import SbatchHandler
+from jobbergate_core.tools.sbatch import SbatchHandler, inject_sbatch_params
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
@@ -32,9 +31,9 @@ async def write_submission_file(file_content: str, filename: str, submit_dir: Pa
     """
     Write a decoded file content to the submit_dir.
     """
-    local_script_path = submit_dir / filename
-    local_script_path.parent.mkdir(parents=True, exist_ok=True)
-    local_script_path.write_bytes(file_content.encode("utf-8"))
+    safe_filename = Path(filename).name
+    local_script_path = submit_dir / safe_filename
+    local_script_path.write_text(file_content, encoding="utf-8")
 
     logger.debug(f"Copied file to {local_script_path}")
     return local_script_path
@@ -49,39 +48,32 @@ async def process_supporting_files(pending_job_submission: PendingJobSubmission,
     """
     supporting_files = [file for file in pending_job_submission.job_script.files if file.file_type == FileType.SUPPORT]
 
-    if SETTINGS.WRITE_SUBMISSION_FILES:
-        # Write the supporting submission support files to the submit dir
-        logger.debug(f"Writing supporting submission files to {submit_dir}")
-
-        # Retrieve the files from the backend
-        files_to_retrieve = [retrieve_submission_file(file) for file in supporting_files]
-        files_content = await asyncio.gather(*files_to_retrieve)
-
-        # Write the files to the submit dir
-        files_to_write = [
-            write_submission_file(file_content, file.filename, submit_dir)
-            for file_content, file in zip(files_content, supporting_files)
-        ]
-        return await asyncio.gather(*files_to_write)
-    else:
-        # Reject the submission if there are supporting files with WRITE_SUBMISSION_FILES set to False
+    if not supporting_files:
+        return []
+    elif supporting_files and not SETTINGS.WRITE_SUBMISSION_FILES:
         logger.debug(f"Can't write files for submission {pending_job_submission.id}")
-
-        JobSubmissionError.require_condition(
-            not supporting_files,
+        raise JobSubmissionError(
             "Job submission rejected. The submission has supporting files that can't be downloaded to "
             "the execution dir. Set `WRITE_SUBMISSION_FILES` setting to `True` to download the "
             "job script files to the execution dir.",
         )
-    return []
+    # Write the supporting submission support files to the submit dir
+    logger.debug(f"Writing supporting submission files to {submit_dir}")
+
+    # Retrieve the files from the backend
+    files_to_retrieve = [retrieve_submission_file(file) for file in supporting_files]
+    files_content = await asyncio.gather(*files_to_retrieve)
+
+    # Write the files to the submit dir
+    files_to_write = [
+        write_submission_file(file_content, file.filename, submit_dir)
+        for file_content, file in zip(files_content, supporting_files)
+    ]
+    return await asyncio.gather(*files_to_write)
 
 
-async def get_job_script_file(pending_job_submission: PendingJobSubmission, submit_dir: Path) -> str:
-    """
-    Get the job script file from the backend.
-
-    Write the job script file to the submit_dir if WRITE_SUBMISSION_FILES is set to True.
-    """
+async def get_job_script_file(pending_job_submission: PendingJobSubmission, submit_dir: Path) -> Path:
+    """Get the job script file from the backend."""
     job_script_file = None
 
     for file in pending_job_submission.job_script.files:
@@ -99,13 +91,15 @@ async def get_job_script_file(pending_job_submission: PendingJobSubmission, subm
 
     job_script = await retrieve_submission_file(job_script_file)
 
-    if SETTINGS.WRITE_SUBMISSION_FILES:
-        await write_submission_file(job_script, job_script_file.filename, submit_dir)
+    if pending_job_submission.sbatch_parameters:
+        job_script = inject_sbatch_params(
+            job_script, pending_job_submission.sbatch_parameters, "Sbatch params injected at submission time"
+        )
 
-    return job_script
+    return await write_submission_file(job_script, job_script_file.filename, submit_dir)
 
 
-async def fetch_pending_submissions() -> List[PendingJobSubmission]:
+async def fetch_pending_submissions() -> list[PendingJobSubmission]:
     """
     Retrieve a list of pending job_submissions.
     """
@@ -200,7 +194,7 @@ async def submit_job_script(
         submission_directory=submit_dir,
     )
 
-    with TemporaryDirectory() as tmp_dir:
+    with TemporaryDirectory(prefix=str(pending_job_submission.id), suffix=pending_job_submission.name) as tmp_dir:
         tmp_dir_path = Path(tmp_dir)
         async with handle_errors_async(
             "Error processing job-script files",
@@ -213,10 +207,11 @@ async def submit_job_script(
             logger.debug(f"Fetching job script for job submission {pending_job_submission.id}")
             job_script = await get_job_script_file(pending_job_submission, tmp_dir_path)
 
-            sbatch_handler.create_submission_directory()
-            job_script_final = sbatch_handler.copy_file_to_submission_directory(job_script)
-            for file in supporting_files:
-                sbatch_handler.copy_file_to_submission_directory(file)
+            if SETTINGS.WRITE_SUBMISSION_FILES:
+                sbatch_handler.create_submission_directory()
+                job_script = sbatch_handler.copy_file_to_submission_directory(job_script)
+                for file in supporting_files:
+                    sbatch_handler.copy_file_to_submission_directory(file)
 
     async with handle_errors_async(
         "Failed to submit job to slurm",
@@ -224,7 +219,7 @@ async def submit_job_script(
         do_except=_reject_handler,
     ):
         logger.debug(f"Submitting job script for job submission {pending_job_submission.id}")
-        slurm_job_id = sbatch_handler.run(job_script_final)
+        slurm_job_id = sbatch_handler.run(job_script)
 
     logger.debug(f"Received slurm job id {slurm_job_id} for job submission {pending_job_submission.id}")
 
