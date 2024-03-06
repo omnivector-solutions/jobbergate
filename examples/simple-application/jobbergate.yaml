@@ -5,4 +5,4 @@ application_config:
   foo: FOO
   bar: BAR
   baz: BAZ
-  workdir: /nfs
+  filename: dummy-result.txt
