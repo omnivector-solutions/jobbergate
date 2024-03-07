@@ -101,6 +101,8 @@ services:
     build:
       context: ../jobbergate-agent/
       dockerfile: Dockerfile.dev
+    container_name: jg-agent
+    hostname: jg-agent
     networks:
       - jobbergate-net
     volumes:
