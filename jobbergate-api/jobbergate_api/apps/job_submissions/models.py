@@ -4,10 +4,7 @@ Database model for the JobSubmission resource.
 
 from __future__ import annotations
 
-from typing import Any
-
-from sqlalchemy import Enum, ForeignKey, Integer, String, text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import ARRAY, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
 from sqlalchemy.sql.expression import Select
 
@@ -34,7 +31,7 @@ class JobSubmission(CrudMixin, Base):
         client_id: The id of the custer this submission runs on.
         status: The status of the job submission.
         report_message: The message returned by the job.
-        execution_parameters: The properties of the job.
+        sbatch_arguments: The arguments used to submit the job to the slurm queue.
 
     See Mixin class definitions for other columns
     """
@@ -60,14 +57,7 @@ class JobSubmission(CrudMixin, Base):
         index=True,
     )
     report_message: Mapped[str] = mapped_column(String, nullable=True)
-
-    execution_parameters: Mapped[dict[str, Any]] = mapped_column(
-        "template_vars",
-        JSONB,
-        nullable=False,
-        default=text("'{}'::jsonb"),
-        server_default=text("'{}'::jsonb"),
-    )
+    sbatch_arguments: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=True)
 
     job_script: Mapped[JobScript] = relationship(
         "JobScript",

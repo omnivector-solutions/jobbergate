@@ -1,6 +1,7 @@
 """
 Pytest helpers to use in all apps.
 """
+
 from pytest import fixture
 
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
@@ -100,7 +101,7 @@ def job_submission_data(base_data):
         **base_data,
         "client_id": "dummy-client-id",
         "status": JobSubmissionStatus.CREATED,
-        "execution_parameters": {"name": "job-submission-name", "comment": "I am a comment"},
+        "sbatch_arguments": ["--name foo", "--comment=bar"],
     }
 
 

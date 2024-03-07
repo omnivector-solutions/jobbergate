@@ -2,11 +2,20 @@
 
 This file keeps track of all notable changes to jobbergate-api
 
+## Unreleased
+
+- Modified the interface with slurm from slurmrestd to sbatch command [ASP-4584]
+  - Removed database column `JobSubmission.execution_parameters`
+  - Added database column `JobSubmission.sbatch_arguments` as a list of strings
+
 ## 4.5.0a1 -- 2024-02-22
+
 - Added notifications via rabbitmq for job status updates [PENG-2039]
 
 ## 4.4.0a1 -- 2024-02-21
+
 ## 4.4.0a0 -- 2024-02-19
+
 ## 4.3.0 -- 2024-02-14
 
 - Revamped job_submissions statuses and tracked more details slurm job_state [PENG-2064]
