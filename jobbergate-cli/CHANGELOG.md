@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+
+## 4.4.0a2 -- 2024-03-08
 - Removed `output_directory` from the schema `JobbergateConfig` for backward compatibility with jobbergate-legacy [ASP-4322]
 - Fixed bug on `jobbergate_cli.subapps.applications.application_helpers.get_running_jobs` when squeue finds no job [ASP-4322]
 - Fixed bug on `jobbergate application update` to pull the correct entry when the identifier is updated
