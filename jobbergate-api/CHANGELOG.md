@@ -6,12 +6,7 @@ This file keeps track of all notable changes to jobbergate-api
 
 - Pinned aio-pika dependency to avoid issues with opentelemetry [PENG-2111]
 - Downgrade FastAPI to 0.99.1 to patch issue on the file endpoints
-
-## 4.5.0a1 -- 2024-02-22
-
 - Added notifications via rabbitmq for job status updates [PENG-2039]
-
-## 4.4.0a1 -- 2024-02-21
 
 ## 4.4.0a0 -- 2024-02-19
 
