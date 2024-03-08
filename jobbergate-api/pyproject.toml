@@ -117,7 +117,11 @@ RABBITMQ_USERNAME = { value = "local-user", skip_if_set = true }
 RABBITMQ_PASSWORD = { value = "local-pswd", skip_if_set = true }
 
 [tool.coverage.run]
-omit = ["jobbergate_api/main.py", "jobbergate_api/safe_types.py"]
+omit = [
+    "jobbergate_api/main.py",
+    "jobbergate_api/safe_types.py",
+    "jobbergate_api/logging.py",
+]
 concurrency = ["greenlet", "thread"]
 
 [tool.coverage.report]

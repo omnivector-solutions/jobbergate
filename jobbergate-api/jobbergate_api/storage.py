@@ -121,19 +121,20 @@ class EngineFactory:
 
         engine = self.get_engine(override_db_name=override_db_name)
         session = AsyncSession(engine)
-        nested_transaction = await session.begin_nested()
+        await session.begin()
         try:
             yield session
+        except Exception as err:
+            logger.warning(f"Rolling back session due to error: {err}")
+            await session.rollback()
+            raise err
+        else:
             if commit is True:
                 logger.debug("Committing session")
                 await session.commit()
             else:
-                logger.debug("Committing nested transaction")
-                await nested_transaction.commit()
-        except Exception as err:
-            logger.warning(f"Rolling back session due to error: {err}")
-            await nested_transaction.rollback()
-            raise err
+                logger.debug("Rolling back read-only session")
+                await session.rollback()
         finally:
             logger.debug("Closing session")
             await session.close()

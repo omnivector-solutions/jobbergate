@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     DEPLOY_ENV: str = "LOCAL"
 
     LOG_LEVEL: LogLevelEnum = LogLevelEnum.DEBUG
+    SQL_LOG_LEVEL: LogLevelEnum = LogLevelEnum.WARNING
 
     # Database settings  # Default to values from docker-compose.yml
     DATABASE_HOST: str = "localhost"
