@@ -2,6 +2,11 @@
 
 This file keeps track of all notable changes to jobbergate-api
 
+## Unreleased
+
+- Pinned aio-pika dependency to avoid issues with opentelemetry [PENG-2111]
+
+
 ## 4.5.0a1 -- 2024-02-22
 - Added notifications via rabbitmq for job status updates [PENG-2039]
 

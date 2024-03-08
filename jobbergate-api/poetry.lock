@@ -2,19 +2,22 @@
 
 [[package]]
 name = "aio-pika"
-version = "9.4.0"
-description = "Wrapper around the aiormq for asyncio and humans"
+version = "8.3.0"
+description = "Wrapper for the aiormq for asyncio and humans."
 category = "main"
 optional = false
-python-versions = ">=3.8,<4.0"
+python-versions = ">3.6, <4"
 files = [
-    {file = "aio_pika-9.4.0-py3-none-any.whl", hash = "sha256:06d3680ea8515aa6c02ac6f94ffe2dde3396f141fde92eef63beb98c7a143cfd"},
-    {file = "aio_pika-9.4.0.tar.gz", hash = "sha256:5199be0f50bd0fb1338962390383bb83a3ce8e760bb603aa071e58b56afeeec1"},
+    {file = "aio-pika-8.3.0.tar.gz", hash = "sha256:c0e2601eda6a1097fe1d33c5f9965a86a27b328ac48914d20c23f675b3ab1797"},
+    {file = "aio_pika-8.3.0-py3-none-any.whl", hash = "sha256:36c4742449f1cbcb83165b3733b090cf88f3d2f7f027225eedb8c7f300b05dde"},
 ]
 
 [package.dependencies]
-aiormq = ">=6.8.0,<6.9.0"
+aiormq = ">=6.6.3,<6.7.0"
 yarl = "*"
+
+[package.extras]
+develop = ["aiomisc (>=16.0,<17.0)", "coverage (!=4.3)", "coveralls", "nox", "pylava", "pytest", "pytest-cov", "shortuuid", "sphinx", "sphinx-autobuild", "timeout-decorator", "tox (>=2.4)"]
 
 [[package]]
 name = "aioboto3"
@@ -168,18 +171,18 @@ files = [
 
 [[package]]
 name = "aiormq"
-version = "6.8.0"
+version = "6.6.4"
 description = "Pure python AMQP asynchronous client library"
 category = "main"
 optional = false
-python-versions = ">=3.8,<4.0"
+python-versions = ">=3.7,<4.0"
 files = [
-    {file = "aiormq-6.8.0-py3-none-any.whl", hash = "sha256:9a16174dcae4078c957a773d2f02d3dfd6c2fcf12c909dc244333a458f2aeab0"},
-    {file = "aiormq-6.8.0.tar.gz", hash = "sha256:198f9c7430feb7bc491016099a06266dc45880b6b1de3925d410fde6541a66fb"},
+    {file = "aiormq-6.6.4-py3-none-any.whl", hash = "sha256:9fb93dc871eb9c45a410e29669624790c01b70d27f20d512a22b146c411440ea"},
+    {file = "aiormq-6.6.4.tar.gz", hash = "sha256:95835a4db6117263305d450f838ccdc3eabd427c0deb32fd617769ad4c989e98"},
 ]
 
 [package.dependencies]
-pamqp = "3.3.0"
+pamqp = "3.2.1"
 yarl = "*"
 
 [[package]]
@@ -1786,14 +1789,14 @@ files = [
 
 [[package]]
 name = "pamqp"
-version = "3.3.0"
+version = "3.2.1"
 description = "RabbitMQ Focused AMQP low-level library"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pamqp-3.3.0-py2.py3-none-any.whl", hash = "sha256:c901a684794157ae39b52cbf700db8c9aae7a470f13528b9d7b4e5f7202f8eb0"},
-    {file = "pamqp-3.3.0.tar.gz", hash = "sha256:40b8795bd4efcf2b0f8821c1de83d12ca16d5760f4507836267fd7a02b06763b"},
+    {file = "pamqp-3.2.1-py2.py3-none-any.whl", hash = "sha256:15acef752356593ca569d13dfedc8ada9f17deeeb8cec4f7b77825e2b6c7de3e"},
+    {file = "pamqp-3.2.1.tar.gz", hash = "sha256:22550ceb1ca50aafda65873e77e8c1c1b139fb5975e1a09860fae940cf8e970a"},
 ]
 
 [package.extras]
@@ -4208,4 +4211,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "ecac817855265b6db97e8f437c076bfb6f7432d108f40903796039cfea96dbcd"
+content-hash = "49fb11c34131409b222f387c79192bf74a7728abee63f5d6053e0545ab21c9d5"
