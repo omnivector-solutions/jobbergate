@@ -100,6 +100,8 @@ class Integer(QuestionBase):
         super().__init__(variablename, message, **kwargs)
         self.minval = minval
         self.maxval = maxval
+        if self.inquirer_kwargs.get("default") == 0:
+            self.inquirer_kwargs["default"] = "0"
         self.inquirer_kwargs.update(validate=self._validator)
 
     def _validator(self, _, current):
