@@ -4,8 +4,10 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+Fixed bug on `jobbergate_cli.subapps.applications.questions.Integer` when a default of zero could not be set properly
 
 ## 4.4.1 -- 2024-03-21
+
 ## 4.4.0 -- 2024-03-19
 
 - Removed `output_directory` from the schema `JobbergateConfig` for backward compatibility with jobbergate-legacy [ASP-4322]

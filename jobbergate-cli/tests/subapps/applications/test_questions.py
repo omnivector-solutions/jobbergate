@@ -41,6 +41,24 @@ def test_Integer__success(dummy_render_class, mocker):
     assert answers["foo"] == 13
 
 
+def test_Integer__zero_as_default():
+    """
+    The default of zero is an eddy case for inquired.
+
+    Due to implementation details on inquire and the fact that its boolean equivalent
+    is false, `0` was not set as default and was not presented on the questions.
+
+    We need to ensure it is.
+    """
+    question = Integer("foo", "gimme the foo!", default=0)
+    prompts = question.make_prompts()
+
+    prompt = prompts.pop()
+
+    assert bool(prompt.default) is True
+    assert int(prompt.default) == 0
+
+
 def test_Integer__fails_with_outside_of_range(dummy_render_class, mocker):
     variablename = "foo"
     question = Integer(variablename, "gimme the foo!", minval=14, maxval=16)
