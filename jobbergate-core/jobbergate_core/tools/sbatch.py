@@ -6,7 +6,7 @@ import shlex
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable
+from typing import ClassVar, Iterable
 
 from buzz import check_expressions
 from loguru import logger
@@ -14,9 +14,17 @@ from loguru import logger
 
 def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: list[str], header: str | None = None) -> str:
     """
-    Inject sbatch params into job script.
+    Injects sbatch parameters into a job script.
 
-    Given the job script as job_script_data_as_string, inject the sbatch params in the correct location.
+    This function takes a job script as a string, a list of sbatch parameters, and an optional header.
+
+    Args:
+        job_script_data_as_string: The job script as a string.
+        sbatch_params: A list of sbatch parameters to be inserted.
+        header: A comment to be inserted before the parameters (i.e., "Injected at runtime by Jobbergate").
+
+    Returns:
+        The job script with the sbatch parameters inserted.
     """
     logger.debug("Preparing to inject sbatch params into job script")
 
@@ -35,8 +43,7 @@ def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: list[str
     inner_string = f"# {header}\n" if header else ""
     for parameter in sbatch_params:
         inner_string += f"#SBATCH {parameter}\n"
-    else:
-        inner_string += "\n"
+    inner_string += "\n"
 
     new_job_script_data_as_string = (
         job_script_data_as_string[:insert_index] + inner_string + job_script_data_as_string[insert_index:]
@@ -55,6 +62,8 @@ class SbatchHandler:
     scontrol_path: Path
     submission_directory: Path = field(default_factory=Path)
 
+    sbatch_output_parser: ClassVar[re.Pattern] = re.compile(r"^(?P<id>\d+)(,(?P<cluster_name>.+))?$")
+
     def __post_init__(self):
         with check_expressions("Check paths", raise_exc_class=ValueError) as check:
             check(self.sbatch_path.is_absolute(), "sbatch_path is not an absolute path")
@@ -63,23 +72,22 @@ class SbatchHandler:
             check(self.scontrol_path.exists(), "scontrol_path does not exist")
 
     def run(self, job_script_path: Path) -> int:
-        """Runs sbatch as the user."""
+        """Runs sbatch as the user to submit a job script and returns the slurm id assigned to it."""
         command = (
             self.sbatch_path.as_posix(),
-            job_script_path.as_posix(),
             "--parsable",
+            job_script_path.as_posix(),
         )
 
         completed_process = self._run_command_as_user(
             command, cwd=self.submission_directory, capture_output=True, text=True
         )
 
-        try:
-            return int(completed_process.stdout.split(",")[0])
-        except (ValueError, AttributeError) as e:
-            message = f"Failed to parse slurm job id from {completed_process.stdout}"
-            logger.error(message)
-            raise RuntimeError(message) from e
+        if match := self.sbatch_output_parser.match(completed_process.stdout):
+            return int(match.group("id"))
+        message = f"Failed to parse slurm job id from {completed_process.stdout}"
+        logger.error(message)
+        raise RuntimeError(message)
 
     def get_job_info(self, job_id: int) -> str:
         """Gets job info as the user."""

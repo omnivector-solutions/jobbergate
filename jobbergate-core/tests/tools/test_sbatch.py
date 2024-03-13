@@ -35,8 +35,8 @@ class TestSbatchHandler:
         mocked_run.assert_called_once_with(
             [
                 sbatch_path.as_posix(),
-                job_script_path.as_posix(),
                 "--parsable",
+                job_script_path.as_posix(),
             ],
             user="test-user",
             cwd=tmp_path,
@@ -59,8 +59,8 @@ class TestSbatchHandler:
         mocked_run.assert_called_once_with(
             [
                 sbatch_path.as_posix(),
-                job_script_path.as_posix(),
                 "--parsable",
+                job_script_path.as_posix(),
             ],
             user="test-user",
             cwd=tmp_path,
