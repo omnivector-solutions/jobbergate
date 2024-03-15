@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+import functools
+import os
+import pwd
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from buzz import DoExceptParams
+from buzz import DoExceptParams, require_condition
 from jobbergate_core.tools.sbatch import SbatchHandler, inject_sbatch_params
 from loguru import logger
 
@@ -155,6 +158,21 @@ async def mark_as_rejected(job_submission_id: int, report_message: str):
         response.raise_for_status()
 
 
+@functools.lru_cache(maxsize=64)
+def run_as_user(username):
+    """Provide to subprocess.run a way to run a command as the user."""
+    # Get the uid and gid from the username
+    pwan = pwd.getpwnam(username)
+    uid = pwan.pw_uid
+    gid = pwan.pw_gid
+
+    def preexec():  # Function to be run in the child process before the subprocess call
+        os.setgid(gid)
+        os.setuid(uid)
+
+    return preexec
+
+
 async def submit_job_script(
     pending_job_submission: PendingJobSubmission,
     user_mapper: SlurmUserMapper,
@@ -182,16 +200,18 @@ async def submit_job_script(
     ):
         email = pending_job_submission.owner_email
         mapper_class_name = user_mapper.__class__.__name__
-        logger.debug(f"Fetching username for email {email} with mapper {mapper_class_name}")
+        logger.debug(f"Fetching username for email '{email}' with mapper {mapper_class_name}")
         username = user_mapper[email]
-        logger.debug(f"Using local slurm user {username} for job submission")
+        logger.debug(f"Using local slurm user '{username}' for job submission")
+        preexec_fn = run_as_user(username)
 
     submit_dir = pending_job_submission.execution_directory or SETTINGS.DEFAULT_SLURM_WORK_DIR
+
     sbatch_handler = SbatchHandler(
-        username=username,
         sbatch_path=SETTINGS.SBATCH_PATH,
         scontrol_path=SETTINGS.SCONTROL_PATH,
         submission_directory=submit_dir,
+        preexec_fn=preexec_fn,
     )
 
     with TemporaryDirectory(prefix=str(pending_job_submission.id), suffix=pending_job_submission.name) as tmp_dir:
@@ -202,13 +222,19 @@ async def submit_job_script(
             do_except=_reject_handler,
         ):
             logger.debug(f"Processing submission files for job submission {pending_job_submission.id}")
+
+            require_condition(
+                expr=submit_dir.exists() and submit_dir.is_absolute(),
+                message=f"The submission directory must exist and be an absolute path, got: {submit_dir.as_posix()}",
+                raise_exc_class=JobSubmissionError,
+            )
+
             supporting_files = await process_supporting_files(pending_job_submission, tmp_dir_path)
 
             logger.debug(f"Fetching job script for job submission {pending_job_submission.id}")
             job_script = await get_job_script_file(pending_job_submission, tmp_dir_path)
 
             if SETTINGS.WRITE_SUBMISSION_FILES:
-                sbatch_handler.create_submission_directory()
                 job_script = sbatch_handler.copy_file_to_submission_directory(job_script)
                 for file in supporting_files:
                     sbatch_handler.copy_file_to_submission_directory(file)
@@ -219,9 +245,7 @@ async def submit_job_script(
         do_except=_reject_handler,
     ):
         logger.debug(f"Submitting job script for job submission {pending_job_submission.id}")
-        slurm_job_id = sbatch_handler.run(job_script)
-
-    logger.debug(f"Received slurm job id {slurm_job_id} for job submission {pending_job_submission.id}")
+        slurm_job_id = sbatch_handler.submit_job(job_script)
 
     return slurm_job_id
 

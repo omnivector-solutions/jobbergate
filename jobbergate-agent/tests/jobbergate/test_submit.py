@@ -2,6 +2,7 @@
 Define tests for the submission functions of the jobbergate section.
 """
 
+import getpass
 import json
 import re
 from unittest import mock
@@ -41,6 +42,11 @@ class RegexArgMatcher:
 
     def __repr__(self):
         return f"regex='{self.pattern}' (flags={self.flags})"
+
+
+@pytest.fixture
+def user_mapper():
+    return SingleUserMapper(getpass.getuser())
 
 
 @pytest.mark.asyncio
@@ -380,7 +386,7 @@ async def test_mark_as_rejected__raises_JobbergateApiError_if_the_response_is_no
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
 async def test_submit_job_script__success_with_files(
-    mocker, dummy_pending_job_submission_data, dummy_template_source, tweak_settings
+    mocker, dummy_pending_job_submission_data, dummy_template_source, tweak_settings, user_mapper
 ):
     """
     Test that the ``submit_job_script()`` successfully submits a job.
@@ -388,12 +394,10 @@ async def test_submit_job_script__success_with_files(
     Verifies that a PendingJobSubmission instance is submitted via the Slurm REST API
     and that a ``slurm_job_id`` is returned.
     """
-    user_mapper = SingleUserMapper("dummy-user")
-
     pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
 
     mocked_sbatch = mock.MagicMock()
-    mocked_sbatch.run = lambda *args, **kwargs: 13
+    mocked_sbatch.submit_job = lambda *args, **kwargs: 13
     mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
 
     async with respx.mock:
@@ -410,14 +414,13 @@ async def test_submit_job_script__success_with_files(
     assert slurm_job_id == 13
     assert download_route.call_count == 1
 
-    assert mocked_sbatch.create_submission_directory.call_count == 1
     assert mocked_sbatch.copy_file_to_submission_directory.call_count == len(pending_job_submission.job_script.files)
 
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
 async def test_submit_job_script__success_without_files(
-    mocker, dummy_pending_job_submission_data, dummy_template_source, tweak_settings
+    mocker, dummy_pending_job_submission_data, dummy_template_source, tweak_settings, user_mapper
 ):
     """
     Test that the ``submit_job_script()`` successfully submits a job.
@@ -425,12 +428,10 @@ async def test_submit_job_script__success_without_files(
     Verifies that a PendingJobSubmission instance is submitted via the Slurm REST API
     and that a ``slurm_job_id`` is returned.
     """
-    user_mapper = SingleUserMapper("dummy-user")
-
     pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
 
     mocked_sbatch = mock.MagicMock()
-    mocked_sbatch.run = lambda *args, **kwargs: 13
+    mocked_sbatch.submit_job = lambda *args, **kwargs: 13
     mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
 
     async with respx.mock:
@@ -447,7 +448,6 @@ async def test_submit_job_script__success_without_files(
     assert slurm_job_id == 13
     assert download_route.call_count == 1
 
-    assert mocked_sbatch.create_submission_directory.call_count == 0
     assert mocked_sbatch.copy_file_to_submission_directory.call_count == 0
 
 
@@ -458,6 +458,7 @@ async def test_submit_job_script__with_non_default_execution_directory(
     dummy_template_source,
     mocker,
     tmp_path,
+    user_mapper,
 ):
     """
     Test that the ``submit_job_script()`` successfully submits a job with an exec dir.
@@ -466,8 +467,6 @@ async def test_submit_job_script__with_non_default_execution_directory(
     and that a ``slurm_job_id`` is returned. Verifies that the execution_directory is
     taken from the request and submitted to slurm rest api.
     """
-    user_mapper = SingleUserMapper("dummy-user")
-
     exe_path = tmp_path / "exec"
     exe_path.mkdir()
     pending_job_submission = PendingJobSubmission(
@@ -476,7 +475,7 @@ async def test_submit_job_script__with_non_default_execution_directory(
     )
 
     mocked_sbatch = mock.MagicMock()
-    mocked_sbatch.run = lambda *args, **kwargs: 13
+    mocked_sbatch.submit_job = lambda *args, **kwargs: 13
     mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
 
     async with respx.mock:
@@ -496,7 +495,7 @@ async def test_submit_job_script__with_non_default_execution_directory(
 
 @pytest.mark.usefixtures("mock_access_token")
 async def test_submit_job_script__raises_exception_if_no_executable_script_was_found(
-    dummy_pending_job_submission_data, mocker
+    dummy_pending_job_submission_data, mocker, user_mapper
 ):
     """
     Test that the ``submit_job_script()`` will raise a JobSubmissionError if it cannot
@@ -512,7 +511,7 @@ async def test_submit_job_script__raises_exception_if_no_executable_script_was_f
     mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
 
     with pytest.raises(JobSubmissionError, match="Could not find an executable"):
-        await submit_job_script(pending_job_submission, SingleUserMapper())
+        await submit_job_script(pending_job_submission, user_mapper)
 
     mock_mark_as_rejected.assert_called_once_with(
         dummy_pending_job_submission_data["id"],
@@ -523,21 +522,19 @@ async def test_submit_job_script__raises_exception_if_no_executable_script_was_f
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
 async def test_submit_job_script__raises_exception_if_sbatch_fails(
-    dummy_pending_job_submission_data, mocker, dummy_template_source
+    dummy_pending_job_submission_data, mocker, dummy_template_source, user_mapper
 ):
     """
     Test that ``submit_job_script()`` raises an exception if the response from sbatch
     is not 0. Verifies that the error message is included in the raised
     exception and that the ``mark_as_rejected`` method is called for the job submission.
     """
-    user_mapper = SingleUserMapper("dummy-user")
-
     pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
 
     mock_mark_as_rejected = mocker.patch("jobbergate_agent.jobbergate.submit.mark_as_rejected")
 
     mocked_sbatch = mock.MagicMock()
-    mocked_sbatch.run.side_effect = RuntimeError("BOOM!")
+    mocked_sbatch.submit_job.side_effect = RuntimeError("BOOM!")
     mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
 
     async with respx.mock:

@@ -1,4 +1,3 @@
-import getpass
 import json
 from typing import List
 
@@ -6,8 +5,6 @@ from jobbergate_core.tools.sbatch import SbatchHandler
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
-
-# from jobbergate_agent.jobbergate.api import update_status
 from jobbergate_agent.jobbergate.schemas import ActiveJobSubmission, SlurmJobData
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobbergateApiError, SbatchError
@@ -18,7 +15,7 @@ async def fetch_job_data(slurm_job_id: int, sbatch_handler: SbatchHandler) -> Sl
     logger.debug(f"Fetching slurm job status for slurm job {slurm_job_id}")
 
     try:
-        data = json.loads(sbatch_handler.get_job_info(slurm_job_id))
+        data = sbatch_handler.get_job_info(slurm_job_id)
     except RuntimeError as e:
         logger.error(f"Failed to fetch job state from slurm: {e}")
         return SlurmJobData(
@@ -31,7 +28,6 @@ async def fetch_job_data(slurm_job_id: int, sbatch_handler: SbatchHandler) -> Sl
     with SbatchError.handle_errors("Failed parse info from slurm", do_except=log_error):
         slurm_state = SlurmJobData.parse_obj(data)
         slurm_state.job_info = json.dumps(data)
-        logger.debug(f"State for slurm job {slurm_job_id} is {slurm_state}")
 
     return slurm_state
 
@@ -56,7 +52,7 @@ async def update_job_data(
     """
     Update a job submission with the job state
     """
-    logger.debug(f"Updating {job_submission_id=} with {slurm_job_data=}")
+    logger.debug(f"Updating {job_submission_id=} with: {slurm_job_data}")
 
     with JobbergateApiError.handle_errors(
         f"Could not update job data for job submission {job_submission_id} via the API",
@@ -81,7 +77,6 @@ async def update_active_jobs():
     logger.debug("Started updating slurm job data for active jobs...")
 
     sbatch_handler = SbatchHandler(
-        username=getpass.getuser(),
         sbatch_path=SETTINGS.SBATCH_PATH,
         scontrol_path=SETTINGS.SCONTROL_PATH,
         submission_directory=SETTINGS.DEFAULT_SLURM_WORK_DIR,
@@ -90,8 +85,8 @@ async def update_active_jobs():
     logger.debug("Fetching active jobs")
     active_job_submissions = await fetch_active_submissions()
 
+    skip = "skipping to next active job"
     for active_job_submission in active_job_submissions:
-        skip = "skipping to next active job"
         logger.debug(f"Fetching slurm job state of job_submission {active_job_submission.id}")
 
         try:
@@ -99,8 +94,6 @@ async def update_active_jobs():
         except Exception:
             logger.debug(f"Fetch job data failed...{skip}")
             continue
-
-        logger.debug(f"Updating job_submission with slurm job data={slurm_job_data}")
 
         try:
             await update_job_data(active_job_submission.id, slurm_job_data)

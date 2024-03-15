@@ -24,13 +24,11 @@ async def test_fetch_job_data__success():
     job data from Slurm as a ``SlurmJobData``.
     """
     mocked_sbatch = mock.MagicMock()
-    mocked_sbatch.get_job_info.return_value = json.dumps(
-        dict(
-            job_state="FAILED",
-            job_id=123,
-            state_reason="NonZeroExitCode",
-            foo="bar",
-        )
+    mocked_sbatch.get_job_info.return_value = dict(
+        job_state="FAILED",
+        job_id=123,
+        state_reason="NonZeroExitCode",
+        foo="bar",
     )
 
     result: SlurmJobData = await fetch_job_data(123, mocked_sbatch)

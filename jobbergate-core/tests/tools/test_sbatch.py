@@ -1,4 +1,7 @@
+import json
 import subprocess
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from textwrap import dedent
 
 import pytest
@@ -21,52 +24,46 @@ def scontrol_path(tmp_path):
 
 
 class TestSbatchHandler:
+    @pytest.mark.parametrize(
+        "sbatch_output, expected_result",
+        [
+            ("123", {"id": "123", "cluster_name": None}),
+            ("123,cluster", {"id": "123", "cluster_name": "cluster"}),
+        ],
+    )
+    def test_parse_sbatch_parser(self, sbatch_output, expected_result):
+        actual_result = SbatchHandler.sbatch_output_parser.match(sbatch_output).groupdict()
+        assert actual_result == expected_result
+
     def test_run__success(self, mocker, sbatch_path, scontrol_path, tmp_path):
-        response = subprocess.CompletedProcess(args=[], stdout="123,cluster-name", returncode=0)
-        mocked_run = mocker.patch("jobbergate_core.tools.sbatch.subprocess.run", return_value=response)
-
-        sbatch_handler = SbatchHandler(
-            username="test-user", sbatch_path=sbatch_path, scontrol_path=scontrol_path, submission_directory=tmp_path
-        )
-
-        job_script_path = tmp_path / "file.sh"
-
-        assert sbatch_handler.run(job_script_path) == 123
-        mocked_run.assert_called_once_with(
-            [
-                sbatch_path.as_posix(),
-                "--parsable",
-                job_script_path.as_posix(),
-            ],
-            user="test-user",
-            cwd=tmp_path,
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-
-    def test_run__success_with_no_cluster_name(self, mocker, sbatch_path, scontrol_path, tmp_path):
         response = subprocess.CompletedProcess(args=[], stdout="123", returncode=0)
         mocked_run = mocker.patch("jobbergate_core.tools.sbatch.subprocess.run", return_value=response)
 
+        def dummy_preexec_fn():
+            pass
+
         sbatch_handler = SbatchHandler(
-            username="test-user", sbatch_path=sbatch_path, scontrol_path=scontrol_path, submission_directory=tmp_path
+            sbatch_path=sbatch_path,
+            scontrol_path=scontrol_path,
+            submission_directory=tmp_path,
+            preexec_fn=dummy_preexec_fn,
         )
 
         job_script_path = tmp_path / "file.sh"
 
-        assert sbatch_handler.run(job_script_path) == 123
+        assert sbatch_handler.submit_job(job_script_path) == 123
         mocked_run.assert_called_once_with(
-            [
+            (
                 sbatch_path.as_posix(),
                 "--parsable",
                 job_script_path.as_posix(),
-            ],
-            user="test-user",
+            ),
+            preexec_fn=dummy_preexec_fn,
+            check=True,
+            shell=False,
             cwd=tmp_path,
             capture_output=True,
             text=True,
-            check=True,
         )
 
     def test_run__fail_on_sbatch_error(self, mocker, sbatch_path, scontrol_path, tmp_path):
@@ -76,7 +73,7 @@ class TestSbatchHandler:
         )
 
         sbatch_handler = SbatchHandler(
-            username="test-user", sbatch_path=sbatch_path, scontrol_path=scontrol_path, submission_directory=tmp_path
+            sbatch_path=sbatch_path, scontrol_path=scontrol_path, submission_directory=tmp_path
         )
         job_script_path = tmp_path / "file.sh"
 
@@ -84,7 +81,7 @@ class TestSbatchHandler:
             RuntimeError,
             match="^Failed to run command with code 1: Error: Invalid argument",
         ):
-            sbatch_handler.run(job_script_path)
+            sbatch_handler.submit_job(job_script_path)
 
     @pytest.mark.parametrize("stdout", ["", "not-a-number"])
     def test_run__fail_on_unparsable_output(self, mocker, stdout, sbatch_path, scontrol_path, tmp_path):
@@ -92,7 +89,7 @@ class TestSbatchHandler:
         mocker.patch("jobbergate_core.tools.sbatch.subprocess.run", return_value=response)
 
         sbatch_handler = SbatchHandler(
-            username="test-user", sbatch_path=sbatch_path, scontrol_path=scontrol_path, submission_directory=tmp_path
+            sbatch_path=sbatch_path, scontrol_path=scontrol_path, submission_directory=tmp_path
         )
 
         job_script_path = tmp_path / "file.sh"
@@ -101,7 +98,100 @@ class TestSbatchHandler:
             RuntimeError,
             match="^Failed to parse slurm job id from",
         ):
-            sbatch_handler.run(job_script_path)
+            sbatch_handler.submit_job(job_script_path)
+
+    def test_get_job_info__success(self, mocker, sbatch_path, scontrol_path, tmp_path):
+        job_info = {"id": 123, "cluster_name": "cluster", "status": "running", "user": "test-user"}
+        response_data = json.dumps({"jobs": [job_info]})
+        response = subprocess.CompletedProcess(args=[], stdout=response_data, returncode=0)
+        mocked_run = mocker.patch("jobbergate_core.tools.sbatch.subprocess.run", return_value=response)
+
+        sbatch_handler = SbatchHandler(
+            sbatch_path=sbatch_path, scontrol_path=scontrol_path, submission_directory=tmp_path
+        )
+
+        assert sbatch_handler.get_job_info(123) == job_info
+        mocked_run.assert_called_once_with(
+            (
+                scontrol_path.as_posix(),
+                "show",
+                "job",
+                "123",
+                "--json",
+            ),
+            preexec_fn=None,
+            check=True,
+            shell=False,
+            capture_output=True,
+            text=True,
+        )
+
+    def test_get_job_info__failed_to_parse(self, mocker, sbatch_path, scontrol_path, tmp_path):
+        response_data = json.dumps({"foo": "bar"})
+        response = subprocess.CompletedProcess(args=[], stdout=response_data, returncode=0)
+        mocked_run = mocker.patch("jobbergate_core.tools.sbatch.subprocess.run", return_value=response)
+
+        sbatch_handler = SbatchHandler(
+            sbatch_path=sbatch_path, scontrol_path=scontrol_path, submission_directory=tmp_path
+        )
+
+        with pytest.raises(RuntimeError, match="^Failed to parse job info from"):
+            sbatch_handler.get_job_info(123)
+
+        mocked_run.assert_called_once_with(
+            (
+                scontrol_path.as_posix(),
+                "show",
+                "job",
+                "123",
+                "--json",
+            ),
+            preexec_fn=None,
+            check=True,
+            shell=False,
+            capture_output=True,
+            text=True,
+        )
+
+    def test_get_job_info__not_fount(self, mocker, sbatch_path, scontrol_path, tmp_path):
+        response_data = json.dumps({"jobs": []})
+        response = subprocess.CompletedProcess(args=[], stdout=response_data, returncode=0)
+        mocked_run = mocker.patch("jobbergate_core.tools.sbatch.subprocess.run", return_value=response)
+
+        sbatch_handler = SbatchHandler(
+            sbatch_path=sbatch_path, scontrol_path=scontrol_path, submission_directory=tmp_path
+        )
+        with pytest.raises(RuntimeError, match="^Job not fount: 123"):
+            sbatch_handler.get_job_info(123)
+        mocked_run.assert_called_once_with(
+            (
+                scontrol_path.as_posix(),
+                "show",
+                "job",
+                "123",
+                "--json",
+            ),
+            preexec_fn=None,
+            check=True,
+            shell=False,
+            capture_output=True,
+            text=True,
+        )
+
+    def test_file_to_submission__success(self, mocker, sbatch_path, scontrol_path, tmp_path):
+        sbatch_handler = SbatchHandler(
+            sbatch_path=sbatch_path,
+            scontrol_path=scontrol_path,
+            submission_directory=tmp_path,
+        )
+
+        with TemporaryDirectory() as temp_dir:
+            source_file = Path(temp_dir) / "file.txt"
+            file_content = b"test"
+            source_file.write_bytes(file_content)
+            destination_file = sbatch_handler.copy_file_to_submission_directory(source_file)
+            assert destination_file == tmp_path / source_file.name
+            assert destination_file.read_bytes() == file_content
 
 
 class TestInjectSbatchParameters:

@@ -4,11 +4,16 @@ This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
 
+- Dropped support for Python 3.8 and 3.9
 
 ## 4.5.0a2 -- 2024-02-23
+
 ## 4.5.0a1 -- 2024-02-22
+
 ## 4.4.0a1 -- 2024-02-21
+
 ## 4.4.0a0 -- 2024-02-19
+
 ## 4.3.0 -- 2024-02-14
 
 - Keep version in sync with the other components.

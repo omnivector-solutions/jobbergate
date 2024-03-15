@@ -5,17 +5,17 @@ set -e
 echo "---> Starting the MUNGE Authentication service (munged) ..."
 service munge start
 
-echo "---> Waiting for slurmctld to become active before starting slurmd..."
+echo "---> Waiting for slurmdbd to become active before starting slurmctld ..."
 
-until 2>/dev/null >/dev/tcp/slurmctld/6817
+until 2>/dev/null >/dev/tcp/slurmdbd/6819
 do
-    echo "-- slurmctld is not available.  Sleeping ..."
+    echo "-- slurmdbd is not available.  Sleeping ..."
     sleep 2
 done
-echo "-- slurmctld is now active ..."
+echo "-- slurmdbd is now active ..."
 
-echo "---> Starting the Slurm Node Daemon (slurmd) ..."
-/usr/sbin/slurmd -Dvvv
+echo "---> Starting the Slurm Controller Daemon (slurmctld) ..."
+gosu slurm /usr/sbin/slurmctld -Dvvv &
 
 echo "---> Starting Jobbergate-agent ..."
 cd /app
