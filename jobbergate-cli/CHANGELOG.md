@@ -8,6 +8,7 @@ This file keeps track of all notable changes to jobbergate-cli
 - Fixed bug on `jobbergate_cli.subapps.applications.application_helpers.get_running_jobs` when squeue finds no job [ASP-4322]
 - Fixed bug on `jobbergate application update` to pull the correct entry when the identifier is updated
 - Dropped support for Python 3.8 and 3.9
+- Added Jobbergate-core as a project dependency to reuse key components
 
 ## 4.5.0a2 -- 2024-02-23
 

@@ -83,6 +83,7 @@ services:
       - jobbergate-net
     volumes:
       - ../jobbergate-cli/jobbergate_cli/:/app/jobbergate_cli/
+      - ../jobbergate-core/:/jobbergate-core
       - ../examples/simple-application/:/simple-example/
       - ../examples/motorbike-application/:/motorbike-example/
       - ./etc/run-motorbike.py:/app/run-motorbike

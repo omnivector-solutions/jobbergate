@@ -21,18 +21,13 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.10"
+jobbergate-core = { path = "../jobbergate-core", develop = true }
 click = "^8.1.0"
-httpx = "^0.24.1"
 importlib-metadata = "^4.2"
 inquirer = "^3.1.0"
 Jinja2 = "^3.1.2"
-loguru = "^0.6.0"
-pendulum = "3.0.0b1"
-py-buzz = "^4.0.0"
-pydantic = "^1.10.12"
 pyperclip = "^1.8.2"
 python-dotenv = "^1.0.0"
-python-jose = "^3.3.0"
 PyYAML = "6.*"
 rich = "^11.2.0"
 sentry-sdk = "^1.29.2"
@@ -40,6 +35,14 @@ typer = "^0.9.0"
 
 [tool.poetry.scripts]
 jobbergate = "jobbergate_cli.main:app"
+
+[tool.stickywheel]
+# This will resolve the relative path to the jobbergate-core package at build time
+# and pin its version based on the version in the jobbergate-cli pyproject.toml file.
+# Since it is at build time, there is no need to install the pluging on dev machines,
+# the deployment workflow will take care of it.
+# Reference: https://github.com/python-poetry/poetry/issues/6850#issuecomment-1445477319
+strategy = "exact"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.0"

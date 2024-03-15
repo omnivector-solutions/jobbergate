@@ -563,6 +563,27 @@ files = [
 ansicon = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
+name = "jobbergate-core"
+version = "4.5.0a2"
+description = "Jobbergate Core"
+optional = false
+python-versions = "^3.10"
+files = []
+develop = true
+
+[package.dependencies]
+httpx = "^0.24.1"
+loguru = "^0.6.0"
+pendulum = "3.0.0b1"
+py-buzz = "^4.0.0"
+pydantic = "^1.10.12"
+python-jose = "^3.3.0"
+
+[package.source]
+type = "directory"
+url = "../jobbergate-core"
+
+[[package]]
 name = "loguru"
 version = "0.6.0"
 description = "Python logging made (stupidly) simple"
@@ -1628,4 +1649,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "31428f5b138631a6b91e014041d0fea424231b9a1edb47aca7062f2e8c25eed2"
+content-hash = "885396e7482326630e7080670bc0b178693920eca7441c6f8641f4c899c132b3"
