@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-core
 ## Unreleased
 
 - Dropped support for Python 3.8 and 3.9
+- Added helpers to interact with Slurm by using sbatch to submit jobs and scontrol que get information about them
 
 ## 4.5.0a2 -- 2024-02-23
 
