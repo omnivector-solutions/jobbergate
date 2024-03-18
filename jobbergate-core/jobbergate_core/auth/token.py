@@ -1,6 +1,7 @@
 """
 Utilities for handling tokens on Jobbergate.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace

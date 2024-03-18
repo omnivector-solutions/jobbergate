@@ -3,6 +3,7 @@ Provide to the agent a way to map email addresses from Jobbergate local Slurm us
 
 Custom mappers can be added to the agent as installable plugins, which are discovered at runtime.
 """
+
 from collections.abc import Mapping as MappingABC
 from dataclasses import dataclass
 from typing import Mapping, Protocol

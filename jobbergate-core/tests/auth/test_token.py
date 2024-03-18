@@ -1,6 +1,7 @@
 """
 Test the utilities for handling auth in Jobbergate.
 """
+
 import pytest
 
 from jobbergate_core.auth.token import Token, TokenError, TokenType

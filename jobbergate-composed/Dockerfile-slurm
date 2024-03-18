@@ -26,7 +26,7 @@ RUN set -ex \
     && echo "deb [signed-by=/usr/share/keyrings/ubuntu-hpc.gpg] https://ppa.launchpadcontent.net/ubuntu-hpc/slurm-wlm-23.02/ubuntu/ jammy main" > /etc/apt/sources.list.d/ubuntu-hpc-slurm.list \
     && gpg --keyserver hkp://keyserver.ubuntu.com:80  --recv-keys AE87121DC3E4A0B0F81FF023F6D0C5D5C6BEB37B \
     && apt update \
-    && apt install slurm-wlm-basic-plugins slurmrestd slurmd slurmdbd slurmctld mysql-client -y \
+    && apt install slurm-wlm-basic-plugins slurmd slurmdbd slurmctld mysql-client -y \
     && rm -rf "${GNUPGHOME}" ubuntu-hpc.pub
 
 

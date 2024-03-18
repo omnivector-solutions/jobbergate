@@ -4,6 +4,9 @@ This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
 
+- Dropped support for Python 3.8 and 3.9
+- Replaced slurmrestd as the way the agent interacts with slurm by using sbatch to submit jobs and scontrol to get information about them
+
 ## 4.4.0 -- 2024-03-19
 
 - Keep version in sync with the other components.

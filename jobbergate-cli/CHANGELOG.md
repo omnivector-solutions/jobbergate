@@ -4,7 +4,8 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
-Fixed bug on `jobbergate_cli.subapps.applications.questions.Integer` when a default of zero could not be set properly
+- Fixed bug on `jobbergate_cli.subapps.applications.questions.Integer` when a default of zero could not be set properly
+- Dropped support for Python 3.8 and 3.9
 
 ## 4.4.0 -- 2024-03-19
 

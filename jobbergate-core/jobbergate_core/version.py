@@ -1,6 +1,7 @@
 """
 Provide the version of the package.
 """
+
 from importlib import metadata
 
 

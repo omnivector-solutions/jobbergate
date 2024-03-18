@@ -1,6 +1,7 @@
 """
 Utilities for handling authentication in the Jobbergate system.
 """
+
 import time
 from collections import namedtuple
 from dataclasses import dataclass, field

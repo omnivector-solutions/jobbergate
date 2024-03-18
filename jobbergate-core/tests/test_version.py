@@ -1,6 +1,7 @@
 """
 Test the module version.
 """
+
 import toml
 
 from jobbergate_core import __version__

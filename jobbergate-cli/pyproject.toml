@@ -20,7 +20,7 @@ classifiers = [
 "Changelog" = "https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-cli/CHANGELOG.rst"
 
 [tool.poetry.dependencies]
-python = "^3.8.1"
+python = "^3.10"
 click = "^8.1.0"
 httpx = "^0.24.1"
 importlib-metadata = "^4.2"

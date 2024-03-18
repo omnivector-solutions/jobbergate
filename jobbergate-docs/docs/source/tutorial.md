@@ -127,7 +127,6 @@ jobbergate-composed-minio-create-bucket-1   "/create-bucket.sh"      minio-creat
 mysql                                       "docker-entrypoint.s…"   mysql                 running             3306/tcp, 33060/tcp
 slurmctld                                   "/usr/local/bin/slur…"   slurmctld             running             6817/tcp
 slurmdbd                                    "/usr/local/bin/slur…"   slurmdbd              running             6819/tcp
-slurmrestd                                  "/usr/local/bin/slur…"   slurmrestd            running             0.0.0.0:6820->6820/tcp
 ```
 
 The `STATUS` for each service should be "running" except for the `minio-create-bucket` and `jobbergate-cli`
