@@ -18,10 +18,7 @@ To install the package from Pypi simply run `pip install jobbergate-agent`.
 
     ```bash
     JOBBERGATE_AGENT_BASE_API_URL="<base-api-url>"
-    JOBBERGATE_AGENT_BASE_SLURMRESTD_URL="<slurmrestd-endpoint>"
-    JOBBERGATE_AGENT_X_SLURM_USER_NAME="<slurmrestd-user-name>"
-    JOBBERGATE_AGENT_SLURMRESTD_JWT_KEY_PATH="/path/to/the/jwt/secret/key"
-    JOBBERGATE_AGENT_SLURMRESTD_JWT_KEY_STRING="jwt-secret-key-in-plain-text"
+    JOBBERGATE_AGENT_X_SLURM_USER_NAME="<sbatch-user-name>"
     JOBBERGATE_AGENT_SENTRY_DSN="<sentry-dsn-key>"
     JOBBERGATE_AGENT_OIDC_DOMAIN="<OIDC-domain>"
     JOBBERGATE_AGENT_OIDC_AUDIENCE="<OIDC-audience>"
@@ -30,8 +27,6 @@ To install the package from Pypi simply run `pip install jobbergate-agent`.
     ```
 
     **Note**: `JOBBERGATE_AGENT_SENTRY_DSN` is optional. If you do not pass it the agent understands Sentry will not be used.
-
-    **Note**: When both `JOBBERGATE_AGENT_SLURMRESTD_JWT_KEY_PATH` and `JOBBERGATE_AGENT_SLURMRESTD_JWT_KEY_STRING` are passed, the agent will completely ignore the `JOBBERGATE_AGENT_SLURMRESTD_JWT_KEY_PATH` and will prioritize the `JOBBERGATE_AGENT_SLURMRESTD_JWT_KEY_STRING`. Beware this behaviour.
 
 ## Local usage example
 

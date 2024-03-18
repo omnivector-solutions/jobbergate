@@ -38,34 +38,6 @@ def mock_cluster_api_cache_dir(tmp_path):
         yield _cache_dir
 
 
-@pytest.fixture(autouse=True)
-def mock_slurmrestd_api_cache_dir(tmp_path):
-    _cache_dir = tmp_path / ".cache/jobbergate-agent/slurmrestd"
-    with mock.patch("jobbergate_agent.clients.slurmrestd.CACHE_DIR", new=_cache_dir):
-        yield _cache_dir
-
-
-@pytest.fixture(autouse=True)
-def slurmrestd_jwt_key_string():
-    yield "DUMMY-JWT-SECRET"
-
-
-@pytest.fixture(autouse=True)
-def slurmrestd_jwt_key_path(tmp_path, slurmrestd_jwt_key_string):
-    _jwt_dir = tmp_path / "jwt.key"
-    _jwt_dir.write_text(slurmrestd_jwt_key_string)
-    with mock.patch.object(SETTINGS, "SLURMRESTD_JWT_KEY_PATH", new=_jwt_dir.as_posix()):
-        yield _jwt_dir
-
-
-@pytest.fixture(autouse=True)
-def mock_slurmrestd_acquire_token(mocker):
-    mocker.patch(
-        "jobbergate_agent.clients.slurmrestd.acquire_token",
-        return_value="default-dummy-token",
-    )
-
-
 @pytest.fixture
 def caplog(caplog):
     """

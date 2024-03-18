@@ -1,4 +1,5 @@
 """Core module for exception related operations"""
+
 import contextlib
 from asyncio import iscoroutinefunction
 from typing import Any, Callable, Iterable, Iterator, Mapping, Optional, Tuple, Type, Union
@@ -19,8 +20,8 @@ class AuthTokenError(ClusterAgentError):
     """Raise exception when there are connection issues with the backend"""
 
 
-class SlurmrestdError(ClusterAgentError):
-    """Raise exception when slurmrestd raises any error"""
+class SbatchError(ClusterAgentError):
+    """Raise exception when sbatch raises any error"""
 
 
 class JobbergateApiError(ClusterAgentError):

@@ -97,36 +97,6 @@ services:
       - JOBBERGATE_CACHE_DIR=/cache
       - DEFAULT_CLUSTER_NAME=local-slurm
 
-  jobbergate-agent:
-    build:
-      context: ../jobbergate-agent/
-      dockerfile: Dockerfile.dev
-    networks:
-      - jobbergate-net
-    volumes:
-      - ../jobbergate-agent/jobbergate_agent/:/app/jobbergate_agent
-      - ../jobbergate-core/:/jobbergate-core
-      - jobbergate-agent-cache:/cache/
-      - ./slurm-work-dir:/slurm-work-dir/
-    command: ["jg-run"]
-    environment:
-      - JOBBERGATE_AGENT_BASE_SLURMRESTD_URL=http://slurmrestd:6820
-      - JOBBERGATE_AGENT_X_SLURM_USER_NAME=local-user
-      - JOBBERGATE_AGENT_DEFAULT_SLURM_WORK_DIR=/slurm-work-dir
-      - JOBBERGATE_AGENT_BASE_API_URL=http://jobbergate-api:80
-      - JOBBERGATE_AGENT_OIDC_DOMAIN=keycloak.local:8080/realms/jobbergate-local
-      - JOBBERGATE_AGENT_OIDC_AUDIENCE=https://local.omnivector.solutions
-      - JOBBERGATE_AGENT_OIDC_CLIENT_ID=local-slurm
-      - JOBBERGATE_AGENT_OIDC_CLIENT_SECRET=SVkaJ2f9xeYfOVzQPHXYyiwr12za4xGF
-      - JOBBERGATE_AGENT_OIDC_USE_HTTPS=false
-      - JOBBERGATE_AGENT_CACHE_DIR=/cache
-      - JOBBERGATE_AGENT_SLURMRESTD_JWT_KEY_STRING=${JWT_SECRET:-supersecret}
-      - JOBBERGATE_AGENT_TASK_JOBS_INTERVAL_SECONDS=15
-      - JOBBERGATE_AGENT_SLURM_RESTD_VERSION=v0.0.37
-    depends_on:
-      jobbergate-api:
-        condition: service_healthy
-
   db:
     image: postgres
     restart: always
@@ -253,23 +223,42 @@ services:
 
   slurmctld:
     build:
-      context: .
-      dockerfile: Dockerfile-slurm
+      context: ../jobbergate-agent/
+      dockerfile: Dockerfile.dev
       args:
         - JWT_SECRET=${JWT_SECRET:-supersecret}
-    image: slurm-docker-cluster
     networks:
       - jobbergate-net
     command: ["slurmctld"]
     container_name: slurmctld
     hostname: slurmctld
+    environment:
+      - JOBBERGATE_AGENT_X_SLURM_USER_NAME=local-user
+      - JOBBERGATE_AGENT_DEFAULT_SLURM_WORK_DIR=/slurm-work-dir
+      - JOBBERGATE_AGENT_BASE_API_URL=http://jobbergate-api:80
+      - JOBBERGATE_AGENT_OIDC_DOMAIN=keycloak.local:8080/realms/jobbergate-local
+      - JOBBERGATE_AGENT_OIDC_AUDIENCE=https://local.omnivector.solutions
+      - JOBBERGATE_AGENT_OIDC_CLIENT_ID=local-slurm
+      - JOBBERGATE_AGENT_OIDC_CLIENT_SECRET=SVkaJ2f9xeYfOVzQPHXYyiwr12za4xGF
+      - JOBBERGATE_AGENT_OIDC_USE_HTTPS=false
+      - JOBBERGATE_AGENT_CACHE_DIR=/cache
+      - JOBBERGATE_AGENT_TASK_JOBS_INTERVAL_SECONDS=15
+      - JOBBERGATE_AGENT_SLURM_RESTD_VERSION=v0.0.37
     volumes:
       - etc_munge:/etc/munge
       - var_log_slurm:/var/log/slurm
       - ./slurm-fake-nfs:/nfs
       - ./slurm-work-dir:/slurm-work-dir
+      - ../jobbergate-agent/jobbergate_agent/:/app/jobbergate_agent
+      - ../jobbergate-core/:/jobbergate-core
+      - jobbergate-agent-cache:/cache/
     expose:
       - "6817"
+    depends_on:
+      jobbergate-api:
+        condition: service_healthy
+      slurmdbd:
+        condition: service_started
 
   slurmdbd:
     build:
@@ -289,7 +278,6 @@ services:
     expose:
       - "6819"
     depends_on:
-      - slurmctld
       - mysql
 
   c1:
@@ -331,31 +319,6 @@ services:
       - ./slurm-work-dir:/slurm-work-dir
     expose:
       - "6818"
-    depends_on:
-      - slurmctld
-
-  slurmrestd:
-    build:
-      context: .
-      dockerfile: Dockerfile-slurm
-    image: slurm-docker-cluster
-    networks:
-      - jobbergate-net
-    command: ["slurmrestd"]
-    environment:
-      - SLURMRESTD_SECURITY=disable_unshare_files,disable_unshare_sysv,disable_user_check
-      - SLURM_JWT=daemon
-    container_name: slurmrestd
-    hostname: slurmrestd
-    volumes:
-      - etc_munge:/etc/munge
-      - var_log_slurm:/var/log/slurm
-      - ./slurm-fake-nfs:/nfs
-      - ./slurm-work-dir:/slurm-work-dir
-    expose:
-      - "6820"
-    ports:
-      - 6820:6820
     depends_on:
       - slurmctld
 
