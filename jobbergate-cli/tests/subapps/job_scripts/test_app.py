@@ -285,7 +285,7 @@ def test_render__non_fast_mode_and_job_submission(
         description=job_script_data["description"],
         cluster_name=None,
         execution_directory=None,
-        execution_parameters_file=None,
+        sbatch_arguments=None,
     )
     assert render_route.call_count == 1
     content = json.loads(render_route.calls.last.request.content)

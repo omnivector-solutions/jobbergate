@@ -14,7 +14,7 @@ from jobbergate_cli.constants import FileType
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobSubmissionCreateRequestData, JobSubmissionResponse
-from jobbergate_cli.subapps.job_scripts.tools import download_job_script_files, validate_parameter_file
+from jobbergate_cli.subapps.job_scripts.tools import download_job_script_files
 
 
 def sbatch_run(filename: str, *argv) -> int:
@@ -81,7 +81,7 @@ def create_job_submission(
     description: Optional[str] = None,
     cluster_name: Optional[str] = None,
     execution_directory: Optional[Path] = None,
-    execution_parameters_file: Optional[Path] = None,
+    sbatch_arguments: Optional[list[str]] = None,
     download: bool = False,
 ) -> JobSubmissionResponse:
     """
@@ -98,7 +98,7 @@ def create_job_submission(
     :param: execution_directory:       An optional directory where the job should be executed. If provided as a
                                        relative path, it will be constructed as an absolute path relative to
                                        the current working directory.
-    :param: execution_parameters_file: An optional file containing the execution parameters for the job.
+    :param: sbatch_arguments: An optional list of strings containing additional arguments to pass to sbatch
 
     :returns: The Job Submission data returned by the API after creating the new Job Submission
     """
@@ -118,12 +118,6 @@ def create_job_submission(
         ),
     )
 
-    Abort.require_condition(
-        settings.SBATCH_PATH is None or execution_parameters_file is None,
-        "Execution parameters file is not compatible with on-site job submissions",
-        raise_kwargs=dict(subject="Job Submission Error", support=False),
-    )
-
     if execution_directory is None:
         execution_directory = Path.cwd()
     if not execution_directory.is_absolute():
@@ -135,10 +129,8 @@ def create_job_submission(
         job_script_id=job_script_id,
         cluster_name=_map_cluster_name(jg_ctx, cluster_name),
         execution_directory=execution_directory,
+        sbatch_arguments=sbatch_arguments,
     )
-
-    if execution_parameters_file is not None:
-        job_submission_data.execution_parameters = validate_parameter_file(execution_parameters_file)
 
     if download or settings.SBATCH_PATH is not None:
         job_script_files = download_job_script_files(job_script_id, jg_ctx, Path.cwd())

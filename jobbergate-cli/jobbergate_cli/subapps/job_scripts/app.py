@@ -368,7 +368,7 @@ def render(
             description=job_script_result.description,
             cluster_name=cluster_name,
             execution_directory=execution_directory,
-            execution_parameters_file=None,
+            sbatch_arguments=None,
         )
     except Exception as err:
         raise Abort(

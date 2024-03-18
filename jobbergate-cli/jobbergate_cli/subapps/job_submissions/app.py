@@ -21,12 +21,12 @@ from jobbergate_cli.subapps.pagination import handle_pagination
 HIDDEN_FIELDS = [
     "created_at",
     "execution_directory",
-    "execution_parameters",
     "is_archived",
     "job_script",
     "report_message",
-    "updated_at",
+    "sbatch_arguments",
     "slurm_job_info",
+    "updated_at",
 ]
 
 
@@ -71,17 +71,16 @@ def create(
             """
         ).strip(),
     ),
-    execution_parameters: Optional[Path] = typer.Option(
+    sbatch_arguments: Optional[list[str]] = typer.Option(
         None,
+        "--sbatch-arguments",
+        "-s",
         help=dedent(
             """
-            The path to a JSON file containing the parameters to be passed to the job submission.
-            See more details at: https://slurm.schedmd.com/rest_api.html
+            Additional arguments to pass as sbatch directives. These should be provided as a list of strings.
+            See more details at: https://slurm.schedmd.com/sbatch.html
             """
         ).strip(),
-        exists=True,
-        readable=True,
-        resolve_path=True,
     ),
     download: bool = typer.Option(
         False,
@@ -100,7 +99,7 @@ def create(
         description=description,
         execution_directory=execution_directory,
         cluster_name=cluster_name,
-        execution_parameters_file=execution_parameters,
+        sbatch_arguments=sbatch_arguments,
         download=download,
     )
 
