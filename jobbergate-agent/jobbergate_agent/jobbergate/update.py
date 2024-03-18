@@ -1,7 +1,7 @@
 import json
 from typing import List
 
-from jobbergate_core.tools.sbatch import SbatchHandler
+from jobbergate_core.tools.sbatch import InfoHandler
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
@@ -11,11 +11,11 @@ from jobbergate_agent.utils.exception import JobbergateApiError, SbatchError
 from jobbergate_agent.utils.logging import log_error
 
 
-async def fetch_job_data(slurm_job_id: int, sbatch_handler: SbatchHandler) -> SlurmJobData:
+async def fetch_job_data(slurm_job_id: int, info_handler: InfoHandler) -> SlurmJobData:
     logger.debug(f"Fetching slurm job status for slurm job {slurm_job_id}")
 
     try:
-        data = sbatch_handler.get_job_info(slurm_job_id)
+        data = info_handler.get_job_info(slurm_job_id)
     except RuntimeError as e:
         logger.error(f"Failed to fetch job state from slurm: {e}")
         return SlurmJobData(
@@ -76,11 +76,7 @@ async def update_active_jobs():
     """
     logger.debug("Started updating slurm job data for active jobs...")
 
-    sbatch_handler = SbatchHandler(
-        sbatch_path=SETTINGS.SBATCH_PATH,
-        scontrol_path=SETTINGS.SCONTROL_PATH,
-        submission_directory=SETTINGS.DEFAULT_SLURM_WORK_DIR,
-    )
+    sbatch_handler = InfoHandler(scontrol_path=SETTINGS.SCONTROL_PATH)
 
     logger.debug("Fetching active jobs")
     active_job_submissions = await fetch_active_submissions()

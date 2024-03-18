@@ -201,7 +201,7 @@ async def test_update_active_jobs(mocker):
     """
 
     mocked_sbatch = mock.MagicMock()
-    mocker.patch("jobbergate_agent.jobbergate.update.SbatchHandler", return_value=mocked_sbatch)
+    mocker.patch("jobbergate_agent.jobbergate.update.InfoHandler", return_value=mocked_sbatch)
 
     mocker.patch(
         "jobbergate_agent.jobbergate.update.fetch_active_submissions",

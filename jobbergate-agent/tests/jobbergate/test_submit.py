@@ -398,7 +398,7 @@ async def test_submit_job_script__success_with_files(
 
     mocked_sbatch = mock.MagicMock()
     mocked_sbatch.submit_job = lambda *args, **kwargs: 13
-    mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
+    mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
 
     async with respx.mock:
         download_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh")
@@ -432,7 +432,7 @@ async def test_submit_job_script__success_without_files(
 
     mocked_sbatch = mock.MagicMock()
     mocked_sbatch.submit_job = lambda *args, **kwargs: 13
-    mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
+    mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
 
     async with respx.mock:
         download_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh")
@@ -476,7 +476,7 @@ async def test_submit_job_script__with_non_default_execution_directory(
 
     mocked_sbatch = mock.MagicMock()
     mocked_sbatch.submit_job = lambda *args, **kwargs: 13
-    mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
+    mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
 
     async with respx.mock:
         download_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh")
@@ -508,7 +508,7 @@ async def test_submit_job_script__raises_exception_if_no_executable_script_was_f
     mock_mark_as_rejected = mocker.patch("jobbergate_agent.jobbergate.submit.mark_as_rejected")
 
     mocked_sbatch = mock.MagicMock()
-    mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
+    mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
 
     with pytest.raises(JobSubmissionError, match="Could not find an executable"):
         await submit_job_script(pending_job_submission, user_mapper)
@@ -535,7 +535,7 @@ async def test_submit_job_script__raises_exception_if_sbatch_fails(
 
     mocked_sbatch = mock.MagicMock()
     mocked_sbatch.submit_job.side_effect = RuntimeError("BOOM!")
-    mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
+    mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
 
     async with respx.mock:
         respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/oauth/token").mock(

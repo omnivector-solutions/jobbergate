@@ -2,11 +2,10 @@
 Provide tool functions for working with Job Submission data
 """
 
-import re
 from pathlib import Path
-from subprocess import PIPE, Popen
 from typing import Optional, cast
 
+from jobbergate_core.tools.sbatch import SubmissionHandler, inject_sbatch_params
 from loguru import logger
 
 from jobbergate_cli.config import settings
@@ -15,43 +14,6 @@ from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobSubmissionCreateRequestData, JobSubmissionResponse
 from jobbergate_cli.subapps.job_scripts.tools import download_job_script_files
-
-
-def sbatch_run(filename: str, *argv) -> int:
-    """Execute Job Submission using sbatch and returns slurm id."""
-
-    if settings.SBATCH_PATH is None or not settings.SBATCH_PATH.exists():
-        raise Abort(
-            "The path to the sbatch executable is not set or does not exist. "
-            "Please set the SBATCH_PATH environment to allow on-site job submissions.",
-            subject="sbatch error",
-            support=False,
-        )
-
-    cmd = [settings.SBATCH_PATH.as_posix(), filename, *argv]
-    logger.debug(f"Executing: {' '.join(cmd)}")
-    p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    output_raw, err_raw = p.communicate(b"sbatch output")
-
-    output = output_raw.decode("utf-8")
-    err = err_raw.decode("utf-8")
-    rc = p.returncode
-
-    logger.debug("Job submission output: {}", output)
-    logger.debug("Job submission return code: {}", rc)
-
-    if rc != 0:
-        logger.error("Job submission error: {}", err)
-        raise Abort(f"Failed to execute submission with error: {err}", subject="sbatch error", support=False)
-
-    match = re.search(r"^Submitted batch job (\d+)", output)
-
-    if match is None:
-        raise Abort(f"Failed to parse slurm job id from {output=}", subject="sbatch error", support=False)
-
-    slurm_job_id = int(match.group(1))
-    logger.info("Job submission successful. Slurm job id: {}", slurm_job_id)
-    return slurm_job_id
 
 
 def _map_cluster_name(
@@ -133,7 +95,7 @@ def create_job_submission(
     )
 
     if download or settings.SBATCH_PATH is not None:
-        job_script_files = download_job_script_files(job_script_id, jg_ctx, Path.cwd())
+        job_script_files = download_job_script_files(job_script_id, jg_ctx, execution_directory)
 
     if settings.SBATCH_PATH is None:
         logger.info("Creating job submission in remote mode")
@@ -147,9 +109,29 @@ def create_job_submission(
             "There should be exactly one entrypoint file in the parent job script",
             raise_kwargs=dict(subject="Job Script Error"),
         )
+        job_script_path = execution_directory / entrypoint_file[0].filename
 
-        filename = entrypoint_file[0].filename
-        slurm_id = sbatch_run(filename, name)
+        if sbatch_arguments:
+            job_script_content = job_script_path.read_text()
+            job_script_content = inject_sbatch_params(
+                job_script_content, sbatch_arguments, "Injected at submission time by Jobbergate CLI"
+            )
+            job_script_path.write_text(job_script_content)
+
+        try:
+            sbatch_handler = SubmissionHandler(
+                sbatch_path=settings.SBATCH_PATH,
+                submission_directory=execution_directory,
+            )
+            slurm_id = sbatch_handler.submit_job(job_script_path)
+        except Exception as e:
+            raise Abort(
+                "Failed to submit job to Slurm",
+                raise_kwargs=dict(
+                    subject="Slurm Submission Error",
+                    support=True,
+                ),
+            ) from e
         job_submission_data.slurm_job_id = slurm_id
 
     result = cast(

@@ -8,7 +8,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from buzz import DoExceptParams, require_condition
-from jobbergate_core.tools.sbatch import SbatchHandler, inject_sbatch_params
+from jobbergate_core.tools.sbatch import SubmissionHandler, inject_sbatch_params
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
@@ -207,9 +207,8 @@ async def submit_job_script(
 
     submit_dir = pending_job_submission.execution_directory or SETTINGS.DEFAULT_SLURM_WORK_DIR
 
-    sbatch_handler = SbatchHandler(
+    sbatch_handler = SubmissionHandler(
         sbatch_path=SETTINGS.SBATCH_PATH,
-        scontrol_path=SETTINGS.SCONTROL_PATH,
         submission_directory=submit_dir,
         preexec_fn=preexec_fn,
     )
