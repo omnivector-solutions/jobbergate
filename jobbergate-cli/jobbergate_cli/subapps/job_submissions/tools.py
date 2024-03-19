@@ -2,9 +2,12 @@
 Provide tool functions for working with Job Submission data
 """
 
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, cast
 
+from buzz import enforce_defined
 from jobbergate_core.tools.sbatch import SubmissionHandler, inject_sbatch_params
 from loguru import logger
 
@@ -36,18 +39,10 @@ def _map_cluster_name(
     return f"{base_cluster_name}-{jg_ctx.persona.identity_data.organization_id}"
 
 
-def create_job_submission(
-    jg_ctx: JobbergateContext,
-    job_script_id: int,
-    name: str,
-    description: Optional[str] = None,
-    cluster_name: Optional[str] = None,
-    execution_directory: Optional[Path] = None,
-    sbatch_arguments: Optional[list[str]] = None,
-    download: bool = False,
-) -> JobSubmissionResponse:
+@dataclass
+class JobSubmissionABC(ABC):
     """
-    Create a Job Submission from the given Job Script.
+    A dataclass representing a job submission for Jobbergate.
 
     :param: jg_ctx:                    The JobbergateContext. Used to retrieve the client for requests
                                        and the email of the submitting user
@@ -60,68 +55,109 @@ def create_job_submission(
     :param: execution_directory:       An optional directory where the job should be executed. If provided as a
                                        relative path, it will be constructed as an absolute path relative to
                                        the current working directory.
-    :param: sbatch_arguments: An optional list of strings containing additional arguments to pass to sbatch
-
-    :returns: The Job Submission data returned by the API after creating the new Job Submission
+    :param: download:                  A flag indicating whether the job script files should be downloaded to the.
+    :param: sbatch_arguments:          An optional list of arguments to pass to inject into the job script.
     """
 
-    # Make static type checkers happy
-    assert jg_ctx.client is not None, "jg_ctx.client is uninitialized"
+    jg_ctx: JobbergateContext
+    job_script_id: int
+    name: str
+    execution_directory: Path | None = None
+    cluster_name: str | None = None
+    download: bool = False
+    description: Optional[str] = None
+    sbatch_arguments: Optional[list[str]] = None
 
-    if cluster_name is None:
-        cluster_name = settings.DEFAULT_CLUSTER_NAME
+    def __post_init__(self):
+        """Post-init hook to ensure that the cluster_name and execution_directory are set correctly."""
+        if not self.cluster_name:
+            self.cluster_name = settings.DEFAULT_CLUSTER_NAME
+        if self.cluster_name is None:
+            raise ValueError("No cluster name supplied and no default exists. Cannot submit to an unknown cluster!")
+        self.cluster_name = _map_cluster_name(self.jg_ctx, self.cluster_name)
 
-    Abort.require_condition(
-        cluster_name is not None,
-        "No cluster name supplied and no default exists. Cannot submit to an unknown cluster!",
-        raise_kwargs=dict(
-            subject="No cluster Name",
-            support=True,
-        ),
-    )
+        if self.execution_directory is None:
+            self.execution_directory = Path.cwd()
+        if not self.execution_directory.is_absolute():
+            self.execution_directory = self.execution_directory.resolve()
 
-    if execution_directory is None:
-        execution_directory = Path.cwd()
-    if not execution_directory.is_absolute():
-        execution_directory = execution_directory.resolve()
+    @abstractmethod
+    def process_submission(self):
+        """Process the job submission. This method should be overridden by subclasses."""
+        pass
 
-    job_submission_data = JobSubmissionCreateRequestData(
-        name=name,
-        description=description,
-        job_script_id=job_script_id,
-        cluster_name=_map_cluster_name(jg_ctx, cluster_name),
-        execution_directory=execution_directory,
-        sbatch_arguments=sbatch_arguments,
-    )
+    def get_request_data(self) -> JobSubmissionCreateRequestData:
+        """Return the data to be used in the POST request to the API."""
+        return JobSubmissionCreateRequestData(
+            name=self.name,
+            description=self.description,
+            job_script_id=self.job_script_id,
+            cluster_name=self.cluster_name,
+            execution_directory=self.execution_directory,
+            sbatch_arguments=self.sbatch_arguments,
+        )
 
-    if download or settings.SBATCH_PATH is not None:
-        job_script_files = download_job_script_files(job_script_id, jg_ctx, execution_directory)
+    def make_post_request(self, job_submission_data: JobSubmissionCreateRequestData) -> JobSubmissionResponse:
+        """Make the POST request to the API to create the job submission."""
+        # Make static type checkers happy
+        assert self.jg_ctx.client is not None, "jg_ctx.client is uninitialized"
+        return cast(
+            JobSubmissionResponse,
+            make_request(
+                self.jg_ctx.client,
+                "/jobbergate/job-submissions",
+                "POST",
+                expected_status=201,
+                abort_message="Couldn't create job submission",
+                support=True,
+                request_model=job_submission_data,
+                response_model_cls=JobSubmissionResponse,
+            ),
+        )
 
-    if settings.SBATCH_PATH is None:
+    def run(self) -> JobSubmissionResponse:
+        """Run all required steps to create the job submission."""
+        self.process_submission()
+        job_submission_data = self.get_request_data()
+        return self.make_post_request(job_submission_data)
+
+
+class RemoteJobSubmission(JobSubmissionABC):
+    def process_submission(self):
+        """Process the job submission in remote mode."""
         logger.info("Creating job submission in remote mode")
-    else:
+        if self.download:
+            download_job_script_files(self.job_script_id, self.jg_ctx, self.execution_directory)
+
+
+class OnsiteJobSubmission(JobSubmissionABC):
+    def process_submission(self):
+        """Process the job submission in on-site mode."""
         logger.info("Creating job submission in on-site mode")
+        if settings.SBATCH_PATH is None:
+            raise Abort(
+                "SBATCH_PATH most be set for onsite submissions",
+                subject="Configuration Error",
+                support=True,
+            )
+
+        job_script_files = download_job_script_files(self.job_script_id, self.jg_ctx, self.execution_directory)
 
         entrypoint_file = [f for f in job_script_files if f.file_type == FileType.ENTRYPOINT]
 
         Abort.require_condition(
             len(entrypoint_file) == 1,
-            "There should be exactly one entrypoint file in the parent job script",
+            f"There should be exactly one entrypoint file in the parent job script, got {len(entrypoint_file)}",
             raise_kwargs=dict(subject="Job Script Error"),
         )
-        job_script_path = execution_directory / entrypoint_file[0].filename
+        job_script_path = self.execution_directory / entrypoint_file[0].filename
 
-        if sbatch_arguments:
-            job_script_content = job_script_path.read_text()
-            job_script_content = inject_sbatch_params(
-                job_script_content, sbatch_arguments, "Injected at submission time by Jobbergate CLI"
-            )
-            job_script_path.write_text(job_script_content)
+        self.inject_sbatch_params(job_script_path)
 
         try:
             sbatch_handler = SubmissionHandler(
                 sbatch_path=settings.SBATCH_PATH,
-                submission_directory=execution_directory,
+                submission_directory=self.execution_directory,
             )
             slurm_id = sbatch_handler.submit_job(job_script_path)
         except Exception as e:
@@ -130,24 +166,41 @@ def create_job_submission(
                 raise_kwargs=dict(
                     subject="Slurm Submission Error",
                     support=True,
+                    log_message=f"On-site submission failed: {e:s}",
                 ),
             ) from e
-        job_submission_data.slurm_job_id = slurm_id
+        self.slurm_job_id = slurm_id
 
-    result = cast(
-        JobSubmissionResponse,
-        make_request(
-            jg_ctx.client,
-            "/jobbergate/job-submissions",
-            "POST",
-            expected_status=201,
-            abort_message="Couldn't create job submission",
-            support=True,
-            request_model=job_submission_data,
-            response_model_cls=JobSubmissionResponse,
-        ),
-    )
-    return result
+    def inject_sbatch_params(self, job_script_path: Path):
+        """Inject sbatch parameters into the job script."""
+        if not self.sbatch_arguments:
+            return
+        job_script_content = job_script_path.read_text()
+        job_script_content = inject_sbatch_params(
+            job_script_content, self.sbatch_arguments, "Injected at submission time by Jobbergate CLI"
+        )
+        job_script_path.write_text(job_script_content)
+
+    def get_request_data(self) -> JobSubmissionCreateRequestData:
+        """Return the data to be used in the POST request to the API."""
+        data = super().get_request_data()
+        data.slurm_job_id = enforce_defined(
+            getattr(self, "slurm_job_id", None),
+            "Slurm job id not found, on-site submission failed",
+            raise_exc_class=Abort,
+            raise_kwargs=dict(
+                subject="Slurm Submission Error",
+                support=True,
+            ),
+        )
+        return data
+
+
+def job_submissions_factory(*args, **kwargs) -> JobSubmissionABC:
+    """Job submission factory function. Returns the correct job submission class based on the current mode."""
+    if settings.is_onsite_mode:
+        return OnsiteJobSubmission(*args, **kwargs)
+    return RemoteJobSubmission(*args, **kwargs)
 
 
 def fetch_job_submission_data(

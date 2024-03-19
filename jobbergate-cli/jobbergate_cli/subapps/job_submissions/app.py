@@ -13,7 +13,7 @@ from jobbergate_cli.exceptions import handle_abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobSubmissionResponse
-from jobbergate_cli.subapps.job_submissions.tools import create_job_submission, fetch_job_submission_data
+from jobbergate_cli.subapps.job_submissions.tools import fetch_job_submission_data, job_submissions_factory
 from jobbergate_cli.subapps.pagination import handle_pagination
 
 
@@ -92,7 +92,7 @@ def create(
     """
     jg_ctx: JobbergateContext = ctx.obj
 
-    result = create_job_submission(
+    submissions_handler = job_submissions_factory(
         jg_ctx,
         job_script_id,
         name,
@@ -102,6 +102,7 @@ def create(
         sbatch_arguments=sbatch_arguments,
         download=download,
     )
+    result = submissions_handler.run()
 
     render_single_result(
         jg_ctx,

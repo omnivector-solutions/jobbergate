@@ -11,6 +11,7 @@ This file keeps track of all notable changes to jobbergate-cli
 - Added Jobbergate-core as a project dependency to reuse key components
 - Refactored on-site submission to use the new `jobbergate-core` components
 - Replaced `execution_parameters` by `sbatch_arguments` on job submission
+- Refactored `jobbergate_cli.subapps.job_submissions.tools.create_submission` into two classes in the same module to reduce complexity in the codebase
 
 ## 4.5.0a2 -- 2024-02-23
 
