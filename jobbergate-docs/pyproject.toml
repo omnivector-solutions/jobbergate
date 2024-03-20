@@ -18,7 +18,7 @@ jobbergate-cli = { path = "../jobbergate-cli", develop = true }
 jobbergate-agent = { path = "../jobbergate-agent", develop = true }
 
 [tool.poetry.group.dev.dependencies]
-black = "^23"
+black = "^24"
 isort = "^5.9.3"
 
 [tool.black]
