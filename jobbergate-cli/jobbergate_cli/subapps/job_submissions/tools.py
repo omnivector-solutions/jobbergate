@@ -196,11 +196,38 @@ class OnsiteJobSubmission(JobSubmissionABC):
         return data
 
 
-def job_submissions_factory(*args, **kwargs) -> JobSubmissionABC:
+def job_submissions_factory(
+    jg_ctx: JobbergateContext,
+    job_script_id: int,
+    name: str,
+    execution_directory: Path | None = None,
+    cluster_name: str | None = None,
+    download: bool = False,
+    description: Optional[str] = None,
+    sbatch_arguments: Optional[list[str]] = None,
+) -> JobSubmissionABC:
     """Job submission factory function. Returns the correct job submission class based on the current mode."""
     if settings.is_onsite_mode:
-        return OnsiteJobSubmission(*args, **kwargs)
-    return RemoteJobSubmission(*args, **kwargs)
+        return OnsiteJobSubmission(
+            jg_ctx=jg_ctx,
+            job_script_id=job_script_id,
+            name=name,
+            execution_directory=execution_directory,
+            cluster_name=cluster_name,
+            download=download,
+            description=description,
+            sbatch_arguments=sbatch_arguments,
+        )
+    return RemoteJobSubmission(
+        jg_ctx=jg_ctx,
+        job_script_id=job_script_id,
+        name=name,
+        execution_directory=execution_directory,
+        cluster_name=cluster_name,
+        download=download,
+        description=description,
+        sbatch_arguments=sbatch_arguments,
+    )
 
 
 def fetch_job_submission_data(

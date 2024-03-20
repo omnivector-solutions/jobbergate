@@ -16,8 +16,8 @@ def submit():
         raise typer.Exit(code=1)
 
     fake_slurm_job_id = randint(settings.FAKE_SBATCH_MIN_JOB_ID, settings.FAKE_SBATCH_MAX_JOB_ID)
-    typer.echo(f"fake-sbatch: Submitted batch job {fake_slurm_job_id}")
+    typer.echo(f"{fake_slurm_job_id},fake-sbatch-cluster")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app()

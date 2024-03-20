@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 import typer
 
 from jobbergate_cli.constants import SortOrder
-from jobbergate_cli.exceptions import handle_abort
+from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobSubmissionResponse
@@ -92,17 +92,26 @@ def create(
     """
     jg_ctx: JobbergateContext = ctx.obj
 
-    submissions_handler = job_submissions_factory(
-        jg_ctx,
-        job_script_id,
-        name,
-        description=description,
-        execution_directory=execution_directory,
-        cluster_name=cluster_name,
-        sbatch_arguments=sbatch_arguments,
-        download=download,
-    )
-    result = submissions_handler.run()
+    try:
+        submissions_handler = job_submissions_factory(
+            jg_ctx,
+            job_script_id,
+            name,
+            description=description,
+            execution_directory=execution_directory,
+            cluster_name=cluster_name,
+            sbatch_arguments=sbatch_arguments,
+            download=download,
+        )
+        result = submissions_handler.run()
+    except Exception as err:
+        raise Abort(
+            "Failed to create the job submission",
+            subject="Job submission failed",
+            support=True,
+            log_message=f"There was an issue submitting the job from job_script_id={job_script_id}",
+            original_error=err,
+        )
 
     render_single_result(
         jg_ctx,
