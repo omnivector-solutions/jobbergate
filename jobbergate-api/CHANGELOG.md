@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+- Fixed a bug when an empty string is passed as a value for `execution_directory` on job submissions
+
 ## 4.4.0 -- 2024-03-19
 
 - Removed SQL savepoints for auto-sessions
