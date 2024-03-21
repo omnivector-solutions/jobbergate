@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+
+## 4.4.1 -- 2024-03-21
 - Fixed a bug when an empty string is passed as a value for `execution_directory` on job submissions
 
 ## 4.4.0 -- 2024-03-19
