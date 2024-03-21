@@ -207,13 +207,10 @@ async def submit_job_script(
         preexec_fn = run_as_user(username)
 
     submit_dir = pending_job_submission.execution_directory or SETTINGS.DEFAULT_SLURM_WORK_DIR
-    async with handle_errors_async(
-        "The submission directory must exist and be an absolute path",
-        raise_exc_class=JobSubmissionError,
-        do_except=_reject_handler,
-    ):
-        if not (submit_dir.exists() and submit_dir.is_absolute()):
-            raise ValueError(submit_dir.as_posix())
+    if not submit_dir.exists() or not submit_dir.is_absolute():
+        message = f"The execution directory must exist and be an absolute path, but got '{submit_dir.as_posix()}'"
+        await mark_as_rejected(pending_job_submission.id, message)
+        raise JobSubmissionError(message)
 
     sbatch_handler = SubmissionHandler(
         sbatch_path=SETTINGS.SBATCH_PATH,
