@@ -1,8 +1,8 @@
 """
 JobSubmission resource schema.
 """
+
 import re
-from pathlib import Path
 from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Extra, Field, NonNegativeInt, validator
@@ -363,6 +363,11 @@ class JobSubmissionCreateRequest(BaseModel):
     client_id: Optional[LengthLimitedStr]
     execution_parameters: JobProperties = Field(default_factory=JobProperties)
 
+    @validator("execution_directory", pre=True, always=True)
+    def empty_str_to_none(cls, v):
+        """Ensure empty strings are converted to None to avoid problems with Path downstream."""
+        return v or None
+
     class Config:
         schema_extra = job_submission_meta_mapper
 
@@ -376,6 +381,11 @@ class JobSubmissionUpdateRequest(BaseModel):
     description: Optional[LengthLimitedStr]
     execution_directory: Optional[LengthLimitedStr]
     status: Optional[JobSubmissionStatus]
+
+    @validator("execution_directory", pre=True, always=True)
+    def empty_str_to_none(cls, v):
+        """Ensure empty strings are converted to None to avoid problems with Path downstream."""
+        return v or None
 
     class Config:
         schema_extra = job_submission_meta_mapper
@@ -403,7 +413,7 @@ class JobSubmissionDetailedView(JobSubmissionListView):
     Complete model to match the database for the JobSubmission resource.
     """
 
-    execution_directory: Optional[Path]
+    execution_directory: Optional[str]
     report_message: Optional[str]
     execution_parameters: Optional[JobProperties]
     slurm_job_info: Optional[str]
@@ -419,7 +429,7 @@ class PendingJobSubmission(BaseModel):
     id: int
     name: str
     owner_email: str
-    execution_directory: Optional[Path]
+    execution_directory: Optional[str]
     execution_parameters: dict = Field(default_factory=dict)
     job_script: JobScriptDetailedView
 
