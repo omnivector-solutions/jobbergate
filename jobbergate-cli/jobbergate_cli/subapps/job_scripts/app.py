@@ -23,7 +23,7 @@ from jobbergate_cli.subapps.job_scripts.tools import (
     upload_job_script_files,
 )
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
-from jobbergate_cli.subapps.job_submissions.tools import create_job_submission
+from jobbergate_cli.subapps.job_submissions.tools import job_submissions_factory
 from jobbergate_cli.subapps.pagination import handle_pagination
 from jobbergate_cli.text_tools import dedent
 
@@ -344,7 +344,7 @@ def render(
         actual_value=submit,
     )
 
-    if settings.SBATCH_PATH is None or not submit:
+    if settings.is_onsite_mode is False or not submit:
         # Notice on-site submission will download the job script files anyway, so it is asked just in remote mode.
         download = question_helper(
             question_func=typer.confirm,
@@ -361,23 +361,24 @@ def render(
         return
 
     try:
-        job_submission_result = create_job_submission(
+        submissions_handler = job_submissions_factory(
             jg_ctx=jg_ctx,
             job_script_id=job_script_result.job_script_id,
             name=job_script_result.name,
             description=job_script_result.description,
             cluster_name=cluster_name,
             execution_directory=execution_directory,
-            execution_parameters_file=None,
+            sbatch_arguments=None,
         )
+        job_submission_result = submissions_handler.run()
     except Exception as err:
         raise Abort(
             "Failed to immediately submit the job after job script creation.",
             subject="Automatic job submission failed",
             support=True,
-            log_message=f"""
-                There was an issue submitting the job immediately job_script_id={job_script_result.job_script_id}.
-            """,
+            log_message="There was an issue submitting the job immediately job_script_id={}".format(
+                job_script_result.job_script_id
+            ),
             original_error=err,
         )
 

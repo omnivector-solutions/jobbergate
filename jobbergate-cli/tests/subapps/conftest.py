@@ -181,10 +181,6 @@ def dummy_job_submission_data(dummy_job_script_data):
             job_script_id=dummy_job_script_data[0]["id"],
             slurm_job_id=13,
             status="CREATED",
-            execution_parameters={
-                "name": "job-submission-name-1",
-                "comment": "I am a comment",
-            },
         ),
         dict(
             id=1,
@@ -196,10 +192,6 @@ def dummy_job_submission_data(dummy_job_script_data):
             job_script_id=88,
             slurm_job_id=8888,
             status="CREATED",
-            execution_parameters={
-                "name": "job-submission-name-2",
-                "comment": "I am a comment",
-            },
         ),
         dict(
             id=3,
@@ -211,10 +203,6 @@ def dummy_job_submission_data(dummy_job_script_data):
             job_script_id=99,
             slurm_job_id=9999,
             status="CREATED",
-            execution_parameters={
-                "name": "job-submission-name-3",
-                "comment": "I am a comment",
-            },
         ),
         dict(
             id=4,
@@ -227,10 +215,6 @@ def dummy_job_submission_data(dummy_job_script_data):
             slurm_job_id=9999,
             status="REJECTED",
             report_message="Failed to submit job to slurm",
-            execution_parameters={
-                "name": "job-submission-name-4",
-                "comment": "I am a comment",
-            },
         ),
     ]
 

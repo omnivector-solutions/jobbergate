@@ -5,6 +5,7 @@ Define tests for the submission functions of the jobbergate section.
 import getpass
 import json
 import re
+from pathlib import Path
 from unittest import mock
 
 import httpx
@@ -398,7 +399,7 @@ async def test_submit_job_script__success_with_files(
 
     mocked_sbatch = mock.MagicMock()
     mocked_sbatch.submit_job = lambda *args, **kwargs: 13
-    mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
+    mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
 
     async with respx.mock:
         download_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh")
@@ -432,7 +433,7 @@ async def test_submit_job_script__success_without_files(
 
     mocked_sbatch = mock.MagicMock()
     mocked_sbatch.submit_job = lambda *args, **kwargs: 13
-    mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
+    mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
 
     async with respx.mock:
         download_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh")
@@ -476,7 +477,7 @@ async def test_submit_job_script__with_non_default_execution_directory(
 
     mocked_sbatch = mock.MagicMock()
     mocked_sbatch.submit_job = lambda *args, **kwargs: 13
-    mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
+    mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
 
     async with respx.mock:
         download_route = respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-scripts/1/upload/application.sh")
@@ -508,7 +509,7 @@ async def test_submit_job_script__raises_exception_if_no_executable_script_was_f
     mock_mark_as_rejected = mocker.patch("jobbergate_agent.jobbergate.submit.mark_as_rejected")
 
     mocked_sbatch = mock.MagicMock()
-    mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
+    mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
 
     with pytest.raises(JobSubmissionError, match="Could not find an executable"):
         await submit_job_script(pending_job_submission, user_mapper)
@@ -516,6 +517,51 @@ async def test_submit_job_script__raises_exception_if_no_executable_script_was_f
     mock_mark_as_rejected.assert_called_once_with(
         dummy_pending_job_submission_data["id"],
         RegexArgMatcher(".*Could not find an executable.*"),
+    )
+
+
+@pytest.mark.usefixtures("mock_access_token")
+async def test_submit_job_script__raises_exception_if_execution_dir_does_not_exist(
+    dummy_pending_job_submission_data, mocker, user_mapper
+):
+    pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
+    pending_job_submission.execution_directory = Path("/non/existing/path")
+
+    mock_mark_as_rejected = mocker.patch("jobbergate_agent.jobbergate.submit.mark_as_rejected")
+
+    mocked_sbatch = mock.MagicMock()
+    mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
+
+    with pytest.raises(JobSubmissionError, match="The execution directory must exist and be an absolute path"):
+        await submit_job_script(pending_job_submission, user_mapper)
+
+    mock_mark_as_rejected.assert_called_once_with(
+        dummy_pending_job_submission_data["id"],
+        RegexArgMatcher(".*The execution directory must exist and be an absolute path.*"),
+    )
+
+
+@pytest.mark.usefixtures("mock_access_token")
+async def test_submit_job_script__raises_exception_if_execution_dir_is_relative(
+    dummy_pending_job_submission_data, mocker, user_mapper, tmp_path
+):
+    pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
+    pending_job_submission.execution_directory = Path("./existing/")
+
+    submit_dir = tmp_path / pending_job_submission.execution_directory
+    submit_dir.mkdir()
+
+    mock_mark_as_rejected = mocker.patch("jobbergate_agent.jobbergate.submit.mark_as_rejected")
+
+    mocked_sbatch = mock.MagicMock()
+    mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
+
+    with pytest.raises(JobSubmissionError, match="The execution directory must exist and be an absolute path"):
+        await submit_job_script(pending_job_submission, user_mapper)
+
+    mock_mark_as_rejected.assert_called_once_with(
+        dummy_pending_job_submission_data["id"],
+        RegexArgMatcher(".*The execution directory must exist and be an absolute path.*"),
     )
 
 
@@ -535,7 +581,7 @@ async def test_submit_job_script__raises_exception_if_sbatch_fails(
 
     mocked_sbatch = mock.MagicMock()
     mocked_sbatch.submit_job.side_effect = RuntimeError("BOOM!")
-    mocker.patch("jobbergate_agent.jobbergate.submit.SbatchHandler", return_value=mocked_sbatch)
+    mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
 
     async with respx.mock:
         respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/oauth/token").mock(

@@ -96,6 +96,11 @@ class Settings(BaseSettings):
 
         return values
 
+    @property
+    def is_onsite_mode(self) -> bool:
+        """Check if the SBATCH_PATH is set, indicating that the CLI is running in on-site mode."""
+        return self.SBATCH_PATH is not None
+
     class Config:
         """
         Customize behavior of the Settings class. Especially, enable the use of dotenv to load settings from a ``.env``

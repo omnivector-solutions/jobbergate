@@ -248,10 +248,13 @@ def test_render__non_fast_mode_and_job_submission(
             content=dummy_module_source.encode(),
         ),
     )
-    mocked_create_job_submission = mocker.patch(
-        "jobbergate_cli.subapps.job_scripts.app.create_job_submission",
-        return_value=JobSubmissionResponse.parse_obj(job_submission_data),
+
+    submissions_handler = mock.MagicMock()
+    submissions_handler.run.return_value = JobSubmissionResponse.parse_obj(job_submission_data)
+    mocked_factory = mocker.patch(
+        "jobbergate_cli.subapps.job_scripts.app.job_submissions_factory", return_value=submissions_handler
     )
+
     mocker.patch.object(
         importlib.import_module("inquirer.prompt"),
         "ConsoleRender",
@@ -278,15 +281,7 @@ def test_render__non_fast_mode_and_job_submission(
         id=application_response.application_id,
         identifier=None,
     )
-    mocked_create_job_submission.assert_called_once_with(
-        jg_ctx=dummy_context,
-        job_script_id=job_script_data["id"],
-        name=job_script_data["name"],
-        description=job_script_data["description"],
-        cluster_name=None,
-        execution_directory=None,
-        execution_parameters_file=None,
-    )
+
     assert render_route.call_count == 1
     content = json.loads(render_route.calls.last.request.content)
     assert content == {
@@ -307,6 +302,16 @@ def test_render__non_fast_mode_and_job_submission(
             },
         },
     }
+
+    mocked_factory.assert_called_once_with(
+        jg_ctx=dummy_context,
+        job_script_id=job_script_data["id"],
+        name=job_script_data["name"],
+        description=job_script_data["description"],
+        cluster_name=None,
+        execution_directory=None,
+        sbatch_arguments=None,
+    )
 
     mocked_render.assert_has_calls(
         [

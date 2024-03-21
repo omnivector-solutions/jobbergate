@@ -9,11 +9,11 @@ from typing import Any, Dict, Optional
 import typer
 
 from jobbergate_cli.constants import SortOrder
-from jobbergate_cli.exceptions import handle_abort
+from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobSubmissionResponse
-from jobbergate_cli.subapps.job_submissions.tools import create_job_submission, fetch_job_submission_data
+from jobbergate_cli.subapps.job_submissions.tools import fetch_job_submission_data, job_submissions_factory
 from jobbergate_cli.subapps.pagination import handle_pagination
 
 
@@ -21,12 +21,12 @@ from jobbergate_cli.subapps.pagination import handle_pagination
 HIDDEN_FIELDS = [
     "created_at",
     "execution_directory",
-    "execution_parameters",
     "is_archived",
     "job_script",
     "report_message",
-    "updated_at",
+    "sbatch_arguments",
     "slurm_job_info",
+    "updated_at",
 ]
 
 
@@ -71,17 +71,16 @@ def create(
             """
         ).strip(),
     ),
-    execution_parameters: Optional[Path] = typer.Option(
+    sbatch_arguments: Optional[list[str]] = typer.Option(
         None,
+        "--sbatch-arguments",
+        "-s",
         help=dedent(
             """
-            The path to a JSON file containing the parameters to be passed to the job submission.
-            See more details at: https://slurm.schedmd.com/rest_api.html
+            Additional arguments to pass as sbatch directives. These should be provided as a list of strings.
+            See more details at: https://slurm.schedmd.com/sbatch.html
             """
         ).strip(),
-        exists=True,
-        readable=True,
-        resolve_path=True,
     ),
     download: bool = typer.Option(
         False,
@@ -93,16 +92,26 @@ def create(
     """
     jg_ctx: JobbergateContext = ctx.obj
 
-    result = create_job_submission(
-        jg_ctx,
-        job_script_id,
-        name,
-        description=description,
-        execution_directory=execution_directory,
-        cluster_name=cluster_name,
-        execution_parameters_file=execution_parameters,
-        download=download,
-    )
+    try:
+        submissions_handler = job_submissions_factory(
+            jg_ctx,
+            job_script_id,
+            name,
+            description=description,
+            execution_directory=execution_directory,
+            cluster_name=cluster_name,
+            sbatch_arguments=sbatch_arguments,
+            download=download,
+        )
+        result = submissions_handler.run()
+    except Exception as err:
+        raise Abort(
+            "Failed to create the job submission",
+            subject="Job submission failed",
+            support=True,
+            log_message=f"There was an issue submitting the job from job_script_id={job_script_id}",
+            original_error=err,
+        )
 
     render_single_result(
         jg_ctx,

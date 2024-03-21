@@ -7,8 +7,8 @@ import pwd
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from buzz import DoExceptParams, require_condition
-from jobbergate_core.tools.sbatch import SbatchHandler, inject_sbatch_params
+from buzz import DoExceptParams
+from jobbergate_core.tools.sbatch import SubmissionHandler, inject_sbatch_params
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
@@ -94,9 +94,9 @@ async def get_job_script_file(pending_job_submission: PendingJobSubmission, subm
 
     job_script = await retrieve_submission_file(job_script_file)
 
-    if pending_job_submission.sbatch_parameters:
+    if pending_job_submission.sbatch_arguments:
         job_script = inject_sbatch_params(
-            job_script, pending_job_submission.sbatch_parameters, "Sbatch params injected at submission time"
+            job_script, pending_job_submission.sbatch_arguments, "Sbatch params injected at submission time"
         )
 
     return await write_submission_file(job_script, job_script_file.filename, submit_dir)
@@ -183,6 +183,7 @@ async def submit_job_script(
     :param: pending_job_submission: A job_submission with fields needed to submit.
     :returns: The ``slurm_job_id`` for the submitted job
     """
+    logger.debug(f"Submitting {pending_job_submission}")
 
     async def _reject_handler(params: DoExceptParams):
         """
@@ -206,10 +207,13 @@ async def submit_job_script(
         preexec_fn = run_as_user(username)
 
     submit_dir = pending_job_submission.execution_directory or SETTINGS.DEFAULT_SLURM_WORK_DIR
+    if not submit_dir.exists() or not submit_dir.is_absolute():
+        message = f"The execution directory must exist and be an absolute path, but got '{submit_dir.as_posix()}'"
+        await mark_as_rejected(pending_job_submission.id, message)
+        raise JobSubmissionError(message)
 
-    sbatch_handler = SbatchHandler(
+    sbatch_handler = SubmissionHandler(
         sbatch_path=SETTINGS.SBATCH_PATH,
-        scontrol_path=SETTINGS.SCONTROL_PATH,
         submission_directory=submit_dir,
         preexec_fn=preexec_fn,
     )
@@ -222,12 +226,6 @@ async def submit_job_script(
             do_except=_reject_handler,
         ):
             logger.debug(f"Processing submission files for job submission {pending_job_submission.id}")
-
-            require_condition(
-                expr=submit_dir.exists() and submit_dir.is_absolute(),
-                message=f"The submission directory must exist and be an absolute path, got: {submit_dir.as_posix()}",
-                raise_exc_class=JobSubmissionError,
-            )
 
             supporting_files = await process_supporting_files(pending_job_submission, tmp_dir_path)
 
