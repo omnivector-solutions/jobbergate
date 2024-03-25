@@ -23,10 +23,8 @@ def test_discover_tasks__success():
         "self-update": self_update_task,
     }
     actual_result = load_plugins("tasks")
-    # actual_result = {k: v.__name__ for k, v in actual_result_raw.items()}
 
     assert actual_result == expected_result
-    # assert actual_result_raw is None
 
 
 def test_discover_user_mappers__success():
