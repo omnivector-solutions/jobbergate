@@ -74,14 +74,12 @@ def upgrade():
             "REJECTED",
             "DONE",
             "ABORTED",
-
             # -- Temporarily included until after remapping --
             "COMPLETED",
             "FAILED",
             "UNKNOWN",
             "CANCELLED",
             # ----
-
             name="jobsubmissionstatus",
             native_enum=False,
         ),
@@ -92,12 +90,14 @@ def upgrade():
     op.execute("UPDATE job_submissions SET status = 'DONE' WHERE status = 'COMPLETED'")
     op.execute("UPDATE job_submissions SET status = 'ABORTED' WHERE status = 'FAILED'")
     op.execute("UPDATE job_submissions SET status = 'ABORTED' WHERE status = 'UNKNOWN'")
-    op.execute("""
+    op.execute(
+        """
         UPDATE job_submissions
         SET status = 'ABORTED',
             slurm_job_state = 'CANCELLED'
         WHERE status = 'CANCELLED'
-    """)
+    """
+    )
     # ----
 
     op.alter_column(
@@ -148,12 +148,10 @@ def downgrade():
             "UNKNOWN",
             "REJECTED",
             "CANCELLED",
-
             # -- Temporarily included until after remapping --
             "DONE",
             "ABORTED",
             # ----
-
             name="jobsubmissionstatus",
             native_enum=False,
         ),
@@ -161,12 +159,14 @@ def downgrade():
     )
 
     # -- do the remapping --
-    op.execute("""
+    op.execute(
+        """
         UPDATE job_submissions
         SET status = 'CANCELLED'
         WHERE status = 'ABORTED'
         AND slurm_job_state = 'CANCELLED'
-    """)
+    """
+    )
     op.execute("UPDATE job_submissions SET status = 'FAILED' WHERE status = 'ABORTED'")
     op.execute("UPDATE job_submissions SET status = 'COMPLETED' WHERE status = 'DONE'")
     # ----
