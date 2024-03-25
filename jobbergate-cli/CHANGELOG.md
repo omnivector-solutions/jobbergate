@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+
+## 4.4.2 -- 2024-03-25
 Fixed bug on `jobbergate_cli.subapps.applications.questions.Integer` when a default of zero could not be set properly
 
 ## 4.4.1 -- 2024-03-21
