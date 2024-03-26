@@ -108,18 +108,15 @@ async def job_submission_get(
 )
 async def job_submission_get_list(
     list_params: ListParams = Depends(),
-    slurm_job_ids: str
-    | None = Query(
+    slurm_job_ids: str | None = Query(
         None,
         description="Comma-separated list of slurm-job-ids to match active job_submissions",
     ),
-    submit_status: JobSubmissionStatus
-    | None = Query(
+    submit_status: JobSubmissionStatus | None = Query(
         None,
         description="Limit results to those with matching status",
     ),
-    from_job_script_id: int
-    | None = Query(
+    from_job_script_id: int | None = Query(
         None,
         description="Filter job-submissions by the job-script-id they were created from.",
     ),

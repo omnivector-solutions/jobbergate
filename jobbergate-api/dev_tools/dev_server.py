@@ -1,6 +1,7 @@
 """
 Provide command for starting a local development server for the API.
 """
+
 from time import sleep
 
 import typer

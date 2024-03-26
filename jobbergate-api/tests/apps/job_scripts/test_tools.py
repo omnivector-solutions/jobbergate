@@ -1,6 +1,7 @@
 """
 Test job-script files.
 """
+
 import snick
 
 from jobbergate_api.apps.job_scripts.tools import inject_sbatch_params

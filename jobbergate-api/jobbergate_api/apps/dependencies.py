@@ -4,6 +4,7 @@ Router dependencies shared for multiple resources.
 Note:
     The dependencies can be reused multiple times, since FastAPI caches the results.
 """
+
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from itertools import chain

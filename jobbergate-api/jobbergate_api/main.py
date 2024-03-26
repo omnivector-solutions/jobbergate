@@ -1,6 +1,7 @@
 """
 Main file to startup the fastapi server.
 """
+
 from contextlib import asynccontextmanager
 
 import asyncpg

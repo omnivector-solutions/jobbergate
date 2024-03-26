@@ -3,6 +3,7 @@ Provide configuration settings for the app.
 
 Pull settings from environment variables or a .env file if available.
 """
+
 from enum import Enum
 from typing import Optional
 

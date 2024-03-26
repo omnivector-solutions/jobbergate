@@ -1,6 +1,7 @@
 """
 Provide unit tests for the main app.
 """
+
 import pytest
 from fastapi import status
 from httpx import AsyncClient

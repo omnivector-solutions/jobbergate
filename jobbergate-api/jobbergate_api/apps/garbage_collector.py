@@ -1,4 +1,5 @@
 """Delete unused files from jobbergate's file storage."""
+
 from fastapi import BackgroundTasks
 from loguru import logger
 from sqlalchemy import select

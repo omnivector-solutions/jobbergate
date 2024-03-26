@@ -1,6 +1,7 @@
 """
 Email notification system for Jobbergate.
 """
+
 from dataclasses import dataclass
 from typing import List, Optional, Union
 

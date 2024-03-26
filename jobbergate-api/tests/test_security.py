@@ -1,6 +1,7 @@
 """
 Test the security module.
 """
+
 from unittest.mock import patch
 
 import pytest
