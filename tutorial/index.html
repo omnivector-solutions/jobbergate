@@ -1470,7 +1470,6 @@ services are in a healthy state</p>
 </span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>mysql                                       &quot;docker-entrypoint.s…&quot;   mysql                 running             3306/tcp, 33060/tcp
 </span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>slurmctld                                   &quot;/usr/local/bin/slur…&quot;   slurmctld             running             6817/tcp
 </span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>slurmdbd                                    &quot;/usr/local/bin/slur…&quot;   slurmdbd              running             6819/tcp
-</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>slurmrestd                                  &quot;/usr/local/bin/slur…&quot;   slurmrestd            running             0.0.0.0:6820-&gt;6820/tcp
 </span></code></pre></div>
 <p>The <code>STATUS</code> for each service should be "running" except for the <code>minio-create-bucket</code> and <code>jobbergate-cli</code>
 services that should be "exited".</p>

@@ -1242,13 +1242,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#jobbergate_api.apps.job_submissions.properties_parser" class="md-nav__link">
-    properties_parser
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#jobbergate_api.apps.job_submissions.routers" class="md-nav__link">
     routers
   </a>
@@ -2334,13 +2327,6 @@
           <li class="md-nav__item">
   <a href="#jobbergate_api.apps.job_submissions.models" class="md-nav__link">
     models
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_api.apps.job_submissions.properties_parser" class="md-nav__link">
-    properties_parser
   </a>
   
 </li>
@@ -7167,13 +7153,13 @@ helper functions in the class.</p>
           </td>
         </tr>
         <tr>
-          <td><code>execution_parameters</code></td>
+          <td><code>sbatch_arguments</code></td>
           <td>
-                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[dict[str, <span title="typing.Any">Any</span>]]</code>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[list[str]]</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The properties of the job.</p>
+              <p>The arguments used to submit the job to the slurm queue.</p>
             </div>
           </td>
         </tr>
@@ -7306,295 +7292,6 @@ helper functions in the class.</p>
 
 </div>
 
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-module">
-
-
-
-
-<h6 id="jobbergate_api.apps.job_submissions.properties_parser" class="doc doc-heading">
-          <span class="doc doc-object-name doc-module-name">properties_parser</span>
-
-
-</h6>
-
-  <div class="doc doc-contents ">
-  
-      <p>Parser for Slurm REST API parameters from SBATCH parameters at the job script file.</p>
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-class">
-
-
-
-
-<h7 id="jobbergate_api.apps.job_submissions.properties_parser.ArgumentParserCustomExit" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">ArgumentParserCustomExit</span>
-
-
-</h7>
-
-
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="argparse.ArgumentParser">ArgumentParser</span></code></p>
-
-  
-      <p>Custom implementation of the built-in class for argument parsing.</p>
-<p>The sys.exit triggered by the original code is replaced by a ValueError,
-besides some friendly logging messages.</p>
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h8 id="jobbergate_api.apps.job_submissions.properties_parser.ArgumentParserCustomExit.exit" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">exit</span>
-
-
-</h8>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">exit</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Raise ValueError when parsing invalid parameters or if the type of their values is not correct.</p>
-
-  </div>
-
-</div>
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-
-<h7 id="jobbergate_api.apps.job_submissions.properties_parser.SbatchToSlurm" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">SbatchToSlurm</span>
-
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
-  </span>
-
-</h7>
-
-
-  <div class="doc doc-contents ">
-
-  
-      <p>Store the information for each parameter, including its name at Slurm API and SBATCH.</p>
-<p>Besides that, any extra argument this parameter needs when added to
-the parser. This information is used to build the jobscript/SBATCH parser
-and the two-way mapping between Slurm API and SBATCH names.</p>
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h7 id="jobbergate_api.apps.job_submissions.properties_parser.build_mapping_sbatch_to_slurm" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">build_mapping_sbatch_to_slurm</span>
-
-
-</h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">build_mapping_sbatch_to_slurm</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">bidict</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Create a mapper to translate in both ways between the names expected by Slurm REST API and SBATCH.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h7 id="jobbergate_api.apps.job_submissions.properties_parser.build_parser" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">build_parser</span>
-
-
-</h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">build_parser</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">ArgumentParser</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Build an ArgumentParser to handle all SBATCH parameters declared at sbatch_to_slurm.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h7 id="jobbergate_api.apps.job_submissions.properties_parser.convert_sbatch_to_slurm_api" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">convert_sbatch_to_slurm_api</span>
-
-
-</h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">convert_sbatch_to_slurm_api</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nb">input</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Take a dictionary containing key-value pairing of SBATCH parameter name space to Slurm API namespace.</p>
-<p>Notice the values should not be affected.</p>
-<p>Raise KeyError if any of the keys are unknown to the mapper.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h7 id="jobbergate_api.apps.job_submissions.properties_parser.get_job_parameters" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">get_job_parameters</span>
-
-
-</h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_job_parameters</span><span class="p">(</span><span class="n">jobscript</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Parse all SBATCH parameters from a job script, map their names to Slurm API parameters.</p>
-<p>They are returned as a key-value pairing dictionary.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h7 id="jobbergate_api.apps.job_submissions.properties_parser.get_job_properties_from_job_script" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">get_job_properties_from_job_script</span>
-
-
-</h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_job_properties_from_job_script</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">main_file_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobProperties</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Get the job properties for Slurm REST API from a job script file.</p>
-<p>Extra keyword arguments can be used to overwrite any parameter from the
-job script, like name or current_working_directory.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h7 id="jobbergate_api.apps.job_submissions.properties_parser.jobscript_to_dict" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">jobscript_to_dict</span>
-
-
-</h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">jobscript_to_dict</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">jobscript</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Extract the SBATCH params from a given job script.</p>
-<p>It returns them in a dictionary for mapping the parameter names to their values.</p>
-<p>Raise ValueError if any of the parameters are unknown to the parser.</p>
-
-  </div>
-
-</div>
 
 
 
@@ -8040,47 +7737,6 @@ job script, like name or current_working_directory.</p>
 
   
       <p>Specialized model for the cluster-agent to pull an active job_submission.</p>
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-
-<h7 id="jobbergate_api.apps.job_submissions.schemas.JobProperties" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">JobProperties</span>
-
-
-</h7>
-
-
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
-
-  
-      <p>Specialized model for job properties.</p>
-<p>See more details at: https://slurm.schedmd.com/rest_api.html</p>
 
 
   

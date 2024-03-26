@@ -1049,6 +1049,13 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#jobbergate_cli.config.Settings.is_onsite_mode" class="md-nav__link">
+    is_onsite_mode
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_cli.config.Settings.Config" class="md-nav__link">
     Config
   </a>
@@ -2008,6 +2015,13 @@
   
     <nav class="md-nav" aria-label="Settings">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.config.Settings.is_onsite_mode" class="md-nav__link">
+    is_onsite_mode
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#jobbergate_cli.config.Settings.Config" class="md-nav__link">
@@ -3256,6 +3270,30 @@ Can load configuration from a dotenv file if supplied.</p>
 
 
 
+
+<div class="doc doc-object doc-attribute">
+
+
+
+
+<h6 id="jobbergate_cli.config.Settings.is_onsite_mode" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">is_onsite_mode</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">is_onsite_mode</span><span class="p">:</span> <span class="nb">bool</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Check if the SBATCH_PATH is set, indicating that the CLI is running in on-site mode.</p>
+  </div>
+
+</div>
 
 
 <div class="doc doc-object doc-class">
@@ -8133,20 +8171,19 @@ parameter_path is a valid json file</p>
 </span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">            The path on the cluster where the job script should be executed.</span><span class="se">\n</span><span class="s1">            If provided as a relative path, it will be converted as an absolute path from your current</span><span class="se">\n</span><span class="s1">            working directory. If you use &quot;~&quot; to denote your home directory, the path will be expanded to an</span><span class="se">\n</span><span class="s1">            absolute path for your home directory on *this* machine.</span><span class="se">\n</span><span class="s1">            &#39;</span>
 </span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>        <span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
 </span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>    <span class="p">),</span>
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>    <span class="n">execution_parameters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>    <span class="n">sbatch_arguments</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span>
 </span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>        <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>        <span class="n">help</span><span class="o">=</span><span class="n">dedent</span><span class="p">(</span>
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">            The path to a JSON file containing the parameters to be passed to the job submission.</span><span class="se">\n</span><span class="s2">            See more details at: https://slurm.schedmd.com/rest_api.html</span><span class="se">\n</span><span class="s2">            &quot;</span>
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>        <span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>        <span class="n">exists</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>        <span class="n">readable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>        <span class="n">resolve_path</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>    <span class="p">),</span>
-</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>    <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span>
-</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>        <span class="kc">False</span><span class="p">,</span>
-</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Download the job script files to the current working directory&quot;</span><span class="p">,</span>
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>    <span class="p">),</span>
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a><span class="p">)</span>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>        <span class="s2">&quot;--sbatch-arguments&quot;</span><span class="p">,</span>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>        <span class="s2">&quot;-s&quot;</span><span class="p">,</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>        <span class="n">help</span><span class="o">=</span><span class="n">dedent</span><span class="p">(</span>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">            Additional arguments to pass as sbatch directives. These should be provided as a list of strings.</span><span class="se">\n</span><span class="s2">            See more details at: https://slurm.schedmd.com/sbatch.html</span><span class="se">\n</span><span class="s2">            &quot;</span>
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>        <span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>    <span class="p">),</span>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>    <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span>
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>        <span class="kc">False</span><span class="p">,</span>
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Download the job script files to the current working directory&quot;</span><span class="p">,</span>
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>    <span class="p">),</span>
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8294,33 +8331,28 @@ parameter_path is a valid json file</p>
 
 
 
-
-
-<div class="doc doc-object doc-function">
+<div class="doc doc-object doc-class">
 
 
 
 
-<h7 id="jobbergate_cli.subapps.job_submissions.tools.create_job_submission" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">create_job_submission</span>
+<h7 id="jobbergate_cli.subapps.job_submissions.tools.JobSubmissionABC" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobSubmissionABC</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">create_job_submission</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">jg_ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">job_script_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">cluster_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">execution_directory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">execution_parameters_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionResponse</span>
-</span></code></pre></div>
+
 
   <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="abc.ABC">ABC</span></code></p>
+
   
-      <p>Create a Job Submission from the given Job Script.</p>
+      <p>A dataclass representing a job submission for Jobbergate.</p>
 <p>:param: jg_ctx:                    The JobbergateContext. Used to retrieve the client for requests
                                    and the email of the submitting user
 :param: job_script_id:             The <code>id</code> of the Job Script to submit to Slurm
@@ -8332,12 +8364,310 @@ parameter_path is a valid json file</p>
 :param: execution_directory:       An optional directory where the job should be executed. If provided as a
                                    relative path, it will be constructed as an absolute path relative to
                                    the current working directory.
-:param: execution_parameters_file: An optional file containing the execution parameters for the job.</p>
-<p>:returns: The Job Submission data returned by the API after creating the new Job Submission</p>
+:param: download:                  A flag indicating whether the job script files should be downloaded to the.
+:param: sbatch_arguments:          An optional list of arguments to pass to inject into the job script.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_cli.subapps.job_submissions.tools.JobSubmissionABC.__post_init__" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">__post_init__</span>
+
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">__post_init__</span><span class="p">()</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Post-init hook to ensure that the cluster_name and execution_directory are set correctly.</p>
 
   </div>
 
 </div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_cli.subapps.job_submissions.tools.JobSubmissionABC.get_request_data" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">get_request_data</span>
+
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_request_data</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionCreateRequestData</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Return the data to be used in the POST request to the API.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_cli.subapps.job_submissions.tools.JobSubmissionABC.make_post_request" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">make_post_request</span>
+
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">make_post_request</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_submission_data</span><span class="p">:</span> <span class="n">JobSubmissionCreateRequestData</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionResponse</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Make the POST request to the API to create the job submission.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_cli.subapps.job_submissions.tools.JobSubmissionABC.process_submission" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">process_submission</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">process_submission</span><span class="p">()</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Process the job submission. This method should be overridden by subclasses.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_cli.subapps.job_submissions.tools.JobSubmissionABC.run" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">run</span>
+
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">run</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionResponse</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Run all required steps to create the job submission.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_cli.subapps.job_submissions.tools.OnsiteJobSubmission" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">OnsiteJobSubmission</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_cli.subapps.job_submissions.tools.JobSubmissionABC" href="#jobbergate_cli.subapps.job_submissions.tools.JobSubmissionABC">JobSubmissionABC</a></code></p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_cli.subapps.job_submissions.tools.OnsiteJobSubmission.get_request_data" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">get_request_data</span>
+
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_request_data</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionCreateRequestData</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Return the data to be used in the POST request to the API.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_cli.subapps.job_submissions.tools.OnsiteJobSubmission.inject_sbatch_params" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">inject_sbatch_params</span>
+
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">inject_sbatch_params</span><span class="p">(</span><span class="n">job_script_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Inject sbatch parameters into the job script.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_cli.subapps.job_submissions.tools.OnsiteJobSubmission.process_submission" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">process_submission</span>
+
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">process_submission</span><span class="p">()</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Process the job submission in on-site mode.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_cli.subapps.job_submissions.tools.RemoteJobSubmission" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">RemoteJobSubmission</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_cli.subapps.job_submissions.tools.JobSubmissionABC" href="#jobbergate_cli.subapps.job_submissions.tools.JobSubmissionABC">JobSubmissionABC</a></code></p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_cli.subapps.job_submissions.tools.RemoteJobSubmission.process_submission" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">process_submission</span>
+
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">process_submission</span><span class="p">()</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Process the job submission in remote mode.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
 
 
 <div class="doc doc-object doc-function">
@@ -8369,17 +8699,26 @@ parameter_path is a valid json file</p>
 
 
 
-<h7 id="jobbergate_cli.subapps.job_submissions.tools.sbatch_run" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">sbatch_run</span>
+<h7 id="jobbergate_cli.subapps.job_submissions.tools.job_submissions_factory" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">job_submissions_factory</span>
 
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">sbatch_run</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">argv</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_submissions_factory</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">jg_ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">job_script_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">execution_directory</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">cluster_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">sbatch_arguments</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionABC</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Execute Job Submission using sbatch and returns slurm id.</p>
+      <p>Job submission factory function. Returns the correct job submission class based on the current mode.</p>
 
   </div>
 
