@@ -1,322 +1,389 @@
-import json
 import pathlib
+from unittest import mock
 
 import httpx
 import pytest
 
 from jobbergate_cli.exceptions import Abort
-from jobbergate_cli.schemas import JobSubmissionResponse
-from jobbergate_cli.subapps.job_submissions.tools import create_job_submission, fetch_job_submission_data, sbatch_run
+from jobbergate_cli.schemas import JobScriptResponse, JobSubmissionCreateRequestData, JobSubmissionResponse
+from jobbergate_cli.subapps.job_submissions.tools import (
+    OnsiteJobSubmission,
+    RemoteJobSubmission,
+    fetch_job_submission_data,
+    job_submissions_factory,
+)
 
 
-def test_create_job_submission__success(
-    respx_mock,
-    dummy_job_submission_data,
-    dummy_domain,
-    dummy_context,
-    attach_persona,
-    seed_clusters,
-):
-    job_submission_data = dummy_job_submission_data[0]
-    job_submission_name = job_submission_data["name"]
-    job_submission_description = job_submission_data["description"]
+@pytest.mark.parametrize("submission_cls", [OnsiteJobSubmission, RemoteJobSubmission])
+@pytest.mark.parametrize("organization_id", [None, "", "some-organization"])
+class TestJobSubmissionsClusterName:
+    def test_with_explicit_cluster_name(
+        self, dummy_context, attach_persona, submission_cls, organization_id, tweak_settings
+    ):
+        cluster_name = "test-cluster"
+        attach_persona("dummy@dummy.com", organization_id=organization_id)
+        with tweak_settings(DEFAULT_CLUSTER_NAME="default-cluster"):
+            submission_handler = submission_cls(
+                jg_ctx=dummy_context,
+                job_script_id=1,
+                name="test",
+                cluster_name=cluster_name,
+            )
+        expected_cluster_name = cluster_name
+        if organization_id:
+            expected_cluster_name += f"-{organization_id}"
+        assert submission_handler.cluster_name == expected_cluster_name
 
-    job_script_id = job_submission_data["job_script_id"]
+    def test_default_cluster_name(self, dummy_context, attach_persona, submission_cls, organization_id, tweak_settings):
+        cluster_name = "default-cluster"
+        attach_persona("dummy@dummy.com", organization_id=organization_id)
+        with tweak_settings(DEFAULT_CLUSTER_NAME=cluster_name):
+            submission_handler = submission_cls(
+                jg_ctx=dummy_context,
+                job_script_id=1,
+                name="test",
+            )
+        expected_cluster_name = cluster_name
+        if organization_id:
+            expected_cluster_name += f"-{organization_id}"
+        assert submission_handler.cluster_name == expected_cluster_name
 
-    create_job_submission_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions")
-    create_job_submission_route.mock(
-        return_value=httpx.Response(
-            httpx.codes.CREATED,
-            json=job_submission_data,
-        ),
-    )
+    def test_throws_exception_with_no_explicit_or_default_cluster_name(
+        self, dummy_context, attach_persona, submission_cls, organization_id, tweak_settings
+    ):
+        attach_persona("dummy@dummy.com", organization_id=organization_id)
+        with (
+            tweak_settings(DEFAULT_CLUSTER_NAME=None),
+            pytest.raises(ValueError, match="No cluster name supplied and no default exists"),
+        ):
+            submission_cls(
+                jg_ctx=dummy_context,
+                job_script_id=1,
+                name="test",
+            )
 
-    attach_persona("dummy@dummy.com")
-    seed_clusters("dummy-cluster")
-
-    new_job_submission = create_job_submission(
-        dummy_context,
-        job_script_id,
-        job_submission_name,
-        job_submission_description,
-        cluster_name="dummy-cluster",
-    )
-    assert new_job_submission == JobSubmissionResponse(**job_submission_data)
-
-
-def test_create_job_submission__with_explicit_cluster_name(
-    respx_mock,
-    dummy_job_submission_data,
-    dummy_domain,
-    dummy_context,
-    attach_persona,
-    seed_clusters,
-):
-    job_submission_data = dummy_job_submission_data[0]
-    job_submission_name = job_submission_data["name"]
-    job_submission_description = job_submission_data["description"]
-
-    job_script_id = job_submission_data["job_script_id"]
-
-    create_job_submission_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions")
-    create_job_submission_route.mock(
-        return_value=httpx.Response(
-            httpx.codes.CREATED,
-            json=job_submission_data,
-        ),
-    )
-
-    attach_persona("dummy@dummy.com")
-    seed_clusters("other-cluster")
-
-    new_job_submission = create_job_submission(
-        dummy_context,
-        job_script_id,
-        job_submission_name,
-        description=job_submission_description,
-        cluster_name="other-cluster",
-    )
-    assert new_job_submission == JobSubmissionResponse(**job_submission_data)
-
-    assert json.loads(create_job_submission_route.calls.last.request.content)["client_id"] == "other-cluster"
+    def test_with_organization_id_on_cluster_name(
+        self, dummy_context, attach_persona, submission_cls, organization_id, tweak_settings
+    ):
+        cluster_name = "test-cluster"
+        if organization_id:
+            cluster_name += f"-{organization_id}"
+        attach_persona("dummy@dummy.com", organization_id=organization_id)
+        with tweak_settings(DEFAULT_CLUSTER_NAME="default-cluster"):
+            submission_handler = submission_cls(
+                jg_ctx=dummy_context,
+                job_script_id=1,
+                name="test",
+                cluster_name=cluster_name,
+            )
+        assert submission_handler.cluster_name == cluster_name
 
 
-def test_create_job_submission__with_default_cluster_name(
-    respx_mock,
-    dummy_job_submission_data,
-    dummy_domain,
-    dummy_context,
-    attach_persona,
-    seed_clusters,
-    tweak_settings,
-):
-    job_submission_data = dummy_job_submission_data[0]
-    job_submission_name = job_submission_data["name"]
-    job_submission_description = job_submission_data["description"]
+@pytest.mark.parametrize("submission_cls", [OnsiteJobSubmission, RemoteJobSubmission])
+@pytest.mark.parametrize(
+    "execution_directory", [pathlib.Path("./some/relative/path"), pathlib.Path("/some/absolute/path"), None]
+)
+class TestJobSubmissionsExecutionDirectory:
+    def test_execution_directory_is_absolute(self, dummy_context, attach_persona, submission_cls, execution_directory):
+        attach_persona("dummy@dummy.com")
 
-    job_script_id = job_submission_data["job_script_id"]
-
-    create_job_submission_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions")
-    create_job_submission_route.mock(
-        return_value=httpx.Response(
-            httpx.codes.CREATED,
-            json=job_submission_data,
-        ),
-    )
-
-    attach_persona("dummy@dummy.com")
-    seed_clusters("other-cluster")
-
-    with tweak_settings(DEFAULT_CLUSTER_NAME="default-cluster"):
-        new_job_submission = create_job_submission(
-            dummy_context,
-            job_script_id,
-            job_submission_name,
-            description=job_submission_description,
-        )
-        assert new_job_submission == JobSubmissionResponse(**job_submission_data)
-
-    assert json.loads(create_job_submission_route.calls.last.request.content)["client_id"] == "default-cluster"
-
-
-def test_create_job_submission__throws_exception_with_no_explicit_or_default_cluster_name(
-    respx_mock,
-    dummy_job_submission_data,
-    dummy_domain,
-    dummy_context,
-    attach_persona,
-):
-    job_submission_data = dummy_job_submission_data[0]
-    job_submission_name = job_submission_data["name"]
-    job_submission_description = job_submission_data["description"]
-
-    job_script_id = job_submission_data["job_script_id"]
-
-    create_job_submission_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions")
-    create_job_submission_route.mock(
-        return_value=httpx.Response(
-            httpx.codes.CREATED,
-            json=job_submission_data,
-        ),
-    )
-
-    attach_persona("dummy@dummy.com")
-
-    with pytest.raises(Abort, match="unknown cluster"):
-        create_job_submission(
-            dummy_context,
-            job_script_id,
-            job_submission_name,
-            description=job_submission_description,
+        submission_handler = submission_cls(
+            jg_ctx=dummy_context,
+            job_script_id=1,
+            name="test",
+            execution_directory=execution_directory,
+            cluster_name="test-cluster",
         )
 
+        assert submission_handler.execution_directory.is_absolute()
 
-def test_create_job_submission__with_explicit_execution_dir(
-    respx_mock,
-    dummy_job_submission_data,
-    dummy_domain,
-    dummy_context,
-    attach_persona,
-    seed_clusters,
-):
-    job_submission_data = dummy_job_submission_data[0]
-    job_submission_name = job_submission_data["name"]
-    job_submission_description = job_submission_data["description"]
+        if execution_directory is None:
+            # Default value
+            execution_directory = pathlib.Path.cwd()
 
-    job_script_id = job_submission_data["job_script_id"]
+        expected_execution_directory = execution_directory.resolve()
+        assert submission_handler.execution_directory == expected_execution_directory
 
-    create_job_submission_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions")
-    create_job_submission_route.mock(
-        return_value=httpx.Response(
-            httpx.codes.CREATED,
-            json=job_submission_data,
-        ),
-    )
 
+class TestJobSubmissionsGetRequestData:
+    def test_handle_request_data__on_site(self, dummy_context, attach_persona):
+        attach_persona("dummy@dummy.com")
+
+        dummy_data = dict(
+            job_script_id=1,
+            name="test",
+            execution_directory=pathlib.Path("/some/fake/path"),
+            sbatch_arguments=["--partition=debug", "--time=1:00:00"],
+            description="test description",
+            cluster_name="test-cluster",
+        )
+
+        submission_handler = OnsiteJobSubmission(jg_ctx=dummy_context, download=True, **dummy_data)
+
+        # simulate process_submission by setting slurm_job_id
+        dummy_data["slurm_job_id"] = 1234
+        submission_handler.slurm_job_id = dummy_data["slurm_job_id"]
+
+        actual_request_data = submission_handler.get_request_data()
+        expected_request_data = JobSubmissionCreateRequestData.parse_obj(dummy_data)
+
+        assert actual_request_data == expected_request_data
+
+    def test_handle_request_data__remote(self, dummy_context, attach_persona, dummy_domain, respx_mock):
+        attach_persona("dummy@dummy.com")
+
+        dummy_data = dict(
+            job_script_id=1,
+            name="test",
+            execution_directory=pathlib.Path("/some/fake/path"),
+            sbatch_arguments=["--partition=debug", "--time=1:00:00"],
+            description="test description",
+            cluster_name="test-cluster",
+        )
+
+        submission_handler = RemoteJobSubmission(jg_ctx=dummy_context, download=True, **dummy_data)
+
+        actual_request_data = submission_handler.get_request_data()
+        expected_request_data = JobSubmissionCreateRequestData.parse_obj(dummy_data)
+
+        assert actual_request_data == expected_request_data
+
+
+@pytest.mark.parametrize("submission_cls", [OnsiteJobSubmission, RemoteJobSubmission])
+class TestJobSubmissionsMakePostRequest:
+    def test_post_request__success(
+        self, dummy_context, attach_persona, submission_cls, dummy_job_submission_data, respx_mock, dummy_domain
+    ):
+        attach_persona("dummy@dummy.com")
+        job_submission_data = dummy_job_submission_data[0]
+
+        submission_handler = submission_cls(
+            jg_ctx=dummy_context,
+            job_script_id=job_submission_data["job_script_id"],
+            name=job_submission_data["name"],
+            cluster_name="test-cluster",
+        )
+
+        create_job_submission_data = JobSubmissionCreateRequestData.parse_obj(job_submission_data)
+        create_job_submission_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions")
+        create_job_submission_route.mock(
+            return_value=httpx.Response(
+                httpx.codes.CREATED,
+                json=job_submission_data,
+            ),
+        )
+
+        actual_response = submission_handler.make_post_request(create_job_submission_data)
+        expected_response = JobSubmissionResponse.parse_obj(job_submission_data)
+
+        assert actual_response == expected_response
+
+
+class TestJobSubmissionsProcessSubmissions:
+    def test_process_submission__remote_download(self, dummy_context, mocker, attach_persona):
+        attach_persona("dummy@dummy.com")
+        submission_handler = RemoteJobSubmission(
+            jg_ctx=dummy_context,
+            job_script_id=1,
+            name="test",
+            cluster_name="test-cluster",
+            download=True,
+        )
+        mocked_download_job_script_files = mocker.patch(
+            "jobbergate_cli.subapps.job_submissions.tools.download_job_script_files"
+        )
+        submission_handler.process_submission()
+        mocked_download_job_script_files.assert_called_once_with(
+            submission_handler.job_script_id, submission_handler.jg_ctx, submission_handler.execution_directory
+        )
+
+    def test_process_submission__no_remote_download(self, dummy_context, mocker, attach_persona):
+        attach_persona("dummy@dummy.com")
+        submission_handler = RemoteJobSubmission(
+            jg_ctx=dummy_context,
+            job_script_id=1,
+            name="test",
+            cluster_name="test-cluster",
+            download=False,
+        )
+        mocked_download_job_script_files = mocker.patch(
+            "jobbergate_cli.subapps.job_submissions.tools.download_job_script_files"
+        )
+        submission_handler.process_submission()
+        mocked_download_job_script_files.assert_not_called()
+
+    def test_process_submission__on_site_abort_if_sbatch_path_is_unset(
+        self, dummy_context, attach_persona, tweak_settings
+    ):
+        attach_persona("dummy@dummy.com")
+        submission_handler = OnsiteJobSubmission(
+            jg_ctx=dummy_context,
+            job_script_id=1,
+            name="test",
+            cluster_name="test-cluster",
+        )
+
+        with (
+            tweak_settings(SBATCH_PATH=None),
+            pytest.raises(Abort, match="SBATCH_PATH most be set for onsite submissions"),
+        ):
+            submission_handler.process_submission()
+
+    class DummyFile:
+        @property
+        def file_type(self):
+            return "NOT-ENTRYPOINT"
+
+    @pytest.mark.parametrize("job_script_files", [[], [DummyFile(), DummyFile()]])
+    def test_process_submission__on_site_abort_if_not_exact_one_entrypoint_file_is_found(
+        self, job_script_files, dummy_context, attach_persona, tweak_settings, mocker, tmp_path
+    ):
+        attach_persona("dummy@dummy.com")
+        submission_handler = OnsiteJobSubmission(
+            jg_ctx=dummy_context,
+            job_script_id=1,
+            name="test",
+            cluster_name="test-cluster",
+        )
+
+        mocker.patch(
+            "jobbergate_cli.subapps.job_submissions.tools.download_job_script_files", return_value=job_script_files
+        )
+
+        with (
+            tweak_settings(SBATCH_PATH=tmp_path),
+            pytest.raises(Abort, match="There should be exactly one entrypoint file in the parent job script"),
+        ):
+            submission_handler.process_submission()
+
+    @pytest.mark.parametrize("download", [True, False])
+    def test_process_submission__on_site_success(
+        self, download, dummy_context, attach_persona, tweak_settings, mocker, tmp_path, dummy_job_script_data
+    ):
+        attach_persona("dummy@dummy.com")
+
+        job_script_data = JobScriptResponse.parse_obj(dummy_job_script_data[0])
+
+        submission_handler = OnsiteJobSubmission(
+            jg_ctx=dummy_context,
+            job_script_id=1,
+            name="test",
+            cluster_name="test-cluster",
+            download=download,
+            execution_directory=tmp_path,
+        )
+
+        mocked_download_job_script_files = mocker.patch(
+            "jobbergate_cli.subapps.job_submissions.tools.download_job_script_files", return_value=job_script_data.files
+        )
+        mocked_inject_sbatch_params = mocker.patch.object(submission_handler, "inject_sbatch_params")
+
+        mocked_sbatch = mock.MagicMock()
+        mocked_sbatch.submit_job = lambda *args, **kwargs: 13
+        mocker.patch("jobbergate_cli.subapps.job_submissions.tools.SubmissionHandler", return_value=mocked_sbatch)
+
+        with tweak_settings(SBATCH_PATH=tmp_path):
+            submission_handler.process_submission()
+
+        assert submission_handler.slurm_job_id == 13
+
+        # files are downloaded anyway for on-site submissions
+        mocked_download_job_script_files.assert_called_once_with(1, dummy_context, tmp_path)
+        assert mocked_inject_sbatch_params.call_count == 1
+
+    def test_inject_sbatch_params__on_site(self, mocker, attach_persona, dummy_context, tmp_path):
+        attach_persona("dummy@dummy.com")
+        submission_handler = OnsiteJobSubmission(
+            jg_ctx=dummy_context,
+            job_script_id=1,
+            name="test",
+            cluster_name="test-cluster",
+            execution_directory=tmp_path,
+            sbatch_arguments=["--partition=debug", "--time=1:00:00"],
+        )
+
+        job_script_path = tmp_path / "entrypoint.sh"
+
+        job_script_path.write_text("original content")
+
+        mocked_inject_sbatch_params = mocker.patch(
+            "jobbergate_cli.subapps.job_submissions.tools.inject_sbatch_params", return_value="inject_sbatch_params"
+        )
+
+        submission_handler.inject_sbatch_params(job_script_path)
+
+        mocked_inject_sbatch_params.assert_called_once_with(
+            "original content", ["--partition=debug", "--time=1:00:00"], "Injected at submission time by Jobbergate CLI"
+        )
+        assert job_script_path.read_text() == "inject_sbatch_params"
+
+    def test_skip_inject_sbatch_params__on_site(self, mocker, attach_persona, dummy_context, tmp_path):
+        attach_persona("dummy@dummy.com")
+        submission_handler = OnsiteJobSubmission(
+            jg_ctx=dummy_context,
+            job_script_id=1,
+            name="test",
+            cluster_name="test-cluster",
+            execution_directory=tmp_path,
+            sbatch_arguments=[],
+        )
+
+        job_script_path = tmp_path / "entrypoint.sh"
+
+        job_script_path.write_text("original content")
+
+        mocked_inject_sbatch_params = mocker.patch("jobbergate_cli.subapps.job_submissions.tools.inject_sbatch_params")
+
+        submission_handler.inject_sbatch_params(job_script_path)
+
+        assert mocked_inject_sbatch_params.call_count == 0
+        assert job_script_path.read_text() == "original content"
+
+
+@pytest.mark.parametrize("submission_cls", [OnsiteJobSubmission, RemoteJobSubmission])
+class TestJobSubmissionsRun:
+    def test_run__success(self, dummy_context, attach_persona, submission_cls, mocker):
+        attach_persona("dummy@dummy.com")
+        submission_handler = submission_cls(
+            jg_ctx=dummy_context,
+            job_script_id=1,
+            name="test",
+            cluster_name="test-cluster",
+        )
+
+        mocked_process_submission = mocker.patch.object(submission_handler, "process_submission")
+        mocked_get_request_data = mocker.patch.object(
+            submission_handler, "get_request_data", return_value="request_data"
+        )
+        mocked_make_post_request = mocker.patch.object(submission_handler, "make_post_request", return_value="response")
+
+        actual_response = submission_handler.run()
+
+        assert actual_response == "response"
+        mocked_process_submission.assert_called_once()
+        mocked_get_request_data.assert_called_once()
+        mocked_make_post_request.assert_called_once_with("request_data")
+
+
+@pytest.mark.parametrize(
+    "submission_cls,sbatch_path", [[OnsiteJobSubmission, "/usr/bin/sbatch"], [RemoteJobSubmission, None]]
+)
+def test_job_submissions_factory(submission_cls, sbatch_path, attach_persona, dummy_context, tweak_settings):
     attach_persona("dummy@dummy.com")
-    seed_clusters("dummy-cluster")
-
-    create_job_submission(
-        dummy_context,
-        job_script_id,
-        job_submission_name,
-        job_submission_description,
-        cluster_name="dummy-cluster",
-        execution_directory=pathlib.Path("/some/fake/path"),
-    )
-    payload = json.loads(create_job_submission_route.calls.last.request.content)
-    assert payload["execution_directory"] == "/some/fake/path"
-
-    create_job_submission(
-        dummy_context,
-        job_script_id,
-        job_submission_name,
-        job_submission_description,
-        cluster_name="dummy-cluster",
-        execution_directory=pathlib.Path("./some/relative/path"),
-    )
-    payload = json.loads(create_job_submission_route.calls.last.request.content)
-    assert payload["execution_directory"] == str(pathlib.Path.cwd() / "./some/relative/path")
-
-
-def test_create_job_submission__with_default_execution_dir(
-    mocker,
-    respx_mock,
-    dummy_job_submission_data,
-    dummy_domain,
-    dummy_context,
-    attach_persona,
-    seed_clusters,
-):
-    job_submission_data = dummy_job_submission_data[0]
-    job_submission_name = job_submission_data["name"]
-    job_submission_description = job_submission_data["description"]
-
-    job_script_id = job_submission_data["job_script_id"]
-
-    create_job_submission_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions")
-    create_job_submission_route.mock(
-        return_value=httpx.Response(
-            httpx.codes.CREATED,
-            json=job_submission_data,
-        ),
-    )
-
-    attach_persona("dummy@dummy.com")
-    seed_clusters("dummy-cluster")
-
-    mocker.patch("jobbergate_cli.subapps.job_submissions.tools.Path.cwd", return_value=pathlib.Path("/some/fake/path"))
-
-    create_job_submission(
-        dummy_context,
-        job_script_id,
-        job_submission_name,
-        job_submission_description,
-        cluster_name="dummy-cluster",
-        execution_directory=None,
-    )
-    payload = json.loads(create_job_submission_route.calls.last.request.content)
-    assert payload["execution_directory"] == "/some/fake/path"
-
-
-def test_create_job_submission__in_multitenancy_mode_with_org_id(
-    respx_mock,
-    dummy_job_submission_data,
-    dummy_domain,
-    dummy_context,
-    attach_persona,
-    seed_clusters,
-):
-    job_submission_data = dummy_job_submission_data[0]
-    job_submission_name = job_submission_data["name"]
-    job_submission_description = job_submission_data["description"]
-
-    job_script_id = job_submission_data["job_script_id"]
-
-    create_job_submission_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions")
-    create_job_submission_route.mock(
-        return_value=httpx.Response(
-            httpx.codes.CREATED,
-            json=job_submission_data,
-        ),
-    )
-
-    attach_persona("dummy@dummy.com", organization_id="some-organization")
-    seed_clusters("other-cluster-some-organization")
-
-    new_job_submission = create_job_submission(
-        dummy_context,
-        job_script_id,
-        job_submission_name,
-        description=job_submission_description,
-        cluster_name="other-cluster",
-    )
-    assert new_job_submission == JobSubmissionResponse(**job_submission_data)
-
-    assert (
-        json.loads(create_job_submission_route.calls.last.request.content)["client_id"]
-        == "other-cluster-some-organization"
-    )
-
-
-def test_create_job_submission__in_multitenancy_mode_with_org_id_and_cluster_name_already_has_org_id(
-    respx_mock,
-    dummy_job_submission_data,
-    dummy_domain,
-    dummy_context,
-    attach_persona,
-    seed_clusters,
-):
-    job_submission_data = dummy_job_submission_data[0]
-    job_submission_name = job_submission_data["name"]
-    job_submission_description = job_submission_data["description"]
-
-    job_script_id = job_submission_data["job_script_id"]
-
-    create_job_submission_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions")
-    create_job_submission_route.mock(
-        return_value=httpx.Response(
-            httpx.codes.CREATED,
-            json=job_submission_data,
-        ),
-    )
-
-    attach_persona("dummy@dummy.com", organization_id="some-organization")
-    seed_clusters("other-cluster-some-organization")
-
-    new_job_submission = create_job_submission(
-        dummy_context,
-        job_script_id,
-        job_submission_name,
-        description=job_submission_description,
-        cluster_name="other-cluster-some-organization",
-    )
-    assert new_job_submission == JobSubmissionResponse(**job_submission_data)
-
-    assert (
-        json.loads(create_job_submission_route.calls.last.request.content)["client_id"]
-        == "other-cluster-some-organization"
-    )
+    with tweak_settings(SBATCH_PATH=sbatch_path):
+        submission_handler = job_submissions_factory(
+            jg_ctx=dummy_context,
+            job_script_id=1,
+            name="test",
+            cluster_name="test-cluster",
+            download=True,
+        )
+    assert isinstance(submission_handler, submission_cls)
+    assert submission_handler.jg_ctx == dummy_context
+    assert submission_handler.job_script_id == 1
+    assert submission_handler.name == "test"
+    assert submission_handler.cluster_name == "test-cluster"
+    assert submission_handler.download is True
 
 
 def test_fetch_job_submission_data__success__using_id(
@@ -339,60 +406,3 @@ def test_fetch_job_submission_data__success__using_id(
     assert fetch_route.called
     assert result == JobSubmissionResponse(**job_submission_data)
     assert result.report_message == job_submission_data.get("report_message")
-
-
-class TestSbatchRun:
-    def test_valid_arguments_returns_slurm_id(self, mocker, tweak_settings, tmp_path):
-        mocked_popen = mocker.MagicMock()
-        mocker.patch("jobbergate_cli.subapps.job_submissions.tools.Popen", return_value=mocked_popen)
-        mocked_popen.communicate.return_value = (b"Submitted batch job 123", b"")
-        mocked_popen.returncode = 0
-
-        with tweak_settings(SBATCH_PATH=tmp_path):
-            slurm_id = sbatch_run("filename.sh")
-
-        assert slurm_id == 123
-
-    def test_raises_abort_if_sbatch_command_returns_non_zero_exit_code(
-        self,
-        mocker,
-        tweak_settings,
-        tmp_path,
-    ):
-        mocked_popen = mocker.MagicMock()
-        mocker.patch("jobbergate_cli.subapps.job_submissions.tools.Popen", return_value=mocked_popen)
-        mocked_popen.communicate.return_value = (b"", b"Error: Invalid argument")
-        mocked_popen.returncode = 1
-
-        with tweak_settings(SBATCH_PATH=tmp_path):
-            with pytest.raises(
-                Abort,
-                match="^Failed to execute submission with error",
-            ):
-                sbatch_run("filename.sh")
-
-    def test_raises_abort_if_slurm_job_id_cannot_be_parsed_from_output(
-        self,
-        mocker,
-        tweak_settings,
-        tmp_path,
-    ):
-        mocked_popen = mocker.MagicMock()
-        mocker.patch("jobbergate_cli.subapps.job_submissions.tools.Popen", return_value=mocked_popen)
-        mocked_popen.communicate.return_value = (b"Invalid output", b"")
-        mocked_popen.returncode = 0
-
-        with tweak_settings(SBATCH_PATH=tmp_path):
-            with pytest.raises(
-                Abort,
-                match="^Failed to parse slurm job id from output=",
-            ):
-                sbatch_run("filename.sh")
-
-    def test_raises_abort_if_sbatch_path_not_set_or_does_not_exist(self, tweak_settings, tmp_path):
-        with tweak_settings(SBATCH_PATH=tmp_path / "nonexistent"):
-            with pytest.raises(
-                Abort,
-                match="^The path to the sbatch executable is not set or does not exist",
-            ):
-                sbatch_run("filename.sh")

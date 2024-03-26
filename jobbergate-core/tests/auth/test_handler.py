@@ -1,6 +1,7 @@
 """
 Test the utilities for handling auth in Jobbergate.
 """
+
 from unittest import mock
 
 import httpx

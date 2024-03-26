@@ -1,5 +1,5 @@
-import json
 import shlex
+from unittest import mock
 
 import httpx
 import pytest
@@ -22,7 +22,6 @@ def test_create(
     dummy_job_submission_data,
     cli_runner,
     mocker,
-    tmp_path,
     flag_name,
     flag_job_script_id,
     separator,
@@ -32,14 +31,13 @@ def test_create(
     job_submission_description = job_submission_data.description
     job_script_id = job_submission_data.job_script_id
 
-    param_file_path = tmp_path / "param_file.json"
-    param_file_path.write_text(json.dumps(job_submission_data.execution_parameters))
-
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_submissions.app.render_single_result")
-    patched_create_job_submission = mocker.patch(
-        "jobbergate_cli.subapps.job_submissions.app.create_job_submission",
+
+    submissions_handler = mock.MagicMock()
+    submissions_handler.run.return_value = job_submission_data
+    mocked_factory = mocker.patch(
+        "jobbergate_cli.subapps.job_submissions.app.job_submissions_factory", return_value=submissions_handler
     )
-    patched_create_job_submission.return_value = job_submission_data
 
     test_app = make_test_app("create", create)
     result = cli_runner.invoke(
@@ -50,13 +48,23 @@ def test_create(
                 create {flag_name}{separator}{job_submission_name}
                        --description='{job_submission_description}'
                        {flag_job_script_id}{separator}{job_script_id}
-                       --execution-parameters={param_file_path}
                        --download
                 """
             )
         ),
     )
     assert result.exit_code == 0, f"create failed: {result.stdout}"
+
+    mocked_factory.assert_called_once_with(
+        dummy_context,
+        job_script_id,
+        job_submission_name,
+        description=job_submission_description,
+        execution_directory=None,
+        cluster_name=None,
+        sbatch_arguments=[],
+        download=True,
+    )
 
     mocked_render.assert_called_once_with(
         dummy_context,

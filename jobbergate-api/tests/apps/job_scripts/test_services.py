@@ -1,4 +1,5 @@
 """Database models for the job scripts resource."""
+
 from itertools import product
 from typing import Any
 

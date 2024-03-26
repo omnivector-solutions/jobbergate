@@ -1,4 +1,5 @@
 """Router for the Job Script Template resource."""
+
 from typing import cast
 
 from buzz import handle_errors
@@ -202,8 +203,7 @@ async def job_script_get(
 )
 async def job_script_get_list(
     list_params: ListParams = Depends(),
-    from_job_script_template_id: int
-    | None = Query(
+    from_job_script_template_id: int | None = Query(
         None,
         description="Filter job-scripts by the job-script-template-id they were created from.",
     ),

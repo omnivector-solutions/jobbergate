@@ -1,6 +1,7 @@
 """
 Test the email notification system at Jobbergate.
 """
+
 from unittest import mock
 
 import pytest

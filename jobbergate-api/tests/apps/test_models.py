@@ -1,4 +1,5 @@
 """Test the the models."""
+
 import pytest
 from sqlalchemy import String
 

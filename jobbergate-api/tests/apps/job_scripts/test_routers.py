@@ -1,4 +1,5 @@
 """Tests for the /job-scripts/ endpoint."""
+
 import pytest
 from fastapi import HTTPException, status
 from loguru import logger

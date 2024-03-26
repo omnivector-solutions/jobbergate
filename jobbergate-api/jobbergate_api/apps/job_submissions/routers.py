@@ -1,9 +1,9 @@
 """
 Router for the JobSubmission resource.
 """
+
 from typing import Any
 
-from buzz import handle_errors
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import status
@@ -13,7 +13,6 @@ from loguru import logger
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.dependencies import SecureService, secure_services
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus, slurm_job_state_details
-from jobbergate_api.apps.job_submissions.properties_parser import get_job_properties_from_job_script
 from jobbergate_api.apps.job_submissions.schemas import (
     ActiveJobSubmission,
     JobSubmissionAgentRejectedRequest,
@@ -27,7 +26,6 @@ from jobbergate_api.apps.job_submissions.schemas import (
 )
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.apps.schemas import ListParams
-from jobbergate_api.apps.services import ServiceError
 from jobbergate_api.email_notification import notify_submission_rejected
 from jobbergate_api.rabbitmq_notification import publish_status_change
 
@@ -77,24 +75,8 @@ async def job_submission_create(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
 
     if create_request.slurm_job_id is None:
-        main_file_content = await secure_services.file.job_script.get_file_content(job_script_files[0])
-
-        with handle_errors(
-            "Failed to parse execution parameters from the job script",
-            raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
-        ):
-            execution_parameters = get_job_properties_from_job_script(
-                main_file_content.decode(), **create_request.execution_parameters.dict(exclude_unset=True)
-            )
-
-        create_request.execution_parameters = execution_parameters
         submission_status = JobSubmissionStatus.CREATED
     else:
-        if create_request.execution_parameters.dict(exclude_unset=True):
-            message = "Execution parameters are not allowed for on-site job submissions"
-            logger.warning(message)
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
         submission_status = JobSubmissionStatus.SUBMITTED
 
     new_job_submission = await secure_services.crud.job_submission.create(
@@ -126,18 +108,15 @@ async def job_submission_get(
 )
 async def job_submission_get_list(
     list_params: ListParams = Depends(),
-    slurm_job_ids: str
-    | None = Query(
+    slurm_job_ids: str | None = Query(
         None,
         description="Comma-separated list of slurm-job-ids to match active job_submissions",
     ),
-    submit_status: JobSubmissionStatus
-    | None = Query(
+    submit_status: JobSubmissionStatus | None = Query(
         None,
         description="Limit results to those with matching status",
     ),
-    from_job_script_id: int
-    | None = Query(
+    from_job_script_id: int | None = Query(
         None,
         description="Filter job-submissions by the job-script-id they were created from.",
     ),

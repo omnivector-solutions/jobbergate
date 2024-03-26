@@ -1,4 +1,5 @@
 """Core module for Jobbergate API clients management"""
+
 import httpx
 import sentry_sdk
 from jobbergate_core.auth.token import Token, TokenError, TokenType

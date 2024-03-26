@@ -1,4 +1,5 @@
 """Test the plugin module."""
+
 from unittest import mock
 
 import pytest

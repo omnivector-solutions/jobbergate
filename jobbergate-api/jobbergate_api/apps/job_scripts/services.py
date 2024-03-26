@@ -1,4 +1,5 @@
 """Services for the job_scripts resource, including module specific business logic."""
+
 from typing import Any, NamedTuple
 
 from buzz import enforce_defined, require_condition

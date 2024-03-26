@@ -7,6 +7,7 @@ References:
     https://github.com/agronholm/apscheduler
     https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins
 """
+
 from typing import Protocol, Union
 
 from apscheduler.job import Job

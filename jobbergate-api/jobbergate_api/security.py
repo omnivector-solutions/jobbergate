@@ -3,6 +3,7 @@ Instantiates armasec resources for auth on api endpoints using project settings.
 
 Also provides a factory function for TokenSecurity to reduce boilerplate.
 """
+
 from armasec import Armasec, TokenPayload
 from armasec.schemas import DomainConfig
 from armasec.token_security import PermissionMode

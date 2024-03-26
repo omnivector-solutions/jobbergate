@@ -1,6 +1,7 @@
 """
 Validation methods for the uploaded files.
 """
+
 from ast import parse as ast_parse
 from functools import wraps
 from pathlib import PurePath

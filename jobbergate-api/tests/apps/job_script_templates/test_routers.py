@@ -1,4 +1,5 @@
 """Test the router for the Job Script Template resource."""
+
 import json
 
 import pytest

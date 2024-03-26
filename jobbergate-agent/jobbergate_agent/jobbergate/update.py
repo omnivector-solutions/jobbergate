@@ -1,25 +1,23 @@
 import json
 from typing import List
 
-from httpx import codes
+from jobbergate_core.tools.sbatch import InfoHandler
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
-from jobbergate_agent.clients.slurmrestd import backend_client as slurmrestd_client
-
-# from jobbergate_agent.jobbergate.api import update_status
 from jobbergate_agent.jobbergate.schemas import ActiveJobSubmission, SlurmJobData
-from jobbergate_agent.utils.exception import JobbergateApiError, SlurmrestdError
+from jobbergate_agent.settings import SETTINGS
+from jobbergate_agent.utils.exception import JobbergateApiError, SbatchError
 from jobbergate_agent.utils.logging import log_error
 
 
-async def fetch_job_data(slurm_job_id: int) -> SlurmJobData:
+async def fetch_job_data(slurm_job_id: int, info_handler: InfoHandler) -> SlurmJobData:
     logger.debug(f"Fetching slurm job status for slurm job {slurm_job_id}")
 
-    response = await slurmrestd_client.get(f"/job/{slurm_job_id}")
-
-    if response.status_code == codes.NOT_FOUND:
-        logger.warning(f"Couldn't find a slurm job matching id {slurm_job_id}. Reporting job state as UNKNOWN")
+    try:
+        data = info_handler.get_job_info(slurm_job_id)
+    except RuntimeError as e:
+        logger.error(f"Failed to fetch job state from slurm: {e}")
         return SlurmJobData(
             job_id=slurm_job_id,
             job_state="UNKNOWN",
@@ -27,13 +25,9 @@ async def fetch_job_data(slurm_job_id: int) -> SlurmJobData:
             state_reason=f"Slurm did not find a job matching id {slurm_job_id}",
         )
 
-    with SlurmrestdError.handle_errors("Failed to fetch job state from slurm", do_except=log_error):
-        response.raise_for_status()
-        data = response.json()
-        job_info = data["jobs"][0]
-        slurm_state = SlurmJobData.parse_obj(job_info)
-        slurm_state.job_info = json.dumps(job_info)
-        logger.debug(f"State for slurm job {slurm_job_id} is {slurm_state}")
+    with SbatchError.handle_errors("Failed parse info from slurm", do_except=log_error):
+        slurm_state = SlurmJobData.parse_obj(data)
+        slurm_state.job_info = json.dumps(data)
 
     return slurm_state
 
@@ -58,7 +52,7 @@ async def update_job_data(
     """
     Update a job submission with the job state
     """
-    logger.debug(f"Updating {job_submission_id=} with {slurm_job_data=}")
+    logger.debug(f"Updating {job_submission_id=} with: {slurm_job_data}")
 
     with JobbergateApiError.handle_errors(
         f"Could not update job data for job submission {job_submission_id} via the API",
@@ -82,20 +76,20 @@ async def update_active_jobs():
     """
     logger.debug("Started updating slurm job data for active jobs...")
 
+    sbatch_handler = InfoHandler(scontrol_path=SETTINGS.SCONTROL_PATH)
+
     logger.debug("Fetching active jobs")
     active_job_submissions = await fetch_active_submissions()
 
+    skip = "skipping to next active job"
     for active_job_submission in active_job_submissions:
-        skip = "skipping to next active job"
         logger.debug(f"Fetching slurm job state of job_submission {active_job_submission.id}")
 
         try:
-            slurm_job_data: SlurmJobData = await fetch_job_data(active_job_submission.slurm_job_id)
+            slurm_job_data: SlurmJobData = await fetch_job_data(active_job_submission.slurm_job_id, sbatch_handler)
         except Exception:
             logger.debug(f"Fetch job data failed...{skip}")
             continue
-
-        logger.debug(f"Updating job_submission with slurm job data={slurm_job_data}")
 
         try:
             await update_job_data(active_job_submission.id, slurm_job_data)

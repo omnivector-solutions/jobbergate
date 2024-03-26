@@ -51,20 +51,4 @@ then
     exec /usr/sbin/slurmd -Dvvv
 fi
 
-if [ "$1" = "slurmrestd" ]
-then
-
-    echo "---> Waiting for slurmctld to become active before starting slurmrestd..."
-
-    until 2>/dev/null >/dev/tcp/slurmctld/6817
-    do
-        echo "-- slurmctld is not available.  Sleeping ..."
-        sleep 2
-    done
-    echo "-- slurmctld is now active ..."
-
-    echo "---> Starting the Slurm Rest API (slurmrestd) ..."
-    exec /usr/sbin/slurmrestd -vvvv -a rest_auth/jwt 0.0.0.0:6820
-fi
-
 exec "$@"

@@ -1,6 +1,7 @@
 """
 Define fixtures for the ``jobbergate`` section.
 """
+
 from textwrap import dedent
 
 import pytest

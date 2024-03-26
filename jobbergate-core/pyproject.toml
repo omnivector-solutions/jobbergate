@@ -19,12 +19,12 @@ classifiers = [
 "Changelog" = "https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-core/CHANGELOG.rst"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
 httpx = "^0.24.1"
 loguru = "^0.6.0"
 pendulum = "3.0.0b1"
 py-buzz = "^4.0.0"
-pydantic = "^1.8.2"
+pydantic = "^1.10.12"
 python-jose = "^3.3.0"
 
 [tool.poetry.dev-dependencies]

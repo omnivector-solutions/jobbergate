@@ -1,6 +1,7 @@
 """
 Provide command for showing the current environment.
 """
+
 import json
 
 import typer
@@ -19,8 +20,6 @@ def show_env(use_json: bool = typer.Option(False, "--json", help="Dump as JSON")
         output = json.dumps(settings.dict())
     else:
         output = "\n  ".join(
-            ["Jobbergate settings:"] + [
-                f"{k}: {v}" for (k, v) in settings.dict().items()
-            ],
+            ["Jobbergate settings:"] + [f"{k}: {v}" for (k, v) in settings.dict().items()],
         )
     print(output)
