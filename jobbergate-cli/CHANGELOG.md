@@ -6,10 +6,11 @@ This file keeps track of all notable changes to jobbergate-cli
 
 - Fixed bug on `jobbergate_cli.subapps.applications.questions.Integer` when a default of zero could not be set properly
 - Dropped support for Python 3.8 and 3.9
-- Added Jobbergate-core as a project dependency to reuse key components
-- Refactored on-site submission to use the new `jobbergate-core` components
-- Replaced `execution_parameters` by `sbatch_arguments` on job submission
-- Refactored `jobbergate_cli.subapps.job_submissions.tools.create_submission` into two classes in the same module to reduce complexity in the codebase
+- Modified the interface with slurm from slurmrestd to sbatch command [ASP-4586]:
+  - Added Jobbergate-core as a project dependency to reuse key components
+  - Refactored on-site submission to use the new `jobbergate-core` components
+  - Replaced `execution_parameters` by `sbatch_arguments` on job submission
+  - Refactored `jobbergate_cli.subapps.job_submissions.tools.create_submission` into two classes in the same module to reduce complexity in the codebase
 
 ## 4.4.0 -- 2024-03-19
 
