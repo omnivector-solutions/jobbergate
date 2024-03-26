@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+
+## 5.0.0a0 -- 2024-03-26
 - Fixed bug on `jobbergate_cli.subapps.applications.questions.Integer` when a default of zero could not be set properly
 - Dropped support for Python 3.8 and 3.9
 - Modified the interface with slurm from slurmrestd to sbatch command [ASP-4586]:
