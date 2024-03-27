@@ -21,7 +21,7 @@ async def _fetch_upstream_version_info() -> str:
     return upstream_version
 
 
-def _compare_versions(current_version: str, upstream_version: str) -> bool:
+def _need_update(current_version: str, upstream_version: str) -> bool:
     """Compare the current version with the upstream version.
 
     In case the current version is the same as the upstream version, return False.
@@ -54,7 +54,7 @@ async def self_update_agent():
         f"Jobbergate Agent version info: current_version={current_version}, upstream_version={upstream_version}"
     )
 
-    if _compare_versions(current_version, upstream_version):
+    if _need_update(current_version, upstream_version):
         logger.warning("The Jobbergate Agent is outdated in relation of the upstream version, an update is required.")
 
         logger.debug("Shutting down the scheduler...")

@@ -5,8 +5,8 @@ import pytest
 import respx
 
 from jobbergate_agent.internals.update import (
-    _compare_versions,
     _fetch_upstream_version_info,
+    _need_update,
     _update_package,
     self_update_agent,
 )
@@ -48,9 +48,9 @@ async def test__fetch_upstream_version_info__check_http_error(http_code: int):
         ("1.0.1", "1.0.0", True),  # Patch version rollback
     ],
 )
-def test_compare_versions(current_version: str, upstream_version: str, expected_result: bool):
-    """Test that _compare_versions returns the expected result."""
-    assert _compare_versions(current_version, upstream_version) is expected_result
+def test_need_update(current_version: str, upstream_version: str, expected_result: bool):
+    """Test that _need_update returns the expected result."""
+    assert _need_update(current_version, upstream_version) is expected_result
 
 
 @pytest.mark.parametrize(
@@ -61,13 +61,13 @@ def test_compare_versions(current_version: str, upstream_version: str, expected_
         ("1", "2"),  # Major version with no minor/patch
     ],
 )
-def test_compare_versions__check_improperly_formatted_versions(
+def test_need_update__check_improperly_formatted_versions(
     current_version: str,
     upstream_version: str,
 ):
-    """Test that _compare_versions raises error on improperly formatted versions."""
+    """Test that _need_update raises error on improperly formatted versions."""
     with pytest.raises(ValueError):
-        _compare_versions(current_version, upstream_version)
+        _need_update(current_version, upstream_version)
 
 
 @pytest.mark.parametrize(
@@ -109,13 +109,13 @@ def test_update_package(mocked_sys: mock.MagicMock, mocked_subprocess: mock.Magi
 @mock.patch("jobbergate_agent.internals.update._fetch_upstream_version_info")
 @mock.patch("jobbergate_agent.internals.update._update_package")
 @mock.patch("jobbergate_agent.internals.update.get_distribution")
-@mock.patch("jobbergate_agent.internals.update._compare_versions")
+@mock.patch("jobbergate_agent.internals.update._need_update")
 @mock.patch("jobbergate_agent.internals.update.scheduler")
 @mock.patch("jobbergate_agent.internals.update.schedule_tasks")
 async def test_self_update_agent(
     mocked_schedule_tasks: mock.MagicMock,
     mocked_scheduler: mock.MagicMock,
-    mocked_compare_versions: mock.MagicMock,
+    mocked_need_update: mock.MagicMock,
     mocked_get_distribution: mock.MagicMock,
     mocked_update_package: mock.MagicMock,
     mocked_fetch_upstream_version_info: mock.MagicMock,
@@ -130,14 +130,14 @@ async def test_self_update_agent(
     """
     mocked_get_distribution.return_value.version = current_version
     mocked_fetch_upstream_version_info.return_value = upstream_version
-    mocked_compare_versions.return_value = is_update_available
+    mocked_need_update.return_value = is_update_available
     mocked_scheduler.shutdown = mock.Mock()
 
     await self_update_agent()
 
     mocked_get_distribution.assert_called_once_with("jobbergate_agent")
     mocked_fetch_upstream_version_info.assert_called_once_with()
-    mocked_compare_versions.assert_called_once_with(current_version, upstream_version)
+    mocked_need_update.assert_called_once_with(current_version, upstream_version)
     if is_update_available:
         mocked_scheduler.shutdown.assert_called_once_with(wait=False)
         mocked_update_package.assert_called_once_with(upstream_version)
