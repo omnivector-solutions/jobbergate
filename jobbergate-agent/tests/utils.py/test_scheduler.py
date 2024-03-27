@@ -54,6 +54,7 @@ def test_scheduler_end_to_end(tweak_settings):
         "active-jobs",
         "garbage-collection",
         "pending-jobs",
+        "self-update",
     }
 
     shut_down_scheduler(scheduler, wait=False)

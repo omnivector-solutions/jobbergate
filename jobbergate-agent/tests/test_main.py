@@ -4,7 +4,13 @@ from jobbergate_agent.main import main
 
 
 @mock.patch("jobbergate_agent.main.asyncio")
-def test_main__checks_if_agent_asyncio_loop_is_run_forever(mock_asyncio):
+@mock.patch("jobbergate_agent.main.init_sentry")
+@mock.patch("jobbergate_agent.main.init_scheduler")
+def test_main__checks_if_agent_asyncio_loop_is_run_forever(
+    mocked_init_scheduler: mock.MagicMock,
+    mocked_init_sentry: mock.MagicMock,
+    mock_asyncio: mock.MagicMock,
+):
     """Checks whether the corountine that runs all functionality is called or not."""
 
     mocked_loop = mock.MagicMock()
@@ -14,6 +20,8 @@ def test_main__checks_if_agent_asyncio_loop_is_run_forever(mock_asyncio):
 
     mock_asyncio.get_event_loop.assert_called_once()
     mocked_loop.run_forever.assert_called_once()
+    mocked_init_scheduler.assert_called_once_with()
+    mocked_init_sentry.assert_called_once_with()
 
 
 @mock.patch("jobbergate_agent.main.asyncio.get_event_loop")

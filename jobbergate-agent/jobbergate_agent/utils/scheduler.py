@@ -19,6 +19,9 @@ from jobbergate_agent.utils.logging import logger, logger_wraps
 from jobbergate_agent.utils.plugin import load_plugins
 
 
+scheduler = AsyncIOScheduler()
+
+
 class JobbergateTask(Protocol):
     """Protocol to be implemented by any task that is expected to run on the scheduler."""
 
@@ -53,7 +56,6 @@ def schedule_tasks(scheduler: BaseScheduler) -> None:
 @logger_wraps()
 def init_scheduler() -> BaseScheduler:
     """Initialize the scheduler and schedule all tasks."""
-    scheduler = AsyncIOScheduler()
     scheduler.start()
     schedule_tasks(scheduler)
     return scheduler
