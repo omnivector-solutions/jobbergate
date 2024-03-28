@@ -8,22 +8,22 @@ underlines = ["", "", ""]
 
 [[tool.towncrier.type]]
 directory = "core"
-name = "jobbergate-core"
+name = "Core"
 showcontent = true
 
 [[tool.towncrier.type]]
 directory = "agent"
-name = "jobbergate-agent"
+name = "Agent"
 showcontent = true
 
 [[tool.towncrier.type]]
 directory = "api"
-name = "jobbergate-api"
+name = "API"
 showcontent = true
 
 [[tool.towncrier.type]]
 directory = "cli"
-name = "jobbergate-cli"
+name = "CLI"
 showcontent = true
 
 [[tool.towncrier.type]]
