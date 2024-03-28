@@ -1,0 +1,37 @@
+[tool.towncrier]
+directory = "changelog.d"
+filename = "CHANGELOG.md"
+start_string = "<!-- towncrier release notes start -->\n"
+title_format = "## [{version}](https://github.com/omnivector-solutions/jobbergate/releases/tag/{version}) - {project_date}"
+issue_format = "[ASP-{issue}](https://jira.scania.com/browse/ASP-{issue})"
+underlines = ["", "", ""]
+
+[[tool.towncrier.type]]
+directory = "core"
+name = "jobbergate-core"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "agent"
+name = "jobbergate-agent"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "api"
+name = "jobbergate-api"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "cli"
+name = "jobbergate-cli"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "docs"
+name = "Documentation"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "misc"
+name = "Misc"
+showcontent = false
