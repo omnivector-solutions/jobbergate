@@ -19,6 +19,8 @@ def self_update_task(scheduler: BaseScheduler) -> Job:
     """
     Schedule a task to self update the agent every ``TASK_SELF_UPDATE_INTERVAL_SECONDS`` seconds.
     """
+    if SETTINGS.TASK_SELF_UPDATE_INTERVAL_SECONDS is None:
+        return None
     return scheduler.add_job(self_update_agent, "interval", seconds=SETTINGS.TASK_SELF_UPDATE_INTERVAL_SECONDS)
 
 

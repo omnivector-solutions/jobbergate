@@ -55,7 +55,7 @@ async def self_update_agent():
     )
 
     if _need_update(current_version, upstream_version):
-        logger.warning("The Jobbergate Agent is outdated in relation of the upstream version, an update is required.")
+        logger.warning("The Jobbergate Agent is outdated in relation to the upstream version; an update is required.")
 
         logger.debug("Shutting down the scheduler...")
         scheduler.shutdown(wait=False)
