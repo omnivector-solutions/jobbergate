@@ -7,11 +7,21 @@ from buzz import handle_errors
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client
+from jobbergate_agent.internals.update import self_update_agent
 from jobbergate_agent.jobbergate.submit import submit_pending_jobs
 from jobbergate_agent.jobbergate.update import update_active_jobs
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.logging import log_error, logger_wraps
 from jobbergate_agent.utils.scheduler import BaseScheduler, Job
+
+
+def self_update_task(scheduler: BaseScheduler) -> Job:
+    """
+    Schedule a task to self update the agent every ``TASK_SELF_UPDATE_INTERVAL_SECONDS`` seconds.
+    """
+    if SETTINGS.TASK_SELF_UPDATE_INTERVAL_SECONDS is None:
+        return None
+    return scheduler.add_job(self_update_agent, "interval", seconds=SETTINGS.TASK_SELF_UPDATE_INTERVAL_SECONDS)
 
 
 def active_submissions_task(scheduler: BaseScheduler) -> Job:

@@ -1,9 +1,10 @@
 # Change Log
 
-This file keeps track of all notable changes to jobbergate-core
+This file keeps track of all notable changes to jobbergate-agent
 
 ## Unreleased
 
+- Added a task scheduler whose purpose is to self update the agent [PENG-2116]
 
 ## 5.0.0a0 -- 2024-03-26
 - Dropped support for Python 3.8 and 3.9

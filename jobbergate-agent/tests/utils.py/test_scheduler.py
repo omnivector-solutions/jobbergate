@@ -46,7 +46,7 @@ def test_schedule_tasks__fails(mocked_plugins):
 
 def test_scheduler_end_to_end(tweak_settings):
     """Test that scheduler can start, get the tasks and shutdown properly."""
-    with tweak_settings(TASK_GARBAGE_COLLECTION_HOUR=23):
+    with tweak_settings(TASK_GARBAGE_COLLECTION_HOUR=23), tweak_settings(TASK_SELF_UPDATE_INTERVAL_SECONDS=60):
         scheduler = init_scheduler()
 
     assert scheduler.running is True
@@ -54,6 +54,7 @@ def test_scheduler_end_to_end(tweak_settings):
         "active-jobs",
         "garbage-collection",
         "pending-jobs",
+        "self-update",
     }
 
     shut_down_scheduler(scheduler, wait=False)
