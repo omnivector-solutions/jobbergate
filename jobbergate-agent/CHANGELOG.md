@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-agent
 
 ## Unreleased
 
+
+## 5.0.0a1 -- 2024-04-04
 - Added a task scheduler whose purpose is to self update the agent [PENG-2116]
 
 ## 5.0.0a0 -- 2024-03-26
