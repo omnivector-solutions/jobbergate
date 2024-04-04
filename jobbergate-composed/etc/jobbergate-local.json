@@ -88,8 +88,32 @@
     "client": {
       "cli": [
         {
-          "id": "3ed61d85-0d03-46a8-8010-e0be1e9931fa",
-          "name": "jobbergate:job-submissions:view",
+          "id": "3494f738-d92c-4b19-9e25-5590ab01f086",
+          "name": "jobbergate:job-templates:create",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
+          "attributes": {}
+        },
+        {
+          "id": "74be4480-5aa8-4df4-a4f4-04ee9c509306",
+          "name": "jobbergate:job-templates:read",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
+          "attributes": {}
+        },
+        {
+          "id": "c0c9190a-9df0-4d8a-9c75-da16773ba899",
+          "name": "jobbergate:job-templates:update",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
+          "attributes": {}
+        },
+        {
+          "id": "30e1234f-24dc-4d50-a710-773822b47733",
+          "name": "jobbergate:job-templates:delete",
           "composite": false,
           "clientRole": true,
           "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
@@ -97,15 +121,7 @@
         },
         {
           "id": "191708ce-ba2a-4df1-ada4-d729260db855",
-          "name": "jobbergate:job-scripts:view",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
-          "attributes": {}
-        },
-        {
-          "id": "9eaccc11-12fd-433f-8ecd-fab1f5abb429",
-          "name": "jobbergate:job-templates:edit",
+          "name": "jobbergate:job-scripts:create",
           "composite": false,
           "clientRole": true,
           "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
@@ -113,15 +129,31 @@
         },
         {
           "id": "4e257fac-e62f-4091-8147-75a0173e58fe",
-          "name": "jobbergate:job-scripts:edit",
+          "name": "jobbergate:job-scripts:read",
           "composite": false,
           "clientRole": true,
           "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
           "attributes": {}
         },
         {
-          "id": "f432b492-a166-4b67-a4a0-a9077ee459d4",
-          "name": "jobbergate:job-templates:view",
+          "id": "058097f0-e692-4026-af1c-33c84a26fdd5",
+          "name": "jobbergate:job-scripts:update",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
+          "attributes": {}
+        },
+        {
+          "id": "86d55573-97e0-4244-98e6-0201f1308344",
+          "name": "jobbergate:job-scripts:delete",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
+          "attributes": {}
+        },
+        {
+          "id": "3ed61d85-0d03-46a8-8010-e0be1e9931fa",
+          "name": "jobbergate:job-submissions:create",
           "composite": false,
           "clientRole": true,
           "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
@@ -129,7 +161,23 @@
         },
         {
           "id": "386f16b0-f358-41dd-a6c2-4f3eb96bc84f",
-          "name": "jobbergate:job-submissions:edit",
+          "name": "jobbergate:job-submissions:read",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
+          "attributes": {}
+        },
+        {
+          "id": "7ed00337-05c7-4981-9100-9ff85bf3b031",
+          "name": "jobbergate:job-submissions:update",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
+          "attributes": {}
+        },
+        {
+          "id": "bde6151d-e30f-49b6-b032-c7bc5401beec",
+          "name": "jobbergate:job-submissions:delete",
           "composite": false,
           "clientRole": true,
           "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
@@ -350,48 +398,96 @@
       ],
       "local-slurm": [
         {
-          "id": "82d5fa04-bf1d-4e07-ac0b-47e974d52c04",
-          "name": "jobbergate:job-templates:view",
+          "id": "e6e06eff-bc07-433f-8059-69ba1e7e4c6d",
+          "name": "jobbergate:job-templates:create",
           "composite": false,
           "clientRole": true,
           "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
           "attributes": {}
         },
         {
-          "id": "4a53e4d7-e14e-41bf-8fd2-9d377419baca",
-          "name": "jobbergate:job-templates:edit",
+          "id": "e5e6b03c-b91f-4265-812a-b5a8d47cdc02",
+          "name": "jobbergate:job-templates:read",
           "composite": false,
           "clientRole": true,
           "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
           "attributes": {}
         },
         {
-          "id": "7063e39b-9d7c-4953-8ab7-750e18c6ff98",
-          "name": "jobbergate:job-scripts:edit",
+          "id": "1efe5876-e0a4-4f1b-a9bf-5799cab00ddc",
+          "name": "jobbergate:job-templates:update",
           "composite": false,
           "clientRole": true,
           "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
           "attributes": {}
         },
         {
-          "id": "cb7c4d6c-4690-4cb5-b288-a71557aa5552",
-          "name": "jobbergate:job-submissions:view",
+          "id": "5bf25b73-7aa7-4015-a050-b8426f10fc20",
+          "name": "jobbergate:job-templates:delete",
           "composite": false,
           "clientRole": true,
           "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
           "attributes": {}
         },
         {
-          "id": "342a9b6f-8406-42d8-b336-697818672a3f",
-          "name": "jobbergate:job-scripts:view",
+          "id": "c38af99d-632f-4313-8fa2-e492b4b3af2d",
+          "name": "jobbergate:job-scripts:create",
           "composite": false,
           "clientRole": true,
           "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
           "attributes": {}
         },
         {
-          "id": "9726a419-92cd-486a-90c5-e4b536066a28",
-          "name": "jobbergate:job-submissions:edit",
+          "id": "2b2c4a91-8778-4597-a5da-c0ac9be7a13e",
+          "name": "jobbergate:job-scripts:read",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
+          "attributes": {}
+        },
+        {
+          "id": "0d157278-f2ec-4458-ae0a-f83bfb865e63",
+          "name": "jobbergate:job-scripts:update",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
+          "attributes": {}
+        },
+        {
+          "id": "0ee2314b-bfe8-400f-8ad9-f5e27e4e7c8e",
+          "name": "jobbergate:job-scripts:delete",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
+          "attributes": {}
+        },
+        {
+          "id": "d471a865-9af5-45ad-8828-397828f8e9f0",
+          "name": "jobbergate:job-submissions:create",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
+          "attributes": {}
+        },
+        {
+          "id": "7959e27a-64a8-4a68-ad3d-ab554020d8d0",
+          "name": "jobbergate:job-submissions:read",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
+          "attributes": {}
+        },
+        {
+          "id": "7ef70c60-45a2-4124-8ab3-620c79109ad6",
+          "name": "jobbergate:job-submissions:update",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
+          "attributes": {}
+        },
+        {
+          "id": "c3a617a2-607c-4f37-a909-4730828388de",
+          "name": "jobbergate:job-submissions:delete",
           "composite": false,
           "clientRole": true,
           "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
@@ -566,12 +662,18 @@
       ],
       "clientRoles": {
         "cli": [
-          "jobbergate:job-submissions:view",
-          "jobbergate:job-scripts:view",
-          "jobbergate:job-templates:edit",
-          "jobbergate:job-scripts:edit",
-          "jobbergate:job-templates:view",
-          "jobbergate:job-submissions:edit"
+          "jobbergate:job-scripts:create",
+          "jobbergate:job-scripts:read",
+          "jobbergate:job-scripts:update",
+          "jobbergate:job-scripts:delete",
+          "jobbergate:job-submissions:create",
+          "jobbergate:job-submissions:read",
+          "jobbergate:job-submissions:update",
+          "jobbergate:job-submissions:delete",
+          "jobbergate:job-templates:create",
+          "jobbergate:job-templates:read",
+          "jobbergate:job-templates:update",
+          "jobbergate:job-templates:delete"
         ]
       },
       "notBefore": 0,
@@ -592,12 +694,18 @@
       ],
       "clientRoles": {
         "local-slurm": [
-          "jobbergate:job-templates:view",
-          "jobbergate:job-templates:edit",
-          "jobbergate:job-scripts:edit",
-          "jobbergate:job-submissions:view",
-          "jobbergate:job-scripts:view",
-          "jobbergate:job-submissions:edit"
+          "jobbergate:job-scripts:create",
+          "jobbergate:job-scripts:read",
+          "jobbergate:job-scripts:update",
+          "jobbergate:job-scripts:delete",
+          "jobbergate:job-submissions:create",
+          "jobbergate:job-submissions:read",
+          "jobbergate:job-submissions:update",
+          "jobbergate:job-submissions:delete",
+          "jobbergate:job-templates:create",
+          "jobbergate:job-templates:read",
+          "jobbergate:job-templates:update",
+          "jobbergate:job-templates:delete"
         ]
       },
       "notBefore": 0,

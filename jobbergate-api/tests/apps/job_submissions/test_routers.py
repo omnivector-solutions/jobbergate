@@ -48,7 +48,7 @@ async def test_create_job_submission__on_site_submission(
     inserted_job_script_id = base_job_script.id
     slurm_job_id = 1234
 
-    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-cluster-client")
+    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_CREATE, client_id="dummy-cluster-client")
     create_data = fill_job_submission_data(job_script_id=inserted_job_script_id, slurm_job_id=slurm_job_id)
 
     # Removed defaults to make sure these are correctly set by other mechanisms
@@ -107,7 +107,7 @@ async def test_create_job_submission__with_client_id_in_token(
 
     inserted_job_script_id = base_job_script.id
 
-    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-cluster-client")
+    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_CREATE, client_id="dummy-cluster-client")
     create_data = fill_job_submission_data(job_script_id=inserted_job_script_id)
 
     # Removed defaults to make sure these are correctly set by other mechanisms
@@ -136,7 +136,7 @@ async def test_create_job_submission__with_client_id_in_token(
     created_id = response_data["id"]
 
     # Make sure that the data can be retrieved with a GET request
-    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_VIEW)
+    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_READ)
     response = await client.get(f"jobbergate/job-submissions/{created_id}")
     assert response.status_code == 200
     response_data = response.json()
@@ -180,7 +180,7 @@ async def test_create_job_submission__with_client_id_in_request_body(
 
     inserted_job_script_id = base_job_script.id
 
-    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-cluster-client")
+    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_CREATE, client_id="dummy-cluster-client")
     create_data = fill_job_submission_data(job_script_id=inserted_job_script_id)
 
     # Removed defaults to make sure these are correctly set by other mechanisms
@@ -238,7 +238,7 @@ async def test_create_job_submission__with_execution_directory(
 
     inserted_job_script_id = base_job_script.id
 
-    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-cluster-client")
+    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_CREATE, client_id="dummy-cluster-client")
     create_data = fill_job_submission_data(
         job_script_id=inserted_job_script_id,
         execution_directory="/some/fake/path",
@@ -280,7 +280,7 @@ async def test_create_job_submission_without_job_script(
     We show this by trying to create a job_submission without a job_script created before, then assert that
     the job_submission still does not exists in the database, the correct status code (404) is returned.
     """
-    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT)
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_CREATE)
     response = await client.post(
         "/jobbergate/job-submissions", json=fill_job_submission_data(job_script_id=9999)
     )
@@ -334,7 +334,7 @@ async def test_create_job_submission_without_client_id(
 
     inject_security_header(
         tester_email,
-        Permissions.JOB_SUBMISSIONS_EDIT,
+        Permissions.JOB_SUBMISSIONS_CREATE,
     )
     create_data = fill_job_submission_data(job_script_id=inserted_job_script_id)
     create_data.pop("client_id", None)
@@ -364,7 +364,7 @@ async def test_get_job_submission_by_id(
     inserted_instance = await synth_services.crud.job_submission.create(**fill_job_submission_data())
     inserted_job_submission_id = inserted_instance.id
 
-    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_VIEW)
+    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_READ)
     response = await client.get(f"/jobbergate/job-submissions/{inserted_job_submission_id}")
     assert response.status_code == status.HTTP_200_OK
 
@@ -404,7 +404,7 @@ async def test_get_job_submission_by_id_invalid(client, inject_security_header, 
     requested job_submission does not exist. We show this by asserting that the status code
     returned is what we would expect given the job_submission requested doesn't exist (404).
     """
-    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_READ)
     response = await client.get("/jobbergate/job-submissions/9999")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -450,7 +450,7 @@ async def test_get_job_submissions__no_param(
     for create_data in all_create_data:
         await synth_services.crud.job_submission.create(**create_data)
 
-    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_READ)
     response = await client.get("/jobbergate/job-submissions")
     assert unpack_response(response, key="name", sort=True) == ["sub1", "sub2", "sub3"]
 
@@ -536,7 +536,7 @@ async def test_get_job_submissions__user_only(
     for create_data in all_create_data:
         await synth_services.crud.job_submission.create(**create_data)
 
-    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_READ)
     response = await client.get("/jobbergate/job-submissions", params=dict(user_only=True))
     assert unpack_response(response, key="name", sort=True) == ["sub1", "sub3"]
 
@@ -560,7 +560,7 @@ async def test_get_job_submissions__include_archived(
     for create_data in all_create_data:
         await synth_services.crud.job_submission.create(**create_data)
 
-    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_READ)
     response = await client.get("/jobbergate/job-submissions", params=dict(user_only=False))
     assert unpack_response(response, key="is_archived", sort=True) == [False, True]
 
@@ -586,7 +586,7 @@ async def test_get_job_submissions__from_job_script_id(
             **fill_job_submission_data(job_script_id=job_script_list[i // 2].id)
         )
 
-    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_READ)
 
     for job_script in job_script_list:
         response = await client.get(f"/jobbergate/job-submissions?from_job_script_id={job_script.id}")
@@ -636,7 +636,7 @@ async def test_get_job_submissions__with_status_param(
         ),
     )
 
-    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_READ)
     response = await client.get(
         "/jobbergate/job-submissions", params=dict(submit_status=JobSubmissionStatus.CREATED.value)
     )
@@ -676,7 +676,7 @@ async def test_get_job_submissions__with_search_param(
     for item in submission_list:
         await synth_services.crud.job_submission.create(job_script_id=inserted_job_script_id, **item)
 
-    inject_security_header("admin@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
+    inject_security_header("admin@org.com", Permissions.JOB_SUBMISSIONS_READ)
 
     response = await client.get("/jobbergate/job-submissions?all=true&search=one")
     assert unpack_response(response, key="name") == ["test name one"]
@@ -726,7 +726,7 @@ async def test_get_job_submissions_with_sort_params(
     for item in submission_list:
         await synth_services.crud.job_submission.create(job_script_id=inserted_job_script_id, **item)
 
-    inject_security_header("admin@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
+    inject_security_header("admin@org.com", Permissions.JOB_SUBMISSIONS_READ)
 
     response = await client.get("/jobbergate/job-submissions?sort_field=id")
     assert unpack_response(response, key="name") == ["Z", "Y", "X"]
@@ -777,7 +777,7 @@ async def test_list_job_submission_pagination(
     for item in submission_list:
         await synth_services.crud.job_submission.create(**item)
 
-    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_READ)
     response = await client.get("/jobbergate/job-submissions?page=1&size=1&sort_field=id")
     assert unpack_response(
         response,
@@ -854,7 +854,7 @@ async def test_get_job_submissions_with_slurm_job_ids_param(
     for item in submission_list:
         await synth_services.crud.job_submission.create(job_script_id=inserted_job_script_id, **item)
 
-    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_READ)
     response = await client.get("/jobbergate/job-submissions?slurm_job_ids=101,103")
     assert unpack_response(response, key="name", sort=True) == ["sub1", "sub3"]
 
@@ -894,7 +894,7 @@ async def test_get_job_submissions_applies_no_slurm_filter_if_slurm_job_ids_is_e
     for item in submission_list:
         await synth_services.crud.job_submission.create(job_script_id=inserted_job_script_id, **item)
 
-    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_READ)
 
     with_empty_param_response = await client.get("/jobbergate/job-submissions?slurm_job_ids=")
     assert with_empty_param_response.status_code == status.HTTP_200_OK
@@ -916,7 +916,7 @@ async def test_get_job_submissions_with_invalid_slurm_job_ids_param(
     This test proves that GET /job-submissions requires the slurm_job_ids parameter to be a comma-separated
     list of integer slurm job ids.
     """
-    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_VIEW)
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_READ)
     response = await client.get("/jobbergate/job-submissions?slurm_job_ids=101-103")
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert "Invalid slurm_job_ids" in response.text
@@ -952,7 +952,7 @@ async def test_update_job_submission__basic(
 
     payload = dict(name="new name", description="new description", execution_directory="/some/fake/path")
 
-    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_UPDATE)
     response = await client.put(f"/jobbergate/job-submissions/{inserted_job_submission_id}", json=payload)
 
     assert response.status_code == status.HTTP_200_OK, f"Update failed: {response.text}"
@@ -977,7 +977,7 @@ async def test_update_job_submission_not_found(client, inject_security_header, s
     This test proves that it is not possible to update a job_submission if it is not found. We show this by
     asserting that the response status code of the request is 404.
     """
-    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT)
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_UPDATE)
     response = await client.put("/jobbergate/job-submissions/9999", json=dict(job_submission_name="new name"))
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -1078,7 +1078,7 @@ async def test_delete_job_submission(
     )
     inserted_job_submission_id = inserted_submission.id
 
-    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_DELETE)
     response = await client.delete(f"/jobbergate/job-submissions/{inserted_job_submission_id}")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
@@ -1093,7 +1093,7 @@ async def test_delete_job_submission_not_found(client, inject_security_header, s
     This test proves that it is not possible to delete a job_submission if it does not exists. We show this
     by asserting that a 404 response status code is returned.
     """
-    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_EDIT)
+    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_DELETE)
     response = await client.delete("/jobbergate/job-submissions/9999")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -1224,7 +1224,7 @@ async def test_job_submissions_agent_pending__success(
 
     inject_security_header(
         "who@cares.com",
-        Permissions.JOB_SUBMISSIONS_VIEW,
+        Permissions.JOB_SUBMISSIONS_READ,
         client_id="dummy-client",
     )
     response = await client.get("/jobbergate/job-submissions/agent/pending")
@@ -1255,7 +1255,7 @@ async def test_job_submissions_agent_pending__returns_400_if_token_does_not_carr
     """
     inject_security_header(
         "who@cares.com",
-        Permissions.JOB_SUBMISSIONS_VIEW,
+        Permissions.JOB_SUBMISSIONS_READ,
     )
     response = await client.get("/jobbergate/job-submissions/agent/pending")
     assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -1293,7 +1293,7 @@ async def test_job_submissions_agent_submitted__success(
         slurm_job_info="Fake slurm job info",
     )
 
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
     response = await client.post(f"/jobbergate/job-submissions/agent/submitted", json=payload)
     assert response.status_code == status.HTTP_202_ACCEPTED
 
@@ -1339,7 +1339,7 @@ async def test_job_submissions_agent_submitted__fails_if_status_is_not_CREATED(
         slurm_job_info="Fake slurm job info",
     )
 
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
     response = await client.post(f"/jobbergate/job-submissions/agent/submitted", json=payload)
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "Only CREATED Job Submissions can be marked as SUBMITTED" in response.text
@@ -1355,7 +1355,7 @@ async def test_job_submissions_agent_submitted__fails_if_token_does_not_carry_cl
     This test proves that PUT /job-submissions/agent/submitted returns a 400 status if the access
     token used to query the route does not include a ``client_id``.
     """
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT)
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE)
     response = await client.put(
         "/jobbergate/job-submissions/agent/1",
         json=dict(
@@ -1399,7 +1399,7 @@ async def test_job_submissions_agent_submitted__fails_if_client_id_does_not_matc
         slurm_job_info="Fake slurm job info",
     )
 
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="stupid-client")
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="stupid-client")
     response = await client.post(f"/jobbergate/job-submissions/agent/submitted", json=payload)
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
@@ -1439,7 +1439,7 @@ async def test_job_submissions_agent_rejected__success(
 
     inject_security_header(
         "who@cares.com",
-        Permissions.JOB_SUBMISSIONS_EDIT,
+        Permissions.JOB_SUBMISSIONS_UPDATE,
         client_id="dummy-client",
         organization_id="dummy-org",
     )
@@ -1489,7 +1489,7 @@ async def test_job_submissions_agent_rejected__publishes_status_change_to_rabbit
 
     inject_security_header(
         "who@cares.com",
-        Permissions.JOB_SUBMISSIONS_EDIT,
+        Permissions.JOB_SUBMISSIONS_UPDATE,
         client_id="dummy-client",
         organization_id="dummy-org",
     )
@@ -1543,7 +1543,7 @@ async def test_job_submissions_agent_rejected__fails_if_status_is_not_CREATED(
         report_message="Something went wrong",
     )
 
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
     response = await client.post(f"/jobbergate/job-submissions/agent/rejected", json=payload)
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "Only CREATED Job Submissions can be marked as REJECTED" in response.text
@@ -1580,7 +1580,7 @@ async def test_job_submissions_agent_update__success(
     )
     inserted_job_submission_id = inserted_submission.id
 
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
     response = await client.put(
         f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
         json=dict(
@@ -1644,7 +1644,7 @@ async def test_job_submissions_agent_update__sets_aborted_status(
     )
     inserted_job_submission_id = inserted_submission.id
 
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
     response = await client.put(
         f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
         json=dict(
@@ -1695,7 +1695,7 @@ async def test_job_submissions_agent_update__sets_done_status(
     )
     inserted_job_submission_id = inserted_submission.id
 
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
     response = await client.put(
         f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
         json=dict(
@@ -1759,7 +1759,7 @@ async def test_job_submissions_agent_update__publishes_status_change_to_rabbitmq
 
     inject_security_header(
         "who@cares.com",
-        Permissions.JOB_SUBMISSIONS_EDIT,
+        Permissions.JOB_SUBMISSIONS_UPDATE,
         client_id="dummy-client",
         organization_id="dummy-org",
     )
@@ -1800,7 +1800,7 @@ async def test_job_submissions_agent_update__returns_400_if_token_does_not_carry
     This test proves that PUT /job-submissions/agent/{job_submission_id} returns a 400 status if the access
     token used to query the route does not include a ``client_id``.
     """
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT)
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE)
     response = await client.put(
         "/jobbergate/job-submissions/agent/1",
         json=dict(status=JobSubmissionStatus.SUBMITTED, slurm_job_id=111),
@@ -1835,7 +1835,7 @@ async def test_job_submissions_agent_update__returns_403_if_client_id_differs(
     )
     inserted_job_submission_id = inserted_submission.id
 
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="stupid-client")
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="stupid-client")
     response = await client.put(
         f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
         json=dict(
@@ -1873,7 +1873,7 @@ async def test_job_submissions_agent_update__returns_409_if_slurm_job_id_differs
     )
     inserted_job_submission_id = inserted_submission.id
 
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
     response = await client.put(
         f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
         json=dict(
@@ -1934,7 +1934,7 @@ async def test_job_submissions_agent_active__success(
     for item in submission_list:
         await synth_services.crud.job_submission.create(job_script_id=inserted_job_script_id, **item)
 
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_VIEW, client_id="dummy-client")
+    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_READ, client_id="dummy-client")
     response = await client.get("/jobbergate/job-submissions/agent/active")
     assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
 
@@ -1955,7 +1955,7 @@ async def test_job_submissions_agent_active__returns_400_if_token_does_not_carry
     """
     inject_security_header(
         "who@cares.com",
-        Permissions.JOB_SUBMISSIONS_VIEW,
+        Permissions.JOB_SUBMISSIONS_READ,
     )
     response = await client.get("/jobbergate/job-submissions/agent/active")
     assert response.status_code == status.HTTP_400_BAD_REQUEST

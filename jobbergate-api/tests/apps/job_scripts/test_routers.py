@@ -17,7 +17,7 @@ async def test_create_stand_alone_job_script(
     payload = fill_job_script_data()
 
     tester_email = payload.pop("owner_email")
-    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_CREATE)
 
     response = await client.post("jobbergate/job-scripts", json=payload)
     assert response.status_code == 201, f"Create failed: {response.text}"
@@ -41,7 +41,7 @@ async def test_create_stand_alone_job_script(
     assert instance.parent_template_id is None
 
     # Make sure that the data can be retrieved with a GET request
-    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
     response = await client.get(f"jobbergate/job-scripts/{created_id}")
     assert response.status_code == 200
     response_data = response.json()
@@ -74,7 +74,7 @@ async def test_clone_job_script__success(
 
     new_owner_email = "new_" + tester_email
 
-    inject_security_header(new_owner_email, Permissions.JOB_SCRIPTS_EDIT)
+    inject_security_header(new_owner_email, Permissions.JOB_SCRIPTS_CREATE)
     response = await client.post(f"jobbergate/job-scripts/clone/{original_instance.id}")
 
     assert response.status_code == 201, f"Clone failed: {response.text}"
@@ -105,7 +105,7 @@ async def test_clone_job_script__replace_base_values(
         description="new description",
     )
 
-    inject_security_header(new_owner_email, Permissions.JOB_SCRIPTS_EDIT)
+    inject_security_header(new_owner_email, Permissions.JOB_SCRIPTS_CREATE)
     response = await client.post(f"jobbergate/job-scripts/clone/{original_instance.id}", json=payload)
 
     assert response.status_code == 201, f"Clone failed: {response.text}"
@@ -132,7 +132,7 @@ async def test_clone_job_script__fail_not_found(
     synth_services,
 ):
     assert (await synth_services.crud.job_script.count()) == 0
-    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_CREATE)
     response = await client.post("jobbergate/job-scripts/clone/0")
 
     assert response.status_code == 404
@@ -175,7 +175,7 @@ async def test_render_job_script_from_template(
         },
     }
 
-    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_CREATE)
     response = await client.post(
         f"/jobbergate/job-scripts/render-from-template/{base_template.id}",
         json=payload,
@@ -229,7 +229,7 @@ async def test_render_job_script_from_template__no_entrypoint(
         },
     }
 
-    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_CREATE)
     response = await client.post(
         f"/jobbergate/job-scripts/render-from-template/{base_template.id}",
         json=payload,
@@ -281,7 +281,7 @@ async def test_render_job_script_from_template__multiple_entrypoints(
         },
     }
 
-    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_CREATE)
     response = await client.post(
         f"/jobbergate/job-scripts/render-from-template/{base_template.id}",
         json=payload,
@@ -316,7 +316,7 @@ async def test_render_job_script_from_template__template_file_unavailable(
         },
     }
 
-    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_CREATE)
     response = await client.post(
         f"/jobbergate/job-scripts/render-from-template/{base_template.id}",
         json=payload,
@@ -381,7 +381,7 @@ async def test_render_job_script_from_template__without_template(
         },
     }
 
-    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_CREATE)
     response = await client.post(
         "/jobbergate/job-scripts/render-from-template/9999",
         json=payload,
@@ -406,7 +406,7 @@ async def test_get_job_script_by_id__success(
     """
     inserted_instance = await synth_services.crud.job_script.create(**fill_job_script_data())
 
-    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
     response = await client.get(f"/jobbergate/job-scripts/{inserted_instance.id}")
 
     assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
@@ -432,7 +432,7 @@ async def test_get_job_script_by_id__invalid_id(
     requested job_script does not exist. We show this by asserting that the status code
     returned is what we would expect given the job_script requested doesn't exist (404).
     """
-    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
     response = await client.get("/jobbergate/job-scripts/9999")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -502,7 +502,7 @@ class TestListJobScripts:
         inject_security_header,
         job_scripts_list,
     ):
-        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
         response = await client.get("jobbergate/job-scripts?include_archived=True&sort_field=id")
         assert response.status_code == 200, f"Get failed: {response.text}"
 
@@ -526,7 +526,7 @@ class TestListJobScripts:
         inject_security_header,
         job_scripts_list,
     ):
-        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
         response = await client.get("jobbergate/job-scripts")
         assert response.status_code == 200, f"Get failed: {response.text}"
 
@@ -545,7 +545,7 @@ class TestListJobScripts:
         inject_security_header,
         job_scripts_list,
     ):
-        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
         response = await client.get("jobbergate/job-scripts?user_only=True&include_archived=True")
         assert response.status_code == 200, f"Get failed: {response.text}"
 
@@ -588,7 +588,7 @@ class TestListJobScripts:
                 file_type=file_type,
             )
 
-        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
         response = await client.get("jobbergate/job-scripts", params={"include_parent": True})
         assert response.status_code == 200, f"Get failed: {response.text}"
 
@@ -623,7 +623,7 @@ class TestListJobScripts:
         for item in data:
             await synth_services.crud.job_script.create(**item)
 
-        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
         response = await client.get("jobbergate/job-scripts", params={"include_parent": False})
         assert response.status_code == 200, f"Get failed: {response.text}"
 
@@ -669,7 +669,7 @@ class TestListJobScripts:
         for item in data:
             await synth_services.crud.job_script.create(**item)
 
-        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
         response = await client.get("jobbergate/job-scripts", params={"search": "instance"})
         assert response.status_code == 200, f"Get failed: {response.text}"
 
@@ -702,7 +702,7 @@ class TestJobScriptFiles:
         file_type = "ENTRYPOINT"
         dummy_file_path = make_dummy_file("test_template.sh", content=job_script_data_as_string)
 
-        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_CREATE)
         with open(dummy_file_path, mode="rb") as file:
             response = await client.put(
                 f"jobbergate/job-scripts/{id}/upload/{file_type}",
@@ -738,7 +738,7 @@ class TestJobScriptFiles:
         owner_email = tester_email
         requester_email = "another_" + owner_email
 
-        inject_security_header(requester_email, Permissions.JOB_SCRIPTS_EDIT)
+        inject_security_header(requester_email, Permissions.JOB_SCRIPTS_CREATE)
         with open(dummy_file_path, mode="rb") as file:
             response = await client.put(
                 f"jobbergate/job-scripts/{id}/upload/{file_type}",
@@ -767,7 +767,7 @@ class TestJobScriptFiles:
             file_type=file_type,
         )
 
-        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_VIEW)
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
         response = await client.get(f"jobbergate/job-scripts/{id}/upload/{job_script_filename}")
 
         assert response.status_code == status.HTTP_200_OK
@@ -794,7 +794,7 @@ class TestJobScriptFiles:
             file_type=file_type,
         )
 
-        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_DELETE)
         response = await client.delete(f"jobbergate/job-scripts/{parent_id}/upload/{job_script_filename}")
         assert response.status_code == status.HTTP_200_OK, f"Delete failed: {response.text}"
 
@@ -825,13 +825,13 @@ class TestJobScriptFiles:
         owner_email = tester_email
         requester_email = "another_" + owner_email
 
-        inject_security_header(requester_email, Permissions.JOB_SCRIPTS_EDIT)
+        inject_security_header(requester_email, Permissions.JOB_SCRIPTS_DELETE)
         response = await client.delete(f"jobbergate/job-scripts/{parent_id}/upload/{job_script_filename}")
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 async def test_auto_clean_unused_entries(client, tester_email, inject_security_header, synth_session):
     """Test that unused job scripts are automatically cleaned."""
-    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_DELETE)
     response = await client.delete("jobbergate/job-scripts/clean-unused-entries")
     assert response.status_code == status.HTTP_202_ACCEPTED
