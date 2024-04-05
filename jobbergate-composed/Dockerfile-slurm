@@ -1,4 +1,4 @@
-FROM ubuntu:jammy-20211122
+FROM ubuntu:jammy-20211122 as slurm-base
 
 
 # Install GOSU
@@ -55,3 +55,17 @@ RUN useradd -ms /bin/bash local-user
 COPY etc/slurm-entrypoint.sh /usr/local/bin/slurm-entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/slurm-entrypoint.sh"]
+
+
+
+FROM slurm-base as jobbergate-agent
+
+RUN apt update && apt install -y curl libpq-dev gcc python3-dev python3-pip && \
+    ln -s /usr/bin/python3 /usr/bin/python
+
+RUN curl -sSL  https://install.python-poetry.org | \
+    POETRY_HOME=/opt/poetry POETRY_VERSION=1.5.1 python && \
+    ln -s /opt/poetry/bin/poetry /usr/local/bin/poetry && \
+    poetry config virtualenvs.create false
+
+WORKDIR /app
