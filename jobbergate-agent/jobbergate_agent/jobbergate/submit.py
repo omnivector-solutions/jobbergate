@@ -8,17 +8,17 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from buzz import DoExceptParams
-from jobbergate_core.tools.sbatch import SubmissionHandler, InfoHandler, inject_sbatch_params
+from jobbergate_core.tools.sbatch import InfoHandler, SubmissionHandler, inject_sbatch_params
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
 from jobbergate_agent.jobbergate.constants import FileType
 from jobbergate_agent.jobbergate.schemas import JobScriptFile, PendingJobSubmission, SlurmJobData
+from jobbergate_agent.jobbergate.update import fetch_job_data
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError, handle_errors_async
 from jobbergate_agent.utils.logging import log_error
 from jobbergate_agent.utils.user_mapper import SlurmUserMapper, manufacture
-from jobbergate_agent.jobbergate.update import fetch_job_data
 
 
 async def retrieve_submission_file(file: JobScriptFile) -> str:

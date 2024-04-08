@@ -329,7 +329,7 @@ async def test_mark_as_submitted__success():
             SlurmJobData(
                 job_state="RUNNING",
                 job_info="{}",
-            )
+            ),
         )
         assert update_route.called
         last_request = update_route.calls.last.request
@@ -363,7 +363,7 @@ async def test_mark_as_submitted__raises_JobbergateApiError_if_the_response_is_n
                 SlurmJobData(
                     job_state="RUNNING",
                     job_info="{}",
-                )
+                ),
             )
         assert update_route.called
 
@@ -690,7 +690,7 @@ async def test_submit_pending_jobs(
 
     mocked_sbatch = mock.MagicMock()
     mocker.patch("jobbergate_agent.jobbergate.submit.InfoHandler", return_value=mocked_sbatch)
-    mocked_fetch = mocker.patch(
+    mocker.patch(
         "jobbergate_agent.jobbergate.submit.fetch_job_data",
         return_value=SlurmJobData(
             job_state="RUNNING",
