@@ -51,4 +51,24 @@ then
     exec /usr/sbin/slurmd -Dvvv
 fi
 
+if [ "$1" = "jobbergate-agent" ]
+then
+    echo "---> Waiting for slurmctld to become active before starting jobbergate-agent..."
+
+    until 2>/dev/null >/dev/tcp/slurmctld/6817
+    do
+        echo "-- slurmctld is not available.  Sleeping ..."
+        sleep 2
+    done
+    echo "-- slurmctld is now active ..."
+
+    echo "---> Starting the Slurm Node Daemon (slurmd) ..."
+    exec /usr/sbin/slurmd -Dvvv &
+
+    echo "---> Starting Jobbergate-agent ..."
+    cd /app
+    poetry install
+    poetry run jg-run
+fi
+
 exec "$@"
