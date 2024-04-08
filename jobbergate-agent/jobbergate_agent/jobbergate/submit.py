@@ -8,16 +8,17 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from buzz import DoExceptParams
-from jobbergate_core.tools.sbatch import SubmissionHandler, inject_sbatch_params
+from jobbergate_core.tools.sbatch import SubmissionHandler, InfoHandler, inject_sbatch_params
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
 from jobbergate_agent.jobbergate.constants import FileType
-from jobbergate_agent.jobbergate.schemas import JobScriptFile, PendingJobSubmission
+from jobbergate_agent.jobbergate.schemas import JobScriptFile, PendingJobSubmission, SlurmJobData
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError, handle_errors_async
 from jobbergate_agent.utils.logging import log_error
 from jobbergate_agent.utils.user_mapper import SlurmUserMapper, manufacture
+from jobbergate_agent.jobbergate.update import fetch_job_data
 
 
 async def retrieve_submission_file(file: JobScriptFile) -> str:
@@ -118,7 +119,7 @@ async def fetch_pending_submissions() -> list[PendingJobSubmission]:
     return pending_job_submissions
 
 
-async def mark_as_submitted(job_submission_id: int, slurm_job_id: int):
+async def mark_as_submitted(job_submission_id: int, slurm_job_id: int, slurm_job_data: SlurmJobData):
     """
     Mark job_submission as submitted in the Jobbergate API.
     """
@@ -133,6 +134,9 @@ async def mark_as_submitted(job_submission_id: int, slurm_job_id: int):
             json=dict(
                 id=job_submission_id,
                 slurm_job_id=slurm_job_id,
+                slurm_job_state=slurm_job_data.job_state,
+                slurm_job_info=slurm_job_data.job_info,
+                slurm_job_state_reason=slurm_job_data.state_reason,
             ),
         )
         response.raise_for_status()
@@ -256,6 +260,8 @@ async def submit_pending_jobs():
     """
     logger.debug("Started submitting pending jobs...")
 
+    info_handler = InfoHandler(scontrol_path=SETTINGS.SCONTROL_PATH)
+
     logger.debug("Building user-mapper")
     user_mapper = manufacture()
 
@@ -271,7 +277,8 @@ async def submit_pending_jobs():
             re_raise=False,
         ):
             slurm_job_id = await submit_job_script(pending_job_submission, user_mapper)
+            slurm_job_data: SlurmJobData = await fetch_job_data(slurm_job_id, info_handler)
 
-            await mark_as_submitted(pending_job_submission.id, slurm_job_id)
+            await mark_as_submitted(pending_job_submission.id, slurm_job_id, slurm_job_data)
 
     logger.debug("...Finished submitting pending jobs")

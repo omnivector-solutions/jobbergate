@@ -1289,6 +1289,8 @@ async def test_job_submissions_agent_submitted__success(
     payload = dict(
         id=inserted_job_submission_id,
         slurm_job_id=111,
+        slurm_job_state=SlurmJobState.RUNNING,
+        slurm_job_info="Fake slurm job info",
     )
 
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
@@ -1299,6 +1301,9 @@ async def test_job_submissions_agent_submitted__success(
     assert instance.id == inserted_job_submission_id
     assert instance.status == JobSubmissionStatus.SUBMITTED
     assert instance.slurm_job_id == payload["slurm_job_id"]
+    assert instance.slurm_job_state == payload["slurm_job_state"]
+    assert instance.slurm_job_info == payload["slurm_job_info"]
+    assert instance.report_message is None
 
 
 async def test_job_submissions_agent_submitted__fails_if_status_is_not_CREATED(
@@ -1330,6 +1335,8 @@ async def test_job_submissions_agent_submitted__fails_if_status_is_not_CREATED(
     payload = dict(
         id=inserted_job_submission_id,
         slurm_job_id=111,
+        slurm_job_state=SlurmJobState.RUNNING,
+        slurm_job_info="Fake slurm job info",
     )
 
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="dummy-client")
@@ -1351,7 +1358,12 @@ async def test_job_submissions_agent_submitted__fails_if_token_does_not_carry_cl
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT)
     response = await client.put(
         "/jobbergate/job-submissions/agent/1",
-        json=dict(status=JobSubmissionStatus.SUBMITTED, slurm_job_id=111),
+        json=dict(
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.RUNNING,
+            slurm_job_info="Fake slurm job info",
+        ),
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "Checked expressions failed: Access token does not contain\\n  1: client_id" in response.text
@@ -1383,6 +1395,8 @@ async def test_job_submissions_agent_submitted__fails_if_client_id_does_not_matc
     payload = dict(
         id=inserted_job_submission_id,
         slurm_job_id=111,
+        slurm_job_state=SlurmJobState.RUNNING,
+        slurm_job_info="Fake slurm job info",
     )
 
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT, client_id="stupid-client")
