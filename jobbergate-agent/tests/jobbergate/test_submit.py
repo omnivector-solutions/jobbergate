@@ -12,7 +12,7 @@ import httpx
 import pytest
 import respx
 
-from jobbergate_agent.jobbergate.schemas import JobScriptFile, PendingJobSubmission
+from jobbergate_agent.jobbergate.schemas import JobScriptFile, PendingJobSubmission, SlurmJobData
 from jobbergate_agent.jobbergate.submit import (
     fetch_pending_submissions,
     get_job_script_file,
@@ -323,10 +323,23 @@ async def test_mark_as_submitted__success():
         update_route = respx.post(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/submitted")
         update_route.mock(return_value=httpx.Response(status_code=200))
 
-        await mark_as_submitted(1, 111)
+        await mark_as_submitted(
+            1,
+            111,
+            SlurmJobData(
+                job_state="RUNNING",
+                job_info="{}",
+            ),
+        )
         assert update_route.called
         last_request = update_route.calls.last.request
-        assert json.loads(last_request.content) == dict(id=1, slurm_job_id=111)
+        assert json.loads(last_request.content) == dict(
+            id=1,
+            slurm_job_id=111,
+            slurm_job_state="RUNNING",
+            slurm_job_info="{}",
+            slurm_job_state_reason=None,
+        )
 
 
 @pytest.mark.asyncio
@@ -344,7 +357,14 @@ async def test_mark_as_submitted__raises_JobbergateApiError_if_the_response_is_n
             JobbergateApiError,
             match="Could not mark job submission 1 as submitted",
         ):
-            await mark_as_submitted(1, 111)
+            await mark_as_submitted(
+                1,
+                111,
+                SlurmJobData(
+                    job_state="RUNNING",
+                    job_info="{}",
+                ),
+            )
         assert update_route.called
 
 
@@ -668,6 +688,16 @@ async def test_submit_pending_jobs(
         "jobbergate_agent.jobbergate.submit.mark_as_submitted", side_effect=_mocked_mark_as_submitted
     )
 
+    mocked_sbatch = mock.MagicMock()
+    mocker.patch("jobbergate_agent.jobbergate.submit.InfoHandler", return_value=mocked_sbatch)
+    mocker.patch(
+        "jobbergate_agent.jobbergate.submit.fetch_job_data",
+        return_value=SlurmJobData(
+            job_state="RUNNING",
+            job_info="{}",
+        ),
+    )
+
     test_mapper = manufacture()
 
     await submit_pending_jobs()
@@ -683,8 +713,8 @@ async def test_submit_pending_jobs(
 
     mock_mark.assert_has_calls(
         [
-            mocker.call(1, 11),
-            mocker.call(2, 22),
+            mocker.call(1, 11, SlurmJobData(job_state="RUNNING", job_info="{}")),
+            mocker.call(2, 22, SlurmJobData(job_state="RUNNING", job_info="{}")),
         ]
     )
     assert mock_mark.call_count == 2

@@ -215,7 +215,10 @@ class JobSubmissionAgentSubmittedRequest(BaseModel):
     """Request model for marking JobSubmission instances as SUBMITTED."""
 
     id: int
-    slurm_job_id: Optional[NonNegativeInt]
+    slurm_job_id: NonNegativeInt
+    slurm_job_state: SlurmJobState
+    slurm_job_info: str
+    slurm_job_state_reason: Optional[str]
 
     class Config:
         schema_extra = job_submission_meta_mapper

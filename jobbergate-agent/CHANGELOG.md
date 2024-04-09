@@ -3,6 +3,7 @@
 This file keeps track of all notable changes to jobbergate-agent
 
 ## Unreleased
+- Added logic to update slurm job status at job submission time [PENG-2193]
 
 
 ## 5.0.0a1 -- 2024-04-04

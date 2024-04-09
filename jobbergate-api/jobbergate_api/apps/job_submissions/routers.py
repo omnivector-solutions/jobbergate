@@ -287,6 +287,9 @@ async def job_submissions_agent_submitted(
     await secure_services.crud.job_submission.update(
         submitted_request.id,
         slurm_job_id=submitted_request.slurm_job_id,
+        slurm_job_state=submitted_request.slurm_job_state,
+        slurm_job_info=submitted_request.slurm_job_info,
+        report_message=submitted_request.slurm_job_state_reason,
         status=JobSubmissionStatus.SUBMITTED,
     )
     return FastAPIResponse(status_code=status.HTTP_202_ACCEPTED)
