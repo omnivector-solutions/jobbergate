@@ -1,11 +1,16 @@
+import re
 import subprocess
 import sys
 
+from apscheduler.job import Job
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from loguru import logger
 from pkg_resources import get_distribution
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
-from jobbergate_agent.utils.scheduler import schedule_tasks, scheduler
+
+# flake8 doesn't understand the scheduler is used in the self_update_agent function
+from jobbergate_agent.utils.scheduler import schedule_tasks, scheduler  # noqa: F401
 
 
 package_name = "jobbergate_agent"
@@ -25,18 +30,51 @@ def _need_update(current_version: str, upstream_version: str) -> bool:
     """Compare the current version with the upstream version.
 
     In case the current version is the same as the upstream version, return False.
-    As well as, in case the major versions are the same, return False, as we don't want
-    to update across major versions. Otherwise, return True.
-
-    This behaviour allows the agent to update and rollback across all minor and patch versions.
+    If the major versions are different, return False, as updates across major versions are not desired.
+    Otherwise, return True, allowing updates and rollbacks across all minor and patch versions,
+    including handling for pre-release versions ('a' for alpha, 'b' for beta).
     """
-    if current_version == upstream_version:
-        return False
-    current_major, _, _ = map(int, current_version.split("."))
-    upstream_major, _, _ = map(int, upstream_version.split("."))
+    current_major: int | str
+    current_minor: int | str
+    current_patch: int | str
+    current_pre_version: int | str
+    upstream_major: int | str
+    upstream_minor: int | str
+    upstream_patch: int | str
+    upstream_pre_version: int | str
+
+    # regular expression to parse version strings: major.minor.patch[ab][pre-release]
+    version_pattern = r"^(\d+)\.(\d+)\.(\d+)([ab](\d+))?$"
+
+    current_match = re.match(version_pattern, current_version)
+    upstream_match = re.match(version_pattern, upstream_version)
+
+    if not current_match or not upstream_match:
+        raise ValueError(
+            f"One of the following versions are improperly formatted: {current_version}, {upstream_version}"
+        )
+
+    current_major, current_minor, current_patch, _, current_pre_version = current_match.groups(default="")
+    upstream_major, upstream_minor, upstream_patch, _, upstream_pre_version = upstream_match.groups(default="")
+
+    current_major, current_minor, current_patch = map(int, [current_major, current_minor, current_patch])
+    upstream_major, upstream_minor, upstream_patch = map(int, [upstream_major, upstream_minor, upstream_patch])
+
+    current_pre_version = int(current_pre_version) if current_pre_version.isdigit() else 0
+    upstream_pre_version = int(upstream_pre_version) if upstream_pre_version.isdigit() else 0
+
+    # major version check
     if current_major != upstream_major:
         return False
-    return True
+    # minor version check
+    elif (current_minor != upstream_minor and upstream_pre_version == 0) or (
+        current_minor == upstream_minor and current_pre_version != 0 and upstream_pre_version == 0
+    ):
+        return True
+    # patch version check
+    elif current_patch != upstream_patch and upstream_pre_version == 0:
+        return True
+    return False
 
 
 def _update_package(version: str) -> None:
@@ -48,6 +86,8 @@ async def self_update_agent():
 
     In case the agent is updated, the scheduler is shutdown and restarted with the new version.
     """
+    global scheduler
+
     current_version = get_distribution(package_name).version
     upstream_version = await _fetch_upstream_version_info()
     logger.debug(
@@ -60,12 +100,22 @@ async def self_update_agent():
         logger.debug("Shutting down the scheduler...")
         scheduler.shutdown(wait=False)
 
+        logger.debug("Clearing the scheduler jobs...")
+        scheduler_jobs: list[Job] = scheduler.get_jobs()
+        for job in scheduler_jobs:
+            job.remove()
+
         logger.debug(f"Updating {package_name} from version {current_version} to {upstream_version}...")
         _update_package(upstream_version)
         logger.debug("Update completed successfully.")
 
         logger.debug(f"Loading plugins from version {upstream_version}...")
-        schedule_tasks(scheduler)
+        new_scheduler = AsyncIOScheduler()
+        schedule_tasks(new_scheduler)
+        new_scheduler.start()
         logger.debug("Plugins loaded successfully.")
+
+        logger.info("Replacing the scheduler with the new version...")
+        scheduler = new_scheduler
     else:
         logger.debug("No update is required or update crosses a major version divide.")

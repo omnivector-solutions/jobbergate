@@ -46,6 +46,12 @@ async def test__fetch_upstream_version_info__check_http_error(http_code: int):
         ("2.0.0", "1.0.0", False),  # Major version rollback
         ("1.2.0", "1.1.0", True),  # Minor version rollback
         ("1.0.1", "1.0.0", True),  # Patch version rollback
+        ("1.1.0a1", "1.1.0", True),  # Minor alpha version rollback
+        ("1.6.0a1", "1.6.1", True),  # Patch alpha version update available
+        ("1.0.0a1", "1.0.0", True),  # Alpha version rollback
+        ("1.0.9a1", "1.1.0", True),  # Alpha version update available
+        ("1.0.9a1", "1.0.9a2", False),  # Alpha version update available
+        ("1.4.7", "1.5.0a1", False),  # Alpha minor version update
     ],
 )
 def test_need_update(current_version: str, upstream_version: str, expected_result: bool):
@@ -59,6 +65,8 @@ def test_need_update(current_version: str, upstream_version: str, expected_resul
         ("1.0", "1.0.1"),  # Improperly formatted current version
         ("1.0.0", "1.0"),  # Improperly formatted upstream version
         ("1", "2"),  # Major version with no minor/patch
+        ("1.0.1a", "1.1.0"),  # Pre-release improperly formatted
+        ("1.0.1", "1.0.10b"),  # Pre-release improperly formatted
     ],
 )
 def test_need_update__check_improperly_formatted_versions(
@@ -112,7 +120,9 @@ def test_update_package(mocked_sys: mock.MagicMock, mocked_subprocess: mock.Magi
 @mock.patch("jobbergate_agent.internals.update._need_update")
 @mock.patch("jobbergate_agent.internals.update.scheduler")
 @mock.patch("jobbergate_agent.internals.update.schedule_tasks")
+@mock.patch("jobbergate_agent.internals.update.AsyncIOScheduler")
 async def test_self_update_agent(
+    mocked_asyncio_scheduler: mock.MagicMock,
     mocked_schedule_tasks: mock.MagicMock,
     mocked_scheduler: mock.MagicMock,
     mocked_need_update: mock.MagicMock,
@@ -133,6 +143,11 @@ async def test_self_update_agent(
     mocked_need_update.return_value = is_update_available
     mocked_scheduler.shutdown = mock.Mock()
 
+    mocked_new_scheduler = mock.Mock()
+    mocked_asyncio_scheduler.return_value = mocked_new_scheduler
+    mocked_new_scheduler.shutdown = mock.Mock()
+    mocked_new_scheduler.start = mock.Mock()
+
     await self_update_agent()
 
     mocked_get_distribution.assert_called_once_with("jobbergate_agent")
@@ -141,8 +156,17 @@ async def test_self_update_agent(
     if is_update_available:
         mocked_scheduler.shutdown.assert_called_once_with(wait=False)
         mocked_update_package.assert_called_once_with(upstream_version)
-        mocked_schedule_tasks.assert_called_once_with(mocked_scheduler)
+        mocked_schedule_tasks.assert_called_once_with(mocked_new_scheduler)
+        mocked_asyncio_scheduler.assert_called_once_with()
+        mocked_new_scheduler.start.assert_called_once_with()
+
+        # this asserts that the scheduler is updated *in memory* with the new version
+        from jobbergate_agent.internals.update import scheduler
+
+        assert scheduler is mocked_new_scheduler
     else:
         mocked_scheduler.shutdown.assert_not_called()
         mocked_update_package.assert_not_called()
         mocked_schedule_tasks.assert_not_called()
+        mocked_asyncio_scheduler.assert_not_called()
+        mocked_new_scheduler.start.assert_not_called()
