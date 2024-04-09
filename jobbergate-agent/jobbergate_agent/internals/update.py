@@ -37,14 +37,12 @@ def _need_update(current_version: str, upstream_version: str) -> bool:
     current_major: int | str
     current_minor: int | str
     current_patch: int | str
-    current_pre_version: int | str
     upstream_major: int | str
     upstream_minor: int | str
     upstream_patch: int | str
-    upstream_pre_version: int | str
 
-    # regular expression to parse version strings: major.minor.patch[ab][pre-release]
-    version_pattern = r"^(\d+)\.(\d+)\.(\d+)([ab](\d+))?$"
+    # regular expression to parse version strings: major.minor.patch
+    version_pattern = r"^(\d+)\.(\d+)\.(\d+)$"
 
     current_match = re.match(version_pattern, current_version)
     upstream_match = re.match(version_pattern, upstream_version)
@@ -54,25 +52,17 @@ def _need_update(current_version: str, upstream_version: str) -> bool:
             f"One of the following versions are improperly formatted: {current_version}, {upstream_version}"
         )
 
-    current_major, current_minor, current_patch, _, current_pre_version = current_match.groups(default="")
-    upstream_major, upstream_minor, upstream_patch, _, upstream_pre_version = upstream_match.groups(default="")
+    current_major, current_minor, current_patch = current_match.groups()
+    upstream_major, upstream_minor, upstream_patch = upstream_match.groups()
 
     current_major, current_minor, current_patch = map(int, [current_major, current_minor, current_patch])
     upstream_major, upstream_minor, upstream_patch = map(int, [upstream_major, upstream_minor, upstream_patch])
 
-    current_pre_version = int(current_pre_version) if current_pre_version.isdigit() else 0
-    upstream_pre_version = int(upstream_pre_version) if upstream_pre_version.isdigit() else 0
-
     # major version check
     if current_major != upstream_major:
         return False
-    # minor version check
-    elif (current_minor != upstream_minor and upstream_pre_version == 0) or (
-        current_minor == upstream_minor and current_pre_version != 0 and upstream_pre_version == 0
-    ):
-        return True
-    # patch version check
-    elif current_patch != upstream_patch and upstream_pre_version == 0:
+    # minor and patch version check
+    elif current_minor != upstream_minor or current_patch != upstream_patch:
         return True
     return False
 

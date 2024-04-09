@@ -46,12 +46,6 @@ async def test__fetch_upstream_version_info__check_http_error(http_code: int):
         ("2.0.0", "1.0.0", False),  # Major version rollback
         ("1.2.0", "1.1.0", True),  # Minor version rollback
         ("1.0.1", "1.0.0", True),  # Patch version rollback
-        ("1.1.0a1", "1.1.0", True),  # Minor alpha version rollback
-        ("1.6.0a1", "1.6.1", True),  # Patch alpha version update available
-        ("1.0.0a1", "1.0.0", True),  # Alpha version rollback
-        ("1.0.9a1", "1.1.0", True),  # Alpha version update available
-        ("1.0.9a1", "1.0.9a2", False),  # Alpha version update available
-        ("1.4.7", "1.5.0a1", False),  # Alpha minor version update
     ],
 )
 def test_need_update(current_version: str, upstream_version: str, expected_result: bool):
@@ -67,6 +61,7 @@ def test_need_update(current_version: str, upstream_version: str, expected_resul
         ("1", "2"),  # Major version with no minor/patch
         ("1.0.1a", "1.1.0"),  # Pre-release improperly formatted
         ("1.0.1", "1.0.10b"),  # Pre-release improperly formatted
+        ("1.0.9a1", "1.0.9a2"),  # Alpha version is not an allowed format
     ],
 )
 def test_need_update__check_improperly_formatted_versions(
