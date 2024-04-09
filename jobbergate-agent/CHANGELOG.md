@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-agent
 ## Unreleased
 - Added logic to update slurm job status at job submission time [PENG-2193]
 
+- Hot fix regarding the self update task where tasks weren't properly scheduled after the version update
 
 ## 5.0.0a1 -- 2024-04-04
 - Added a task scheduler whose purpose is to self update the agent [PENG-2116]
