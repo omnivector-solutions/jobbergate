@@ -63,6 +63,51 @@ async def test_create_job_template__success(
     assert response_data["template_vars"] == dict(foo="bar")
 
 
+async def test_create_job_template__fails_if_name_is_empty(
+    client,
+    fill_job_template_data,
+    inject_security_header,
+    synth_services,
+):
+    payload = fill_job_template_data(
+        identifier="create-template",
+        name="",
+        description="This is a test template",
+        template_vars=dict(foo="bar"),
+    )
+
+    tester_email = payload.pop("owner_email")
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+
+    response = await client.post("jobbergate/job-script-templates", json=payload)
+    assert response.status_code == 422
+    assert "Cannot be an empty string" in response.text
+    assert (await synth_services.crud.template.count()) == 0
+
+
+async def test_create_job_template__coerces_empty_identifier_to_None(
+    client,
+    fill_job_template_data,
+    inject_security_header,
+    synth_services,
+):
+    payload = fill_job_template_data(
+        identifier="",
+        name="Test Template",
+        description="This is a test template",
+        template_vars=dict(foo="bar"),
+    )
+
+    tester_email = payload.pop("owner_email")
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+
+    response = await client.post("jobbergate/job-script-templates", json=payload)
+    assert response.status_code == 201, f"Create failed: {response.text}"
+    response_data = response.json()
+
+    assert response_data["identifier"] == None
+
+
 async def test_create_job_template__fail_unauthorized(client, fill_job_template_data, synth_services):
     """Test that the job template creation fails if the user is unauthorized."""
     payload = fill_job_template_data()

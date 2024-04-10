@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+- Added logic to coerce empty `identifier` on job script templates to a `None` value [PENG-2152]
+- Added logic disallow empty `name` on job script templates [PENG-2152]
 
 ## 5.0.0a1 -- 2024-04-04
 ## 5.0.0a0 -- 2024-03-26

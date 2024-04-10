@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any, Optional
 
 import pydantic
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.schemas import LengthLimitedStr, TableResource
@@ -116,6 +116,24 @@ class JobTemplateCreateRequest(BaseModel):
     description: LengthLimitedStr | None
     template_vars: dict[LengthLimitedStr, Any] | None
 
+    @validator("name")
+    def not_empty_str(cls, value):
+        """
+        Do not allow a string value to be empty.
+        """
+        if value == "":
+            raise ValueError("Cannot be an empty string")
+        return value
+
+    @validator("identifier")
+    def empty_str_to_none(cls, value):
+        """
+        Coerce an empty string value to None.
+        """
+        if value == "":
+            return None
+        return value
+
     class Config:
         schema_extra = job_template_meta_mapper
 
@@ -127,6 +145,24 @@ class JobTemplateCloneRequest(BaseModel):
     identifier: LengthLimitedStr | None
     description: LengthLimitedStr | None
     template_vars: dict[LengthLimitedStr, Any] | None
+
+    @validator("name")
+    def not_empty_str(cls, value):
+        """
+        Do not allow a string value to be empty.
+        """
+        if value == "":
+            raise ValueError("Cannot be an empty string")
+        return value
+
+    @validator("identifier")
+    def empty_str_to_none(cls, value):
+        """
+        Coerce an empty string value to None.
+        """
+        if value == "":
+            return None
+        return value
 
     class Config:
         schema_extra = job_template_meta_mapper
@@ -140,6 +176,24 @@ class JobTemplateUpdateRequest(BaseModel):
     description: LengthLimitedStr | None
     template_vars: dict[LengthLimitedStr, Any] | None
     is_archived: bool | None
+
+    @validator("name")
+    def not_empty_str(cls, value):
+        """
+        Do not allow a string value to be empty.
+        """
+        if value == "":
+            raise ValueError("Cannot be an empty string")
+        return value
+
+    @validator("identifier")
+    def empty_str_to_none(cls, value):
+        """
+        Coerce an empty string value to None.
+        """
+        if value == "":
+            return None
+        return value
 
     class Config:
         schema_extra = job_template_meta_mapper
