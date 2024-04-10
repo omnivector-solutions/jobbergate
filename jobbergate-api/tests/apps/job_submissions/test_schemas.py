@@ -1,4 +1,5 @@
 import pytest
+
 from jobbergate_api.apps.job_submissions.schemas import JobSubmissionCreateRequest, JobSubmissionUpdateRequest
 
 
