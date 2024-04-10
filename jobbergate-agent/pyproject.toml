@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jobbergate-agent"
-version = "5.0.0a1"
+version = "5.0.0a2"
 description = "Jobbergate Agent"
 authors = ["Omnivector Solutions <info@omnivector.solutions>"]
 license = "MIT"
