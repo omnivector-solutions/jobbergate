@@ -14,6 +14,7 @@ from jobbergate_agent.settings import SETTINGS
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 @pytest.mark.parametrize("upstream_version", ["1.0.0", "1.0.1", "1.1.0", "2.0.0"])
 async def test__fetch_upstream_version_info__success(upstream_version: str):
     """Test that _fetch_upstream_version_info returns the expected result."""
@@ -26,6 +27,7 @@ async def test__fetch_upstream_version_info__success(upstream_version: str):
 
 
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
 @pytest.mark.parametrize("http_code", [404, 500])
 async def test__fetch_upstream_version_info__check_http_error(http_code: int):
     """Test that _fetch_upstream_version_info raises error on HTTP error."""
@@ -36,6 +38,7 @@ async def test__fetch_upstream_version_info__check_http_error(http_code: int):
             await _fetch_upstream_version_info()
 
 
+@pytest.mark.usefixtures("mock_access_token")
 @pytest.mark.parametrize(
     "current_version, upstream_version, expected_result",
     [
@@ -53,6 +56,7 @@ def test_need_update(current_version: str, upstream_version: str, expected_resul
     assert _need_update(current_version, upstream_version) is expected_result
 
 
+@pytest.mark.usefixtures("mock_access_token")
 @pytest.mark.parametrize(
     "current_version, upstream_version",
     [
@@ -73,6 +77,7 @@ def test_need_update__check_improperly_formatted_versions(
         _need_update(current_version, upstream_version)
 
 
+@pytest.mark.usefixtures("mock_access_token")
 @pytest.mark.parametrize(
     "version, executable",
     [
@@ -96,6 +101,7 @@ def test_update_package(mocked_sys: mock.MagicMock, mocked_subprocess: mock.Magi
     )
 
 
+@pytest.mark.usefixtures("mock_access_token")
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "current_version, upstream_version, is_update_available",
