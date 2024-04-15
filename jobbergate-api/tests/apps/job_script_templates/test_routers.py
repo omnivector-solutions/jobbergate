@@ -77,7 +77,7 @@ async def test_create_job_template__fails_if_name_is_empty(
     )
 
     tester_email = payload.pop("owner_email")
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
 
     response = await client.post("jobbergate/job-script-templates", json=payload)
     assert response.status_code == 422
@@ -99,7 +99,7 @@ async def test_create_job_template__coerces_empty_identifier_to_None(
     )
 
     tester_email = payload.pop("owner_email")
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
 
     response = await client.post("jobbergate/job-script-templates", json=payload)
     assert response.status_code == 201, f"Create failed: {response.text}"
