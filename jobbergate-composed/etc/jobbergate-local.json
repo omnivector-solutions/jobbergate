@@ -694,18 +694,10 @@
       ],
       "clientRoles": {
         "local-slurm": [
-          "jobbergate:job-scripts:create",
           "jobbergate:job-scripts:read",
-          "jobbergate:job-scripts:update",
-          "jobbergate:job-scripts:delete",
           "jobbergate:job-submissions:create",
           "jobbergate:job-submissions:read",
-          "jobbergate:job-submissions:update",
-          "jobbergate:job-submissions:delete",
-          "jobbergate:job-templates:create",
-          "jobbergate:job-templates:read",
-          "jobbergate:job-templates:update",
-          "jobbergate:job-templates:delete"
+          "jobbergate:job-submissions:update"
         ]
       },
       "notBefore": 0,
