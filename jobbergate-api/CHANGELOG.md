@@ -4,8 +4,12 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+- Added cluster statuses table and endpoints to monitor if the agents are pinging the API in the expected time interval [ASP-4600]
+
 ## 5.0.0 -- 2024-04-18
 
+- Added logic to coerce empty `identifier` on job script templates to a `None` value [PENG-2152]
+- Added logic disallow empty `name` on job script templates [PENG-2152]
 - Added logic to coerce empty `identifier` on job script templates to a `None` value [PENG-2152]
 - Added logic disallow empty `name` on job script templates [PENG-2152]
 - Fixed a bug when an empty string is passed as a value for `execution_directory` on job submissions
