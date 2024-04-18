@@ -19,6 +19,6 @@ class ClusterStatus(CommonMixin, TimestampMixin, Base):
     )
 
     @property
-    def is_health(self) -> bool:
+    def is_healthy(self) -> bool:
         """Return True if the last_reported time is before now plus the interval in seconds between pings."""
         return PendulumDateTime.utcnow().subtract(seconds=self.interval) <= self.last_reported

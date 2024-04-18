@@ -10,8 +10,6 @@ This file keeps track of all notable changes to jobbergate-api
 
 - Added logic to coerce empty `identifier` on job script templates to a `None` value [PENG-2152]
 - Added logic disallow empty `name` on job script templates [PENG-2152]
-- Added logic to coerce empty `identifier` on job script templates to a `None` value [PENG-2152]
-- Added logic disallow empty `name` on job script templates [PENG-2152]
 - Fixed a bug when an empty string is passed as a value for `execution_directory` on job submissions
 - Modified the interface with slurm from slurmrestd to sbatch command [ASP-4584]
   - Removed database column `JobSubmission.execution_parameters`

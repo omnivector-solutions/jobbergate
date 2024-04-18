@@ -8,7 +8,7 @@ import pendulum
 
 class TestPutClusterStatus:
 
-    async def test_report_cluster_status__health(self, client, inject_security_header, synth_session):
+    async def test_report_cluster_status__create(self, client, inject_security_header, synth_session):
         client_id = "dummy-client"
         inject_security_header(
             "who@cares.com",
@@ -17,7 +17,9 @@ class TestPutClusterStatus:
         )
 
         interval = 60
-        response = await client.put("/jobbergate/clusters/status", params={"interval": interval})
+        now = pendulum.datetime(2023, 1, 1)
+        with pendulum.test(now):
+            response = await client.put("/jobbergate/clusters/status", params={"interval": interval})
 
         assert response.status_code == status.HTTP_202_ACCEPTED
 
@@ -26,9 +28,9 @@ class TestPutClusterStatus:
 
         assert instance.client_id == client_id
         assert instance.interval == interval
-        assert instance.is_health is True
+        assert instance.last_reported == now
 
-    async def test_report_cluster_status__not_health(self, client, inject_security_header, synth_session):
+    async def test_report_cluster_status__update(self, client, inject_security_header, synth_session):
         client_id = "dummy-client"
         inject_security_header(
             "who@cares.com",
@@ -36,19 +38,24 @@ class TestPutClusterStatus:
             client_id=client_id,
         )
 
-        interval = 60
+        original_time = pendulum.datetime(2023, 1, 1)
+        original_interval = 60
+        with pendulum.test(original_time):
+            response = await client.put("/jobbergate/clusters/status", params={"interval": original_interval})
+            assert response.status_code == status.HTTP_202_ACCEPTED
 
-        with pendulum.test(pendulum.datetime(2023, 1, 1)):
+        now = original_time.add(days=1)
+        interval = original_interval * 2
+        with pendulum.test(now):
             response = await client.put("/jobbergate/clusters/status", params={"interval": interval})
             assert response.status_code == status.HTTP_202_ACCEPTED
 
-        with pendulum.test(pendulum.datetime(2023, 1, 1).add(seconds=interval + 1)):
-            query = select(ClusterStatus).filter(ClusterStatus.client_id == client_id)
-            instance = (await synth_session.execute(query)).unique().scalar_one()
+        query = select(ClusterStatus).filter(ClusterStatus.client_id == client_id)
+        instance = (await synth_session.execute(query)).unique().scalar_one()
 
-            assert instance.client_id == client_id
-            assert instance.interval == interval
-            assert instance.is_health is False
+        assert instance.client_id == client_id
+        assert instance.interval == interval
+        assert instance.last_reported == now
 
     @pytest.mark.parametrize("interval", [0, -1, None])
     async def test_report__invalid_interval_raises_error(
@@ -113,7 +120,7 @@ class TestListClusterStatus:
             response, check_total=3, check_page=1, check_pages=1, key="client_id", sort=True
         ) == [s.client_id for s in statuses]
 
-        assert unpack_response(response, key="is_health") == [True, True, False]
+        assert unpack_response(response, key="is_healthy") == [True, True, False]
 
     async def test_get_cluster_status__bad_permission(self, client, inject_security_header, synth_session):
 

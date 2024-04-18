@@ -27,7 +27,7 @@ cluster_status_meta_mapper = MetaMapper(
         description="The expected interval in seconds between pings from the agent",
         example=60,
     ),
-    is_health=MetaField(
+    is_healthy=MetaField(
         description="A boolean indicating if the cluster is healthy based on the last_reported time",
         example=True,
     ),
@@ -44,7 +44,7 @@ class ClusterStatusView(BaseModel):
     updated_at: DateTime
     last_reported: DateTime
     interval: int
-    is_health: bool
+    is_healthy: bool
 
     class Config:
         orm_mode = True
