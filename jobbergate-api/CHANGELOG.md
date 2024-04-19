@@ -4,8 +4,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+## 5.1.0 -- 2024-04-19
 
-## 5.1.0a0 -- 2024-04-19
 - Added cluster statuses table and endpoints to monitor if the agents are pinging the API in the expected time interval [ASP-4600]
 
 ## 5.0.0 -- 2024-04-18

@@ -4,8 +4,10 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+## 5.1.0 -- 2024-04-19
 
-## 5.1.0a0 -- 2024-04-19
+- Keep version in sync with the API.
+
 ## 5.0.0 -- 2024-04-18
 
 - Fixed bug on `jobbergate_cli.subapps.applications.questions.Integer` when a default of zero could not be set properly
