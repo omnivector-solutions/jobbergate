@@ -1272,13 +1272,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#jobbergate_core.tools.sbatch.Command" class="md-nav__link">
-    Command
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#jobbergate_core.tools.sbatch.InfoHandler" class="md-nav__link">
     InfoHandler
   </a>
@@ -1701,13 +1694,6 @@
   
     <nav class="md-nav" aria-label="sbatch">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_core.tools.sbatch.Command" class="md-nav__link">
-    Command
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#jobbergate_core.tools.sbatch.InfoHandler" class="md-nav__link">
@@ -4444,70 +4430,6 @@ Expiration date and permissions are some examples of data that can be found.</p>
 
 
 
-<h6 id="jobbergate_core.tools.sbatch.Command" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">Command</span>
-
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
-  </span>
-
-</h6>
-
-
-  <div class="doc doc-contents ">
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h7 id="jobbergate_core.tools.sbatch.Command.run_command" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">run_command</span>
-
-
-</h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">run_command</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">cmd</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CompletedProcess</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Runs a command as the user.</p>
-
-  </div>
-
-</div>
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-
 <h6 id="jobbergate_core.tools.sbatch.InfoHandler" class="doc doc-heading">
           <span class="doc doc-object-name doc-class-name">InfoHandler</span>
 
@@ -4520,8 +4442,6 @@ Expiration date and permissions are some examples of data that can be found.</p>
 
 
   <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_core.tools.sbatch.Command" href="#jobbergate_core.tools.sbatch.Command">Command</a></code></p>
 
   
       <p>Get info from jobs on the cluster.</p>
@@ -4586,8 +4506,6 @@ Expiration date and permissions are some examples of data that can be found.</p>
 
 
   <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_core.tools.sbatch.Command" href="#jobbergate_core.tools.sbatch.Command">Command</a></code></p>
 
   
       <p>Submits sbatch jobs to the cluster.</p>
