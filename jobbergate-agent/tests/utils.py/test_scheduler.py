@@ -54,6 +54,7 @@ def test_scheduler_end_to_end(tweak_settings):
         "active-jobs",
         "garbage-collection",
         "pending-jobs",
+        "report-status",
         "self-update",
     }
 

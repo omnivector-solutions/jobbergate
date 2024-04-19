@@ -52,7 +52,6 @@ def user_mapper():
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
-@pytest.mark.asyncio
 async def test_retrieve_submission_file__success():
     """
     Test that the ``retrieve_submission_file()`` function can retrieve a submission file

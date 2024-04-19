@@ -4,6 +4,7 @@ This file keeps track of all notable changes to jobbergate-agent
 
 ## Unreleased
 
+- Added a new task to report at the expected interval that the agent is up and running [ASP-4602]
 - Patched cwd issues on remote job submission to avoid permission denied errors on the folder
 
 ## 5.0.0 -- 2024-04-18
