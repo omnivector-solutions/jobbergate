@@ -39,13 +39,9 @@ class TestSubmissionHandler:
         response = subprocess.CompletedProcess(args=[], stdout="123", returncode=0)
         mocked_run = mocker.patch("jobbergate_core.tools.sbatch.subprocess.run", return_value=response)
 
-        def dummy_preexec_fn():
-            pass
-
         sbatch_handler = SubmissionHandler(
             sbatch_path=sbatch_path,
             submission_directory=tmp_path,
-            preexec_fn=dummy_preexec_fn,
         )
 
         job_script_path = tmp_path / "file.sh"
@@ -57,7 +53,6 @@ class TestSubmissionHandler:
                 "--parsable",
                 job_script_path.as_posix(),
             ),
-            preexec_fn=dummy_preexec_fn,
             check=True,
             shell=False,
             cwd=tmp_path,
@@ -128,7 +123,6 @@ class TestInfoHandler:
                 "123",
                 "--json",
             ),
-            preexec_fn=None,
             check=True,
             shell=False,
             capture_output=True,
@@ -153,7 +147,6 @@ class TestInfoHandler:
                 "123",
                 "--json",
             ),
-            preexec_fn=None,
             check=True,
             shell=False,
             capture_output=True,
@@ -176,7 +169,6 @@ class TestInfoHandler:
                 "123",
                 "--json",
             ),
-            preexec_fn=None,
             check=True,
             shell=False,
             capture_output=True,
