@@ -911,6 +911,40 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#jobbergate_api.apps.clusters" class="md-nav__link">
+    clusters
+  </a>
+  
+    <nav class="md-nav" aria-label="clusters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.apps.clusters.models" class="md-nav__link">
+    models
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.apps.clusters.routers" class="md-nav__link">
+    routers
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.apps.clusters.schemas" class="md-nav__link">
+    schemas
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_api.apps.constants" class="md-nav__link">
     constants
   </a>
@@ -2001,6 +2035,40 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#jobbergate_api.apps.clusters" class="md-nav__link">
+    clusters
+  </a>
+  
+    <nav class="md-nav" aria-label="clusters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.apps.clusters.models" class="md-nav__link">
+    models
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.apps.clusters.routers" class="md-nav__link">
+    routers
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.apps.clusters.schemas" class="md-nav__link">
+    schemas
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_api.apps.constants" class="md-nav__link">
     constants
   </a>
@@ -3068,6 +3136,319 @@
 
 
 
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h5 id="jobbergate_api.apps.clusters" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">clusters</span>
+
+
+</h5>
+
+  <div class="doc doc-contents ">
+  
+      <p>Module to track agent's health on the clusters.</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h6 id="jobbergate_api.apps.clusters.models" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">models</span>
+
+
+</h6>
+
+  <div class="doc doc-contents ">
+  
+      <p>Database models for the cluster health resource.</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_api.apps.clusters.models.ClusterStatus" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">ClusterStatus</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.models.CommonMixin" href="#jobbergate_api.apps.models.CommonMixin">CommonMixin</a></code>, <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.models.TimestampMixin" href="#jobbergate_api.apps.models.TimestampMixin">TimestampMixin</a></code>, <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.models.Base" href="#jobbergate_api.apps.models.Base">Base</a></code></p>
+
+  
+      <p>Cluster status table definition.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+
+<h8 id="jobbergate_api.apps.clusters.models.ClusterStatus.is_healthy" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">is_healthy</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">is_healthy</span><span class="p">:</span> <span class="nb">bool</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Return True if the last_reported time is before now plus the interval in seconds between pings.</p>
+  </div>
+
+</div>
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h6 id="jobbergate_api.apps.clusters.routers" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">routers</span>
+
+
+</h6>
+
+  <div class="doc doc-contents ">
+  
+      <p>Cluster status API endpoints.</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_api.apps.clusters.routers.get_cluster_status" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">get_cluster_status</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get_cluster_status</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">secure_session</span><span class="p">:</span> <span class="n">SecureSession</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>        <span class="n">secure_session</span><span class="p">(</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>            <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_SUBMISSIONS_VIEW</span><span class="p">,</span> <span class="n">commit</span><span class="o">=</span><span class="kc">False</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="p">)</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="p">)</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the status of the cluster.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_api.apps.clusters.routers.report_cluster_status" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">report_cluster_status</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">report_cluster_status</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;The interval in seconds between pings.&quot;</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="p">),</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">secure_session</span><span class="p">:</span> <span class="n">SecureSession</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="n">secure_session</span><span class="p">(</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>            <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_SUBMISSIONS_EDIT</span><span class="p">,</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>            <span class="n">ensure_client_id</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        <span class="p">)</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="p">),</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Report the status of the cluster.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h6 id="jobbergate_api.apps.clusters.schemas" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">schemas</span>
+
+
+</h6>
+
+  <div class="doc doc-contents ">
+  
+      <p>Schema definitions for the cluster app.</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_api.apps.clusters.schemas.ClusterStatusView" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">ClusterStatusView</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Describes the status of a cluster.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+  </div>
+
+  </div>
+
+</div>
 
 <div class="doc doc-object doc-module">
 
