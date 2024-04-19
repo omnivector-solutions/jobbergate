@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
 
+- Refactored the command handler that interfaces with sbatch and scontrol
+
 ## 5.0.0 -- 2024-04-18
 
 - Dropped support for Python 3.8 and 3.9
