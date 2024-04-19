@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-agent
 
 ## Unreleased
 
+- Patched cwd issues on remote job submission to avoid permission denied errors on the folder
+
 ## 5.0.0 -- 2024-04-18
 
 - Added logic to update slurm job status at job submission time [PENG-2193]

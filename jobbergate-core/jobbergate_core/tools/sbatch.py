@@ -6,7 +6,7 @@ import shlex
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Sequence
+from typing import Any, ClassVar, Sequence
 
 from buzz import check_expressions
 from loguru import logger
@@ -51,15 +51,13 @@ def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: list[str
     return new_job_script_data_as_string
 
 
-@dataclass(frozen=True)
-class Command:
-    preexec_fn: Callable | None = None
+@dataclass
+class SubprocessHandler:
 
-    def run_command(self, cmd: Sequence[str], **kwargs) -> subprocess.CompletedProcess:
-        """Runs a command as the user."""
+    def run(self, cmd: Sequence[str], **kwargs) -> subprocess.CompletedProcess:
         logger.debug("Running command '{}' with kwargs: {}", " ".join(cmd), kwargs)
         try:
-            result = subprocess.run(cmd, preexec_fn=self.preexec_fn, check=True, shell=False, **kwargs)
+            result = subprocess.run(cmd, check=True, shell=False, **kwargs)
             logger.trace("Command returned code {} with result: {}", result.returncode, result.stdout)
             return result
         except subprocess.CalledProcessError as e:
@@ -69,10 +67,11 @@ class Command:
 
 
 @dataclass(frozen=True)
-class InfoHandler(Command):
+class InfoHandler:
     """Get info from jobs on the cluster."""
 
     scontrol_path: Path = Path("/usr/bin/scontrol")
+    subprocess_handler: SubprocessHandler = field(default_factory=SubprocessHandler)
 
     def __post_init__(self):
         with check_expressions("Check paths", raise_exc_class=ValueError) as check:
@@ -88,7 +87,7 @@ class InfoHandler(Command):
             shlex.quote(str(slurm_id)),
             "--json",
         )
-        completed_process = self.run_command(command, capture_output=True, text=True)
+        completed_process = self.subprocess_handler.run(command, capture_output=True, text=True)
         data = json.loads(completed_process.stdout)
         try:
             job_info = data["jobs"][0]
@@ -105,11 +104,12 @@ class InfoHandler(Command):
 
 
 @dataclass(frozen=True)
-class SubmissionHandler(Command):
+class SubmissionHandler:
     """Submits sbatch jobs to the cluster."""
 
     sbatch_path: Path = Path("/usr/bin/sbatch")
     submission_directory: Path = field(default_factory=Path.cwd)
+    subprocess_handler: SubprocessHandler = field(default_factory=SubprocessHandler)
 
     sbatch_output_parser: ClassVar[re.Pattern] = re.compile(r"^(?P<id>\d+)(,(?P<cluster_name>.+))?$")
 
@@ -128,7 +128,9 @@ class SubmissionHandler(Command):
             job_script_path.as_posix(),
         )
 
-        completed_process = self.run_command(command, cwd=self.submission_directory, capture_output=True, text=True)
+        completed_process = self.subprocess_handler.run(
+            command, cwd=self.submission_directory, capture_output=True, text=True
+        )
 
         if match := self.sbatch_output_parser.match(completed_process.stdout):
             slurm_id = int(match.group("id"))
@@ -145,7 +147,7 @@ class SubmissionHandler(Command):
         command = ("tee", destination_file.as_posix())
         try:
             with source_file.open("rb") as source:
-                self.run_command(
+                self.subprocess_handler.run(
                     command,
                     stdin=source,
                     stdout=subprocess.DEVNULL,

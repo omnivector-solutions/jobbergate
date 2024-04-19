@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import asyncio
-import functools
 import os
 import pwd
+from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from buzz import DoExceptParams
-from jobbergate_core.tools.sbatch import InfoHandler, SubmissionHandler, inject_sbatch_params
+from jobbergate_core.tools.sbatch import InfoHandler, SubmissionHandler, SubprocessHandler, inject_sbatch_params
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
@@ -162,19 +162,26 @@ async def mark_as_rejected(job_submission_id: int, report_message: str):
         response.raise_for_status()
 
 
-@functools.lru_cache(maxsize=64)
-def run_as_user(username):
-    """Provide to subprocess.run a way to run a command as the user."""
-    # Get the uid and gid from the username
-    pwan = pwd.getpwnam(username)
-    uid = pwan.pw_uid
-    gid = pwan.pw_gid
+@dataclass
+class SubprocessAsUserHandler(SubprocessHandler):
+    """Subprocess handler that runs as a given user."""
 
-    def preexec():  # Function to be run in the child process before the subprocess call
-        os.setgid(gid)
-        os.setuid(uid)
+    username: str
 
-    return preexec
+    def __post_init__(self):
+        pwan = pwd.getpwnam(self.username)
+        self.uid = pwan.pw_uid
+        self.gid = pwan.pw_gid
+
+    def run(self, *args, **kwargs):
+        kwargs.update(user=self.uid, group=self.gid)
+        # Tests indicate that the change on the working directory precedes the change of user on the subprocess.
+        # With that, the user running the agent can face permission denied errors on cwd,
+        # depending on the setting on the filesystem and permissions on the directory.
+        # To avoid this, we change the working directory after changing to the submitter user using preexec_fn.
+        if cwd := kwargs.pop("cwd", None):
+            kwargs["preexec_fn"] = lambda: os.chdir(cwd)
+        return super().run(*args, **kwargs)
 
 
 async def submit_job_script(
@@ -208,7 +215,7 @@ async def submit_job_script(
         logger.debug(f"Fetching username for email '{email}' with mapper {mapper_class_name}")
         username = user_mapper[email]
         logger.debug(f"Using local slurm user '{username}' for job submission")
-        preexec_fn = run_as_user(username)
+        subprocess_handler = SubprocessAsUserHandler(username)
 
     submit_dir = pending_job_submission.execution_directory or SETTINGS.DEFAULT_SLURM_WORK_DIR
     if not submit_dir.exists() or not submit_dir.is_absolute():
@@ -219,7 +226,7 @@ async def submit_job_script(
     sbatch_handler = SubmissionHandler(
         sbatch_path=SETTINGS.SBATCH_PATH,
         submission_directory=submit_dir,
-        preexec_fn=preexec_fn,
+        subprocess_handler=subprocess_handler,
     )
 
     with TemporaryDirectory(prefix=str(pending_job_submission.id), suffix=pending_job_submission.name) as tmp_dir:
