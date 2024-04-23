@@ -12,7 +12,7 @@ class TestPutClusterStatus:
         client_id = "dummy-client"
         inject_security_header(
             "who@cares.com",
-            Permissions.JOB_SUBMISSIONS_EDIT,
+            Permissions.CLUSTERS_UPDATE,
             client_id=client_id,
         )
 
@@ -34,7 +34,7 @@ class TestPutClusterStatus:
         client_id = "dummy-client"
         inject_security_header(
             "who@cares.com",
-            Permissions.JOB_SUBMISSIONS_EDIT,
+            Permissions.CLUSTERS_UPDATE,
             client_id=client_id,
         )
 
@@ -64,7 +64,7 @@ class TestPutClusterStatus:
         client_id = "dummy-client"
         inject_security_header(
             "who@cares.com",
-            Permissions.JOB_SUBMISSIONS_EDIT,
+            Permissions.CLUSTERS_UPDATE,
             client_id=client_id,
         )
 
@@ -74,7 +74,7 @@ class TestPutClusterStatus:
 
     async def test_report_cluster_status__no_client_id(self, client, inject_security_header):
 
-        inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_EDIT)
+        inject_security_header("who@cares.com", Permissions.CLUSTERS_UPDATE)
 
         response = await client.put("/jobbergate/clusters/status", params={"interval": 60})
 
@@ -95,7 +95,7 @@ class TestListClusterStatus:
         self, client, inject_security_header, unpack_response, synth_session
     ):
 
-        inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_VIEW)
+        inject_security_header("who@cares.com", Permissions.CLUSTERS_READ)
 
         response = await client.get("/jobbergate/clusters/status")
         assert unpack_response(response, check_total=0, check_page=1, check_pages=0) == []
@@ -110,7 +110,7 @@ class TestListClusterStatus:
             ClusterStatus(client_id="client-3", interval=30, last_reported=pendulum.datetime(2022, 1, 1)),
         ]
 
-        inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_VIEW)
+        inject_security_header("who@cares.com", Permissions.CLUSTERS_READ)
 
         with pendulum.test(pendulum.datetime(2023, 1, 1)):
             synth_session.add_all(statuses)
