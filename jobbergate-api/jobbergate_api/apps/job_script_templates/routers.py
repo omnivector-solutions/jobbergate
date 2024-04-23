@@ -39,7 +39,7 @@ router = APIRouter(prefix="/job-script-templates", tags=["Job Script Templates"]
 async def job_script_template_create(
     create_request: JobTemplateCreateRequest,
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
+        secure_services(Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
     ),
 ):
     """Create a new job script template."""
@@ -63,7 +63,7 @@ async def job_script_template_create(
 )
 async def job_script_template_get(
     id_or_identifier: int | str = Path(),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_VIEW, commit=False)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_READ, commit=False)),
 ):
     """Get a job script template by id or identifier."""
     logger.info(f"Getting job script template with {id_or_identifier=}")
@@ -80,7 +80,7 @@ async def job_script_template_clone(
     id_or_identifier: int | str = Path(),
     clone_request: JobTemplateCloneRequest | None = None,
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
+        secure_services(Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
     ),
 ):
     """Clone a job script template by id or identifier."""
@@ -123,7 +123,7 @@ async def job_script_template_clone(
 async def job_script_template_get_list(
     list_params: ListParams = Depends(),
     include_null_identifier: bool = Query(False),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_VIEW, commit=False)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_READ, commit=False)),
 ):
     """Get a list of job script templates."""
     logger.debug("Preparing to list job script templates")
@@ -149,7 +149,7 @@ async def job_script_template_update(
     update_request: JobTemplateUpdateRequest,
     id_or_identifier: int | str = Path(),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
+        secure_services(Permissions.JOB_TEMPLATES_UPDATE, ensure_email=True)
     ),
 ):
     """Update a job script template by id or identifier."""
@@ -170,7 +170,7 @@ async def job_script_template_update(
 async def job_script_template_delete(
     id_or_identifier: int | str = Path(),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
+        secure_services(Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)
     ),
 ):
     """Delete a job script template by id or identifier."""
@@ -189,7 +189,7 @@ async def job_script_template_delete(
 async def job_script_template_get_file(
     id_or_identifier: int | str = Path(),
     file_name: str = Path(),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_VIEW, commit=False)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_READ, commit=False)),
 ):
     """
     Get a job script template file by id or identifier.
@@ -218,7 +218,7 @@ async def job_script_template_upload_file(
     file_type: FileType = Path(),
     upload_file: UploadFile = File(..., description="File to upload"),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
+        secure_services(Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
     ),
 ):
     """Upload a file to a job script template by id or identifier."""
@@ -250,7 +250,7 @@ async def job_script_template_delete_file(
     id_or_identifier: int | str = Path(),
     file_name: str = Path(),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
+        secure_services(Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)
     ),
 ):
     """Delete a file from a job script template by id or identifier."""
@@ -267,7 +267,7 @@ async def job_script_template_delete_file(
 )
 async def job_script_workflow_get_file(
     id_or_identifier: int | str = Path(),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_VIEW, commit=False)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_READ, commit=False)),
 ):
     """
     Get a workflow file by id or identifier.
@@ -298,7 +298,7 @@ async def job_script_workflow_upload_file(
     ),
     upload_file: UploadFile = File(..., description="File to upload"),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
+        secure_services(Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
     ),
 ):
     """Upload a file to a job script workflow by id or identifier."""
@@ -336,7 +336,7 @@ async def job_script_workflow_upload_file(
 async def job_script_workflow_delete_file(
     id_or_identifier: int | str = Path(),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_EDIT, ensure_email=True)
+        secure_services(Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)
     ),
 ):
     """Delete a workflow file from a job script template by id or identifier."""
@@ -356,7 +356,7 @@ async def job_script_workflow_delete_file(
 )
 async def job_script_template_garbage_collector(
     background_tasks: BackgroundTasks,
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_EDIT)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_DELETE)),
 ):
     """Delete all unused files from jobbergate templates on the file storage."""
     logger.info("Starting garbage collection from jobbergate file storage")

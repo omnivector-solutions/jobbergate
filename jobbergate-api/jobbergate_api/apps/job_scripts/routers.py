@@ -39,7 +39,7 @@ router = APIRouter(prefix="/job-scripts", tags=["Job Scripts"])
 )
 def job_script_auto_clean_unused_entries(
     background_tasks: BackgroundTasks,
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_EDIT)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_DELETE)),
 ):
     """Automatically clean unused job scripts depending on a threshold."""
     logger.info("Starting automatically cleanup for unused job scripts")
@@ -55,7 +55,7 @@ def job_script_auto_clean_unused_entries(
 )
 async def job_script_create(
     create_request: JobScriptCreateRequest,
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_EDIT)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_CREATE)),
 ):
     """Create a stand alone job script."""
     logger.info(f"Creating a new job script with {create_request=}")
@@ -82,7 +82,7 @@ async def job_script_clone(
     id: int = Path(),
     clone_request: JobScriptCloneRequest | None = None,
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SCRIPTS_EDIT, ensure_email=True)
+        secure_services(Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)
     ),
 ):
     """Clone a job script by its id."""
@@ -116,7 +116,7 @@ async def job_script_create_from_template(
     render_request: RenderFromTemplateRequest,
     id_or_identifier: int | str = Path(...),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SCRIPTS_EDIT, ensure_email=True)
+        secure_services(Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)
     ),
 ):
     """Create a new job script from a job script template."""
@@ -189,7 +189,7 @@ async def job_script_create_from_template(
 )
 async def job_script_get(
     id: int = Path(),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_VIEW, commit=False)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_READ, commit=False)),
 ):
     """Get a job script by id."""
     logger.info(f"Getting job script {id=}")
@@ -207,7 +207,7 @@ async def job_script_get_list(
         None,
         description="Filter job-scripts by the job-script-template-id they were created from.",
     ),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_VIEW, commit=False)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_READ, commit=False)),
 ):
     """Get a list of job scripts."""
     logger.debug("Preparing to list job scripts")
@@ -232,7 +232,7 @@ async def job_script_update(
     update_params: JobScriptUpdateRequest,
     id: int = Path(),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SCRIPTS_EDIT, ensure_email=True)
+        secure_services(Permissions.JOB_SCRIPTS_UPDATE, ensure_email=True)
     ),
 ):
     """Update a job script template by id or identifier."""
@@ -251,7 +251,7 @@ async def job_script_update(
 async def job_script_delete(
     id: int = Path(...),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SCRIPTS_EDIT, ensure_email=True)
+        secure_services(Permissions.JOB_SCRIPTS_DELETE, ensure_email=True)
     ),
 ):
     """Delete a job script template by id or identifier."""
@@ -270,7 +270,7 @@ async def job_script_delete(
 async def job_script_get_file(
     id: int = Path(...),
     file_name: str = Path(...),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_VIEW, commit=False)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_READ, commit=False)),
 ):
     """
     Get a job script file.
@@ -297,7 +297,7 @@ async def job_script_upload_file(
     file_type: FileType = Path(...),
     upload_file: UploadFile = File(..., description="File to upload"),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SCRIPTS_EDIT, ensure_email=True)
+        secure_services(Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)
     ),
 ):
     """Upload a file to a job script."""
@@ -330,7 +330,7 @@ async def job_script_delete_file(
     id: int = Path(...),
     file_name: str = Path(...),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SCRIPTS_EDIT, ensure_email=True)
+        secure_services(Permissions.JOB_SCRIPTS_DELETE, ensure_email=True)
     ),
 ):
     """Delete a file from a job script template by id or identifier."""
@@ -349,7 +349,7 @@ async def job_script_delete_file(
 )
 def job_script_garbage_collector(
     background_tasks: BackgroundTasks,
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_EDIT)),
+    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_DELETE)),
 ):
     """Delete all unused files from job scripts on the file storage."""
     logger.info("Starting garbage collection from jobbergate file storage")

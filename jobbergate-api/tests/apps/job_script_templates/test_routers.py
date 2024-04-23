@@ -29,7 +29,7 @@ async def test_create_job_template__success(
     )
 
     tester_email = payload.pop("owner_email")
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
 
     response = await client.post("jobbergate/job-script-templates", json=payload)
     assert response.status_code == 201, f"Create failed: {response.text}"
@@ -53,7 +53,7 @@ async def test_create_job_template__success(
     assert instance.template_vars == dict(foo="bar")
 
     # Make sure that the data can be retrieved with a GET request
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_READ)
     response = await client.get(f"jobbergate/job-script-templates/{instance.id}")
     assert response.status_code == 200
     response_data = response.json()
@@ -77,7 +77,7 @@ async def test_create_job_template__fails_if_name_is_empty(
     )
 
     tester_email = payload.pop("owner_email")
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
 
     response = await client.post("jobbergate/job-script-templates", json=payload)
     assert response.status_code == 422
@@ -99,7 +99,7 @@ async def test_create_job_template__coerces_empty_identifier_to_None(
     )
 
     tester_email = payload.pop("owner_email")
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
 
     response = await client.post("jobbergate/job-script-templates", json=payload)
     assert response.status_code == 201, f"Create failed: {response.text}"
@@ -126,7 +126,7 @@ async def test_create_job_template__fail_identifier_already_exists(
     payload = fill_job_template_data(identifier="duplicated-template")
 
     tester_email = payload.pop("owner_email")
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
 
     response = await client.post("jobbergate/job-script-templates", json=payload)
     assert response.status_code == 201
@@ -149,7 +149,7 @@ async def test_create_job_template__fail_missing_name(
     payload.pop("name")
 
     tester_email = payload.pop("owner_email")
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
 
     response = await client.post("jobbergate/job-script-templates", json=payload)
 
@@ -174,7 +174,7 @@ async def test_update_job_template__success(
         template_vars={"new": "value"},
     )
 
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_UPDATE)
     response = await client.put(
         f"jobbergate/job-script-templates/{instance.id}",
         json=payload,
@@ -201,7 +201,7 @@ async def test_update_job_template__fail_not_found(
         description="new-description",
         template_vars={"new": "value"},
     )
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_UPDATE)
     response = await client.put(f"jobbergate/job-script-templates/{job_template_id}", json=payload)
     assert response.status_code == 404
 
@@ -237,7 +237,7 @@ async def test_update_job_template__forbidden(
         template_vars={"new": "value"},
     )
 
-    inject_security_header(requester_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(requester_email, Permissions.JOB_TEMPLATES_UPDATE)
     response = await client.put(
         f"jobbergate/job-script-templates/{instance.id}",
         json=payload,
@@ -262,7 +262,7 @@ async def test_get_job_template__success(
 
     identification = getattr(instance, identification_field)
 
-    inject_security_header(instance.owner_email, Permissions.JOB_TEMPLATES_VIEW)
+    inject_security_header(instance.owner_email, Permissions.JOB_TEMPLATES_READ)
     response = await client.get(f"jobbergate/job-script-templates/{identification}")
     assert response.status_code == 200, f"Get failed: {response.text}"
     response_data = response.json()
@@ -289,7 +289,7 @@ async def test_delete_job_template__success(
     )
     instance = await synth_services.crud.template.create(**payload)
 
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_DELETE)
     identification = getattr(instance, identification_field)
     response = await client.delete(f"jobbergate/job-script-templates/{identification}")
     assert response.status_code == 204, f"Delete failed: {response.text}"
@@ -304,7 +304,7 @@ async def test_delete_job_template__fail_not_found(
     synth_session,
 ):
     job_template_id = 0
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_DELETE)
     response = await client.delete(f"jobbergate/job-script-templates/{job_template_id}")
     assert response.status_code == 404
 
@@ -327,7 +327,7 @@ async def test_delete_job_template__forbidden(
     )
     instance = await synth_services.crud.template.create(**payload)
 
-    inject_security_header(requester_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(requester_email, Permissions.JOB_TEMPLATES_DELETE)
     identification = getattr(instance, identification_field)
     response = await client.delete(f"jobbergate/job-script-templates/{identification}")
     assert response.status_code == 403
@@ -366,7 +366,7 @@ async def test_clone_job_template__success(
 
     new_owner_email = "new_" + tester_email
 
-    inject_security_header(new_owner_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(new_owner_email, Permissions.JOB_TEMPLATES_CREATE)
     response = await client.post(f"jobbergate/job-script-templates/clone/{original_instance.id}")
 
     assert response.status_code == 201, f"Clone failed: {response.text}"
@@ -409,7 +409,7 @@ async def test_clone_job_template__replace_base_values(
         template_vars={"new": "value"},
     )
 
-    inject_security_header(new_owner_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(new_owner_email, Permissions.JOB_TEMPLATES_CREATE)
     response = await client.post(
         f"jobbergate/job-script-templates/clone/{original_instance.id}", json=payload
     )
@@ -443,7 +443,7 @@ async def test_clone_job_template__fail_not_found(
     synth_services,
 ):
     assert (await synth_services.crud.template.count()) == 0
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
     response = await client.post("jobbergate/job-script-templates/clone/0")
 
     assert response.status_code == 404
@@ -461,7 +461,7 @@ async def test_clone_job_template__fail_conflict(
         **fill_job_template_data(owner_email=tester_email, identifier=identifier)
     )
 
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
     response = await client.post(
         f"jobbergate/job-script-templates/clone/{original_instance.id}", json=dict(identifier=identifier)
     )
@@ -516,7 +516,7 @@ class TestListJobTemplates:
         inject_security_header,
         job_templates_list,
     ):
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_READ)
         response = await client.get(
             "jobbergate/job-script-templates",
             params=dict(include_null_identifier=True, include_archived=True, sort_field="id"),
@@ -543,7 +543,7 @@ class TestListJobTemplates:
         inject_security_header,
         job_templates_list,
     ):
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_READ)
         response = await client.get("jobbergate/job-script-templates?include_null_identifier=True")
         assert response.status_code == 200, f"List failed: {response.text}"
 
@@ -562,7 +562,7 @@ class TestListJobTemplates:
         inject_security_header,
         job_templates_list,
     ):
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_READ)
         response = await client.get(
             "jobbergate/job-script-templates?user_only=True&include_null_identifier=True&include_archived=True"
         )
@@ -597,7 +597,7 @@ class TestJobTemplateFiles:
         file_type = "ENTRYPOINT"
         dummy_file_path = make_dummy_file("test_template.py.j2", content=dummy_template)
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
         with open(dummy_file_path, mode="rb") as template_file:
             response = await client.put(
                 f"jobbergate/job-script-templates/{parent_id}/upload/template/{file_type}",
@@ -619,7 +619,7 @@ class TestJobTemplateFiles:
         assert dummy_template == file_content.decode()
 
         # Finally, see that the file is included in the parent template file list
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_READ)
         response = await client.get(f"jobbergate/job-script-templates/{parent_id}")
         assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
 
@@ -648,7 +648,7 @@ class TestJobTemplateFiles:
         owner_email = tester_email
         requester_email = "another_" + owner_email
 
-        inject_security_header(requester_email, Permissions.JOB_TEMPLATES_EDIT)
+        inject_security_header(requester_email, Permissions.JOB_TEMPLATES_CREATE)
         with open(dummy_file_path, mode="rb") as template_file:
             response = await client.put(
                 f"jobbergate/job-script-templates/{parent_id}/upload/template/{file_type}",
@@ -673,7 +673,7 @@ class TestJobTemplateFiles:
             file_type="ENTRYPOINT",
         )
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_READ)
         response = await client.get(
             f"jobbergate/job-script-templates/{job_template_data.id}/upload/template/test_template.py.j2"
         )
@@ -698,7 +698,7 @@ class TestJobTemplateFiles:
             file_type="ENTRYPOINT",
         )
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_DELETE)
         response = await client.delete(
             f"jobbergate/job-script-templates/{parent_id}/upload/template/test_template.py.j2"
         )
@@ -727,7 +727,7 @@ class TestJobTemplateFiles:
         owner_email = tester_email
         requester_email = "another_" + owner_email
 
-        inject_security_header(requester_email, Permissions.JOB_TEMPLATES_EDIT)
+        inject_security_header(requester_email, Permissions.JOB_TEMPLATES_DELETE)
         response = await client.delete(
             f"jobbergate/job-script-templates/{parent_id}/upload/template/test_template.py.j2"
         )
@@ -754,7 +754,7 @@ class TestJobTemplateWorkflowFile:
         dummy_file_path = make_dummy_file("test_template.py.j2", content=dummy_application_source_file)
         runtime_config = {"foo": "bar"}
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
         with open(dummy_file_path, mode="rb") as workflow_file:
             response = await client.put(
                 f"jobbergate/job-script-templates/{parent_id}/upload/workflow",
@@ -777,7 +777,7 @@ class TestJobTemplateWorkflowFile:
         assert dummy_application_source_file == file_content.decode()
 
         # Finally, see that the file is included in the parent template file list
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_READ)
         response = await client.get(f"jobbergate/job-script-templates/{parent_id}")
         assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
 
@@ -813,7 +813,7 @@ class TestJobTemplateWorkflowFile:
         new_runtime_config = {"new": "config"}
         new_content = "import that"
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
         with open(make_dummy_file("test_template.py.j2", content=new_content), mode="rb") as workflow_file:
             response = await client.put(
                 f"jobbergate/job-script-templates/{parent_id}/upload/workflow",
@@ -853,7 +853,7 @@ class TestJobTemplateWorkflowFile:
 
         new_content = "import that"
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
         with open(make_dummy_file("test_template.py.j2", content=new_content), mode="rb") as workflow_file:
             response = await client.put(
                 f"jobbergate/job-script-templates/{parent_id}/upload/workflow",
@@ -883,7 +883,7 @@ class TestJobTemplateWorkflowFile:
 
         new_content = "import that"
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
         with open(make_dummy_file("test_template.py.j2", content=new_content), mode="rb") as workflow_file:
             response = await client.put(
                 f"jobbergate/job-script-templates/{parent_id}/upload/workflow",
@@ -915,7 +915,7 @@ class TestJobTemplateWorkflowFile:
         owner_email = tester_email
         requester_email = "another_" + owner_email
 
-        inject_security_header(requester_email, Permissions.JOB_TEMPLATES_EDIT)
+        inject_security_header(requester_email, Permissions.JOB_TEMPLATES_CREATE)
         with open(dummy_file_path, mode="rb") as workflow_file:
             response = await client.put(
                 f"jobbergate/job-script-templates/{parent_id}/upload/workflow",
@@ -937,7 +937,7 @@ class TestJobTemplateWorkflowFile:
             runtime_config=dict(foo="bar"),
         )
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_VIEW)
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_READ)
         response = await client.get(f"jobbergate/job-script-templates/{parent_id}/upload/workflow")
 
         assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
@@ -960,7 +960,7 @@ class TestJobTemplateWorkflowFile:
             runtime_config=dict(foo="bar"),
         )
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_EDIT)
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_DELETE)
         response = await client.delete(f"jobbergate/job-script-templates/{parent_id}/upload/workflow")
         assert response.status_code == status.HTTP_200_OK, f"Delete failed: {response.text}"
 
