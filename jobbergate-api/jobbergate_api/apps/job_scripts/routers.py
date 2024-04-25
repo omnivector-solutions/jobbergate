@@ -237,9 +237,11 @@ async def job_script_update(
 ):
     """Update a job script template by id or identifier."""
     logger.info(f"Updating job script {id=} with {update_params=}")
-    await secure_services.crud.job_script.get(
-        id, ensure_attributes={"owner_email": secure_services.identity_payload.email}
-    )
+    instance = await secure_services.crud.job_script.get(id)
+    if Permissions.JOB_SCRIPTS_ADMIN not in secure_services.identity_payload.permissions:
+        secure_services.crud.job_script.ensure_attribute(
+            instance, owner_email=secure_services.identity_payload.email
+        )
     return await secure_services.crud.job_script.update(id, **update_params.dict(exclude_unset=True))
 
 
@@ -256,9 +258,11 @@ async def job_script_delete(
 ):
     """Delete a job script template by id or identifier."""
     logger.info(f"Deleting job script {id=}")
-    await secure_services.crud.job_script.get(
-        id, ensure_attributes={"owner_email": secure_services.identity_payload.email}
-    )
+    instance = await secure_services.crud.job_script.get(id)
+    if Permissions.JOB_SCRIPTS_ADMIN not in secure_services.identity_payload.permissions:
+        secure_services.crud.job_script.ensure_attribute(
+            instance, owner_email=secure_services.identity_payload.email
+        )
     await secure_services.crud.job_script.delete(id)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -309,9 +313,11 @@ async def job_script_upload_file(
 
     logger.debug(f"Uploading file {upload_file.filename} to job script {id=}")
 
-    job_script = await secure_services.crud.job_script.get(
-        id, ensure_attributes={"owner_email": secure_services.identity_payload.email}
-    )
+    job_script = await secure_services.crud.job_script.get(id)
+    if Permissions.JOB_SCRIPTS_ADMIN not in secure_services.identity_payload.permissions:
+        secure_services.crud.job_script.ensure_attribute(
+            job_script, owner_email=secure_services.identity_payload.email
+        )
 
     await secure_services.file.job_script.upsert(
         parent_id=job_script.id,
@@ -334,9 +340,11 @@ async def job_script_delete_file(
     ),
 ):
     """Delete a file from a job script template by id or identifier."""
-    job_script = await secure_services.crud.job_script.get(
-        id, ensure_attributes={"owner_email": secure_services.identity_payload.email}
-    )
+    job_script = await secure_services.crud.job_script.get(id)
+    if Permissions.JOB_SCRIPTS_ADMIN not in secure_services.identity_payload.permissions:
+        secure_services.crud.job_script.ensure_attribute(
+            job_script, owner_email=secure_services.identity_payload.email
+        )
     job_script_file = await secure_services.file.job_script.get(job_script.id, file_name)
     await secure_services.file.job_script.delete(job_script_file)
 
