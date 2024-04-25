@@ -128,6 +128,14 @@
           "attributes": {}
         },
         {
+          "id": "cc07b473-ab1f-4ff5-8bb8-b2b70b495d57",
+          "name": "jobbergate:job-submissions:admin",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
+          "attributes": {}
+        },
+        {
           "id": "30e1234f-24dc-4d50-a710-773822b47733",
           "name": "jobbergate:job-templates:delete",
           "composite": false,
@@ -454,6 +462,14 @@
           "attributes": {}
         },
         {
+          "id": "2a7b8ca3-d6b1-426b-a35d-dd83433910ab",
+          "name": "jobbergate:job-submissions:admin",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
+          "attributes": {}
+        },
+        {
           "id": "5bf25b73-7aa7-4015-a050-b8426f10fc20",
           "name": "jobbergate:job-templates:delete",
           "composite": false,
@@ -699,6 +715,7 @@
           "jobbergate:job-scripts:read",
           "jobbergate:job-scripts:update",
           "jobbergate:job-scripts:delete",
+          "jobbergate:job-submissions:admin",
           "jobbergate:job-submissions:create",
           "jobbergate:job-submissions:read",
           "jobbergate:job-submissions:update",

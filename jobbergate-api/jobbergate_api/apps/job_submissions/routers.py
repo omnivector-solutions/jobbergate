@@ -160,9 +160,11 @@ async def job_submission_delete(
 ):
     """Delete job_submission given its id."""
     logger.info(f"Deleting job submission {id=}")
-    await secure_services.crud.job_submission.get(
-        id, ensure_attributes={"owner_email": secure_services.identity_payload.email}
-    )
+    instance = await secure_services.crud.job_submission.get(id)
+    if Permissions.JOB_SUBMISSIONS_ADMIN not in secure_services.identity_payload.permissions:
+        secure_services.crud.job_submission.ensure_attribute(
+            instance, owner_email=secure_services.identity_payload.email
+        )
     await secure_services.crud.job_submission.delete(id)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -182,9 +184,11 @@ async def job_submission_update(
 ):
     """Update a job_submission given its id."""
     logger.debug(f"Updating {id=} with {update_params=}")
-    await secure_services.crud.job_submission.get(
-        id, ensure_attributes={"owner_email": secure_services.identity_payload.email}
-    )
+    instance = await secure_services.crud.job_submission.get(id)
+    if Permissions.JOB_SUBMISSIONS_ADMIN not in secure_services.identity_payload.permissions:
+        secure_services.crud.job_submission.ensure_attribute(
+            instance, owner_email=secure_services.identity_payload.email
+        )
     return await secure_services.crud.job_submission.update(id, **update_params.dict(exclude_unset=True))
 
 

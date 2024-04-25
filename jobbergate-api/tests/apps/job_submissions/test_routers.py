@@ -926,13 +926,21 @@ async def test_get_job_submissions_with_invalid_slurm_job_ids_param(
     assert "Invalid slurm_job_ids" in response.text
 
 
+@pytest.mark.parametrize(
+    "is_owner, permissions",
+    [
+        (True, [Permissions.JOB_SUBMISSIONS_UPDATE]),
+        (False, [Permissions.JOB_SUBMISSIONS_UPDATE, Permissions.JOB_SUBMISSIONS_ADMIN]),
+    ],
+)
 async def test_update_job_submission__basic(
     client,
     fill_job_script_data,
     fill_job_submission_data,
-    tester_email,
     inject_security_header,
     synth_services,
+    is_owner,
+    permissions,
 ):
     """
     Test update job_submission via PUT.
@@ -952,7 +960,10 @@ async def test_update_job_submission__basic(
 
     payload = dict(name="new name", description="new description", execution_directory="/some/fake/path")
 
-    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_UPDATE)
+    owner_email = inserted_submission.owner_email
+    requester_email = owner_email if is_owner else "another_" + owner_email
+
+    inject_security_header(requester_email, *permissions)
     response = await client.put(f"/jobbergate/job-submissions/{inserted_job_submission_id}", json=payload)
 
     assert response.status_code == status.HTTP_200_OK, f"Update failed: {response.text}"
@@ -1054,13 +1065,21 @@ async def test_update_job_submission_forbidden(
     assert instance.name == "old name"
 
 
+@pytest.mark.parametrize(
+    "is_owner, permissions",
+    [
+        (True, [Permissions.JOB_SUBMISSIONS_DELETE]),
+        (False, [Permissions.JOB_SUBMISSIONS_DELETE, Permissions.JOB_SUBMISSIONS_ADMIN]),
+    ],
+)
 async def test_delete_job_submission(
     client,
     fill_job_script_data,
     fill_job_submission_data,
-    tester_email,
     inject_security_header,
     synth_services,
+    is_owner,
+    permissions,
 ):
     """
     Test delete job_submission via DELETE.
@@ -1078,7 +1097,10 @@ async def test_delete_job_submission(
     )
     inserted_job_submission_id = inserted_submission.id
 
-    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_DELETE)
+    owner_email = inserted_submission.owner_email
+    requester_email = owner_email if is_owner else "another_" + owner_email
+
+    inject_security_header(requester_email, *permissions)
     response = await client.delete(f"/jobbergate/job-submissions/{inserted_job_submission_id}")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
