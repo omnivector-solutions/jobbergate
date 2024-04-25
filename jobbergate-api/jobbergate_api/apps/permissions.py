@@ -14,6 +14,7 @@ class Permissions(str, Enum):
     JOB_TEMPLATES_READ = "jobbergate:job-templates:read"
     JOB_TEMPLATES_UPDATE = "jobbergate:job-templates:update"
     JOB_TEMPLATES_DELETE = "jobbergate:job-templates:delete"
+    JOB_TEMPLATES_ADMIN = "jobbergate:job-templates:admin"
     JOB_SCRIPTS_CREATE = "jobbergate:job-scripts:create"
     JOB_SCRIPTS_READ = "jobbergate:job-scripts:read"
     JOB_SCRIPTS_UPDATE = "jobbergate:job-scripts:update"

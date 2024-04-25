@@ -112,6 +112,14 @@
           "attributes": {}
         },
         {
+          "id": "24b5a993-221f-4a64-9d67-a3076147d2a8",
+          "name": "jobbergate:job-templates:admin",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
+          "attributes": {}
+        },
+        {
           "id": "30e1234f-24dc-4d50-a710-773822b47733",
           "name": "jobbergate:job-templates:delete",
           "composite": false,
@@ -422,6 +430,14 @@
           "attributes": {}
         },
         {
+          "id": "bb979ddf-8cdd-4e20-831e-270b7e05813b",
+          "name": "jobbergate:job-templates:admin",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
+          "attributes": {}
+        },
+        {
           "id": "5bf25b73-7aa7-4015-a050-b8426f10fc20",
           "name": "jobbergate:job-templates:delete",
           "composite": false,
@@ -663,6 +679,7 @@
       "clientRoles": {
         "cli": [
           "jobbergate:job-scripts:create",
+          "jobbergate:job-templates:admin",
           "jobbergate:job-scripts:read",
           "jobbergate:job-scripts:update",
           "jobbergate:job-scripts:delete",

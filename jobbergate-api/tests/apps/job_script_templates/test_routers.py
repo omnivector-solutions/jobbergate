@@ -158,14 +158,25 @@ async def test_create_job_template__fail_missing_name(
     assert (await synth_services.crud.template.count()) == 0
 
 
+@pytest.mark.parametrize(
+    "is_owner, permissions",
+    [
+        (True, [Permissions.JOB_TEMPLATES_UPDATE]),
+        (False, [Permissions.JOB_TEMPLATES_UPDATE, Permissions.JOB_TEMPLATES_ADMIN]),
+    ],
+)
 async def test_update_job_template__success(
     client,
     fill_job_template_data,
     inject_security_header,
     tester_email,
     synth_services,
+    is_owner,
+    permissions,
 ):
     instance = await synth_services.crud.template.create(**fill_job_template_data())
+
+    requester_email = tester_email if is_owner else "another_" + tester_email
 
     payload = dict(
         name="new-name",
@@ -174,7 +185,7 @@ async def test_update_job_template__success(
         template_vars={"new": "value"},
     )
 
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_UPDATE)
+    inject_security_header(requester_email, *permissions)
     response = await client.put(
         f"jobbergate/job-script-templates/{instance.id}",
         json=payload,
@@ -275,6 +286,13 @@ async def test_get_job_template__success(
 
 
 @pytest.mark.parametrize("identification_field", ("id", "identifier"))
+@pytest.mark.parametrize(
+    "is_owner, permissions",
+    [
+        (True, [Permissions.JOB_TEMPLATES_DELETE]),
+        (False, [Permissions.JOB_TEMPLATES_DELETE, Permissions.JOB_TEMPLATES_ADMIN]),
+    ],
+)
 async def test_delete_job_template__success(
     identification_field,
     client,
@@ -282,6 +300,8 @@ async def test_delete_job_template__success(
     inject_security_header,
     fill_job_template_data,
     synth_services,
+    is_owner,
+    permissions,
 ):
     payload = fill_job_template_data(
         identifier=f"delete-template-{identification_field}",
@@ -289,7 +309,9 @@ async def test_delete_job_template__success(
     )
     instance = await synth_services.crud.template.create(**payload)
 
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_DELETE)
+    requester_email = tester_email if is_owner else "another_" + tester_email
+
+    inject_security_header(requester_email, *permissions)
     identification = getattr(instance, identification_field)
     response = await client.delete(f"jobbergate/job-script-templates/{identification}")
     assert response.status_code == 204, f"Delete failed: {response.text}"
@@ -583,6 +605,13 @@ class TestJobTemplateFiles:
         raw_db_data = await synth_services.crud.template.create(**fill_job_template_data())
         yield JobTemplateDetailedView.from_orm(raw_db_data)
 
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_TEMPLATES_CREATE]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.JOB_TEMPLATES_ADMIN]),
+        ],
+    )
     async def test_create__success(
         self,
         client,
@@ -592,12 +621,16 @@ class TestJobTemplateFiles:
         synth_bucket,
         dummy_template,
         make_dummy_file,
+        is_owner,
+        permissions,
     ):
         parent_id = job_template_data.id
         file_type = "ENTRYPOINT"
         dummy_file_path = make_dummy_file("test_template.py.j2", content=dummy_template)
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
+        requester_email = tester_email if is_owner else "another_" + tester_email
+
+        inject_security_header(requester_email, *permissions)
         with open(dummy_file_path, mode="rb") as template_file:
             response = await client.put(
                 f"jobbergate/job-script-templates/{parent_id}/upload/template/{file_type}",
@@ -619,7 +652,7 @@ class TestJobTemplateFiles:
         assert dummy_template == file_content.decode()
 
         # Finally, see that the file is included in the parent template file list
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_READ)
+        inject_security_header(requester_email, Permissions.JOB_TEMPLATES_READ)
         response = await client.get(f"jobbergate/job-script-templates/{parent_id}")
         assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
 
@@ -681,6 +714,13 @@ class TestJobTemplateFiles:
         assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
         assert response.content.decode() == "dummy file data"
 
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_TEMPLATES_DELETE]),
+            (False, [Permissions.JOB_TEMPLATES_DELETE, Permissions.JOB_TEMPLATES_ADMIN]),
+        ],
+    )
     async def test_delete__success(
         self,
         client,
@@ -689,6 +729,8 @@ class TestJobTemplateFiles:
         job_template_data,
         synth_bucket,
         synth_services,
+        is_owner,
+        permissions,
     ):
         parent_id = job_template_data.id
         await synth_services.file.template.upsert(
@@ -698,7 +740,9 @@ class TestJobTemplateFiles:
             file_type="ENTRYPOINT",
         )
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_DELETE)
+        requester_email = tester_email if is_owner else "another_" + tester_email
+
+        inject_security_header(requester_email, *permissions)
         response = await client.delete(
             f"jobbergate/job-script-templates/{parent_id}/upload/template/test_template.py.j2"
         )
@@ -740,6 +784,13 @@ class TestJobTemplateWorkflowFile:
         raw_db_data = await synth_services.crud.template.create(**fill_job_template_data())
         yield JobTemplateListView.from_orm(raw_db_data)
 
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_TEMPLATES_CREATE]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.JOB_TEMPLATES_ADMIN]),
+        ],
+    )
     async def test_create__success(
         self,
         client,
@@ -749,12 +800,16 @@ class TestJobTemplateWorkflowFile:
         synth_bucket,
         dummy_application_source_file,
         make_dummy_file,
+        is_owner,
+        permissions,
     ):
         parent_id = job_template_data.id
         dummy_file_path = make_dummy_file("test_template.py.j2", content=dummy_application_source_file)
         runtime_config = {"foo": "bar"}
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
+        requester_email = tester_email if is_owner else "another_" + tester_email
+
+        inject_security_header(requester_email, *permissions)
         with open(dummy_file_path, mode="rb") as workflow_file:
             response = await client.put(
                 f"jobbergate/job-script-templates/{parent_id}/upload/workflow",
@@ -777,7 +832,7 @@ class TestJobTemplateWorkflowFile:
         assert dummy_application_source_file == file_content.decode()
 
         # Finally, see that the file is included in the parent template file list
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_READ)
+        inject_security_header(requester_email, Permissions.JOB_TEMPLATES_READ)
         response = await client.get(f"jobbergate/job-script-templates/{parent_id}")
         assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
 
@@ -790,6 +845,13 @@ class TestJobTemplateWorkflowFile:
         assert workflow_file["filename"] == WORKFLOW_FILE_NAME
         assert workflow_file["runtime_config"] == runtime_config
 
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_TEMPLATES_CREATE]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.JOB_TEMPLATES_ADMIN]),
+        ],
+    )
     async def test_update__success(
         self,
         client,
@@ -798,6 +860,8 @@ class TestJobTemplateWorkflowFile:
         job_template_data,
         synth_services,
         make_dummy_file,
+        is_owner,
+        permissions,
     ):
         parent_id = job_template_data.id
         original_runtime_config = {"foo": "bar"}
@@ -813,7 +877,9 @@ class TestJobTemplateWorkflowFile:
         new_runtime_config = {"new": "config"}
         new_content = "import that"
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
+        requester_email = tester_email if is_owner else "another_" + tester_email
+
+        inject_security_header(requester_email, *permissions)
         with open(make_dummy_file("test_template.py.j2", content=new_content), mode="rb") as workflow_file:
             response = await client.put(
                 f"jobbergate/job-script-templates/{parent_id}/upload/workflow",
@@ -831,6 +897,13 @@ class TestJobTemplateWorkflowFile:
         assert workflow_file.runtime_config == new_runtime_config
         assert (await synth_services.file.workflow.get_file_content(workflow_file)) == new_content.encode()
 
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_TEMPLATES_CREATE]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.JOB_TEMPLATES_ADMIN]),
+        ],
+    )
     async def test_update_optional_runtime_config__success(
         self,
         client,
@@ -839,6 +912,8 @@ class TestJobTemplateWorkflowFile:
         job_template_data,
         synth_services,
         make_dummy_file,
+        is_owner,
+        permissions,
     ):
         parent_id = job_template_data.id
         original_runtime_config = {"foo": "bar"}
@@ -853,7 +928,9 @@ class TestJobTemplateWorkflowFile:
 
         new_content = "import that"
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
+        requester_email = tester_email if is_owner else "another_" + tester_email
+
+        inject_security_header(requester_email, *permissions)
         with open(make_dummy_file("test_template.py.j2", content=new_content), mode="rb") as workflow_file:
             response = await client.put(
                 f"jobbergate/job-script-templates/{parent_id}/upload/workflow",
@@ -943,6 +1020,13 @@ class TestJobTemplateWorkflowFile:
         assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
         assert response.content.decode() == "import this"
 
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_TEMPLATES_DELETE]),
+            (False, [Permissions.JOB_TEMPLATES_DELETE, Permissions.JOB_TEMPLATES_ADMIN]),
+        ],
+    )
     async def test_delete__success(
         self,
         client,
@@ -951,6 +1035,8 @@ class TestJobTemplateWorkflowFile:
         job_template_data,
         synth_bucket,
         synth_services,
+        is_owner,
+        permissions,
     ):
         parent_id = job_template_data.id
         upserted_instance = await synth_services.file.workflow.upsert(
@@ -960,7 +1046,9 @@ class TestJobTemplateWorkflowFile:
             runtime_config=dict(foo="bar"),
         )
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_DELETE)
+        requester_email = tester_email if is_owner else "another_" + tester_email
+
+        inject_security_header(requester_email, *permissions)
         response = await client.delete(f"jobbergate/job-script-templates/{parent_id}/upload/workflow")
         assert response.status_code == status.HTTP_200_OK, f"Delete failed: {response.text}"
 
