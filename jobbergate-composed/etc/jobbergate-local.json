@@ -712,19 +712,19 @@
         "cli": [
           "jobbergate:job-scripts:admin",
           "jobbergate:job-scripts:create",
+          "jobbergate:job-scripts:delete",
           "jobbergate:job-scripts:read",
           "jobbergate:job-scripts:update",
-          "jobbergate:job-scripts:delete",
           "jobbergate:job-submissions:admin",
           "jobbergate:job-submissions:create",
+          "jobbergate:job-submissions:delete",
           "jobbergate:job-submissions:read",
           "jobbergate:job-submissions:update",
-          "jobbergate:job-submissions:delete",
           "jobbergate:job-templates:admin",
           "jobbergate:job-templates:create",
+          "jobbergate:job-templates:delete",
           "jobbergate:job-templates:read",
-          "jobbergate:job-templates:update",
-          "jobbergate:job-templates:delete"
+          "jobbergate:job-templates:update"
         ]
       },
       "notBefore": 0,
