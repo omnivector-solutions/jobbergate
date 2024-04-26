@@ -155,7 +155,7 @@ async def job_script_template_update(
     """Update a job script template by id or identifier."""
     logger.info(f"Updating job script template {id_or_identifier=} with {update_request=}")
     instance = await secure_services.crud.template.get(id_or_identifier)
-    if Permissions.JOB_TEMPLATES_ADMIN not in secure_services.identity_payload.permissions:
+    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
         secure_services.crud.template.ensure_attribute(
             instance, owner_email=secure_services.identity_payload.email
         )
@@ -178,7 +178,7 @@ async def job_script_template_delete(
     """Delete a job script template by id or identifier."""
     logger.info(f"Deleting job script template with {id_or_identifier=}")
     isinstance = await secure_services.crud.template.get(id_or_identifier)
-    if Permissions.JOB_TEMPLATES_ADMIN not in secure_services.identity_payload.permissions:
+    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
         secure_services.crud.template.ensure_attribute(
             isinstance, owner_email=secure_services.identity_payload.email
         )
@@ -234,7 +234,7 @@ async def job_script_template_upload_file(
 
     logger.debug(f"Uploading file {upload_file.filename} to job script template {id_or_identifier=}")
     job_script_template = await secure_services.crud.template.get(id_or_identifier)
-    if Permissions.JOB_TEMPLATES_ADMIN not in secure_services.identity_payload.permissions:
+    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
         secure_services.crud.template.ensure_attribute(
             job_script_template, owner_email=secure_services.identity_payload.email
         )
@@ -261,7 +261,7 @@ async def job_script_template_delete_file(
 ):
     """Delete a file from a job script template by id or identifier."""
     job_script_template = await secure_services.crud.template.get(id_or_identifier)
-    if Permissions.JOB_TEMPLATES_ADMIN not in secure_services.identity_payload.permissions:
+    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
         secure_services.crud.template.ensure_attribute(
             job_script_template, owner_email=secure_services.identity_payload.email
         )
@@ -312,7 +312,7 @@ async def job_script_workflow_upload_file(
     """Upload a file to a job script workflow by id or identifier."""
     logger.debug(f"Uploading workflow file to job script template {id_or_identifier=}: {runtime_config}")
     job_script_template = await secure_services.crud.template.get(id_or_identifier)
-    if Permissions.JOB_TEMPLATES_ADMIN not in secure_services.identity_payload.permissions:
+    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
         secure_services.crud.template.ensure_attribute(
             job_script_template, owner_email=secure_services.identity_payload.email
         )
@@ -351,7 +351,7 @@ async def job_script_workflow_delete_file(
     """Delete a workflow file from a job script template by id or identifier."""
     logger.debug(f"Deleting workflow file from job script template {id_or_identifier=}")
     job_script_template = await secure_services.crud.template.get(id_or_identifier)
-    if Permissions.JOB_TEMPLATES_ADMIN not in secure_services.identity_payload.permissions:
+    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
         secure_services.crud.template.ensure_attribute(
             job_script_template, owner_email=secure_services.identity_payload.email
         )

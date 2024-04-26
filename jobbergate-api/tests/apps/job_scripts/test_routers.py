@@ -465,7 +465,7 @@ async def test_get_job_script_by_id__bad_permission(
     "is_owner, permissions",
     [
         (True, [Permissions.JOB_SCRIPTS_UPDATE]),
-        (False, [Permissions.JOB_SCRIPTS_UPDATE, Permissions.JOB_SCRIPTS_ADMIN]),
+        (False, [Permissions.JOB_SCRIPTS_UPDATE, Permissions.ADMIN]),
     ],
 )
 async def test_update_job_script__success(
@@ -548,7 +548,7 @@ async def test_update_job_script__fail_forbidden(
     "is_owner, permissions",
     [
         (True, [Permissions.JOB_SCRIPTS_DELETE]),
-        (False, [Permissions.JOB_SCRIPTS_DELETE, Permissions.JOB_SCRIPTS_ADMIN]),
+        (False, [Permissions.JOB_SCRIPTS_DELETE, Permissions.ADMIN]),
     ],
 )
 async def test_delete_job_script__success(
@@ -831,7 +831,7 @@ class TestJobScriptFiles:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_SCRIPTS_CREATE]),
-            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.JOB_SCRIPTS_ADMIN]),
+            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.ADMIN]),
         ],
     )
     async def test_create__success(
@@ -927,7 +927,7 @@ class TestJobScriptFiles:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_SCRIPTS_DELETE]),
-            (False, [Permissions.JOB_SCRIPTS_DELETE, Permissions.JOB_SCRIPTS_ADMIN]),
+            (False, [Permissions.JOB_SCRIPTS_DELETE, Permissions.ADMIN]),
         ],
     )
     async def test_delete__success(

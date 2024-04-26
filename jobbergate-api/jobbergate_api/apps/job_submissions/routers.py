@@ -161,7 +161,7 @@ async def job_submission_delete(
     """Delete job_submission given its id."""
     logger.info(f"Deleting job submission {id=}")
     instance = await secure_services.crud.job_submission.get(id)
-    if Permissions.JOB_SUBMISSIONS_ADMIN not in secure_services.identity_payload.permissions:
+    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
         secure_services.crud.job_submission.ensure_attribute(
             instance, owner_email=secure_services.identity_payload.email
         )
@@ -185,7 +185,7 @@ async def job_submission_update(
     """Update a job_submission given its id."""
     logger.debug(f"Updating {id=} with {update_params=}")
     instance = await secure_services.crud.job_submission.get(id)
-    if Permissions.JOB_SUBMISSIONS_ADMIN not in secure_services.identity_payload.permissions:
+    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
         secure_services.crud.job_submission.ensure_attribute(
             instance, owner_email=secure_services.identity_payload.email
         )

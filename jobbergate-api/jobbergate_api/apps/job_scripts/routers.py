@@ -238,7 +238,7 @@ async def job_script_update(
     """Update a job script template by id or identifier."""
     logger.info(f"Updating job script {id=} with {update_params=}")
     instance = await secure_services.crud.job_script.get(id)
-    if Permissions.JOB_SCRIPTS_ADMIN not in secure_services.identity_payload.permissions:
+    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
         secure_services.crud.job_script.ensure_attribute(
             instance, owner_email=secure_services.identity_payload.email
         )
@@ -259,7 +259,7 @@ async def job_script_delete(
     """Delete a job script template by id or identifier."""
     logger.info(f"Deleting job script {id=}")
     instance = await secure_services.crud.job_script.get(id)
-    if Permissions.JOB_SCRIPTS_ADMIN not in secure_services.identity_payload.permissions:
+    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
         secure_services.crud.job_script.ensure_attribute(
             instance, owner_email=secure_services.identity_payload.email
         )
@@ -314,7 +314,7 @@ async def job_script_upload_file(
     logger.debug(f"Uploading file {upload_file.filename} to job script {id=}")
 
     job_script = await secure_services.crud.job_script.get(id)
-    if Permissions.JOB_SCRIPTS_ADMIN not in secure_services.identity_payload.permissions:
+    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
         secure_services.crud.job_script.ensure_attribute(
             job_script, owner_email=secure_services.identity_payload.email
         )
@@ -341,7 +341,7 @@ async def job_script_delete_file(
 ):
     """Delete a file from a job script template by id or identifier."""
     job_script = await secure_services.crud.job_script.get(id)
-    if Permissions.JOB_SCRIPTS_ADMIN not in secure_services.identity_payload.permissions:
+    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
         secure_services.crud.job_script.ensure_attribute(
             job_script, owner_email=secure_services.identity_payload.email
         )

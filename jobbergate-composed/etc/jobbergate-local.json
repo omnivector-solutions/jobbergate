@@ -113,23 +113,7 @@
         },
         {
           "id": "24b5a993-221f-4a64-9d67-a3076147d2a8",
-          "name": "jobbergate:job-templates:admin",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
-          "attributes": {}
-        },
-        {
-          "id": "fe1e2548-f66d-46cc-a834-08d9762f4028",
-          "name": "jobbergate:job-scripts:admin",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
-          "attributes": {}
-        },
-        {
-          "id": "cc07b473-ab1f-4ff5-8bb8-b2b70b495d57",
-          "name": "jobbergate:job-submissions:admin",
+          "name": "jobbergate:admin",
           "composite": false,
           "clientRole": true,
           "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
@@ -447,23 +431,7 @@
         },
         {
           "id": "bb979ddf-8cdd-4e20-831e-270b7e05813b",
-          "name": "jobbergate:job-templates:admin",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
-          "attributes": {}
-        },
-        {
-          "id": "f6a62a77-7a8c-4ee3-924c-d81d694b2a2e",
-          "name": "jobbergate:job-scripts:admin",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
-          "attributes": {}
-        },
-        {
-          "id": "2a7b8ca3-d6b1-426b-a35d-dd83433910ab",
-          "name": "jobbergate:job-submissions:admin",
+          "name": "jobbergate:admin",
           "composite": false,
           "clientRole": true,
           "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
@@ -710,17 +678,15 @@
       ],
       "clientRoles": {
         "cli": [
-          "jobbergate:job-scripts:admin",
+          "jobbergate:admin",
           "jobbergate:job-scripts:create",
           "jobbergate:job-scripts:delete",
           "jobbergate:job-scripts:read",
           "jobbergate:job-scripts:update",
-          "jobbergate:job-submissions:admin",
           "jobbergate:job-submissions:create",
           "jobbergate:job-submissions:delete",
           "jobbergate:job-submissions:read",
           "jobbergate:job-submissions:update",
-          "jobbergate:job-templates:admin",
           "jobbergate:job-templates:create",
           "jobbergate:job-templates:delete",
           "jobbergate:job-templates:read",

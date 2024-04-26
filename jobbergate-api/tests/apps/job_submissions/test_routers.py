@@ -930,7 +930,7 @@ async def test_get_job_submissions_with_invalid_slurm_job_ids_param(
     "is_owner, permissions",
     [
         (True, [Permissions.JOB_SUBMISSIONS_UPDATE]),
-        (False, [Permissions.JOB_SUBMISSIONS_UPDATE, Permissions.JOB_SUBMISSIONS_ADMIN]),
+        (False, [Permissions.JOB_SUBMISSIONS_UPDATE, Permissions.ADMIN]),
     ],
 )
 async def test_update_job_submission__basic(
@@ -1069,7 +1069,7 @@ async def test_update_job_submission_forbidden(
     "is_owner, permissions",
     [
         (True, [Permissions.JOB_SUBMISSIONS_DELETE]),
-        (False, [Permissions.JOB_SUBMISSIONS_DELETE, Permissions.JOB_SUBMISSIONS_ADMIN]),
+        (False, [Permissions.JOB_SUBMISSIONS_DELETE, Permissions.ADMIN]),
     ],
 )
 async def test_delete_job_submission(

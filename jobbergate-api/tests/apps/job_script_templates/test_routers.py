@@ -162,7 +162,7 @@ async def test_create_job_template__fail_missing_name(
     "is_owner, permissions",
     [
         (True, [Permissions.JOB_TEMPLATES_UPDATE]),
-        (False, [Permissions.JOB_TEMPLATES_UPDATE, Permissions.JOB_TEMPLATES_ADMIN]),
+        (False, [Permissions.JOB_TEMPLATES_UPDATE, Permissions.ADMIN]),
     ],
 )
 async def test_update_job_template__success(
@@ -290,7 +290,7 @@ async def test_get_job_template__success(
     "is_owner, permissions",
     [
         (True, [Permissions.JOB_TEMPLATES_DELETE]),
-        (False, [Permissions.JOB_TEMPLATES_DELETE, Permissions.JOB_TEMPLATES_ADMIN]),
+        (False, [Permissions.JOB_TEMPLATES_DELETE, Permissions.ADMIN]),
     ],
 )
 async def test_delete_job_template__success(
@@ -609,7 +609,7 @@ class TestJobTemplateFiles:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_TEMPLATES_CREATE]),
-            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.JOB_TEMPLATES_ADMIN]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.ADMIN]),
         ],
     )
     async def test_create__success(
@@ -718,7 +718,7 @@ class TestJobTemplateFiles:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_TEMPLATES_DELETE]),
-            (False, [Permissions.JOB_TEMPLATES_DELETE, Permissions.JOB_TEMPLATES_ADMIN]),
+            (False, [Permissions.JOB_TEMPLATES_DELETE, Permissions.ADMIN]),
         ],
     )
     async def test_delete__success(
@@ -788,7 +788,7 @@ class TestJobTemplateWorkflowFile:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_TEMPLATES_CREATE]),
-            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.JOB_TEMPLATES_ADMIN]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.ADMIN]),
         ],
     )
     async def test_create__success(
@@ -849,7 +849,7 @@ class TestJobTemplateWorkflowFile:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_TEMPLATES_CREATE]),
-            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.JOB_TEMPLATES_ADMIN]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.ADMIN]),
         ],
     )
     async def test_update__success(
@@ -901,7 +901,7 @@ class TestJobTemplateWorkflowFile:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_TEMPLATES_CREATE]),
-            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.JOB_TEMPLATES_ADMIN]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.ADMIN]),
         ],
     )
     async def test_update_optional_runtime_config__success(
@@ -1024,7 +1024,7 @@ class TestJobTemplateWorkflowFile:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_TEMPLATES_DELETE]),
-            (False, [Permissions.JOB_TEMPLATES_DELETE, Permissions.JOB_TEMPLATES_ADMIN]),
+            (False, [Permissions.JOB_TEMPLATES_DELETE, Permissions.ADMIN]),
         ],
     )
     async def test_delete__success(
