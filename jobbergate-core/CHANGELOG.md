@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
 
+
+## 5.2.0a0 -- 2024-04-29
 ## 5.1.0 -- 2024-04-19
 
 - Refactored the command handler that interfaces with sbatch and scontrol
