@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+
+## 5.2.0a0 -- 2024-04-29
 ## 5.1.0 -- 2024-04-19
 
 - Keep version in sync with the API.

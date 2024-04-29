@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-agent
 
 ## Unreleased
 
+
+## 5.2.0a0 -- 2024-04-29
 ## 5.1.0 -- 2024-04-19
 
 - Added a new task to report at the expected interval that the agent is up and running [ASP-4602]
