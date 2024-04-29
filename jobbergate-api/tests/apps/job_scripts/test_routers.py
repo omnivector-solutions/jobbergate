@@ -461,6 +461,145 @@ async def test_get_job_script_by_id__bad_permission(
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
+@pytest.mark.parametrize(
+    "is_owner, permissions",
+    [
+        (True, [Permissions.JOB_SCRIPTS_UPDATE]),
+        (False, [Permissions.JOB_SCRIPTS_UPDATE, Permissions.ADMIN]),
+    ],
+)
+async def test_update_job_script__success(
+    client,
+    fill_job_script_data,
+    inject_security_header,
+    tester_email,
+    synth_services,
+    is_owner,
+    permissions,
+):
+    instance = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    requester_email = tester_email if is_owner else "another_" + tester_email
+
+    payload = dict(
+        name="new-name",
+        description="new-description",
+    )
+
+    inject_security_header(requester_email, *permissions)
+    response = await client.put(f"jobbergate/job-scripts/{instance.id}", json=payload)
+
+    assert response.status_code == 200, f"Update failed: {response.text}"
+    response_data = response.json()
+    assert response_data["name"] == payload["name"]
+    assert response_data["description"] == payload["description"]
+
+
+async def test_update_job_script__fail_not_found(
+    client,
+    inject_security_header,
+    tester_email,
+    synth_services,
+):
+    payload = dict(
+        name="new-name",
+        description="new-description",
+    )
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_UPDATE)
+    response = await client.put(f"jobbergate/job-scripts/0", json=payload)
+
+    assert response.status_code == 404
+
+
+async def test_update_job_script__fail_unauthorized(client):
+    payload = dict(
+        name="new-name",
+        description="new-description",
+    )
+    response = await client.put("jobbergate/job-scripts/0", json=payload)
+
+    assert response.status_code == 401
+
+
+async def test_update_job_script__fail_forbidden(
+    client,
+    fill_job_script_data,
+    inject_security_header,
+    tester_email,
+    synth_services,
+):
+    instance = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    owner_email = tester_email
+    requester_email = "another_" + owner_email
+
+    payload = dict(
+        name="new-name",
+        description="new-description",
+    )
+
+    inject_security_header(requester_email, Permissions.JOB_SCRIPTS_UPDATE)
+    response = await client.put(f"jobbergate/job-scripts/{instance.id}", json=payload)
+
+    assert response.status_code == 403
+
+
+@pytest.mark.parametrize(
+    "is_owner, permissions",
+    [
+        (True, [Permissions.JOB_SCRIPTS_DELETE]),
+        (False, [Permissions.JOB_SCRIPTS_DELETE, Permissions.ADMIN]),
+    ],
+)
+async def test_delete_job_script__success(
+    client,
+    inject_security_header,
+    fill_job_script_data,
+    synth_services,
+    is_owner,
+    permissions,
+):
+    instance = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    owner_email = instance.owner_email
+    requester_email = owner_email if is_owner else "another_" + owner_email
+
+    inject_security_header(requester_email, *permissions)
+    response = await client.delete(f"jobbergate/job-scripts/{instance.id}")
+    assert response.status_code == 204, f"Delete failed: {response.text}"
+
+    assert (await synth_services.crud.job_script.count()) == 0
+
+
+async def test_delete_job_script__fail_not_found(
+    client,
+    inject_security_header,
+    tester_email,
+    synth_services,
+):
+    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_DELETE)
+    response = await client.delete("jobbergate/job-scripts/0")
+    assert response.status_code == 404
+
+
+async def test_delete_job_script__fail_forbidden(
+    client,
+    inject_security_header,
+    fill_job_script_data,
+    synth_services,
+):
+    instance = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    owner_email = instance.owner_email
+    requester_email = "another_" + owner_email
+
+    inject_security_header(requester_email, Permissions.JOB_SCRIPTS_DELETE)
+    response = await client.delete(f"jobbergate/job-scripts/{instance.id}")
+    assert response.status_code == 403
+
+    assert (await synth_services.crud.job_script.count()) == 1
+
+
 class TestListJobScripts:
     """Test the list endpoint."""
 
@@ -688,21 +827,32 @@ class TestJobScriptFiles:
         raw_db_data = await synth_services.crud.job_script.create(**fill_job_script_data())
         yield raw_db_data
 
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_SCRIPTS_CREATE]),
+            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.ADMIN]),
+        ],
+    )
     async def test_create__success(
         self,
         client,
-        tester_email,
         inject_security_header,
         job_script_data,
         job_script_data_as_string,
         make_dummy_file,
         synth_services,
+        is_owner,
+        permissions,
     ):
         id = job_script_data.id
         file_type = "ENTRYPOINT"
         dummy_file_path = make_dummy_file("test_template.sh", content=job_script_data_as_string)
 
-        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_CREATE)
+        owner_email = job_script_data.owner_email
+        requester_email = owner_email if is_owner else "another_" + owner_email
+
+        inject_security_header(requester_email, *permissions)
         with open(dummy_file_path, mode="rb") as file:
             response = await client.put(
                 f"jobbergate/job-scripts/{id}/upload/{file_type}",
@@ -773,15 +923,23 @@ class TestJobScriptFiles:
         assert response.status_code == status.HTTP_200_OK
         assert response.content.decode() == job_script_data_as_string
 
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_SCRIPTS_DELETE]),
+            (False, [Permissions.JOB_SCRIPTS_DELETE, Permissions.ADMIN]),
+        ],
+    )
     async def test_delete__success(
         self,
         client,
-        tester_email,
         inject_security_header,
         job_script_data,
         job_script_data_as_string,
         synth_services,
         synth_bucket,
+        is_owner,
+        permissions,
     ):
         parent_id = job_script_data.id
         file_type = "ENTRYPOINT"
@@ -794,7 +952,10 @@ class TestJobScriptFiles:
             file_type=file_type,
         )
 
-        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_DELETE)
+        owner_email = job_script_data.owner_email
+        requester_email = owner_email if is_owner else "another_" + owner_email
+
+        inject_security_header(requester_email, *permissions)
         response = await client.delete(f"jobbergate/job-scripts/{parent_id}/upload/{job_script_filename}")
         assert response.status_code == status.HTTP_200_OK, f"Delete failed: {response.text}"
 

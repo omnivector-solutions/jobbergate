@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-api
 ## Unreleased
 
 - Expanded permission sets from view/edit to create/read/update/delete
+- Added admin role to allow key users to update/delete entities owned by others [ASP-4989]
 
 ## 5.1.0 -- 2024-04-19
 
