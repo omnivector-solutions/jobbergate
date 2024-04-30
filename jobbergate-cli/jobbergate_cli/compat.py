@@ -36,85 +36,125 @@ def add_legacy_compatible_commands(app: typer.Typer):
     # Applications
     app.command(
         name="list-applications",
-        help="LIST the available applications",
+        help="replaced by: applications list",
+        deprecated=True,
+        rich_help_panel="Backward compatibility",
     )(list_applications)
     app.command(
         name="get-application",
         help="GET an Application.",
+        deprecated=True,
+        hidden=True,
     )(get_application)
     app.command(
         name="create-application",
         help="CREATE an Application.",
+        deprecated=True,
+        hidden=True,
     )(create_application)
     app.command(
         name="delete-application",
         help="DELETE an Application.",
+        deprecated=True,
+        hidden=True,
     )(delete_application)
     app.command(
         name="update-application",
         help="UPDATE an Application.",
+        deprecated=True,
+        hidden=True,
     )(update_application)
     app.command(
         name="download-application",
         help="Download application files.",
+        deprecated=True,
+        hidden=True,
     )(download_files_application)
     app.command(
         name="clone-application",
         help="Clone an application.",
+        deprecated=True,
+        hidden=True,
     )(clone_application)
 
     # Job Scripts
     app.command(
         name="list-job-scripts",
-        help="LIST job scripts",
+        help="replaced by: job-scripts list",
+        deprecated=True,
+        rich_help_panel="Backward compatibility",
     )(list_job_scripts)
     app.command(
         name="get-job-script",
         help="GET a job script",
+        deprecated=True,
+        hidden=True,
     )(get_job_script)
     app.command(
         name="create-job-script",
-        help="CREATE a job script",
+        help="replaced by: job-scripts render",
+        deprecated=True,
+        rich_help_panel="Backward compatibility",
     )(render_job_script)
     app.command(
         name="update-job-script",
         help="UPDATE a job script",
+        deprecated=True,
+        hidden=True,
     )(update_job_script)
     app.command(
         name="render-job-script-locally",
         help="Render a job script locally",
+        deprecated=True,
+        hidden=True,
     )(render_job_script_locally)
     app.command(
         name="delete-job-script",
         help="DELETE a job script",
+        deprecated=True,
+        hidden=True,
     )(delete_job_script)
     app.command(
         name="download-job-script",
         help="Download job script files.",
+        deprecated=True,
+        hidden=True,
     )(download_files_job_script)
     app.command(
         name="show-job-script-files",
         help="Show job script files.",
+        deprecated=True,
+        hidden=True,
     )(show_files)
     app.command(
         name="clone-job-script",
         help="Clone a job script.",
+        deprecated=True,
+        hidden=True,
     )(clone_job_script)
 
     # Job Submissions
     app.command(
         name="list-job-submissions",
-        help="LIST job submissions",
+        help="replaced by: job-submissions list",
+        deprecated=True,
+        rich_help_panel="Backward compatibility",
     )(list_job_submissions)
     app.command(
         name="get-job-submission",
         help="GET a job submission",
+        deprecated=True,
+        hidden=True,
     )(get_job_submission)
     app.command(
         name="create-job-submission",
-        help="CREATE a job submission",
+        help="replaced by: job-submissions create",
+        deprecated=True,
+        rich_help_panel="Backward compatibility",
     )(create_job_submission)
     app.command(
         name="delete-job-submission",
         help="DELETE a job submission",
+        deprecated=True,
+        hidden=True,
     )(delete_job_submission)

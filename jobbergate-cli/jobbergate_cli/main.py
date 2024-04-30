@@ -15,6 +15,9 @@ from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.logging import init_logs, init_sentry
 from jobbergate_cli.render import render_json, terminal_message
 from jobbergate_cli.schemas import JobbergateContext, Persona, TokenSet
+from jobbergate_cli.subapps.applications.app import app as applications_app
+from jobbergate_cli.subapps.job_scripts.app import app as job_scripts_app
+from jobbergate_cli.subapps.job_submissions.app import app as job_submissions_app
 from jobbergate_cli.text_tools import conjoin, copy_to_clipboard
 
 
@@ -26,14 +29,10 @@ if settings.JOBBERGATE_COMPATIBILITY_MODE:
     from jobbergate_cli.compat import add_legacy_compatible_commands
 
     add_legacy_compatible_commands(app)
-else:
-    from jobbergate_cli.subapps.applications.app import app as applications_app
-    from jobbergate_cli.subapps.job_scripts.app import app as job_scripts_app
-    from jobbergate_cli.subapps.job_submissions.app import app as job_submissions_app
 
-    app.add_typer(applications_app, name="applications")
-    app.add_typer(job_scripts_app, name="job-scripts")
-    app.add_typer(job_submissions_app, name="job-submissions")
+app.add_typer(applications_app, name="applications")
+app.add_typer(job_scripts_app, name="job-scripts")
+app.add_typer(job_submissions_app, name="job-submissions")
 
 
 @app.callback(invoke_without_command=True)
@@ -101,7 +100,7 @@ def main(
     ctx.obj = context
 
 
-@app.command()
+@app.command(rich_help_panel="Authentication")
 @handle_abort
 def login(ctx: typer.Context):
     """
@@ -115,7 +114,7 @@ def login(ctx: typer.Context):
     )
 
 
-@app.command()
+@app.command(rich_help_panel="Authentication")
 @handle_abort
 def logout():
     """
@@ -128,7 +127,7 @@ def logout():
     )
 
 
-@app.command()
+@app.command(rich_help_panel="Authentication")
 @handle_abort
 def show_token(
     plain: bool = typer.Option(

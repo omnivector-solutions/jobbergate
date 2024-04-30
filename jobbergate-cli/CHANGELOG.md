@@ -4,6 +4,9 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+* Hided less used commands on the cli when backward compatibility mode is enabled [ASP-5192]
+* Added the subcommands `applications`, `job-scripts`, and `job-submissions` to backward compatibility mode
+* Marked backward compatible commands as deprecated and indicated the new alternative
 
 ## 5.2.0a0 -- 2024-04-29
 ## 5.1.0 -- 2024-04-19
