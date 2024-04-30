@@ -861,14 +861,22 @@ class TestJobScriptFiles:
 
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
 
-        job_script_file = await synth_services.file.job_script.get(id, "test_template.sh")
+        # Check the response from the upload endpoint
+        response_data = response.json()
+        assert response_data is not None
+        assert response_data["parent_id"] == id
+        assert response_data["filename"] == dummy_file_path.name
+        assert response_data["file_type"] == file_type
 
+        # Check the database
+        job_script_file = await synth_services.file.job_script.get(id, "test_template.sh")
         assert job_script_file is not None
         assert job_script_file.parent_id == id
         assert job_script_file.filename == dummy_file_path.name
         assert job_script_file.file_type == file_type
         assert job_script_file.file_key == f"job_script_files/{id}/{dummy_file_path.name}"
 
+        # Check the file content on s3
         file_content = await synth_services.file.job_script.get_file_content(job_script_file)
         assert file_content.decode() == job_script_data_as_string
 

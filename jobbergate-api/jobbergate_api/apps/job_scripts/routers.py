@@ -19,6 +19,7 @@ from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptCloneRequest,
     JobScriptCreateRequest,
     JobScriptDetailedView,
+    JobScriptFileDetailedView,
     JobScriptListView,
     JobScriptUpdateRequest,
     RenderFromTemplateRequest,
@@ -298,6 +299,7 @@ async def job_script_get_file(
         "If a previous filename is provided, the file will be renamed from that. "
         "Upload file is optional in this scenario since the file content can be copied from previous file."
     ),
+    response_model=JobScriptFileDetailedView,
 )
 async def job_script_upload_file(
     id: int = Path(...),
@@ -329,7 +331,7 @@ async def job_script_upload_file(
             job_script, owner_email=secure_services.identity_payload.email
         )
 
-    await secure_services.file.job_script.upsert(
+    return await secure_services.file.job_script.upsert(
         parent_id=job_script.id,
         filename=filename,
         upload_content=upload_file,
