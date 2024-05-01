@@ -1,11 +1,11 @@
 import re
 import subprocess
 import sys
+from importlib.metadata import version
 
 from apscheduler.job import Job
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from loguru import logger
-from pkg_resources import get_distribution
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
 
@@ -78,7 +78,7 @@ async def self_update_agent():
     """
     global scheduler
 
-    current_version = get_distribution(package_name).version
+    current_version = version(package_name)
     upstream_version = await _fetch_upstream_version_info()
     logger.debug(
         f"Jobbergate Agent version info: current_version={current_version}, upstream_version={upstream_version}"
