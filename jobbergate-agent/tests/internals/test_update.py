@@ -117,7 +117,7 @@ def test_update_package(mocked_sys: mock.MagicMock, mocked_subprocess: mock.Magi
 )
 @mock.patch("jobbergate_agent.internals.update._fetch_upstream_version_info")
 @mock.patch("jobbergate_agent.internals.update._update_package")
-@mock.patch("jobbergate_agent.internals.update.get_distribution")
+@mock.patch("jobbergate_agent.internals.update.version")
 @mock.patch("jobbergate_agent.internals.update._need_update")
 @mock.patch("jobbergate_agent.internals.update.scheduler")
 @mock.patch("jobbergate_agent.internals.update.schedule_tasks")
@@ -127,7 +127,7 @@ async def test_self_update_agent(
     mocked_schedule_tasks: mock.MagicMock,
     mocked_scheduler: mock.MagicMock,
     mocked_need_update: mock.MagicMock,
-    mocked_get_distribution: mock.MagicMock,
+    mocked_version: mock.MagicMock,
     mocked_update_package: mock.MagicMock,
     mocked_fetch_upstream_version_info: mock.MagicMock,
     current_version: str,
@@ -139,7 +139,7 @@ async def test_self_update_agent(
     If an update is available, it is expected that the scheduler is shutdown
     and then restarted with the new version after the package update is done.
     """
-    mocked_get_distribution.return_value.version = current_version
+    mocked_version.return_value = current_version
     mocked_fetch_upstream_version_info.return_value = upstream_version
     mocked_need_update.return_value = is_update_available
     mocked_scheduler.shutdown = mock.Mock()
@@ -151,7 +151,7 @@ async def test_self_update_agent(
 
     await self_update_agent()
 
-    mocked_get_distribution.assert_called_once_with("jobbergate_agent")
+    mocked_version.assert_called_once_with("jobbergate_agent")
     mocked_fetch_upstream_version_info.assert_called_once_with()
     mocked_need_update.assert_called_once_with(current_version, upstream_version)
     if is_update_available:
