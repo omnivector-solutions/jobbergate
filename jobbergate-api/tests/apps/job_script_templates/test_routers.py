@@ -612,7 +612,7 @@ class TestJobTemplateFiles:
             (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.ADMIN]),
         ],
     )
-    async def test_create__success(
+    async def test_upsert_new_file(
         self,
         client,
         tester_email,
@@ -664,6 +664,154 @@ class TestJobTemplateFiles:
         assert template_file["parent_id"] == parent_id
         assert template_file["filename"] == dummy_file_path.name
         assert template_file["file_type"] == file_type
+
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_TEMPLATES_CREATE]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.ADMIN]),
+        ],
+    )
+    async def test_upsert_replace_content(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_template_data,
+        make_dummy_file,
+        synth_services,
+        is_owner,
+        permissions,
+    ):
+        parent_id = job_template_data.id
+        file_type = "ENTRYPOINT"
+        job_template_filename = "entrypoint.py.j2"
+
+        await synth_services.file.template.upsert(
+            parent_id=parent_id,
+            filename=job_template_filename,
+            upload_content="Old {{ name }}!",
+            file_type=file_type,
+        )
+
+        new_content = "New {{ name }}!"
+        dummy_file_path = make_dummy_file(job_template_filename, content=new_content)
+
+        requester_email = tester_email if is_owner else "another_" + tester_email
+
+        inject_security_header(requester_email, *permissions)
+        with open(dummy_file_path, mode="rb") as file:
+            response = await client.put(
+                f"jobbergate/job-script-templates/{parent_id}/upload/template/{file_type}",
+                files={"upload_file": (dummy_file_path.name, file, "text/plain")},
+            )
+
+        assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
+
+        template_file = await synth_services.file.template.get(
+            parent_id=parent_id, filename=job_template_filename
+        )
+
+        assert template_file is not None
+        assert template_file.parent_id == parent_id
+        assert template_file.filename == job_template_filename
+        assert template_file.file_type == file_type
+
+        file_content = await synth_services.file.template.get_file_content(template_file)
+        assert file_content.decode() == new_content
+
+    async def test_upsert_rename_file(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_template_data,
+        synth_services,
+    ):
+        parent_id = job_template_data.id
+        file_type = "ENTRYPOINT"
+        job_template_filename = "entrypoint.py.j2"
+
+        await synth_services.file.template.upsert(
+            parent_id=parent_id,
+            filename=job_template_filename,
+            upload_content="Original {{ name }}!",
+            file_type=file_type,
+        )
+
+        new_filename = "new_entrypoint.py.j2"
+
+        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
+        response = await client.put(
+            f"jobbergate/job-script-templates/{parent_id}/upload/template/{file_type}",
+            params={"filename": new_filename, "previous_filename": job_template_filename},
+        )
+
+        assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
+
+        template_file = await synth_services.file.template.get(parent_id=parent_id, filename=new_filename)
+
+        assert template_file is not None
+        assert template_file.parent_id == parent_id
+        assert template_file.filename == new_filename
+        assert template_file.file_type == file_type
+
+        file_content = await synth_services.file.template.get_file_content(template_file)
+        assert file_content.decode() == "Original {{ name }}!"
+
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_TEMPLATES_CREATE]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.ADMIN]),
+        ],
+    )
+    async def test_upsert_replace_content_and_rename(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_template_data,
+        make_dummy_file,
+        synth_services,
+        is_owner,
+        permissions,
+    ):
+        parent_id = job_template_data.id
+        file_type = "ENTRYPOINT"
+        job_template_filename = "entrypoint.py.j2"
+
+        await synth_services.file.template.upsert(
+            parent_id=parent_id,
+            filename=job_template_filename,
+            upload_content="Old {{ name }}!",
+            file_type=file_type,
+        )
+
+        new_content = "New {{ name }}!"
+        new_filename = "new_entrypoint.py.j2"
+
+        dummy_file_path = make_dummy_file(new_filename, content=new_content)
+        requester_email = tester_email if is_owner else "another_" + tester_email
+        inject_security_header(requester_email, *permissions)
+        with open(dummy_file_path, mode="rb") as file:
+            response = await client.put(
+                f"jobbergate/job-script-templates/{parent_id}/upload/template/{file_type}",
+                files={"upload_file": (dummy_file_path.name, file, "text/plain")},
+                params={"filename": dummy_file_path.name, "previous_filename": job_template_filename},
+            )
+
+        assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
+
+        template_file = await synth_services.file.template.get(parent_id=parent_id, filename=new_filename)
+
+        assert template_file is not None
+        assert template_file.parent_id == parent_id
+        assert template_file.filename == new_filename
+        assert template_file.file_type == file_type
+
+        file_content = await synth_services.file.template.get_file_content(template_file)
+        assert file_content.decode() == new_content
 
     async def test_create__fail_forbidden(
         self,

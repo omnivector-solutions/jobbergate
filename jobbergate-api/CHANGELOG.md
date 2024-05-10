@@ -4,8 +4,11 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+- Enabled template and job-script files to be renamed on upsert routes [PENG-2070]
+- Added a response model for PUT on `/job-scripts/{id}/upload/{file_type}`
 
 ## 5.2.0a0 -- 2024-04-29
+
 - Expanded permission sets from view/edit to create/read/update/delete
 - Added admin role to allow key users to update/delete entities owned by others [ASP-4989]
 

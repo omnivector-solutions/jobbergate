@@ -98,6 +98,7 @@ minversion = "7.0"
 addopts = [
     "--random-order",
     "--cov=jobbergate_api",
+    "--cov-report=term",
     "--cov-report=xml:tests/coverage.xml",
     "--no-flaky-report",
 ]

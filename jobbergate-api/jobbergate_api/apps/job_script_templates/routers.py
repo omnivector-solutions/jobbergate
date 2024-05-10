@@ -214,25 +214,38 @@ async def job_script_template_get_file(
 @router.put(
     "/{id_or_identifier}/upload/template/{file_type}",
     status_code=status.HTTP_200_OK,
-    description="Endpoint to upload a file to a job script template by id or identifier",
+    description=(
+        "Endpoint to upload a file to a job script template by id or identifier. "
+        "If a previous filename is provided, the file will be renamed from that. "
+        "Upload file is optional in this scenario since the file content can be copied from previous file."
+    ),
     response_model=TemplateFileDetailedView,
 )
 async def job_script_template_upload_file(
     id_or_identifier: int | str = Path(),
     file_type: FileType = Path(),
-    upload_file: UploadFile = File(..., description="File to upload"),
+    filename: str | None = Query(None, max_length=255),
+    upload_file: UploadFile | None = File(None, description="File to upload"),
+    previous_filename: str | None = Query(
+        None, description="Previous name of the file in case a rename is needed", max_length=255
+    ),
     secure_services: SecureService = Depends(
         secure_services(Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
     ),
 ):
     """Upload a file to a job script template by id or identifier."""
-    if upload_file.filename is None:
+    # This is included for backwards compatibility with the previous implementation
+    # where filename was recovered from the upload_file object
+    filename = filename or getattr(upload_file, "filename")
+    if not filename:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="The upload file has no filename",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Filename must be provided either as a query parameter or as part of the file upload",
         )
 
-    logger.debug(f"Uploading file {upload_file.filename} to job script template {id_or_identifier=}")
+    logger.debug(
+        f"Uploading {filename=} to job template {id_or_identifier=}; {file_type=}; {previous_filename=}"
+    )
     job_script_template = await secure_services.crud.template.get(id_or_identifier)
     if Permissions.ADMIN not in secure_services.identity_payload.permissions:
         secure_services.crud.template.ensure_attribute(
@@ -241,8 +254,9 @@ async def job_script_template_upload_file(
 
     return await secure_services.file.template.upsert(
         parent_id=job_script_template.id,
-        filename=upload_file.filename,
+        filename=filename,
         upload_content=upload_file,
+        previous_filename=previous_filename,
         file_type=file_type,
     )
 
