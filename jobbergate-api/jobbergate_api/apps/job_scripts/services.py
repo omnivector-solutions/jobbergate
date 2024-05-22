@@ -64,49 +64,54 @@ class JobScriptCrudService(CrudService):
         """
         result = AutoCleanResponse(archived=set(), deleted=set())
 
-        subquery = (
-            select(
-                JobSubmission.job_script_id,
-                func.max(JobSubmission.created_at).label("last_used"),
-            )  # type: ignore
-            .group_by(JobSubmission.job_script_id)
-            .subquery()
-        )
-        joined_query = (
-            select(self.model_type, subquery)  # type: ignore
-            .join(subquery, subquery.c.job_script_id == self.model_type.id, isouter=True)
-            .subquery()
-        )
-
         if days_to_delete := settings.AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE:
-            query = (
+            threshold = PendulumDateTime.utcnow().subtract(days=days_to_delete).naive()
+            subquery_unused_job_script = select(self.model_type.id).where(
+                self.model_type.is_archived.is_(True), self.model_type.updated_at < threshold
+            )
+            subquery_recent_child = (
+                select(JobSubmission.job_script_id)
+                .where(JobSubmission.job_script_id.in_(subquery_unused_job_script))
+                .group_by(JobSubmission.job_script_id)
+                .having(func.max(JobSubmission.created_at) >= threshold)
+            )
+
+            delete_query = (
                 delete(self.model_type)  # type: ignore
-                .where(self.model_type.is_archived.is_(True))
                 .where(
-                    func.greatest(joined_query.c.updated_at, joined_query.c.last_used)
-                    < PendulumDateTime.utcnow().subtract(days=days_to_delete).naive()
+                    self.model_type.id.in_(subquery_unused_job_script),
+                    ~self.model_type.id.in_(subquery_recent_child),
                 )
                 .returning(self.model_type.id)
             )
-            deleted = await self.session.execute(query)
+            deleted = await self.session.execute(delete_query)
             result.deleted.update(row[0] for row in deleted.all())
+        logger.debug(f"Job scripts marked as deleted: {result.deleted}")
 
         if days_to_archive := settings.AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE:
+            threshold = PendulumDateTime.utcnow().subtract(days=days_to_archive).naive()
+            subquery_unused_job_script = select(self.model_type.id).where(
+                self.model_type.is_archived.is_(False), self.model_type.updated_at < threshold
+            )
+            subquery_recent_child = (
+                select(JobSubmission.job_script_id)
+                .where(JobSubmission.job_script_id.in_(subquery_unused_job_script))
+                .group_by(JobSubmission.job_script_id)
+                .having(func.max(JobSubmission.created_at) >= threshold)
+            )
+
             update_query = (
                 update(self.model_type)  # type: ignore
-                .where(self.model_type.is_archived.is_(False))
                 .where(
-                    func.greatest(joined_query.c.updated_at, joined_query.c.last_used)
-                    < PendulumDateTime.utcnow().subtract(days=days_to_archive).naive()
+                    self.model_type.id.in_(subquery_unused_job_script),
+                    ~self.model_type.id.in_(subquery_recent_child),
                 )
                 .values(is_archived=True)
                 .returning(self.model_type.id)
             )
             archived = await self.session.execute(update_query)
             result.archived.update(row[0] for row in archived.all())
-
         logger.debug(f"Job scripts marked as archived: {result.archived}")
-        logger.debug(f"Job scripts marked as deleted: {result.deleted}")
 
         return result
 
