@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+
+## 5.2.0a1 -- 2024-05-24
 - Enabled template and job-script files to be renamed on upsert routes [PENG-2070]
 - Added a response model for PUT on `/job-scripts/{id}/upload/{file_type}`
 
