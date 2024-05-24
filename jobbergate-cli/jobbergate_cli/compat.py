@@ -36,7 +36,7 @@ def add_legacy_compatible_commands(app: typer.Typer):
     # Applications
     app.command(
         name="list-applications",
-        help="replaced by: applications list",
+        help="LIST the available applications, replaced by: applications list",
         deprecated=True,
         rich_help_panel="Backward compatibility",
     )(list_applications)
@@ -80,7 +80,7 @@ def add_legacy_compatible_commands(app: typer.Typer):
     # Job Scripts
     app.command(
         name="list-job-scripts",
-        help="replaced by: job-scripts list",
+        help="LIST job scripts, replaced by: job-scripts list",
         deprecated=True,
         rich_help_panel="Backward compatibility",
     )(list_job_scripts)
@@ -92,7 +92,7 @@ def add_legacy_compatible_commands(app: typer.Typer):
     )(get_job_script)
     app.command(
         name="create-job-script",
-        help="replaced by: job-scripts render",
+        help="CREATE a job script, replaced by: job-scripts render",
         deprecated=True,
         rich_help_panel="Backward compatibility",
     )(render_job_script)
@@ -136,7 +136,7 @@ def add_legacy_compatible_commands(app: typer.Typer):
     # Job Submissions
     app.command(
         name="list-job-submissions",
-        help="replaced by: job-submissions list",
+        help="LIST job submissions, replaced by: job-submissions list",
         deprecated=True,
         rich_help_panel="Backward compatibility",
     )(list_job_submissions)
@@ -148,7 +148,7 @@ def add_legacy_compatible_commands(app: typer.Typer):
     )(get_job_submission)
     app.command(
         name="create-job-submission",
-        help="replaced by: job-submissions create",
+        help="CREATE a job submission, replaced by: job-submissions create",
         deprecated=True,
         rich_help_panel="Backward compatibility",
     )(create_job_submission)
