@@ -411,7 +411,7 @@ async def test_submit_job_script__success_with_files(
     """
     Test that the ``submit_job_script()`` successfully submits a job.
 
-    Verifies that a PendingJobSubmission instance is submitted via the Slurm REST API
+    Verifies that a PendingJobSubmission instance is submitted via the sbatch command
     and that a ``slurm_job_id`` is returned.
     """
     pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
@@ -445,7 +445,7 @@ async def test_submit_job_script__success_without_files(
     """
     Test that the ``submit_job_script()`` successfully submits a job.
 
-    Verifies that a PendingJobSubmission instance is submitted via the Slurm REST API
+    Verifies that a PendingJobSubmission instance is submitted via the sbatch command
     and that a ``slurm_job_id`` is returned.
     """
     pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
@@ -483,9 +483,9 @@ async def test_submit_job_script__with_non_default_execution_directory(
     """
     Test that the ``submit_job_script()`` successfully submits a job with an exec dir.
 
-    Verifies that a PendingJobSubmission instance is submitted via the Slurm REST API
+    Verifies that a PendingJobSubmission instance is submitted via the sbatch command
     and that a ``slurm_job_id`` is returned. Verifies that the execution_directory is
-    taken from the request and submitted to slurm rest api.
+    taken from the request and that the job script is written to the correct directory.
     """
     exe_path = tmp_path / "exec"
     exe_path.mkdir()
@@ -641,7 +641,7 @@ async def test_submit_pending_jobs(
 ):
     """
     Test that the ``submit_pending_jobs()`` function can fetch pending job submissions,
-    submit each to slurm via the Slurm REST API, and update the job submission via the
+    submit each to slurm via the sbatch command, and update the job submission via the
     Jobbergate API.
     """
 

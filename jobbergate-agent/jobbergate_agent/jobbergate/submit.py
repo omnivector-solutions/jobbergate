@@ -189,7 +189,7 @@ async def submit_job_script(
     user_mapper: SlurmUserMapper,
 ) -> int:
     """
-    Submit a Job Script to slurm via the Slurm REST API.
+    Submit a Job Script to slurm via the sbatch command.
 
     :param: pending_job_submission: A job_submission with fields needed to submit.
     :returns: The ``slurm_job_id`` for the submitted job

@@ -47,30 +47,6 @@ class ActiveJobSubmission(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     slurm_job_id: int
 
 
-class SlurmJobParams(pydantic.BaseModel):
-    """
-    Specialized model for describing job submission parameters for Slurm REST API.
-    """
-
-    name: str
-    get_user_environment: int = 1
-    standard_error: Optional[Path]
-    standard_output: Optional[Path]
-    current_working_directory: Optional[Path]
-
-    class Config:
-        extra = "allow"
-
-
-class SlurmJobSubmission(pydantic.BaseModel):
-    """
-    Specialized model for describing a request to submit a job to Slurm REST API.
-    """
-
-    script: str
-    job: SlurmJobParams
-
-
 class SlurmSubmitError(pydantic.BaseModel):
     """
     Specialized model for error content in a SlurmSubmitResponse.
