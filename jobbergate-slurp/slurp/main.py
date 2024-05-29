@@ -3,15 +3,18 @@ The main slurp application.
 
 Provides a Typer app and associated commands.
 """
+
 import asyncio
 from datetime import datetime
 import subprocess
+from faker import Faker
+import pendulum
 
 import typer
 from loguru import logger
 
 from slurp.connections import build_url, db, reset_id_seq
-from slurp.migrators.applications import mark_uploaded, migrate_applications
+from slurp.migrators.applications import migrate_applications
 from slurp.migrators.job_scripts import migrate_job_scripts, transfer_job_script_files
 from slurp.migrators.job_submissions import migrate_job_submissions
 from slurp.pull_legacy import pull_applications, pull_job_scripts, pull_job_submissions, pull_users
@@ -85,3 +88,98 @@ def migrate(
     asyncio.run(transfer_job_script_files(legacy_job_scripts, db))
 
     logger.success("Finished migration!")
+
+
+@app.command()
+def fill(
+    n: int = typer.Argument(10, help="The number of rows to insert into the table."),
+):
+    """Fill the database with n rows."""
+    logger.debug(f"Inserting {n} rows into the table.")
+    fake = Faker()
+    today = pendulum.today()
+    with db(is_legacy=False) as nextgen_db:
+        mogrified_params = ",".join(
+            [
+                nextgen_db.mogrify(
+                    """
+                    (
+                        %(name)s,
+                        %(owner_email)s,
+                        %(created)s,
+                        %(created)s,
+                        %(is_archived)s
+                    )
+                    """,
+                    dict(
+                        name=fake.name(),
+                        owner_email=fake.email(),
+                        created=today.add(days=-fake.random_int(1, 365)),
+                        is_archived=fake.boolean(chance_of_getting_true=50),
+                    ),
+                )
+                for _ in range(n)
+            ]
+        )
+
+        nextgen_db.execute(
+            """
+            insert into job_scripts (
+                name,
+                owner_email,
+                created_at,
+                updated_at,
+                is_archived
+            )
+            values {}
+            """.format(
+                mogrified_params
+            ),
+        )
+        job_script_ids = nextgen_db.execute("select id from job_scripts").fetchall()
+
+        mogrified_params = ",".join(
+            [
+                nextgen_db.mogrify(
+                    """
+                    (
+                        %(job_script_id)s,
+                        %(name)s,
+                        %(status)s,
+                        %(client_id)s,
+                        %(owner_email)s,
+                        %(created)s,
+                        %(created)s
+                    )
+                    """,
+                    dict(
+                        job_script_id=parent_id["id"],
+                        name=fake.name(),
+                        status="CREATED",
+                        client_id=fake.uuid4(),
+                        owner_email=fake.email(),
+                        created=today.add(days=-fake.random_int(1, 365)),
+                    ),
+                )
+                for parent_id in job_script_ids
+            ]
+        )
+
+        nextgen_db.execute(
+            """
+            insert into job_submissions (
+                job_script_id,
+                name,
+                status,
+                client_id,
+                owner_email,
+                created_at,
+                updated_at
+            )
+            values {}
+            """.format(
+                mogrified_params
+            ),
+        )
+
+    logger.success("Finished filling the table.")
