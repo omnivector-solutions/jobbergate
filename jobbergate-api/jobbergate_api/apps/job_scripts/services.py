@@ -86,7 +86,7 @@ class JobScriptCrudService(CrudService):
             )
             deleted = await self.session.execute(delete_query)
             result.deleted.update(row[0] for row in deleted.all())
-        logger.debug(f"Job scripts marked as deleted: {result.deleted}")
+        logger.debug(f"Job scripts deleted: {result.deleted}")
 
         if days_to_archive := settings.AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE:
             threshold = PendulumDateTime.utcnow().subtract(days=days_to_archive).naive()
