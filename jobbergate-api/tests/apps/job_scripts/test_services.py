@@ -1,7 +1,7 @@
 """Database models for the job scripts resource."""
 
 from itertools import product
-from typing import Any
+from typing import Any, Callable, NamedTuple
 
 import pendulum
 import pytest
@@ -191,13 +191,38 @@ class TestIntegration:
         ]
 
 
+class TestEntryInfo(NamedTuple):
+    """Named tuple to store the info on a test entry."""
+
+    last_updated_delta: int
+    last_used_delta: int | None
+    is_archived: bool
+
+
+def filter_test_entries(
+    entries: dict[TestEntryInfo, dict[str, Any]],
+    **kwargs: set[Any],
+) -> set[int]:
+    """
+    This function returns a filter for test entries contained in a dictionary, based on specified target attributes.
+
+    Given that entries are a dictionary of TestEntryInfo objects and their associated data,
+    this function facilitates the retrieval of entry IDs that are contained in the set of values for each key in kwargs.
+    """
+    if not kwargs:
+        return set()
+    return set(
+        value["id"] for key, value in entries.items() if all(getattr(key, k) in v for k, v in kwargs.items())
+    )
+
+
 class TestAutoCleanUnusedJobScripts:
     """
     Test the auto_clean_unused_job_scripts method.
     """
 
     DAYS_TO_ARCHIVE = 1
-    DAYS_TO_DELETE = 3
+    DAYS_TO_DELETE = 2
 
     @pytest.fixture
     def time_now(self):
@@ -209,17 +234,45 @@ class TestAutoCleanUnusedJobScripts:
             yield time_now
 
     @pytest.fixture
-    async def dummy_data(self, fill_job_script_data, time_now, synth_services):
+    async def dummy_data(
+        self, fill_job_script_data, fill_job_submission_data, time_now, synth_services
+    ) -> dict[TestEntryInfo, dict[str, Any]]:
         """
-        Create dummy test data.
+        Create dummy test data covering a range of possible scenarios.
+
+        The current time is pinned by pendulum, and the test data covers a range of days added to it.
+        The test data is created with a range of possible values for last_updated_delta, last_used_delta and
+        is_archived.
+        Last used means the last time a job submission was created with the job script. If it is None,
+        it means the job script was never used to create a job submission.
         """
-        result = []
-        for i, is_archived in product([0, 2, 4], [True, False]):
-            data = fill_job_script_data(name=f"name-{i}", is_archived=is_archived)
-            with pendulum.test(time_now.add(days=i)):
+        result = {}
+
+        LAST_UPDATED_DELTA_VALUES = (0, 1, 2)
+        LAST_USED_DELTA_VALUES = (None, 0, 1, 2, 3)
+        IS_ARCHIVED_VALUES = (True, False)
+
+        for e in product(LAST_UPDATED_DELTA_VALUES, LAST_USED_DELTA_VALUES, IS_ARCHIVED_VALUES):
+            entry_info = TestEntryInfo(*e)
+            data = fill_job_script_data(is_archived=entry_info.is_archived)
+
+            with pendulum.test(time_now.add(days=entry_info.last_updated_delta)):
                 job_script = await synth_services.crud.job_script.create(**data)
+
             data["id"] = job_script.id
-            result.append(data)
+
+            if entry_info.last_used_delta is not None:
+                with pendulum.test(time_now.add(days=entry_info.last_used_delta)):
+                    job_submission = await synth_services.crud.job_submission.create(
+                        **fill_job_submission_data(
+                            status=JobSubmissionStatus.CREATED,
+                            client_id="test-client-id",
+                            job_script_id=data["id"],
+                        )
+                    )
+                data["child_job_submission_id"] = job_submission.id
+
+            result[entry_info] = data
 
         return result
 
@@ -232,6 +285,7 @@ class TestAutoCleanUnusedJobScripts:
                 AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE=None,
                 AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE=None,
             ),
+            pendulum.test(time_now.add(days=1_000)),
         ):
             result = await synth_services.crud.job_script.auto_clean_unused_job_scripts()
 
@@ -240,94 +294,62 @@ class TestAutoCleanUnusedJobScripts:
 
         jobs_list = await synth_services.crud.job_script.list()
 
-        assert {j.id for j in jobs_list} == {j["id"] for j in dummy_data}
+        assert {j.id for j in jobs_list} == {j["id"] for j in dummy_data.values()}
 
-    async def test_auto_clean__day_0(self, dummy_data, tweak_settings, time_now, synth_services):
-        """
-        Test that nothing is deleted or archived on day 0, because the conditions are not met.
-        """
-        with (
-            tweak_settings(
-                AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE=self.DAYS_TO_ARCHIVE,
-                AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE=self.DAYS_TO_DELETE,
-            ),
-            pendulum.test(time_now),
-        ):
-            result = await synth_services.crud.job_script.auto_clean_unused_job_scripts()
-
-        assert result.archived == set()
-        assert result.deleted == set()
-
-        jobs_list = await synth_services.crud.job_script.list()
-
-        assert {j.id for j in jobs_list} == {j["id"] for j in dummy_data}
-
-    async def test_auto_clean__day_2(self, dummy_data, tweak_settings, time_now, synth_services):
-        """
-        Test that not archived job scripts are archived on day 2, but nothing is deleted.
-        """
-        with (
-            tweak_settings(
-                AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE=self.DAYS_TO_ARCHIVE,
-                AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE=self.DAYS_TO_DELETE,
-            ),
-            pendulum.test(time_now.add(days=2)),
-        ):
-            result = await synth_services.crud.job_script.auto_clean_unused_job_scripts()
-
-        assert result.archived == set(s["id"] for s in dummy_data if s["is_archived"] is False)
-        assert result.deleted == set()
-
-        jobs_list = await synth_services.crud.job_script.list()
-
-        assert {j.id for j in jobs_list} == {j["id"] for j in dummy_data}
-
-    async def test_auto_clean__day_4(self, dummy_data, tweak_settings, time_now, synth_services):
-        """
-        Test that not archived job script are archived, while archived job scripts are deleted.
-        """
-        with (
-            tweak_settings(
-                AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE=self.DAYS_TO_ARCHIVE,
-                AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE=self.DAYS_TO_DELETE,
-            ),
-            pendulum.test(time_now.add(days=4)),
-        ):
-            result = await synth_services.crud.job_script.auto_clean_unused_job_scripts()
-
-        assert result.archived == set(s["id"] for s in dummy_data if s["is_archived"] is False)
-        assert result.deleted == set(s["id"] for s in dummy_data if s["is_archived"] is True)
-
-        jobs_list = await synth_services.crud.job_script.list()
-
-        assert {j.id for j in jobs_list} == {j["id"] for j in dummy_data} - result.deleted
-
-    async def test_auto_clean__day_4_recently_used(
-        self, dummy_data, tweak_settings, time_now, fill_job_submission_data, synth_services
+    @pytest.mark.parametrize("time_delta", list(range(7)))
+    async def test_auto_clean__set(
+        self,
+        time_delta,
+        dummy_data,
+        tweak_settings,
+        time_now,
+        synth_services,
     ):
         """
-        Test that nothing is deleted or archived on day 4, because all of them have a recent job submission.
+        Test the expected entries are archived or deleted when advancing the current time day by day.
+
+        The test data is created with a range of possible values for last_updated_delta, last_used_delta and
+        is_archived. Considering the `DAYS_TO_ARCHIVE` and `DAYS_TO_DELETE` settings,
+        we expect the following behavior:
+        - On day zero, nothing should be archived or deleted.
+          - Notice `set(range(0))` and `set(range(-1))` are empty sets,
+            so no entries are returned by the filters.
+        - On day one:
+          - Entries not previously archived should be archived if last_updated_delta is 0, and
+            last_used_delta is 0 or None.
+          - No entries should be deleted.
+        - On day two:
+            - Entries not previously archived should be archived if last_updated_delta is 0 or 1, and
+                last_used_delta is 0, 1, or None.
+            - Entries previously archived should be deleted if last_updated_delta is 0, and last_used_delta
+              is 0 or None.
+        - And so on for the following days.
         """
         with (
             tweak_settings(
                 AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE=self.DAYS_TO_ARCHIVE,
                 AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE=self.DAYS_TO_DELETE,
             ),
-            pendulum.test(time_now.add(days=4)),
+            pendulum.test(time_now.add(days=time_delta, minutes=1)),
         ):
-            for item in dummy_data:
-                await synth_services.crud.job_submission.create(
-                    **fill_job_submission_data(
-                        status=JobSubmissionStatus.CREATED,
-                        client_id="test-client-id",
-                        job_script_id=item["id"],
-                    )
-                )
             result = await synth_services.crud.job_script.auto_clean_unused_job_scripts()
 
-        assert result.archived == set()
-        assert result.deleted == set()
+        expected_archived_ids = filter_test_entries(
+            dummy_data,
+            is_archived={False},
+            last_updated_delta=set(range(time_delta)),
+            last_used_delta=set(range(time_delta)) | {None},
+        )
+        assert result.archived == expected_archived_ids
 
+        expected_deleted_ids = filter_test_entries(
+            dummy_data,
+            is_archived={True},
+            last_updated_delta=set(range(time_delta - 1)),
+            last_used_delta=set(range(time_delta - 1)) | {None},
+        )
+        assert result.deleted == expected_deleted_ids
+
+        # Assert the deleted entries are not in the list of job scripts
         jobs_list = await synth_services.crud.job_script.list()
-
-        assert {j.id for j in jobs_list} == {j["id"] for j in dummy_data}
+        assert {j.id for j in jobs_list} == {j["id"] for j in dummy_data.values()} - result.deleted

@@ -1,5 +1,7 @@
 """Delete unused files from jobbergate's file storage."""
 
+import asyncio
+
 from fastapi import BackgroundTasks
 from loguru import logger
 from sqlalchemy import select
@@ -32,10 +34,17 @@ async def get_files_to_delete(session, table, bucket) -> set[str]:
 
 async def delete_files_from_bucket(bucket, files_to_delete: set[str]) -> None:
     """Delete files from the bucket."""
-    for file_to_delete in files_to_delete:
-        file = await bucket.Object(file_to_delete)
-        await file.delete()
-        logger.debug(f"Deleted file {file_to_delete} from bucket {bucket.name}")
+    MAX_CONCURRENT_REQUESTS = 25
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+
+    async def delete_file(file: str) -> None:
+        async with semaphore:
+            obj = await bucket.Object(file)
+            await obj.delete()
+        logger.debug(f"Deleted file {file} from bucket {bucket.name}")
+
+    tasks = [delete_file(file) for file in files_to_delete]
+    await asyncio.gather(*tasks)
 
 
 async def garbage_collect(session, bucket, list_of_tables, background_tasks: BackgroundTasks) -> None:
