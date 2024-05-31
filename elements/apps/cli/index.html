@@ -1200,7 +1200,7 @@ This means that some of the questions can be truncated and will not be fully vis
 <ul>
 <li><code>SBATCH_PATH</code> is configured on the CLI, so the payload to create a new submission does not include <code>slurm_job_id</code>.</li>
 <li>The API processes the creation as usual, giving it the status <code>CREATED</code> and adding the new entry on the database.</li>
-<li>The agent pulls pending jobs (<code>status=CREATED</code>) and submit them to slurm on every cycle using <a href="https://slurm.schedmd.com/rest.html">Slurm Rest Api</a>.</li>
+<li>The agent pulls pending jobs (<code>status=CREATED</code>) and submit them to slurm on every cycle.</li>
 <li>The agent pulls active jobs (<code>STATUS=SUBMITTED</code>) and update their status on every cycle.</li>
 </ul>
 </li>

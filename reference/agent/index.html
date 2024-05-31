@@ -1047,20 +1047,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#jobbergate_agent.jobbergate.schemas.SlurmJobParams" class="md-nav__link">
-    SlurmJobParams
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_agent.jobbergate.schemas.SlurmJobSubmission" class="md-nav__link">
-    SlurmJobSubmission
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#jobbergate_agent.jobbergate.schemas.SlurmSubmitError" class="md-nav__link">
     SlurmSubmitError
   </a>
@@ -1789,20 +1775,6 @@
           <li class="md-nav__item">
   <a href="#jobbergate_agent.jobbergate.schemas.SlurmJobData" class="md-nav__link">
     SlurmJobData
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_agent.jobbergate.schemas.SlurmJobParams" class="md-nav__link">
-    SlurmJobParams
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_agent.jobbergate.schemas.SlurmJobSubmission" class="md-nav__link">
-    SlurmJobSubmission
   </a>
   
 </li>
@@ -2954,86 +2926,6 @@ to the Jobbergate API.</p>
 
 
 
-<h6 id="jobbergate_agent.jobbergate.schemas.SlurmJobParams" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">SlurmJobParams</span>
-
-
-</h6>
-
-
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
-
-  
-      <p>Specialized model for describing job submission parameters for Slurm REST API.</p>
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-
-<h6 id="jobbergate_agent.jobbergate.schemas.SlurmJobSubmission" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">SlurmJobSubmission</span>
-
-
-</h6>
-
-
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
-
-  
-      <p>Specialized model for describing a request to submit a job to Slurm REST API.</p>
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-
 <h6 id="jobbergate_agent.jobbergate.schemas.SlurmSubmitError" class="doc doc-heading">
           <span class="doc doc-object-name doc-class-name">SlurmSubmitError</span>
 
@@ -3381,7 +3273,7 @@ Reject the submission if there are support files with WRITE_SUBMISSION_FILES set
 
   <div class="doc doc-contents ">
   
-      <p>Submit a Job Script to slurm via the Slurm REST API.</p>
+      <p>Submit a Job Script to slurm via the sbatch command.</p>
 <p>:param: pending_job_submission: A job_submission with fields needed to submit.
 :returns: The <code>slurm_job_id</code> for the submitted job</p>
 
