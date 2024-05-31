@@ -5,10 +5,12 @@ This file keeps track of all notable changes to jobbergate-api
 ## Unreleased
 
 
+## 5.2.0a2 -- 2024-05-31
+- Improve performance on Automatically clean up unused job scripts [ASP-5186]
+
 ## 5.2.0a1 -- 2024-05-24
 - Enabled template and job-script files to be renamed on upsert routes [PENG-2070]
 - Added a response model for PUT on `/job-scripts/{id}/upload/{file_type}`
-- Improve performance on Automatically clean up unused job scripts [ASP-5186]
 
 ## 5.2.0a0 -- 2024-04-29
 
