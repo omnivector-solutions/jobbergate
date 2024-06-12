@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any, Optional
 
 import pydantic
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.schemas import LengthLimitedStr, TableResource
@@ -87,36 +87,30 @@ class RunTimeConfig(BaseModel):
     It also loads the contend directly from the json at the request payload.
     """
 
+    @model_validator(mode="before")
     @classmethod
-    def __get_validators__(cls):
+    def coerce_string_to_dict(cls, data):
         """
         Get the validators.
         """
-        yield cls.validate_to_json
+        if isinstance(data, str):
+            return json.loads(data)
+        else:
+            return data
 
-    @classmethod
-    def validate_to_json(cls, value):
-        """
-        Validate the produced json.
-        """
-        if isinstance(value, str):
-            return cls(**json.loads(value))
-        return value
-
-    class Config:
-        extra = pydantic.Extra.allow
-        schema_extra = job_template_meta_mapper
+    model_config = ConfigDict(extra="allow", json_schema_extra=job_template_meta_mapper)
 
 
 class JobTemplateCreateRequest(BaseModel):
     """Schema for the request to create a job template."""
 
     name: LengthLimitedStr
-    identifier: LengthLimitedStr | None
-    description: LengthLimitedStr | None
-    template_vars: dict[LengthLimitedStr, Any] | None
+    identifier: LengthLimitedStr | None = None
+    description: LengthLimitedStr | None = None
+    template_vars: dict[LengthLimitedStr, Any] | None = None
 
-    @validator("name")
+    @field_validator("name")
+    @classmethod
     def not_empty_str(cls, value):
         """
         Do not allow a string value to be empty.
@@ -125,7 +119,8 @@ class JobTemplateCreateRequest(BaseModel):
             raise ValueError("Cannot be an empty string")
         return value
 
-    @validator("identifier")
+    @field_validator("identifier")
+    @classmethod
     def empty_str_to_none(cls, value):
         """
         Coerce an empty string value to None.
@@ -134,19 +129,19 @@ class JobTemplateCreateRequest(BaseModel):
             return None
         return value
 
-    class Config:
-        schema_extra = job_template_meta_mapper
+    model_config = ConfigDict(json_schema_extra=job_template_meta_mapper)
 
 
 class JobTemplateCloneRequest(BaseModel):
     """Schema for the request to clone a job template."""
 
-    name: LengthLimitedStr | None
-    identifier: LengthLimitedStr | None
-    description: LengthLimitedStr | None
-    template_vars: dict[LengthLimitedStr, Any] | None
+    name: LengthLimitedStr | None = None
+    identifier: LengthLimitedStr | None = None
+    description: LengthLimitedStr | None = None
+    template_vars: dict[LengthLimitedStr, Any] | None = None
 
-    @validator("name")
+    @field_validator("name")
+    @classmethod
     def not_empty_str(cls, value):
         """
         Do not allow a string value to be empty.
@@ -155,7 +150,8 @@ class JobTemplateCloneRequest(BaseModel):
             raise ValueError("Cannot be an empty string")
         return value
 
-    @validator("identifier")
+    @field_validator("identifier")
+    @classmethod
     def empty_str_to_none(cls, value):
         """
         Coerce an empty string value to None.
@@ -164,20 +160,20 @@ class JobTemplateCloneRequest(BaseModel):
             return None
         return value
 
-    class Config:
-        schema_extra = job_template_meta_mapper
+    model_config = ConfigDict(json_schema_extra=job_template_meta_mapper)
 
 
 class JobTemplateUpdateRequest(BaseModel):
     """Schema for the request to update a job template."""
 
-    name: LengthLimitedStr | None
-    identifier: LengthLimitedStr | None
-    description: LengthLimitedStr | None
-    template_vars: dict[LengthLimitedStr, Any] | None
-    is_archived: bool | None
+    name: LengthLimitedStr | None = None
+    identifier: LengthLimitedStr | None = None
+    description: LengthLimitedStr | None = None
+    template_vars: dict[LengthLimitedStr, Any] | None = None
+    is_archived: bool | None = None
 
-    @validator("name")
+    @field_validator("name")
+    @classmethod
     def not_empty_str(cls, value):
         """
         Do not allow a string value to be empty.
@@ -186,7 +182,8 @@ class JobTemplateUpdateRequest(BaseModel):
             raise ValueError("Cannot be an empty string")
         return value
 
-    @validator("identifier")
+    @field_validator("identifier")
+    @classmethod
     def empty_str_to_none(cls, value):
         """
         Coerce an empty string value to None.
@@ -195,8 +192,7 @@ class JobTemplateUpdateRequest(BaseModel):
             return None
         return value
 
-    class Config:
-        schema_extra = job_template_meta_mapper
+    model_config = ConfigDict(json_schema_extra=job_template_meta_mapper)
 
 
 class TemplateFileDetailedView(BaseModel):
@@ -208,9 +204,7 @@ class TemplateFileDetailedView(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
-        schema_extra = job_template_meta_mapper
+    model_config = ConfigDict(from_attributes=True, json_schema_extra=job_template_meta_mapper)
 
 
 class WorkflowFileDetailedView(BaseModel):
@@ -219,33 +213,38 @@ class WorkflowFileDetailedView(BaseModel):
     parent_id: int
     filename: str
     runtime_config: Optional[dict[str, Any]] = {}
-    created_at: Optional[datetime]
-    updated_at: Optional[datetime]
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
-    class Config:
-        orm_mode = True
-        schema_extra = job_template_meta_mapper
+    model_config = ConfigDict(from_attributes=True, json_schema_extra=job_template_meta_mapper)
 
 
 class JobTemplateListView(TableResource):
     """Schema for the response to get a list of entries."""
 
-    identifier: Optional[str]
-    cloned_from_id: Optional[int]
+    identifier: Optional[str] = None
+    cloned_from_id: Optional[int] = None
 
-    class Config:
-        schema_extra = job_template_meta_mapper
+    model_config = ConfigDict(json_schema_extra=job_template_meta_mapper)
 
 
-class JobTemplateDetailedView(JobTemplateListView):
+class JobTemplateBaseDetailedView(JobTemplateListView):
+    """
+    Schema for the request to an entry.
+
+    Notice the files are omitted.
+    """
+
+    template_vars: dict[str, Any] | None
+
+
+class JobTemplateDetailedView(JobTemplateBaseDetailedView):
     """
     Schema for the request to an entry.
 
     Notice the files default to None, as they are not always requested, to differentiate between
     an empty list when they are requested, but no file is found.
     """
-
-    template_vars: dict[str, Any] | None
 
     template_files: list[TemplateFileDetailedView] | None
     workflow_files: list[WorkflowFileDetailedView] | None

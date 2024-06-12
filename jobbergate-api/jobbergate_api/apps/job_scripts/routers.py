@@ -14,8 +14,10 @@ from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.dependencies import SecureService, secure_services
 from jobbergate_api.apps.garbage_collector import garbage_collect
 from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate
+from jobbergate_api.apps.job_script_templates.tools import coerce_id_or_identifier
 from jobbergate_api.apps.job_scripts.models import JobScriptFile
 from jobbergate_api.apps.job_scripts.schemas import (
+    JobScriptBaseView,
     JobScriptCloneRequest,
     JobScriptCreateRequest,
     JobScriptDetailedView,
@@ -51,7 +53,7 @@ def job_script_auto_clean_unused_entries(
 @router.post(
     "",
     status_code=status.HTTP_201_CREATED,
-    response_model=JobScriptDetailedView,
+    response_model=JobScriptBaseView,
     description="Endpoint for creating a stand alone job script. Use file upload to add files.",
 )
 async def job_script_create(
@@ -69,7 +71,7 @@ async def job_script_create(
 
     return await secure_services.crud.job_script.create(
         owner_email=secure_services.identity_payload.email,
-        **create_request.dict(exclude_unset=True),
+        **create_request.model_dump(exclude_unset=True),
     )
 
 
@@ -96,7 +98,7 @@ async def job_script_clone(
     cloned_instance = await secure_services.crud.job_script.clone_instance(
         original_instance,
         owner_email=secure_services.identity_payload.email,
-        **clone_request.dict(exclude_unset=True, exclude_none=True),
+        **clone_request.model_dump(exclude_unset=True, exclude_none=True),
     )
 
     for file in original_instance.files:
@@ -115,16 +117,17 @@ async def job_script_clone(
 async def job_script_create_from_template(
     create_request: JobScriptCreateRequest,
     render_request: RenderFromTemplateRequest,
-    id_or_identifier: int | str = Path(...),
+    id_or_identifier: str = Path(...),
     secure_services: SecureService = Depends(
         secure_services(Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)
     ),
 ):
     """Create a new job script from a job script template."""
-    logger.info(f"Creating a new job script from {id_or_identifier=} with {create_request=}")
+    typed_id_or_identifier = coerce_id_or_identifier(id_or_identifier)
+    logger.info(f"Creating a new job script from {typed_id_or_identifier=} with {create_request=}")
 
     base_template = cast(
-        JobScriptTemplate, await secure_services.crud.template.get(id_or_identifier, include_files=True)
+        JobScriptTemplate, await secure_services.crud.template.get(typed_id_or_identifier, include_files=True)
     )
 
     required_map = render_request.template_output_name_mapping
@@ -136,7 +139,7 @@ async def job_script_create_from_template(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The following required files are missing for job template {}: {}".format(
-                id_or_identifier, ", ".join(missing_keys)
+                typed_id_or_identifier, ", ".join(missing_keys)
             ),
         )
 
@@ -156,7 +159,7 @@ async def job_script_create_from_template(
     job_script = await secure_services.crud.job_script.create(
         owner_email=secure_services.identity_payload.email,
         parent_template_id=base_template.id,
-        **create_request.dict(exclude_unset=True),
+        **create_request.model_dump(exclude_unset=True),
     )
 
     for new_filename, template_file in mapped_template_files.items():
@@ -213,7 +216,8 @@ async def job_script_get_list(
     """Get a list of job scripts."""
     logger.debug("Preparing to list job scripts")
 
-    list_kwargs = list_params.dict(exclude_unset=True, exclude={"user_only"})
+    list_kwargs = list_params.model_dump(exclude_unset=True, exclude={"user_only"})
+    list_kwargs["include_parent"] = True
 
     if from_job_script_template_id is not None:
         list_kwargs["parent_template_id"] = from_job_script_template_id
@@ -238,12 +242,12 @@ async def job_script_update(
 ):
     """Update a job script template by id or identifier."""
     logger.info(f"Updating job script {id=} with {update_params=}")
-    instance = await secure_services.crud.job_script.get(id)
+    instance = await secure_services.crud.job_script.get(id, include_parent=True)
     if Permissions.ADMIN not in secure_services.identity_payload.permissions:
         secure_services.crud.job_script.ensure_attribute(
             instance, owner_email=secure_services.identity_payload.email
         )
-    return await secure_services.crud.job_script.update(id, **update_params.dict(exclude_unset=True))
+    return await secure_services.crud.job_script.update(id, **update_params.model_dump(exclude_unset=True))
 
 
 @router.delete(

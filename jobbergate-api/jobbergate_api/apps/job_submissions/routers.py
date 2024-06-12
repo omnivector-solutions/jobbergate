@@ -80,7 +80,7 @@ async def job_submission_create(
         submission_status = JobSubmissionStatus.SUBMITTED
 
     new_job_submission = await secure_services.crud.job_submission.create(
-        **create_request.dict(exclude_unset=True),
+        **create_request.model_dump(exclude_unset=True),
         owner_email=secure_services.identity_payload.email,
         status=submission_status,
     )
@@ -125,7 +125,11 @@ async def job_submission_get_list(
     """List job_submissions for the authenticated user."""
     logger.debug("Fetching job submissions")
 
-    list_kwargs = list_params.dict(exclude_unset=True, exclude={"user_only", "include_archived"})
+    list_kwargs = list_params.model_dump(
+        exclude_unset=True,
+        exclude={"user_only", "include_archived"},
+    )
+    list_kwargs["include_parent"] = True
 
     if list_params.user_only:
         list_kwargs["owner_email"] = secure_services.identity_payload.email
@@ -142,9 +146,7 @@ async def job_submission_get_list(
                 detail="Invalid slurm_job_ids param. Must be a comma-separated list of integers",
             )
 
-    return await secure_services.crud.job_submission.paginated_list(
-        **list_kwargs,
-    )
+    return await secure_services.crud.job_submission.paginated_list(**list_kwargs)
 
 
 @router.delete(
@@ -189,7 +191,9 @@ async def job_submission_update(
         secure_services.crud.job_submission.ensure_attribute(
             instance, owner_email=secure_services.identity_payload.email
         )
-    return await secure_services.crud.job_submission.update(id, **update_params.dict(exclude_unset=True))
+    return await secure_services.crud.job_submission.update(
+        id, **update_params.model_dump(exclude_unset=True)
+    )
 
 
 # The "agent" routes are used for agents to fetch pending job submissions and update their statuses

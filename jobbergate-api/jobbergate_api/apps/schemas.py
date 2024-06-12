@@ -1,48 +1,67 @@
 """Define app-wide, reusable pydantic schemas."""
 
-from typing import Annotated, Any
+import datetime
+from typing import Annotated, Any, List, Type
 
+import pendulum
 import sqlalchemy
-from pendulum.datetime import DateTime
-from pydantic import BaseModel, Field
-from pydantic.utils import GetterDict
+from pydantic import BaseModel, ConfigDict, Field, GetCoreSchemaHandler
+from pydantic_core import PydanticCustomError, core_schema
+from pydantic_extra_types.pendulum_dt import DateTime
 
 # Make both Pydantic and mypy happy:
 LengthLimitedStr = Annotated[str, Field(max_length=255)]
 
 
-class IgnoreLazyGetterDict(GetterDict):
+class PydanticDateTime(pendulum.DateTime):
     """
-    A custom GetterDict to avoid triggering lazy-loads when accessing attributes.
+    A `pendulum.DateTime` object. At runtime, this type decomposes into pendulum.DateTime automatically.
+    This type exists because Pydantic throws a fit on unknown types.
 
-    In this way, only explicitly joined relationships will be loaded and included in the response.
-
-    References:
-        https://github.com/tiangolo/fastapi/discussions/5942
+    This code is borrowed and enhanced from the `pydantic-extra-types` module but provides conversion from
+    standard datetimes as well.
     """
 
-    def __getitem__(self, key: str) -> Any:
-        """
-        Customize __getitem__ to avoid triggering lazy-loads when accessing attributes.
-        """
-        if self._is_lazy_loaded(key):
-            raise KeyError(f"The attribute '{key}' is not loaded.")
-        super().__getitem__(key)
+    __slots__: List[str] = []
 
-    def get(self, key: Any, default: Any = None) -> Any:
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source: Type[Any], handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
         """
-        Get an attribute value from the object, or return a default value if the attribute does not exist.
+        Return a Pydantic CoreSchema with the Datetime validation
+
+        Args:
+            source: The source type to be converted.
+            handler: The handler to get the CoreSchema.
+
+        Returns:
+            A Pydantic CoreSchema with the Datetime validation.
         """
-        if self._is_relationship(key) and self._is_lazy_loaded(key):
-            return default
-        return getattr(self._obj, key, default)
+        return core_schema.no_info_wrap_validator_function(cls._validate, core_schema.datetime_schema())
 
-    def _is_lazy_loaded(self, key: Any) -> bool:
-        return key in sqlalchemy.orm.attributes.instance_state(self._obj).unloaded  # type: ignore
+    @classmethod
+    def _validate(cls, value: Any, handler: core_schema.ValidatorFunctionWrapHandler) -> Any:
+        """
+        Validate the datetime object and return it.
 
-    def _is_relationship(self, key: Any):
-        relationship_keys = [r.key for r in sqlalchemy.inspect(self._obj.__class__).relationships]
-        return key in relationship_keys
+        Args:
+            value: The value to validate.
+            handler: The handler to get the CoreSchema.
+
+        Returns:
+            The validated value or raises a PydanticCustomError.
+        """
+        if isinstance(value, pendulum.DateTime):
+            return handler(value)
+
+        if isinstance(value, datetime.datetime):
+            return handler(pendulum.instance(value))
+
+        try:
+            return handler(pendulum.parse(value))
+        except Exception as exc:
+            raise PydanticCustomError("value_error", "value is not a valid timestamp") from exc
 
 
 class TableResource(BaseModel):
@@ -53,14 +72,12 @@ class TableResource(BaseModel):
     id: int
     name: str
     owner_email: str
-    created_at: DateTime
-    updated_at: DateTime
+    created_at: PydanticDateTime
+    updated_at: PydanticDateTime
     is_archived: bool
-    description: str | None
+    description: str | None = None
 
-    class Config:
-        orm_mode = True
-        getter_dict = IgnoreLazyGetterDict
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ListParams(BaseModel):
@@ -70,7 +87,7 @@ class ListParams(BaseModel):
 
     sort_ascending: bool = True
     user_only: bool = False
-    search: LengthLimitedStr | None
-    sort_field: LengthLimitedStr | None
+    search: LengthLimitedStr | None = None
+    sort_field: LengthLimitedStr | None = None
     include_archived: bool = False
     include_parent: bool = False

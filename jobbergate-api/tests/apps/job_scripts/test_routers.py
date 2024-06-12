@@ -26,7 +26,7 @@ async def test_create_stand_alone_job_script(
     assert response_data["name"] == payload["name"]
     assert response_data["description"] == payload["description"]
     assert response_data["owner_email"] == tester_email
-    assert response_data["files"] is None
+    assert "files" not in response_data
     assert response_data["parent_template_id"] is None
 
     created_id = response_data["id"]
@@ -696,7 +696,7 @@ class TestListJobScripts:
         assert response_data["total"] == len(expected_names)
         assert expected_names == actual_names
 
-    async def test_list_job_scripts__include_parent(
+    async def test_list_job_scripts__with_parent(
         self,
         client,
         tester_email,
@@ -728,7 +728,7 @@ class TestListJobScripts:
             )
 
         inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
-        response = await client.get("jobbergate/job-scripts", params={"include_parent": True})
+        response = await client.get("jobbergate/job-scripts")
         assert response.status_code == 200, f"Get failed: {response.text}"
 
         response_data = response.json()
@@ -741,42 +741,6 @@ class TestListJobScripts:
 
         assert response_data["items"][0]["template"] is not None
         assert response_data["items"][0]["template"]["name"] == base_template.name
-        assert response_data["items"][1]["template"] is None
-
-    async def test_list_job_scripts__not_include_parent(
-        self,
-        client,
-        tester_email,
-        inject_security_header,
-        fill_job_template_data,
-        fill_all_job_script_data,
-        synth_services,
-    ):
-        base_template = await synth_services.crud.template.create(**fill_job_template_data())
-
-        data = fill_all_job_script_data(
-            {"name": "name-1", "parent_template_id": base_template.id},
-            {"name": "name-2"},
-        )
-
-        for item in data:
-            await synth_services.crud.job_script.create(**item)
-
-        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
-        response = await client.get("jobbergate/job-scripts", params={"include_parent": False})
-        assert response.status_code == 200, f"Get failed: {response.text}"
-
-        response_data = response.json()
-
-        logger.info(f"{response_data=}")
-
-        expected_names = {i["name"] for i in data}
-        actual_names = {i["name"] for i in response_data["items"]}
-
-        assert response_data["total"] == len(expected_names)
-        assert expected_names == actual_names
-
-        assert response_data["items"][0]["template"] is None
         assert response_data["items"][1]["template"] is None
 
     async def test_list_job_scripts__search(

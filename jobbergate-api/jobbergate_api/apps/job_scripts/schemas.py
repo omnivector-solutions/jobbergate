@@ -6,7 +6,7 @@ from datetime import datetime
 from textwrap import dedent
 from typing import Any
 
-from pydantic import BaseModel, NonNegativeInt
+from pydantic import BaseModel, ConfigDict, NonNegativeInt
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.job_script_templates.schemas import JobTemplateListView
@@ -88,10 +88,9 @@ class JobScriptCreateRequest(BaseModel):
     """
 
     name: LengthLimitedStr
-    description: LengthLimitedStr | None
+    description: LengthLimitedStr | None = None
 
-    class Config:
-        schema_extra = job_script_meta_mapper
+    model_config = ConfigDict(json_schema_extra=job_script_meta_mapper)
 
 
 class JobScriptCloneRequest(BaseModel):
@@ -99,22 +98,20 @@ class JobScriptCloneRequest(BaseModel):
     Request model for cloning JobScript instances.
     """
 
-    name: LengthLimitedStr | None
-    description: LengthLimitedStr | None
+    name: LengthLimitedStr | None = None
+    description: LengthLimitedStr | None = None
 
-    class Config:
-        schema_extra = job_script_meta_mapper
+    model_config = ConfigDict(json_schema_extra=job_script_meta_mapper)
 
 
 class RenderFromTemplateRequest(BaseModel):
     """Request model for creating a JobScript entry from a template."""
 
     template_output_name_mapping: dict[LengthLimitedStr, LengthLimitedStr]
-    sbatch_params: list[str] | None
+    sbatch_params: list[str] | None = None
     param_dict: dict[str, Any]
 
-    class Config:
-        schema_extra = job_script_meta_mapper
+    model_config = ConfigDict(json_schema_extra=job_script_meta_mapper)
 
 
 class JobScriptUpdateRequest(BaseModel):
@@ -122,12 +119,11 @@ class JobScriptUpdateRequest(BaseModel):
     Request model for updating JobScript instances.
     """
 
-    name: LengthLimitedStr | None
-    description: LengthLimitedStr | None
-    is_archived: bool | None
+    name: LengthLimitedStr | None = None
+    description: LengthLimitedStr | None = None
+    is_archived: bool | None = None
 
-    class Config:
-        schema_extra = job_script_meta_mapper
+    model_config = ConfigDict(json_schema_extra=job_script_meta_mapper)
 
 
 class JobScriptFileDetailedView(BaseModel):
@@ -139,23 +135,29 @@ class JobScriptFileDetailedView(BaseModel):
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
-    class Config:
-        orm_mode = True
-        schema_extra = job_script_meta_mapper
+    model_config = ConfigDict(from_attributes=True, json_schema_extra=job_script_meta_mapper)
 
 
-class JobScriptListView(TableResource):
+class JobScriptBaseView(TableResource):
+    """
+    Base model to match database for the JobScript resource.
+
+    Omits parent relationship.
+    """
+
+    parent_template_id: int | None = None
+    cloned_from_id: int | None = None
+
+    model_config = ConfigDict(json_schema_extra=job_script_meta_mapper)
+
+
+class JobScriptListView(JobScriptBaseView):
     """Model to match database for the JobScript resource."""
 
-    parent_template_id: int | None
-    template: JobTemplateListView | None
-    cloned_from_id: int | None
-
-    class Config:
-        schema_extra = job_script_meta_mapper
+    template: JobTemplateListView | None = None
 
 
-class JobScriptDetailedView(JobScriptListView):
+class JobScriptDetailedView(JobScriptBaseView):
     """Model to match database for the JobScript resource."""
 
     files: list[JobScriptFileDetailedView] | None

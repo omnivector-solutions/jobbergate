@@ -66,11 +66,11 @@ def test_get_domain_configs__loads_admin_settings_if_all_are_present():
 def test_lockdown_with_identity__success():
     """Check if the lockdown_with_identity decorator returns the correct identity."""
     token_raw_data = dict(sub="dummy-sub")
-    token_payload = TokenPayload.parse_obj(token_raw_data)
+    token_payload = TokenPayload.model_validate(token_raw_data)
     lock = lockdown_with_identity()
 
     actual_identity = lock(token_payload)
-    expected_identity = IdentityPayload.parse_obj(token_raw_data)
+    expected_identity = IdentityPayload.model_validate(token_raw_data)
 
     assert actual_identity == expected_identity
 
@@ -84,13 +84,13 @@ def test_lockdown_with_identity_ensure_fields__success(opt_name):
         email="dummy-email@pytest.com",
         organization={"dummy-organization-id": {...}},
     )
-    token_payload = TokenPayload.parse_obj(token_raw_data)
+    token_payload = TokenPayload.model_validate(token_raw_data)
 
     kwargs = {opt_name: True}
     lock = lockdown_with_identity(**kwargs)
 
     actual_identity = lock(token_payload)
-    expected_identity = IdentityPayload.parse_obj(token_raw_data)
+    expected_identity = IdentityPayload.model_validate(token_raw_data)
 
     assert actual_identity == expected_identity
 
@@ -99,7 +99,7 @@ def test_lockdown_with_identity_ensure_fields__success(opt_name):
 def test_lockdown_with_identity_ensure_fields__raises_error(opt_name):
     """Check if the lockdown_with_identity decorator raises an error when the identity is missing a field."""
     token_raw_data = dict(sub="dummy-sub")
-    token_payload = TokenPayload.parse_obj(token_raw_data)
+    token_payload = TokenPayload.model_validate(token_raw_data)
     kwargs = {opt_name: True}
     lock = lockdown_with_identity(**kwargs)
 
@@ -120,12 +120,12 @@ def test_lockdown_with_identity__backward_compatibility():
         email="dummy-email@pytest.com",
         organization="dummy-organization-id",
     )
-    token_payload = TokenPayload.parse_obj(token_raw_data)
+    token_payload = TokenPayload.model_validate(token_raw_data)
 
     lock = lockdown_with_identity()
 
     actual_identity = lock(token_payload)
     assert actual_identity.organization_id is None
 
-    expected_identity = IdentityPayload.parse_obj(token_raw_data)
+    expected_identity = IdentityPayload.model_validate(token_raw_data)
     assert actual_identity == expected_identity
