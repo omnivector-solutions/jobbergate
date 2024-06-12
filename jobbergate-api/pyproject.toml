@@ -48,7 +48,6 @@ yarl = "^1.7.2"
 auto-name-enum = "^2.0.0"
 aio-pika = "^8.3.0"
 pydantic-settings = "^2.2.1"
-pydantic-extra-types = "^2.7.0"
 
 [tool.poetry.group.dev.dependencies]
 asgi-lifespan = "^1.0.1"
