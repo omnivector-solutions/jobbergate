@@ -79,8 +79,8 @@ def handle_abort(func):
 
                 if settings.SENTRY_DSN:
                     with sentry_sdk.push_scope() as scope:
-                        if err.sentry_context is not None:
-                            scope.set_context(**err.sentry_context)
+                        if isinstance(err.sentry_context, dict):
+                            scope.set_context(key="runtime", value=err.sentry_context)
                         sentry_sdk.capture_exception(err.original_error if err.original_error is not None else err)
                         sentry_sdk.flush()
 
