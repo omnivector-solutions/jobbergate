@@ -4,10 +4,8 @@ import datetime
 from typing import Annotated, Any, List, Type
 
 import pendulum
-import sqlalchemy
 from pydantic import BaseModel, ConfigDict, Field, GetCoreSchemaHandler
 from pydantic_core import PydanticCustomError, core_schema
-from pydantic_extra_types.pendulum_dt import DateTime
 
 # Make both Pydantic and mypy happy:
 LengthLimitedStr = Annotated[str, Field(max_length=255)]
@@ -16,6 +14,7 @@ LengthLimitedStr = Annotated[str, Field(max_length=255)]
 class PydanticDateTime(pendulum.DateTime):
     """
     A `pendulum.DateTime` object. At runtime, this type decomposes into pendulum.DateTime automatically.
+
     This type exists because Pydantic throws a fit on unknown types.
 
     This code is borrowed and enhanced from the `pydantic-extra-types` module but provides conversion from
@@ -29,7 +28,7 @@ class PydanticDateTime(pendulum.DateTime):
         cls, source: Type[Any], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         """
-        Return a Pydantic CoreSchema with the Datetime validation
+        Return a Pydantic CoreSchema with the Datetime validation.
 
         Args:
             source: The source type to be converted.

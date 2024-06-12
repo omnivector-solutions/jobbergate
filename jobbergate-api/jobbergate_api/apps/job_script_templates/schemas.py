@@ -6,7 +6,6 @@ import json
 from datetime import datetime
 from typing import Any, Optional
 
-import pydantic
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from jobbergate_api.apps.constants import FileType

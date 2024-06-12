@@ -4,7 +4,7 @@ JobSubmission resource schema.
 
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, field_validator, validator
+from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, field_validator
 
 from jobbergate_api.apps.job_scripts.schemas import JobScriptBaseView, JobScriptDetailedView
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus, SlurmJobState
