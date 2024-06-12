@@ -746,9 +746,11 @@
       "clientRoles": {
         "local-slurm": [
           "jobbergate:clusters:update",
+          "jobbergate:job-scripts:delete",
           "jobbergate:job-scripts:read",
           "jobbergate:job-submissions:read",
-          "jobbergate:job-submissions:update"
+          "jobbergate:job-submissions:update",
+          "jobbergate:job-templates:delete"
         ]
       },
       "notBefore": 0,
