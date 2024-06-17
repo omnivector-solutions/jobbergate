@@ -152,7 +152,7 @@ def list_all(
     if search is not None:
         params["search"] = search
     if sort_order is not SortOrder.UNSORTED:
-        params["sort_ascending"] = SortOrder is SortOrder.ASCENDING
+        params["sort_ascending"] = sort_order is SortOrder.ASCENDING
     if sort_field is not None:
         params["sort_field"] = sort_field
     if from_job_script_id is not None:
