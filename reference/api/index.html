@@ -1200,6 +1200,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.apps.job_script_templates.tools" class="md-nav__link">
+    tools
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1406,15 +1413,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#jobbergate_api.apps.schemas.IgnoreLazyGetterDict" class="md-nav__link">
-    IgnoreLazyGetterDict
+  <a href="#jobbergate_api.apps.schemas.ListParams" class="md-nav__link">
+    ListParams
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#jobbergate_api.apps.schemas.ListParams" class="md-nav__link">
-    ListParams
+  <a href="#jobbergate_api.apps.schemas.PydanticDateTime" class="md-nav__link">
+    PydanticDateTime
   </a>
   
 </li>
@@ -2324,6 +2331,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.apps.job_script_templates.tools" class="md-nav__link">
+    tools
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2530,15 +2544,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#jobbergate_api.apps.schemas.IgnoreLazyGetterDict" class="md-nav__link">
-    IgnoreLazyGetterDict
+  <a href="#jobbergate_api.apps.schemas.ListParams" class="md-nav__link">
+    ListParams
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#jobbergate_api.apps.schemas.ListParams" class="md-nav__link">
-    ListParams
+  <a href="#jobbergate_api.apps.schemas.PydanticDateTime" class="md-nav__link">
+    PydanticDateTime
   </a>
   
 </li>
@@ -4718,7 +4732,7 @@ helper functions in the class.</p>
 
 </h7>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_script_template_clone</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">clone_request</span><span class="p">:</span> <span class="n">JobTemplateCloneRequest</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="n">secure_services</span><span class="p">(</span>
@@ -4787,7 +4801,7 @@ helper functions in the class.</p>
 
 </h7>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_script_template_delete</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="n">secure_services</span><span class="p">(</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>            <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_TEMPLATES_DELETE</span><span class="p">,</span>
@@ -4821,7 +4835,7 @@ helper functions in the class.</p>
 
 </h7>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_script_template_delete_file</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="n">secure_services</span><span class="p">(</span>
@@ -4887,7 +4901,7 @@ helper functions in the class.</p>
 
 </h7>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_script_template_get</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="n">secure_services</span><span class="p">(</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>            <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_TEMPLATES_READ</span><span class="p">,</span> <span class="n">commit</span><span class="o">=</span><span class="kc">False</span>
@@ -4920,7 +4934,7 @@ helper functions in the class.</p>
 
 </h7>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_script_template_get_file</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="n">secure_services</span><span class="p">(</span>
@@ -4993,7 +5007,7 @@ helper functions in the class.</p>
 </h7>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_script_template_update</span><span class="p">(</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">update_request</span><span class="p">:</span> <span class="n">JobTemplateUpdateRequest</span><span class="p">,</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="n">secure_services</span><span class="p">(</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>            <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_TEMPLATES_UPDATE</span><span class="p">,</span>
@@ -5027,7 +5041,7 @@ helper functions in the class.</p>
 
 </h7>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_script_template_upload_file</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">file_type</span><span class="p">:</span> <span class="n">FileType</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">),</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">upload_file</span><span class="p">:</span> <span class="n">UploadFile</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">File</span><span class="p">(</span>
@@ -5071,7 +5085,7 @@ helper functions in the class.</p>
 
 </h7>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_script_workflow_delete_file</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="n">secure_services</span><span class="p">(</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>            <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_TEMPLATES_DELETE</span><span class="p">,</span>
@@ -5105,7 +5119,7 @@ helper functions in the class.</p>
 
 </h7>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_script_workflow_get_file</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="n">secure_services</span><span class="p">(</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>            <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_TEMPLATES_READ</span><span class="p">,</span> <span class="n">commit</span><span class="o">=</span><span class="kc">False</span>
@@ -5142,7 +5156,7 @@ helper functions in the class.</p>
 
 </h7>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_script_workflow_upload_file</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">runtime_config</span><span class="p">:</span> <span class="n">RunTimeConfig</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Body</span><span class="p">(</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Runtime configuration is optional when the workflow file already exists&quot;</span><span class="p">,</span>
@@ -5206,6 +5220,47 @@ helper functions in the class.</p>
 
 
 
+<h7 id="jobbergate_api.apps.job_script_templates.schemas.JobTemplateBaseDetailedView" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobTemplateBaseDetailedView</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.job_script_templates.schemas.JobTemplateListView" href="#jobbergate_api.apps.job_script_templates.schemas.JobTemplateListView">JobTemplateListView</a></code></p>
+
+  
+      <p>Schema for the request to an entry.</p>
+<p>Notice the files are omitted.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
 <h7 id="jobbergate_api.apps.job_script_templates.schemas.JobTemplateCloneRequest" class="doc doc-heading">
           <span class="doc doc-object-name doc-class-name">JobTemplateCloneRequest</span>
 
@@ -5242,6 +5297,10 @@ helper functions in the class.</p>
 <h8 id="jobbergate_api.apps.job_script_templates.schemas.JobTemplateCloneRequest.empty_str_to_none" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">empty_str_to_none</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h8>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">empty_str_to_none</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -5264,6 +5323,10 @@ helper functions in the class.</p>
 <h8 id="jobbergate_api.apps.job_script_templates.schemas.JobTemplateCloneRequest.not_empty_str" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">not_empty_str</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h8>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">not_empty_str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -5326,6 +5389,10 @@ helper functions in the class.</p>
 <h8 id="jobbergate_api.apps.job_script_templates.schemas.JobTemplateCreateRequest.empty_str_to_none" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">empty_str_to_none</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h8>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">empty_str_to_none</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -5348,6 +5415,10 @@ helper functions in the class.</p>
 <h8 id="jobbergate_api.apps.job_script_templates.schemas.JobTemplateCreateRequest.not_empty_str" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">not_empty_str</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h8>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">not_empty_str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -5383,7 +5454,7 @@ helper functions in the class.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.job_script_templates.schemas.JobTemplateListView" href="#jobbergate_api.apps.job_script_templates.schemas.JobTemplateListView">JobTemplateListView</a></code></p>
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.job_script_templates.schemas.JobTemplateBaseDetailedView" href="#jobbergate_api.apps.job_script_templates.schemas.JobTemplateBaseDetailedView">JobTemplateBaseDetailedView</a></code></p>
 
   
       <p>Schema for the request to an entry.</p>
@@ -5492,6 +5563,10 @@ an empty list when they are requested, but no file is found.</p>
 <h8 id="jobbergate_api.apps.job_script_templates.schemas.JobTemplateUpdateRequest.empty_str_to_none" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">empty_str_to_none</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h8>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">empty_str_to_none</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -5514,6 +5589,10 @@ an empty list when they are requested, but no file is found.</p>
 <h8 id="jobbergate_api.apps.job_script_templates.schemas.JobTemplateUpdateRequest.not_empty_str" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">not_empty_str</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h8>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">not_empty_str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -5575,8 +5654,8 @@ It also loads the contend directly from the json at the request payload.</p>
 
 
 
-<h8 id="jobbergate_api.apps.job_script_templates.schemas.RunTimeConfig.__get_validators__" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">__get_validators__</span>
+<h8 id="jobbergate_api.apps.job_script_templates.schemas.RunTimeConfig.coerce_string_to_dict" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">coerce_string_to_dict</span>
 
   
   <span class="doc doc-labels">
@@ -5584,38 +5663,12 @@ It also loads the contend directly from the json at the request payload.</p>
   </span>
 
 </h8>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">__get_validators__</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">coerce_string_to_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Get the validators.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h8 id="jobbergate_api.apps.job_script_templates.schemas.RunTimeConfig.validate_to_json" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">validate_to_json</span>
-
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
-  </span>
-
-</h8>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">validate_to_json</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Validate the produced json.</p>
 
   </div>
 
@@ -5942,6 +5995,65 @@ not a number, as that would be identified as id.</p>
 
 </div>
 
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h6 id="jobbergate_api.apps.job_script_templates.tools" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">tools</span>
+
+
+</h6>
+
+  <div class="doc doc-contents ">
+  
+      <p>Provide a method for coercing id_or_identifier to a string or int.</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_script_templates.tools.coerce_id_or_identifier" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">coerce_id_or_identifier</span>
+
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">coerce_id_or_identifier</span><span class="p">(</span><span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Determine whether the id_or_identifier should be a string or an integer.</p>
+<p>This is necessary because FastAPI no longer automatically converts path parameters to integers
+automatically if they may also be string values.</p>
+
+  </div>
+
+</div>
 
 
 
@@ -6384,7 +6496,7 @@ helper functions in the class.</p>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_script_create_from_template</span><span class="p">(</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">create_request</span><span class="p">:</span> <span class="n">JobScriptCreateRequest</span><span class="p">,</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">render_request</span><span class="p">:</span> <span class="n">RenderFromTemplateRequest</span><span class="p">,</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="n">secure_services</span><span class="p">(</span>
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>            <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_SCRIPTS_CREATE</span><span class="p">,</span>
@@ -6724,6 +6836,47 @@ helper functions in the class.</p>
 
 
 
+<h7 id="jobbergate_api.apps.job_scripts.schemas.JobScriptBaseView" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobScriptBaseView</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.schemas.TableResource" href="#jobbergate_api.apps.schemas.TableResource">TableResource</a></code></p>
+
+  
+      <p>Base model to match database for the JobScript resource.</p>
+<p>Omits parent relationship.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
 <h7 id="jobbergate_api.apps.job_scripts.schemas.JobScriptCloneRequest" class="doc doc-heading">
           <span class="doc doc-object-name doc-class-name">JobScriptCloneRequest</span>
 
@@ -6813,7 +6966,7 @@ helper functions in the class.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.job_scripts.schemas.JobScriptListView" href="#jobbergate_api.apps.job_scripts.schemas.JobScriptListView">JobScriptListView</a></code></p>
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.job_scripts.schemas.JobScriptBaseView" href="#jobbergate_api.apps.job_scripts.schemas.JobScriptBaseView">JobScriptBaseView</a></code></p>
 
   
       <p>Model to match database for the JobScript resource.</p>
@@ -6893,7 +7046,7 @@ helper functions in the class.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.schemas.TableResource" href="#jobbergate_api.apps.schemas.TableResource">TableResource</a></code></p>
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.job_scripts.schemas.JobScriptBaseView" href="#jobbergate_api.apps.job_scripts.schemas.JobScriptBaseView">JobScriptBaseView</a></code></p>
 
   
       <p>Model to match database for the JobScript resource.</p>
@@ -8416,6 +8569,47 @@ helper functions in the class.</p>
 
 
 
+<h7 id="jobbergate_api.apps.job_submissions.schemas.JobSubmissionBaseView" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobSubmissionBaseView</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.schemas.TableResource" href="#jobbergate_api.apps.schemas.TableResource">TableResource</a></code></p>
+
+  
+      <p>Base model to match the database for the JobSubmission resource.</p>
+<p>Omits parent relationship.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
 <h7 id="jobbergate_api.apps.job_submissions.schemas.JobSubmissionCreateRequest" class="doc doc-heading">
           <span class="doc doc-object-name doc-class-name">JobSubmissionCreateRequest</span>
 
@@ -8452,6 +8646,10 @@ helper functions in the class.</p>
 <h8 id="jobbergate_api.apps.job_submissions.schemas.JobSubmissionCreateRequest.empty_str_to_none" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">empty_str_to_none</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h8>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">empty_str_to_none</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
@@ -8487,10 +8685,10 @@ helper functions in the class.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.job_submissions.schemas.JobSubmissionListView" href="#jobbergate_api.apps.job_submissions.schemas.JobSubmissionListView">JobSubmissionListView</a></code></p>
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.job_submissions.schemas.JobSubmissionBaseView" href="#jobbergate_api.apps.job_submissions.schemas.JobSubmissionBaseView">JobSubmissionBaseView</a></code></p>
 
   
-      <p>Complete model to match the database for the JobSubmission resource.</p>
+      <p>Complete model to match the database for the JobSubmission resource in a detailed view.</p>
 
 
   
@@ -8527,10 +8725,10 @@ helper functions in the class.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.schemas.TableResource" href="#jobbergate_api.apps.schemas.TableResource">TableResource</a></code></p>
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.job_submissions.schemas.JobSubmissionBaseView" href="#jobbergate_api.apps.job_submissions.schemas.JobSubmissionBaseView">JobSubmissionBaseView</a></code></p>
 
   
-      <p>Partial model to match the database for the JobSubmission resource.</p>
+      <p>Complete model to match the database for the JobSubmission resource in a list view.</p>
 
 
   
@@ -9654,95 +9852,6 @@ helper functions in the class.</p>
 
 
 
-<h6 id="jobbergate_api.apps.schemas.IgnoreLazyGetterDict" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">IgnoreLazyGetterDict</span>
-
-
-</h6>
-
-
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="pydantic.utils.GetterDict">GetterDict</span></code></p>
-
-  
-      <p>A custom GetterDict to avoid triggering lazy-loads when accessing attributes.</p>
-<p>In this way, only explicitly joined relationships will be loaded and included in the response.</p>
-
-<details class="references" open>
-  <summary>References</summary>
-  <p>https://github.com/tiangolo/fastapi/discussions/5942</p>
-</details>
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h7 id="jobbergate_api.apps.schemas.IgnoreLazyGetterDict.__getitem__" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">__getitem__</span>
-
-
-</h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Customize <strong>getitem</strong> to avoid triggering lazy-loads when accessing attributes.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h7 id="jobbergate_api.apps.schemas.IgnoreLazyGetterDict.get" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">get</span>
-
-
-</h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Get an attribute value from the object, or return a default value if the attribute does not exist.</p>
-
-  </div>
-
-</div>
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-
 <h6 id="jobbergate_api.apps.schemas.ListParams" class="doc doc-heading">
           <span class="doc doc-object-name doc-class-name">ListParams</span>
 
@@ -9769,6 +9878,145 @@ helper functions in the class.</p>
 
 
 
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_api.apps.schemas.PydanticDateTime" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">PydanticDateTime</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pendulum.DateTime">DateTime</span></code></p>
+
+  
+      <p>A <code>pendulum.DateTime</code> object. At runtime, this type decomposes into pendulum.DateTime automatically.</p>
+<p>This type exists because Pydantic throws a fit on unknown types.</p>
+<p>This code is borrowed and enhanced from the <code>pydantic-extra-types</code> module but provides conversion from
+standard datetimes as well.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_api.apps.schemas.PydanticDateTime.__get_pydantic_core_schema__" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">__get_pydantic_core_schema__</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">__get_pydantic_core_schema__</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">source</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Return a Pydantic CoreSchema with the Datetime validation.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>source</code></td>
+          <td>
+                <code><span title="typing.Type">Type</span>[<span title="typing.Any">Any</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The source type to be converted.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>handler</code></td>
+          <td>
+                <code><span title="pydantic.GetCoreSchemaHandler">GetCoreSchemaHandler</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The handler to get the CoreSchema.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A Pydantic CoreSchema with the Datetime validation.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
 
 
 
@@ -11371,7 +11619,7 @@ In this case, the 'upload_content' is optional, as the content can be copied fro
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><span title="pydantic.BaseSettings">BaseSettings</span></code></p>
+            Bases: <code><span title="pydantic_settings.BaseSettings">BaseSettings</span></code></p>
 
   
       <p>Provide a pydantic <code>BaseSettings</code> model for the application settings.</p>
@@ -11398,6 +11646,10 @@ In this case, the 'upload_content' is optional, as the content can be copied fro
 <h6 id="jobbergate_api.config.Settings.remove_blank_env" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">remove_blank_env</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h6>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">remove_blank_env</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
@@ -12261,6 +12513,10 @@ checking.</p>
 <h6 id="jobbergate_api.security.IdentityPayload.extract_organization" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">extract_organization</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h6>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">extract_organization</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
