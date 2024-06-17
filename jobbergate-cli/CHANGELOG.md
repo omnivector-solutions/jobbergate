@@ -3,7 +3,7 @@
 This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
-
+* Fixed parameter `--sort-order` on the listing commands
 
 ## 5.2.0a2 -- 2024-05-31
 ## 5.2.0a1 -- 2024-05-24
