@@ -1,9 +1,10 @@
-from jobbergate_api.apps.permissions import Permissions
-from fastapi import status
-from jobbergate_api.apps.clusters.models import ClusterStatus
-from sqlalchemy import select
-import pytest
 import pendulum
+import pytest
+from fastapi import status
+from sqlalchemy import select
+
+from jobbergate_api.apps.clusters.models import ClusterStatus
+from jobbergate_api.apps.permissions import Permissions
 
 
 class TestPutClusterStatus:

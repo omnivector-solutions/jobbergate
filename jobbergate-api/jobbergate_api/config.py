@@ -9,7 +9,8 @@ from typing import Optional
 
 from buzz import require_condition
 from loguru import logger
-from pydantic import BaseSettings, Field, HttpUrl, root_validator
+from pydantic import Field, HttpUrl, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class LogLevelEnum(str, Enum):
@@ -63,7 +64,7 @@ class Settings(BaseSettings):
 
     # S3 configuration
     S3_BUCKET_NAME: str = Field("jobbergate-staging-eu-north-1-resources")
-    S3_ENDPOINT_URL: Optional[str]
+    S3_ENDPOINT_URL: Optional[str] = None
 
     # Test S3 configuration
     TEST_S3_BUCKET_NAME: str = Field("test-jobbergate-resources")
@@ -78,18 +79,18 @@ class Settings(BaseSettings):
     # Security Settings. For details, see https://github.com/omnivector-solutions/armasec
     ARMASEC_DOMAIN: str
     ARMASEC_USE_HTTPS: bool = Field(True)
-    ARMASEC_AUDIENCE: Optional[HttpUrl]
+    ARMASEC_AUDIENCE: Optional[str] = None
     ARMASEC_DEBUG: bool = Field(False)
-    ARMASEC_ADMIN_DOMAIN: Optional[str]
-    ARMASEC_ADMIN_AUDIENCE: Optional[HttpUrl]
-    ARMASEC_ADMIN_MATCH_KEY: Optional[str]
-    ARMASEC_ADMIN_MATCH_VALUE: Optional[str]
+    ARMASEC_ADMIN_DOMAIN: Optional[str] = None
+    ARMASEC_ADMIN_AUDIENCE: Optional[str] = None
+    ARMASEC_ADMIN_MATCH_KEY: Optional[str] = None
+    ARMASEC_ADMIN_MATCH_VALUE: Optional[str] = None
 
     # Key to custom claims packaged with Auth0 tokens
     IDENTITY_CLAIMS_KEY: str = "https://omnivector.solutions"
 
     # Sentry configuration
-    SENTRY_DSN: Optional[HttpUrl]
+    SENTRY_DSN: Optional[HttpUrl] = None
     SENTRY_SAMPLE_RATE: float = Field(1.0, gt=0.0, le=1.0)
     SENTRY_PROFILING_SAMPLE_RATE: float = Field(1.0, gt=0.0, le=1.0)
     SENTRY_TRACING_SAMPLE_RATE: float = Field(1.0, gt=0.0, le=1.0)
@@ -98,17 +99,18 @@ class Settings(BaseSettings):
     MAX_UPLOAD_FILE_SIZE: int = 5 * 1024 * 1024  # 100 MB
 
     # Sendgrid configuration for email notification
-    SENDGRID_FROM_EMAIL: Optional[str]
-    SENDGRID_API_KEY: Optional[str]
+    SENDGRID_FROM_EMAIL: Optional[str] = None
+    SENDGRID_API_KEY: Optional[str] = None
 
     # Enable multi-tenancy so that the database is determined by the client_id in the auth token
     MULTI_TENANCY_ENABLED: bool = Field(False)
 
     # Automatically clean up unused job scripts
-    AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE: int | None
-    AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE: int | None
+    AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE: int | None = None
+    AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE: int | None = None
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def remove_blank_env(cls, values):
         """
         Remove any settings from the environment that are blank strings.
@@ -137,8 +139,7 @@ class Settings(BaseSettings):
 
         return clean_values
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_file=".env")
 
 
 settings = Settings()

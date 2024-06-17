@@ -4,6 +4,11 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+- Migrated to Pydantic version 2 [PENG-2277]
+  - Upgraded pydantic to 2.7
+  - Upgraded fastapi to 0.111
+  - Upgraded armasec to 2.0.1
+  - Added pydantic-settings 2.2.1
 
 ## 5.2.0a2 -- 2024-05-31
 - Improve performance on Automatically clean up unused job scripts [ASP-5186]

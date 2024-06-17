@@ -47,7 +47,7 @@ subapp.add_middleware(
 if settings.SENTRY_DSN and settings.DEPLOY_ENV.lower() != "test":
     logger.info("Initializing Sentry")
     sentry_sdk.init(
-        dsn=settings.SENTRY_DSN,
+        dsn=str(settings.SENTRY_DSN),
         sample_rate=settings.SENTRY_SAMPLE_RATE,
         environment=settings.DEPLOY_ENV,
         profiles_sample_rate=settings.SENTRY_PROFILING_SAMPLE_RATE,

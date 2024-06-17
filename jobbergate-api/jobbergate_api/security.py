@@ -10,7 +10,7 @@ from armasec.token_security import PermissionMode
 from buzz import check_expressions
 from fastapi import Depends, HTTPException, status
 from loguru import logger
-from pydantic import EmailStr, root_validator
+from pydantic import EmailStr, model_validator
 
 from jobbergate_api.config import settings
 
@@ -67,7 +67,8 @@ class IdentityPayload(TokenPayload):
     email: EmailStr | None = None
     organization_id: str | None = None
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def extract_organization(cls, values):
         """
         Extract the organization_id from the organization payload.
@@ -113,7 +114,7 @@ def lockdown_with_identity(
         """
         Provide an injectable function to lockdown a route and extract the identity payload.
         """
-        identity_payload = IdentityPayload.parse_obj(token_payload)
+        identity_payload = IdentityPayload(**token_payload.model_dump())
 
         with check_expressions(
             main_message="Access token does not contain",

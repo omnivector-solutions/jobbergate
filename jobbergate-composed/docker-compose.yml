@@ -87,6 +87,8 @@ services:
       - ../jobbergate-core/:/jobbergate-core
       - ../examples/simple-application/:/simple-example/
       - ../examples/motorbike-application/:/motorbike-example/
+      - ../examples/simple-job-script.sh:/simple-job-script.sh
+      - ../examples/sleepy-job-script.sh:/sleepy-job-script.sh
       - ./etc/run-motorbike.py:/app/run-motorbike
       - ./slurm-fake-nfs:/nfs
       - jobbergate-cli-cache:/cache/

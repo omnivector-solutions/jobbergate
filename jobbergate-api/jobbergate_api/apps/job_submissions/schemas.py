@@ -4,9 +4,9 @@ JobSubmission resource schema.
 
 from typing import Optional
 
-from pydantic import BaseModel, Extra, Field, NonNegativeInt, validator
+from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, field_validator
 
-from jobbergate_api.apps.job_scripts.schemas import JobScriptDetailedView, JobScriptListView
+from jobbergate_api.apps.job_scripts.schemas import JobScriptBaseView, JobScriptDetailedView
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus, SlurmJobState
 from jobbergate_api.apps.schemas import LengthLimitedStr, TableResource
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
@@ -113,20 +113,20 @@ class JobSubmissionCreateRequest(BaseModel):
     """
 
     name: LengthLimitedStr
-    description: Optional[LengthLimitedStr]
+    description: Optional[LengthLimitedStr] = None
     job_script_id: NonNegativeInt
-    slurm_job_id: Optional[NonNegativeInt]
-    execution_directory: Optional[LengthLimitedStr]
-    client_id: Optional[LengthLimitedStr]
-    sbatch_arguments: Optional[list[LengthLimitedStr]] = Field(None, max_items=50)
+    slurm_job_id: Optional[NonNegativeInt] = None
+    execution_directory: Optional[LengthLimitedStr] = None
+    client_id: Optional[LengthLimitedStr] = None
+    sbatch_arguments: Optional[list[LengthLimitedStr]] = Field(None, max_length=50)
 
-    @validator("execution_directory", pre=True, always=True)
+    @field_validator("execution_directory", mode="before")
+    @classmethod
     def empty_str_to_none(cls, v):
         """Ensure empty strings are converted to None to avoid problems with Path downstream."""
         return v or None
 
-    class Config:
-        schema_extra = job_submission_meta_mapper
+    model_config = ConfigDict(json_schema_extra=job_submission_meta_mapper)
 
 
 class JobSubmissionUpdateRequest(BaseModel):
@@ -134,40 +134,46 @@ class JobSubmissionUpdateRequest(BaseModel):
     Request model for updating JobSubmission instances.
     """
 
-    name: Optional[LengthLimitedStr]
-    description: Optional[LengthLimitedStr]
-    execution_directory: Optional[LengthLimitedStr]
-    status: Optional[JobSubmissionStatus]
+    name: Optional[LengthLimitedStr] = None
+    description: Optional[LengthLimitedStr] = None
+    execution_directory: Optional[LengthLimitedStr] = None
+    status: Optional[JobSubmissionStatus] = None
 
-    @validator("execution_directory", pre=True, always=True)
+    @field_validator("execution_directory", mode="before")
     def empty_str_to_none(cls, v):
         """Ensure empty strings are converted to None to avoid problems with Path downstream."""
         return v or None
 
-    class Config:
-        schema_extra = job_submission_meta_mapper
+    model_config = ConfigDict(json_schema_extra=job_submission_meta_mapper)
 
 
-class JobSubmissionListView(TableResource):
+class JobSubmissionBaseView(TableResource):
     """
-    Partial model to match the database for the JobSubmission resource.
+    Base model to match the database for the JobSubmission resource.
+
+    Omits parent relationship.
     """
 
-    job_script_id: Optional[int]
-    slurm_job_id: Optional[int]
+    job_script_id: Optional[int] = None
+    slurm_job_id: Optional[int] = None
     client_id: str
     status: JobSubmissionStatus
-    slurm_job_state: Optional[SlurmJobState]
+    slurm_job_state: Optional[SlurmJobState] = None
 
-    job_script: Optional[JobScriptListView]
-
-    class Config:
-        schema_extra = job_submission_meta_mapper
+    model_config = ConfigDict(json_schema_extra=job_submission_meta_mapper)
 
 
-class JobSubmissionDetailedView(JobSubmissionListView):
+class JobSubmissionListView(JobSubmissionBaseView):
     """
-    Complete model to match the database for the JobSubmission resource.
+    Complete model to match the database for the JobSubmission resource in a list view.
+    """
+
+    job_script: Optional[JobScriptBaseView] = None
+
+
+class JobSubmissionDetailedView(JobSubmissionBaseView):
+    """
+    Complete model to match the database for the JobSubmission resource in a detailed view.
     """
 
     execution_directory: Optional[str]
@@ -186,15 +192,14 @@ class PendingJobSubmission(BaseModel):
     id: int
     name: str
     owner_email: str
-    execution_directory: Optional[str]
+    execution_directory: Optional[str] = None
     execution_parameters: dict = Field(default_factory=dict)
     job_script: JobScriptDetailedView
-    sbatch_arguments: Optional[list[str]]
+    sbatch_arguments: Optional[list[str]] = None
 
-    class Config:
-        orm_mode = True
-        extra = Extra.ignore
-        schema_extra = job_submission_meta_mapper
+    model_config = ConfigDict(
+        from_attributes=True, extra="ignore", json_schema_extra=job_submission_meta_mapper
+    )
 
 
 class ActiveJobSubmission(BaseModel):
@@ -205,10 +210,7 @@ class ActiveJobSubmission(BaseModel):
     id: int
     name: str
     slurm_job_id: int
-
-    class Config:
-        orm_mode = True
-        extra = Extra.ignore
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
 
 
 class JobSubmissionAgentSubmittedRequest(BaseModel):
@@ -218,10 +220,9 @@ class JobSubmissionAgentSubmittedRequest(BaseModel):
     slurm_job_id: NonNegativeInt
     slurm_job_state: SlurmJobState
     slurm_job_info: str
-    slurm_job_state_reason: Optional[str]
+    slurm_job_state_reason: Optional[str] = None
 
-    class Config:
-        schema_extra = job_submission_meta_mapper
+    model_config = ConfigDict(json_schema_extra=job_submission_meta_mapper)
 
 
 class JobSubmissionAgentRejectedRequest(BaseModel):
@@ -230,8 +231,7 @@ class JobSubmissionAgentRejectedRequest(BaseModel):
     id: int
     report_message: str
 
-    class Config:
-        schema_extra = job_submission_meta_mapper
+    model_config = ConfigDict(json_schema_extra=job_submission_meta_mapper)
 
 
 class JobSubmissionAgentUpdateRequest(BaseModel):
@@ -240,7 +240,6 @@ class JobSubmissionAgentUpdateRequest(BaseModel):
     slurm_job_id: NonNegativeInt
     slurm_job_state: SlurmJobState
     slurm_job_info: str
-    slurm_job_state_reason: Optional[str]
+    slurm_job_state_reason: Optional[str] = None
 
-    class Config:
-        schema_extra = job_submission_meta_mapper
+    model_config = ConfigDict(json_schema_extra=job_submission_meta_mapper)

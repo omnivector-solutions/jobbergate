@@ -1,9 +1,8 @@
 """Schema definitions for the cluster app."""
 
-from pendulum.datetime import DateTime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
-from jobbergate_api.apps.schemas import IgnoreLazyGetterDict
+from jobbergate_api.apps.schemas import PydanticDateTime
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
 cluster_status_meta_mapper = MetaMapper(
@@ -40,13 +39,13 @@ class ClusterStatusView(BaseModel):
     """
 
     client_id: str
-    created_at: DateTime
-    updated_at: DateTime
-    last_reported: DateTime
+    created_at: PydanticDateTime
+    updated_at: PydanticDateTime
+    last_reported: PydanticDateTime
     interval: int
     is_healthy: bool
 
-    class Config:
-        orm_mode = True
-        getter_dict = IgnoreLazyGetterDict
-        schema_extra = cluster_status_meta_mapper
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra=cluster_status_meta_mapper,
+    )

@@ -326,7 +326,7 @@ async def test_create_job_submission_without_client_id(
 
     This test proves that it is not possible to create a job_submission without including a
     ``client_id`` in either the request body or embedded in the access token. If none are supplied,
-    we assert that a 400 response is returned.k
+    we assert that a 400 response is returned.
     """
     base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
 
