@@ -2,7 +2,7 @@
 
 import contextlib
 from asyncio import iscoroutinefunction
-from typing import Any, Callable, Iterable, Iterator, Mapping, Optional, Tuple, Type, Union
+from typing import Any, AsyncIterator, Callable, Coroutine, Iterable, Mapping, Optional, Tuple, Type, Union
 
 from buzz import Buzz, get_traceback, reformat_exception
 from buzz.tools import DoExceptParams, noop
@@ -43,10 +43,10 @@ async def handle_errors_async(
     raise_args: Optional[Iterable[Any]] = None,
     raise_kwargs: Optional[Mapping[str, Any]] = None,
     handle_exc_class: Union[Type[Exception], Tuple[Type[Exception], ...]] = Exception,
-    do_finally: Callable[[], None] = noop,
-    do_except: Callable[[DoExceptParams], None] = noop,
-    do_else: Callable[[], None] = noop,
-) -> Iterator[None]:
+    do_finally: Callable[[], None] | Callable[[], Coroutine[Any, Any, None]] = noop,
+    do_except: Callable[[DoExceptParams], None] | Callable[[DoExceptParams], Coroutine[Any, Any, None]] = noop,
+    do_else: Callable[[], None] | Callable[[], Coroutine[Any, Any, None]] = noop,
+) -> AsyncIterator[None]:
     """
     Async context manager that will intercept exceptions and repackage them with a message attached.
 
