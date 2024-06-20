@@ -1,7 +1,7 @@
 """Database models for the job scripts resource."""
 
 from itertools import product
-from typing import Any, Callable, NamedTuple
+from typing import Any, NamedTuple
 
 import pendulum
 import pytest
@@ -111,7 +111,7 @@ class TestIntegration:
     async def test_update_includes_no_files(self, script_test_data, synth_services):
         script_instance = await synth_services.crud.job_script.create(**script_test_data)
 
-        script_file = await synth_services.file.job_script.upsert(
+        await synth_services.file.job_script.upsert(
             script_instance.id,
             "test.txt",
             "test file content",

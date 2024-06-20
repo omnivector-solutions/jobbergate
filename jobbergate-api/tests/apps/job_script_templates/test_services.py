@@ -227,14 +227,14 @@ class TestIntegration:
     async def test_update_template_includes_no_files(self, template_test_data, synth_services):
         template_instance = await synth_services.crud.template.create(**template_test_data)
 
-        workflow_file = await synth_services.file.workflow.upsert(
+        await synth_services.file.workflow.upsert(
             template_instance.id,
             WORKFLOW_FILE_NAME,
             "print('hello world')",
             runtime_config=dict(foo="bar"),
         )
 
-        template_file = await synth_services.file.template.upsert(
+        await synth_services.file.template.upsert(
             template_instance.id,
             "test.txt",
             "test file content",

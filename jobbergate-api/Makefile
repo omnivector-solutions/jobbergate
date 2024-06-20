@@ -17,20 +17,15 @@ mypy: install
 
 .PHONY: lint
 lint: install
-	poetry run black --check ${PACKAGE_NAME}
-	poetry run isort --check ${PACKAGE_NAME}
-	poetry run pflake8 ${PACKAGE_NAME}
-
-.PHONY: qa
-qa: test mypy lint
-	echo "All quality checks pass!"
+	poetry run ruff check tests ${PACKAGE_NAME}
 
 .PHONY: format
 format: install
-	poetry run black ${PACKAGE_NAME}
-	poetry run isort ${PACKAGE_NAME}
-	poetry run black tests
-	poetry run isort tests
+	poetry run ruff format tests ${PACKAGE_NAME}
+
+.PHONY: qa
+qa: test mypy lint format
+	echo "All quality checks pass!"
 
 .PHONY: local
 local: install
