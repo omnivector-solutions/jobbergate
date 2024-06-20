@@ -196,7 +196,7 @@ async def submit_job_script(
     """
     logger.debug(f"Submitting {pending_job_submission}")
 
-    async def _reject_handler(params: DoExceptParams):
+    async def _reject_handler(params: DoExceptParams) -> None:
         """
         Use for the ``do_except`` parameter of a ``handle_errors``.
 
@@ -259,7 +259,7 @@ async def submit_job_script(
     return slurm_job_id
 
 
-async def submit_pending_jobs():
+async def submit_pending_jobs() -> None:
     """
     Submit all pending jobs and update them with ``SUBMITTED`` status and slurm_job_id.
 

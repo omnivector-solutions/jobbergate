@@ -26,7 +26,7 @@ async def fetch_job_data(slurm_job_id: int, info_handler: InfoHandler) -> SlurmJ
         )
 
     with SbatchError.handle_errors("Failed parse info from slurm", do_except=log_error):
-        slurm_state = SlurmJobData.parse_obj(data)
+        slurm_state = SlurmJobData.model_validate(data)
         slurm_state.job_info = json.dumps(data)
 
     return slurm_state
@@ -70,7 +70,7 @@ async def update_job_data(
         response.raise_for_status()
 
 
-async def update_active_jobs():
+async def update_active_jobs() -> None:
     """
     Update slurm job state for active jobs.
     """

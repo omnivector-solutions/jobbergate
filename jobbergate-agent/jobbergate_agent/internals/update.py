@@ -71,7 +71,7 @@ def _update_package(version: str) -> None:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", f"{package_name}=={version}"])
 
 
-async def self_update_agent():
+async def self_update_agent() -> None:
     """Fetch the upstream version and update the agent if necessary.
 
     In case the agent is updated, the scheduler is shutdown and restarted with the new version.
