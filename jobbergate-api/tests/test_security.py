@@ -20,21 +20,18 @@ def test_get_domain_configs__loads_only_base_settings():
     """Check if the correct domain configuration is loaded when only one domain is provided."""
     with (
         patch.object(settings, "ARMASEC_DOMAIN", new="foo.io"),
-        patch.object(settings, "ARMASEC_AUDIENCE", new="https://bar.dev"),
     ):
         domain_configs = get_domain_configs()
 
     assert len(domain_configs) == 1
     first_config = domain_configs.pop()
     assert first_config.domain == "foo.io"
-    assert first_config.audience == "https://bar.dev"
 
 
 def test_get_domain_configs__loads_admin_settings_if_all_are_present():
     """Check if the correct domain configuration is loaded when two domains are provided."""
     with (
         patch.object(settings, "ARMASEC_DOMAIN", new="foo.io"),
-        patch.object(settings, "ARMASEC_AUDIENCE", new="https://bar.dev"),
         patch.object(settings, "ARMASEC_ADMIN_DOMAIN", new="admin.io"),
     ):
         domain_configs = get_domain_configs()
@@ -42,13 +39,10 @@ def test_get_domain_configs__loads_admin_settings_if_all_are_present():
     assert len(domain_configs) == 1
     first_config = domain_configs.pop()
     assert first_config.domain == "foo.io"
-    assert first_config.audience == "https://bar.dev"
 
     with (
         patch.object(settings, "ARMASEC_DOMAIN", new="foo.io"),
-        patch.object(settings, "ARMASEC_AUDIENCE", new="https://bar.dev"),
         patch.object(settings, "ARMASEC_ADMIN_DOMAIN", new="admin.io"),
-        patch.object(settings, "ARMASEC_ADMIN_AUDIENCE", new="https://admin.dev"),
         patch.object(settings, "ARMASEC_ADMIN_MATCH_KEY", new="foo"),
         patch.object(settings, "ARMASEC_ADMIN_MATCH_VALUE", new="bar"),
     ):
@@ -57,9 +51,7 @@ def test_get_domain_configs__loads_admin_settings_if_all_are_present():
     assert len(domain_configs) == 2
     (first_config, second_config) = domain_configs
     assert first_config.domain == "foo.io"
-    assert first_config.audience == "https://bar.dev"
     assert second_config.domain == "admin.io"
-    assert second_config.audience == "https://admin.dev"
     assert second_config.match_keys == dict(foo="bar")
 
 

@@ -79,10 +79,8 @@ class Settings(BaseSettings):
     # Security Settings. For details, see https://github.com/omnivector-solutions/armasec
     ARMASEC_DOMAIN: str
     ARMASEC_USE_HTTPS: bool = Field(True)
-    ARMASEC_AUDIENCE: Optional[str] = None
     ARMASEC_DEBUG: bool = Field(False)
     ARMASEC_ADMIN_DOMAIN: Optional[str] = None
-    ARMASEC_ADMIN_AUDIENCE: Optional[str] = None
     ARMASEC_ADMIN_MATCH_KEY: Optional[str] = None
     ARMASEC_ADMIN_MATCH_VALUE: Optional[str] = None
 
