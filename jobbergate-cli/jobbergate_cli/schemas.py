@@ -187,10 +187,7 @@ class JobScriptFile(pydantic.BaseModel, extra="ignore"):
         return f"/jobbergate/job-scripts/{self.parent_id}/upload/{self.filename}"
 
 
-class JobScriptResponse(
-    pydantic.BaseModel,
-    extra="ignore",
-):
+class JobScriptResponse(pydantic.BaseModel):
     """
     Describes the format of data for job_scripts retrieved from the Jobbergate API endpoints.
     """
@@ -217,7 +214,7 @@ class JobScriptResponse(
             return []
         return value
 
-    model_config = pydantic.ConfigDict(populate_by_name=True)
+    model_config = pydantic.ConfigDict(populate_by_name=True, extra="ignore")
 
 
 class JobSubmissionResponse(pydantic.BaseModel, extra="ignore"):

@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-cli
 
 - Migrated to Pydantic version 2 [PENG-2279]
   - Upgraded pydantic to 2.7
+  - Upgraded mypy to 1.10.0
   - Added pydantic-settings 2.3.3
 - Fixed parameter `--sort-order` on the listing commands
 

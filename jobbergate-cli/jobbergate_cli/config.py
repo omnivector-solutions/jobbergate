@@ -6,10 +6,10 @@ Can load configuration from a dotenv file if supplied.
 from pathlib import Path
 from sys import exit
 from typing import Optional
-from typing_extensions import Self
 
-from pydantic import model_validator, AnyHttpUrl, Field, ValidationError
+from pydantic import Field, ValidationError, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing_extensions import Self
 
 from jobbergate_cli import constants
 from jobbergate_cli.constants import OV_CONTACT
@@ -36,7 +36,7 @@ class Settings(BaseSettings):
 
     JOBBERGATE_CACHE_DIR: Path = Field(Path.home() / ".local/share/jobbergate3")
 
-    ARMADA_API_BASE: AnyHttpUrl = Field("https://armada-k8s.staging.omnivector.solutions")
+    ARMADA_API_BASE: str = Field("https://armada-k8s.staging.omnivector.solutions")
 
     SBATCH_PATH: Optional[Path] = None
 
