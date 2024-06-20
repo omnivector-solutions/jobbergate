@@ -5,7 +5,7 @@ description = "Jobbergate Official Documentation"
 authors = ["Omnivector Solutions <info@omnivector.solutions>"]
 license = "MIT"
 repository = "https://github.com/omnivector-solutions/jobbergate"
-
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -18,16 +18,10 @@ jobbergate-cli = { path = "../jobbergate-cli", develop = true }
 jobbergate-agent = { path = "../jobbergate-agent", develop = true }
 
 [tool.poetry.group.dev.dependencies]
-black = "^24"
-isort = "^5.9.3"
+ruff = "^0.4.9"
 
-[tool.black]
+[tool.ruff]
 line-length = 120
-
-[tool.isort]
-src_paths = ["src"]
-multi_line_output = 3
-include_trailing_comma = true
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

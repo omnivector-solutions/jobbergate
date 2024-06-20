@@ -10,18 +10,15 @@ install:
 
 .PHONY: lint
 lint: install
-	poetry run black --check source
-	poetry run isort --check source
-	poetry run flake8 --max-line-length=120 --max-complexity=40 source
-
-.PHONY: qa
-qa: lint
-	echo "All tests pass! Ready for deployment"
+	poetry run ruff check docs/source
 
 .PHONY: format
 format: install
-	poetry run black source
-	poetry run isort source
+	poetry run ruff format docs/source
+
+.PHONY: qa
+qa: lint format
+	echo "All tests pass! Ready for deployment"
 
 .PHONY: docs
 docs: install
