@@ -3,7 +3,11 @@
 This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
-* Fixed parameter `--sort-order` on the listing commands
+
+- Migrated to Pydantic version 2 [PENG-2279]
+  - Upgraded pydantic to 2.7
+  - Added pydantic-settings 2.3.3
+- Fixed parameter `--sort-order` on the listing commands
 
 ## 5.2.0a2 -- 2024-05-31
 ## 5.2.0a1 -- 2024-05-24

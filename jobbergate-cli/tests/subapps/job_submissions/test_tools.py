@@ -125,7 +125,7 @@ class TestJobSubmissionsGetRequestData:
         submission_handler.slurm_job_id = dummy_data["slurm_job_id"]
 
         actual_request_data = submission_handler.get_request_data()
-        expected_request_data = JobSubmissionCreateRequestData.parse_obj(dummy_data)
+        expected_request_data = JobSubmissionCreateRequestData.model_validate(dummy_data)
 
         assert actual_request_data == expected_request_data
 
@@ -144,7 +144,7 @@ class TestJobSubmissionsGetRequestData:
         submission_handler = RemoteJobSubmission(jg_ctx=dummy_context, download=True, **dummy_data)
 
         actual_request_data = submission_handler.get_request_data()
-        expected_request_data = JobSubmissionCreateRequestData.parse_obj(dummy_data)
+        expected_request_data = JobSubmissionCreateRequestData.model_validate(dummy_data)
 
         assert actual_request_data == expected_request_data
 
@@ -164,7 +164,7 @@ class TestJobSubmissionsMakePostRequest:
             cluster_name="test-cluster",
         )
 
-        create_job_submission_data = JobSubmissionCreateRequestData.parse_obj(job_submission_data)
+        create_job_submission_data = JobSubmissionCreateRequestData.model_validate(job_submission_data)
         create_job_submission_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions")
         create_job_submission_route.mock(
             return_value=httpx.Response(
@@ -174,7 +174,7 @@ class TestJobSubmissionsMakePostRequest:
         )
 
         actual_response = submission_handler.make_post_request(create_job_submission_data)
-        expected_response = JobSubmissionResponse.parse_obj(job_submission_data)
+        expected_response = JobSubmissionResponse.model_validate(job_submission_data)
 
         assert actual_response == expected_response
 
@@ -262,7 +262,7 @@ class TestJobSubmissionsProcessSubmissions:
     ):
         attach_persona("dummy@dummy.com")
 
-        job_script_data = JobScriptResponse.parse_obj(dummy_job_script_data[0])
+        job_script_data = JobScriptResponse.model_validate(dummy_job_script_data[0])
 
         submission_handler = OnsiteJobSubmission(
             jg_ctx=dummy_context,

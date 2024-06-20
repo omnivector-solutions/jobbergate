@@ -2,17 +2,18 @@
 Provide a time-loop class that can be used to to iterate during a given window of time.
 """
 
+from dataclasses import dataclass
 from typing import Optional, Union
 
 import pendulum
-import pydantic
 from buzz import require_condition
 from rich.progress import Progress
 
 from jobbergate_cli.exceptions import JobbergateCliError
 
 
-class Tick(pydantic.BaseModel):
+@dataclass
+class Tick:
     """
     A helper class describing a "tick".
 

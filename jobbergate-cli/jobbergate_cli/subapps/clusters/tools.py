@@ -58,7 +58,7 @@ def save_clusters_to_cache(client_ids: List[str]):
     )
 
     logger.debug(f"Caching cluster info at {settings.JOBBERGATE_CLUSTER_LIST_PATH}")
-    settings.JOBBERGATE_CLUSTER_LIST_PATH.write_text(cache_data.json())
+    settings.JOBBERGATE_CLUSTER_LIST_PATH.write_text(cache_data.model_dump_json())
 
 
 def load_clusters_from_cache() -> Optional[List[str]]:
