@@ -230,7 +230,7 @@ class TestAutoCleanUnusedJobScripts:
         Test fixture to freeze time for testing
         """
         time_now = pendulum.datetime(2023, 1, 1)
-        with pendulum.test(pendulum.datetime(2023, 1, 1)):
+        with pendulum.travel_to(time_now, freeze=True):
             yield time_now
 
     @pytest.fixture
@@ -256,13 +256,13 @@ class TestAutoCleanUnusedJobScripts:
             entry_info = TestEntryInfo(*e)
             data = fill_job_script_data(is_archived=entry_info.is_archived)
 
-            with pendulum.test(time_now.add(days=entry_info.last_updated_delta)):
+            with pendulum.travel_to(time_now.add(days=entry_info.last_updated_delta), freeze=True):
                 job_script = await synth_services.crud.job_script.create(**data)
 
             data["id"] = job_script.id
 
             if entry_info.last_used_delta is not None:
-                with pendulum.test(time_now.add(days=entry_info.last_used_delta)):
+                with pendulum.travel_to(time_now.add(days=entry_info.last_used_delta), freeze=True):
                     job_submission = await synth_services.crud.job_submission.create(
                         **fill_job_submission_data(
                             status=JobSubmissionStatus.CREATED,
@@ -285,7 +285,7 @@ class TestAutoCleanUnusedJobScripts:
                 AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE=None,
                 AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE=None,
             ),
-            pendulum.test(time_now.add(days=1_000)),
+            pendulum.travel_to(time_now.add(days=1_000), freeze=True),
         ):
             result = await synth_services.crud.job_script.auto_clean_unused_job_scripts()
 
@@ -330,7 +330,7 @@ class TestAutoCleanUnusedJobScripts:
                 AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE=self.DAYS_TO_ARCHIVE,
                 AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE=self.DAYS_TO_DELETE,
             ),
-            pendulum.test(time_now.add(days=time_delta, minutes=1)),
+            pendulum.travel_to(time_now.add(days=time_delta, minutes=1), freeze=True),
         ):
             result = await synth_services.crud.job_script.auto_clean_unused_job_scripts()
 

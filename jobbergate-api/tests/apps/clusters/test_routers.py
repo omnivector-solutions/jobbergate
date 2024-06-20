@@ -18,7 +18,7 @@ class TestPutClusterStatus:
 
         interval = 60
         now = pendulum.datetime(2023, 1, 1)
-        with pendulum.test(now):
+        with pendulum.travel_to(now, freeze=True):
             response = await client.put("/jobbergate/clusters/status", params={"interval": interval})
 
         assert response.status_code == status.HTTP_202_ACCEPTED
@@ -40,13 +40,13 @@ class TestPutClusterStatus:
 
         original_time = pendulum.datetime(2023, 1, 1)
         original_interval = 60
-        with pendulum.test(original_time):
+        with pendulum.travel_to(original_time, freeze=True):
             response = await client.put("/jobbergate/clusters/status", params={"interval": original_interval})
             assert response.status_code == status.HTTP_202_ACCEPTED
 
         now = original_time.add(days=1)
         interval = original_interval * 2
-        with pendulum.test(now):
+        with pendulum.travel_to(now, freeze=True):
             response = await client.put("/jobbergate/clusters/status", params={"interval": interval})
             assert response.status_code == status.HTTP_202_ACCEPTED
 
@@ -107,7 +107,7 @@ class TestListClusterStatus:
 
         inject_security_header("who@cares.com", Permissions.CLUSTERS_READ)
 
-        with pendulum.test(pendulum.datetime(2023, 1, 1)):
+        with pendulum.travel_to(pendulum.datetime(2023, 1, 1), freeze=True):
             synth_session.add_all(statuses)
             response = await client.get("/jobbergate/clusters/status")
 
