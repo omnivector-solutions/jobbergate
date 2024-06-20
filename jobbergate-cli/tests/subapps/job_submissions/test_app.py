@@ -62,7 +62,7 @@ def test_create(
         description=job_submission_description,
         execution_directory=None,
         cluster_name=None,
-        sbatch_arguments=[],
+        sbatch_arguments=None,
         download=True,
     )
 
