@@ -387,22 +387,6 @@ files = [
 ]
 
 [[package]]
-name = "bidict"
-version = "0.22.1"
-description = "The bidirectional mapping library for Python."
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "bidict-0.22.1-py3-none-any.whl", hash = "sha256:6ef212238eb884b664f28da76f33f1d28b260f665fc737b413b287d5487d1e7b"},
-    {file = "bidict-0.22.1.tar.gz", hash = "sha256:1e0f7f74e4860e6d0943a05d4134c63a2fad86f3d4732fb265bd79e4e856d81d"},
-]
-
-[package.extras]
-docs = ["furo", "sphinx", "sphinx-copybutton"]
-lint = ["pre-commit"]
-test = ["hypothesis", "pytest", "pytest-benchmark[histogram]", "pytest-cov", "pytest-xdist", "sortedcollections", "sortedcontainers", "sphinx"]
-
-[[package]]
 name = "boto3"
 version = "1.28.17"
 description = "The AWS SDK for Python"
@@ -4506,4 +4490,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "9900a48034501aea4c6134df47857f6847b12dfb3315b9001f46fd708fd0d40c"
+content-hash = "afcc49316568de7497e560aaffa4dd0e279c880b70d8f0b217ab60652eb730db"
