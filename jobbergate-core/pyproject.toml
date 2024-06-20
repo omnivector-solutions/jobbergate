@@ -22,7 +22,7 @@ classifiers = [
 python = "^3.10"
 httpx = "^0.24.1"
 loguru = "^0.6.0"
-pendulum = "3.0.0b1"
+pendulum = { extras = ["test"], version = "^3.0.0" }
 py-buzz = "^4.0.0"
 python-jose = "^3.3.0"
 
