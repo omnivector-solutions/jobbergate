@@ -27,10 +27,7 @@ py-buzz = "^4.0.0"
 python-jose = "^3.3.0"
 
 [tool.poetry.dev-dependencies]
-black = "^24.3"
-isort = "^5.9.3"
 mypy = "^0.931"
-pyproject-flake8 = "^3.8"
 pytest-cov = "^3.0.0"
 pytest-env = "^0.6.2"
 pytest-freezegun = "^0.4.2"
@@ -40,6 +37,10 @@ requests-mock = "^1.10"
 respx = "^0.20.1"
 setuptools = "^69.0.2"
 toml = "^0.10.2"
+ruff = "^0.4.9"
+
+[tool.ruff]
+line-length = 120
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -54,22 +55,8 @@ addopts = [
 fail_under = 85
 show_missing = true
 
-[tool.black]
-line-length = 120
-
-[tool.isort]
-line_length = 120
-lines_after_imports = "2"
-profile = "black"
-multi_line_output = 3
-include_trailing_comma = true
-
-[tool.flake8]
-max-line-length = 120
-max-complexity = 40
-
 [[tool.mypy.overrides]]
-module = ["dataclasses", "toml", "requests", "jose.*"]
+module = ["click", "dataclasses", "toml", "requests", "jose.*"]
 ignore_missing_imports = true
 
 [build-system]

@@ -12,23 +12,20 @@ test: install ## Run the suite of unit tests
 	poetry run pytest
 
 .PHONY: lint
-lint: install ## Lint the code using black, isort and flake8
-	poetry run black --check ${PACKAGE_NAME} tests
-	poetry run isort --check ${PACKAGE_NAME} tests
-	poetry run pflake8 ${PACKAGE_NAME} tests
+lint: install
+	poetry run ruff check tests ${PACKAGE_NAME}
 
 .PHONY: mypy
 mypy: install ## Run static typer checks
 	poetry run mypy ${PACKAGE_NAME} --pretty
 
-.PHONY: qa
-qa: test lint mypy ## Run the full suite of quality assurance, i.e. test, lint and static type checker
-	echo "All quality checks pass!"
-
 .PHONY: format
-format: install ## Format the code using black and isort
-	poetry run black ${PACKAGE_NAME} tests
-	poetry run isort ${PACKAGE_NAME} tests
+format: install
+	poetry run ruff format tests ${PACKAGE_NAME}
+
+.PHONY: qa
+qa: test mypy lint format
+	echo "All quality checks pass!"
 
 .PHONY: clean
 clean: ## Remove cache files and similars
