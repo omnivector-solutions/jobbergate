@@ -526,9 +526,7 @@ def download_files(
         dedent(
             """
             A total of {} job script files were successfully downloaded.
-            """.format(
-                len(downloaded_files)
-            )
+            """.format(len(downloaded_files))
         ),
         subject="Job script download succeeded",
     )

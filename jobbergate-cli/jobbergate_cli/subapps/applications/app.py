@@ -405,9 +405,7 @@ def download_files(
         dedent(
             """
             A total of {} application files were successfully downloaded.
-            """.format(
-                len(saved_files)
-            )
+            """.format(len(saved_files))
         ).strip(),
         subject="Application download succeeded",
     )
