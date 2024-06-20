@@ -31,10 +31,6 @@ qa: test mypy lint format
 local: install
 	poetry run dev-tools dev-server --port=8000
 
-.PHONY: update-precommit
-update-precommit:
-	poetry run pre-commit autoupdate
-
 # To include a message with the generated migration, set the MESSAGE variable in the make command:
 #   $ make db-migration MESSAGE="this migration applies foo to bar"
 .PHONY: db-migrate
