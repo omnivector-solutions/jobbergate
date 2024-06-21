@@ -1056,13 +1056,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#jobbergate_cli.config.Settings.Config" class="md-nav__link">
-    Config
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#jobbergate_cli.config.Settings.compute_extra_settings" class="md-nav__link">
     compute_extra_settings()
   </a>
@@ -2019,13 +2012,6 @@
           <li class="md-nav__item">
   <a href="#jobbergate_cli.config.Settings.is_onsite_mode" class="md-nav__link">
     is_onsite_mode
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_cli.config.Settings.Config" class="md-nav__link">
-    Config
   </a>
   
 </li>
@@ -3255,7 +3241,7 @@ Can load configuration from a dotenv file if supplied.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><span title="pydantic.BaseSettings">BaseSettings</span></code></p>
+            Bases: <code><span title="pydantic_settings.BaseSettings">BaseSettings</span></code></p>
 
   
       <p>Provide a <code>pydantic</code> settings model to hold configuration values loaded from the environment.</p>
@@ -3296,45 +3282,6 @@ Can load configuration from a dotenv file if supplied.</p>
 </div>
 
 
-<div class="doc doc-object doc-class">
-
-
-
-
-<h6 id="jobbergate_cli.config.Settings.Config" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">Config</span>
-
-
-</h6>
-
-
-  <div class="doc doc-contents ">
-
-  
-      <p>Customize behavior of the Settings class. Especially, enable the use of dotenv to load settings from a <code>.env</code>
-file instead of the environment.</p>
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
 
 
 <div class="doc doc-object doc-function">
@@ -3347,7 +3294,7 @@ file instead of the environment.</p>
 
 
 </h6>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">compute_extra_settings</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">compute_extra_settings</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Self</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4785,6 +4732,10 @@ to the columns of the table.</p>
 <h6 id="jobbergate_cli.schemas.JobScriptResponse.null_files" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">null_files</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
 
 </h6>
 <div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">null_files</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -5043,7 +4994,7 @@ JobbergateApplicationConfig model.</p>
 
   <div class="doc doc-contents ">
           <p class="doc doc-class-bases">
-            Bases: <code><span title="pydantic.generics.GenericModel">GenericModel</span></code>, <code><span title="typing.Generic">Generic</span>[<span title="jobbergate_cli.schemas.EnvelopeT">EnvelopeT</span>]</code></p>
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code>, <code><span title="typing.Generic">Generic</span>[<span title="jobbergate_cli.schemas.EnvelopeT">EnvelopeT</span>]</code></p>
 
   
       <p>A model describing the structure of response envelopes from "list" endpoints.</p>
@@ -8983,13 +8934,15 @@ parameter_path is a valid json file</p>
 <h5 id="jobbergate_cli.time_loop.Tick" class="doc doc-heading">
           <span class="doc doc-object-name doc-class-name">Tick</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
 
 </h5>
 
 
   <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
 
   
       <p>A helper class describing a "tick".</p>
