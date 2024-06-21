@@ -88,6 +88,22 @@
     "client": {
       "cli": [
         {
+          "id": "2dd32416-2e52-4ed3-97cd-b941753b7538",
+          "name": "jobbergate:clusters:read",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
+          "attributes": {}
+        },
+        {
+          "id": "f1de913f-2068-4445-81a5-6eca20525102",
+          "name": "jobbergate:clusters:update",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
+          "attributes": {}
+        },
+        {
           "id": "3494f738-d92c-4b19-9e25-5590ab01f086",
           "name": "jobbergate:job-templates:create",
           "composite": false,
@@ -406,6 +422,22 @@
       ],
       "local-slurm": [
         {
+          "id": "94b9846e-197f-4121-a157-6d5533a55dba",
+          "name": "jobbergate:clusters:read",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
+          "attributes": {}
+        },
+        {
+          "id": "f7a52978-f8ba-4c19-9161-7fd1a9fc26df",
+          "name": "jobbergate:clusters:update",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
+          "attributes": {}
+        },
+        {
           "id": "e6e06eff-bc07-433f-8059-69ba1e7e4c6d",
           "name": "jobbergate:job-templates:create",
           "composite": false,
@@ -679,6 +711,8 @@
       "clientRoles": {
         "cli": [
           "jobbergate:admin",
+          "jobbergate:clusters:read",
+          "jobbergate:clusters:update",
           "jobbergate:job-scripts:create",
           "jobbergate:job-scripts:delete",
           "jobbergate:job-scripts:read",
@@ -711,10 +745,12 @@
       ],
       "clientRoles": {
         "local-slurm": [
+          "jobbergate:clusters:update",
+          "jobbergate:job-scripts:delete",
           "jobbergate:job-scripts:read",
-          "jobbergate:job-submissions:create",
           "jobbergate:job-submissions:read",
-          "jobbergate:job-submissions:update"
+          "jobbergate:job-submissions:update",
+          "jobbergate:job-templates:delete"
         ]
       },
       "notBefore": 0,

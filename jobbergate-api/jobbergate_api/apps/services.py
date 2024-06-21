@@ -593,8 +593,16 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
         )
 
-        # Mypy doesn't like aioboto3 much
-        await self.bucket.upload_fileobj(Fileobj=file_obj, Key=instance.file_key)  # type: ignore
+        try:
+            # Mypy doesn't like aioboto3 much
+            await self.bucket.upload_fileobj(Fileobj=file_obj, Key=instance.file_key)  # type: ignore
+        except Exception as e:
+            message = f"Error uploading file {instance.filename} to {instance.file_key} -- {str(e)}"
+            logger.error(message)
+            raise ServiceError(
+                f"Error uploading file {instance.filename} to the file storage",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     async def add_instance(self, parent_id, filename, upsert_kwargs) -> FileModel:
         """
