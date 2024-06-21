@@ -32,6 +32,8 @@ PyYAML = "6.*"
 rich = "^11.2.0"
 sentry-sdk = "^1.29.2"
 typer = "^0.9.0"
+pydantic = "^2.7"
+pydantic-settings = "^2.3.3"
 
 [tool.poetry.scripts]
 jobbergate = "jobbergate_cli.main:app"
@@ -48,7 +50,7 @@ strategy = "exact"
 black = ">=23,<25"
 flake8-pyproject = "^1.2.3"
 isort = "^5.9.3"
-mypy = "^0.982"
+mypy = "^1.10"
 plummet = { extras = ["time-machine"], version = "^1.1.0" }
 pytest-cov = "^4.0.0"
 pytest-env = "^0.6.2"
@@ -94,6 +96,9 @@ include_trailing_comma = true
 [tool.flake8]
 max-line-length = 120
 max-complexity = 40
+
+[tool.mypy]
+plugins = "pydantic.mypy"
 
 [[tool.mypy.overrides]]
 module = ["urllib3", "pyperclip", "inquirer.*", "jose.*", "pep562"]

@@ -386,7 +386,7 @@ def test_make_request__uses_request_model_instance_for_request_body_if_passed(re
     assert dummy_response_instance.foo == 1
     assert dummy_response_instance.bar == "one"
 
-    assert dummy_route.calls.last.request.content == json.dumps(dict(foo=1, bar="one")).encode("utf-8")
+    assert json.loads(dummy_route.calls.last.request.content.decode()) == dict(foo=1, bar="one")
     assert dummy_route.calls.last.request.headers["Content-Type"] == "application/json"
 
 
@@ -435,5 +435,5 @@ def test_make_request__can_use_unpack_response_into_ListResponseEnvelope(respx_m
     assert dummy_response_instance.size == 5
     assert dummy_response_instance.pages == 1
 
-    assert dummy_route.calls.last.request.content == json.dumps(dict(foo=1, bar="one")).encode("utf-8")
+    assert json.loads(dummy_route.calls.last.request.content.decode()) == dict(foo=1, bar="one")
     assert dummy_route.calls.last.request.headers["Content-Type"] == "application/json"

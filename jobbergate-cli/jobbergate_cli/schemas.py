@@ -13,7 +13,7 @@ import pydantic.generics
 from jobbergate_cli.constants import FileType
 
 
-class TokenSet(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+class TokenSet(pydantic.BaseModel, extra="ignore"):
     """
     A model representing a pairing of access and refresh tokens
     """
@@ -29,7 +29,7 @@ class IdentityData(pydantic.BaseModel):
 
     email: str
     client_id: str
-    organization_id: Optional[str]
+    organization_id: Optional[str] = None
 
 
 class Persona(pydantic.BaseModel):
@@ -42,7 +42,7 @@ class Persona(pydantic.BaseModel):
     identity_data: IdentityData
 
 
-class DeviceCodeData(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+class DeviceCodeData(pydantic.BaseModel, extra="ignore"):
     """
     A model representing the data that is returned from the OIDC provider's device code endpoint.
     """
@@ -57,24 +57,24 @@ class JobbergateContext(pydantic.BaseModel, arbitrary_types_allowed=True):
     A data object describing context passed from the main entry point.
     """
 
-    persona: Optional[Persona]
+    persona: Optional[Persona] = None
     full_output: bool = False
     raw_output: bool = False
-    client: Optional[httpx.Client]
+    client: Optional[httpx.Client] = None
 
 
-class JobbergateConfig(pydantic.BaseModel, extra=pydantic.Extra.allow):
+class JobbergateConfig(pydantic.BaseModel, extra="allow"):
     """
     A data object describing the config values needed in the "jobbergate_config" section of the
     JobbergateApplicationConfig model.
     """
 
-    template_files: Optional[List[Path]]
+    template_files: Optional[List[Path]] = None
     default_template: Optional[str] = None
     supporting_files_output_name: Optional[Dict[str, List[str]]] = None
     supporting_files: Optional[List[str]] = None
 
-    @pydantic.root_validator(pre=True)
+    @pydantic.model_validator(mode="before")
     def compute_extra_settings(cls, values):
         """
         Compute missing values and extra operations to enhance the user experience and backward compatibility.
@@ -96,7 +96,7 @@ class JobbergateApplicationConfig(pydantic.BaseModel):
     jobbergate_config: JobbergateConfig
 
 
-class TemplateFileResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+class TemplateFileResponse(pydantic.BaseModel, extra="ignore"):
     parent_id: int
     filename: str
     file_type: str
@@ -108,7 +108,7 @@ class TemplateFileResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
         return f"/jobbergate/job-script-templates/{self.parent_id}/upload/template/{self.filename}"
 
 
-class WorkflowFileResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+class WorkflowFileResponse(pydantic.BaseModel, extra="ignore"):
     parent_id: int
     filename: str
     runtime_config: Dict[str, Any] = {}
@@ -120,7 +120,7 @@ class WorkflowFileResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
         return f"/jobbergate/job-script-templates/{self.parent_id}/upload/workflow"
 
 
-class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+class ApplicationResponse(pydantic.BaseModel, extra="ignore"):
     """
     Describes the format of data for applications retrieved from the Jobbergate API endpoints.
     """
@@ -140,7 +140,7 @@ class ApplicationResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     workflow_files: List[WorkflowFileResponse] = []
 
 
-class LocalTemplateFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+class LocalTemplateFile(pydantic.BaseModel, extra="ignore"):
     """
     Template file retrieved from a local folder.
     """
@@ -150,7 +150,7 @@ class LocalTemplateFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     file_type: FileType
 
 
-class LocalWorkflowFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+class LocalWorkflowFile(pydantic.BaseModel, extra="ignore"):
     """
     Workflow file retrived from a local folder.
     """
@@ -160,7 +160,7 @@ class LocalWorkflowFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     runtime_config: Dict[str, Any] = {}
 
 
-class LocalApplication(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+class LocalApplication(pydantic.BaseModel, extra="ignore"):
     """
     Application retrieved from a local folder.
     """
@@ -171,7 +171,7 @@ class LocalApplication(pydantic.BaseModel, extra=pydantic.Extra.ignore):
     workflow_files: List[LocalWorkflowFile] = []
 
 
-class JobScriptFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+class JobScriptFile(pydantic.BaseModel, extra="ignore"):
     """
     Model containing job-script files.
     """
@@ -187,11 +187,7 @@ class JobScriptFile(pydantic.BaseModel, extra=pydantic.Extra.ignore):
         return f"/jobbergate/job-scripts/{self.parent_id}/upload/{self.filename}"
 
 
-class JobScriptResponse(
-    pydantic.BaseModel,
-    extra=pydantic.Extra.ignore,
-    allow_population_by_field_name=True,
-):
+class JobScriptResponse(pydantic.BaseModel):
     """
     Describes the format of data for job_scripts retrieved from the Jobbergate API endpoints.
     """
@@ -208,7 +204,8 @@ class JobScriptResponse(
 
     files: List[JobScriptFile] = []
 
-    @pydantic.validator("files", pre=True)
+    @pydantic.field_validator("files", mode="before")
+    @classmethod
     def null_files(cls, value):
         """
         Remap a `None` value in files to an empty list.
@@ -217,27 +214,29 @@ class JobScriptResponse(
             return []
         return value
 
+    model_config = pydantic.ConfigDict(populate_by_name=True, extra="ignore")
 
-class JobSubmissionResponse(pydantic.BaseModel, extra=pydantic.Extra.ignore):
+
+class JobSubmissionResponse(pydantic.BaseModel, extra="ignore"):
     """
     Describes the format of data for job_submissions retrieved from the Jobbergate API endpoints.
     """
 
     job_submission_id: int = pydantic.Field(alias="id")
     name: str
-    slurm_job_id: Optional[int]
-    slurm_job_state: Optional[str]
-    slurm_job_info: Optional[str]
-    job_script_id: Optional[int]
-    cluster_name: Optional[str] = pydantic.Field(alias="client_id")
+    slurm_job_id: Optional[int] = None
+    slurm_job_state: Optional[str] = None
+    slurm_job_info: Optional[str] = None
+    job_script_id: Optional[int] = None
+    cluster_name: Optional[str] = pydantic.Field(default=None, alias="client_id")
     description: Optional[str] = None
-    execution_directory: Optional[Path]
+    execution_directory: Optional[Path] = None
     owner_email: str
     status: str
-    created_at: Optional[datetime]
-    updated_at: Optional[datetime]
-    report_message: Optional[str]
-    sbatch_arguments: Optional[list[str]]
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    report_message: Optional[str] = None
+    sbatch_arguments: Optional[list[str]] = None
 
 
 class JobScriptCreateRequest(pydantic.BaseModel):
@@ -246,14 +245,14 @@ class JobScriptCreateRequest(pydantic.BaseModel):
     """
 
     name: str
-    description: Optional[str]
+    description: Optional[str] = None
 
 
 class RenderFromTemplateRequest(pydantic.BaseModel):
     """Request model for creating a JobScript entry from a template."""
 
     template_output_name_mapping: Dict[str, str]
-    sbatch_params: Optional[List[str]]
+    sbatch_params: Optional[List[str]] = None
     param_dict: Dict[str, Any]
 
 
@@ -277,13 +276,13 @@ class JobSubmissionCreateRequestData(pydantic.BaseModel):
     slurm_job_id: Optional[int] = None
     client_id: Optional[str] = pydantic.Field(None, alias="cluster_name")
     execution_directory: Optional[Path] = None
-    sbatch_arguments: Optional[list[str]]
+    sbatch_arguments: Optional[list[str]] = None
 
 
 EnvelopeT = TypeVar("EnvelopeT")
 
 
-class ListResponseEnvelope(pydantic.generics.GenericModel, Generic[EnvelopeT]):
+class ListResponseEnvelope(pydantic.BaseModel, Generic[EnvelopeT]):
     """
     A model describing the structure of response envelopes from "list" endpoints.
     """

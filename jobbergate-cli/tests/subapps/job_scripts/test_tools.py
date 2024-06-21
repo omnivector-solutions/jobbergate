@@ -62,7 +62,7 @@ def test_fetch_job_script_data__success(
         ),
     )
     job_script = fetch_job_script_data(dummy_context, 1)
-    assert job_script == JobScriptResponse.parse_obj(dummy_job_script_data[0])
+    assert job_script == JobScriptResponse.model_validate(dummy_job_script_data[0])
 
 
 def test_inject_sbatch_params():
@@ -358,7 +358,7 @@ def test_render_job_script__providing_a_name(
         identifier=None,
     )
 
-    assert actual_job_script_data == JobScriptResponse.parse_obj(desired_job_script_data)
+    assert actual_job_script_data == JobScriptResponse.model_validate(desired_job_script_data)
 
 
 def test_render_job_script__set_name_dynamically_from_application_config(
@@ -431,7 +431,7 @@ def test_render_job_script__set_name_dynamically_from_application_config(
         identifier=None,
     )
 
-    assert actual_job_script_data == JobScriptResponse.parse_obj(desired_job_script_data)
+    assert actual_job_script_data == JobScriptResponse.model_validate(desired_job_script_data)
 
 
 def test_render_job_script__set_name_dynamically_from_jobbergate_config(
@@ -504,7 +504,7 @@ def test_render_job_script__set_name_dynamically_from_jobbergate_config(
         identifier=None,
     )
 
-    assert actual_job_script_data == JobScriptResponse.parse_obj(desired_job_script_data)
+    assert actual_job_script_data == JobScriptResponse.model_validate(desired_job_script_data)
 
 
 def test_render_job_script__without_a_name(
@@ -576,7 +576,7 @@ def test_render_job_script__without_a_name(
         identifier=None,
     )
 
-    assert actual_job_script_data == JobScriptResponse.parse_obj(desired_job_script_data)
+    assert actual_job_script_data == JobScriptResponse.model_validate(desired_job_script_data)
 
 
 def test_question_helper__return_actual_value_when_actual_value_is_not_none():
@@ -664,7 +664,7 @@ class TestDownloadJobScriptFiles:
                 json=dummy_job_script_data[0],
             ),
         )
-        job_script_data = JobScriptResponse.parse_obj(dummy_job_script_data[0])
+        job_script_data = JobScriptResponse.model_validate(dummy_job_script_data[0])
 
         get_file_routes = [respx_mock.get(f"{dummy_domain}{f.path}") for f in job_script_data.files]
         for route in get_file_routes:

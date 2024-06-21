@@ -5,7 +5,6 @@ Provide tool functions for working with Application data.
 import contextlib
 import copy
 import io
-import json
 import pathlib
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
@@ -92,7 +91,7 @@ def fetch_application_data_locally(
     workflow_file = LocalWorkflowFile(
         filename=module_file_path.name,
         path=module_file_path,
-        runtime_config=application_config.jobbergate_config.dict(),
+        runtime_config=application_config.jobbergate_config.model_dump(),
     )
 
     return LocalApplication(
@@ -324,7 +323,7 @@ def upload_application(
             files={
                 "upload_file": (module_file_path.name, module_file, "text/plain"),
             },
-            data={"runtime_config": application_config.jobbergate_config.json()},
+            data={"runtime_config": application_config.jobbergate_config.model_dump_json()},
             expected_status=200,
         )
 
@@ -352,11 +351,10 @@ def save_application_files(
         config_path.parent.mkdir(parents=True, exist_ok=True)
         config_path.write_text(
             yaml.dump(
-                json.loads(  # workaround to convert path to string
-                    application_config.json(
-                        exclude_none=True,
-                        exclude_unset=True,
-                    ),
+                application_config.model_dump(
+                    mode="json",
+                    exclude_none=True,
+                    exclude_unset=True,
                 ),
                 indent=2,
             )
@@ -417,7 +415,7 @@ def load_application_from_source(app_source: str, app_config: JobbergateApplicat
     app_locals: Dict[str, Any] = dict()
     exec(app_source, app_locals, app_locals)
     jobbergate_application_class = app_locals["JobbergateApplication"]
-    application = jobbergate_application_class(app_config.dict())
+    application = jobbergate_application_class(app_config.model_dump())
     return application
 
 
@@ -459,7 +457,7 @@ class ApplicationRuntime:
     def as_flatten_param_dict(self) -> Dict[str, Any]:
         """Flatten the internal data to support the rendering process."""
         param_dict_flat = {}
-        for outer_value in self.app_config.dict().values():
+        for outer_value in self.app_config.model_dump().values():
             for nest_key, nest_value in outer_value.items():
                 param_dict_flat[nest_key] = nest_value
         return param_dict_flat
@@ -522,7 +520,7 @@ class ApplicationRuntime:
         # Legacy applications change the values at runtime, so we need to update the config
         self.app_config = JobbergateApplicationConfig(
             application_config=dict(self.app_module.application_config),
-            jobbergate_config=JobbergateConfig.parse_obj(self.app_module.jobbergate_config),
+            jobbergate_config=JobbergateConfig.model_validate(self.app_module.jobbergate_config),
         )
         logger.debug(f"Concluded getting answers: {self.answers}")
 

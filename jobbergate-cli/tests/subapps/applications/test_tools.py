@@ -62,7 +62,7 @@ def test_fetch_application_data__success__using_id(
 
     result = fetch_application_data(dummy_context, id=app_id)
     assert fetch_route.called
-    assert result == ApplicationResponse.parse_obj(app_data)
+    assert result == ApplicationResponse.model_validate(app_data)
 
 
 def test_fetch_application_data__success__using_identifier(
@@ -83,7 +83,7 @@ def test_fetch_application_data__success__using_identifier(
 
     result = fetch_application_data(dummy_context, identifier=app_identifier)
     assert fetch_route.called
-    assert result == ApplicationResponse.parse_obj(app_data)
+    assert result == ApplicationResponse.model_validate(app_data)
 
 
 def test_fetch_application_data__fails_with_both_id_or_identifier(dummy_context):
@@ -109,7 +109,7 @@ def test_load_application_data__success(dummy_module_source, dummy_config_source
             WorkflowFileResponse(
                 filename="jobbergate.py",
                 parent_id=1,
-                runtime_config=expected_config.jobbergate_config.dict(),
+                runtime_config=expected_config.jobbergate_config.model_dump(),
                 created_at=datetime.datetime.now(),
                 updated_at=datetime.datetime.now(),
             )
@@ -135,7 +135,7 @@ def test_load_application_data__fails_if_application_module_cannot_be_loaded_fro
             WorkflowFileResponse(
                 filename="jobbergate.py",
                 parent_id=1,
-                runtime_config=expected_config.jobbergate_config.dict(),
+                runtime_config=expected_config.jobbergate_config.model_dump(),
                 created_at=datetime.datetime.now(),
                 updated_at=datetime.datetime.now(),
             )
@@ -190,7 +190,7 @@ def test_fetch_application_data_locally__success(
             LocalWorkflowFile(
                 filename="jobbergate.py",
                 path=module_file_path,
-                runtime_config=expected_config.jobbergate_config.dict(),
+                runtime_config=expected_config.jobbergate_config.model_dump(),
             )
         ],
     )
@@ -388,7 +388,7 @@ class TestDownloadApplicationFiles:
                 WorkflowFileResponse(
                     filename="jobbergate.py",
                     parent_id=1,
-                    runtime_config=application_config.jobbergate_config.dict(),
+                    runtime_config=application_config.jobbergate_config.model_dump(),
                     created_at=datetime.datetime.now(),
                     updated_at=datetime.datetime.now(),
                 )
@@ -432,7 +432,7 @@ class TestApplicationRuntime:
     @pytest.fixture(scope="function")
     def application_runtime(self, dummy_module_source, dummy_application_data):
         return ApplicationRuntime(
-            ApplicationResponse.parse_obj(dummy_application_data[0]),
+            ApplicationResponse.model_validate(dummy_application_data[0]),
             dummy_module_source,
         )
 
@@ -515,7 +515,7 @@ class TestApplicationRuntime:
             def mainflow(self, data):
                 self.jobbergate_config["job_script_name"] = "very-unique-name"
 
-        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.model_dump())
         application_runtime.execute_application()
 
         assert application_runtime.as_flatten_param_dict()["job_script_name"] == "very-unique-name"
@@ -525,7 +525,7 @@ class TestApplicationRuntime:
             def mainflow(self, data):
                 data["job_script_name"] = "very-unique-name"
 
-        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.model_dump())
         application_runtime.execute_application()
 
         assert application_runtime.as_flatten_param_dict()["job_script_name"] == "very-unique-name"
@@ -535,7 +535,7 @@ class TestApplicationRuntime:
             def mainflow(self, data):
                 self.jobbergate_config["default_template"] = "very-unique-template"
 
-        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.model_dump())
         application_runtime.execute_application()
 
         assert application_runtime.as_flatten_param_dict()["default_template"] == "very-unique-template"
@@ -545,7 +545,7 @@ class TestApplicationRuntime:
             def mainflow(self, data):
                 data["default_template"] = "very-unique-template"
 
-        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.model_dump())
         application_runtime.execute_application()
 
         assert application_runtime.as_flatten_param_dict()["default_template"] == "very-unique-template"
@@ -568,7 +568,7 @@ class TestApplicationRuntime:
             def subflow(self, data):
                 return [question3]
 
-        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.model_dump())
         dummy_render_class.prepared_input = dict(
             foo="FOO",
             bar="BAR",
@@ -604,7 +604,7 @@ class TestApplicationRuntime:
             def subflow(self, data):
                 return None
 
-        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.model_dump())
         dummy_render_class.prepared_input = dict(foo="FOO", bar="BAR", baz="BAZ")
 
         mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
@@ -629,7 +629,7 @@ class TestApplicationRuntime:
             def subflow(self, data):
                 return [question3]
 
-        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.model_dump())
         application_runtime.fast_mode = True
         dummy_render_class.prepared_input = dict(foo="FOO", bar="BAR", baz="BAZ")
 
@@ -655,7 +655,7 @@ class TestApplicationRuntime:
             def subflow(self, data):
                 return [question3]
 
-        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.model_dump())
         application_runtime.supplied_params = dict(bar="rab")
         dummy_render_class.prepared_input = dict(
             foo="FOO",
@@ -681,7 +681,7 @@ class TestApplicationRuntime:
             def subflow(self, data):
                 raise NotImplementedError("BOOM!")
 
-        application_runtime.app_module = DummyApplication(application_runtime.app_config.dict())
+        application_runtime.app_module = DummyApplication(application_runtime.app_config.model_dump())
         dummy_render_class.prepared_input = dict(
             foo="FOO",
         )

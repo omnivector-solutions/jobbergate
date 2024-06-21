@@ -117,12 +117,7 @@ def render_list_results(
     :param: title:         The title header to include above the ``Table`` output
     """
     if ctx.raw_output:
-        # THIS IS SO DUMB....need to dump to string to make sure paths are converted,
-        # then convert back to dict so we can strip out the "results" element, then
-        # dump back to string
-        serialized = envelope.json()
-        deserialized = json.loads(serialized)
-        render_json(deserialized["items"])
+        render_json(envelope.model_dump(mode="json")["items"])
     else:
         if envelope.total == 0:
             terminal_message("There are no results to display", subject="Nothing here...")
@@ -195,8 +190,7 @@ def render_single_result(
     """
     if isinstance(result, pydantic.BaseModel):
         result_model = cast(pydantic.BaseModel, result)
-        result_dict = json.loads(result_model.json())
-        result = cast(Dict[str, Any], result_dict)
+        result = cast(Dict[str, Any], result_model.model_dump(mode="json"))
 
     if value_mappers is not None:
         for key, mapper in value_mappers.items():
@@ -218,11 +212,7 @@ def render_paginated_list_results(
     hidden_fields: Optional[List[str]] = None,
     value_mappers: Optional[Dict[str, Callable[[Any], Any]]] = None,
 ):
-    # Serialize envelope for rendering
-    # This is needed because ListResponseEnvelope may have a nested model or it may have a dict
-    # After serialization, we have a consistency in a list of dicts
-    serialized = envelope.json()
-    deserialized = json.loads(serialized)
+    deserialized = envelope.model_dump(mode="json")
 
     if envelope.total == 0:
         terminal_message("There are no results to display", subject="Nothing here...")

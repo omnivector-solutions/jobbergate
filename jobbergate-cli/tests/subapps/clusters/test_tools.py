@@ -92,7 +92,7 @@ def test_load_clusters_from_cache__success(tmp_path, tweak_settings):
                 updated_at=datetime.utcnow(),
                 client_ids=["cluster1", "cluster2", "cluster3"],
             )
-            cluster_cache_path.write_text(cache_data.json())
+            cluster_cache_path.write_text(cache_data.model_dump_json())
 
             assert load_clusters_from_cache() == ["cluster1", "cluster2", "cluster3"]
 
@@ -105,7 +105,7 @@ def test_load_clusters_from_cache__returns_None_if_cache_is_expired(tmp_path, tw
                 updated_at=datetime.utcnow(),
                 client_ids=["cluster1", "cluster2", "cluster3"],
             )
-            cluster_cache_path.write_text(cache_data.json())
+            cluster_cache_path.write_text(cache_data.model_dump_json())
 
         with plummet.frozen_time("2022-05-13 16:56:06"):
             assert load_clusters_from_cache() is None

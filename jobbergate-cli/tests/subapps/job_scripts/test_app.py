@@ -73,7 +73,7 @@ def test_get_one__success(
     assert result.exit_code == 0, f"get-one failed: {result.stdout}"
     mocked_render.assert_called_once_with(
         dummy_context,
-        JobScriptResponse.parse_obj(dummy_job_script_data[0]),
+        JobScriptResponse.model_validate(dummy_job_script_data[0]),
         title="Job Script",
         hidden_fields=HIDDEN_FIELDS,
     )
@@ -168,7 +168,7 @@ def test_create__success(
 
     mocked_render.assert_called_once_with(
         dummy_context,
-        JobScriptResponse.parse_obj(
+        JobScriptResponse.model_validate(
             dict(
                 id=1,
                 created_at="2023-10-03 08:25:00",
@@ -250,7 +250,7 @@ def test_render__non_fast_mode_and_job_submission(
     )
 
     submissions_handler = mock.MagicMock()
-    submissions_handler.run.return_value = JobSubmissionResponse.parse_obj(job_submission_data)
+    submissions_handler.run.return_value = JobSubmissionResponse.model_validate(job_submission_data)
     mocked_factory = mocker.patch(
         "jobbergate_cli.subapps.job_scripts.app.job_submissions_factory", return_value=submissions_handler
     )
@@ -629,7 +629,7 @@ def test_show_files__success(
     )
 
     get_file_routes = [
-        respx_mock.get(f"{dummy_domain}{JobScriptFile.parse_obj(f).path}") for f in job_script_data["files"]
+        respx_mock.get(f"{dummy_domain}{JobScriptFile.model_validate(f).path}") for f in job_script_data["files"]
     ]
     for route in get_file_routes:
         route.mock(
