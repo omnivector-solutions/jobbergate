@@ -183,7 +183,7 @@ def secure_session(
                 ensure_organization=ensure_organization,
                 ensure_client_id=ensure_client_id,
             )
-        )
+        ),
     ) -> typing.AsyncIterator[SecureSession]:
         override_db_name = identity_payload.organization_id if settings.MULTI_TENANCY_ENABLED else None
         async with engine_factory.auto_session(override_db_name=override_db_name, commit=commit) as session:

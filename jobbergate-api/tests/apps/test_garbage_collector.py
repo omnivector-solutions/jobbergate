@@ -1,7 +1,5 @@
 """Tests for the garbage collector."""
 
-from unittest.mock import patch
-
 import pytest
 from fastapi import BackgroundTasks
 

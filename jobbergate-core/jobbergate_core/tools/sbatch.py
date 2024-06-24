@@ -53,7 +53,6 @@ def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: list[str
 
 @dataclass
 class SubprocessHandler:
-
     def run(self, cmd: Sequence[str], **kwargs) -> subprocess.CompletedProcess:
         logger.debug("Running command '{}' with kwargs: {}", " ".join(cmd), kwargs)
         try:

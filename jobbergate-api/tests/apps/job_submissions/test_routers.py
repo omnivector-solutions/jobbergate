@@ -1316,7 +1316,7 @@ async def test_job_submissions_agent_submitted__success(
     )
 
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
-    response = await client.post(f"/jobbergate/job-submissions/agent/submitted", json=payload)
+    response = await client.post("/jobbergate/job-submissions/agent/submitted", json=payload)
     assert response.status_code == status.HTTP_202_ACCEPTED
 
     instance = await synth_services.crud.job_submission.get(inserted_job_submission_id)
@@ -1362,7 +1362,7 @@ async def test_job_submissions_agent_submitted__fails_if_status_is_not_CREATED(
     )
 
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
-    response = await client.post(f"/jobbergate/job-submissions/agent/submitted", json=payload)
+    response = await client.post("/jobbergate/job-submissions/agent/submitted", json=payload)
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "Only CREATED Job Submissions can be marked as SUBMITTED" in response.text
 
@@ -1422,7 +1422,7 @@ async def test_job_submissions_agent_submitted__fails_if_client_id_does_not_matc
     )
 
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="stupid-client")
-    response = await client.post(f"/jobbergate/job-submissions/agent/submitted", json=payload)
+    response = await client.post("/jobbergate/job-submissions/agent/submitted", json=payload)
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
@@ -1465,7 +1465,7 @@ async def test_job_submissions_agent_rejected__success(
         client_id="dummy-client",
         organization_id="dummy-org",
     )
-    response = await client.post(f"/jobbergate/job-submissions/agent/rejected", json=payload)
+    response = await client.post("/jobbergate/job-submissions/agent/rejected", json=payload)
     assert response.status_code == status.HTTP_202_ACCEPTED
 
     instance = await synth_services.crud.job_submission.get(inserted_job_submission_id)
@@ -1515,7 +1515,7 @@ async def test_job_submissions_agent_rejected__publishes_status_change_to_rabbit
         client_id="dummy-client",
         organization_id="dummy-org",
     )
-    response = await client.post(f"/jobbergate/job-submissions/agent/rejected", json=payload)
+    response = await client.post("/jobbergate/job-submissions/agent/rejected", json=payload)
     assert response.status_code == status.HTTP_202_ACCEPTED
 
     async with rabbitmq_connect(exchange_name="dummy-org", do_purge=True) as (_, queue):
@@ -1566,7 +1566,7 @@ async def test_job_submissions_agent_rejected__fails_if_status_is_not_CREATED(
     )
 
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
-    response = await client.post(f"/jobbergate/job-submissions/agent/rejected", json=payload)
+    response = await client.post("/jobbergate/job-submissions/agent/rejected", json=payload)
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "Only CREATED Job Submissions can be marked as REJECTED" in response.text
 

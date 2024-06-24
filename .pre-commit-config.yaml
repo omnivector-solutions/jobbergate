@@ -1,9 +1,0 @@
-repos:
-- repo: local
-  hooks:
-    - id: jobbergate-api-tests
-      name: Run quality checks in jobbergate-api
-      language: system
-      entry: bash -c 'cd jobbergate-api && exec make qa'
-      pass_filenames: false
-      files: ^jobbergate-api/

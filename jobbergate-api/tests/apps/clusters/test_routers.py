@@ -8,7 +8,6 @@ from jobbergate_api.apps.permissions import Permissions
 
 
 class TestPutClusterStatus:
-
     async def test_report_cluster_status__create(self, client, inject_security_header, synth_session):
         client_id = "dummy-client"
         inject_security_header(
@@ -19,7 +18,7 @@ class TestPutClusterStatus:
 
         interval = 60
         now = pendulum.datetime(2023, 1, 1)
-        with pendulum.test(now):
+        with pendulum.travel_to(now, freeze=True):
             response = await client.put("/jobbergate/clusters/status", params={"interval": interval})
 
         assert response.status_code == status.HTTP_202_ACCEPTED
@@ -41,13 +40,13 @@ class TestPutClusterStatus:
 
         original_time = pendulum.datetime(2023, 1, 1)
         original_interval = 60
-        with pendulum.test(original_time):
+        with pendulum.travel_to(original_time, freeze=True):
             response = await client.put("/jobbergate/clusters/status", params={"interval": original_interval})
             assert response.status_code == status.HTTP_202_ACCEPTED
 
         now = original_time.add(days=1)
         interval = original_interval * 2
-        with pendulum.test(now):
+        with pendulum.travel_to(now, freeze=True):
             response = await client.put("/jobbergate/clusters/status", params={"interval": interval})
             assert response.status_code == status.HTTP_202_ACCEPTED
 
@@ -74,7 +73,6 @@ class TestPutClusterStatus:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     async def test_report_cluster_status__no_client_id(self, client, inject_security_header):
-
         inject_security_header("who@cares.com", Permissions.CLUSTERS_UPDATE)
 
         response = await client.put("/jobbergate/clusters/status", params={"interval": 60})
@@ -82,7 +80,6 @@ class TestPutClusterStatus:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     async def test_report_cluster_status__bad_permission(self, client, inject_security_header):
-
         inject_security_header("who@cares.com", client_id="dummy-client")
 
         response = await client.put("/jobbergate/clusters/status", params={"interval": 60})
@@ -91,11 +88,9 @@ class TestPutClusterStatus:
 
 
 class TestListClusterStatus:
-
     async def test_get_cluster_status__empty(
         self, client, inject_security_header, unpack_response, synth_session
     ):
-
         inject_security_header("who@cares.com", Permissions.CLUSTERS_READ)
 
         response = await client.get("/jobbergate/clusters/status")
@@ -104,7 +99,6 @@ class TestListClusterStatus:
     async def test_get_cluster_status__list(
         self, client, inject_security_header, unpack_response, synth_session
     ):
-
         statuses = [
             ClusterStatus(client_id="client-1", interval=10, last_reported=pendulum.datetime(2023, 1, 1)),
             ClusterStatus(client_id="client-2", interval=20, last_reported=pendulum.datetime(2023, 1, 1)),
@@ -113,7 +107,7 @@ class TestListClusterStatus:
 
         inject_security_header("who@cares.com", Permissions.CLUSTERS_READ)
 
-        with pendulum.test(pendulum.datetime(2023, 1, 1)):
+        with pendulum.travel_to(pendulum.datetime(2023, 1, 1), freeze=True):
             synth_session.add_all(statuses)
             response = await client.get("/jobbergate/clusters/status")
 
@@ -124,7 +118,6 @@ class TestListClusterStatus:
         assert unpack_response(response, key="is_healthy") == [True, True, False]
 
     async def test_get_cluster_status__bad_permission(self, client, inject_security_header, synth_session):
-
         inject_security_header("who@cares.com")
 
         response = await client.get("/jobbergate/clusters/status")

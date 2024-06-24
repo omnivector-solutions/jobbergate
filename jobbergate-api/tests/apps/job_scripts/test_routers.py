@@ -2,7 +2,6 @@
 
 import pytest
 from fastapi import status
-from loguru import logger
 
 from jobbergate_api.apps.permissions import Permissions
 
@@ -506,7 +505,7 @@ async def test_update_job_script__fail_not_found(
         description="new-description",
     )
     inject_security_header(tester_email, Permissions.JOB_SCRIPTS_UPDATE)
-    response = await client.put(f"jobbergate/job-scripts/0", json=payload)
+    response = await client.put("jobbergate/job-scripts/0", json=payload)
 
     assert response.status_code == 404
 

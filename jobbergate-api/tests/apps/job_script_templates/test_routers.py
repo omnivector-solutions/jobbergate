@@ -6,7 +6,10 @@ import pytest
 from fastapi import status
 
 from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
-from jobbergate_api.apps.job_script_templates.schemas import JobTemplateBaseDetailedView, JobTemplateListView
+from jobbergate_api.apps.job_script_templates.schemas import (
+    JobTemplateBaseDetailedView,
+    JobTemplateListView,
+)
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.apps.services import ServiceError
 
@@ -105,7 +108,7 @@ async def test_create_job_template__coerces_empty_identifier_to_None(
     assert response.status_code == 201, f"Create failed: {response.text}"
     response_data = response.json()
 
-    assert response_data["identifier"] == None
+    assert response_data["identifier"] is None
 
 
 async def test_create_job_template__fail_unauthorized(client, fill_job_template_data, synth_services):

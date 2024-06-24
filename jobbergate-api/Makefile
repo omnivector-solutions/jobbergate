@@ -17,28 +17,19 @@ mypy: install
 
 .PHONY: lint
 lint: install
-	poetry run black --check ${PACKAGE_NAME}
-	poetry run isort --check ${PACKAGE_NAME}
-	poetry run pflake8 ${PACKAGE_NAME}
-
-.PHONY: qa
-qa: test mypy lint
-	echo "All quality checks pass!"
+	poetry run ruff check tests ${PACKAGE_NAME}
 
 .PHONY: format
 format: install
-	poetry run black ${PACKAGE_NAME}
-	poetry run isort ${PACKAGE_NAME}
-	poetry run black tests
-	poetry run isort tests
+	poetry run ruff format tests ${PACKAGE_NAME}
+
+.PHONY: qa
+qa: test mypy lint format
+	echo "All quality checks pass!"
 
 .PHONY: local
 local: install
 	poetry run dev-tools dev-server --port=8000
-
-.PHONY: update-precommit
-update-precommit:
-	poetry run pre-commit autoupdate
 
 # To include a message with the generated migration, set the MESSAGE variable in the make command:
 #   $ make db-migration MESSAGE="this migration applies foo to bar"

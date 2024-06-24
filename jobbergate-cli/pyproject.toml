@@ -31,7 +31,7 @@ python-dotenv = "^1.0.0"
 PyYAML = "6.*"
 rich = "^11.2.0"
 sentry-sdk = "^1.29.2"
-typer = "^0.9.0"
+typer = "^0.12.3"
 pydantic = "^2.7"
 pydantic-settings = "^2.3.3"
 
@@ -47,9 +47,6 @@ jobbergate = "jobbergate_cli.main:app"
 strategy = "exact"
 
 [tool.poetry.group.dev.dependencies]
-black = ">=23,<25"
-flake8-pyproject = "^1.2.3"
-isort = "^5.9.3"
 mypy = "^1.10"
 plummet = { extras = ["time-machine"], version = "^1.1.0" }
 pytest-cov = "^4.0.0"
@@ -60,6 +57,10 @@ pytest-random-order = "^1.0.4"
 pytest-responsemock = "^1.0.1"
 respx = "^0.20.1"
 types-PyYAML = "^6.0.4"
+ruff = "^0.4.9"
+
+[tool.ruff]
+line-length = 120
 
 [tool.pytest.ini_options]
 minversion = "7.0"
@@ -82,20 +83,6 @@ env = [
 [tool.coverage.report]
 fail_under = 85
 show_missing = true
-
-[tool.black]
-line-length = 120
-
-[tool.isort]
-line_length = 120
-lines_after_imports = "2"
-profile = "black"
-multi_line_output = 3
-include_trailing_comma = true
-
-[tool.flake8]
-max-line-length = 120
-max-complexity = 40
 
 [tool.mypy]
 plugins = "pydantic.mypy"

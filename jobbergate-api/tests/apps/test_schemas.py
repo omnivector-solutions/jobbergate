@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 
 import pendulum
 import pytest
@@ -37,7 +37,6 @@ class TestLengthLimitedStr:
 
 
 class TestPydanticDateTime:
-
     class DateTimeSchema(BaseModel):
         timestamp: PydanticDateTime
 

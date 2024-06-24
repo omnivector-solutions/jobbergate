@@ -9,14 +9,18 @@ This file keeps track of all notable changes to jobbergate-cli
   - Upgraded mypy to 1.10.0
   - Added pydantic-settings 2.3.3
 - Fixed parameter `--sort-order` on the listing commands
+- Updated linter and format checker to use ruff
 
 ## 5.2.0a2 -- 2024-05-31
+
 ## 5.2.0a1 -- 2024-05-24
-* Hided less used commands on the cli when backward compatibility mode is enabled [ASP-5192]
-* Added the subcommands `applications`, `job-scripts`, and `job-submissions` to backward compatibility mode
-* Marked backward compatible commands as deprecated and indicated the new alternative
+
+- Hided less used commands on the cli when backward compatibility mode is enabled [ASP-5192]
+- Added the subcommands `applications`, `job-scripts`, and `job-submissions` to backward compatibility mode
+- Marked backward compatible commands as deprecated and indicated the new alternative
 
 ## 5.2.0a0 -- 2024-04-29
+
 ## 5.1.0 -- 2024-04-19
 
 - Keep version in sync with the API.

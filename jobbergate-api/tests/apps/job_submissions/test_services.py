@@ -78,7 +78,7 @@ class TestIntegration:
         submission_instance = await synth_services.crud.job_submission.create(
             **fill_job_submission_data(), job_script_id=script_instance.id
         )
-        script_file = await synth_services.file.job_script.upsert(
+        await synth_services.file.job_script.upsert(
             script_instance.id,
             "test.txt",
             "test file content",

@@ -58,11 +58,7 @@ single-user-mapper = "jobbergate_agent.utils.user_mapper:SingleUserMapper"
 
 [tool.poetry.dev-dependencies]
 asynctest = "^0.13.0"
-black = "^24.3"
-flake8 = "^6.1"
-flake8-pyproject = "^1.2.3"
 freezegun = "^1.2.2"
-isort = "^5.9.3"
 mypy = "^1.10"
 pytest-asyncio = "^0.18.2"
 pytest-cov = "^4.0.0"
@@ -71,6 +67,10 @@ pytest-mock = "^3.7.0"
 pytest-random-order = "^1.0.4"
 requests-mock = "^1.10"
 respx = "^0.20.1"
+ruff = "^0.4.9"
+
+[tool.ruff]
+line-length = 120
 
 [tool.pytest.ini_options]
 minversion = "7.0"
@@ -90,20 +90,6 @@ env = [
 [tool.coverage.report]
 fail_under = 90
 show_missing = true
-
-[tool.black]
-line-length = 120
-
-[tool.isort]
-line_length = 120
-lines_after_imports = "2"
-profile = "black"
-multi_line_output = 3
-include_trailing_comma = true
-
-[tool.flake8]
-max-line-length = 120
-max-complexity = 40
 
 [tool.mypy]
 plugins = "pydantic.mypy"
