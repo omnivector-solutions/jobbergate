@@ -105,6 +105,7 @@ def login(ctx: typer.Context):
         f"User was logged in with email '{persona.identity_data.email}'",
         subject="Logged in!",
     )
+    render_demo()
 
 
 @app.command(rich_help_panel="Authentication")
