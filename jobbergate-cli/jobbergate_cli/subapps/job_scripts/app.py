@@ -113,7 +113,7 @@ def get_one(
 
 @app.command()
 @handle_abort
-def create(
+def create_stand_alone(
     ctx: typer.Context,
     name: str = typer.Option(
         ...,
@@ -129,6 +129,9 @@ def create(
         help="A path for one of the supporting files to upload",
     ),
 ):
+    """
+    Create and upload files for a standalone job script (i.e., unrelated to any application).
+    """
     jg_ctx: JobbergateContext = ctx.obj
 
     # Make static type checkers happy
@@ -165,7 +168,7 @@ def create(
 
 @app.command()
 @handle_abort
-def render_locally(
+def create_locally(
     ctx: typer.Context,
     application_path: pathlib.Path = typer.Argument(
         pathlib.Path("."),
@@ -202,7 +205,7 @@ def render_locally(
     ),
 ):
     """
-    Render a new job-script from an application locally.
+    Create a job-script from local application files (ideal for development and troubleshooting).
 
     The templates will be overwritten with the rendered files.
     """
@@ -226,7 +229,7 @@ def render_locally(
 
 @app.command()
 @handle_abort
-def render(
+def create(
     ctx: typer.Context,
     name: Optional[str] = typer.Option(
         None,
@@ -297,7 +300,7 @@ def render(
     ),
 ):
     """
-    Render a new job script from an application.
+    Create a new job script from an application.
     """
     jg_ctx: JobbergateContext = ctx.obj
 

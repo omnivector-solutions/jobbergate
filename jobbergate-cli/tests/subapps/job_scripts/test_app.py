@@ -1,5 +1,6 @@
 import importlib
 import json
+import pathlib
 import shlex
 from unittest import mock
 
@@ -13,13 +14,12 @@ from jobbergate_cli.subapps.job_scripts.app import (
     JOB_SUBMISSION_HIDDEN_FIELDS,
     clone,
     create,
+    create_locally,
+    create_stand_alone,
     delete,
     download_files,
     get_one,
     list_all,
-    pathlib,
-    render,
-    render_locally,
     show_files,
     style_mapper,
     update,
@@ -79,7 +79,7 @@ def test_get_one__success(
     )
 
 
-def test_create__success(
+def test_create_stand_alone__success(
     respx_mock,
     make_test_app,
     dummy_context,
@@ -129,7 +129,7 @@ def test_create__success(
 
     attach_persona("dummy@dummy.com")
 
-    test_app = make_test_app("create", create)
+    test_app = make_test_app("create-stand-alone", create_stand_alone)
 
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
     mocker.patch.object(
@@ -142,7 +142,7 @@ def test_create__success(
         shlex.split(
             unwrap(
                 f"""
-                create --name=dummy-name
+                create-stand-alone --name=dummy-name
                        --job-script-path={dummy_job_script}
                        --supporting-file-path={dummy_support_1}
                        --supporting-file-path={dummy_support_2}
@@ -150,7 +150,7 @@ def test_create__success(
             )
         ),
     )
-    assert result.exit_code == 0, f"render failed: {result.stdout}"
+    assert result.exit_code == 0, f"create failed: {result.stdout}"
 
     assert create_route.called
     content = json.loads(create_route.calls.last.request.content)
@@ -187,7 +187,7 @@ def test_create__success(
 @pytest.mark.parametrize(
     "name_flag,application_id_flag,separator", [("--name", "--application-id", "="), ("-n", "-i", " ")]
 )
-def test_render__non_fast_mode_and_job_submission(
+def test_create__non_fast_mode_and_job_submission(
     respx_mock,
     make_test_app,
     dummy_context,
@@ -234,7 +234,7 @@ def test_render__non_fast_mode_and_job_submission(
 
     attach_persona("dummy@dummy.com")
 
-    test_app = make_test_app("render", render)
+    test_app = make_test_app("create", create)
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
     mocked_fetch_application_data = mocker.patch(
         "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
@@ -265,7 +265,7 @@ def test_render__non_fast_mode_and_job_submission(
         shlex.split(
             unwrap(
                 f"""
-                render {name_flag}{separator}dummy-name
+                create {name_flag}{separator}dummy-name
                        {application_id_flag}{separator}{application_response.application_id}
                        --param-file={param_file_path}
                        {sbatch_params}
@@ -275,7 +275,7 @@ def test_render__non_fast_mode_and_job_submission(
         # To confirm that the job should be submitted to the default cluster, in the current dir and not downloaded
         input=f"y\nn\n{settings.DEFAULT_CLUSTER_NAME}\n.\n",
     )
-    assert result.exit_code == 0, f"render failed: {result.stdout}"
+    assert result.exit_code == 0, f"create failed: {result.stdout}"
     mocked_fetch_application_data.assert_called_once_with(
         dummy_context,
         id=application_response.application_id,
@@ -331,7 +331,7 @@ def test_render__non_fast_mode_and_job_submission(
     )
 
 
-def test_render__with_fast_mode_and_no_job_submission(
+def test_create__with_fast_mode_and_no_job_submission(
     respx_mock,
     make_test_app,
     dummy_context,
@@ -373,7 +373,7 @@ def test_render__with_fast_mode_and_no_job_submission(
 
     attach_persona("dummy@dummy.com")
 
-    test_app = make_test_app("render", render)
+    test_app = make_test_app("create", create)
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
     mocked_fetch_application_data = mocker.patch(
         "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
@@ -392,7 +392,7 @@ def test_render__with_fast_mode_and_no_job_submission(
         shlex.split(
             unwrap(
                 f"""
-                render --name=dummy-name
+                create --name=dummy-name
                        --application-id={application_response.application_id}
                        --param-file={param_file_path}
                        --fast
@@ -403,7 +403,7 @@ def test_render__with_fast_mode_and_no_job_submission(
             )
         ),
     )
-    assert result.exit_code == 0, f"render failed: {result.stdout}"
+    assert result.exit_code == 0, f"create failed: {result.stdout}"
     mocked_fetch_application_data.assert_called_once_with(
         dummy_context,
         id=application_response.application_id,
@@ -438,7 +438,7 @@ def test_render__with_fast_mode_and_no_job_submission(
     )
 
 
-def test_render__submit_is_none_and_cluster_name_is_defined(
+def test_create__submit_is_none_and_cluster_name_is_defined(
     respx_mock,
     make_test_app,
     dummy_context,
@@ -477,7 +477,7 @@ def test_render__submit_is_none_and_cluster_name_is_defined(
 
     attach_persona("dummy@dummy.com")
 
-    test_app = make_test_app("render", render)
+    test_app = make_test_app("create", create)
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
     mocked_fetch_application_data = mocker.patch(
         "jobbergate_cli.subapps.job_scripts.app.render_job_script",
@@ -489,7 +489,7 @@ def test_render__submit_is_none_and_cluster_name_is_defined(
         shlex.split(
             unwrap(
                 f"""
-                render --name=dummy-name
+                create --name=dummy-name
                        --application-id={application_response.application_id}
                        --param-file={param_file_path}
                        --cluster-name=dummy-cluster
@@ -506,14 +506,14 @@ def test_render__submit_is_none_and_cluster_name_is_defined(
         hidden_fields=HIDDEN_FIELDS,
     )
 
-    assert result.exit_code == 1, f"render failed: {result.stdout}"
+    assert result.exit_code == 1, f"create failed: {result.stdout}"
     assert "Incorrect parameters" in result.stdout
 
 
-def test_render_job_script_locally__success(
+def test_create_job_script_locally__success(
     dummy_render_class, dummy_application_dir, make_test_app, cli_runner, mocker
 ):
-    test_app = make_test_app("render-locally", render_locally)
+    test_app = make_test_app("create-locally", create_locally)
 
     dummy_render_class.prepared_input = dict(
         foo="FOO",
@@ -530,10 +530,10 @@ def test_render_job_script_locally__success(
 
     result = cli_runner.invoke(
         test_app,
-        shlex.split(f"render-locally {dummy_application_dir} --output-path={dummy_application_dir}"),
+        shlex.split(f"create-locally {dummy_application_dir} --output-path={dummy_application_dir}"),
     )
 
-    assert result.exit_code == 0, f"render-locally failed: {result.stdout}"
+    assert result.exit_code == 0, f"create-locally failed: {result.stdout}"
 
     mocked_terminal_message.assert_called_once_with(
         "The job script was successfully rendered locally.",

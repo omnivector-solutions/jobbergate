@@ -13,12 +13,12 @@ from jobbergate_cli.subapps.applications.app import get_one as get_application
 from jobbergate_cli.subapps.applications.app import list_all as list_applications
 from jobbergate_cli.subapps.applications.app import update as update_application
 from jobbergate_cli.subapps.job_scripts.app import clone as clone_job_script
+from jobbergate_cli.subapps.job_scripts.app import create as create_job_script
+from jobbergate_cli.subapps.job_scripts.app import create_locally as create_job_script_locally
 from jobbergate_cli.subapps.job_scripts.app import delete as delete_job_script
 from jobbergate_cli.subapps.job_scripts.app import download_files as download_files_job_script
 from jobbergate_cli.subapps.job_scripts.app import get_one as get_job_script
 from jobbergate_cli.subapps.job_scripts.app import list_all as list_job_scripts
-from jobbergate_cli.subapps.job_scripts.app import render as render_job_script
-from jobbergate_cli.subapps.job_scripts.app import render_locally as render_job_script_locally
 from jobbergate_cli.subapps.job_scripts.app import show_files as show_files
 from jobbergate_cli.subapps.job_scripts.app import update as update_job_script
 from jobbergate_cli.subapps.job_submissions.app import create as create_job_submission
@@ -92,10 +92,10 @@ def add_legacy_compatible_commands(app: typer.Typer):
     )(get_job_script)
     app.command(
         name="create-job-script",
-        help="CREATE a job script, replaced by: job-scripts render",
+        help="CREATE a job script, replaced by: job-scripts create",
         deprecated=True,
         rich_help_panel="Backward compatibility",
-    )(render_job_script)
+    )(create_job_script)
     app.command(
         name="update-job-script",
         help="UPDATE a job script",
@@ -104,10 +104,10 @@ def add_legacy_compatible_commands(app: typer.Typer):
     )(update_job_script)
     app.command(
         name="render-job-script-locally",
-        help="Render a job script locally",
+        help="Render a job script locally, replaced by: job-scripts create-locally",
         deprecated=True,
         hidden=True,
-    )(render_job_script_locally)
+    )(create_job_script_locally)
     app.command(
         name="delete-job-script",
         help="DELETE a job script",
