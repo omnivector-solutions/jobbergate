@@ -10,6 +10,10 @@ This file keeps track of all notable changes to jobbergate-cli
   - Added pydantic-settings 2.3.3
 - Fixed parameter `--sort-order` on the listing commands
 - Updated linter and format checker to use ruff
+- Added a quick start guide to be displayed when the user runs the command with no arguments and after login
+- Renamed command `jobbergate job-scripts create` to `jobbergate job-scripts create-stand-alone`
+- Renamed command `jobbergate job-scripts render` to `jobbergate job-scripts create`
+- Renamed command `jobbergate job-scripts render-locally` to `jobbergate job-scripts create-locally`
 
 ## 5.2.0a2 -- 2024-05-31
 
