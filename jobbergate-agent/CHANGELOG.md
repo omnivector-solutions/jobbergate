@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-agent
 
 ## Unreleased
 
+
+## 5.2.0a3 -- 2024-06-26
 - Migrated to Pydantic version 2 [PENG-2278]
   - Upgraded pydantic to 2.7
   - Added pydantic-settings 2.2.1

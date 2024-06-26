@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+
+## 5.2.0a3 -- 2024-06-26
 - Migrated to Pydantic version 2 [PENG-2277]
   - Upgraded pydantic to 2.7
   - Upgraded fastapi to 0.111

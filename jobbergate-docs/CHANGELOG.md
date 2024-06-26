@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-docs
 
 ## Unreleased
 
+
+## 5.2.0a3 -- 2024-06-26
 - Updated linter and format checker to use ruff
 
 ## 5.2.0a2 -- 2024-05-31

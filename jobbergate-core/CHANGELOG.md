@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
 
+
+## 5.2.0a3 -- 2024-06-26
 - Removed unused dependency for pydantic
 - Updated linter and format checker to use ruff
 
