@@ -540,7 +540,7 @@ class ApplicationRuntime:
                 )
             self.app_config.jobbergate_config.default_template = list_of_entrypoints[0]
 
-        if not self.app_config.jobbergate_config.supporting_files:
+        if self.app_config.jobbergate_config.supporting_files is None:
             list_of_supporting_files = [
                 i.filename for i in self.app_data.template_files if i.file_type.upper() == "SUPPORT"
             ]
