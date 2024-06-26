@@ -1284,6 +1284,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_cli.render.render_demo" class="md-nav__link">
+    render_demo()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_cli.render.render_dict" class="md-nav__link">
     render_dict()
   </a>
@@ -2241,6 +2248,13 @@
         
       </ul>
     </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.render.render_demo" class="md-nav__link">
+    render_demo()
+  </a>
   
 </li>
         
@@ -4031,6 +4045,28 @@ to the columns of the table.</p>
 
 </div>
 
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h5 id="jobbergate_cli.render.render_demo" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">render_demo</span>
+
+
+</h5>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_demo</span><span class="p">(</span><span class="n">pre_amble</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Show the demo for the jobbergate-cli.</p>
+
+  </div>
+
+</div>
 
 
 <div class="doc doc-object doc-function">
@@ -6965,6 +7001,73 @@ make API calls
 
 
 
+<h7 id="jobbergate_cli.subapps.job_scripts.app.create" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">create</span>
+
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">create</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">typer</span><span class="o">.</span><span class="n">Context</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;--name&#39;</span><span class="p">,</span> <span class="s1">&#39;-n&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">dedent</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">            The name of the job script to create.</span><span class="se">\n</span><span class="s1">            If this is not supplied, the name will be derived from the base application.</span><span class="se">\n</span><span class="s1">            &#39;</span><span class="p">)),</span> <span class="n">application_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;--application-id&#39;</span><span class="p">,</span> <span class="s1">&#39;-i&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The id of the application from which to create the job script.&#39;</span><span class="p">),</span> <span class="n">application_identifier</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The identifier of the application from which to create the job script.&#39;</span><span class="p">),</span> <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Optional text describing the job script.&#39;</span><span class="p">),</span> <span class="n">sbatch_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Optional parameter to submit raw sbatch parameters.&#39;</span><span class="p">),</span> <span class="n">param_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">dedent</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">            Supply a json file that contains the parameters for populating templates.</span><span class="se">\n</span><span class="s1">            If this is not supplied, the question asking in the application is triggered.</span><span class="se">\n</span><span class="s1">            &#39;</span><span class="p">)),</span> <span class="n">fast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;--fast&#39;</span><span class="p">,</span> <span class="s1">&#39;-f&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Use default answers (when available) instead of asking the user.&#39;</span><span class="p">),</span> <span class="n">download</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Download the job script files to the current working directory&#39;</span><span class="p">),</span> <span class="n">submit</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Do not ask the user if they want to submit a job.&#39;</span><span class="p">),</span> <span class="n">cluster_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The name of the cluster where the job should be submitted to (i.g. &#39;nash-staging&#39;)&quot;</span><span class="p">),</span> <span class="n">execution_directory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">dedent</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">            The path on the cluster where the job script should be executed.</span><span class="se">\n</span><span class="s1">            If provided as a relative path, it will be converted as an absolute path from your current</span><span class="se">\n</span><span class="s1">            working directory. If you use &quot;~&quot; to denote your home directory, the path will be expanded to an</span><span class="se">\n</span><span class="s1">            absolute path for your home directory on *this* machine.</span><span class="se">\n</span><span class="s1">            &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()))</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Create a new job script from an application.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_cli.subapps.job_scripts.app.create_locally" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">create_locally</span>
+
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">create_locally</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">typer</span><span class="o">.</span><span class="n">Context</span><span class="p">,</span> <span class="n">application_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Argument</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">),</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The path to the application directory to use as a template for the job script.&#39;</span><span class="p">,</span> <span class="n">dir_okay</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">job_script_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="s1">&#39;job_script&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The name of the job script to render locally.&#39;</span><span class="p">),</span> <span class="n">output_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">),</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The path to the directory where the rendered job script should be saved.&#39;</span><span class="p">,</span> <span class="n">dir_okay</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">sbatch_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Optional parameter to submit raw sbatch parameters.&#39;</span><span class="p">),</span> <span class="n">param_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">dedent</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">            Supply a json file that contains the parameters for populating templates.</span><span class="se">\n</span><span class="s1">            If this is not supplied, the question asking in the application is triggered.</span><span class="se">\n</span><span class="s1">            &#39;</span><span class="p">)),</span> <span class="n">fast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;--fast&#39;</span><span class="p">,</span> <span class="s1">&#39;-f&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Use default answers (when available) instead of asking the user.&#39;</span><span class="p">))</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Create a job-script from local application files (ideal for development and troubleshooting).</p>
+<p>The templates will be overwritten with the rendered files.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_cli.subapps.job_scripts.app.create_stand_alone" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">create_stand_alone</span>
+
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">create_stand_alone</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">typer</span><span class="o">.</span><span class="n">Context</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">dedent</span><span class="p">(</span><span class="s1">&#39;The name of the job script to create.&#39;</span><span class="p">)),</span> <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Optional text describing the job script.&#39;</span><span class="p">),</span> <span class="n">job_script_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The path to the job script file to upload&#39;</span><span class="p">),</span> <span class="n">supporting_file_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;A path for one of the supporting files to upload&#39;</span><span class="p">))</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Create and upload files for a standalone job script (i.e., unrelated to any application).</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
 <h7 id="jobbergate_cli.subapps.job_scripts.app.delete" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">delete</span>
 
@@ -7042,51 +7145,6 @@ make API calls
   <div class="doc doc-contents ">
   
       <p>Show available job scripts</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h7 id="jobbergate_cli.subapps.job_scripts.app.render" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">render</span>
-
-
-</h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">typer</span><span class="o">.</span><span class="n">Context</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;--name&#39;</span><span class="p">,</span> <span class="s1">&#39;-n&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">dedent</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">            The name of the job script to create.</span><span class="se">\n</span><span class="s1">            If this is not supplied, the name will be derived from the base application.</span><span class="se">\n</span><span class="s1">            &#39;</span><span class="p">)),</span> <span class="n">application_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;--application-id&#39;</span><span class="p">,</span> <span class="s1">&#39;-i&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The id of the application from which to create the job script.&#39;</span><span class="p">),</span> <span class="n">application_identifier</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The identifier of the application from which to create the job script.&#39;</span><span class="p">),</span> <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Optional text describing the job script.&#39;</span><span class="p">),</span> <span class="n">sbatch_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Optional parameter to submit raw sbatch parameters.&#39;</span><span class="p">),</span> <span class="n">param_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">dedent</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">            Supply a json file that contains the parameters for populating templates.</span><span class="se">\n</span><span class="s1">            If this is not supplied, the question asking in the application is triggered.</span><span class="se">\n</span><span class="s1">            &#39;</span><span class="p">)),</span> <span class="n">fast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;--fast&#39;</span><span class="p">,</span> <span class="s1">&#39;-f&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Use default answers (when available) instead of asking the user.&#39;</span><span class="p">),</span> <span class="n">download</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Download the job script files to the current working directory&#39;</span><span class="p">),</span> <span class="n">submit</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Do not ask the user if they want to submit a job.&#39;</span><span class="p">),</span> <span class="n">cluster_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The name of the cluster where the job should be submitted to (i.g. &#39;nash-staging&#39;)&quot;</span><span class="p">),</span> <span class="n">execution_directory</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">dedent</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">            The path on the cluster where the job script should be executed.</span><span class="se">\n</span><span class="s1">            If provided as a relative path, it will be converted as an absolute path from your current</span><span class="se">\n</span><span class="s1">            working directory. If you use &quot;~&quot; to denote your home directory, the path will be expanded to an</span><span class="se">\n</span><span class="s1">            absolute path for your home directory on *this* machine.</span><span class="se">\n</span><span class="s1">            &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()))</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Render a new job script from an application.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h7 id="jobbergate_cli.subapps.job_scripts.app.render_locally" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">render_locally</span>
-
-
-</h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_locally</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">typer</span><span class="o">.</span><span class="n">Context</span><span class="p">,</span> <span class="n">application_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Argument</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">),</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The path to the application directory to use as a template for the job script.&#39;</span><span class="p">,</span> <span class="n">dir_okay</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">job_script_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="s1">&#39;job_script&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The name of the job script to render locally.&#39;</span><span class="p">),</span> <span class="n">output_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">),</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The path to the directory where the rendered job script should be saved.&#39;</span><span class="p">,</span> <span class="n">dir_okay</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">sbatch_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Optional parameter to submit raw sbatch parameters.&#39;</span><span class="p">),</span> <span class="n">param_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="n">dedent</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">            Supply a json file that contains the parameters for populating templates.</span><span class="se">\n</span><span class="s1">            If this is not supplied, the question asking in the application is triggered.</span><span class="se">\n</span><span class="s1">            &#39;</span><span class="p">)),</span> <span class="n">fast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;--fast&#39;</span><span class="p">,</span> <span class="s1">&#39;-f&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Use default answers (when available) instead of asking the user.&#39;</span><span class="p">))</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Render a new job-script from an application locally.</p>
-<p>The templates will be overwritten with the rendered files.</p>
 
   </div>
 
