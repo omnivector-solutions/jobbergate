@@ -10,6 +10,7 @@ from rich import print_json
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+from rich.markdown import Markdown
 
 from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
 from jobbergate_cli.text_tools import dedent
@@ -254,3 +255,36 @@ def render_paginated_list_results(
     console = Console()
     console.print()
     console.print(table)
+
+
+def render_demo(pre_amble: str | None = None):
+    """
+    Show the demo for the jobbergate-cli.
+    """
+    message = dedent(
+        """       
+        * To create a job-script and run it on the cluster, use the command:
+
+          ```jobbergate job-scripts create --application-identifier <value>```
+
+        * If you need to find your application identifier, run the command:
+
+           ```jobbergate applications list```
+
+           Or search for an application by name:
+
+           ```jobbergate applications list --search <search-term>```
+
+        * For more information on any command run it with the `--help` option.
+
+        * To check all the available commands, refer to:
+
+          ```jobbergate --help```
+        """
+    )
+    console = Console()
+    if pre_amble:
+        console.print(pre_amble)
+    console.print()
+    console.print(Panel(Markdown(message), title="Quick Start Guide for Jobbergate-CLI"))
+    console.print()

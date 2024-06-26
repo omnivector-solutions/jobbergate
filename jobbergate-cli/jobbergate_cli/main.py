@@ -9,17 +9,17 @@ import importlib_metadata
 import jose
 import typer
 
+
 from jobbergate_cli.auth import clear_token_cache, fetch_auth_tokens, init_persona, load_tokens_from_cache
 from jobbergate_cli.config import settings
 from jobbergate_cli.exceptions import Abort, handle_abort
 from jobbergate_cli.logging import init_logs, init_sentry
-from jobbergate_cli.render import render_json, terminal_message
+from jobbergate_cli.render import render_demo, render_json, terminal_message
 from jobbergate_cli.schemas import JobbergateContext, Persona, TokenSet
 from jobbergate_cli.subapps.applications.app import app as applications_app
 from jobbergate_cli.subapps.job_scripts.app import app as job_scripts_app
 from jobbergate_cli.subapps.job_submissions.app import app as job_submissions_app
-from jobbergate_cli.text_tools import conjoin, copy_to_clipboard
-
+from jobbergate_cli.text_tools import copy_to_clipboard
 
 app = typer.Typer()
 
@@ -63,14 +63,7 @@ def main(
         raise typer.Exit()
 
     if ctx.invoked_subcommand is None:
-        terminal_message(
-            conjoin(
-                "No command provided. Please check the [bold magenta]usage[/bold magenta] and add a command",
-                "",
-                f"[yellow]{ctx.get_help()}[/yellow]",
-            ),
-            subject="Need a jobbergate command",
-        )
+        render_demo(pre_amble="No command provided.")
         raise typer.Exit()
 
     init_logs(verbose=verbose)
@@ -112,6 +105,7 @@ def login(ctx: typer.Context):
         f"User was logged in with email '{persona.identity_data.email}'",
         subject="Logged in!",
     )
+    render_demo()
 
 
 @app.command(rich_help_panel="Authentication")
