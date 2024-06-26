@@ -14,6 +14,7 @@ This file keeps track of all notable changes to jobbergate-cli
 - Renamed command `jobbergate job-scripts create` to `jobbergate job-scripts create-stand-alone`
 - Renamed command `jobbergate job-scripts render` to `jobbergate job-scripts create`
 - Renamed command `jobbergate job-scripts render-locally` to `jobbergate job-scripts create-locally`
+- Fixed `ApplicationRuntime` filling supporting files when they are already set by the application as an empty list
 
 ## 5.2.0a2 -- 2024-05-31
 
