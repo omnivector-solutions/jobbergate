@@ -263,11 +263,11 @@ def render_demo(pre_amble: str | None = None):
     """
     message = dedent(
         """       
-        * To create a job-script and run it on the cluster, run the command:
+        * To create a job-script and run it on the cluster, use the command:
 
           ```jobbergate job-scripts create --application-identifier <value>```
 
-        * In case you need to find your application identifier, run the command:
+        * If you need to find your application identifier, run the command:
 
            ```jobbergate applications list```
 
@@ -277,7 +277,7 @@ def render_demo(pre_amble: str | None = None):
 
         * For more information on any command run it with the `--help` option.
 
-        * To check all the available commands refer to:
+        * To check all the available commands, refer to:
 
           ```jobbergate --help```
         """
@@ -286,5 +286,5 @@ def render_demo(pre_amble: str | None = None):
     if pre_amble:
         console.print(pre_amble)
     console.print()
-    console.print(Panel(Markdown(message), title="Quick Start Guide on Jobbergate-CLI"))
+    console.print(Panel(Markdown(message), title="Quick Start Guide for Jobbergate-CLI"))
     console.print()
