@@ -3,7 +3,7 @@
 This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
-
+- Change pydantic.BaseSettings config to use `extra=ignore`
 
 ## 5.2.0a3 -- 2024-06-26
 - Migrated to Pydantic version 2 [PENG-2279]

@@ -82,10 +82,7 @@ class Settings(BaseSettings):
             self.SINGLE_USER_SUBMITTER = self.X_SLURM_USER_NAME
         return self
 
-    model_config = SettingsConfigDict(
-        env_prefix="JOBBERGATE_AGENT_",
-        env_file=_get_env_file(),
-    )
+    model_config = SettingsConfigDict(env_prefix="JOBBERGATE_AGENT_", env_file=_get_env_file(), extra="ignore")
 
 
 def init_settings() -> Settings:
