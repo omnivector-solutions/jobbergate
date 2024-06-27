@@ -115,9 +115,7 @@ class Settings(BaseSettings):
         """Check if the SBATCH_PATH is set, indicating that the CLI is running in on-site mode."""
         return self.SBATCH_PATH is not None
 
-    model_config = SettingsConfigDict(
-        env_file=_get_env_file(),
-    )
+    model_config = SettingsConfigDict(env_file=_get_env_file(), extra="ignore")
 
 
 def build_settings(*args, **kwargs):
