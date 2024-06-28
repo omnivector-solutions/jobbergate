@@ -3,7 +3,6 @@
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, HTTPException, Path, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
-from fastapi.responses import StreamingResponse
 from fastapi_pagination import Page
 from loguru import logger
 from sqlalchemy.exc import IntegrityError
@@ -211,8 +210,8 @@ async def job_script_template_get_file(
     logger.debug(f"Getting template file {file_name=} from job script template {typed_id_or_identifier=}")
     job_script_template = await secure_services.crud.template.get(typed_id_or_identifier)
     job_script_template_file = await secure_services.file.template.get(job_script_template.id, file_name)
-    return StreamingResponse(
-        content=await secure_services.file.template.stream_file_content(job_script_template_file),
+    return FastAPIResponse(
+        content=await secure_services.file.template.get_file_content(job_script_template_file),
         media_type="text/plain",
         headers={"filename": job_script_template_file.filename},
     )
@@ -310,8 +309,8 @@ async def job_script_workflow_get_file(
     logger.debug(f"Getting workflow file from job script template {typed_id_or_identifier=}")
     job_script_template = await secure_services.crud.template.get(typed_id_or_identifier)
     workflow_file = await secure_services.file.workflow.get(job_script_template.id, WORKFLOW_FILE_NAME)
-    return StreamingResponse(
-        content=await secure_services.file.workflow.stream_file_content(workflow_file),
+    return FastAPIResponse(
+        content=await secure_services.file.workflow.get_file_content(workflow_file),
         media_type="text/plain",
         headers={"filename": WORKFLOW_FILE_NAME},
     )

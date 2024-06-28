@@ -6,7 +6,6 @@ from buzz import handle_errors
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Path, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
-from fastapi.responses import StreamingResponse
 from fastapi_pagination import Page
 from loguru import logger
 
@@ -288,8 +287,8 @@ async def job_script_get_file(
         See https://fastapi.tiangolo.com/advanced/custom-response/#streamingresponse
     """
     job_script_file = await secure_services.file.job_script.get(id, file_name)
-    return StreamingResponse(
-        content=await secure_services.file.job_script.stream_file_content(job_script_file),
+    return FastAPIResponse(
+        content=await secure_services.file.job_script.get_file_content(job_script_file),
         media_type="text/plain",
         headers={"filename": job_script_file.filename},
     )
