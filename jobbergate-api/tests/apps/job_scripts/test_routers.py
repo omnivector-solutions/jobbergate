@@ -1056,6 +1056,37 @@ class TestJobScriptFiles:
         assert response.status_code == status.HTTP_200_OK
         assert response.content.decode() == job_script_data_as_string
 
+    async def test_get__large_file_success(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_script_data,
+        synth_services,
+    ):
+        """
+        Ensure that large files can be retrieved with no problem.
+        This was created after strange issues were identified running on FastAPI 0.111.
+        """
+        large_string = "print(1)\n" * 5000
+
+        id = job_script_data.id
+        file_type = "ENTRYPOINT"
+        job_script_filename = "entrypoint.sh"
+
+        await synth_services.file.job_script.upsert(
+            parent_id=id,
+            filename=job_script_filename,
+            upload_content=large_string,
+            file_type=file_type,
+        )
+
+        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
+        response = await client.get(f"jobbergate/job-scripts/{id}/upload/{job_script_filename}")
+
+        assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
+        assert response.content.decode() == large_string
+
     @pytest.mark.parametrize(
         "is_owner, permissions",
         [
