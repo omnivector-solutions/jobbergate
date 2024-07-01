@@ -5,32 +5,22 @@ This file keeps track of all notable changes to jobbergate-cli
 ## Unreleased
 
 
-## 5.2.0a5 -- 2024-06-28
-## 5.2.0a4 -- 2024-06-27
+## 5.2.0 -- 2024-07-01
 - Change pydantic.BaseSettings config to use `extra=ignore`
-
-## 5.2.0a3 -- 2024-06-26
 - Migrated to Pydantic version 2 [PENG-2279]
   - Upgraded pydantic to 2.7
   - Upgraded mypy to 1.10.0
   - Added pydantic-settings 2.3.3
 - Fixed parameter `--sort-order` on the listing commands
 - Updated linter and format checker to use ruff
-- Added a quick start guide to be displayed when the user runs the command with no arguments and after login
-- Renamed command `jobbergate job-scripts create` to `jobbergate job-scripts create-stand-alone`
-- Renamed command `jobbergate job-scripts render` to `jobbergate job-scripts create`
-- Renamed command `jobbergate job-scripts render-locally` to `jobbergate job-scripts create-locally`
-- Fixed `ApplicationRuntime` filling supporting files when they are already set by the application as an empty list
-
-## 5.2.0a2 -- 2024-05-31
-
-## 5.2.0a1 -- 2024-05-24
-
 - Hided less used commands on the cli when backward compatibility mode is enabled [ASP-5192]
-- Added the subcommands `applications`, `job-scripts`, and `job-submissions` to backward compatibility mode
-- Marked backward compatible commands as deprecated and indicated the new alternative
-
-## 5.2.0a0 -- 2024-04-29
+  - Added the subcommands `applications`, `job-scripts`, and `job-submissions` to backward compatibility mode
+  - Renamed command `jobbergate job-scripts create` to `jobbergate job-scripts create-stand-alone`
+  - Renamed command `jobbergate job-scripts render` to `jobbergate job-scripts create`
+  - Renamed command `jobbergate job-scripts render-locally` to `jobbergate job-scripts create-locally`
+  - Marked backward compatible commands as deprecated and indicated the new alternative
+  - Added a quick start guide to be displayed when the user runs the command with no arguments and after login
+- Fixed `ApplicationRuntime` filling supporting files when they are already set by the application as an empty list
 
 ## 5.1.0 -- 2024-04-19
 
