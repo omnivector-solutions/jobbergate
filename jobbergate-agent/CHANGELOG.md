@@ -5,20 +5,14 @@ This file keeps track of all notable changes to jobbergate-agent
 ## Unreleased
 
 
-## 5.2.0a5 -- 2024-06-28
-## 5.2.0a4 -- 2024-06-27
+## 5.2.0 -- 2024-07-01
 - Change pydantic.BaseSettings config to use `extra=ignore`
-
-## 5.2.0a3 -- 2024-06-26
 - Migrated to Pydantic version 2 [PENG-2278]
   - Upgraded pydantic to 2.7
   - Added pydantic-settings 2.2.1
 - Upgraded mypy to 1.10
 - Updated linter and format checker to use ruff
 
-## 5.2.0a2 -- 2024-05-31
-## 5.2.0a1 -- 2024-05-24
-## 5.2.0a0 -- 2024-04-29
 ## 5.1.0 -- 2024-04-19
 
 - Added a new task to report at the expected interval that the agent is up and running [ASP-4602]
