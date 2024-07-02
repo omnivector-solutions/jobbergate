@@ -4,8 +4,10 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+- Remove the audience setting [[PENG-2230](https://sharing.clickup.com/t/h/c/18022949/PENG-2230/O40JANAF6KCBE9R)]
 
 ## 5.2.0 -- 2024-07-01
+
 - Fixed issue when retrieving large files on get routes after upgrading to FastAPI 0.111
 - Change pydantic.BaseSettings config to use `extra=ignore`
 - Migrated to Pydantic version 2 [PENG-2277]
