@@ -1,13 +1,15 @@
-from typing import Any, Callable, Dict, Optional
+from pathlib import Path
+from typing import Any, Callable, Dict, Generator, Optional
 
 import httpx
+from jobbergate_core import JobbergateAuthHandler
 import pytest
 import yaml
 from typer import Context, Typer
 from typer.testing import CliRunner
 
 from jobbergate_cli.constants import JOBBERGATE_APPLICATION_CONFIG_FILE_NAME, JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-from jobbergate_cli.schemas import IdentityData, JobbergateApplicationConfig, JobbergateContext, Persona, TokenSet
+from jobbergate_cli.schemas import IdentityData, JobbergateApplicationConfig, JobbergateContext
 from jobbergate_cli.subapps.applications.tools import load_application_from_source
 from jobbergate_cli.text_tools import dedent
 
@@ -37,27 +39,30 @@ def make_test_app(dummy_context):
 
 
 @pytest.fixture
-def dummy_context(dummy_domain):
-    return JobbergateContext(
-        persona=None,
-        client=httpx.Client(base_url=dummy_domain, headers={"Authorization": "Bearer XXXXXXXX"}),
+def dummy_context(mocker, tmp_path, dummy_domain) -> Generator[JobbergateContext, None, None]:
+    def dummy_auth(request: httpx.Request) -> httpx.Request:
+        request.headers["Authorization"] = "Bearer XXXXXXXX"
+        return request
+
+    authentication_handler = JobbergateAuthHandler(
+        cache_directory=Path(tmp_path),
+        login_domain="test-domain",
+        login_audience="test-audience",
     )
+    with mocker.patch.object(authentication_handler, attribute="acquire_access", return_value=dummy_auth):
+        yield JobbergateContext(
+            client=httpx.Client(base_url=dummy_domain), authentication_handler=authentication_handler
+        )
 
 
 @pytest.fixture
-def attach_persona(dummy_context):
+def attach_persona(mocker, dummy_context):
     def _helper(
         email: str, client_id: str = "dummy-client", access_token: str = "foo", organization_id: Optional[str] = None
     ):
-        identity_data = IdentityData(
-            client_id=client_id,
-            email=email,
-        )
-        if organization_id is not None:
-            identity_data.organization_id = organization_id
-        dummy_context.persona = Persona(
-            token_set=TokenSet(access_token=access_token),
-            identity_data=identity_data,
+        identity_data = IdentityData(client_id=client_id, email=email, organization_id=organization_id)
+        return mocker.patch.object(
+            dummy_context.authentication_handler, attribute="get_identity_data", return_value=identity_data
         )
 
     return _helper

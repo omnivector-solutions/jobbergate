@@ -4,7 +4,7 @@ Provide a ``typer`` app that can interact with Cluster data in a cruddy manner.
 
 import typer
 
-from jobbergate_cli.exceptions import handle_abort
+from jobbergate_cli.exceptions import handle_abort, handle_authentication_error
 from jobbergate_cli.render import terminal_message
 from jobbergate_cli.schemas import JobbergateContext
 from jobbergate_cli.subapps.clusters.tools import get_client_ids
@@ -15,6 +15,7 @@ app = typer.Typer(help="Commands to interact with clusters")
 
 @app.command("list")
 @handle_abort
+@handle_authentication_error
 def list_all(
     ctx: typer.Context,
 ):

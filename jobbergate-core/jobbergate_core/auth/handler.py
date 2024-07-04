@@ -3,22 +3,72 @@ Utilities for handling authentication in the Jobbergate system.
 """
 
 import time
-from collections import namedtuple
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict
+from typing import Callable, Iterable
 
-import httpx
 from loguru import logger
+import pendulum
+from pydantic import BaseModel
 
-from jobbergate_core.auth.exceptions import AuthenticationError, TokenError
+from jobbergate_core.auth.exceptions import AuthenticationError
 from jobbergate_core.auth.token import Token, TokenType
+from jobbergate_core.tools.requests import Client, RequestHandler
 
 
-_LoginInformation = namedtuple(
-    "_LoginInformation",
-    ["verification_url", "wait_interval", "device_code", "expires_at"],
-)
+class DeviceCodeData(BaseModel):
+    """
+    A model representing the data that is returned from the OIDC provider's device code endpoint.
+    """
+
+    verification_uri_complete: str
+    interval: int
+    device_code: str
+    expires_in: float
+
+
+class TokenInformation(BaseModel):
+    access_token: str | None = None
+    refresh_token: str | None = None
+
+
+class IdentityData(BaseModel):
+    """
+    A model representing the identifying data for a user from an auth token.
+    """
+
+    email: str
+    client_id: str
+    organization_id: str | None = None
+
+
+@dataclass
+class TimedIterator:
+    """
+    An iterator that runs for a given time interval, yielding the current iteration number.
+    """
+
+    total: int
+    step: int
+
+    def __post_init__(self):
+        now = pendulum.now()
+        interval = pendulum.interval(now, now.add(seconds=self.total))
+        self.range = interval.range("seconds", self.step)
+
+    def __iter__(self):
+        for i, date_time in enumerate(self.range):
+            time_to_sleep = date_time.diff(pendulum.now()).in_seconds()
+            time.sleep(time_to_sleep)
+            yield i
+
+    def __len__(self):
+        return self.total // self.step + 1
+
+
+def print_login_url(device_code_data: DeviceCodeData):
+    """Basic way to handle the login url."""
+    print(f"Login Here: {device_code_data.verification_uri_complete}")
 
 
 @dataclass
@@ -82,12 +132,18 @@ class JobbergateAuthHandler:
     login_domain: str
     login_audience: str
     login_client_id: str = "default"
+    login_client_secret: str | None = None
+    login_url_handler: Callable[[DeviceCodeData], None] = print_login_url
+    login_sequence_handler: Callable[[Iterable], Iterable] = lambda i: i
+
+    _client: Client = field(init=False, repr=False)
     _access_token: Token = field(init=False, repr=False)
     _refresh_token: Token = field(init=False, repr=False)
 
     def __post_init__(self):
         self._access_token = Token(cache_directory=self.cache_directory, label=TokenType.ACCESS.value)
         self._refresh_token = Token(cache_directory=self.cache_directory, label=TokenType.REFRESH.value)
+        self._client = Client(base_url=self.login_domain, headers={"content-type": "application/x-www-form-urlencoded"})
 
     def __call__(self, request):
         """
@@ -121,26 +177,57 @@ class JobbergateAuthHandler:
         Raises:
             AuthenticationError: If all of the steps above fail to acquire a valid access token.
         """
+        if self._access_token.is_valid():
+            return self._access_token.bearer_token
+
         logger.debug("Acquiring access token")
 
-        for procedure_name in (None, "load_from_cache", "refresh_tokens", "login"):
-            if procedure_name:
-                procedure = getattr(self, procedure_name)
-                try:
-                    procedure()
-                except TokenError:
-                    logger.debug("{} failed, moving to the next procedure", procedure_name)
+        for procedure_name in (
+            "load_from_cache",
+            "refresh_tokens",
+            "get_access_from_secret",
+            "login",
+        ):
+            procedure = getattr(self, procedure_name)
+            try:
+                procedure()
+            except AuthenticationError as err:
+                logger.debug("{} failed due to: {}", procedure_name, str(err))
             if self._access_token.is_valid():
                 return self._access_token.bearer_token
-        raise AuthenticationError("Unable to acquire the access token")
+        raise AuthenticationError("Unable to acquire the access token, all attempts failed")
+
+    def get_access_from_secret(self) -> None:
+        AuthenticationError.require_condition(self.login_client_secret is not None, message="Client secret is unset")
+
+        with AuthenticationError.handle_errors("Failed to get access token from client secret"):
+            data = (
+                RequestHandler(
+                    client=self._client,
+                    url_path="/protocol/openid-connect/token",
+                    method="POST",
+                    request_kwargs={
+                        "data": {
+                            "audience": self.login_audience,
+                            "client_id": self.login_client_id,
+                            "client_secret": self.login_client_secret,
+                            "grant_type": "client_credentials",
+                        }
+                    },
+                )
+                .raise_for_status()
+                .to_model(TokenInformation)
+            )
+            self._update_tokens_from_info(data)
 
     def load_from_cache(self) -> None:
         """
         Load the tokens that are available at the cache directory.
         """
         logger.debug("Loading tokens from cache directory: {}", self.cache_directory.as_posix())
-        self._access_token = self._access_token.load_from_cache()
-        self._refresh_token = self._refresh_token.load_from_cache()
+        with AuthenticationError.handle_errors("Failed to load tokens from cache"):
+            self._access_token = self._access_token.load_from_cache()
+            self._refresh_token = self._refresh_token.load_from_cache()
 
     def save_to_cache(self) -> None:
         """
@@ -149,23 +236,24 @@ class JobbergateAuthHandler:
         Note:
             This method will create the cache directory if it does not exist.
         """
-        logger.debug(
-            "Saving tokens to cache directory: {}",
-            self.cache_directory.as_posix(),
-        )
-        self.cache_directory.mkdir(parents=True, exist_ok=True)
-        self._access_token.save_to_cache()
-        self._refresh_token.save_to_cache()
+        logger.debug("Saving tokens to cache directory: {}", self.cache_directory.as_posix())
+        with AuthenticationError.handle_errors("Failed to save tokens to cache"):
+            self.cache_directory.mkdir(parents=True, exist_ok=True)
+            if self._access_token.is_valid():
+                self._access_token.save_to_cache()
+            if self._refresh_token.is_valid():
+                self._refresh_token.save_to_cache()
 
     def logout(self) -> None:
         """
         Logout from Jobbergate by clearing the loaded tokens and their cache on the disk.
         """
         logger.debug("Logging out from Jobbergate")
-        self._access_token = self._access_token.replace(content="")
-        self._access_token.clear_cache()
-        self._refresh_token = self._refresh_token.replace(content="")
-        self._refresh_token.clear_cache()
+        with AuthenticationError.handle_errors("Failed to logout from Jobbergate"):
+            self._access_token = self._access_token.replace(content="")
+            self._access_token.clear_cache()
+            self._refresh_token = self._refresh_token.replace(content="")
+            self._refresh_token.clear_cache()
 
     def login(self) -> None:
         """
@@ -177,69 +265,58 @@ class JobbergateAuthHandler:
         After the login is completed, the tokens will be saved to the cache directory.
         """
         logger.debug("Preparing to login to Jobbergate")
-        login_info = self._get_login_information()
-        response = self._wait_for_login_confirmation(login_info)
-        self._process_tokens_from_response(response)
+        with AuthenticationError.handle_errors("Failed to login to Jobbergate"):
+            login_info = self._get_device_code()
+            token_info = self._wait_for_login_confirmation(login_info)
+            self._update_tokens_from_info(token_info)
         logger.success("Login completed")
 
-    def _wait_for_login_confirmation(self, login_info: _LoginInformation) -> httpx.Response:
-        print(f"Login Here: {login_info.verification_url}")
-        while True:
-            AuthenticationError.require_condition(
-                login_info.expires_at > time.time(), "Login expired, please try again"
-            )
-            response = self._get_login_confirmation(login_info)
-            try:
-                response.raise_for_status()
-                break
-            except httpx.HTTPStatusError:
-                logger.debug(
-                    "    Login not completed yet, waiting {} seconds",
-                    login_info.wait_interval,
-                )
-                time.sleep(login_info.wait_interval)
-        logger.debug("Preparing to login to Jobbergate")
-        return response
-
-    def _get_login_confirmation(self, login_info: _LoginInformation) -> httpx.Response:
-        response = httpx.post(
-            f"{self.login_domain}/protocol/openid-connect/token",
-            data=dict(
-                grant_type="urn:ietf:params:oauth:grant-type:device_code",
-                device_code=login_info.device_code,
-                client_id=self.login_client_id,
-            ),
-        )
-
-        return response
-
-    def _get_login_information(self) -> _LoginInformation:
-        with AuthenticationError.handle_errors(
-            "Unexpected error while fetching the tokens",
+    def _wait_for_login_confirmation(self, device_code_data: DeviceCodeData) -> TokenInformation:
+        self.login_url_handler(device_code_data)
+        for counter in self.login_sequence_handler(
+            TimedIterator(int(device_code_data.expires_in), device_code_data.interval)
         ):
-            response = httpx.post(
-                f"{self.login_domain}/protocol/openid-connect/auth/device",
-                data=dict(
-                    client_id=self.login_client_id,
-                    grant_type="client_credentials",
-                    audience=self.login_audience,
-                ),
-            )
-            response.raise_for_status()
+            request_handler = RequestHandler(
+                client=self._client,
+                url_path="/protocol/openid-connect/token",
+                method="POST",
+                request_kwargs={
+                    "data": {
+                        "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
+                        "device_code": device_code_data.device_code,
+                        "client_id": self.login_client_id,
+                    }
+                },
+            ).check_status_code(200, 400)
 
-        device_code_data = response.json()
-        with AuthenticationError.handle_errors(
-            f"Error processing the request data after fetching the token, {device_code_data=}",
-        ):
-            verification_url = device_code_data["verification_uri_complete"]
-            wait_interval = device_code_data["interval"]
-            device_code = device_code_data["device_code"]
-            expires_at = time.time() + device_code_data["expires_in"]
-        return _LoginInformation(
-            verification_url,
-            wait_interval,
-            device_code,
-            expires_at,
+            if request_handler.response.is_success:
+                return request_handler.to_model(TokenInformation)
+
+            logger.debug(
+                "Login not completed completed on attempt #{}, waiting {} seconds",
+                counter + 1,
+                device_code_data.interval,
+            )
+
+        raise AuthenticationError("Login process was not completed in time. Please try again.")
+
+    def _get_device_code(self) -> DeviceCodeData:
+        return (
+            RequestHandler(
+                client=self._client,
+                url_path="/protocol/openid-connect/auth/device",
+                method="POST",
+                request_kwargs={
+                    "data": {
+                        "client_id": self.login_client_id,
+                        "grant_type": "client_credentials",
+                        "audience": self.login_audience,
+                    }
+                },
+            )
+            .raise_for_status()
+            .check_status_code(200)
+            .to_model(DeviceCodeData)
         )
 
     def refresh_tokens(self) -> None:
@@ -254,48 +331,64 @@ class JobbergateAuthHandler:
         logger.debug("Preparing to refresh the tokens")
 
         if not self._refresh_token.content:
-            raise TokenError("The refresh is unavailable, please login again")
+            raise AuthenticationError("Session can no be refreshed since the refresh token is unavailable")
         if self._refresh_token.is_expired():
-            raise TokenError("Refresh token is expired, please login again")
+            raise AuthenticationError("Session can no be refreshed since the refresh token is expired")
 
-        response = self._get_refresh_token()
-        self._process_tokens_from_response(response)
+        with AuthenticationError.handle_errors("Failed to refresh the session"):
+            token_info = self._get_refresh_token()
+            self._update_tokens_from_info(token_info)
 
         logger.success("Tokens refreshed successfully")
 
-    def _get_refresh_token(self):
-        with AuthenticationError.handle_errors(
-            "Unexpected error while refreshing the tokens",
-        ):
-            response = httpx.post(
-                f"{self.login_domain}/protocol/openid-connect/token",
-                data=dict(
-                    client_id=self.login_client_id,
-                    audience=self.login_audience,
-                    grant_type="refresh_token",
-                    refresh_token=self._refresh_token.content,
-                ),
+    def _get_refresh_token(self) -> TokenInformation:
+        return (
+            RequestHandler(
+                client=self._client,
+                url_path="/protocol/openid-connect/token",
+                method="POST",
+                request_kwargs={
+                    "data": {
+                        "client_id": self.login_client_id,
+                        "audience": self.login_audience,
+                        "grant_type": "refresh_token",
+                        "refresh_token": self._refresh_token.content,
+                    },
+                },
             )
-            response.raise_for_status()
-        return response
-
-    def _process_tokens_from_response(self, response):
-        response_data = response.json()
-
-        tokens_content = {t: response_data.get(f"{t.value}_token") for t in TokenType}
-        AuthenticationError.require_condition(
-            all(tokens_content.values()), "Not all tokens were included in the response"
+            .raise_for_status()
+            .to_model(TokenInformation)
         )
-        self._update_tokens(tokens_content)
-        self.save_to_cache()
 
-    def _update_tokens(self, tokens_content: Dict[TokenType, str]):
+    def _update_tokens_from_info(self, token_information: TokenInformation):
         """
         Update the tokens with the new content.
         """
-        access_token = tokens_content.get(TokenType.ACCESS, "")
-        if access_token:
-            self._access_token = self._access_token.replace(content=access_token)
-        refresh_token = tokens_content.get(TokenType.REFRESH, "")
-        if refresh_token:
-            self._refresh_token = self._refresh_token.replace(content=refresh_token)
+        if token_information.access_token:
+            self._access_token = self._access_token.replace(content=token_information.access_token)
+        if token_information.refresh_token:
+            self._refresh_token = self._refresh_token.replace(content=token_information.refresh_token)
+        self.save_to_cache()
+
+    def get_identity_data(self) -> IdentityData:
+        if not self._access_token.is_valid():
+            self.acquire_access()
+        token_data = self._access_token.data
+        email = AuthenticationError.enforce_defined(
+            token_data.get("email"),
+            "Could not retrieve user email from token",
+        )
+        client_id = AuthenticationError.enforce_defined(
+            token_data.get("azp"), "Could not retrieve client_id from token"
+        )
+        org_dict = token_data.get("organization", {})
+        AuthenticationError.require_condition(
+            len(org_dict) <= 1,
+            message="More than one organization id found in token payload",
+        )
+        organization_id = set(org_dict.keys()).pop() if org_dict else None
+        return IdentityData(
+            email=email,
+            client_id=client_id,
+            organization_id=organization_id,
+        )

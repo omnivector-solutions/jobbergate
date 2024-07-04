@@ -7,7 +7,7 @@ from pathlib import Path
 from sys import exit
 from typing import Optional
 
-from pydantic import Field, ValidationError, model_validator
+from pydantic import Field, ValidationError, computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Self
 
@@ -60,16 +60,6 @@ class Settings(BaseSettings):
     JOBBERGATE_AWS_SECRET_ACCESS_KEY: Optional[str] = None
     JOBBERGATE_S3_LOG_BUCKET: str = Field("jobbergate-cli-logs")
 
-    # Computed values. Listed as Optional, but will *always* be set (or overridden) based on other values
-    JOBBERGATE_APPLICATION_MODULE_PATH: Optional[Path] = None
-    JOBBERGATE_APPLICATION_CONFIG_PATH: Optional[Path] = None
-    JOBBERGATE_LOG_PATH: Optional[Path] = None
-    JOBBERGATE_USER_TOKEN_DIR: Optional[Path] = None
-    JOBBERGATE_ACCESS_TOKEN_PATH: Optional[Path] = None
-    JOBBERGATE_REFRESH_TOKEN_PATH: Optional[Path] = None
-
-    JOBBERGATE_CLUSTER_LIST_PATH: Optional[Path] = None
-
     # Compatibility mode: If True, add commands as they appear in the legacy app
     JOBBERGATE_COMPATIBILITY_MODE: Optional[bool] = False
     JOBBERGATE_LEGACY_NAME_CONVENTION: Optional[bool] = False
@@ -79,10 +69,6 @@ class Settings(BaseSettings):
     OIDC_AUDIENCE: str
     OIDC_CLIENT_ID: str
     OIDC_USE_HTTPS: bool = True
-    OIDC_MAX_POLL_TIME: int = 5 * 60  # 5 Minutes
-
-    # Enable multi-tenancy to fix cluster name mapping by client_id
-    MULTI_TENANCY_ENABLED: bool = False
 
     @model_validator(mode="after")
     def compute_extra_settings(self) -> Self:
@@ -93,22 +79,31 @@ class Settings(BaseSettings):
         cache_dir = self.JOBBERGATE_CACHE_DIR
         cache_dir.mkdir(exist_ok=True, parents=True)
 
-        self.JOBBERGATE_APPLICATION_MODULE_PATH = cache_dir / constants.JOBBERGATE_APPLICATION_MODULE_FILE_NAME
-        self.JOBBERGATE_APPLICATION_CONFIG_PATH = cache_dir / constants.JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
-
-        log_dir = cache_dir / "logs"
-        log_dir.mkdir(exist_ok=True, parents=True)
-        self.JOBBERGATE_LOG_PATH = log_dir / "jobbergate-cli.log"
-
-        token_dir = cache_dir / "token"
-        token_dir.mkdir(exist_ok=True, parents=True)
-        self.JOBBERGATE_USER_TOKEN_DIR = token_dir
-        self.JOBBERGATE_ACCESS_TOKEN_PATH = token_dir / "access.token"
-        self.JOBBERGATE_REFRESH_TOKEN_PATH = token_dir / "refresh.token"
-
-        self.JOBBERGATE_CLUSTER_LIST_PATH = cache_dir / "clusters.json"
-
         return self
+
+    @computed_field
+    def JOBBERGATE_USER_TOKEN_DIR(self) -> Path:
+        token_dir = self.JOBBERGATE_CACHE_DIR / "token"
+        token_dir.mkdir(exist_ok=True, parents=True)
+        return token_dir
+
+    @computed_field
+    def JOBBERGATE_LOG_PATH(self) -> Path:
+        log_file = self.JOBBERGATE_CACHE_DIR / "logs" / "jobbergate-cli.log"
+        log_file.parent.mkdir(exist_ok=True, parents=True)
+        return log_file
+
+    @computed_field
+    def JOBBERGATE_APPLICATION_MODULE_PATH(self) -> Path:
+        return self.JOBBERGATE_CACHE_DIR / constants.JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+
+    @computed_field
+    def JOBBERGATE_APPLICATION_CONFIG_PATH(self) -> Path:
+        return self.JOBBERGATE_CACHE_DIR / constants.JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
+
+    @computed_field
+    def JOBBERGATE_CLUSTER_LIST_PATH(self) -> Path:
+        return self.JOBBERGATE_CACHE_DIR / "clusters.json"
 
     @property
     def is_onsite_mode(self) -> bool:

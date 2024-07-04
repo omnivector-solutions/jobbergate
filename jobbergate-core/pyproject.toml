@@ -25,9 +25,10 @@ loguru = "^0.6.0"
 pendulum = { extras = ["test"], version = "^3.0.0" }
 py-buzz = "^4.0.0"
 python-jose = "^3.3.0"
+pydantic = "^2.7"
 
 [tool.poetry.dev-dependencies]
-mypy = "^0.931"
+mypy = "^1.10"
 pytest-cov = "^3.0.0"
 pytest-env = "^0.6.2"
 pytest-freezegun = "^0.4.2"
@@ -54,6 +55,9 @@ addopts = [
 [tool.coverage.report]
 fail_under = 85
 show_missing = true
+
+[tool.mypy]
+plugins = "pydantic.mypy"
 
 [[tool.mypy.overrides]]
 module = ["click", "dataclasses", "toml", "requests", "jose.*"]

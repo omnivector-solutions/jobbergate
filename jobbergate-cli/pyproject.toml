@@ -77,7 +77,6 @@ env = [
     "OIDC_DOMAIN = dummy_auth_domain.com",
     "OIDC_AUDIENCE = https://dummy_auth_audience.com",
     "OIDC_CLIENT_ID = dummy_client_id",
-    "MULTI_TENANCY_ENABLED = false",
 ]
 
 [tool.coverage.report]
