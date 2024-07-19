@@ -173,10 +173,8 @@ Jobbergate settings:
   S3_ENDPOINT_URL: None
   ARMASEC_DOMAIN: localhost:9080/realms/master/protocol/openid-connect
   ARMASEC_USE_HTTPS: True
-  ARMASEC_AUDIENCE: https://local.omnivector.solutions
   ARMASEC_DEBUG: True
   ARMASEC_ADMIN_DOMAIN: None
-  ARMASEC_ADMIN_AUDIENCE: None
   ARMASEC_ADMIN_MATCH_KEY: None
   ARMASEC_ADMIN_MATCH_VALUE: None
   IDENTITY_CLAIMS_KEY: https://omnivector.solutions
@@ -196,7 +194,7 @@ poetry run dev-tools show-env --json
 The JSON output will look something like:
 
 ```json
-{"DEPLOY_ENV": "LOCAL", "LOG_LEVEL": "DEBUG", "DATABASE_HOST": "localhost", "DATABASE_USER": "compose-db-user", "DATABASE_PSWD": "compose-db-pswd", "DATABASE_NAME": "compose-db-name", "DATABASE_PORT": 5432, "TEST_DATABASE_HOST": "localhost", "TEST_DATABASE_USER": "test-user", "TEST_DATABASE_PSWD": "test-pswd", "TEST_DATABASE_NAME": "test-db", "TEST_DATABASE_PORT": 5433, "S3_BUCKET_NAME": "jobbergate-k8s-staging", "S3_ENDPOINT_URL": null, "ARMASEC_DOMAIN": "localhost:9080/realms/master/protocol/openid-connect", "ARMASEC_USE_HTTPS": true, "ARMASEC_AUDIENCE": "https://local.omnivector.solutions", "ARMASEC_DEBUG": true, "ARMASEC_ADMIN_DOMAIN": null, "ARMASEC_ADMIN_AUDIENCE": null, "ARMASEC_ADMIN_MATCH_KEY": null, "ARMASEC_ADMIN_MATCH_VALUE": null, "IDENTITY_CLAIMS_KEY": "https://omnivector.solutions", "SENTRY_DSN": null, "SENTRY_SAMPLE_RATE": 1.0, "MAX_UPLOAD_FILE_SIZE": 104857600, "SENDGRID_FROM_EMAIL": null, "SENDGRID_API_KEY": null}
+{"DEPLOY_ENV": "LOCAL", "LOG_LEVEL": "DEBUG", "DATABASE_HOST": "localhost", "DATABASE_USER": "compose-db-user", "DATABASE_PSWD": "compose-db-pswd", "DATABASE_NAME": "compose-db-name", "DATABASE_PORT": 5432, "TEST_DATABASE_HOST": "localhost", "TEST_DATABASE_USER": "test-user", "TEST_DATABASE_PSWD": "test-pswd", "TEST_DATABASE_NAME": "test-db", "TEST_DATABASE_PORT": 5433, "S3_BUCKET_NAME": "jobbergate-k8s-staging", "S3_ENDPOINT_URL": null, "ARMASEC_DOMAIN": "localhost:9080/realms/master/protocol/openid-connect", "ARMASEC_USE_HTTPS": true, "ARMASEC_DEBUG": true, "ARMASEC_ADMIN_DOMAIN": null, "ARMASEC_ADMIN_MATCH_KEY": null, "ARMASEC_ADMIN_MATCH_VALUE": null, "IDENTITY_CLAIMS_KEY": "https://omnivector.solutions", "SENTRY_DSN": null, "SENTRY_SAMPLE_RATE": 1.0, "MAX_UPLOAD_FILE_SIZE": 104857600, "SENDGRID_FROM_EMAIL": null, "SENDGRID_API_KEY": null}
 ```
 
 ## The `dev-server` subcommand

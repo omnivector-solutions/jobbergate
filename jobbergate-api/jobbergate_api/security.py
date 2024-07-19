@@ -25,14 +25,12 @@ def get_domain_configs() -> list[DomainConfig]:
     domain_configs = [
         DomainConfig(
             domain=settings.ARMASEC_DOMAIN,
-            audience=settings.ARMASEC_AUDIENCE,
             use_https=settings.ARMASEC_USE_HTTPS,
         )
     ]
     if all(
         [
             settings.ARMASEC_ADMIN_DOMAIN,
-            settings.ARMASEC_ADMIN_AUDIENCE,
             settings.ARMASEC_ADMIN_MATCH_KEY,
             settings.ARMASEC_ADMIN_MATCH_VALUE,
         ]
@@ -45,7 +43,6 @@ def get_domain_configs() -> list[DomainConfig]:
         domain_configs.append(
             DomainConfig(
                 domain=settings.ARMASEC_ADMIN_DOMAIN,
-                audience=settings.ARMASEC_ADMIN_AUDIENCE,
                 use_https=settings.ARMASEC_USE_HTTPS,
                 match_keys={settings.ARMASEC_ADMIN_MATCH_KEY: settings.ARMASEC_ADMIN_MATCH_VALUE},
             )

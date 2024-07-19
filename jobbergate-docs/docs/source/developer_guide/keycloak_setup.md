@@ -83,12 +83,6 @@ Jobbergate requires two claims that are not available by default. We will add th
 
 Click the `Mappers`  tab at the top, and then click the `Create` button to add a new Mapper.
 
-#### Audience
-
-First, we need to add an "audience" mapper. Select "audience" for the `Name` field. Next, select "Audience" for the
-`Mapper Type`.  The `Included Custom Audience` value may be whatever you like. The local deploy, by default, uses
-<https://apis.omnivector.solutions>. Make sure to enable the `Add to ID token` setting.
-
 #### Permissions
 
 The `Armasec` package expects to find "permissions" in a claim at the root
@@ -127,15 +121,9 @@ Click on the `Roles` tab, and click the `Add Role` button. Add all the following
 
 ### Add Mappers
 
-Like the CLI client, the Agent's client also requires the "Audience" and "Permissions" mappers.
+Like the CLI client, the Agent's client also requires the "Permissions" mapper.
 
 Click the `Mappers`  tab at the top, and then click the `Create` button to add a new Mapper.
-
-#### Audience
-
-First, we need to add an "audience" mapper. Select "audience" for the `Name` field. Next, select "Audience" for the
-`Mapper Type`.  The `Included Custom Audience` value may be whatever you like. The local deploy, by default, uses
-"<https://apis.omnivector.solutions>". Make sure to enable the `Add to ID token` setting.
 
 #### Permissions
 
