@@ -833,13 +833,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#audience" class="md-nav__link">
-    Audience
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#permissions" class="md-nav__link">
     Permissions
   </a>
@@ -878,13 +871,6 @@
   
     <nav class="md-nav" aria-label="Add Mappers">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#audience_1" class="md-nav__link">
-    Audience
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#permissions_1" class="md-nav__link">
@@ -1155,13 +1141,6 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#audience" class="md-nav__link">
-    Audience
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#permissions" class="md-nav__link">
     Permissions
   </a>
@@ -1200,13 +1179,6 @@
   
     <nav class="md-nav" aria-label="Add Mappers">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#audience_1" class="md-nav__link">
-    Audience
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#permissions_1" class="md-nav__link">
@@ -1343,10 +1315,6 @@ are checked for each request to make sure that the user has permission to fulfil
 <h3 id="add-mappers">Add Mappers</h3>
 <p>Jobbergate requires two claims that are not available by default. We will add them to the JWTs with Mappers.</p>
 <p>Click the <code>Mappers</code>  tab at the top, and then click the <code>Create</code> button to add a new Mapper.</p>
-<h4 id="audience">Audience</h4>
-<p>First, we need to add an "audience" mapper. Select "audience" for the <code>Name</code> field. Next, select "Audience" for the
-<code>Mapper Type</code>.  The <code>Included Custom Audience</code> value may be whatever you like. The local deploy, by default, uses
-<a href="https://apis.omnivector.solutions">https://apis.omnivector.solutions</a>. Make sure to enable the <code>Add to ID token</code> setting.</p>
 <h4 id="permissions">Permissions</h4>
 <p>The <code>Armasec</code> package expects to find "permissions" in a claim at the root
 of the JWT payload. To facilitate this, we need to add a mapper that will copy the permissions to the correct place in
@@ -1399,12 +1367,8 @@ click on the <code>Save</code> button.</p>
 </tbody>
 </table>
 <h3 id="add-mappers_1">Add Mappers</h3>
-<p>Like the CLI client, the Agent's client also requires the "Audience" and "Permissions" mappers.</p>
+<p>Like the CLI client, the Agent's client also requires the "Permissions" mapper.</p>
 <p>Click the <code>Mappers</code>  tab at the top, and then click the <code>Create</code> button to add a new Mapper.</p>
-<h4 id="audience_1">Audience</h4>
-<p>First, we need to add an "audience" mapper. Select "audience" for the <code>Name</code> field. Next, select "Audience" for the
-<code>Mapper Type</code>.  The <code>Included Custom Audience</code> value may be whatever you like. The local deploy, by default, uses
-"<a href="https://apis.omnivector.solutions">https://apis.omnivector.solutions</a>". Make sure to enable the <code>Add to ID token</code> setting.</p>
 <h4 id="permissions_1">Permissions</h4>
 <p>Next, add a "permissions" mapper. The <code>Armasec</code> package expects to find a "permissions" claims under a claim at the root
 of the JWT payload. Enter "Permissions" under the <code>Name</code> field. Next, select "User Client Role" as the <code>Mapper Type</code>.
