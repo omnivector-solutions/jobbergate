@@ -96,7 +96,7 @@ class IdentityPayload(TokenPayload):
 
 def lockdown_with_identity(
     *scopes: str,
-    permission_mode: PermissionMode = PermissionMode.ALL,
+    permission_mode: PermissionMode = PermissionMode.SOME,
     ensure_email: bool = False,
     ensure_organization: bool = False,
     ensure_client_id: bool = False,

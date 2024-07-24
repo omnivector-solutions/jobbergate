@@ -24,7 +24,7 @@ from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionUpdateRequest,
     PendingJobSubmission,
 )
-from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.apps.permissions import Permissions, can_bypass_ownership_check
 from jobbergate_api.apps.schemas import ListParams
 from jobbergate_api.email_notification import notify_submission_rejected
 from jobbergate_api.rabbitmq_notification import publish_status_change
@@ -41,7 +41,7 @@ router = APIRouter(prefix="/job-submissions", tags=["Job Submissions"])
 async def job_submission_create(
     create_request: JobSubmissionCreateRequest,
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SUBMISSIONS_CREATE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_CREATE, ensure_email=True)
     ),
 ):
     """
@@ -94,7 +94,9 @@ async def job_submission_create(
 )
 async def job_submission_get(
     id: int = Path(...),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SUBMISSIONS_READ, commit=False)),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)
+    ),
 ):
     """Return the job_submission given it's id."""
     logger.debug(f"Getting job submission {id=}")
@@ -120,7 +122,9 @@ async def job_submission_get_list(
         None,
         description="Filter job-submissions by the job-script-id they were created from.",
     ),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SUBMISSIONS_READ, commit=False)),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)
+    ),
 ):
     """List job_submissions for the authenticated user."""
     logger.debug("Fetching job submissions")
@@ -157,13 +161,13 @@ async def job_submission_get_list(
 async def job_submission_delete(
     id: int = Path(..., description="id of the job submission to delete"),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SUBMISSIONS_DELETE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_DELETE, ensure_email=True)
     ),
 ):
     """Delete job_submission given its id."""
     logger.info(f"Deleting job submission {id=}")
     instance = await secure_services.crud.job_submission.get(id)
-    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
+    if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.job_submission.ensure_attribute(
             instance, owner_email=secure_services.identity_payload.email
         )
@@ -181,13 +185,13 @@ async def job_submission_update(
     update_params: JobSubmissionUpdateRequest,
     id: int = Path(),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SUBMISSIONS_UPDATE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_email=True)
     ),
 ):
     """Update a job_submission given its id."""
     logger.debug(f"Updating {id=} with {update_params=}")
     instance = await secure_services.crud.job_submission.get(id)
-    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
+    if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.job_submission.ensure_attribute(
             instance, owner_email=secure_services.identity_payload.email
         )
@@ -207,7 +211,7 @@ async def job_submission_agent_update(
     update_params: JobSubmissionAgentUpdateRequest,
     id: int = Path(),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)
     ),
 ):
     """
@@ -275,7 +279,7 @@ async def job_submission_agent_update(
 async def job_submissions_agent_submitted(
     submitted_request: JobSubmissionAgentSubmittedRequest,
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)
     ),
 ):
     """Update a job_submission to indicate that it was submitted to Slurm."""
@@ -312,7 +316,7 @@ async def job_submissions_agent_submitted(
 async def job_submissions_agent_rejected(
     rejected_request: JobSubmissionAgentRejectedRequest,
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)
     ),
 ):
     """Update a job_submission to indicate that it was rejected by Slurm."""
@@ -357,7 +361,9 @@ async def job_submissions_agent_rejected(
 )
 async def job_submissions_agent_pending(
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True)
+        secure_services(
+            Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True
+        )
     ),
 ):
     """Get a list of pending job submissions for the cluster-agent."""
@@ -383,7 +389,9 @@ async def job_submissions_agent_pending(
 )
 async def job_submissions_agent_active(
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True)
+        secure_services(
+            Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True
+        )
     ),
 ):
     """Get a list of active job submissions for the cluster-agent."""

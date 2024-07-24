@@ -52,7 +52,9 @@ async def report_cluster_status(
     response_model=Page[ClusterStatusView],
 )
 async def get_cluster_status(
-    secure_session: SecureSession = Depends(secure_session(Permissions.CLUSTERS_READ, commit=False)),
+    secure_session: SecureSession = Depends(
+        secure_session(Permissions.ADMIN, Permissions.CLUSTERS_READ, commit=False)
+    ),
 ):
     """
     Get the status of the cluster.
