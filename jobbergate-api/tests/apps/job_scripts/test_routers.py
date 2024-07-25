@@ -9,14 +9,15 @@ from jobbergate_api.apps.permissions import Permissions
 pytest.mark.usefixtures("synth_session")
 
 
-async def test_create_stand_alone_job_script(
-    client, fill_job_script_data, inject_security_header, synth_services
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE))
+async def test_create_stand_alone_job_script__success(
+    client, permission, fill_job_script_data, inject_security_header, synth_services
 ):
     """Test a stand alone job script can be create."""
     payload = fill_job_script_data()
 
     tester_email = payload.pop("owner_email")
-    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_CREATE)
+    inject_security_header(tester_email, permission)
 
     response = await client.post("jobbergate/job-scripts", json=payload)
     assert response.status_code == 201, f"Create failed: {response.text}"
@@ -51,8 +52,9 @@ async def test_create_stand_alone_job_script(
     assert response_data["parent_template_id"] is None
 
 
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE))
 async def test_clone_job_script__success(
-    client, fill_job_script_data, inject_security_header, tester_email, synth_services
+    client, permission, fill_job_script_data, inject_security_header, tester_email, synth_services
 ):
     original_instance = await synth_services.crud.job_script.create(
         **fill_job_script_data(owner_email=tester_email)
@@ -73,7 +75,7 @@ async def test_clone_job_script__success(
 
     new_owner_email = "new_" + tester_email
 
-    inject_security_header(new_owner_email, Permissions.JOB_SCRIPTS_CREATE)
+    inject_security_header(new_owner_email, permission)
     response = await client.post(f"jobbergate/job-scripts/clone/{original_instance.id}")
 
     assert response.status_code == 201, f"Clone failed: {response.text}"
@@ -137,7 +139,9 @@ async def test_clone_job_script__fail_not_found(
     assert response.status_code == 404
 
 
-async def test_render_job_script_from_template(
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE))
+async def test_render_job_script_from_template__success(
+    permission,
     fill_job_template_data,
     fill_job_script_data,
     client,
@@ -174,7 +178,7 @@ async def test_render_job_script_from_template(
         },
     }
 
-    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_CREATE)
+    inject_security_header(tester_email, permission)
     response = await client.post(
         f"/jobbergate/job-scripts/render-from-template/{base_template.id}",
         json=payload,
@@ -388,7 +392,9 @@ async def test_render_job_script_from_template__without_template(
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ))
 async def test_get_job_script_by_id__success(
+    permission,
     fill_job_script_data,
     client,
     inject_security_header,
@@ -405,7 +411,7 @@ async def test_get_job_script_by_id__success(
     """
     inserted_instance = await synth_services.crud.job_script.create(**fill_job_script_data())
 
-    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
+    inject_security_header(tester_email, permission)
     response = await client.get(f"/jobbergate/job-scripts/{inserted_instance.id}")
 
     assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
@@ -464,7 +470,8 @@ async def test_get_job_script_by_id__bad_permission(
     "is_owner, permissions",
     [
         (True, [Permissions.JOB_SCRIPTS_UPDATE]),
-        (False, [Permissions.JOB_SCRIPTS_UPDATE, Permissions.ADMIN]),
+        (False, [Permissions.ADMIN]),
+        (False, [Permissions.JOB_SCRIPTS_UPDATE, Permissions.MAINTAINER]),
     ],
 )
 async def test_update_job_script__success(
@@ -547,7 +554,8 @@ async def test_update_job_script__fail_forbidden(
     "is_owner, permissions",
     [
         (True, [Permissions.JOB_SCRIPTS_DELETE]),
-        (False, [Permissions.JOB_SCRIPTS_DELETE, Permissions.ADMIN]),
+        (False, [Permissions.ADMIN]),
+        (False, [Permissions.JOB_SCRIPTS_DELETE, Permissions.MAINTAINER]),
     ],
 )
 async def test_delete_job_script__success(
@@ -633,14 +641,16 @@ class TestListJobScripts:
             await synth_services.crud.job_script.create(**item)
         yield data
 
+    @pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ))
     async def test_list_job_scripts__all_success(
         self,
+        permission,
         client,
         tester_email,
         inject_security_header,
         job_scripts_list,
     ):
-        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
+        inject_security_header(tester_email, permission)
         response = await client.get("jobbergate/job-scripts?include_archived=True&sort_field=id")
         assert response.status_code == 200, f"Get failed: {response.text}"
 
@@ -794,7 +804,8 @@ class TestJobScriptFiles:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_SCRIPTS_CREATE]),
-            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.ADMIN]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.MAINTAINER]),
         ],
     )
     async def test_upsert_new_file(
@@ -847,7 +858,8 @@ class TestJobScriptFiles:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_SCRIPTS_CREATE]),
-            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.ADMIN]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.MAINTAINER]),
         ],
     )
     async def test_upsert_replace_content(
@@ -900,7 +912,8 @@ class TestJobScriptFiles:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_SCRIPTS_CREATE]),
-            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.ADMIN]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.MAINTAINER]),
         ],
     )
     async def test_upsert_rename_file(
@@ -950,7 +963,8 @@ class TestJobScriptFiles:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_SCRIPTS_CREATE]),
-            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.ADMIN]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.MAINTAINER]),
         ],
     )
     async def test_upsert_replace_content_and_rename(
@@ -1030,8 +1044,10 @@ class TestJobScriptFiles:
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
+    @pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ))
     async def test_get__success(
         self,
+        permission,
         client,
         tester_email,
         inject_security_header,
@@ -1050,7 +1066,7 @@ class TestJobScriptFiles:
             file_type=file_type,
         )
 
-        inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
+        inject_security_header(tester_email, permission)
         response = await client.get(f"jobbergate/job-scripts/{id}/upload/{job_script_filename}")
 
         assert response.status_code == status.HTTP_200_OK
@@ -1091,7 +1107,8 @@ class TestJobScriptFiles:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_SCRIPTS_DELETE]),
-            (False, [Permissions.JOB_SCRIPTS_DELETE, Permissions.ADMIN]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_SCRIPTS_DELETE, Permissions.MAINTAINER]),
         ],
     )
     async def test_delete__success(
@@ -1155,8 +1172,11 @@ class TestJobScriptFiles:
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
-async def test_auto_clean_unused_entries(client, tester_email, inject_security_header, synth_session):
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SCRIPTS_DELETE))
+async def test_auto_clean_unused_entries(
+    client, permission, tester_email, inject_security_header, synth_session
+):
     """Test that unused job scripts are automatically cleaned."""
-    inject_security_header(tester_email, Permissions.JOB_SCRIPTS_DELETE)
+    inject_security_header(tester_email, permission)
     response = await client.delete("jobbergate/job-scripts/clean-unused-entries")
     assert response.status_code == status.HTTP_202_ACCEPTED

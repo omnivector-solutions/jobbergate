@@ -15,7 +15,9 @@ from jobbergate_api.rabbitmq_notification import rabbitmq_connect
 pytest.mark.usefixtures("synth_session")
 
 
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_CREATE))
 async def test_create_job_submission__on_site_submission(
+    permission,
     fill_job_script_data,
     fill_job_submission_data,
     client,
@@ -48,7 +50,7 @@ async def test_create_job_submission__on_site_submission(
     inserted_job_script_id = base_job_script.id
     slurm_job_id = 1234
 
-    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_CREATE, client_id="dummy-cluster-client")
+    inject_security_header(tester_email, permission, client_id="dummy-cluster-client")
     create_data = fill_job_submission_data(job_script_id=inserted_job_script_id, slurm_job_id=slurm_job_id)
 
     # Removed defaults to make sure these are correctly set by other mechanisms
@@ -75,7 +77,9 @@ async def test_create_job_submission__on_site_submission(
     assert response_data["sbatch_arguments"] == ["--name foo", "--comment=bar"]
 
 
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_CREATE))
 async def test_create_job_submission__with_client_id_in_token(
+    permission,
     fill_job_script_data,
     fill_job_submission_data,
     client,
@@ -107,7 +111,7 @@ async def test_create_job_submission__with_client_id_in_token(
 
     inserted_job_script_id = base_job_script.id
 
-    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_CREATE, client_id="dummy-cluster-client")
+    inject_security_header(tester_email, permission, client_id="dummy-cluster-client")
     create_data = fill_job_submission_data(job_script_id=inserted_job_script_id)
 
     # Removed defaults to make sure these are correctly set by other mechanisms
@@ -346,7 +350,9 @@ async def test_create_job_submission_without_client_id(
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ))
 async def test_get_job_submission_by_id(
+    permission,
     client,
     tester_email,
     fill_job_submission_data,
@@ -364,7 +370,7 @@ async def test_get_job_submission_by_id(
     inserted_instance = await synth_services.crud.job_submission.create(**fill_job_submission_data())
     inserted_job_submission_id = inserted_instance.id
 
-    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_READ)
+    inject_security_header(tester_email, permission)
     response = await client.get(f"/jobbergate/job-submissions/{inserted_job_submission_id}")
     assert response.status_code == status.HTTP_200_OK
 
@@ -930,7 +936,8 @@ async def test_get_job_submissions_with_invalid_slurm_job_ids_param(
     "is_owner, permissions",
     [
         (True, [Permissions.JOB_SUBMISSIONS_UPDATE]),
-        (False, [Permissions.JOB_SUBMISSIONS_UPDATE, Permissions.ADMIN]),
+        (False, [Permissions.ADMIN]),
+        (False, [Permissions.JOB_SUBMISSIONS_UPDATE, Permissions.MAINTAINER]),
     ],
 )
 async def test_update_job_submission__basic(
@@ -1069,7 +1076,8 @@ async def test_update_job_submission_forbidden(
     "is_owner, permissions",
     [
         (True, [Permissions.JOB_SUBMISSIONS_DELETE]),
-        (False, [Permissions.JOB_SUBMISSIONS_DELETE, Permissions.ADMIN]),
+        (False, [Permissions.ADMIN]),
+        (False, [Permissions.JOB_SUBMISSIONS_DELETE, Permissions.MAINTAINER]),
     ],
 )
 async def test_delete_job_submission(
@@ -1180,7 +1188,9 @@ async def test_delete_job_submission_forbidden(
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ))
 async def test_job_submissions_agent_pending__success(
+    permission,
     client,
     job_script_data_as_string,
     fill_job_script_data,
@@ -1244,11 +1254,7 @@ async def test_job_submissions_agent_pending__success(
         item["sbatch_arguments"] = f"--comment={item['name']}"
         await synth_services.crud.job_submission.create(**item)
 
-    inject_security_header(
-        "who@cares.com",
-        Permissions.JOB_SUBMISSIONS_READ,
-        client_id="dummy-client",
-    )
+    inject_security_header("who@cares.com", permission, client_id="dummy-client")
     response = await client.get("/jobbergate/job-submissions/agent/pending")
 
     assert response.status_code == status.HTTP_200_OK
@@ -1284,7 +1290,9 @@ async def test_job_submissions_agent_pending__returns_400_if_token_does_not_carr
     assert "Access token does not contain\\n  1: client_id" in response.text
 
 
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE))
 async def test_job_submissions_agent_submitted__success(
+    permission,
     fill_job_script_data,
     fill_job_submission_data,
     client,
@@ -1315,7 +1323,7 @@ async def test_job_submissions_agent_submitted__success(
         slurm_job_info="Fake slurm job info",
     )
 
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
+    inject_security_header("who@cares.com", permission, client_id="dummy-client")
     response = await client.post("/jobbergate/job-submissions/agent/submitted", json=payload)
     assert response.status_code == status.HTTP_202_ACCEPTED
 
@@ -1426,7 +1434,9 @@ async def test_job_submissions_agent_submitted__fails_if_client_id_does_not_matc
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE))
 async def test_job_submissions_agent_rejected__success(
+    permission,
     fill_job_script_data,
     fill_job_submission_data,
     client,
@@ -1459,12 +1469,7 @@ async def test_job_submissions_agent_rejected__success(
         report_message="Something went wrong",
     )
 
-    inject_security_header(
-        "who@cares.com",
-        Permissions.JOB_SUBMISSIONS_UPDATE,
-        client_id="dummy-client",
-        organization_id="dummy-org",
-    )
+    inject_security_header("who@cares.com", permission, client_id="dummy-client", organization_id="dummy-org")
     response = await client.post("/jobbergate/job-submissions/agent/rejected", json=payload)
     assert response.status_code == status.HTTP_202_ACCEPTED
 
@@ -1571,7 +1576,9 @@ async def test_job_submissions_agent_rejected__fails_if_status_is_not_CREATED(
     assert "Only CREATED Job Submissions can be marked as REJECTED" in response.text
 
 
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE))
 async def test_job_submissions_agent_update__success(
+    permission,
     fill_job_script_data,
     fill_job_submission_data,
     client,
@@ -1602,7 +1609,7 @@ async def test_job_submissions_agent_update__success(
     )
     inserted_job_submission_id = inserted_submission.id
 
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
+    inject_security_header("who@cares.com", permission, client_id="dummy-client")
     response = await client.put(
         f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
         json=dict(
@@ -1907,7 +1914,9 @@ async def test_job_submissions_agent_update__returns_409_if_slurm_job_id_differs
     assert response.status_code == status.HTTP_409_CONFLICT
 
 
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ))
 async def test_job_submissions_agent_active__success(
+    permission,
     client,
     fill_job_script_data,
     fill_all_job_submission_data,
@@ -1956,7 +1965,7 @@ async def test_job_submissions_agent_active__success(
     for item in submission_list:
         await synth_services.crud.job_submission.create(job_script_id=inserted_job_script_id, **item)
 
-    inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_READ, client_id="dummy-client")
+    inject_security_header("who@cares.com", permission, client_id="dummy-client")
     response = await client.get("/jobbergate/job-submissions/agent/active")
     assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
 

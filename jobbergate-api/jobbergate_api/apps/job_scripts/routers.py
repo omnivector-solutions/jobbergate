@@ -26,7 +26,7 @@ from jobbergate_api.apps.job_scripts.schemas import (
     RenderFromTemplateRequest,
 )
 from jobbergate_api.apps.job_scripts.tools import inject_sbatch_params
-from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.apps.permissions import Permissions, can_bypass_ownership_check
 from jobbergate_api.apps.schemas import ListParams
 from jobbergate_api.apps.services import ServiceError
 
@@ -41,7 +41,9 @@ router = APIRouter(prefix="/job-scripts", tags=["Job Scripts"])
 )
 def job_script_auto_clean_unused_entries(
     background_tasks: BackgroundTasks,
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_DELETE)),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_DELETE)
+    ),
 ):
     """Automatically clean unused job scripts depending on a threshold."""
     logger.info("Starting automatically cleanup for unused job scripts")
@@ -57,7 +59,9 @@ def job_script_auto_clean_unused_entries(
 )
 async def job_script_create(
     create_request: JobScriptCreateRequest,
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_CREATE)),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE)
+    ),
 ):
     """Create a stand alone job script."""
     logger.info(f"Creating a new job script with {create_request=}")
@@ -84,7 +88,7 @@ async def job_script_clone(
     id: int = Path(),
     clone_request: JobScriptCloneRequest | None = None,
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)
     ),
 ):
     """Clone a job script by its id."""
@@ -118,7 +122,7 @@ async def job_script_create_from_template(
     render_request: RenderFromTemplateRequest,
     id_or_identifier: str = Path(...),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)
     ),
 ):
     """Create a new job script from a job script template."""
@@ -192,7 +196,9 @@ async def job_script_create_from_template(
 )
 async def job_script_get(
     id: int = Path(),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_READ, commit=False)),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ, commit=False)
+    ),
 ):
     """Get a job script by id."""
     logger.info(f"Getting job script {id=}")
@@ -210,7 +216,9 @@ async def job_script_get_list(
         None,
         description="Filter job-scripts by the job-script-template-id they were created from.",
     ),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_READ, commit=False)),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ, commit=False)
+    ),
 ):
     """Get a list of job scripts."""
     logger.debug("Preparing to list job scripts")
@@ -236,13 +244,13 @@ async def job_script_update(
     update_params: JobScriptUpdateRequest,
     id: int = Path(),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SCRIPTS_UPDATE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_UPDATE, ensure_email=True)
     ),
 ):
     """Update a job script template by id or identifier."""
     logger.info(f"Updating job script {id=} with {update_params=}")
     instance = await secure_services.crud.job_script.get(id, include_parent=True)
-    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
+    if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.job_script.ensure_attribute(
             instance, owner_email=secure_services.identity_payload.email
         )
@@ -257,13 +265,13 @@ async def job_script_update(
 async def job_script_delete(
     id: int = Path(...),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SCRIPTS_DELETE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_DELETE, ensure_email=True)
     ),
 ):
     """Delete a job script template by id or identifier."""
     logger.info(f"Deleting job script {id=}")
     instance = await secure_services.crud.job_script.get(id)
-    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
+    if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.job_script.ensure_attribute(
             instance, owner_email=secure_services.identity_payload.email
         )
@@ -278,7 +286,9 @@ async def job_script_delete(
 async def job_script_get_file(
     id: int = Path(...),
     file_name: str = Path(...),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_READ, commit=False)),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ, commit=False)
+    ),
 ):
     """
     Get a job script file.
@@ -313,7 +323,7 @@ async def job_script_upload_file(
         None, description="Previous name of the file in case a rename is needed", max_length=255
     ),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)
     ),
 ):
     """Upload a file to a job script."""
@@ -329,7 +339,7 @@ async def job_script_upload_file(
     logger.debug(f"Uploading file {filename=} to job script {id=} with {file_type=} and {previous_filename=}")
 
     job_script = await secure_services.crud.job_script.get(id)
-    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
+    if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.job_script.ensure_attribute(
             job_script, owner_email=secure_services.identity_payload.email
         )
@@ -352,12 +362,12 @@ async def job_script_delete_file(
     id: int = Path(...),
     file_name: str = Path(...),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_SCRIPTS_DELETE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_DELETE, ensure_email=True)
     ),
 ):
     """Delete a file from a job script template by id or identifier."""
     job_script = await secure_services.crud.job_script.get(id)
-    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
+    if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.job_script.ensure_attribute(
             job_script, owner_email=secure_services.identity_payload.email
         )
@@ -373,7 +383,9 @@ async def job_script_delete_file(
 )
 def job_script_garbage_collector(
     background_tasks: BackgroundTasks,
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_SCRIPTS_DELETE)),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_DELETE)
+    ),
 ):
     """Delete all unused files from job scripts on the file storage."""
     logger.info("Starting garbage collection from jobbergate file storage")

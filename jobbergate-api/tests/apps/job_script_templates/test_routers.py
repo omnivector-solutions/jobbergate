@@ -17,7 +17,9 @@ from jobbergate_api.apps.services import ServiceError
 pytest.mark.usefixtures("synth_session")
 
 
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE))
 async def test_create_job_template__success(
+    permission,
     client,
     fill_job_template_data,
     inject_security_header,
@@ -32,7 +34,7 @@ async def test_create_job_template__success(
     )
 
     tester_email = payload.pop("owner_email")
-    inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
+    inject_security_header(tester_email, permission)
 
     response = await client.post("jobbergate/job-script-templates", json=payload)
     assert response.status_code == 201, f"Create failed: {response.text}"
@@ -165,7 +167,8 @@ async def test_create_job_template__fail_missing_name(
     "is_owner, permissions",
     [
         (True, [Permissions.JOB_TEMPLATES_UPDATE]),
-        (False, [Permissions.JOB_TEMPLATES_UPDATE, Permissions.ADMIN]),
+        (False, [Permissions.ADMIN]),
+        (False, [Permissions.JOB_TEMPLATES_UPDATE, Permissions.MAINTAINER]),
     ],
 )
 async def test_update_job_template__success(
@@ -261,7 +264,9 @@ async def test_update_job_template__forbidden(
 
 
 @pytest.mark.parametrize("identification_field", ("id", "identifier"))
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ))
 async def test_get_job_template__success(
+    permission,
     identification_field,
     client,
     inject_security_header,
@@ -276,7 +281,7 @@ async def test_get_job_template__success(
 
     identification = getattr(instance, identification_field)
 
-    inject_security_header(instance.owner_email, Permissions.JOB_TEMPLATES_READ)
+    inject_security_header(instance.owner_email, permission)
     response = await client.get(f"jobbergate/job-script-templates/{identification}")
     assert response.status_code == 200, f"Get failed: {response.text}"
     response_data = response.json()
@@ -293,7 +298,8 @@ async def test_get_job_template__success(
     "is_owner, permissions",
     [
         (True, [Permissions.JOB_TEMPLATES_DELETE]),
-        (False, [Permissions.JOB_TEMPLATES_DELETE, Permissions.ADMIN]),
+        (False, [Permissions.ADMIN]),
+        (False, [Permissions.JOB_TEMPLATES_DELETE, Permissions.MAINTAINER]),
     ],
 )
 async def test_delete_job_template__success(
@@ -360,7 +366,9 @@ async def test_delete_job_template__forbidden(
     assert (await synth_services.crud.template.count()) == 1
 
 
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE))
 async def test_clone_job_template__success(
+    permission,
     client,
     fill_job_template_data,
     inject_security_header,
@@ -391,7 +399,7 @@ async def test_clone_job_template__success(
 
     new_owner_email = "new_" + tester_email
 
-    inject_security_header(new_owner_email, Permissions.JOB_TEMPLATES_CREATE)
+    inject_security_header(new_owner_email, permission)
     response = await client.post(f"jobbergate/job-script-templates/clone/{original_instance.id}")
 
     assert response.status_code == 201, f"Clone failed: {response.text}"
@@ -534,14 +542,16 @@ class TestListJobTemplates:
             await synth_services.crud.template.create(**item)
         yield data
 
+    @pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ))
     async def test_list_job_templates__all_success(
         self,
+        permission,
         client,
         tester_email,
         inject_security_header,
         job_templates_list,
     ):
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_READ)
+        inject_security_header(tester_email, permission)
         response = await client.get(
             "jobbergate/job-script-templates",
             params=dict(include_null_identifier=True, include_archived=True, sort_field="id"),
@@ -612,7 +622,8 @@ class TestJobTemplateFiles:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_TEMPLATES_CREATE]),
-            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.ADMIN]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.MAINTAINER]),
         ],
     )
     async def test_upsert_new_file(
@@ -672,7 +683,8 @@ class TestJobTemplateFiles:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_TEMPLATES_CREATE]),
-            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.ADMIN]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.MAINTAINER]),
         ],
     )
     async def test_upsert_replace_content(
@@ -766,7 +778,8 @@ class TestJobTemplateFiles:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_TEMPLATES_CREATE]),
-            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.ADMIN]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.MAINTAINER]),
         ],
     )
     async def test_upsert_replace_content_and_rename(
@@ -841,8 +854,10 @@ class TestJobTemplateFiles:
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
+    @pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ))
     async def test_get__success(
         self,
+        permission,
         client,
         tester_email,
         inject_security_header,
@@ -857,7 +872,7 @@ class TestJobTemplateFiles:
             file_type="ENTRYPOINT",
         )
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_READ)
+        inject_security_header(tester_email, permission)
         response = await client.get(
             f"jobbergate/job-script-templates/{job_template_data.id}/upload/template/test_template.py.j2"
         )
@@ -899,7 +914,8 @@ class TestJobTemplateFiles:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_TEMPLATES_DELETE]),
-            (False, [Permissions.JOB_TEMPLATES_DELETE, Permissions.ADMIN]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_TEMPLATES_DELETE, Permissions.MAINTAINER]),
         ],
     )
     async def test_delete__success(
@@ -969,7 +985,8 @@ class TestJobTemplateWorkflowFile:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_TEMPLATES_CREATE]),
-            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.ADMIN]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.MAINTAINER]),
         ],
     )
     async def test_create__success(
@@ -1030,7 +1047,8 @@ class TestJobTemplateWorkflowFile:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_TEMPLATES_CREATE]),
-            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.ADMIN]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.MAINTAINER]),
         ],
     )
     async def test_update__success(
@@ -1082,7 +1100,8 @@ class TestJobTemplateWorkflowFile:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_TEMPLATES_CREATE]),
-            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.ADMIN]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.MAINTAINER]),
         ],
     )
     async def test_update_optional_runtime_config__success(
@@ -1184,8 +1203,9 @@ class TestJobTemplateWorkflowFile:
         # First, check the response from the upload endpoint
         assert response.status_code == status.HTTP_403_FORBIDDEN, f"Upload failed: {response.text}"
 
+    @pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ))
     async def test_get__success(
-        self, client, tester_email, inject_security_header, job_template_data, synth_services
+        self, permission, client, tester_email, inject_security_header, job_template_data, synth_services
     ):
         parent_id = job_template_data.id
         await synth_services.file.workflow.upsert(
@@ -1195,7 +1215,7 @@ class TestJobTemplateWorkflowFile:
             runtime_config=dict(foo="bar"),
         )
 
-        inject_security_header(tester_email, Permissions.JOB_TEMPLATES_READ)
+        inject_security_header(tester_email, permission)
         response = await client.get(f"jobbergate/job-script-templates/{parent_id}/upload/workflow")
 
         assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
@@ -1228,7 +1248,8 @@ class TestJobTemplateWorkflowFile:
         "is_owner, permissions",
         [
             (True, [Permissions.JOB_TEMPLATES_DELETE]),
-            (False, [Permissions.JOB_TEMPLATES_DELETE, Permissions.ADMIN]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_TEMPLATES_DELETE, Permissions.MAINTAINER]),
         ],
     )
     async def test_delete__success(

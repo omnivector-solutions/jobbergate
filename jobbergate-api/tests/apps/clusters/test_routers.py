@@ -88,16 +88,18 @@ class TestPutClusterStatus:
 
 
 class TestListClusterStatus:
+    @pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.CLUSTERS_READ))
     async def test_get_cluster_status__empty(
-        self, client, inject_security_header, unpack_response, synth_session
+        self, permission, client, inject_security_header, unpack_response, synth_session
     ):
-        inject_security_header("who@cares.com", Permissions.CLUSTERS_READ)
+        inject_security_header("who@cares.com", permission)
 
         response = await client.get("/jobbergate/clusters/status")
         assert unpack_response(response, check_total=0, check_page=1, check_pages=0) == []
 
+    @pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.CLUSTERS_READ))
     async def test_get_cluster_status__list(
-        self, client, inject_security_header, unpack_response, synth_session
+        self, permission, client, inject_security_header, unpack_response, synth_session
     ):
         statuses = [
             ClusterStatus(client_id="client-1", interval=10, last_reported=pendulum.datetime(2023, 1, 1)),
@@ -105,7 +107,7 @@ class TestListClusterStatus:
             ClusterStatus(client_id="client-3", interval=30, last_reported=pendulum.datetime(2022, 1, 1)),
         ]
 
-        inject_security_header("who@cares.com", Permissions.CLUSTERS_READ)
+        inject_security_header("who@cares.com", permission)
 
         with pendulum.travel_to(pendulum.datetime(2023, 1, 1), freeze=True):
             synth_session.add_all(statuses)

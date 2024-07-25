@@ -5,6 +5,9 @@ This file keeps track of all notable changes to jobbergate-api
 ## Unreleased
 
 - Remove the audience setting [[PENG-2230](https://sharing.clickup.com/t/h/c/18022949/PENG-2230/O40JANAF6KCBE9R)]
+- Added `jobbergate:maintainer` role [[PENG-2323](https://app.clickup.com/t/18022949/PENG-2323)]
+    - `jobbergate:maintainer` acts as previous `jobbergate:admin` role, allowing users to update/delete entities owned by others
+    - `jobbergate:admin` now grants access to all endpoints besides the `jobbergate:maintainer` role
 
 ## 5.2.0 -- 2024-07-01
 

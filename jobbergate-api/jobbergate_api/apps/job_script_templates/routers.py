@@ -1,8 +1,18 @@
 """Router for the Job Script Template resource."""
 
-from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, HTTPException, Path, Query
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Body,
+    Depends,
+    File,
+    HTTPException,
+    Path,
+    Query,
+    UploadFile,
+    status,
+)
 from fastapi import Response as FastAPIResponse
-from fastapi import UploadFile, status
 from fastapi_pagination import Page
 from loguru import logger
 from sqlalchemy.exc import IntegrityError
@@ -24,7 +34,7 @@ from jobbergate_api.apps.job_script_templates.schemas import (
     WorkflowFileDetailedView,
 )
 from jobbergate_api.apps.job_script_templates.tools import coerce_id_or_identifier
-from jobbergate_api.apps.permissions import Permissions
+from jobbergate_api.apps.permissions import Permissions, can_bypass_ownership_check
 from jobbergate_api.apps.schemas import ListParams
 from jobbergate_api.apps.services import ServiceError
 
@@ -40,7 +50,7 @@ router = APIRouter(prefix="/job-script-templates", tags=["Job Script Templates"]
 async def job_script_template_create(
     create_request: JobTemplateCreateRequest,
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
     ),
 ):
     """Create a new job script template."""
@@ -64,7 +74,9 @@ async def job_script_template_create(
 )
 async def job_script_template_get(
     id_or_identifier: str = Path(),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_READ, commit=False)),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ, commit=False)
+    ),
 ):
     """Get a job script template by id or identifier."""
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
@@ -82,7 +94,7 @@ async def job_script_template_clone(
     id_or_identifier: str = Path(),
     clone_request: JobTemplateCloneRequest | None = None,
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
     ),
 ):
     """Clone a job script template by id or identifier."""
@@ -126,7 +138,9 @@ async def job_script_template_clone(
 async def job_script_template_get_list(
     list_params: ListParams = Depends(),
     include_null_identifier: bool = Query(False),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_READ, commit=False)),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ, commit=False)
+    ),
 ):
     """Get a list of job script templates."""
     logger.debug("Preparing to list job script templates")
@@ -152,14 +166,14 @@ async def job_script_template_update(
     update_request: JobTemplateUpdateRequest,
     id_or_identifier: str = Path(),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_UPDATE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_UPDATE, ensure_email=True)
     ),
 ):
     """Update a job script template by id or identifier."""
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
     logger.info(f"Updating job script template {typed_id_or_identifier=} with {update_request=}")
     instance = await secure_services.crud.template.get(typed_id_or_identifier)
-    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
+    if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.template.ensure_attribute(
             instance, owner_email=secure_services.identity_payload.email
         )
@@ -176,14 +190,14 @@ async def job_script_template_update(
 async def job_script_template_delete(
     id_or_identifier: str = Path(),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)
     ),
 ):
     """Delete a job script template by id or identifier."""
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
     logger.info(f"Deleting job script template with {typed_id_or_identifier=}")
     isinstance = await secure_services.crud.template.get(typed_id_or_identifier)
-    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
+    if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.template.ensure_attribute(
             isinstance, owner_email=secure_services.identity_payload.email
         )
@@ -198,7 +212,9 @@ async def job_script_template_delete(
 async def job_script_template_get_file(
     id_or_identifier: str = Path(),
     file_name: str = Path(),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_READ, commit=False)),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ, commit=False)
+    ),
 ):
     """
     Get a job script template file by id or identifier.
@@ -236,7 +252,7 @@ async def job_script_template_upload_file(
         None, description="Previous name of the file in case a rename is needed", max_length=255
     ),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
     ),
 ):
     """Upload a file to a job script template by id or identifier."""
@@ -254,7 +270,7 @@ async def job_script_template_upload_file(
         f"Uploading {filename=} to job template {typed_id_or_identifier=}; {file_type=}; {previous_filename=}"
     )
     job_script_template = await secure_services.crud.template.get(typed_id_or_identifier)
-    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
+    if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.template.ensure_attribute(
             job_script_template, owner_email=secure_services.identity_payload.email
         )
@@ -277,13 +293,13 @@ async def job_script_template_delete_file(
     id_or_identifier: str = Path(),
     file_name: str = Path(),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)
     ),
 ):
     """Delete a file from a job script template by id or identifier."""
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
     job_script_template = await secure_services.crud.template.get(typed_id_or_identifier)
-    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
+    if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.template.ensure_attribute(
             job_script_template, owner_email=secure_services.identity_payload.email
         )
@@ -297,7 +313,9 @@ async def job_script_template_delete_file(
 )
 async def job_script_workflow_get_file(
     id_or_identifier: str = Path(),
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_READ, commit=False)),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ, commit=False)
+    ),
 ):
     """
     Get a workflow file by id or identifier.
@@ -329,7 +347,7 @@ async def job_script_workflow_upload_file(
     ),
     upload_file: UploadFile = File(..., description="File to upload"),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
     ),
 ):
     """Upload a file to a job script workflow by id or identifier."""
@@ -338,7 +356,7 @@ async def job_script_workflow_upload_file(
         f"Uploading workflow file to job script template {typed_id_or_identifier=}: {runtime_config}"
     )
     job_script_template = await secure_services.crud.template.get(typed_id_or_identifier)
-    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
+    if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.template.ensure_attribute(
             job_script_template, owner_email=secure_services.identity_payload.email
         )
@@ -371,14 +389,14 @@ async def job_script_workflow_upload_file(
 async def job_script_workflow_delete_file(
     id_or_identifier: str = Path(),
     secure_services: SecureService = Depends(
-        secure_services(Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)
+        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)
     ),
 ):
     """Delete a workflow file from a job script template by id or identifier."""
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
     logger.debug(f"Deleting workflow file from job script template {typed_id_or_identifier=}")
     job_script_template = await secure_services.crud.template.get(typed_id_or_identifier)
-    if Permissions.ADMIN not in secure_services.identity_payload.permissions:
+    if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.template.ensure_attribute(
             job_script_template, owner_email=secure_services.identity_payload.email
         )
@@ -394,7 +412,9 @@ async def job_script_workflow_delete_file(
 )
 async def job_script_template_garbage_collector(
     background_tasks: BackgroundTasks,
-    secure_services: SecureService = Depends(secure_services(Permissions.JOB_TEMPLATES_DELETE)),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_DELETE)
+    ),
 ):
     """Delete all unused files from jobbergate templates on the file storage."""
     logger.info("Starting garbage collection from jobbergate file storage")
