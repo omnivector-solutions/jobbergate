@@ -32,9 +32,4 @@ def can_bypass_ownership_check(permissions: list[str]) -> bool:
     """
     Determine if the user has permissions that allow them to bypass ownership checks.
     """
-    return any(
-        (
-            Permissions.ADMIN in permissions,
-            Permissions.MAINTAINER in permissions,
-        )
-    )
+    return Permissions.ADMIN in permissions or Permissions.MAINTAINER in permissions
