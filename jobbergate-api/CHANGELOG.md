@@ -10,6 +10,7 @@ This file keeps track of all notable changes to jobbergate-api
 - Added `jobbergate:maintainer` role [[PENG-2323](https://app.clickup.com/t/18022949/PENG-2323)]
     - `jobbergate:maintainer` acts as previous `jobbergate:admin` role, allowing users to update/delete entities owned by others
     - `jobbergate:admin` now grants access to all endpoints besides the `jobbergate:maintainer` role
+- Implemented an endpoint to fetch a cluster status by its client id [[PENG-2348](https://sharing.clickup.com/t/h/c/18022949/PENG-2348/QWZFBKV72ZNL293)]
 
 ## 5.2.0 -- 2024-07-01
 
