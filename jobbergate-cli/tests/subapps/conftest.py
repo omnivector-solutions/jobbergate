@@ -9,6 +9,7 @@ from typer import Context, Typer
 from typer.testing import CliRunner
 
 from jobbergate_cli.constants import JOBBERGATE_APPLICATION_CONFIG_FILE_NAME, JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+from jobbergate_cli.exceptions import handle_errors
 from jobbergate_cli.schemas import IdentityData, JobbergateApplicationConfig, JobbergateContext
 from jobbergate_cli.subapps.applications.tools import load_application_from_source
 from jobbergate_cli.text_tools import dedent
@@ -32,7 +33,8 @@ def make_test_app(dummy_context):
     def _helper(command_name: str, command_function: Callable):
         main_app = Typer()
         main_app.callback()(_main_callback)
-        main_app.command(name=command_name)(command_function)
+        safe_command = handle_errors(command_function)
+        main_app.command(name=command_name)(safe_command)
         return main_app
 
     return _helper

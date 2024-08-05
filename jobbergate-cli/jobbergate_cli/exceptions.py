@@ -70,7 +70,7 @@ def handle_abort(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
-            func(*args, **kwargs)
+            return func(*args, **kwargs)
         except Abort as err:
             if not err.warn_only:
                 if err.log_message is not None:
@@ -117,7 +117,7 @@ def handle_authentication_error(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
-            func(*args, **kwargs)
+            return func(*args, **kwargs)
         except AuthenticationError as err:
             subject = "Authentication error"
             original_exception = err.__cause__
@@ -130,5 +130,19 @@ def handle_authentication_error(func):
                 support=True,
                 original_error=err,
             ) from err
+
+    return wrapper
+
+
+def handle_errors(func):
+    """
+    A high level decorator that applies all error handling decorators to a function.
+    """
+
+    @wraps(func)
+    @handle_abort
+    @handle_authentication_error
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
 
     return wrapper

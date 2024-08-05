@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 import typer
 
 from jobbergate_cli.constants import SortOrder
-from jobbergate_cli.exceptions import Abort, handle_abort, handle_authentication_error
+from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobSubmissionResponse
@@ -37,8 +37,6 @@ app = typer.Typer(help="Commands to interact with job submissions")
 
 
 @app.command()
-@handle_abort
-@handle_authentication_error
 def create(
     ctx: typer.Context,
     name: str = typer.Option(
@@ -123,8 +121,6 @@ def create(
 
 
 @app.command("list")
-@handle_abort
-@handle_authentication_error
 def list_all(
     ctx: typer.Context,
     show_all: bool = typer.Option(
@@ -174,8 +170,6 @@ def list_all(
 
 
 @app.command()
-@handle_abort
-@handle_authentication_error
 def get_one(
     ctx: typer.Context,
     id: int = typer.Option(..., "--id", "-i", help="The specific id of the job submission."),
@@ -207,8 +201,6 @@ def get_one(
 
 
 @app.command()
-@handle_abort
-@handle_authentication_error
 def delete(
     ctx: typer.Context,
     id: int = typer.Option(

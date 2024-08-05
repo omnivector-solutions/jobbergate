@@ -7,9 +7,8 @@ from pathlib import Path
 from sys import exit
 from typing import Optional
 
-from pydantic import Field, ValidationError, computed_field, model_validator
+from pydantic import Field, ValidationError, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing_extensions import Self
 
 from jobbergate_cli import constants
 from jobbergate_cli.constants import OV_CONTACT
@@ -70,16 +69,14 @@ class Settings(BaseSettings):
     OIDC_CLIENT_ID: str
     OIDC_USE_HTTPS: bool = True
 
-    @model_validator(mode="after")
-    def compute_extra_settings(self) -> Self:
+    @field_validator("JOBBERGATE_CACHE_DIR", mode="after")
+    def _validate_cache_dir(cls, value: Path) -> Path:
         """
-        Compute settings values that are based on other settings values.
+        Expand, resolve, and create cache directory.
         """
-        self.JOBBERGATE_CACHE_DIR = Path(self.JOBBERGATE_CACHE_DIR).expanduser().resolve()
-        cache_dir = self.JOBBERGATE_CACHE_DIR
-        cache_dir.mkdir(exist_ok=True, parents=True)
-
-        return self
+        value = value.expanduser().resolve()
+        value.mkdir(exist_ok=True, parents=True)
+        return value
 
     @computed_field
     def JOBBERGATE_USER_TOKEN_DIR(self) -> Path:

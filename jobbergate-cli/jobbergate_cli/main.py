@@ -2,6 +2,7 @@
 Provide main entry point for the Jobbergate CLI App.
 """
 
+import sys
 import httpx
 import importlib_metadata
 import typer
@@ -9,7 +10,7 @@ from jobbergate_core.auth.handler import JobbergateAuthHandler
 
 from jobbergate_cli.auth import show_login_message, track_login_progress
 from jobbergate_cli.config import settings
-from jobbergate_cli.exceptions import Abort, handle_abort, handle_authentication_error
+from jobbergate_cli.exceptions import Abort, handle_errors
 from jobbergate_cli.logging import init_logs, init_sentry
 from jobbergate_cli.render import render_demo, render_json, terminal_message
 from jobbergate_cli.schemas import JobbergateContext
@@ -33,8 +34,6 @@ app.add_typer(job_submissions_app, name="job-submissions")
 
 
 @app.callback(invoke_without_command=True)
-@handle_abort
-@handle_authentication_error
 def main(
     ctx: typer.Context,
     verbose: bool = typer.Option(False, help="Enable verbose logging to the terminal"),
@@ -90,8 +89,6 @@ def main(
 
 
 @app.command(rich_help_panel="Authentication")
-@handle_abort
-@handle_authentication_error
 def login(ctx: typer.Context):
     """
     Log in to the jobbergate-cli by storing the supplied token argument in the cache.
@@ -103,8 +100,6 @@ def login(ctx: typer.Context):
 
 
 @app.command(rich_help_panel="Authentication")
-@handle_abort
-@handle_authentication_error
 def logout(ctx: typer.Context):
     """
     Logs out of the jobbergate-cli. Clears the saved user credentials.
@@ -114,8 +109,6 @@ def logout(ctx: typer.Context):
 
 
 @app.command(rich_help_panel="Authentication")
-@handle_abort
-@handle_authentication_error
 def show_token(
     ctx: typer.Context,
     plain: bool = typer.Option(
@@ -178,3 +171,17 @@ def show_token(
             kwargs["footer"] = "The output was copied to your clipboard"
 
         terminal_message(token_text, **kwargs)
+
+
+def safe_entrypoint():
+    """
+    Entrypoint for the app including custom error handling.
+
+    With this we ensure error handling is applied to all commands with no need
+    to duplicate the decorators on each of them.
+    """
+    try:
+        safe_function = handle_errors(app.__call__)
+        safe_function()
+    except typer.Exit as e:
+        sys.exit(e.exit_code)

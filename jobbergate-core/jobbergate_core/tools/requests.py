@@ -37,11 +37,11 @@ def deserialize_request_model(request_model: BaseModel, request_kwargs: dict[str
     Deserialize a pydantic model instance into request_kwargs for an httpx client request in place.
     """
     with check_expressions(
-        main_message="Request was incorrectly structured to include a request model instance.",
+        main_message="Request was incorrectly structured to use a `request_model`",
         raise_exc_class=RequestModelError,
     ) as check:
         for key in ("data", "json", "content"):
-            check(key not in request_kwargs, f"Request already contains '{key}'")
+            check(key not in request_kwargs, f"It already contains '{key}'")
 
     with handle_errors("Failed to deserialize request model", raise_exc_class=RequestModelError):
         request_kwargs["content"] = request_model.model_dump_json()
