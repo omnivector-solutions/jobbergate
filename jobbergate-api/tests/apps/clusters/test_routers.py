@@ -125,3 +125,34 @@ class TestListClusterStatus:
         response = await client.get("/jobbergate/clusters/status")
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+class TestGetClusterStatus:
+    @pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.CLUSTERS_READ))
+    @pytest.mark.parametrize("client_id", ("client-1", "client-2", "client-3"))
+    async def test_get_cluster_status_by_client_id__not_found(
+        self, permission, client_id, client, inject_security_header, synth_session
+    ):
+        inject_security_header("who@cares.com", permission)
+
+        response = await client.get(f"/jobbergate/clusters/status/{client_id}")
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    @pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.CLUSTERS_READ))
+    @pytest.mark.parametrize("client_id", ("client-1", "client-2", "client-3"))
+    async def test_get_cluster_status_by_client_id__found(
+        self, permission, client_id, client, inject_security_header, synth_session
+    ):
+        inject_security_header("who@cares.com", permission)
+
+        status = ClusterStatus(client_id=client_id, interval=10, last_reported=pendulum.datetime(2023, 1, 1))
+        synth_session.add(status)
+        response = await client.get(f"/jobbergate/clusters/status/{client_id}")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == {
+            "client_id": client_id,
+            "interval": 10,
+            "last_reported": "2023-01-01T00:00:00+00:00",
+            "is_healthy": True,
+        }
