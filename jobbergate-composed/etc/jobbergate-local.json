@@ -1025,19 +1025,18 @@
           "consentRequired": false,
           "config": {
             "id.token.claim": "true",
-            "access.token.claim": "true",
-            "included.custom.audience": "https://local.omnivector.solutions"
+            "access.token.claim": "true"
           }
         }
       ],
       "defaultClientScopes": [
-        "web-origins",
-        "acr",
         "profile",
-        "roles",
         "email"
       ],
       "optionalClientScopes": [
+        "acr",
+        "web-origins",
+        "roles",
         "address",
         "phone",
         "offline_access",
@@ -1122,19 +1121,18 @@
           "config": {
             "id.token.claim": "true",
             "access.token.claim": "true",
-            "included.custom.audience": "https://local.omnivector.solutions",
             "userinfo.token.claim": "true"
           }
         }
       ],
       "defaultClientScopes": [
-        "web-origins",
-        "acr",
         "profile",
-        "roles",
         "email"
       ],
       "optionalClientScopes": [
+        "web-origins",
+        "acr",
+        "roles",
         "address",
         "phone",
         "offline_access",
