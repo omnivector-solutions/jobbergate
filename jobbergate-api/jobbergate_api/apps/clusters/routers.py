@@ -62,3 +62,26 @@ async def get_cluster_status(
     logger.debug("Getting list of cluster statuses")
     query = select(ClusterStatus).order_by(ClusterStatus.client_id)
     return await paginate(secure_session.session, query)
+
+
+@router.get(
+    "/status/{client_id}",
+    description="Endpoint to get the status of a specific cluster.",
+    response_model=ClusterStatusView,
+)
+async def get_cluster_status_by_client_id(
+    client_id: str,
+    secure_session: SecureSession = Depends(
+        secure_session(Permissions.ADMIN, Permissions.CLUSTERS_READ, commit=False)
+    ),
+):
+    """
+    Get the status of a specific cluster.
+    """
+    logger.debug("Getting cluster status for client_id={}", client_id)
+    query = select(ClusterStatus).where(ClusterStatus.client_id == client_id)
+    result = await secure_session.session.execute(query)
+    instance = result.scalar_one_or_none()
+    if instance is None:
+        return FastAPIResponse(status_code=status.HTTP_404_NOT_FOUND)
+    return ClusterStatusView.model_validate(instance)
