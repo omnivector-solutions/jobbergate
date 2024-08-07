@@ -3,6 +3,7 @@ Provide main entry point for the Jobbergate CLI App.
 """
 
 import sys
+
 import httpx
 import importlib_metadata
 import typer
@@ -10,7 +11,7 @@ from jobbergate_core.auth.handler import JobbergateAuthHandler
 
 from jobbergate_cli.auth import show_login_message, track_login_progress
 from jobbergate_cli.config import settings
-from jobbergate_cli.exceptions import Abort, handle_errors
+from jobbergate_cli.exceptions import Abort, handle_abort, handle_authentication_error
 from jobbergate_cli.logging import init_logs, init_sentry
 from jobbergate_cli.render import render_demo, render_json, terminal_message
 from jobbergate_cli.schemas import JobbergateContext
@@ -181,7 +182,7 @@ def safe_entrypoint():
     to duplicate the decorators on each of them.
     """
     try:
-        safe_function = handle_errors(app.__call__)
+        safe_function = handle_abort(handle_authentication_error(app.__call__))
         safe_function()
     except typer.Exit as e:
         sys.exit(e.exit_code)

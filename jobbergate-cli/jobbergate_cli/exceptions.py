@@ -132,17 +132,3 @@ def handle_authentication_error(func):
             ) from err
 
     return wrapper
-
-
-def handle_errors(func):
-    """
-    A high level decorator that applies all error handling decorators to a function.
-    """
-
-    @wraps(func)
-    @handle_abort
-    @handle_authentication_error
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
-
-    return wrapper
