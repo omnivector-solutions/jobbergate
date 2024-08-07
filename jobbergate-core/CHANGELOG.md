@@ -3,6 +3,9 @@
 This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
+
+
+## 5.3.0a0 -- 2024-08-07
 - Refined authentication handler to get it ready to be used on the CLI and enable auto-login [ASP-4779]
   - Created a request handler to facilitate the communication with OIDC
   - Added Pydantic back as a dependency and applied it to validate responses from the OIDC server

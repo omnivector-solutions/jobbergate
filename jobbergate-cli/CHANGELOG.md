@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+
+## 5.3.0a0 -- 2024-08-07
 - Enabled auto-login on the CLI [ASP-4779]
   - Replaced authentication functionality by the one from `jobbergate-core` which was already able to handle OIDC authentication at request time
   - Added custom error handling for `AuthenticationError`
