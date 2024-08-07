@@ -36,7 +36,7 @@ pydantic = "^2.7"
 pydantic-settings = "^2.3.3"
 
 [tool.poetry.scripts]
-jobbergate = "jobbergate_cli.main:app"
+jobbergate = "jobbergate_cli.main:safe_entrypoint"
 
 [tool.stickywheel]
 # This will resolve the relative path to the jobbergate-core package at build time
@@ -77,7 +77,6 @@ env = [
     "OIDC_DOMAIN = dummy_auth_domain.com",
     "OIDC_AUDIENCE = https://dummy_auth_audience.com",
     "OIDC_CLIENT_ID = dummy_client_id",
-    "MULTI_TENANCY_ENABLED = false",
 ]
 
 [tool.coverage.report]

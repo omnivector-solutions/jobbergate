@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional, cast
 import typer
 
 from jobbergate_cli.constants import SortOrder
-from jobbergate_cli.exceptions import Abort, handle_abort
+from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateContext
@@ -58,7 +58,6 @@ app = typer.Typer(help="Commands to interact with applications")
 
 
 @app.command("list")
-@handle_abort
 def list_all(
     ctx: typer.Context,
     show_all: bool = typer.Option(False, "--all", help="Show all applications, even the ones without identifier"),
@@ -100,7 +99,6 @@ def list_all(
 
 
 @app.command()
-@handle_abort
 def get_one(
     ctx: typer.Context,
     id: Optional[int] = typer.Option(
@@ -128,7 +126,6 @@ def get_one(
 
 
 @app.command()
-@handle_abort
 def create(
     ctx: typer.Context,
     name: str = typer.Option(
@@ -209,7 +206,6 @@ def create(
 
 
 @app.command()
-@handle_abort
 def update(
     ctx: typer.Context,
     id: Optional[int] = typer.Option(
@@ -317,7 +313,6 @@ def update(
 
 
 @app.command()
-@handle_abort
 def delete(
     ctx: typer.Context,
     id: Optional[int] = typer.Option(
@@ -378,7 +373,6 @@ def delete(
 
 
 @app.command()
-@handle_abort
 def download_files(
     ctx: typer.Context,
     id: Optional[int] = typer.Option(
@@ -412,7 +406,6 @@ def download_files(
 
 
 @app.command()
-@handle_abort
 def clone(
     ctx: typer.Context,
     id: Optional[int] = typer.Option(

@@ -435,7 +435,7 @@ class ApplicationRuntime:
     supplied_params: Dict[str, Any] = field(default_factory=dict)
     fast_mode: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.app_config, self.app_module = load_application_data(self.app_data, self.app_source_code)
         self.answers: Dict[str, Any] = dict()
 

@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict
+from typing import TypedDict
 
 import pendulum
 from jose.jwt import decode
@@ -23,6 +23,18 @@ class TokenType(str, Enum):
 
     ACCESS = "access"
     REFRESH = "refresh"
+
+
+class TokenData(TypedDict, total=False):
+    """
+    Expected data from the token to make type checking easier.
+    """
+
+    email: str
+    azp: str
+    exp: int
+    iat: int
+    organization: dict[str, str]
 
 
 @dataclass(frozen=True)
@@ -46,8 +58,8 @@ class Token:
     label: str
     content: str = ""
     file_path: Path = field(init=False, hash=False, repr=False)
-    data: Dict[str, Any] = field(
-        default_factory=dict,
+    data: TokenData = field(
+        default_factory=lambda: TokenData(),
         init=False,
         hash=False,
         repr=False,
@@ -70,24 +82,28 @@ class Token:
             data = self._get_metadata()
             object.__setattr__(self, "data", data)
 
-    def _get_metadata(self) -> Dict[str, Any]:
+    def _get_metadata(self) -> TokenData:
         """
         Extract the data from the token.
         """
-        logger.debug(f"Getting data from {self.label} token")
-
         with TokenError.handle_errors("Unable to extract data from the token"):
             data = decode(
                 token=self.content,
-                key="",
+                key="secret-will-be-ignored",
                 options=dict(
                     verify_signature=False,
                     verify_aud=False,
+                    verify_iat=False,
                     verify_exp=False,
+                    verify_nbf=False,
+                    verify_iss=False,
+                    verify_sub=False,
+                    verify_jti=False,
+                    verify_at_hash=False,
                 ),
             )
 
-        return data
+        return TokenData(**data)
 
     def load_from_cache(self) -> Token:
         """
@@ -101,7 +117,7 @@ class Token:
             A new token with the content replaced.
         """
         file_path = self.cache_directory / f"{self.label}.token"
-        logger.debug(f"Loading token from {file_path.as_posix()}")
+        logger.debug(f"Loading {self.label} token from {file_path.as_posix()}")
 
         TokenError.require_condition(file_path.exists(), "Token file was not found")
 
@@ -120,7 +136,7 @@ class Token:
         """
         if not self.content:
             return
-        logger.debug(f"Saving token to {self.file_path}")
+        logger.debug(f"Saving {self.label} token to {self.file_path}")
         TokenError.require_condition(self.file_path.parent.exists(), "Parent directory does not exist")
 
         with TokenError.handle_errors("Unknown error while saving the token"):
@@ -145,14 +161,14 @@ class Token:
         Raises:
             TokenError: If the expiration date is not found.
         """
-        logger.debug(f"Checking if {self.label} token has expired")
-
-        TokenError.require_condition("exp" in self.data, "The expiration date was not found")
+        TokenError.require_condition(
+            "exp" in self.data, f"Failed checking {self.label} token since the expiration date was not found"
+        )
         token_expiration = self.data["exp"]
 
         current_time_UTC = pendulum.now().int_timestamp
         is_expired = token_expiration <= current_time_UTC
-        logger.debug(f"    Token is expired: {is_expired}")
+        logger.debug(f"{self.label.capitalize()} token is {'' if is_expired else 'NOT'} expired")
 
         return is_expired
 

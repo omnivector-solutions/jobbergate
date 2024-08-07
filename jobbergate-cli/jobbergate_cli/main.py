@@ -2,20 +2,19 @@
 Provide main entry point for the Jobbergate CLI App.
 """
 
-from typing import Optional
+import sys
 
 import httpx
 import importlib_metadata
-import jose
 import typer
+from jobbergate_core.auth.handler import JobbergateAuthHandler
 
-
-from jobbergate_cli.auth import clear_token_cache, fetch_auth_tokens, init_persona, load_tokens_from_cache
+from jobbergate_cli.auth import show_login_message, track_login_progress
 from jobbergate_cli.config import settings
-from jobbergate_cli.exceptions import Abort, handle_abort
+from jobbergate_cli.exceptions import Abort, handle_abort, handle_authentication_error
 from jobbergate_cli.logging import init_logs, init_sentry
 from jobbergate_cli.render import render_demo, render_json, terminal_message
-from jobbergate_cli.schemas import JobbergateContext, Persona, TokenSet
+from jobbergate_cli.schemas import JobbergateContext
 from jobbergate_cli.subapps.applications.app import app as applications_app
 from jobbergate_cli.subapps.job_scripts.app import app as job_scripts_app
 from jobbergate_cli.subapps.job_submissions.app import app as job_submissions_app
@@ -36,7 +35,6 @@ app.add_typer(job_submissions_app, name="job-submissions")
 
 
 @app.callback(invoke_without_command=True)
-@handle_abort
 def main(
     ctx: typer.Context,
     verbose: bool = typer.Option(False, help="Enable verbose logging to the terminal"),
@@ -68,62 +66,52 @@ def main(
 
     init_logs(verbose=verbose)
     init_sentry()
-    persona = None
 
     protocol = "https" if settings.OIDC_USE_HTTPS else "http"
-    domain = settings.OIDC_DOMAIN
-    client = httpx.Client(
-        base_url=f"{protocol}://{domain}",
-        headers={"content-type": "application/x-www-form-urlencoded"},
-        timeout=settings.JOBBERGATE_REQUESTS_TIMEOUT,
+    authentication_handler = JobbergateAuthHandler(
+        cache_directory=settings.JOBBERGATE_USER_TOKEN_DIR,
+        login_domain=f"{protocol}://{settings.OIDC_DOMAIN}",
+        login_audience=settings.OIDC_AUDIENCE,
+        login_client_id=settings.OIDC_CLIENT_ID,
+        login_url_handler=show_login_message,
+        login_sequence_handler=track_login_progress,
     )
-    context = JobbergateContext(persona=None, client=client)
 
-    if ctx.invoked_subcommand not in ("login", "logout"):
-        persona = init_persona(context)
-        context.client = httpx.Client(
+    ctx.obj = JobbergateContext(
+        client=httpx.Client(
             base_url=settings.ARMADA_API_BASE,
-            headers=dict(Authorization=f"Bearer {persona.token_set.access_token}"),
+            auth=authentication_handler,
             timeout=settings.JOBBERGATE_REQUESTS_TIMEOUT,
-        )
-        context.persona = persona
-        context.full_output = full
-        context.raw_output = raw
-
-    ctx.obj = context
+        ),
+        authentication_handler=authentication_handler,
+        full_output=full,
+        raw_output=raw,
+    )
 
 
 @app.command(rich_help_panel="Authentication")
-@handle_abort
 def login(ctx: typer.Context):
     """
     Log in to the jobbergate-cli by storing the supplied token argument in the cache.
     """
-    token_set: TokenSet = fetch_auth_tokens(ctx.obj)
-    persona: Persona = init_persona(ctx.obj, token_set)
-    terminal_message(
-        f"User was logged in with email '{persona.identity_data.email}'",
-        subject="Logged in!",
-    )
+    ctx.obj.authentication_handler.login()
+    identity_data = ctx.obj.authentication_handler.get_identity_data()
+    terminal_message(f"User was logged in with email '{identity_data.email}'", subject="Logged in!")
     render_demo()
 
 
 @app.command(rich_help_panel="Authentication")
-@handle_abort
-def logout():
+def logout(ctx: typer.Context):
     """
     Logs out of the jobbergate-cli. Clears the saved user credentials.
     """
-    clear_token_cache()
-    terminal_message(
-        "User was logged out.",
-        subject="Logged out",
-    )
+    ctx.obj.authentication_handler.logout()
+    terminal_message("User was logged out.", subject="Logged out")
 
 
 @app.command(rich_help_panel="Authentication")
-@handle_abort
 def show_token(
+    ctx: typer.Context,
     plain: bool = typer.Option(
         False,
         help="Show the token in plain text.",
@@ -153,62 +141,48 @@ def show_token(
 
     Token output is automatically copied to your clipboard.
     """
-    token_set: TokenSet = load_tokens_from_cache()
-    token: Optional[str]
-    if not refresh:
-        token = token_set.access_token
-        subject = "Access Token"
-        Abort.require_condition(
-            token is not None,
-            "User is not logged in. Please log in first.",
-            raise_kwargs=dict(
-                subject="Not logged in",
-            ),
-        )
+    ctx.obj.authentication_handler.acquire_access()
+    if refresh:
+        token = ctx.obj.authentication_handler._refresh_token
     else:
-        token = token_set.refresh_token
-        subject = "Refresh Token"
-        Abort.require_condition(
-            token is not None,
-            "User is not logged in or does not have a refresh token. Please try loggin in again.",
-            raise_kwargs=dict(
-                subject="No refresh token",
-            ),
-        )
+        token = ctx.obj.authentication_handler._access_token
+
+    Abort.require_condition(token.is_valid(), f"Could not obtain {token.label}. Please try loggin in again.")
 
     if decode:
         # Decode the token with ALL verification turned off (we just want to unpack it)
-        content = jose.jwt.decode(
-            token,
-            "secret-will-be-ignored",
-            options=dict(
-                verify_signature=False,
-                verify_aud=False,
-                verify_iat=False,
-                verify_exp=False,
-                verify_nbf=False,
-                verify_iss=False,
-                verify_sub=False,
-                verify_jti=False,
-                verify_at_hash=False,
-            ),
-        )
-        render_json(content)
+        render_json(token.data)
         return
 
     if show_header:
-        token_text = f"""{{ "Authorization": "Bearer {token}" }}"""
+        token_text = f"""{{ "Authorization": "{token.bearer_token}" }}"""
+    elif show_prefix:
+        token_text = token.bearer_token
     else:
-        prefix = "Bearer " if show_prefix else ""
-        token_text = f"{prefix}{token}"
+        token_text = token.content
 
     on_clipboard = copy_to_clipboard(token_text)
 
     if plain:
         print(token_text)
     else:
+        subject = f"{token.label.title()} Token"
         kwargs = dict(subject=subject, indent=False)
         if on_clipboard:
             kwargs["footer"] = "The output was copied to your clipboard"
 
         terminal_message(token_text, **kwargs)
+
+
+def safe_entrypoint():
+    """
+    Entrypoint for the app including custom error handling.
+
+    With this we ensure error handling is applied to all commands with no need
+    to duplicate the decorators on each of them.
+    """
+    try:
+        safe_function = handle_abort(handle_authentication_error(app.__call__))
+        safe_function()
+    except typer.Exit as e:
+        sys.exit(e.exit_code)

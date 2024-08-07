@@ -2,15 +2,17 @@
 Test the utilities for handling auth in Jobbergate.
 """
 
+from dataclasses import replace
 from unittest import mock
 
 import httpx
+import pendulum
 import pytest
 import requests
 
 from jobbergate_core.auth import JobbergateAuthHandler
 from jobbergate_core.auth.exceptions import AuthenticationError
-from jobbergate_core.auth.token import TokenError, TokenType
+from jobbergate_core.auth.token import TokenType
 
 
 DUMMY_LOGIN_DOMAIN = "http://keycloak.local:8080/realms/jobbergate-local"
@@ -123,7 +125,7 @@ class TestJobbergateAuthHandlerLoadFromCache:
 
         If no tokens are found in cache, the tokens dictionary should stay empty.
         """
-        with pytest.raises(TokenError, match="Token file was not found"):
+        with pytest.raises(AuthenticationError, match="Token file was not found"):
             dummy_jobbergate_auth.load_from_cache()
 
     def test_tokens_found__replace_loaded(self, dummy_jobbergate_auth, valid_token, expired_token):
@@ -151,7 +153,7 @@ class TestJobbergateAuthHandlerLoadFromCache:
         assert dummy_jobbergate_auth._refresh_token.content == expected_content
 
 
-def test_save_to_cache(dummy_jobbergate_auth, valid_token, expired_token):
+def test_save_to_cache(dummy_jobbergate_auth, valid_token):
     """
     Test that the save_to_cache function works as expected.
 
@@ -168,7 +170,7 @@ def test_save_to_cache(dummy_jobbergate_auth, valid_token, expired_token):
     )
     dummy_jobbergate_auth._access_token = access_token
     refresh_token = dummy_jobbergate_auth._refresh_token.replace(
-        content=expired_token.content, cache_directory=new_cache_directory
+        content=valid_token.content, cache_directory=new_cache_directory
     )
     dummy_jobbergate_auth._refresh_token = refresh_token
 
@@ -229,8 +231,7 @@ class TestJobbergateAuthHandlerRefreshTokens:
         """
         assert dummy_jobbergate_auth._refresh_token.content == ""
         with pytest.raises(
-            AuthenticationError,
-            match="The refresh is unavailable",
+            AuthenticationError, match="Session can no be refreshed since the refresh token is unavailable"
         ):
             dummy_jobbergate_auth.refresh_tokens()
 
@@ -241,45 +242,10 @@ class TestJobbergateAuthHandlerRefreshTokens:
         dummy_jobbergate_auth._refresh_token = dummy_jobbergate_auth._refresh_token.replace(
             content=expired_token.content,
         )
-        with pytest.raises(AuthenticationError, match="Refresh token is expired"):
+        with pytest.raises(AuthenticationError, match="Session can no be refreshed since the refresh token is expired"):
             dummy_jobbergate_auth.refresh_tokens()
 
-    def test_refresh_tokens__failure_by_missing_data(
-        self,
-        respx_mock,
-        jwt_token,
-        dummy_jobbergate_auth,
-        valid_token,
-    ):
-        """
-        Test that the function raises an exception if the response is missing data.
-        """
-        dummy_jobbergate_auth._refresh_token = dummy_jobbergate_auth._refresh_token.replace(
-            content=valid_token.content,
-        )
-
-        refreshed_access_token_content = jwt_token(custom_data="refreshed_access_token")
-
-        endpoint = f"{dummy_jobbergate_auth.login_domain}/protocol/openid-connect/token"
-        respx_mock.post(endpoint).mock(
-            return_value=httpx.Response(
-                httpx.codes.OK,
-                json=dict(access_token=refreshed_access_token_content),
-            ),  # note that the refresh token is missing
-        )
-        with pytest.raises(
-            AuthenticationError,
-            match="Not all tokens were included in the response",
-        ):
-            dummy_jobbergate_auth.refresh_tokens()
-
-    def test_refresh_tokens__request_failure(
-        self,
-        respx_mock,
-        dummy_jobbergate_auth,
-        expired_token,
-        valid_token,
-    ):
+    def test_refresh_tokens__request_failure(self, respx_mock, dummy_jobbergate_auth, valid_token):
         """
         Test that the function raises an exception if the tokens are not refreshed.
         """
@@ -292,10 +258,7 @@ class TestJobbergateAuthHandlerRefreshTokens:
             return_value=httpx.Response(httpx.codes.BAD_REQUEST),
         )
 
-        with pytest.raises(
-            AuthenticationError,
-            match="Unexpected error while refreshing the tokens",
-        ):
+        with pytest.raises(AuthenticationError):
             dummy_jobbergate_auth.refresh_tokens()
 
 
@@ -392,5 +355,119 @@ class TestJobbergateAuthHandlerLogin:
             ),
         )
 
-        with pytest.raises(AuthenticationError, match="Login expired, please try again"):
+        with pytest.raises(AuthenticationError, match="Login process was not completed in time"):
             dummy_jobbergate_auth.login()
+
+
+class TestJobbergateAuthHandlerFromSecret:
+    """
+    Test the from_secret method on JobbergateAuthHandler class.
+    """
+
+    def test_secret__success(self, respx_mock, dummy_jobbergate_auth, valid_token):
+        """
+        Test that the function works as expected.
+        """
+        assert dummy_jobbergate_auth._access_token.content == ""
+
+        secret_jobbergate_auth = replace(dummy_jobbergate_auth, login_client_secret="dummy-secret")
+
+        endpoint = f"{secret_jobbergate_auth.login_domain}/protocol/openid-connect/token"
+        mocked = respx_mock.post(endpoint).mock(
+            return_value=httpx.Response(httpx.codes.OK, json=dict(access_token=valid_token.content)),
+        )
+
+        secret_jobbergate_auth.get_access_from_secret()
+
+        assert secret_jobbergate_auth._access_token.content == valid_token.content
+
+        assert mocked.called
+
+    def test_secret__bad_request(self, respx_mock, dummy_jobbergate_auth):
+        """
+        Test that the function works as expected.
+        """
+
+        secret_jobbergate_auth = replace(dummy_jobbergate_auth, login_client_secret="dummy-secret")
+
+        endpoint = f"{secret_jobbergate_auth.login_domain}/protocol/openid-connect/token"
+        mocked = respx_mock.post(endpoint).mock(return_value=httpx.Response(httpx.codes.BAD_REQUEST))
+
+        with pytest.raises(AuthenticationError, match="Failed to get access token from client secret"):
+            secret_jobbergate_auth.get_access_from_secret()
+
+        assert dummy_jobbergate_auth._access_token.content == ""
+
+        assert mocked.called
+
+
+class TestJobbergateAuthHandlerGetIdentityData:
+    """
+    Test the get_identity_data method on JobbergateAuthHandler class.
+    """
+
+    def test_get_identity_data__success(self, dummy_jobbergate_auth, jwt_token):
+        """
+        Test that the function works as expected.
+        """
+
+        access_token = jwt_token(
+            azp="dummy-client",
+            email="good@email.com",
+            organization={"some-id": "some-name"},
+            exp=pendulum.tomorrow().int_timestamp,
+        )
+        dummy_jobbergate_auth._access_token = dummy_jobbergate_auth._access_token.replace(content=access_token)
+
+        identity_data = dummy_jobbergate_auth.get_identity_data()
+
+        assert identity_data.email == "good@email.com"
+        assert identity_data.client_id == "dummy-client"
+        assert identity_data.organization_id == "some-id"
+
+    def test_get_identity_data__fails_no_email(self, dummy_jobbergate_auth, jwt_token):
+        """
+        Test that the function raises an exception if the email is missing.
+        """
+
+        access_token = jwt_token(
+            azp="dummy-client",
+            exp=pendulum.tomorrow().int_timestamp,
+        )
+        dummy_jobbergate_auth._access_token = dummy_jobbergate_auth._access_token.replace(content=access_token)
+
+        with pytest.raises(AuthenticationError, match="Could not retrieve user email from token"):
+            dummy_jobbergate_auth.get_identity_data()
+
+    def test_get_identity_data__fails_no_client_id(self, dummy_jobbergate_auth, jwt_token):
+        """
+        Test that the function raises an exception if the client_id is missing.
+        """
+
+        access_token = jwt_token(
+            email="good@email.com",
+            exp=pendulum.tomorrow().int_timestamp,
+        )
+        dummy_jobbergate_auth._access_token = dummy_jobbergate_auth._access_token.replace(content=access_token)
+
+        with pytest.raises(AuthenticationError, match="Could not retrieve client_id from token"):
+            dummy_jobbergate_auth.get_identity_data()
+
+    def test_get_identify_data__fails_more_than_one_organization(self, dummy_jobbergate_auth, jwt_token):
+        """
+        Test that the function raises an exception if there is more than one organization.
+        """
+
+        access_token = jwt_token(
+            azp="dummy-client",
+            email="good@email.com",
+            organization={"some-id": "some-name", "other-id": "other-name"},
+            exp=pendulum.tomorrow().int_timestamp,
+        )
+        dummy_jobbergate_auth._access_token = dummy_jobbergate_auth._access_token.replace(content=access_token)
+
+        with pytest.raises(
+            AuthenticationError,
+            match="More than one organization id found in token payload",
+        ):
+            dummy_jobbergate_auth.get_identity_data()

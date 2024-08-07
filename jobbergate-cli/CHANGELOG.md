@@ -4,6 +4,9 @@ This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
 
+- Enabled auto-login on the CLI [ASP-4779]
+  - Replaced authentication functionality by the one from `jobbergate-core` which was already able to handle OIDC authentication at request time
+  - Added custom error handling for `AuthenticationError`
 
 ## 5.2.0 -- 2024-07-01
 - Change pydantic.BaseSettings config to use `extra=ignore`

@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 import typer
 
 from jobbergate_cli.constants import SortOrder
-from jobbergate_cli.exceptions import Abort, handle_abort
+from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobSubmissionResponse
@@ -37,7 +37,6 @@ app = typer.Typer(help="Commands to interact with job submissions")
 
 
 @app.command()
-@handle_abort
 def create(
     ctx: typer.Context,
     name: str = typer.Option(
@@ -122,7 +121,6 @@ def create(
 
 
 @app.command("list")
-@handle_abort
 def list_all(
     ctx: typer.Context,
     show_all: bool = typer.Option(
@@ -143,11 +141,6 @@ def list_all(
     """
     jg_ctx: JobbergateContext = ctx.obj
 
-    # Make static type checkers happy
-    assert jg_ctx is not None, "JobbergateContext is uninitialized"
-    assert jg_ctx.client is not None, "Client is uninitialized"
-    assert jg_ctx.persona is not None, "Persona is uninitialized"
-
     params: Dict[str, Any] = dict(user_only=not show_all)
     if search is not None:
         params["search"] = search
@@ -159,9 +152,9 @@ def list_all(
         params["from_job_script_id"] = from_job_script_id
 
     value_mappers = None
-    organization_id = jg_ctx.persona.identity_data.organization_id
+    organization_id = jg_ctx.authentication_handler.get_identity_data().organization_id
     if organization_id is not None:
-        value_mappers = dict(cluster_name=lambda cn: cn.replace(f"-{organization_id}", ""))
+        value_mappers = dict(cluster_name=lambda cn: cn.removesuffix(f"-{organization_id}"))
 
     handle_pagination(
         jg_ctx=jg_ctx,
@@ -177,7 +170,6 @@ def list_all(
 
 
 @app.command()
-@handle_abort
 def get_one(
     ctx: typer.Context,
     id: int = typer.Option(..., "--id", "-i", help="The specific id of the job submission."),
@@ -189,12 +181,11 @@ def get_one(
 
     # Make static type checkers happy
     assert jg_ctx is not None, "JobbergateContext is uninitialized"
-    assert jg_ctx.persona is not None, "Persona is uninitialized"
 
     value_mappers = None
-    organization_id = jg_ctx.persona.identity_data.organization_id
+    organization_id = jg_ctx.authentication_handler.get_identity_data().organization_id
     if organization_id is not None:
-        value_mappers = dict(cluster_name=lambda cn: cn.replace(f"-{organization_id}", ""))
+        value_mappers = dict(cluster_name=lambda cn: cn.removesuffix(f"-{organization_id}"))
 
     result = fetch_job_submission_data(jg_ctx, id)
     render_single_result(
@@ -210,7 +201,6 @@ def get_one(
 
 
 @app.command()
-@handle_abort
 def delete(
     ctx: typer.Context,
     id: int = typer.Option(

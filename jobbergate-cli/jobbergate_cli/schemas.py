@@ -11,6 +11,7 @@ import pydantic
 import pydantic.generics
 
 from jobbergate_cli.constants import FileType
+from jobbergate_core.auth.handler import JobbergateAuthHandler
 
 
 class TokenSet(pydantic.BaseModel, extra="ignore"):
@@ -57,10 +58,10 @@ class JobbergateContext(pydantic.BaseModel, arbitrary_types_allowed=True):
     A data object describing context passed from the main entry point.
     """
 
-    persona: Optional[Persona] = None
-    full_output: bool = False
+    client: httpx.Client
+    authentication_handler: JobbergateAuthHandler
     raw_output: bool = False
-    client: Optional[httpx.Client] = None
+    full_output: bool = False
 
 
 class JobbergateConfig(pydantic.BaseModel, extra="allow"):

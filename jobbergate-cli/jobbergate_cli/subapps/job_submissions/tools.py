@@ -29,14 +29,11 @@ def _map_cluster_name(
     If the organization is undefined (multi-tenancy is disabled) or the cluster_name already includes the
     organization_id, use the base_cluster_name.
     """
-    # Make static type checkers happy
-    assert jg_ctx.persona is not None, "jg_ctx.persona is uninitialized"
-
-    org_id = jg_ctx.persona.identity_data.organization_id
+    org_id = jg_ctx.authentication_handler.get_identity_data().organization_id
     if org_id is None or base_cluster_name.endswith(org_id):
         return base_cluster_name
 
-    return f"{base_cluster_name}-{jg_ctx.persona.identity_data.organization_id}"
+    return f"{base_cluster_name}-{org_id}"
 
 
 @dataclass

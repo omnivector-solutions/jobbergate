@@ -12,6 +12,8 @@ from rich import traceback
 from rich.console import Console
 from rich.panel import Panel
 
+from jobbergate_core.auth import AuthenticationError
+
 from jobbergate_cli.config import settings
 from jobbergate_cli.constants import OV_CONTACT
 from jobbergate_cli.text_tools import dedent, unwrap
@@ -68,7 +70,7 @@ def handle_abort(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
-            func(*args, **kwargs)
+            return func(*args, **kwargs)
         except Abort as err:
             if not err.warn_only:
                 if err.log_message is not None:
@@ -103,5 +105,30 @@ def handle_abort(func):
             console.print(Panel(message, **panel_kwargs))
             console.print()
             raise typer.Exit(code=1)
+
+    return wrapper
+
+
+def handle_authentication_error(func):
+    """
+    Adapter decorator that catches AuthenticationError exceptions and raises an appropriate Abort error.
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except AuthenticationError as err:
+            subject = "Authentication error"
+            original_exception = err.__cause__
+            if original_exception is not None:
+                original_exception_name = type(original_exception).__name__
+                subject += f" -- {original_exception_name}"
+            raise Abort(
+                f"{err.message}\n\nPlease check your credentials and try again.",
+                subject=subject,
+                support=True,
+                original_error=err,
+            ) from err
 
     return wrapper
