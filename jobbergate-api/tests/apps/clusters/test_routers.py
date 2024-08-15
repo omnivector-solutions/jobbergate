@@ -129,20 +129,22 @@ class TestListClusterStatus:
 
 class TestGetClusterStatus:
     @pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.CLUSTERS_READ))
-    @pytest.mark.parametrize("client_id", ("client-1", "client-2", "client-3"))
     async def test_get_cluster_status_by_client_id__not_found(
-        self, permission, client_id, client, inject_security_header, synth_session
+        self, permission, client, inject_security_header, synth_session
     ):
+        client_id = "dummy-client"
+
         inject_security_header("who@cares.com", permission)
 
         response = await client.get(f"/jobbergate/clusters/status/{client_id}")
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     @pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.CLUSTERS_READ))
-    @pytest.mark.parametrize("client_id", ("client-1", "client-2", "client-3"))
     async def test_get_cluster_status_by_client_id__found(
-        self, permission, client_id, client, inject_security_header, synth_session
+        self, permission, client, inject_security_header, synth_session
     ):
+        client_id = "dummy-client"
+
         inject_security_header("who@cares.com", permission)
 
         cluster_status = ClusterStatus(
