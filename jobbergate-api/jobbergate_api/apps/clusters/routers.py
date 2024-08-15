@@ -84,4 +84,4 @@ async def get_cluster_status_by_client_id(
     instance = result.scalar_one_or_none()
     if instance is None:
         return FastAPIResponse(status_code=status.HTTP_404_NOT_FOUND)
-    return ClusterStatusView.model_validate(instance)
+    return instance
