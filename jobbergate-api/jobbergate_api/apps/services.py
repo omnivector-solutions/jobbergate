@@ -597,7 +597,9 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             # Mypy doesn't like aioboto3 much
             await self.bucket.upload_fileobj(Fileobj=file_obj, Key=instance.file_key)  # type: ignore
         except Exception as e:
-            message = f"Error uploading file {instance.filename} to {instance.file_key} -- {str(e)}"
+            message = "Error uploading file {} to {} on bucket {} -- {}".format(
+                instance.filename, instance.file_key, self.bucket.name, str(e)
+            )
             logger.error(message)
             raise ServiceError(
                 f"Error uploading file {instance.filename} to the file storage",
@@ -637,12 +639,17 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         Copy the content of a file from one instance to another.
         """
         copy_source = {"Bucket": self.bucket.name, "Key": source_instance.file_key}
-        with handle_errors(
-            f"{self.model_type.__tablename__} file={source_instance.file_key} could not be copied",
-            raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR),
-        ):
+        try:
             await self.bucket.copy(copy_source, destination_instance.file_key)
+        except Exception as e:
+            message = "Error copying file {} to {} on bucket {} -- {}".format(
+                source_instance.file_key, destination_instance.file_key, self.bucket.name, str(e)
+            )
+            logger.error(message)
+            raise ServiceError(
+                f"Error copying file {source_instance.file_key} to the file storage",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     async def delete(self, instance: FileModel) -> None:
         """

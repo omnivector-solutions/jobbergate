@@ -71,9 +71,9 @@ class Settings(BaseSettings):
     TEST_S3_ENDPOINT_URL: str = Field("http://localhost:9000")
 
     # RabbitMQ configuration
-    RABBITMQ_HOST: Optional[str]
-    RABBITMQ_USERNAME: Optional[str]
-    RABBITMQ_PASSWORD: Optional[str]
+    RABBITMQ_HOST: Optional[str] = None
+    RABBITMQ_USERNAME: Optional[str] = None
+    RABBITMQ_PASSWORD: Optional[str] = None
     RABBITMQ_DEFAULT_EXCHANGE: str = "default"
 
     # Security Settings. For details, see https://github.com/omnivector-solutions/armasec
