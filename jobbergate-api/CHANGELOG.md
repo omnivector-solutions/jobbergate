@@ -3,6 +3,9 @@
 This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
+
+
+## 5.3.0a2 -- 2024-08-20
 - Enhance logging for file storage operations
 
 ## 5.3.0a1 -- 2024-08-15
