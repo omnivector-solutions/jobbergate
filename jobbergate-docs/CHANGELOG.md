@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-docs
 ## Unreleased
 
 
+## 5.3.0a2 -- 2024-08-20
 ## 5.3.0a1 -- 2024-08-15
 ## 5.3.0a0 -- 2024-08-07
 ## 5.2.0 -- 2024-07-01
