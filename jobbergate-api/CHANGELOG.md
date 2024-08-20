@@ -3,6 +3,7 @@
 This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
+- Enhance logging for file storage operations
 
 ## 5.3.0a1 -- 2024-08-15
 - Implemented an endpoint to fetch a cluster status by its client id [[PENG-2348](https://sharing.clickup.com/t/h/c/18022949/PENG-2348/QWZFBKV72ZNL293)]
