@@ -541,7 +541,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         if previous_filename == filename:
             previous_filename = None
 
-        if upload_content:
+        if upload_content is not None:
             await self.upload_file_content(upsert_instance, upload_content)
             if not previous_filename:
                 return upsert_instance
