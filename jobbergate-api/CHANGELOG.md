@@ -3,7 +3,7 @@
 This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
-
+- Fixed issue preventing the creation of a job script from an empty template file
 
 ## 5.3.0a2 -- 2024-08-20
 - Enhance logging for file storage operations

@@ -674,37 +674,31 @@ class TestFileService:
         file_data = await dummy_file_service.get_file_content(upserted_instance)
         assert file_data == "dummy upload content".encode()
 
-    async def test_upsert__with_string(self, dummy_file_service):
+    @pytest.mark.parametrize("file_content", ["dummy string content", ""])
+    async def test_upsert__with_string(self, file_content, dummy_file_service):
         """
         Test that the ``upsert()`` method can create a file from a string.
         """
-        upserted_instance = await dummy_file_service.upsert(
-            13,
-            "file-one.txt",
-            "dummy string content",
-        )
+        upserted_instance = await dummy_file_service.upsert(13, "file-one.txt", file_content)
 
         assert upserted_instance.parent_id == 13
         assert upserted_instance.filename == "file-one.txt"
 
         file_data = await dummy_file_service.get_file_content(upserted_instance)
-        assert file_data == "dummy string content".encode()
+        assert file_data == file_content.encode()
 
-    async def test_upsert__with_bytes(self, dummy_file_service):
+    @pytest.mark.parametrize("file_content", [b"dummy bytes content", b""])
+    async def test_upsert__with_bytes(self, file_content, dummy_file_service):
         """
         Test that the ``upsert()`` method can create a file from bytes.
         """
-        upserted_instance = await dummy_file_service.upsert(
-            13,
-            "file-one.txt",
-            "dummy bytes content".encode(),
-        )
+        upserted_instance = await dummy_file_service.upsert(13, "file-one.txt", file_content)
 
         assert upserted_instance.parent_id == 13
         assert upserted_instance.filename == "file-one.txt"
 
         file_data = await dummy_file_service.get_file_content(upserted_instance)
-        assert file_data == "dummy bytes content".encode()
+        assert file_data == file_content
 
     @pytest.mark.parametrize(
         "filename, content",
