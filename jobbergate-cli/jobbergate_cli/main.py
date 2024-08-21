@@ -73,6 +73,7 @@ def main(
         login_domain=f"{protocol}://{settings.OIDC_DOMAIN}",
         login_audience=settings.OIDC_AUDIENCE,
         login_client_id=settings.OIDC_CLIENT_ID,
+        login_client_secret=settings.OIDC_CLIENT_SECRET,
         login_url_handler=show_login_message,
         login_sequence_handler=track_login_progress,
     )
