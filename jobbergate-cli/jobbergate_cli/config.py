@@ -68,6 +68,7 @@ class Settings(BaseSettings):
     OIDC_AUDIENCE: str
     OIDC_CLIENT_ID: str
     OIDC_USE_HTTPS: bool = True
+    OIDC_CLIENT_SECRET: Optional[str] = None
 
     @field_validator("JOBBERGATE_CACHE_DIR", mode="after")
     def _validate_cache_dir(cls, value: Path) -> Path:

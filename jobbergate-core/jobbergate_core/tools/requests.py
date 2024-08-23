@@ -72,6 +72,7 @@ class RequestHandler:
     method: str  # HTTPMethod is new in Python 3.11 and can replace string here
     request_model: BaseModel | None = None
     request_kwargs: dict[str, Any] = field(default_factory=dict)
+    sensitive_keys: set[str] = field(default_factory=set)
 
     request: Request = field(init=False, repr=False)
     response: Response = field(init=False, repr=False)
@@ -97,14 +98,18 @@ class RequestHandler:
         )
         logger.debug(
             dedent(
-                f"""
-                Request built with:
-                url:     {self.request.url}
-                method:  {self.method}
-                headers: {self.request.headers}
-                body:    {debug_request_body}
                 """
-            ).strip()
+                Request built with:
+                url:     {}
+                method:  {}
+                headers: {}
+                body:    {}
+                """
+            ).strip(),
+            self.request.url,
+            self.method,
+            self._sanitize_data(dict(self.request.headers)),
+            self._sanitize_data(debug_request_body),
         )
 
         try:
@@ -166,7 +171,7 @@ class RequestHandler:
                 message="Failed unpacking json from response", request=self.request, response=self.response
             ) from err
 
-        logger.debug(f"Extracted data from response: {data}")
+        logger.debug("Extracted data from response: {}", self._sanitize_data(data))
         return data
 
     def to_model(self, model: Type[ResponseModel]) -> ResponseModel:
@@ -180,3 +185,14 @@ class RequestHandler:
             raise JobbergateResponseError(
                 message="Failed to validate response to model", request=self.request, response=self.response
             ) from err
+
+    def _sanitize_data(self, data: Any) -> Any:
+        """
+        Sanitize sensitive data in the request body and headers.
+        """
+        if self.sensitive_keys and isinstance(data, dict):
+            return {
+                key: "*****" if key.lower() in self.sensitive_keys else self._sanitize_data(value)
+                for key, value in data.items()
+            }
+        return data

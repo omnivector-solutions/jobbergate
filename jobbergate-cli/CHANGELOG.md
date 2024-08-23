@@ -6,6 +6,8 @@ This file keeps track of all notable changes to jobbergate-cli
 
 
 ## 5.3.0a3 -- 2024-08-21
+- Enabled authentication by OIDC client secret [ASP-5244]
+
 ## 5.3.0a2 -- 2024-08-20
 ## 5.3.0a1 -- 2024-08-15
 ## 5.3.0a0 -- 2024-08-07

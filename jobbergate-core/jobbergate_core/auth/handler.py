@@ -198,6 +198,10 @@ class JobbergateAuthHandler:
         raise AuthenticationError("Unable to acquire the access token, all attempts failed")
 
     def get_access_from_secret(self) -> None:
+        """
+        Get the access token using the client secret.
+        """
+        logger.debug("Getting access token from client secret")
         AuthenticationError.require_condition(self.login_client_secret is not None, message="Client secret is unset")
 
         with AuthenticationError.handle_errors("Failed to get access token from client secret"):
@@ -214,6 +218,7 @@ class JobbergateAuthHandler:
                             "grant_type": "client_credentials",
                         }
                     },
+                    sensitive_keys={"access_token", "client_secret"},
                 )
                 .raise_for_status()
                 .to_model(TokenInformation)
@@ -287,6 +292,7 @@ class JobbergateAuthHandler:
                         "client_id": self.login_client_id,
                     }
                 },
+                sensitive_keys={"access_token", "cookie", "device_code", "refresh_token"},
             ).check_status_code(200, 400)
 
             if request_handler.response.is_success:
@@ -313,6 +319,7 @@ class JobbergateAuthHandler:
                         "audience": self.login_audience,
                     }
                 },
+                sensitive_keys={"device_code"},
             )
             .raise_for_status()
             .check_status_code(200)
@@ -355,6 +362,7 @@ class JobbergateAuthHandler:
                         "refresh_token": self._refresh_token.content,
                     },
                 },
+                sensitive_keys={"access_token", "refresh_token"},
             )
             .raise_for_status()
             .to_model(TokenInformation)
