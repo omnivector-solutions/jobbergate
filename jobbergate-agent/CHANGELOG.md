@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-agent
 ## Unreleased
 
 
+## 5.3.0a4 -- 2024-08-23
 ## 5.3.0a3 -- 2024-08-21
 ## 5.3.0a2 -- 2024-08-20
 ## 5.3.0a1 -- 2024-08-15
