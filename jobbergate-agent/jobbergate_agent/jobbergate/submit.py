@@ -281,9 +281,17 @@ async def submit_pending_jobs() -> None:
             do_else=lambda: logger.debug(f"Finished submitting pending job_submission {pending_job_submission.id}"),
             re_raise=False,
         ):
-            slurm_job_id = await submit_job_script(pending_job_submission, user_mapper)
+            cache_file = SETTINGS.CACHE_DIR / f"{pending_job_submission.id}.slurm_job_id"
+            if cache_file.exists():
+                logger.debug(f"Found cache file for job submission {pending_job_submission.id}")
+                slurm_job_id = int(cache_file.read_text())
+            else:
+                slurm_job_id = await submit_job_script(pending_job_submission, user_mapper)
+                cache_file.write_text(str(slurm_job_id))
+
             slurm_job_data: SlurmJobData = await fetch_job_data(slurm_job_id, info_handler)
 
             await mark_as_submitted(pending_job_submission.id, slurm_job_id, slurm_job_data)
+            cache_file.unlink(missing_ok=True)
 
     logger.debug("...Finished submitting pending jobs")

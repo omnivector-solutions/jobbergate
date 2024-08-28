@@ -637,6 +637,8 @@ async def test_submit_job_script__raises_exception_if_sbatch_fails(
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
 async def test_submit_pending_jobs(
+    tweak_settings,
+    tmp_path,
     dummy_job_script_files,
     dummy_template_source,
     mocker,
@@ -666,6 +668,12 @@ async def test_submit_pending_jobs(
             owner_email="email3@dummy.com",
             job_script={"files": dummy_job_script_files},
         ),
+        PendingJobSubmission(
+            id=4,
+            name="sub4",
+            owner_email="email4@dummy.com",
+            job_script={"files": dummy_job_script_files},
+        ),
     ]
 
     mocker.patch(
@@ -678,7 +686,7 @@ async def test_submit_pending_jobs(
             raise Exception("BOOM!")
         return pending_job_submission.id * 11
 
-    def _mocked_mark_as_submitted(job_submission_id: int, slurm_job_id: int):
+    def _mocked_mark_as_submitted(job_submission_id: int, slurm_job_id: int, slurm_job_data: SlurmJobData):
         if job_submission_id == 2:
             raise Exception("BANG!")
 
@@ -701,7 +709,10 @@ async def test_submit_pending_jobs(
 
     test_mapper = manufacture()
 
-    await submit_pending_jobs()
+    with tweak_settings(CACHE_DIR=tmp_path):
+        cached_submission_4 = tmp_path / "4.slurm_job_id"
+        cached_submission_4.write_text("44")
+        await submit_pending_jobs()
 
     mock_submit.assert_has_calls(
         [
@@ -716,6 +727,9 @@ async def test_submit_pending_jobs(
         [
             mocker.call(1, 11, SlurmJobData(job_state="RUNNING", job_info="{}")),
             mocker.call(2, 22, SlurmJobData(job_state="RUNNING", job_info="{}")),
+            mocker.call(4, 44, SlurmJobData(job_state="RUNNING", job_info="{}")),
         ]
     )
-    assert mock_mark.call_count == 2
+    assert mock_mark.call_count == 3
+
+    assert cached_submission_4.exists() is False
