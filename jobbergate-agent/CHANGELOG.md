@@ -3,7 +3,7 @@
 This file keeps track of all notable changes to jobbergate-agent
 
 ## Unreleased
-
+- Fixed issue when downloading job script files for job submission with large names
 
 ## 5.3.0a4 -- 2024-08-23
 ## 5.3.0a3 -- 2024-08-21

@@ -405,8 +405,9 @@ async def test_mark_as_rejected__raises_JobbergateApiError_if_the_response_is_no
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
+@pytest.mark.parametrize("job_submissions_name", ["dummy-job-submission", "really-long-job-submission-name" * 10])
 async def test_submit_job_script__success_with_files(
-    mocker, dummy_pending_job_submission_data, dummy_template_source, tweak_settings, user_mapper
+    mocker, job_submissions_name, dummy_pending_job_submission_data, dummy_template_source, tweak_settings, user_mapper
 ):
     """
     Test that the ``submit_job_script()`` successfully submits a job.
@@ -415,6 +416,7 @@ async def test_submit_job_script__success_with_files(
     and that a ``slurm_job_id`` is returned.
     """
     pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
+    pending_job_submission.name = job_submissions_name
 
     mocked_sbatch = mock.MagicMock()
     mocked_sbatch.submit_job = lambda *args, **kwargs: 13
