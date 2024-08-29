@@ -15,25 +15,27 @@ from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.text_tools import dedent, unwrap
 
 
-def get_possible_solution_to_error(error_code: int) -> str:
+def get_possible_solution_to_error(response: httpx.Response) -> str:
     """
     Get a possible solution to an error code.
     """
-    if httpx.codes.is_client_error(error_code):
+    if response.is_client_error:
         default_solution = "Please check the data on your request and try again"
     else:
         default_solution = "Please try again and contact support if the problem persists"
 
     custom_solutions: dict[int, str] = {
         # client errors
-        httpx.codes.UNAUTHORIZED: "Please verify your credentials to perform this action with system admin",
-        httpx.codes.FORBIDDEN: "Please notice only the owner of the resource can perform this action",
+        httpx.codes.UNAUTHORIZED: "Please login and try again",
+        httpx.codes.FORBIDDEN: "Unable to modify an entry owned by someone else, please contact the resource owner"
+        if "mismatch on attribute" in response.text.lower()
+        else "Please verify your credentials to perform this action with a system admin",
         httpx.codes.NOT_FOUND: "Please check the id number or identifier and try again",
         httpx.codes.REQUEST_TIMEOUT: "Please try again and contact support if the problem persists",
         # server errors
         # ...
     }
-    return custom_solutions.get(error_code, default_solution)
+    return custom_solutions.get(response.status_code, default_solution)
 
 
 def format_response_error(response: httpx.Response, default_text) -> str:
@@ -45,7 +47,7 @@ def format_response_error(response: httpx.Response, default_text) -> str:
         message.append(response.json()["detail"])
     except Exception:
         pass
-    message.append(get_possible_solution_to_error(response.status_code))
+    message.append(get_possible_solution_to_error(response))
     return " -- ".join(message)
 
 

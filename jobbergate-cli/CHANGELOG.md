@@ -3,7 +3,7 @@
 This file keeps track of all notable changes to jobbergate-cli
 
 ## Unreleased
-
+- Enhance error message when request returns 403 Forbidden [ASP-5433]
 
 ## 5.3.0a4 -- 2024-08-23
 - Enabled authentication by OIDC client secret [ASP-5244]
