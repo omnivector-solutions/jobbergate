@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from typing import Any, Generic, Protocol, TypeVar
 
 from botocore.response import StreamingBody
-from buzz import check_expressions, enforce_defined, handle_errors, require_condition
+from buzz import enforce_defined, handle_errors, require_condition
 from fastapi import HTTPException, UploadFile, status
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
@@ -345,16 +345,10 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
 
         Raises HTTPException if the instance does not have the specified values.
         """
-        with check_expressions(
-            main_message="Request not allowed on {} by id={} due to mismatch on attribute(s)".format(
-                self.name, instance.id
-            ),
-            raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_403_FORBIDDEN),
-        ) as check:
-            for attr_name, expected_value in attributes.items():
-                actual_value = getattr(instance, attr_name)
-                check(actual_value == expected_value, message=attr_name)
+        if mismatched := {k for k, v in attributes.items() if getattr(instance, k) != v}:
+            message = f"Mismatch on attribute(s): {', '.join(mismatched)}"
+            logger.debug("Access to {} id={} is forbidden due to {}", self.name, instance.id, message)
+            raise ServiceError(message, status_code=status.HTTP_403_FORBIDDEN)
 
     @property
     def name(self):

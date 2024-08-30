@@ -165,7 +165,7 @@ def test_make_request__raises_Abort_with_ownership_message_for_403_for_non_owner
 
     with pytest.raises(
         Abort,
-        match="There was a big problem -- This jabroni does not own this whingding -- Please notice only the owner of",
+        match="There was a big problem -- This jabroni does not own this whingding -- Please verify your credentials",
     ) as err_info:
         make_request(
             client,
