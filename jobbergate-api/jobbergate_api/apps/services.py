@@ -347,7 +347,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         """
         if mismatched := {k for k, v in attributes.items() if getattr(instance, k) != v}:
             message = f"Mismatch on attribute(s): {', '.join(mismatched)}"
-            logger.debug("Access to {} id={} is forbidden due to", self.name, instance.id, message)
+            logger.debug("Access to {} id={} is forbidden due to {}", self.name, instance.id, message)
             raise ServiceError(message, status_code=status.HTTP_403_FORBIDDEN)
 
     @property
