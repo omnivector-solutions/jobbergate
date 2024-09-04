@@ -447,7 +447,7 @@ FileModel = TypeVar("FileModel", bound=FileModelProto)
 
 class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
     """
-    Proide a service that can perform various file management operations using a supplied ORM model type.
+    Provide a service that can perform various file management operations using a supplied ORM model type.
     """
 
     model_type: type[FileModel]
@@ -462,7 +462,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
 
     async def get(self, parent_id: int, filename: str) -> FileModel:
         """
-        Get a single instances by its parent id and filename (primary keys).
+        Get a single instance by its parent id and filename (primary keys).
 
         Requires that one and only one result is found.
         """

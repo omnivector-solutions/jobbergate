@@ -5,7 +5,7 @@ from fastapi import BackgroundTasks
 
 from jobbergate_api.apps.garbage_collector import (
     delete_files_from_bucket,
-    garbage_collect,
+    garbage_collector,
     get_files_to_delete,
     get_set_of_files_from_bucket,
     get_set_of_files_from_database,
@@ -108,7 +108,7 @@ async def test_garbage_collect(synth_session, synth_bucket, insert_file):
     await synth_session.delete(file2)
 
     bg_tasks = BackgroundTasks()
-    await garbage_collect(synth_session, synth_bucket, [JobScriptTemplateFile], bg_tasks)
+    await garbage_collector(synth_session, synth_bucket, [JobScriptTemplateFile], bg_tasks)
     await bg_tasks()
 
     bucket_files = await get_set_of_files_from_bucket(synth_bucket, JobScriptTemplateFile)

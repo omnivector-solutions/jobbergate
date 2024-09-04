@@ -51,37 +51,35 @@ async def handle_errors_async(
     Async context manager that will intercept exceptions and repackage them with a message attached.
 
     Example:
+        ``` python
+        with handle_errors("It didn't work"):
+            some_code_that_might_raise_an_exception()
+        ```
 
-    .. code-block:: python
+    Args:
+        message: The message to attach to the raised exception.
+        raise_exc_class: The exception type to raise with the constructed message
+            if an exception is caught in the managed context.
 
-       with handle_errors("It didn't work"):
-           some_code_that_might_raise_an_exception()
+            Defaults to Exception.
 
-    :param: message:           The message to attach to the raised exception.
-    :param: raise_exc_class:   The exception type to raise with the constructed message
-                               if an exception is caught in the managed context.
-
-                               Defaults to Exception.
-
-                               If ``None`` is passed, no new exception will be raised and only the
-                               ``do_except``, ``do_else``, and ``do_finally``
-                               functions will be called.
-    :param: raise_args:        Additional positional args (after the constructed message) that will
-                               passed when raising an instance of the ``raise_exc_class``.
-    :param: raise_kwargs:      Keyword args that will be passed when raising an instance of the
-                               ``raise_exc_class``.
-    :param: handle_exc_class:  Limits the class of exceptions that will be intercepted
-                               Any other exception types will not be caught and re-packaged.
-                               Defaults to Exception (will handle all exceptions). May also be
-                               provided as a tuple of multiple exception types to handle.
-    :param: do_finally:        A function that should always be called at the end of the block.
-                               Should take no parameters.
-    :param: do_except:         A function that should be called only if there was an exception.
-                               Must accept one parameter that is an instance of the
-                               ``DoExceptParams`` dataclass. Note that the ``do_except``
-                               method is passed the *original exception*.
-    :param: do_else:           A function that should be called only if there were no
-                               exceptions encountered.
+            If ``None`` is passed, no new exception will be raised and only the
+            ``do_except``, ``do_else``, and ``do_finally``
+            functions will be called.
+        raise_args: Additional positional args (after the constructed message) that will
+            be passed when raising an instance of the ``raise_exc_class``.
+        raise_kwargs: Keyword args that will be passed when raising an instance of the ``raise_exc_class``.
+        handle_exc_class: Limits the class of exceptions that will be intercepted.
+            Any other exception types will not be caught and re-packaged.
+            Defaults to Exception (will handle all exceptions). May also be
+            provided as a tuple of multiple exception types to handle.
+        do_finally: A function that should always be called at the end of the block. Should take no parameters.
+        do_except: A function that should be called only if there was an exception.
+            Must accept one parameter that is an instance of the
+            ``DoExceptParams`` dataclass. Note that the ``do_except``
+            method is passed the *original exception*.
+        do_else: A function that should be called only if there were no
+            exceptions encountered.
     """
     try:
         yield

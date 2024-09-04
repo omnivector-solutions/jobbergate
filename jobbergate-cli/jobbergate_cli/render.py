@@ -3,7 +3,7 @@ Provide helpers to render output for users.
 """
 
 import json
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import Any, Callable, Dict, List, Optional, cast
 
 import pydantic
 from rich import print_json
@@ -67,17 +67,20 @@ class StyleMapper:
         )
 
 
-def terminal_message(message, subject=None, color="green", footer=None, indent=True):
+def terminal_message(
+    message: str, subject: str | None = None, color: str = "green", footer: str | None = None, indent: bool = True
+):
     """
     Print a nicely formatted message as output to the user using a ``rich`` ``Panel``.
 
-    :param: message: The message to print out
-    :param: subject: An optional subject line to add in the header of the ``Panel``
-    :param: color:   An optional color to style the ``subject`` header with
-    :param: footer:  An optional message to display in the footer of the ``Panel``
-    :param: indent:  Adds padding to the left of the message
+    Args:
+        message: The message to print out.
+        subject: An optional subject line to add in the header of the ``Panel``.
+        color: An optional color to style the ``subject`` header with. Defaults to "green".
+        footer: An optional message to display in the footer of the ``Panel``.
+        indent: Adds padding to the left of the message. Defaults to True.
     """
-    panel_kwargs = dict(padding=1)
+    panel_kwargs: dict[str, Any] = dict(padding=1)
     if subject is not None:
         panel_kwargs["title"] = f"[{color}]{subject}"
     if footer is not None:
@@ -104,18 +107,19 @@ def render_json(data: Any):
 def render_list_results(
     ctx: JobbergateContext,
     envelope: ListResponseEnvelope,
-    style_mapper: Optional[StyleMapper] = None,
-    hidden_fields: Optional[List[str]] = None,
+    style_mapper: StyleMapper | None = None,
+    hidden_fields: list[str] | None = None,
     title: str = "Results List",
 ):
     """
     Render a list of result data items in a ``rich`` ``Table``.
 
-    :param: ctx:           The JobbergateContext. This is needed to detect if ``full`` or ``raw`` output is needed
-    :param: envelope:      A ListResponseEnvelope containing the data items
-    :param: style_mapper:  The style mapper that should be used to apply styles to the columns of the table
-    :param: hidden_fields: Columns that should (if not using ``full`` mode) be hidden in the ``Table`` output
-    :param: title:         The title header to include above the ``Table`` output
+    Args:
+        ctx: The JobbergateContext. This is needed to detect if ``full`` or ``raw`` output is needed.
+        envelope: A ListResponseEnvelope containing the data items.
+        style_mapper: The style mapper that should be used to apply styles to the columns of the table.
+        hidden_fields: Columns that should (if not using ``full`` mode) be hidden in the ``Table`` output.
+        title: The title header to include above the ``Table`` output.
     """
     if ctx.raw_output:
         render_json(envelope.model_dump(mode="json")["items"])
@@ -145,16 +149,17 @@ def render_list_results(
 
 
 def render_dict(
-    data: Dict[str, Any],
+    data: dict[str, Any],
     title: str = "Data",
-    hidden_fields: Optional[List[str]] = None,
+    hidden_fields: list[str] | None = None,
 ):
     """
-    Render a dictionary in a ``rich`` ``Table`` That shows the key and value of each item.
+    Render a dictionary in a ``rich`` ``Table`` that shows the key and value of each item.
 
-    :param: data: The dictionary to render
-    :param: title: The title header to include above the ``Table`` output
-    :param: hidden_fields: Keys that should be hidden in the ``Table`` output
+    Args:
+        data: The dictionary to render.
+        title: The title header to include above the ``Table`` output.
+        hidden_fields: Keys that should be hidden in the ``Table`` output.
     """
     if hidden_fields is None:
         hidden_fields = []
@@ -175,19 +180,20 @@ def render_dict(
 
 def render_single_result(
     ctx: JobbergateContext,
-    result: Union[Dict[str, Any], pydantic.BaseModel],
-    hidden_fields: Optional[List[str]] = None,
+    result: dict[str, Any] | pydantic.BaseModel,
+    hidden_fields: list[str] | None = None,
     title: str = "Result",
-    value_mappers: Optional[Dict[str, Callable[[Any], Any]]] = None,
+    value_mappers: dict[str, Callable[[Any], Any]] | None = None,
 ):
     """
-    Render a single data item in a ``rich`` ``Table.
+    Render a single data item in a ``rich`` ``Table``.
 
-    :param: ctx:           The JobbergateContext. This is needed to detect if ``full` or ``raw`` output is needed
-    :param: result:        The data item to display. May be a dict or a pydantic model.
-    :param: hidden_fields: Rows that should (if not using ``full`` mode) be hidden in the ``Table`` output
-    :param: title:         The title header to include above the ``Tale`` output
-    :param: value_mappers: Mapping functions to change fields before rendering
+    Args:
+        ctx: The JobbergateContext. This is needed to detect if ``full`` or ``raw`` output is needed.
+        result: The data item to display. May be a dict or a pydantic model.
+        hidden_fields: Rows that should (if not using ``full`` mode) be hidden in the ``Table`` output.
+        title: The title header to include above the ``Table`` output.
+        value_mappers: Mapping functions to change fields before rendering.
     """
     if isinstance(result, pydantic.BaseModel):
         result_model = cast(pydantic.BaseModel, result)

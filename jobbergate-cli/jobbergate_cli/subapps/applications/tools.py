@@ -48,8 +48,11 @@ def fetch_application_data_locally(
     """
     Retrieve an application from a local directory.
 
-    :param: application_path: The directory containing the application files
-    :returns: A LocalApplication instance containing the application data
+    Args:
+        application_path: The directory containing the application files.
+
+    Returns:
+        A LocalApplication instance containing the application data.
     """
     Abort.require_condition(application_path.is_dir(), f"Application directory {application_path} does not exist")
 
@@ -107,12 +110,15 @@ def fetch_application_data(
     identifier: Optional[str] = None,
 ) -> ApplicationResponse:
     """
-    Retrieve an application from the API by ``id`` or ``identifier``.
+    Retrieve an application from the API by id or identifier.
 
-    :param: jg_ctx:     The JobbergateContext. Needed to access the Httpx client with which to make API calls
-    :param: id:         The id of the application to fetch
-    :param: identifier: If supplied, look for an application instance with the provided identifier
-    :returns: An instance of ApplicationResponse containing the application data
+    Args:
+        jg_ctx: The JobbergateContext. Needed to access the Httpx client with which to make API calls.
+        id: The id of the application to fetch.
+        identifier: If supplied, look for an application instance with the provided identifier.
+
+    Returns:
+        An instance of ApplicationResponse containing the application data.
     """
     identification: Any = id
     if id is None and identifier is None:
@@ -164,8 +170,12 @@ def load_application_data(
     them from app_data.workflow_file.runtime_config and app_data.template_vars
     for backward compatibility.
 
-    :param: app_data: A dictionary containing the application data
-    :returns: A tuple containing the application config and the application module
+    Args:
+        app_data: A dictionary containing the application data.
+        application_source_file: The source file of the application.
+
+    Returns:
+        A tuple containing the application config and the application module.
     """
     if not app_data.workflow_files:  # make type checker happy
         raise Abort(
@@ -205,10 +215,13 @@ def load_application_data(
 @contextlib.contextmanager
 def get_upload_files(application_path: pathlib.Path):
     """
-    Context manager to build the ``files`` parameter.
+    Context manager to build the files parameter.
 
-    Open the supplied file(s) and build a ``files`` param appropriate for using
+    Open the supplied file(s) and build a files param appropriate for using
     multi-part file uploads with the client.
+
+    Args:
+        application_path: The directory where the application files are located.
     """
     Abort.require_condition(application_path.is_dir(), f"Application directory {application_path} does not exist")
 
@@ -232,11 +245,11 @@ def upload_application(
     """
     Upload an application given an application path and the application id.
 
-    :param: jg_ctx:                 The JobbergateContext. Needed to access the Httpx client with which to
-    make API calls
-    :param: application_path:       The directory where the application files to upload may be found
-    :param: application_id:         The id of the application for which to upload  data
-    :param: application_identifier: The identifier of the application for which to upload  data
+    Args:
+        jg_ctx: The JobbergateContext. Needed to access the Httpx client with which to make API calls.
+        application_path: The directory where the application files to upload may be found.
+        application_id: The id of the application for which to upload data.
+        application_identifier: The identifier of the application for which to upload data.
     """
 
     # Make static type checkers happy
@@ -393,8 +406,11 @@ def load_application_config_from_source(config_source: str) -> JobbergateApplica
     """
     Load the JobbergateApplicationConfig from a text string containing the config as YAML.
 
-    :param: config_source: The YAML containing the config
-    :returns: A JobbergateApplicationConfig instance with the config values
+    Args:
+        config_source: The YAML containing the config
+
+    Returns:
+        A JobbergateApplicationConfig instance with the config values
     """
     config_data = yaml.safe_load(config_source)
     config = JobbergateApplicationConfig(**config_data)
@@ -409,8 +425,9 @@ def load_application_from_source(app_source: str, app_config: JobbergateApplicat
 
     Adapted from: https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
 
-    :param: app_source: The JobbergateApplication source code to load
-    :param: app_config: The JobbergateApplicationConfig needed to instantiate the JobbergateApplication
+    Args:
+        app_source: The JobbergateApplication source code to load
+        app_config: The JobbergateApplicationConfig needed to instantiate the JobbergateApplication
     """
     app_locals: Dict[str, Any] = dict()
     exec(app_source, app_locals, app_locals)
@@ -424,10 +441,11 @@ class ApplicationRuntime:
     """
     Prepare and execute a Jobbergate application gathering the answers to the questions.
 
-    :param app_data: The application data, can be either an ApplicationResponse or a LocalApplication.
-    :param app_source_code: The source code of the application, often coming from jobbergate.py file.
-    :param supplied_params: The parameters supplied to the application, defaults to an empty dictionary.
-    :param fast_mode: A flag indicating whether the application is in fast mode, defaults to False.
+    Args:
+        app_data: The application data, can be either an ApplicationResponse or a LocalApplication.
+        app_source_code: The source code of the application, often coming from jobbergate.py file.
+        supplied_params: The parameters supplied to the application, defaults to an empty dictionary.
+        fast_mode: A flag indicating whether the application is in fast mode, defaults to False.
     """
 
     app_data: Union[ApplicationResponse, LocalApplication]

@@ -66,7 +66,7 @@ async def trigger_garbage_collections(interval_between_calls: int = 60) -> None:
 
 def garbage_collection_task(scheduler: BaseScheduler) -> Union[Job, None]:
     """
-    Schedule a task to perform garbage collection every dat at.
+    Schedule a task to perform garbage collection every dat at a specified time.
     """
     if SETTINGS.TASK_GARBAGE_COLLECTION_HOUR is None:
         return None

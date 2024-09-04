@@ -38,9 +38,14 @@ def validate_parameter_file(parameter_path: pathlib.Path) -> Dict[str, Any]:
     """
     Validate parameter file at the supplied path and returns the parsed dict.
 
-    Confirms:
-        parameter_path exists
-        parameter_path is a valid json file
+    Args:
+        parameter_path: Path to the parameter file.
+
+    Raises:
+        Abort: If file does not exist or is not valid JSON.
+
+    Returns:
+        Parsed dictionary from the parameter file.
     """
     data = None
     with Abort.check_expressions(
@@ -182,8 +187,12 @@ def render_template(
     """
     Render a template file and save it to the output directory.
 
-    :param str template_path: The path to the template file.
-    :param Dict[str, Any] parameters: The parameters to use for rendering the template.
+    Args:
+        template_path: The path to the template file.
+        parameters: The parameters to use for rendering the template.
+
+    Returns:
+        The rendered template as a string.
     """
 
     logger.debug("Rendering template file: {} with parameters={}", template_path, parameters)
@@ -234,14 +243,14 @@ def render_job_script_locally(
     """
     Render a new job script from an application in a local directory.
 
-    :param str job_script_name: Name of the new job script.
-    :param pathlib.Path application_path: Path to the base application.
-    :param pathlib.Path output_path: Path to the output the rendered job script.
-    :param Optional[List[str]] sbatch_params: List of sbatch parameters.
-    :param Optional[pathlib.Path] param_file: Path to a parameters file.
-    :param bool fast: Whether to use default answers (when available) instead of asking the user.
-    :param JobbergateContext jg_ctx: The Jobbergate context.
-    :return JobScriptResponse: The new job script.
+    Args:
+        jg_ctx: The Jobbergate context.
+        job_script_name: Name of the new job script.
+        application_path: Path to the base application.
+        output_path: Path to the output the rendered job script.
+        sbatch_params: List of sbatch parameters.
+        param_file: Path to a parameters file.
+        fast: Whether to use default answers (when available) instead of asking the user.
     """
     # Make static type checkers happy
     assert jg_ctx.client is not None
@@ -306,15 +315,18 @@ def render_job_script(
     """
     Render a new job script from an application.
 
-    :param str name: Name of the new job script.
-    :param Optional[int] application_id: Id of the base application.
-    :param Optional[str] application_identifier: Identifier of the base application.
-    :param Optional[str] description: Description of the new job script.
-    :param Optional[List[str]] sbatch_params: List of sbatch parameters.
-    :param Optional[pathlib.Path] param_file: Path to a parameters file.
-    :param bool fast: Whether to use default answers (when available) instead of asking the user.
-    :param JobbergateContext jg_ctx: The Jobbergate context.
-    :return JobScriptResponse: The new job script.
+    Args:
+        jg_ctx: The Jobbergate context.
+        name: Name of the new job script.
+        application_id: Id of the base application.
+        application_identifier: Identifier of the base application.
+        description: Description of the new job script.
+        sbatch_params: List of sbatch parameters.
+        param_file: Path to a parameters file.
+        fast: Whether to use default answers (when available) instead of asking the user.
+
+    Returns:
+        The new job script.
     """
     # Make static type checkers happy
     assert jg_ctx.client is not None
@@ -395,16 +407,16 @@ def upload_job_script_files(
     jg_ctx: JobbergateContext,
     job_script_id: int,
     job_script_path: pathlib.Path,
-    supporting_file_paths: Optional[List[pathlib.Path]] = None,
+    supporting_file_paths: list[pathlib.Path] | None = None,
 ):
     """
     Upload a job-script and its supporting files given their paths and the job-script id.
 
-    :param: jg_ctx:                The JobbergateContext. Needed to access the Httpx client with which to make API calls
-    :param: job_script_path:       The path to the job-script file to upload
-    :param: supporting_file_paths: The paths to any supporting files to upload with the job-scritpt
-    :param: job_script_id:         The id of the job-script for which to upload  data
-    :returns: True if the main job script upload was successful; False otherwise
+    Args:
+        jg_ctx: The ``JobbergateContext`` needed to access the Httpx client with which to make API calls
+        job_script_path: The path to the job-script file to upload
+        supporting_file_paths: The paths to any supporting files to upload with the job-scritpt
+        job_script_id: The id of the job-script for which to upload  data
     """
 
     client = JobbergateCliError.enforce_defined(jg_ctx.client)
@@ -498,17 +510,20 @@ def question_helper(question_func: Callable, text: str, default: Any, fast: bool
     """
     Helper function for asking questions to the user.
 
-    :param Callable question_func: The function to use to ask the question
-    :param str text:               The text of the question to ask
-    :param Any default:            The default value to use if the user does not provide one
-    :param bool fast:              Whether to use default answers (when available) instead of asking the user
-    :param Any actual_value:       The actual value provided by the user, if any
+    Args:
+        question_func: The function to use to ask the question
+        text: The text of the question to ask
+        default: The default value to use if the user does not provide one
+        fast: Whether to use default answers (when available) instead of asking the user
+        actual_value: The actual value provided by the user, if any
 
-    :returns: `actual_value` or `default` or the value provided by the user
+    Returns:
+        `actual_value` or `default` or the value provided by the user
 
-    The `actual_value` has the most priority and will be returned if it is not None.
-    After evaluating the `actual_value`, the fast mode will determine if the default value will be used.
-    Otherwise, the question will be prompted to the user.
+    Notes:
+        The `actual_value` has the most priority and will be returned if it is not None.
+        After evaluating the `actual_value`, the fast mode will determine if the default value will be used.
+        Otherwise, the question will be prompted to the user.
     """
     if actual_value is not None:
         return actual_value

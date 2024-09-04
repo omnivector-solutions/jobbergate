@@ -98,7 +98,7 @@ async def job_submission_get(
         secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)
     ),
 ):
-    """Return the job_submission given it's id."""
+    """Return the job_submission given its id."""
     logger.debug(f"Getting job submission {id=}")
     return await secure_services.crud.job_submission.get(id)
 

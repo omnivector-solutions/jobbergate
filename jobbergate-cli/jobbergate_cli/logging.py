@@ -14,7 +14,7 @@ def init_logs(verbose=False):
     """
     Initialize logging.
 
-    If JOBBERGATE_LOG_PATH is set in the config, add a rotatating file log handler.
+    If JOBBERGATE_LOG_PATH is set in the config, add a rotating file log handler.
     Logs will be retained for 1 week.
 
     If verbose is supplied, add a stdout handler at the DEBUG level.

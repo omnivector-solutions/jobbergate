@@ -19,7 +19,7 @@ from sqlalchemy.exc import IntegrityError
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.dependencies import SecureService, secure_services
-from jobbergate_api.apps.garbage_collector import garbage_collect
+from jobbergate_api.apps.garbage_collector import garbage_collector
 from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
 from jobbergate_api.apps.job_script_templates.models import JobScriptTemplateFile, WorkflowFile
 from jobbergate_api.apps.job_script_templates.schemas import (
@@ -419,7 +419,7 @@ async def job_script_template_garbage_collector(
     """Delete all unused files from jobbergate templates on the file storage."""
     logger.info("Starting garbage collection from jobbergate file storage")
     background_tasks.add_task(
-        garbage_collect,
+        garbage_collector,
         secure_services.session,
         secure_services.bucket,
         [JobScriptTemplateFile, WorkflowFile],

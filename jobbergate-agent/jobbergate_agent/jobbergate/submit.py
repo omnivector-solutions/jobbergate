@@ -191,8 +191,11 @@ async def submit_job_script(
     """
     Submit a Job Script to slurm via the sbatch command.
 
-    :param: pending_job_submission: A job_submission with fields needed to submit.
-    :returns: The ``slurm_job_id`` for the submitted job
+    Args:
+        pending_job_submission: A job_submission with fields needed to submit.
+
+    Returns:
+        The ``slurm_job_id`` for the submitted job
     """
     logger.debug(f"Submitting {pending_job_submission}")
 
@@ -260,8 +263,6 @@ async def submit_job_script(
 async def submit_pending_jobs() -> None:
     """
     Submit all pending jobs and update them with ``SUBMITTED`` status and slurm_job_id.
-
-    :returns: The ``slurm_job_id`` for the submitted job
     """
     logger.debug("Started submitting pending jobs...")
 
