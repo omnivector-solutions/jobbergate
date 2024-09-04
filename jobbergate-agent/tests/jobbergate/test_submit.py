@@ -710,8 +710,8 @@ async def test_submit_pending_jobs(
     test_mapper = manufacture()
 
     with tweak_settings(CACHE_DIR=tmp_path):
-        cached_submission_4 = tmp_path / "4.slurm_job_id"
-        cached_submission_4.write_text("44")
+        cached_submissions = {sub.id: tmp_path / f"{sub.id}.slurm_job_id" for sub in pending_submissions}
+        cached_submissions[4].write_text("44")
         await submit_pending_jobs()
 
     mock_submit.assert_has_calls(
@@ -732,4 +732,8 @@ async def test_submit_pending_jobs(
     )
     assert mock_mark.call_count == 3
 
-    assert cached_submission_4.exists() is False
+    assert cached_submissions[1].exists() is False
+    assert cached_submissions[2].exists() is True
+    assert cached_submissions[2].read_text() == "22"
+    assert cached_submissions[3].exists() is False
+    assert cached_submissions[4].exists() is False
