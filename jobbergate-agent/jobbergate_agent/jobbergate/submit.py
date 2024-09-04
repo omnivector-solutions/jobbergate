@@ -229,14 +229,12 @@ async def submit_job_script(
         subprocess_handler=subprocess_handler,
     )
 
-    with TemporaryDirectory(prefix=str(pending_job_submission.id), suffix=pending_job_submission.name) as tmp_dir:
-        tmp_dir_path = Path(tmp_dir)
-        async with handle_errors_async(
-            "Error processing job-script files",
-            raise_exc_class=JobSubmissionError,
-            do_except=_reject_handler,
-        ):
-            logger.debug(f"Processing submission files for job submission {pending_job_submission.id}")
+    async with handle_errors_async(
+        "Error processing job-script files", raise_exc_class=JobSubmissionError, do_except=_reject_handler
+    ):
+        logger.debug(f"Processing submission files for job submission {pending_job_submission.id}")
+        with TemporaryDirectory(prefix=f"jobbergate-submission-{pending_job_submission.id}-") as tmp_dir:
+            tmp_dir_path = Path(tmp_dir)
 
             supporting_files = await process_supporting_files(pending_job_submission, tmp_dir_path)
 
