@@ -732,8 +732,8 @@ async def test_submit_pending_jobs(
     )
     assert mock_mark.call_count == 3
 
-    assert cached_submissions[1].exists() is False
-    assert cached_submissions[2].exists() is True
+    assert not cached_submissions[1].exists()
+    assert cached_submissions[2].exists()
     assert cached_submissions[2].read_text() == "22"
-    assert cached_submissions[3].exists() is False
-    assert cached_submissions[4].exists() is False
+    assert not cached_submissions[3].exists()
+    assert not cached_submissions[4].exists()
