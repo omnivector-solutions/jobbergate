@@ -4,6 +4,7 @@ This file keeps track of all notable changes to jobbergate-agent
 
 ## Unreleased
 - Fixed issue when downloading job script files for job submission with large names
+- Cache slurm submissions to avoid the resubmission of the same job if the job status update fails [PENG-2342]
 
 ## 5.3.0a5 -- 2024-08-30
 ## 5.3.0a4 -- 2024-08-23
