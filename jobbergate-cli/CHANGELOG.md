@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-cli
 ## Unreleased
 
 
+## 5.3.0a6 -- 2024-09-05
 ## 5.3.0a5 -- 2024-08-30
 - Enhance error message when request returns 403 Forbidden [ASP-5433]
 
