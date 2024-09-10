@@ -5,19 +5,11 @@ This file keeps track of all notable changes to jobbergate-api
 ## Unreleased
 
 
-## 5.3.0a6 -- 2024-09-05
-## 5.3.0a5 -- 2024-08-30
-## 5.3.0a4 -- 2024-08-23
-## 5.3.0a3 -- 2024-08-21
+## 5.3.0 -- 2024-09-09
+
 - Fixed issue preventing the creation of a job script from an empty template file
-
-## 5.3.0a2 -- 2024-08-20
 - Enhance logging for file storage operations
-
-## 5.3.0a1 -- 2024-08-15
 - Implemented an endpoint to fetch a cluster status by its client id [[PENG-2348](https://sharing.clickup.com/t/h/c/18022949/PENG-2348/QWZFBKV72ZNL293)]
-
-## 5.3.0a0 -- 2024-08-07
 - Remove the audience setting [[PENG-2230](https://sharing.clickup.com/t/h/c/18022949/PENG-2230/O40JANAF6KCBE9R)]
 - Added `jobbergate:maintainer` role [[PENG-2323](https://app.clickup.com/t/18022949/PENG-2323)]
     - `jobbergate:maintainer` acts as previous `jobbergate:admin` role, allowing users to update/delete entities owned by others

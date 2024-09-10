@@ -5,16 +5,11 @@ This file keeps track of all notable changes to jobbergate-agent
 ## Unreleased
 
 
-## 5.3.0a6 -- 2024-09-05
+## 5.3.0 -- 2024-09-09
+
 - Fixed issue when downloading job script files for job submission with large names
 - Cache slurm submissions to avoid the resubmission of the same job if the job status update fails [PENG-2342]
 
-## 5.3.0a5 -- 2024-08-30
-## 5.3.0a4 -- 2024-08-23
-## 5.3.0a3 -- 2024-08-21
-## 5.3.0a2 -- 2024-08-20
-## 5.3.0a1 -- 2024-08-15
-## 5.3.0a0 -- 2024-08-07
 ## 5.2.0 -- 2024-07-01
 - Change pydantic.BaseSettings config to use `extra=ignore`
 - Migrated to Pydantic version 2 [PENG-2278]
