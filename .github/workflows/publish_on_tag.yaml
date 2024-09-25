@@ -4,6 +4,7 @@ name: Publish on Tag
 #   - Is triggered when a new version is tagged;
 #   - Check if the version for each sub-project matches the tag;
 #   - Build and release the packages to PyPI.
+#   - Build the agent snap and upload to the snap store.
 
 on:
   push:
@@ -70,3 +71,24 @@ jobs:
           poetry config pypi-token.pypi ${{ secrets.OMNIVECTOR_PYPI_TOKEN }}
           poetry build
           poetry publish
+
+  snapstore:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Snapcraft
+        uses: snapcore/action-build@v1
+        id: snapcraft
+        with:
+          snapcraft-args: "--destructive-mode"
+          snapcraft-channel: "8.x/stable"
+          path: "./jobbergate-agent-snap"
+
+      - name: Release to Edge
+        run: |
+          snapcraft upload --release latest/edge,latest/candidate ${{ steps.snapcraft.outputs.snap }}
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}

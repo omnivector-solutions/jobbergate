@@ -130,3 +130,21 @@ jobs:
           file: tests/coverage.xml
           disable_search: true
           fail_ci_if_error: true
+
+  agent-snap-tests:
+    name: "jobbergate-agent-snap tests"
+    runs-on: "ubuntu-22.04"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.12.3"
+          architecture: "x64"
+          cache: "pip"
+          cache-dependency-path: |
+            .github/workflows/test_on_push.yaml
+      - name: "run quality control checks"
+        working-directory: jobbergate-agent-snap
+        run: |
+          python -m pip install tox==4.20.0
+          make qa
