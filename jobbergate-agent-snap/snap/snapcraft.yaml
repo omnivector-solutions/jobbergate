@@ -74,21 +74,21 @@ apps:
     command: commands/daemon.start
     daemon: simple
     plugs:
-      - system-observe
+    - system-observe
     install-mode: disable
 
   stop:
     command: commands/daemon.stop
     daemon: simple
     plugs:
-      - system-observe
+    - system-observe
     install-mode: disable
 
   restart:
     command: commands/daemon.restart
     daemon: simple
     plugs:
-      - system-observe
+    - system-observe
     install-mode: disable
 
 hooks:
