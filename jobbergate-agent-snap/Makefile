@@ -12,7 +12,7 @@ type: ## Run the type checker
 qa: lint type ## Run all quality assurance checks
 
 .PHONY: format
-type: ## Run the formatter
+format: ## Run the formatter
 	tox -e format
 
 .PHONY: clean

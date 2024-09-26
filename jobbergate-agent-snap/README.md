@@ -3,23 +3,24 @@ The Jobbergate Agent bundled into a Snap.
 
 # Installation instructions
 
-For installing from the remote store, run:
+For installing from the Snap Store, run:
 ```bash
 sudo snap install jobbergate-agent
 ```
 
 ## Basic Usage
 
-This snap requires a few configuration values to be set before it can be used. These values are:
-- base-api-url: The URL of the Jobbergate API server where the agent will send its data. Setting/unsetting this value is more interesting when using the snap in a development environment; do not change it otherwise.
-
-- oidc-domain: The domain of the OIDC server that the agent will use for authentication. Setting/unsetting this value is more interesting when using the snap in a development environment; do not change it otherwise.
-
+This snap requires a few configuration values to be set before it can be used. The required values are:
 - oidc-client-id: The client ID of the OIDC application that the agent will use for authentication.
 
 - oidc-client-secret: The client secret of the OIDC application that the agent will use for authentication.
 
-- task-jobs-interval-seconds: The interval in seconds at which the agent will run its internal task jobs, hence sending data to the Jobbergate API server. This is optional and defaults to 30 seconds.
+The optional values are:
+- base-api-url: The URL of the Jobbergate API server where the agent will send its data. Setting/unsetting this value is more interesting when using the snap in a development environment; do not change it otherwise.
+
+- oidc-domain: The domain of the OIDC server that the agent will use for authentication. Setting/unsetting this value is more interesting when using the snap in a development environment; do not change it otherwise.
+
+- task-jobs-interval-seconds: task-jobs-interval-seconds: The interval in seconds between execution of the agent's internal tasks. This controls the frequency that data is sent to the Jobbergate API. This is optional and defaults to 30 seconds.
 
 - task-self-update-interval-seconds: The interval in seconds at which the agent will check for updates to itself. This is optional and defaults to 30 seconds.
 
@@ -31,7 +32,7 @@ This snap requires a few configuration values to be set before it can be used. T
 
 - slurm-user-mapper: The user mapper that the agent will use to map the system user name to the SLURM user name. This is optional and defaults to none.
 
-- single-user-submitter: The system user name that the agent will use to submit jobs to the SLURM cluster on behalf of in case the *single-user-submitter* is not set. This is optional and defaults to *ubuntu*.
+- single-user-submitter: The system user name that the agent will use to submit jobs to the SLURM cluster if the *slurm-user-mapper* is not set. This is optional and defaults to *ubuntu*.
 
 - write-submission-files: A boolean value (true, false) that indicates whether the agent should write submission files to disk. This is optional and defaults to false.
 
@@ -43,7 +44,7 @@ sudo snap set jobbergate-agent oidc-client-secret=boo
 
 # Development
 
-For development purposes, you can build the `jobbergate-agent` part prior of packing the snap. To do that, run:
+For development purposes, you can build the `jobbergate-agent` part prior to packing the snap. To do that, run:
 ```bash
 snapcraft prime -v
 ```

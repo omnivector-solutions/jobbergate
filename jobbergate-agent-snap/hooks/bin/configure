@@ -28,6 +28,11 @@ AGENT_VARIABLES_MAP: dict[str, Union[str, int]] = {
 }
 
 
+def run_bash(bash_string: str) -> str:
+    """Run bash command and return output as string."""
+    return subprocess.check_output(bash_string.split()).decode().rstrip()
+
+
 def daemon_starter():
     """Start the daemon."""
     try:
@@ -56,11 +61,6 @@ def snapctl_get(snap_config_value: str) -> Union[str, None]:
         snapctl_out = None
 
     return snapctl_out
-
-
-def run_bash(bash_string: str) -> str:
-    """Run bash command and return output as string."""
-    return subprocess.check_output(bash_string.split()).decode().rstrip()
 
 
 def configure_dotenv_files():
