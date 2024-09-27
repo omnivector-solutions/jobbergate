@@ -1096,14 +1096,9 @@ class. The question types include:</p>
 <li>File: prompt the user for a file path</li>
 <li>Checkbox: prompt the user to select as many items from a list as they want</li>
 <li>Confirm: prompt the user to offer a boolean response</li>
-<li>BooleanList: prompt a series of boolean responses</li>
+<li>BooleanList: Prompt the user for a boolean input, then present a preset list of questions based on their initial response</li>
 <li>Const: set the variable to the default value without even asking the user</li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The BooleanList question has some very complex logic. The source code should be
-examined to understand what this does in detail.</p>
-</div>
 <p>All of the implementation of the question classes (including the base class) can be found
 in <a href="https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-cli/jobbergate_cli/subapps/applications/questions.py">the questions module</a>
 of the Jobbergate source code.</p>

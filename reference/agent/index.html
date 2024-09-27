@@ -3245,8 +3245,60 @@ Reject the submission if there are support files with WRITE_SUBMISSION_FILES set
   <div class="doc doc-contents ">
   
       <p>Submit a Job Script to slurm via the sbatch command.</p>
-<p>:param: pending_job_submission: A job_submission with fields needed to submit.
-:returns: The <code>slurm_job_id</code> for the submitted job</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>pending_job_submission</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_agent.jobbergate.schemas.PendingJobSubmission" href="#jobbergate_agent.jobbergate.schemas.PendingJobSubmission">PendingJobSubmission</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A job_submission with fields needed to submit.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code>int</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The <code>slurm_job_id</code> for the submitted job</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -3273,7 +3325,6 @@ Reject the submission if there are support files with WRITE_SUBMISSION_FILES set
   <div class="doc doc-contents ">
   
       <p>Submit all pending jobs and update them with <code>SUBMITTED</code> status and slurm_job_id.</p>
-<p>:returns: The <code>slurm_job_id</code> for the submitted job</p>
 
   </div>
 
@@ -3622,7 +3673,7 @@ Reject the submission if there are support files with WRITE_SUBMISSION_FILES set
 
   <div class="doc doc-contents ">
   
-      <p>Schedule a task to perform garbage collection every dat at.</p>
+      <p>Schedule a task to perform garbage collection every dat at a specified time.</p>
 
   </div>
 
@@ -3970,35 +4021,153 @@ Reject the submission if there are support files with WRITE_SUBMISSION_FILES set
   <div class="doc doc-contents ">
   
       <p>Async context manager that will intercept exceptions and repackage them with a message attached.</p>
-<p>Example:</p>
-<p>.. code-block:: python</p>
-<p>with handle_errors("It didn't work"):
-       some_code_that_might_raise_an_exception()</p>
-<p>:param: message:           The message to attach to the raised exception.
-:param: raise_exc_class:   The exception type to raise with the constructed message
-                           if an exception is caught in the managed context.</p>
-<div class="language-text highlight"><pre><span></span><code>                       Defaults to Exception.
 
-                       If ``None`` is passed, no new exception will be raised and only the
-                       ``do_except``, ``do_else``, and ``do_finally``
-                       functions will be called.
-</code></pre></div>
-<p>:param: raise_args:        Additional positional args (after the constructed message) that will
-                           passed when raising an instance of the <code>raise_exc_class</code>.
-:param: raise_kwargs:      Keyword args that will be passed when raising an instance of the
-                           <code>raise_exc_class</code>.
-:param: handle_exc_class:  Limits the class of exceptions that will be intercepted
-                           Any other exception types will not be caught and re-packaged.
-                           Defaults to Exception (will handle all exceptions). May also be
-                           provided as a tuple of multiple exception types to handle.
-:param: do_finally:        A function that should always be called at the end of the block.
-                           Should take no parameters.
-:param: do_except:         A function that should be called only if there was an exception.
-                           Must accept one parameter that is an instance of the
-                           <code>DoExceptParams</code> dataclass. Note that the <code>do_except</code>
-                           method is passed the <em>original exception</em>.
-:param: do_else:           A function that should be called only if there were no
-                           exceptions encountered.</p>
+<details class="example" open>
+  <summary>Example</summary>
+  <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">with</span> <span class="n">handle_errors</span><span class="p">(</span><span class="s2">&quot;It didn&#39;t work&quot;</span><span class="p">):</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">some_code_that_might_raise_an_exception</span><span class="p">()</span>
+</span></code></pre></div>
+</details>
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>message</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The message to attach to the raised exception.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>raise_exc_class</code></td>
+          <td>
+                <code><span title="typing.Union">Union</span>[<span title="typing.Type">Type</span>[Exception], None]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The exception type to raise with the constructed message
+if an exception is caught in the managed context.</p>
+<p>Defaults to Exception.</p>
+<p>If <code>None</code> is passed, no new exception will be raised and only the
+<code>do_except</code>, <code>do_else</code>, and <code>do_finally</code>
+functions will be called.</p>
+            </div>
+          </td>
+          <td>
+                <code>Exception</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>raise_args</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[<span title="typing.Iterable">Iterable</span>[<span title="typing.Any">Any</span>]]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Additional positional args (after the constructed message) that will
+be passed when raising an instance of the <code>raise_exc_class</code>.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>raise_kwargs</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[<span title="typing.Mapping">Mapping</span>[str, <span title="typing.Any">Any</span>]]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Keyword args that will be passed when raising an instance of the <code>raise_exc_class</code>.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>handle_exc_class</code></td>
+          <td>
+                <code><span title="typing.Union">Union</span>[<span title="typing.Type">Type</span>[Exception], <span title="typing.Tuple">Tuple</span>[<span title="typing.Type">Type</span>[Exception], ...]]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Limits the class of exceptions that will be intercepted.
+Any other exception types will not be caught and re-packaged.
+Defaults to Exception (will handle all exceptions). May also be
+provided as a tuple of multiple exception types to handle.</p>
+            </div>
+          </td>
+          <td>
+                <code>Exception</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>do_finally</code></td>
+          <td>
+                <code><span title="typing.Callable">Callable</span>[[], None] | <span title="typing.Callable">Callable</span>[[], <span title="typing.Coroutine">Coroutine</span>[<span title="typing.Any">Any</span>, <span title="typing.Any">Any</span>, None]]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A function that should always be called at the end of the block. Should take no parameters.</p>
+            </div>
+          </td>
+          <td>
+                <code><span title="buzz.tools.noop">noop</span></code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>do_except</code></td>
+          <td>
+                <code><span title="typing.Callable">Callable</span>[[<span title="buzz.tools.DoExceptParams">DoExceptParams</span>], None] | <span title="typing.Callable">Callable</span>[[<span title="buzz.tools.DoExceptParams">DoExceptParams</span>], <span title="typing.Coroutine">Coroutine</span>[<span title="typing.Any">Any</span>, <span title="typing.Any">Any</span>, None]]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A function that should be called only if there was an exception.
+Must accept one parameter that is an instance of the
+<code>DoExceptParams</code> dataclass. Note that the <code>do_except</code>
+method is passed the <em>original exception</em>.</p>
+            </div>
+          </td>
+          <td>
+                <code><span title="buzz.tools.noop">noop</span></code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>do_else</code></td>
+          <td>
+                <code><span title="typing.Callable">Callable</span>[[], None] | <span title="typing.Callable">Callable</span>[[], <span title="typing.Coroutine">Coroutine</span>[<span title="typing.Any">Any</span>, <span title="typing.Any">Any</span>, None]]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A function that should be called only if there were no
+exceptions encountered.</p>
+            </div>
+          </td>
+          <td>
+                <code><span title="buzz.tools.noop">noop</span></code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -4057,8 +4226,37 @@ Reject the submission if there are support files with WRITE_SUBMISSION_FILES set
   
       <p>Provide a utility function to log a Buzz-based exception and the stack-trace of
 the error's context.</p>
-<p>:param: params: A DoExceptParams instance containing the original exception, a
-                message describing it, and the stack trace of the error.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>params</code></td>
+          <td>
+                <code><span title="buzz.DoExceptParams">DoExceptParams</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A DoExceptParams instance containing the original exception, a
+message describing it, and the stack trace of the error.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 

@@ -1125,8 +1125,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#jobbergate_api.apps.garbage_collector.garbage_collect" class="md-nav__link">
-    garbage_collect()
+  <a href="#jobbergate_api.apps.garbage_collector.garbage_collector" class="md-nav__link">
+    garbage_collector()
   </a>
   
 </li>
@@ -2263,8 +2263,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#jobbergate_api.apps.garbage_collector.garbage_collect" class="md-nav__link">
-    garbage_collect()
+  <a href="#jobbergate_api.apps.garbage_collector.garbage_collector" class="md-nav__link">
+    garbage_collector()
   </a>
   
 </li>
@@ -4016,8 +4016,60 @@
   <div class="doc doc-contents ">
   
       <p>Check if a given jinja2 template is valid by creating a Template object and trying to render it.</p>
-<p>:param str template: Jinja2 template.
-:return bool: Boolean indicating if the template is valid or not.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>template</code></td>
+          <td>
+                <code><span title="typing.Union">Union</span>[str, bytes]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Jinja2 template.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Boolean indicating if the template is valid or not.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -4040,8 +4092,60 @@
   <div class="doc doc-contents ">
   
       <p>Check if a given Python source code is valid by parsing it into an AST node.</p>
-<p>:param Union[str, bytes] source_code: Python source code.
-:return bool: Boolean indicating if the source code is valid or not.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>source_code</code></td>
+          <td>
+                <code><span title="typing.Union">Union</span>[str, bytes]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Python source code.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Boolean indicating if the source code is valid or not.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -4064,8 +4168,60 @@
   <div class="doc doc-contents ">
   
       <p>Check if a given YAML file is valid by parsing it with yaml.safe_load.</p>
-<p>:param Union[str, bytes] yaml_file: YAML file.
-:return bool: Boolean indicating if the file is valid or not.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>yaml_file</code></td>
+          <td>
+                <code><span title="typing.Union">Union</span>[str, bytes]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>YAML file.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Boolean indicating if the file is valid or not.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -4091,7 +4247,6 @@
 <p>It creates a new entry on <code>validation_dispatch</code>, mapping the equation to
 the file extensions that are provided as arguments.</p>
 <p>Raise ValueError if the provided file extensions do not start with a dot.</p>
-<p>:return ValidationEquation: The decorated function.</p>
 
   </div>
 
@@ -4164,8 +4319,8 @@ the file extensions that are provided as arguments.</p>
 
 
 
-<h6 id="jobbergate_api.apps.garbage_collector.garbage_collect" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">garbage_collect</span>
+<h6 id="jobbergate_api.apps.garbage_collector.garbage_collector" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">garbage_collector</span>
 
   
   <span class="doc doc-labels">
@@ -4173,7 +4328,7 @@ the file extensions that are provided as arguments.</p>
   </span>
 
 </h6>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">garbage_collect</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">list_of_tables</span><span class="p">,</span> <span class="n">background_tasks</span><span class="p">:</span> <span class="n">BackgroundTasks</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">garbage_collector</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">list_of_tables</span><span class="p">,</span> <span class="n">background_tasks</span><span class="p">:</span> <span class="n">BackgroundTasks</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -7867,7 +8022,7 @@ helper functions in the class.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Return the job_submission given it's id.</p>
+      <p>Return the job_submission given its id.</p>
 
   </div>
 
@@ -10752,7 +10907,7 @@ information, see this discussion: https://github.com/python/typing/issues/213</p
             Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.services.DatabaseBoundService" href="#jobbergate_api.apps.services.DatabaseBoundService">DatabaseBoundService</a></code>, <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.services.BucketBoundService" href="#jobbergate_api.apps.services.BucketBoundService">BucketBoundService</a></code>, <code><span title="typing.Generic">Generic</span>[<span title="jobbergate_api.apps.services.FileModel">FileModel</span>]</code></p>
 
   
-      <p>Proide a service that can perform various file management operations using a supplied ORM model type.</p>
+      <p>Provide a service that can perform various file management operations using a supplied ORM model type.</p>
 
 
   
@@ -10939,7 +11094,7 @@ information, see this discussion: https://github.com/python/typing/issues/213</p
 
   <div class="doc doc-contents ">
   
-      <p>Get a single instances by its parent id and filename (primary keys).</p>
+      <p>Get a single instance by its parent id and filename (primary keys).</p>
 <p>Requires that one and only one result is found.</p>
 
   </div>

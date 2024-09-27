@@ -3397,7 +3397,7 @@ Can load configuration from a dotenv file if supplied.</p>
   <div class="doc doc-contents ">
   
       <p>Initialize logging.</p>
-<p>If JOBBERGATE_LOG_PATH is set in the config, add a rotatating file log handler.
+<p>If JOBBERGATE_LOG_PATH is set in the config, add a rotating file log handler.
 Logs will be retained for 1 week.</p>
 <p>If verbose is supplied, add a stdout handler at the DEBUG level.</p>
 
@@ -3746,15 +3746,70 @@ to the columns of the table.</p>
 
 
 </h5>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_dict</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Data&#39;</span><span class="p">,</span> <span class="n">hidden_fields</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_dict</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Data&#39;</span><span class="p">,</span> <span class="n">hidden_fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Render a dictionary in a <code>rich</code> <code>Table</code> That shows the key and value of each item.</p>
-<p>:param: data: The dictionary to render
-:param: title: The title header to include above the <code>Table</code> output
-:param: hidden_fields: Keys that should be hidden in the <code>Table</code> output</p>
+      <p>Render a dictionary in a <code>rich</code> <code>Table</code> that shows the key and value of each item.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>data</code></td>
+          <td>
+                <code>dict[str, <span title="typing.Any">Any</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The dictionary to render.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>title</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The title header to include above the <code>Table</code> output.</p>
+            </div>
+          </td>
+          <td>
+                <code>&#39;Data&#39;</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>hidden_fields</code></td>
+          <td>
+                <code>list[str] | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Keys that should be hidden in the <code>Table</code> output.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -3793,17 +3848,98 @@ to the columns of the table.</p>
 
 
 </h5>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_list_results</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">envelope</span><span class="p">:</span> <span class="n">ListResponseEnvelope</span><span class="p">,</span> <span class="n">style_mapper</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">StyleMapper</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">hidden_fields</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Results List&#39;</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_list_results</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">envelope</span><span class="p">:</span> <span class="n">ListResponseEnvelope</span><span class="p">,</span> <span class="n">style_mapper</span><span class="p">:</span> <span class="n">StyleMapper</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">hidden_fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Results List&#39;</span><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Render a list of result data items in a <code>rich</code> <code>Table</code>.</p>
-<p>:param: ctx:           The JobbergateContext. This is needed to detect if <code>full</code> or <code>raw</code> output is needed
-:param: envelope:      A ListResponseEnvelope containing the data items
-:param: style_mapper:  The style mapper that should be used to apply styles to the columns of the table
-:param: hidden_fields: Columns that should (if not using <code>full</code> mode) be hidden in the <code>Table</code> output
-:param: title:         The title header to include above the <code>Table</code> output</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>ctx</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateContext" href="#jobbergate_cli.schemas.JobbergateContext">JobbergateContext</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The JobbergateContext. This is needed to detect if <code>full</code> or <code>raw</code> output is needed.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>envelope</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.ListResponseEnvelope" href="#jobbergate_cli.schemas.ListResponseEnvelope">ListResponseEnvelope</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A ListResponseEnvelope containing the data items.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>style_mapper</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.render.StyleMapper" href="#jobbergate_cli.render.StyleMapper">StyleMapper</a> | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The style mapper that should be used to apply styles to the columns of the table.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>hidden_fields</code></td>
+          <td>
+                <code>list[str] | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Columns that should (if not using <code>full</code> mode) be hidden in the <code>Table</code> output.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>title</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The title header to include above the <code>Table</code> output.</p>
+            </div>
+          </td>
+          <td>
+                <code>&#39;Results List&#39;</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -3820,17 +3956,98 @@ to the columns of the table.</p>
 
 
 </h5>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_single_result</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">BaseModel</span><span class="p">],</span> <span class="n">hidden_fields</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Result&#39;</span><span class="p">,</span> <span class="n">value_mappers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_single_result</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">hidden_fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Result&#39;</span><span class="p">,</span> <span class="n">value_mappers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Render a single data item in a <code>rich</code> ``Table.</p>
-<p>:param: ctx:           The JobbergateContext. This is needed to detect if <code>full` or</code>raw<code>output is needed
-:param: result:        The data item to display. May be a dict or a pydantic model.
-:param: hidden_fields: Rows that should (if not using</code>full<code>mode) be hidden in the</code>Table<code>output
-:param: title:         The title header to include above the</code>Tale`` output
-:param: value_mappers: Mapping functions to change fields before rendering</p>
+      <p>Render a single data item in a <code>rich</code> <code>Table</code>.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>ctx</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateContext" href="#jobbergate_cli.schemas.JobbergateContext">JobbergateContext</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The JobbergateContext. This is needed to detect if <code>full</code> or <code>raw</code> output is needed.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>result</code></td>
+          <td>
+                <code>dict[str, <span title="typing.Any">Any</span>] | <span title="pydantic.BaseModel">BaseModel</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The data item to display. May be a dict or a pydantic model.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>hidden_fields</code></td>
+          <td>
+                <code>list[str] | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Rows that should (if not using <code>full</code> mode) be hidden in the <code>Table</code> output.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>title</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The title header to include above the <code>Table</code> output.</p>
+            </div>
+          </td>
+          <td>
+                <code>&#39;Result&#39;</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>value_mappers</code></td>
+          <td>
+                <code>dict[str, <span title="typing.Callable">Callable</span>[[<span title="typing.Any">Any</span>], <span title="typing.Any">Any</span>]] | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Mapping functions to change fields before rendering.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -3847,17 +4064,98 @@ to the columns of the table.</p>
 
 
 </h5>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">terminal_message</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">subject</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="n">footer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">terminal_message</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="n">footer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">indent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Print a nicely formatted message as output to the user using a <code>rich</code> <code>Panel</code>.</p>
-<p>:param: message: The message to print out
-:param: subject: An optional subject line to add in the header of the <code>Panel</code>
-:param: color:   An optional color to style the <code>subject</code> header with
-:param: footer:  An optional message to display in the footer of the <code>Panel</code>
-:param: indent:  Adds padding to the left of the message</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>message</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The message to print out.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>subject</code></td>
+          <td>
+                <code>str | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>An optional subject line to add in the header of the <code>Panel</code>.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>color</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>An optional color to style the <code>subject</code> header with. Defaults to "green".</p>
+            </div>
+          </td>
+          <td>
+                <code>&#39;green&#39;</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>footer</code></td>
+          <td>
+                <code>str | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>An optional message to display in the footer of the <code>Panel</code>.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>indent</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Adds padding to the left of the message. Defaults to True.</p>
+            </div>
+          </td>
+          <td>
+                <code>True</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -3953,23 +4251,220 @@ to the columns of the table.</p>
 
 
 </h5>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">make_request</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n">httpx</span><span class="o">.</span><span class="n">Client</span><span class="p">,</span> <span class="n">url_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">expected_status</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">expect_response</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">abort_message</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;There was an error communicating with the API&#39;</span><span class="p">,</span> <span class="n">abort_subject</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;REQUEST FAILED&#39;</span><span class="p">,</span> <span class="n">support</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">response_model_cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">ResponseModel</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">request_model</span><span class="p">:</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">BaseModel</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">save_to_file</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">request_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResponseModel</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">make_request</span><span class="p">(</span><span class="n">client</span><span class="p">:</span> <span class="n">httpx</span><span class="o">.</span><span class="n">Client</span><span class="p">,</span> <span class="n">url_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">expected_status</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">expect_response</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">abort_message</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;There was an error communicating with the API&#39;</span><span class="p">,</span> <span class="n">abort_subject</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;REQUEST FAILED&#39;</span><span class="p">,</span> <span class="n">support</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">response_model_cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">ResponseModel</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">request_model</span><span class="p">:</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">BaseModel</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">save_to_file</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">request_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResponseModel</span> <span class="o">|</span> <span class="nb">dict</span> <span class="o">|</span> <span class="nb">int</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Make a request against the Jobbergate API.</p>
-<p>:param: client:              The Httpx client to use for the request
-:param: url_path:            The path to add to the base url of the client where the request should be sent
-:param: method:              The REST method to use for the request (GET, PUT, UPDATE, POST, DELETE, etc)
-:param: expected_status:     The status code to expect on the response. If it is not received, raise an Abort
-:param: expect_response:     Indicates if response data (JSON) is expected from the API endpoint
-:param: abort_message:       The message to show the user if there is a problem and the app must be aborted
-:param: abort_subject:       The subject to use in Abort output to the user
-:param: support:             If true, add a message to the output instructing the user to seek help
-:param: response_model_cls:  If supplied, serialize the response data into this Pydantic model class
-:param: request_model:       Use a pydantic model instance as the data body for the request
-:param: request_kwargs:      Any additional keyword arguments that need to be passed on to the client</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>client</code></td>
+          <td>
+                <code><span title="httpx.Client">Client</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The Httpx client to use for the request.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>url_path</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The path to add to the base url of the client where the request should be sent.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>method</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The REST method to use for the request (GET, PUT, UPDATE, POST, DELETE, etc).</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>expected_status</code></td>
+          <td>
+                <code>int | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The status code to expect on the response. If it is not received, raise an Abort.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>expect_response</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Indicates if response data (JSON) is expected from the API endpoint.</p>
+            </div>
+          </td>
+          <td>
+                <code>True</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>abort_message</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The message to show the user if there is a problem and the app must be aborted.</p>
+            </div>
+          </td>
+          <td>
+                <code>&#39;There was an error communicating with the API&#39;</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>abort_subject</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The subject to use in Abort output to the user.</p>
+            </div>
+          </td>
+          <td>
+                <code>&#39;REQUEST FAILED&#39;</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>support</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>If true, add a message to the output instructing the user to seek help.</p>
+            </div>
+          </td>
+          <td>
+                <code>True</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>response_model_cls</code></td>
+          <td>
+                <code><span title="typing.Type">Type</span>[<span title="jobbergate_cli.requests.ResponseModel">ResponseModel</span>] | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>If supplied, serialize the response data into this Pydantic model class.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>request_model</code></td>
+          <td>
+                <code><span title="pydantic.BaseModel">BaseModel</span> | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Use a pydantic model instance as the data body for the request.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>save_to_file</code></td>
+          <td>
+                <code><span title="pathlib.Path">Path</span> | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>If supplied, save the response data to this file.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>request_kwargs</code></td>
+          <td>
+                <code><span title="typing.Any">Any</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Any additional keyword arguments to pass to the request.</p>
+            </div>
+          </td>
+          <td>
+                <code>{}</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><span title="jobbergate_cli.requests.ResponseModel">ResponseModel</span> | dict | int</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The response from the API, either as a Pydantic model, a dictionary, or an integer status code.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -5418,10 +5913,76 @@ to True.</p>
   <div class="doc doc-contents ">
   
       <p>Initialize the Checkbox question.</p>
-<p>:param: variablename:  The key in the config dictionary that this question will set
-:param: message:       The message to show the user that describes what the question is gathering
-:param whentrue:       List of questions to ask if user answers 'true' on this question
-:param whentrue:       List of questions to show if user answers 'false' on this question</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>variablename</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The key in the config dictionary that this question will set.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>message</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The message to show the user that describes what the question is gathering.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>whentrue</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>List of questions to ask if the user answers 'true' on this question.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>whenfalse</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>List of questions to show if the user answers 'false' on this question.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -5438,14 +5999,56 @@ to True.</p>
 
 
 </h8>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">ignore_child</span><span class="p">(</span><span class="n">child</span><span class="p">:</span> <span class="n">QuestionBase</span><span class="p">,</span> <span class="n">answers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">ignore_child</span><span class="p">(</span><span class="n">child</span><span class="p">:</span> <span class="n">QuestionBase</span><span class="p">,</span> <span class="n">answers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Dynamically check if a child question should be ignored based on the questions that have already been answered.</p>
-<p>:param: child:   The child question that might be ignored
-:param: answers: Answer values to previously asked questions</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>child</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.subapps.applications.questions.QuestionBase" href="#jobbergate_cli.subapps.applications.questions.QuestionBase">QuestionBase</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The child question that might be ignored.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>answers</code></td>
+          <td>
+                <code>dict[str, <span title="typing.Any">Any</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Answer values to previously asked questions.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -5491,7 +6094,35 @@ to True.</p>
   <div class="doc doc-contents ">
   
       <p>Create <code>inquirer</code> prompts from this instance of <code>BooleanList</code> and for all its child questions.</p>
-<p>:param: override_kwargs: A collection of keyword arguments to override in the base <code>make_prompts</code> method</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>override_kwargs</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A collection of keyword arguments to override in the base <code>make_prompts</code> method.</p>
+            </div>
+          </td>
+          <td>
+                <code>{}</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -5554,9 +6185,64 @@ to True.</p>
   <div class="doc doc-contents ">
   
       <p>Initialize the Checkbox question.</p>
-<p>:param: variablename:  The key in the config dictionary that this question will set
-:param: message:       The message to show the user that describes what the question is gathering
-:param: choices:       A list of the possible values from which the Question will allow the user to select many</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>variablename</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The key in the config dictionary that this question will set.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>message</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The message to show the user that describes what the question is gathering.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>choices</code></td>
+          <td>
+                <code>list</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A list of the possible values from which the Question will allow the user to select many.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -5619,8 +6305,50 @@ to True.</p>
   <div class="doc doc-contents ">
   
       <p>Initialize the Confirm question.</p>
-<p>:param: variablename:  The key in the config dictionary that this question will set
-:param: message:       The message to show the user that describes what the question is gathering</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>variablename</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The key in the config dictionary that this question will set.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>message</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The message to show the user that describes what the question is gathering.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -5683,7 +6411,36 @@ to True.</p>
   <div class="doc doc-contents ">
   
       <p>Initialize the Const "question".</p>
-<p>:param: variablename:  The key in the config dictionary that this question will set</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>variablename</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The key in the config dictionary that this question will set.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -5736,8 +6493,37 @@ to True.</p>
             Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_cli.subapps.applications.questions.QuestionBase" href="#jobbergate_cli.subapps.applications.questions.QuestionBase">QuestionBase</a></code></p>
 
   
-      <p>Asks for a directory name. If <code>exists</code> is <code>True</code> it checks if path exists and is a directory.</p>
-<p>:param exists: Checks if given directory exists</p>
+      <p>Asks for a directory name. If <code>exists</code> is <code>True</code>, it checks if the path exists and is a directory.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>exists</code></td>
+          <td>
+                <code>bool | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Checks if the given directory exists.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
 
   
@@ -5763,15 +6549,70 @@ to True.</p>
 
 
 </h8>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__init__</span><span class="p">(</span><span class="n">variablename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">exists</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__init__</span><span class="p">(</span><span class="n">variablename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">exists</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Initialize the Directory question.</p>
-<p>:param: variablename:  The key in the config dictionary that this question will set
-:param: message:       The message to show the user that describes what the question is gathering
-:param: exists:        If True, ensure that the directory exists on the system</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>variablename</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The key in the config dictionary that this question will set.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>message</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The message to show the user that describes what the question is gathering.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>exists</code></td>
+          <td>
+                <code>bool | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>If True, ensure that the directory exists on the system.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -5828,15 +6669,70 @@ to True.</p>
 
 
 </h8>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__init__</span><span class="p">(</span><span class="n">variablename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">exists</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__init__</span><span class="p">(</span><span class="n">variablename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">exists</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Initialize the File question.</p>
-<p>:param: variablename:  The key in the config dictionary that this question will set
-:param: message:       The message to show the user that describes what the question is gathering
-:param: exists:        If True, ensure that the file path exists on the system</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>variablename</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The key in the config dictionary that this question will set.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>message</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The message to show the user that describes what the question is gathering.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>exists</code></td>
+          <td>
+                <code>bool | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>If True, ensure that the file path exists on the system.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -5893,16 +6789,84 @@ to True.</p>
 
 
 </h8>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__init__</span><span class="p">(</span><span class="n">variablename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">minval</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">maxval</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__init__</span><span class="p">(</span><span class="n">variablename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">minval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">maxval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Initialize the Integer question.</p>
-<p>:param: variablename:  The key in the config dictionary that this question will set
-:param: message:       The message to show the user that describes what the question is gathering
-:param: minval:        The minimum value the integer may be set to. If not specified, use negative infinity.
-:param: minval:        The maximum value the integer may be set to. If not specified, use infinity.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>variablename</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The key in the config dictionary that this question will set.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>message</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The message to show the user that describes what the question is gathering.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>minval</code></td>
+          <td>
+                <code>int | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The minimum value the integer may be set to. If not specified, use negative infinity.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>maxval</code></td>
+          <td>
+                <code>int | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The maximum value the integer may be set to. If not specified, use infinity.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -5965,9 +6929,64 @@ to True.</p>
   <div class="doc doc-contents ">
   
       <p>Initialize the List question.</p>
-<p>:param: variablename:  The key in the config dictionary that this question will set
-:param: message:       The message to show the user that describes what the question is gathering
-:param: choices:       A list of the possible values from which the Question will allow the user to select one</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>variablename</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The key in the config dictionary that this question will set.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>message</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The message to show the user that describes what the question is gathering.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>choices</code></td>
+          <td>
+                <code>list</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A list of the possible values from which the Question will allow the user to select one.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -6023,17 +7042,98 @@ to True.</p>
 
 
 </h8>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__init__</span><span class="p">(</span><span class="n">variablename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ignore</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">inquirer_type</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">TInquirerType</span><span class="p">]</span> <span class="o">=</span> <span class="n">inquirer</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__init__</span><span class="p">(</span><span class="n">variablename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ignore</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">inquirer_type</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">TInquirerType</span><span class="p">]</span> <span class="o">=</span> <span class="n">inquirer</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Initialize the Question.</p>
-<p>:param: variablename:  The key in the config dictionary that this question will set
-:param: message:       The message to show the user that describes what the question is gathering
-:param: ignore:        If true, do not ask the question and just use the default value instead
-:param: default:       The default value for the variablename in the answers dict
-:param: inquirer_type: The <code>inquirer</code> question type that this <code>QuestionBase</code> wraps</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>variablename</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The key in the config dictionary that this question will set.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>message</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The message to show the user that describes what the question is gathering.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>ignore</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>If true, do not ask the question and just use the default value instead.</p>
+            </div>
+          </td>
+          <td>
+                <code>False</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>default</code></td>
+          <td>
+                <code><span title="typing.Any">Any</span> | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The default value for the variablename in the answers dict.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>inquirer_type</code></td>
+          <td>
+                <code><span title="typing.Type">Type</span>[<span title="jobbergate_cli.subapps.applications.questions.TInquirerType">TInquirerType</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The <code>inquirer</code> question type that this <code>QuestionBase</code> wraps.</p>
+            </div>
+          </td>
+          <td>
+                <code><span title="inquirer.Text">Text</span></code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -6056,7 +7156,35 @@ to True.</p>
   <div class="doc doc-contents ">
   
       <p>Create <code>inquirer</code> prompts from this instance of <code>QuestionBase</code>.</p>
-<p>:param: override_kwargs: A collection of keyword arguments to override in intializing the <code>inquirer</code> question</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>override_kwargs</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A collection of keyword arguments to override in initializing the <code>inquirer</code> question.</p>
+            </div>
+          </td>
+          <td>
+                <code>{}</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -6149,10 +7277,78 @@ to True.</p>
 
   
       <p>Prepare and execute a Jobbergate application gathering the answers to the questions.</p>
-<p>:param app_data: The application data, can be either an ApplicationResponse or a LocalApplication.
-:param app_source_code: The source code of the application, often coming from jobbergate.py file.
-:param supplied_params: The parameters supplied to the application, defaults to an empty dictionary.
-:param fast_mode: A flag indicating whether the application is in fast mode, defaults to False.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>app_data</code></td>
+          <td>
+                <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.ApplicationResponse" href="#jobbergate_cli.schemas.ApplicationResponse">ApplicationResponse</a>, <a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.LocalApplication" href="#jobbergate_cli.schemas.LocalApplication">LocalApplication</a>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The application data, can be either an ApplicationResponse or a LocalApplication.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>app_source_code</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The source code of the application, often coming from jobbergate.py file.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>supplied_params</code></td>
+          <td>
+                <code><span title="typing.Dict">Dict</span>[str, <span title="typing.Any">Any</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The parameters supplied to the application, defaults to an empty dictionary.</p>
+            </div>
+          </td>
+          <td>
+                <code><span title="dataclasses.field">field</span>(default_factory=dict)</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>fast_mode</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A flag indicating whether the application is in fast mode, defaults to False.</p>
+            </div>
+          </td>
+          <td>
+                <code>False</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
 
   
@@ -6236,11 +7432,89 @@ to True.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Retrieve an application from the API by <code>id</code> or <code>identifier</code>.</p>
-<p>:param: jg_ctx:     The JobbergateContext. Needed to access the Httpx client with which to make API calls
-:param: id:         The id of the application to fetch
-:param: identifier: If supplied, look for an application instance with the provided identifier
-:returns: An instance of ApplicationResponse containing the application data</p>
+      <p>Retrieve an application from the API by id or identifier.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>jg_ctx</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateContext" href="#jobbergate_cli.schemas.JobbergateContext">JobbergateContext</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The JobbergateContext. Needed to access the Httpx client with which to make API calls.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>id</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The id of the application to fetch.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>identifier</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>If supplied, look for an application instance with the provided identifier.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.ApplicationResponse" href="#jobbergate_cli.schemas.ApplicationResponse">ApplicationResponse</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>An instance of ApplicationResponse containing the application data.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -6263,8 +7537,60 @@ to True.</p>
   <div class="doc doc-contents ">
   
       <p>Retrieve an application from a local directory.</p>
-<p>:param: application_path: The directory containing the application files
-:returns: A LocalApplication instance containing the application data</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>application_path</code></td>
+          <td>
+                <code><span title="pathlib.Path">Path</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The directory containing the application files.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.LocalApplication" href="#jobbergate_cli.schemas.LocalApplication">LocalApplication</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A LocalApplication instance containing the application data.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -6286,9 +7612,39 @@ to True.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Context manager to build the <code>files</code> parameter.</p>
-<p>Open the supplied file(s) and build a <code>files</code> param appropriate for using
+      <p>Context manager to build the files parameter.</p>
+<p>Open the supplied file(s) and build a files param appropriate for using
 multi-part file uploads with the client.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>application_path</code></td>
+          <td>
+                <code><span title="pathlib.Path">Path</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The directory where the application files are located.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -6311,8 +7667,60 @@ multi-part file uploads with the client.</p>
   <div class="doc doc-contents ">
   
       <p>Load the JobbergateApplicationConfig from a text string containing the config as YAML.</p>
-<p>:param: config_source: The YAML containing the config
-:returns: A JobbergateApplicationConfig instance with the config values</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>config_source</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The YAML containing the config</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateApplicationConfig" href="#jobbergate_cli.schemas.JobbergateApplicationConfig">JobbergateApplicationConfig</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A JobbergateApplicationConfig instance with the config values</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -6339,8 +7747,74 @@ multi-part file uploads with the client.</p>
 are now stored in different tables in the backend. This function reconstructs
 them from app_data.workflow_file.runtime_config and app_data.template_vars
 for backward compatibility.</p>
-<p>:param: app_data: A dictionary containing the application data
-:returns: A tuple containing the application config and the application module</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>app_data</code></td>
+          <td>
+                <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.ApplicationResponse" href="#jobbergate_cli.schemas.ApplicationResponse">ApplicationResponse</a>, <a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.LocalApplication" href="#jobbergate_cli.schemas.LocalApplication">LocalApplication</a>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A dictionary containing the application data.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>application_source_file</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The source file of the application.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><span title="typing.Tuple">Tuple</span>[<a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateApplicationConfig" href="#jobbergate_cli.schemas.JobbergateApplicationConfig">JobbergateApplicationConfig</a>, <a class="autorefs autorefs-internal" title="jobbergate_cli.subapps.applications.application_base.JobbergateApplicationBase" href="#jobbergate_cli.subapps.applications.application_base.JobbergateApplicationBase">JobbergateApplicationBase</a>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A tuple containing the application config and the application module.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -6365,8 +7839,50 @@ for backward compatibility.</p>
       <p>Load the JobbergateApplication class from a text string containing the source file.</p>
 <p>Creates the module in a temporary file and imports it with importlib.</p>
 <p>Adapted from: https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly</p>
-<p>:param: app_source: The JobbergateApplication source code to load
-:param: app_config: The JobbergateApplicationConfig needed to instantiate the JobbergateApplication</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>app_source</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The JobbergateApplication source code to load</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>app_config</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateApplicationConfig" href="#jobbergate_cli.schemas.JobbergateApplicationConfig">JobbergateApplicationConfig</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The JobbergateApplicationConfig needed to instantiate the JobbergateApplication</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -6433,11 +7949,78 @@ for backward compatibility.</p>
   <div class="doc doc-contents ">
   
       <p>Upload an application given an application path and the application id.</p>
-<p>:param: jg_ctx:                 The JobbergateContext. Needed to access the Httpx client with which to
-make API calls
-:param: application_path:       The directory where the application files to upload may be found
-:param: application_id:         The id of the application for which to upload  data
-:param: application_identifier: The identifier of the application for which to upload  data</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>jg_ctx</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateContext" href="#jobbergate_cli.schemas.JobbergateContext">JobbergateContext</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The JobbergateContext. Needed to access the Httpx client with which to make API calls.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>application_path</code></td>
+          <td>
+                <code><span title="pathlib.Path">Path</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The directory where the application files to upload may be found.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>application_id</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The id of the application for which to upload data.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>application_identifier</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The identifier of the application for which to upload data.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -7003,16 +8586,122 @@ make API calls
   <div class="doc doc-contents ">
   
       <p>Helper function for asking questions to the user.</p>
-<p>:param Callable question_func: The function to use to ask the question
-:param str text:               The text of the question to ask
-:param Any default:            The default value to use if the user does not provide one
-:param bool fast:              Whether to use default answers (when available) instead of asking the user
-:param Any actual_value:       The actual value provided by the user, if any</p>
-<p>:returns: <code>actual_value</code> or <code>default</code> or the value provided by the user</p>
-<p>The <code>actual_value</code> has the most priority and will be returned if it is not None.
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>question_func</code></td>
+          <td>
+                <code><span title="typing.Callable">Callable</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The function to use to ask the question</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>text</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The text of the question to ask</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>default</code></td>
+          <td>
+                <code><span title="typing.Any">Any</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The default value to use if the user does not provide one</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>fast</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Whether to use default answers (when available) instead of asking the user</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>actual_value</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[<span title="typing.Any">Any</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The actual value provided by the user, if any</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p><code>actual_value</code> or <code>default</code> or the value provided by the user</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <p>The <code>actual_value</code> has the most priority and will be returned if it is not None.
 After evaluating the <code>actual_value</code>, the fast mode will determine if the default value will be used.
 Otherwise, the question will be prompted to the user.</p>
-
+</details>
   </div>
 
 </div>
@@ -7078,15 +8767,158 @@ Otherwise, the question will be prompted to the user.</p>
   <div class="doc doc-contents ">
   
       <p>Render a new job script from an application.</p>
-<p>:param str name: Name of the new job script.
-:param Optional[int] application_id: Id of the base application.
-:param Optional[str] application_identifier: Identifier of the base application.
-:param Optional[str] description: Description of the new job script.
-:param Optional[List[str]] sbatch_params: List of sbatch parameters.
-:param Optional[pathlib.Path] param_file: Path to a parameters file.
-:param bool fast: Whether to use default answers (when available) instead of asking the user.
-:param JobbergateContext jg_ctx: The Jobbergate context.
-:return JobScriptResponse: The new job script.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>jg_ctx</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateContext" href="#jobbergate_cli.schemas.JobbergateContext">JobbergateContext</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The Jobbergate context.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>name</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Name of the new job script.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>application_id</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Id of the base application.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>application_identifier</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Identifier of the base application.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>description</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Description of the new job script.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>sbatch_params</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[<span title="typing.List">List</span>[str]]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>List of sbatch parameters.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>param_file</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[<span title="pathlib.Path">Path</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Path to a parameters file.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>fast</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Whether to use default answers (when available) instead of asking the user.</p>
+            </div>
+          </td>
+          <td>
+                <code>False</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobScriptResponse" href="#jobbergate_cli.schemas.JobScriptResponse">JobScriptResponse</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The new job script.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -7109,14 +8941,120 @@ Otherwise, the question will be prompted to the user.</p>
   <div class="doc doc-contents ">
   
       <p>Render a new job script from an application in a local directory.</p>
-<p>:param str job_script_name: Name of the new job script.
-:param pathlib.Path application_path: Path to the base application.
-:param pathlib.Path output_path: Path to the output the rendered job script.
-:param Optional[List[str]] sbatch_params: List of sbatch parameters.
-:param Optional[pathlib.Path] param_file: Path to a parameters file.
-:param bool fast: Whether to use default answers (when available) instead of asking the user.
-:param JobbergateContext jg_ctx: The Jobbergate context.
-:return JobScriptResponse: The new job script.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>jg_ctx</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateContext" href="#jobbergate_cli.schemas.JobbergateContext">JobbergateContext</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The Jobbergate context.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>job_script_name</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Name of the new job script.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>application_path</code></td>
+          <td>
+                <code><span title="pathlib.Path">Path</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Path to the base application.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>output_path</code></td>
+          <td>
+                <code><span title="pathlib.Path">Path</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Path to the output the rendered job script.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>sbatch_params</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[<span title="typing.List">List</span>[str]]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>List of sbatch parameters.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>param_file</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[<span title="pathlib.Path">Path</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Path to a parameters file.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>fast</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Whether to use default answers (when available) instead of asking the user.</p>
+            </div>
+          </td>
+          <td>
+                <code>False</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -7139,8 +9077,74 @@ Otherwise, the question will be prompted to the user.</p>
   <div class="doc doc-contents ">
   
       <p>Render a template file and save it to the output directory.</p>
-<p>:param str template_path: The path to the template file.
-:param Dict[str, Any] parameters: The parameters to use for rendering the template.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>template_path</code></td>
+          <td>
+                <code><span title="pathlib.Path">Path</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The path to the template file.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>parameters</code></td>
+          <td>
+                <code><span title="typing.Dict">Dict</span>[str, <span title="typing.Any">Any</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The parameters to use for rendering the template.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The rendered template as a string.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -7179,17 +9183,84 @@ Otherwise, the question will be prompted to the user.</p>
 
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">upload_job_script_files</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">job_script_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">job_script_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">supporting_file_paths</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">upload_job_script_files</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">job_script_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">job_script_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">supporting_file_paths</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Upload a job-script and its supporting files given their paths and the job-script id.</p>
-<p>:param: jg_ctx:                The JobbergateContext. Needed to access the Httpx client with which to make API calls
-:param: job_script_path:       The path to the job-script file to upload
-:param: supporting_file_paths: The paths to any supporting files to upload with the job-scritpt
-:param: job_script_id:         The id of the job-script for which to upload  data
-:returns: True if the main job script upload was successful; False otherwise</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>jg_ctx</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateContext" href="#jobbergate_cli.schemas.JobbergateContext">JobbergateContext</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The <code>JobbergateContext</code> needed to access the Httpx client with which to make API calls</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>job_script_path</code></td>
+          <td>
+                <code><span title="pathlib.Path">Path</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The path to the job-script file to upload</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>supporting_file_paths</code></td>
+          <td>
+                <code>list[<span title="pathlib.Path">Path</span>] | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The paths to any supporting files to upload with the job-scritpt</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>job_script_id</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The id of the job-script for which to upload  data</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
   </div>
 
@@ -7213,11 +9284,84 @@ Otherwise, the question will be prompted to the user.</p>
   
       <p>Validate parameter file at the supplied path and returns the parsed dict.</p>
 
-<details class="confirms" open>
-  <summary>Confirms</summary>
-  <p>parameter_path exists
-parameter_path is a valid json file</p>
-</details>
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>parameter_path</code></td>
+          <td>
+                <code><span title="pathlib.Path">Path</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Path to the parameter file.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Raises:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.exceptions.Abort" href="#jobbergate_cli.exceptions.Abort">Abort</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>If file does not exist or is not valid JSON.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><span title="typing.Dict">Dict</span>[str, <span title="typing.Any">Any</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Parsed dictionary from the parameter file.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
   </div>
 
 </div>
@@ -7436,19 +9580,138 @@ parameter_path is a valid json file</p>
 
   
       <p>A dataclass representing a job submission for Jobbergate.</p>
-<p>:param: jg_ctx:                    The JobbergateContext. Used to retrieve the client for requests
-                                   and the email of the submitting user
-:param: job_script_id:             The <code>id</code> of the Job Script to submit to Slurm
-:param: name:                      The name to attach to the Job Submission
-:param: description:               An optional description that may be added to the Job Submission
-:param: cluster_name:              An optional cluster_name for the cluster where the job should be executed,
-                                   If left off, it will default to the DEFAULT_CLUSTER_NAME from the settings.
-                                   If no default is set, an exception will be raised.
-:param: execution_directory:       An optional directory where the job should be executed. If provided as a
-                                   relative path, it will be constructed as an absolute path relative to
-                                   the current working directory.
-:param: download:                  A flag indicating whether the job script files should be downloaded to the.
-:param: sbatch_arguments:          An optional list of arguments to pass to inject into the job script.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>jg_ctx</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateContext" href="#jobbergate_cli.schemas.JobbergateContext">JobbergateContext</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The JobbergateContext. Used to retrieve the client for requests and the email of the submitting user.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>job_script_id</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The <code>id</code> of the Job Script to submit to Slurm.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>name</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The name to attach to the Job Submission.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>description</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[str]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>An optional description that may be added to the Job Submission.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>cluster_name</code></td>
+          <td>
+                <code>str | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>An optional cluster_name for the cluster where the job should be executed.
+If left off, it will default to the DEFAULT_CLUSTER_NAME from the settings.
+If no default is set, an exception will be raised.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>execution_directory</code></td>
+          <td>
+                <code><span title="pathlib.Path">Path</span> | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>An optional directory where the job should be executed. If provided as a
+relative path, it will be constructed as an absolute path relative to
+the current working directory.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>download</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A flag indicating whether the job script files should be downloaded to the execution directory.</p>
+            </div>
+          </td>
+          <td>
+                <code>False</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>sbatch_arguments</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[list[str]]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>An optional list of arguments to pass to inject into the job script.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
 
   
