@@ -22,7 +22,7 @@ from jobbergate_cli.subapps.job_scripts.tools import download_job_script_files
 def _map_cluster_name(
     jg_ctx: JobbergateContext,
     base_cluster_name: str,
-):
+) -> str:
     """
     Injects the organization name into the cluster name for multi-tenancy mode.
 
@@ -41,19 +41,19 @@ class JobSubmissionABC(ABC):
     """
     A dataclass representing a job submission for Jobbergate.
 
-    :param: jg_ctx:                    The JobbergateContext. Used to retrieve the client for requests
-                                       and the email of the submitting user
-    :param: job_script_id:             The ``id`` of the Job Script to submit to Slurm
-    :param: name:                      The name to attach to the Job Submission
-    :param: description:               An optional description that may be added to the Job Submission
-    :param: cluster_name:              An optional cluster_name for the cluster where the job should be executed,
-                                       If left off, it will default to the DEFAULT_CLUSTER_NAME from the settings.
-                                       If no default is set, an exception will be raised.
-    :param: execution_directory:       An optional directory where the job should be executed. If provided as a
-                                       relative path, it will be constructed as an absolute path relative to
-                                       the current working directory.
-    :param: download:                  A flag indicating whether the job script files should be downloaded to the.
-    :param: sbatch_arguments:          An optional list of arguments to pass to inject into the job script.
+    Args:
+        jg_ctx: The JobbergateContext. Used to retrieve the client for requests and the email of the submitting user.
+        job_script_id: The ``id`` of the Job Script to submit to Slurm.
+        name: The name to attach to the Job Submission.
+        description: An optional description that may be added to the Job Submission.
+        cluster_name: An optional cluster_name for the cluster where the job should be executed.
+            If left off, it will default to the DEFAULT_CLUSTER_NAME from the settings.
+            If no default is set, an exception will be raised.
+        execution_directory: An optional directory where the job should be executed. If provided as a
+            relative path, it will be constructed as an absolute path relative to
+            the current working directory.
+        download: A flag indicating whether the job script files should be downloaded to the execution directory.
+        sbatch_arguments: An optional list of arguments to pass to inject into the job script.
     """
 
     jg_ctx: JobbergateContext

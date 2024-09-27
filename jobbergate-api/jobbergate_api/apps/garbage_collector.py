@@ -47,7 +47,7 @@ async def delete_files_from_bucket(bucket, files_to_delete: set[str]) -> None:
     await asyncio.gather(*tasks)
 
 
-async def garbage_collect(session, bucket, list_of_tables, background_tasks: BackgroundTasks) -> None:
+async def garbage_collector(session, bucket, list_of_tables, background_tasks: BackgroundTasks) -> None:
     """Delete unused files from jobbergate's file storage."""
     for table in list_of_tables:
         files_to_delete = await get_files_to_delete(session, table, bucket)

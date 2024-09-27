@@ -382,7 +382,7 @@ directory named `/nfs`. The `/nfs` directory in the container is mounted from th
 `slurm-fake-nfs` directory in the `jobbergate-composed` subproject. You can look in this
 directory after the job completes execution to check the results.
 
-You will need to verify that jobs are being submitted correctly vai the following steps:
+You will need to verify that jobs are being submitted correctly via the following steps:
 
 - Submit the job through the CLI
 - Verify that the agent submitted the job

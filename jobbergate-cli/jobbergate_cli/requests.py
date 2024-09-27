@@ -5,7 +5,7 @@ Provide utilities for making requests against the Jobbergate API.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Type, TypeVar, Union
+from typing import Any, Type, TypeVar
 
 import httpx
 import pydantic
@@ -133,21 +133,26 @@ def make_request(
     request_model: pydantic.BaseModel | None = None,
     save_to_file: Path | None = None,
     **request_kwargs: Any,
-) -> Union[ResponseModel, dict, int]:
+) -> ResponseModel | dict | int:
     """
     Make a request against the Jobbergate API.
 
-    :param: client:              The Httpx client to use for the request
-    :param: url_path:            The path to add to the base url of the client where the request should be sent
-    :param: method:              The REST method to use for the request (GET, PUT, UPDATE, POST, DELETE, etc)
-    :param: expected_status:     The status code to expect on the response. If it is not received, raise an Abort
-    :param: expect_response:     Indicates if response data (JSON) is expected from the API endpoint
-    :param: abort_message:       The message to show the user if there is a problem and the app must be aborted
-    :param: abort_subject:       The subject to use in Abort output to the user
-    :param: support:             If true, add a message to the output instructing the user to seek help
-    :param: response_model_cls:  If supplied, serialize the response data into this Pydantic model class
-    :param: request_model:       Use a pydantic model instance as the data body for the request
-    :param: request_kwargs:      Any additional keyword arguments that need to be passed on to the client
+    Args:
+        client: The Httpx client to use for the request.
+        url_path: The path to add to the base url of the client where the request should be sent.
+        method: The REST method to use for the request (GET, PUT, UPDATE, POST, DELETE, etc).
+        expected_status: The status code to expect on the response. If it is not received, raise an Abort.
+        expect_response: Indicates if response data (JSON) is expected from the API endpoint.
+        abort_message: The message to show the user if there is a problem and the app must be aborted.
+        abort_subject: The subject to use in Abort output to the user.
+        support: If true, add a message to the output instructing the user to seek help.
+        response_model_cls: If supplied, serialize the response data into this Pydantic model class.
+        request_model: Use a pydantic model instance as the data body for the request.
+        save_to_file: If supplied, save the response data to this file.
+        request_kwargs: Any additional keyword arguments to pass to the request.
+
+    Returns:
+        The response from the API, either as a Pydantic model, a dictionary, or an integer status code.
     """
 
     if request_model is not None:

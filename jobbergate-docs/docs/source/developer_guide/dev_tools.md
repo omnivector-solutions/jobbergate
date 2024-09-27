@@ -53,7 +53,7 @@ poetry run dev-tools db --help
 
 This command allows you to log in to the database that your Jobbergate API is configured
 to connect with. It allows you to login to databases, regardless of whether they are
-locally hosted via Docker or situated on a remote PostgreSQL server. this ensures
+locally hosted via Docker or situated on a remote PostgreSQL server. This ensures
 seamless access to any database that the Jobbergate API is configured to connect with.
 
 To log in to the database, execute this command:

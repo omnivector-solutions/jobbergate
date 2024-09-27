@@ -40,7 +40,7 @@ class TokenData(TypedDict, total=False):
 @dataclass(frozen=True)
 class Token:
     """
-    Low-level class used to handling tokens.
+    Low-level class used to handle tokens.
 
     Arguments:
         cache_directory: The directory used for cache.

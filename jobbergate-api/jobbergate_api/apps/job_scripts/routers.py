@@ -11,7 +11,7 @@ from loguru import logger
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.dependencies import SecureService, secure_services
-from jobbergate_api.apps.garbage_collector import garbage_collect
+from jobbergate_api.apps.garbage_collector import garbage_collector
 from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate
 from jobbergate_api.apps.job_script_templates.tools import coerce_id_or_identifier
 from jobbergate_api.apps.job_scripts.models import JobScriptFile
@@ -390,7 +390,7 @@ def job_script_garbage_collector(
     """Delete all unused files from job scripts on the file storage."""
     logger.info("Starting garbage collection from jobbergate file storage")
     background_tasks.add_task(
-        garbage_collect,
+        garbage_collector,
         secure_services.session,
         secure_services.bucket,
         [JobScriptFile],
