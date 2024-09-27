@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+
+snapctl stop $SNAP_NAME.daemon
+exit 0

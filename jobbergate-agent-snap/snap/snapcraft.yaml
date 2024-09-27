@@ -57,12 +57,38 @@ parts:
       craftctl default
       craftctl set version="$(craftctl get version)-$(git rev-parse --short HEAD)"
 
+  wrappers:
+    plugin: dump
+    source: wrappers/
+    source-type: local
+
 apps:
   daemon:
     command: bin/jg-run
     daemon: simple
     plugs:
     - network
+    install-mode: disable
+
+  start:
+    command: commands/daemon.start
+    daemon: simple
+    plugs:
+      - system-observe
+    install-mode: disable
+
+  stop:
+    command: commands/daemon.stop
+    daemon: simple
+    plugs:
+      - system-observe
+    install-mode: disable
+
+  restart:
+    command: commands/daemon.restart
+    daemon: simple
+    plugs:
+      - system-observe
     install-mode: disable
 
 hooks:
