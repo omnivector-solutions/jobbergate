@@ -3,8 +3,6 @@ import subprocess
 import sys
 from importlib.metadata import version
 
-from apscheduler.job import Job
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
@@ -12,6 +10,10 @@ from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_ap
 # flake8 doesn't understand the scheduler is used in the self_update_agent function
 from jobbergate_agent.utils.scheduler import schedule_tasks, scheduler  # noqa: F401
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from apscheduler.job import Job
 
 package_name = "jobbergate_agent"
 
@@ -76,7 +78,6 @@ async def self_update_agent() -> None:
 
     In case the agent is updated, the scheduler is shutdown and restarted with the new version.
     """
-    global scheduler
 
     current_version = version(package_name)
     upstream_version = await _fetch_upstream_version_info()
@@ -87,8 +88,8 @@ async def self_update_agent() -> None:
     if _need_update(current_version, upstream_version):
         logger.warning("The Jobbergate Agent is outdated in relation to the upstream version; an update is required.")
 
-        logger.debug("Shutting down the scheduler...")
-        scheduler.shutdown(wait=False)
+        logger.debug("Pausing the scheduler...")
+        scheduler.pause()
 
         logger.debug("Clearing the scheduler jobs...")
         scheduler_jobs: list[Job] = scheduler.get_jobs()
@@ -100,12 +101,10 @@ async def self_update_agent() -> None:
         logger.debug("Update completed successfully.")
 
         logger.debug(f"Loading plugins from version {upstream_version}...")
-        new_scheduler = AsyncIOScheduler()
-        schedule_tasks(new_scheduler)
-        new_scheduler.start()
+        schedule_tasks(scheduler)
+        scheduler.resume()
         logger.debug("Plugins loaded successfully.")
 
-        logger.info("Replacing the scheduler with the new version...")
-        scheduler = new_scheduler
+        logger.info("Resuming the scheduler")
     else:
         logger.debug("No update is required or update crosses a major version divide.")

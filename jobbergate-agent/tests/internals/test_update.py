@@ -121,9 +121,7 @@ def test_update_package(mocked_sys: mock.MagicMock, mocked_subprocess: mock.Magi
 @mock.patch("jobbergate_agent.internals.update._need_update")
 @mock.patch("jobbergate_agent.internals.update.scheduler")
 @mock.patch("jobbergate_agent.internals.update.schedule_tasks")
-@mock.patch("jobbergate_agent.internals.update.AsyncIOScheduler")
 async def test_self_update_agent(
-    mocked_asyncio_scheduler: mock.MagicMock,
     mocked_schedule_tasks: mock.MagicMock,
     mocked_scheduler: mock.MagicMock,
     mocked_need_update: mock.MagicMock,
@@ -142,12 +140,8 @@ async def test_self_update_agent(
     mocked_version.return_value = current_version
     mocked_fetch_upstream_version_info.return_value = upstream_version
     mocked_need_update.return_value = is_update_available
-    mocked_scheduler.shutdown = mock.Mock()
-
-    mocked_new_scheduler = mock.Mock()
-    mocked_asyncio_scheduler.return_value = mocked_new_scheduler
-    mocked_new_scheduler.shutdown = mock.Mock()
-    mocked_new_scheduler.start = mock.Mock()
+    mocked_scheduler.pause = mock.Mock()
+    mocked_scheduler.resume = mock.Mock()
 
     await self_update_agent()
 
@@ -155,19 +149,13 @@ async def test_self_update_agent(
     mocked_fetch_upstream_version_info.assert_called_once_with()
     mocked_need_update.assert_called_once_with(current_version, upstream_version)
     if is_update_available:
-        mocked_scheduler.shutdown.assert_called_once_with(wait=False)
+        mocked_scheduler.pause.assert_called_once_with()
         mocked_update_package.assert_called_once_with(upstream_version)
-        mocked_schedule_tasks.assert_called_once_with(mocked_new_scheduler)
-        mocked_asyncio_scheduler.assert_called_once_with()
-        mocked_new_scheduler.start.assert_called_once_with()
+        mocked_schedule_tasks.assert_called_once_with(mocked_scheduler)
+        mocked_scheduler.resume.assert_called_once_with()
 
-        # this asserts that the scheduler is updated *in memory* with the new version
-        from jobbergate_agent.internals.update import scheduler
-
-        assert scheduler is mocked_new_scheduler
     else:
-        mocked_scheduler.shutdown.assert_not_called()
+        mocked_scheduler.pause.assert_not_called()
         mocked_update_package.assert_not_called()
         mocked_schedule_tasks.assert_not_called()
-        mocked_asyncio_scheduler.assert_not_called()
-        mocked_new_scheduler.start.assert_not_called()
+        mocked_scheduler.resume.assert_not_called()
