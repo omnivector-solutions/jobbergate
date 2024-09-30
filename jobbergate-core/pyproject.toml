@@ -36,7 +36,7 @@ pytest-mock = "^3.6.0"
 pytest-random-order = "^1.0.4"
 requests-mock = "^1.10"
 respx = "^0.20.1"
-setuptools = "^69.0.2"
+setuptools = "^70.0.0"
 toml = "^0.10.2"
 ruff = "^0.4.9"
 
