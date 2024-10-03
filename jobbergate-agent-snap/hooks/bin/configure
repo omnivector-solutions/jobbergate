@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""Snapcraft `configure` hook for the Jobergate Agent snap."""
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+from typing import Union
+
+SNAP_COMMON_PATH = "/var/snap/jobbergate-agent/common"
+SNAP_INSTANCE_NAME = os.environ["SNAP_INSTANCE_NAME"]
+DOTENV_PREFIX = "JOBBERGATE_AGENT_"
+DOTENV_FILE_LOCATION = Path(f"{SNAP_COMMON_PATH}/.env")
+AGENT_VARIABLES_MAP: dict[str, Union[str, int]] = {
+    "BASE_API_URL": "https://apis.vantagehpc.io",
+    "OIDC_DOMAIN": "auth.vantagehpc.io/realms/vantage",
+    "OIDC_CLIENT_ID": "",
+    "OIDC_CLIENT_SECRET": "",
+    "TASK_JOBS_INTERVAL_SECONDS": 30,
+    "TASK_SELF_UPDATE_INTERVAL_SECONDS": 30,
+    "CACHE_DIR": f"{SNAP_COMMON_PATH}/.cache",
+    "SBATCH_PATH": "/usr/bin/sbatch",
+    "SCONTROL_PATH": "/usr/bin/scontrol",
+    "DEFAULT_SLURM_WORK_DIR": "/tmp",
+    "SLURM_USER_MAPPER": "",
+    "SINGLE_USER_SUBMITTER": "ubuntu",
+    "WRITE_SUBMISSION_FILES": "true",
+}
+
+
+def run_bash(bash_string: str) -> str:
+    """Run bash command and return output as string."""
+    return subprocess.check_output(bash_string.split()).decode().rstrip()
+
+
+def daemon_starter():
+    """Start the daemon."""
+    try:
+        run_bash(f"snapctl start {SNAP_INSTANCE_NAME}.daemon")
+    except Exception:
+        sys.exit(1)
+
+
+def daemon_stopper():
+    """Stop the daemon."""
+    try:
+        run_bash(f"snapctl stop {SNAP_INSTANCE_NAME}.daemon")
+    except Exception:
+        sys.exit(1)
+
+
+def snapctl_get(snap_config_value: str) -> Union[str, None]:
+    """Get snap config from snapctl.
+
+    Return python None if snapctl returns the empty string.
+    """
+    snapctl_out: Union[str, None]
+    snapctl_out = run_bash(f"snapctl get {snap_config_value}")
+
+    if snapctl_out == "":
+        snapctl_out = None
+
+    return snapctl_out
+
+
+def configure_dotenv_files():
+    """Configure the .env files based on the snap mode."""
+    env_file_content = ""
+    for env_var, env_value in AGENT_VARIABLES_MAP.items():
+        snapctl_value = snapctl_get(env_var.lower().replace("_", "-"))
+        if snapctl_value is not None:
+            env_value = snapctl_value
+        elif bool(env_value) is False:
+            continue
+        env_file_content += f"{DOTENV_PREFIX}{env_var}={env_value}\n"
+    DOTENV_FILE_LOCATION.write_text(env_file_content)
+
+
+if __name__ == "__main__":
+    daemon_stopper()
+    configure_dotenv_files()
+    daemon_starter()

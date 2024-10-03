@@ -1,0 +1,26 @@
+#!/bin/sh
+set -eu
+
+OIDC_CLIENT_ID=$(snapctl get oidc-client-id)
+OIDC_CLIENT_SECRET=$(snapctl get oidc-client-secret)
+
+# exit 1 if any of the required configuration is missing
+if [ -z "$OIDC_CLIENT_ID"]; then
+    snapctl set-health blocked "Missing the oidc-client-id configuration"
+    echo "Missing the oidc-client-id configuration"
+    exit 1
+fi
+if [ -z "$OIDC_CLIENT_SECRET" ]; then
+    snapctl set-health blocked "Missing the oidc-client-secret configuration"
+    echo "Missing the oidc-client-secret configuration"
+    exit 1
+fi
+
+STATUS=$(snap services $SNAP_NAME.daemon | awk 'FNR == 1 {next} {print $3}')
+
+# start the daemon if the STATUS is `inactive`, otherwise, just exit 0
+if [ "$STATUS" = "inactive" ]; then
+    snapctl start $SNAP_NAME.daemon
+fi
+snapctl set-health okay
+exit 0

@@ -1,0 +1,11 @@
+line-length = 110
+include = ["hooks/bin/configure"]
+extend-exclude = ["__pycache__"]
+
+[lint]
+select = ["E", "W", "F", "C", "N", "D", "I001", "I"]
+ignore = ["D213", "D211", "D203", "C408"]
+fixable = ["ALL"]
+
+[lint.mccabe]
+max-complexity = 10

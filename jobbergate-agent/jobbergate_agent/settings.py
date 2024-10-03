@@ -10,17 +10,17 @@ from typing_extensions import Self
 from jobbergate_agent.utils.logging import logger
 
 
-def _get_env_file() -> str | None:
+def _get_env_file() -> Path | None:
     """
     Determine if running in test mode and return the correct path to the .env file if not.
     """
     _test_mode = "pytest" in sys.modules
-    env_file: str | None
     if not _test_mode:
-        env_file = ".env"
-    else:
-        env_file = None
-    return env_file
+        default_dotenv_file_location = Path("/var/snap/jobbergate-agent/common/.env")
+        if default_dotenv_file_location.exists():
+            return default_dotenv_file_location
+        return Path(".env")
+    return None
 
 
 class Settings(BaseSettings):
