@@ -5,6 +5,7 @@ name: Publish on Tag
 #   - Check if the version for each sub-project matches the tag;
 #   - Build and release the packages to PyPI.
 #   - Build the agent snap and upload to the snap store.
+#   - Build the Jobbergate API Docker image and push to ECR.
 
 on:
   push:
@@ -31,6 +32,9 @@ jobs:
             ],
         }
       fail-fast: false
+    outputs:
+      agent-pypi-version: ${{ steps.extract-metadata.outputs.version }}
+      agent-pypi-package-name: ${{ steps.extract-metadata.outputs.name }}
     steps:
       - uses: actions/checkout@v3
 
@@ -56,14 +60,6 @@ jobs:
           echo "tag=${{ github.ref_name }}, version=${{ steps.poetry-package-version.outputs.version }}"
           exit 1
 
-      # - name: Build and publish on test-PyPI
-      #   working-directory: ${{ matrix.sub_project }}
-      #   run: |
-      #     poetry config repositories.test-pypi https://test.pypi.org/legacy/
-      #     poetry config pypi-token.test-pypi ${{ secrets.TEST_PYPI_TOKEN }}
-      #     poetry build
-      #     poetry publish -r test-pypi
-
       - name: Build and publish on PyPI
         working-directory: ${{ matrix.sub_project }}
         run: |
@@ -72,23 +68,127 @@ jobs:
           poetry build
           poetry publish
 
+      - name: Output metadata
+        working-directory: ${{ matrix.sub_project }}
+        if: ${{ matrix.sub_project }} == "jobbergate-agent"
+        id: extract-metadata
+        run: |
+          VERSION=$(find ./dist -name '*.tar.gz' | sed 's/.\/dist\/jobbergate_agent-\(.*\)\.tar\.gz/\1/')
+          NAME=$(poetry --no-interaction version | awk '{print $1}')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
+  publish-to-ecr:
+    name: Publish API to ECR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if ref is not a tag
+        if: github.ref_type != 'tag'
+        run: |
+          echo "Publish only supported from tag refs!"
+          echo "Got ref_type=${{ github.ref_type }} instead"
+          exit 1
+
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - uses: Gr1N/setup-poetry@v8
+        with:
+          poetry-version: 1.5.1
+
+      - id: poetry-package-version
+        name: Get version of project from poetry
+        working-directory: jobbergate-api
+        run: |
+          VERSION=$(poetry version --short)
+          echo "Sub project version is: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Fail if poetry package version doesn't match tag
+        if: ${{ github.ref_name != steps.poetry-package-version.outputs.version }}
+        run: |
+          echo "Poetry package version doesn't match tag!"
+          echo "tag=${{ github.ref_name }}, version=${{ steps.poetry-package-version.outputs.version }}"
+          exit 1
+
+      - name: Setup AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_ID }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          IMAGE_TAG=${{ github.ref_name }}
+          docker build -t $ECR_REGISTRY/${{ vars.ECR_REPOSITORY }}:$IMAGE_TAG jobbergate-api
+          docker push $ECR_REGISTRY/${{ vars.ECR_REPOSITORY }}:$IMAGE_TAG
+
   snapstore:
+    name: Release Snap to the edge channel
     runs-on: ubuntu-24.04
+    needs: [build-publish]
+    env:
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
 
     steps:
+
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Snapcraft
-        uses: snapcore/action-build@v1
-        id: snapcraft
-        with:
-          snapcraft-args: "--destructive-mode"
-          snapcraft-channel: "8.x/stable"
-          path: "./jobbergate-agent-snap"
+      - name: Install Snapcraft
+        uses: samuelmeuli/action-snapcraft@v2
+
+      - name: Install Jq
+        run: sudo snap install jq --channel latest/stable
+
+      - name: Wait latest version on PyPI
+        env:
+          DESIRED_VERSION: ${{ needs.build-publish.outputs.agent-pypi-version }}
+          PACKAGE_NAME: ${{ needs.build-publish.outputs.agent-pypi-package-name }}
+        timeout-minutes: 1
+        run: |
+          while true; do
+            echo "Checking for version $DESIRED_VERSION of $PACKAGE_NAME"
+            curl -s https://pypi.org/pypi/$PACKAGE_NAME/json | jq -r '.releases | keys[]' | grep -q $DESIRED_VERSION
+            if [ $? -eq 0 ]; then
+              echo "Version $DESIRED_VERSION is available"
+              break
+            else
+              echo "Version $DESIRED_VERSION is not available yet"
+              sleep 2
+            fi
+          done
+
+      - name: Install core24
+        run: sudo snap install core24 --channel latest/stable
+
+      - name: Build snap
+        id: build
+        working-directory: ./jobbergate-agent-snap
+        run: |
+          snapcraft --destructive-mode -v
+          SNAP_FILE_PATH=`find . -name '*.snap'`
+          echo "snap_file_path=$SNAP_FILE_PATH" >> "$GITHUB_OUTPUT"
 
       - name: Release to Edge
+        working-directory: ./jobbergate-agent-snap
         run: |
-          snapcraft upload --release latest/edge,latest/candidate ${{ steps.snapcraft.outputs.snap }}
-        env:
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+          snapcraft upload --release latest/edge,latest/candidate ${{ steps.build.outputs.snap_file_path }}
+
+      - name: Archive snap logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: upload-snap-log
+          path: /home/runner/.local/state/snapcraft/log/**
