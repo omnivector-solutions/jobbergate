@@ -16,9 +16,9 @@ format: ## Run the formatter
 	tox -e format
 
 .PHONY: build
- build: ## Build the snap
- 	@git rev-parse --short HEAD > sha/commit-sha.txt
- 	@snapcraft $(ARGS)
+build: ## Build the snap
+	@git rev-parse --short HEAD > sha/commit-sha.txt
+	@snapcraft $(ARGS)
 
 .PHONY: clean
 clean: ## Clean all files/folders created by the project
