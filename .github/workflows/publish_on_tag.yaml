@@ -70,7 +70,7 @@ jobs:
 
       - name: Output metadata
         working-directory: ${{ matrix.sub_project }}
-        if: ${{ matrix.sub_project }} == "jobbergate-agent"
+        if: matrix.sub_project == 'jobbergate-agent'
         id: extract-metadata
         run: |
           VERSION=$(find ./dist -name '*.tar.gz' | sed 's/.\/dist\/jobbergate_agent-\(.*\)\.tar\.gz/\1/')
@@ -173,11 +173,16 @@ jobs:
       - name: Install core24
         run: sudo snap install core24 --channel latest/stable
 
+      - name: Set up LXD
+        uses: canonical/setup-lxd@v0.1.1
+        with:
+          channel: 5.21/stable
+
       - name: Build snap
         id: build
         working-directory: ./jobbergate-agent-snap
         run: |
-          snapcraft --destructive-mode -v
+          make build ARGS="-v"
           SNAP_FILE_PATH=`find . -name '*.snap'`
           echo "snap_file_path=$SNAP_FILE_PATH" >> "$GITHUB_OUTPUT"
 

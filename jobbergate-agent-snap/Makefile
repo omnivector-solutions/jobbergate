@@ -15,6 +15,11 @@ qa: lint type ## Run all quality assurance checks
 format: ## Run the formatter
 	tox -e format
 
+.PHONY: build
+ build: ## Build the snap
+ 	@git rev-parse --short HEAD > sha/commit-sha.txt
+ 	@snapcraft $(ARGS)
+
 .PHONY: clean
 clean: ## Clean all files/folders created by the project
 	@find . -iname '*.pyc' -delete
@@ -24,6 +29,7 @@ clean: ## Clean all files/folders created by the project
 	@find . -iname '__pycache__' -delete
 	@find . -iname '.zip' -delete
 	@find . -type f -name "*.snap" -delete
+	@find . -iname 'commit-sha.txt' -delete
 	@rm -r .mypy_cache || true
 	@rm -r .ruff_cache || true
 	@rm -r .tox || true

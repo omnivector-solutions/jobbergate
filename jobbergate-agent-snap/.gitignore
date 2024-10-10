@@ -7,3 +7,4 @@ parts/
 prime/
 stage/
 .tox
+commit-sha.txt
