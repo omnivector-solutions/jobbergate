@@ -6,6 +6,7 @@ import io
 from contextlib import contextmanager
 from typing import Any, Generic, Protocol, TypeVar
 
+import httpx
 from botocore.response import StreamingBody
 from buzz import enforce_defined, handle_errors, require_condition
 from fastapi import HTTPException, UploadFile, status
@@ -14,6 +15,7 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 from jinja2 import Template
 from jinja2.exceptions import UndefinedError
 from loguru import logger
+from pydantic import AnyUrl
 from sqlalchemy import delete, func, not_, select, update
 from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -518,7 +520,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         self,
         parent_id: int,
         filename: str,
-        upload_content: str | bytes | UploadFile | None,
+        upload_content: str | bytes | AnyUrl | UploadFile | None,
         previous_filename: str | None = None,
         **upsert_kwargs,
     ) -> FileModel:
@@ -551,7 +553,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         )
 
     async def upload_file_content(
-        self, instance: FileModel, upload_content: str | bytes | UploadFile
+        self, instance: FileModel, upload_content: str | bytes | AnyUrl | UploadFile
     ) -> None:
         """
         Upload the content of a file to s3.
@@ -561,6 +563,10 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             size = file_obj.getbuffer().nbytes
         elif isinstance(upload_content, bytes):
             file_obj = io.BytesIO(upload_content)
+            size = file_obj.getbuffer().nbytes
+        elif isinstance(upload_content, AnyUrl):
+            downloaded_file = httpx.get(upload_content.unicode_string())
+            file_obj = io.BytesIO(downloaded_file.content)
             size = file_obj.getbuffer().nbytes
         elif hasattr(upload_content, "file") and hasattr(upload_content, "size"):
             file_obj = upload_content.file

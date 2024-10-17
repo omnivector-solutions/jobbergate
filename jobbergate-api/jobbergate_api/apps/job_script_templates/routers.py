@@ -1,5 +1,9 @@
 """Router for the Job Script Template resource."""
 
+from typing import cast
+
+import snick
+from buzz import require_condition
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -15,6 +19,7 @@ from fastapi import (
 from fastapi import Response as FastAPIResponse
 from fastapi_pagination import Page
 from loguru import logger
+from pydantic import AnyHttpUrl, AnyUrl
 from sqlalchemy.exc import IntegrityError
 
 from jobbergate_api.apps.constants import FileType
@@ -233,6 +238,33 @@ async def job_script_template_get_file(
     )
 
 
+async def _upsert_template_file(
+    id_or_identifier: str,
+    file_type: FileType,
+    filename: str,
+    upload_content: str | bytes | AnyUrl | UploadFile | None,
+    previous_filename: str | None,
+    secure_services: SecureService,
+):
+    """
+    Provide an auxillary function to be used for uploading from file object or URL.
+    """
+    typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
+    job_script_template = await secure_services.crud.template.get(typed_id_or_identifier)
+    if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
+        secure_services.crud.template.ensure_attribute(
+            job_script_template, owner_email=secure_services.identity_payload.email
+        )
+
+    return await secure_services.file.template.upsert(
+        parent_id=job_script_template.id,
+        filename=filename,
+        upload_content=upload_content,
+        previous_filename=previous_filename,
+        file_type=file_type,
+    )
+
+
 @router.put(
     "/{id_or_identifier}/upload/template/{file_type}",
     status_code=status.HTTP_200_OK,
@@ -265,22 +297,75 @@ async def job_script_template_upload_file(
             detail="Filename must be provided either as a query parameter or as part of the file upload",
         )
 
-    typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
     logger.debug(
-        f"Uploading {filename=} to job template {typed_id_or_identifier=}; {file_type=}; {previous_filename=}"
+        f"Uploading {filename=} to job template {id_or_identifier=}; {file_type=}; {previous_filename=}"
     )
-    job_script_template = await secure_services.crud.template.get(typed_id_or_identifier)
-    if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
-        secure_services.crud.template.ensure_attribute(
-            job_script_template, owner_email=secure_services.identity_payload.email
+    return await _upsert_template_file(
+        id_or_identifier,
+        file_type,
+        filename,
+        upload_file,
+        previous_filename,
+        secure_services,
+    )
+
+
+@router.put(
+    "/{id_or_identifier}/upload-by-url/template/{file_type}",
+    status_code=status.HTTP_200_OK,
+    description=(
+        "Endpoint to upload a file to a job script template by id or identifier using a file URL. "
+        "If a previous filename is provided, the file will be renamed from that. "
+    ),
+    response_model=TemplateFileDetailedView,
+)
+async def job_script_template_upload_file_by_url(
+    id_or_identifier: str = Path(),
+    file_type: FileType = Path(),
+    filename: str | None = Query(None, max_length=255),
+    file_url: AnyHttpUrl = Query(..., description="URL of the file to upload"),
+    previous_filename: str | None = Query(
+        None, description="Previous name of the file in case a rename is needed", max_length=255
+    ),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
+    ),
+):
+    """Upload a file to a job script template by id or identifier using file URL."""
+
+    if filename is None:
+        url_path = file_url.path or ""
+        (*_, filename) = url_path.split("/")
+        require_condition(
+            filename != "",
+            f"Filename could not be extracted from the provided URL: {file_url}",
+            raise_exc_class=HTTPException,
+            exc_builder=lambda exc_class, msg: exc_class(status_code=status.HTTP_400_BAD_REQUEST, detail=msg),
         )
 
-    return await secure_services.file.template.upsert(
-        parent_id=job_script_template.id,
-        filename=filename,
-        upload_content=upload_file,
-        previous_filename=previous_filename,
-        file_type=file_type,
+    # This is needed to make static type checkers happy. It shouldn't be able to happen
+    assert filename is not None
+
+    # We need to down-cast to a regular AnyUrl object so the file service can use `isinstance()`
+    # Otherwise, you get: TypeError("Subscripted generics cannot be used with class and instance checks"
+    loose_url: AnyUrl = cast(AnyUrl, file_url)
+
+    logger.debug(
+        snick.unwrap(
+            """
+            Uploading file {filename=} from {file_url}
+            to job template {id_or_identifier=};
+            {file_type=}; {previous_filename=}
+            """
+        )
+    )
+    return await _upsert_template_file(
+        id_or_identifier,
+        file_type,
+        filename,
+        loose_url,
+        previous_filename,
+        secure_services,
     )
 
 
@@ -334,23 +419,15 @@ async def job_script_workflow_get_file(
     )
 
 
-@router.put(
-    "/{id_or_identifier}/upload/workflow",
-    status_code=status.HTTP_200_OK,
-    description="Endpoint to upload a file to a job script template by id or identifier",
-    response_model=WorkflowFileDetailedView,
-)
-async def job_script_workflow_upload_file(
-    id_or_identifier: str = Path(),
-    runtime_config: RunTimeConfig | None = Body(
-        None, description="Runtime configuration is optional when the workflow file already exists"
-    ),
-    upload_file: UploadFile = File(..., description="File to upload"),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
-    ),
+async def _upsert_workflow_file(
+    id_or_identifier: str,
+    runtime_config: RunTimeConfig | None,
+    upload_content: str | bytes | AnyUrl | UploadFile,
+    secure_services: SecureService,
 ):
-    """Upload a file to a job script workflow by id or identifier."""
+    """
+    Provide an auxillary function to be used for uploading from file object or URL.
+    """
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
     logger.debug(
         f"Uploading workflow file to job script template {typed_id_or_identifier=}: {runtime_config}"
@@ -361,7 +438,7 @@ async def job_script_workflow_upload_file(
             job_script_template, owner_email=secure_services.identity_payload.email
         )
     upsert_kwargs = dict(
-        parent_id=job_script_template.id, filename=WORKFLOW_FILE_NAME, upload_content=upload_file
+        parent_id=job_script_template.id, filename=WORKFLOW_FILE_NAME, upload_content=upload_content
     )
 
     try:
@@ -379,6 +456,49 @@ async def job_script_workflow_upload_file(
         upsert_kwargs["runtime_config"] = runtime_config.model_dump()
 
     return await secure_services.file.workflow.upsert(**upsert_kwargs)
+
+
+@router.put(
+    "/{id_or_identifier}/upload/workflow",
+    status_code=status.HTTP_200_OK,
+    description="Endpoint to upload a file to a job script template by id or identifier",
+    response_model=WorkflowFileDetailedView,
+)
+async def job_script_workflow_upload_file(
+    id_or_identifier: str = Path(),
+    runtime_config: RunTimeConfig | None = Body(
+        None, description="Runtime configuration is optional when the workflow file already exists"
+    ),
+    upload_file: UploadFile = File(..., description="File to upload"),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
+    ),
+):
+    """Upload a file to a job script workflow by id or identifier."""
+    return await _upsert_workflow_file(id_or_identifier, runtime_config, upload_file, secure_services)
+
+
+@router.put(
+    "/{id_or_identifier}/upload-by-url/workflow",
+    status_code=status.HTTP_200_OK,
+    description="Endpoint to upload a file to a job script template by id or identifier from a provided URL.",
+    response_model=WorkflowFileDetailedView,
+)
+async def job_script_upload_file_by_url(
+    id_or_identifier: str = Path(),
+    runtime_config: RunTimeConfig | None = Body(
+        None, description="Runtime configuration is optional when the workflow file already exists"
+    ),
+    file_url: AnyHttpUrl = Query(..., description="URL of the file to upload"),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
+    ),
+):
+    """Upload a file to a job script workflow by id or identifier from a URL."""
+    # We need to down-cast to a regular AnyUrl object so the file service can use `isinstance()`
+    # Otherwise, you get: TypeError("Subscripted generics cannot be used with class and instance checks"
+    loose_url: AnyUrl = cast(AnyUrl, file_url)
+    return await _upsert_workflow_file(id_or_identifier, runtime_config, loose_url, secure_services)
 
 
 @router.delete(

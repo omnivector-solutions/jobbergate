@@ -6,7 +6,9 @@ from contextlib import contextmanager
 from io import BytesIO
 from unittest import mock
 
+import httpx
 import pytest
+from pydantic import AnyHttpUrl
 from fastapi import HTTPException, UploadFile
 from fastapi_pagination.default import Params
 
@@ -693,6 +695,29 @@ class TestFileService:
         Test that the ``upsert()`` method can create a file from bytes.
         """
         upserted_instance = await dummy_file_service.upsert(13, "file-one.txt", file_content)
+
+        assert upserted_instance.parent_id == 13
+        assert upserted_instance.filename == "file-one.txt"
+
+        file_data = await dummy_file_service.get_file_content(upserted_instance)
+        assert file_data == file_content
+
+    @pytest.mark.parametrize("file_content", [b"dummy bytes content", b""])
+    async def test_upsert__with_url(self, file_content, dummy_file_service, respx_mock):
+        """
+        Test that the ``upsert()`` method can create a file from a file url.
+        """
+        respx_mock.get("http://dummy-domain.com/dummy-file.txt").mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                content=file_content,
+            ),
+        )
+        upserted_instance = await dummy_file_service.upsert(
+            13,
+            "file-one.txt",
+            AnyHttpUrl("http://dummy-domain.com/dummy-file.txt"),
+        )
 
         assert upserted_instance.parent_id == 13
         assert upserted_instance.filename == "file-one.txt"
