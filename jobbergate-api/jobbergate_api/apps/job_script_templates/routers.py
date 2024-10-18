@@ -1,7 +1,5 @@
 """Router for the Job Script Template resource."""
 
-from typing import cast
-
 import snick
 from buzz import require_condition
 from fastapi import (
@@ -323,7 +321,7 @@ async def job_script_template_upload_file_by_url(
     id_or_identifier: str = Path(),
     file_type: FileType = Path(),
     filename: str | None = Query(None, max_length=255),
-    file_url: AnyHttpUrl = Query(..., description="URL of the file to upload"),
+    file_url: AnyUrl = Query(..., description="URL of the file to upload"),
     previous_filename: str | None = Query(
         None, description="Previous name of the file in case a rename is needed", max_length=255
     ),
@@ -346,10 +344,6 @@ async def job_script_template_upload_file_by_url(
     # This is needed to make static type checkers happy. It shouldn't be able to happen
     assert filename is not None
 
-    # We need to down-cast to a regular AnyUrl object so the file service can use `isinstance()`
-    # Otherwise, you get: TypeError("Subscripted generics cannot be used with class and instance checks"
-    loose_url: AnyUrl = cast(AnyUrl, file_url)
-
     logger.debug(
         snick.unwrap(
             """
@@ -363,7 +357,7 @@ async def job_script_template_upload_file_by_url(
         id_or_identifier,
         file_type,
         filename,
-        loose_url,
+        file_url,
         previous_filename,
         secure_services,
     )
@@ -495,10 +489,7 @@ async def job_script_upload_file_by_url(
     ),
 ):
     """Upload a file to a job script workflow by id or identifier from a URL."""
-    # We need to down-cast to a regular AnyUrl object so the file service can use `isinstance()`
-    # Otherwise, you get: TypeError("Subscripted generics cannot be used with class and instance checks"
-    loose_url: AnyUrl = cast(AnyUrl, file_url)
-    return await _upsert_workflow_file(id_or_identifier, runtime_config, loose_url, secure_services)
+    return await _upsert_workflow_file(id_or_identifier, runtime_config, file_url, secure_services)
 
 
 @router.delete(

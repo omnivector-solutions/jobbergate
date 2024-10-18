@@ -8,7 +8,7 @@ from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
 from fastapi_pagination import Page
 from loguru import logger
-from pydantic import AnyHttpUrl, AnyUrl
+from pydantic import AnyUrl
 import snick
 
 from jobbergate_api.apps.constants import FileType
@@ -322,7 +322,7 @@ async def job_script_upload_file_by_url(
     id: int = Path(...),
     file_type: FileType = Path(...),
     filename: str | None = Query(None, max_length=255),
-    file_url: AnyHttpUrl = Query(..., description="URL of the file to upload"),
+    file_url: AnyUrl = Query(..., description="URL of the file to upload"),
     previous_filename: str | None = Query(
         None,
         description="Previous name of the file in case a rename is needed",
@@ -346,10 +346,6 @@ async def job_script_upload_file_by_url(
     # This is needed to make static type checkers happy. It shouldn't be able to happen
     assert filename is not None
 
-    # We need to down-cast to a regular AnyUrl object so the file service can use `isinstance()`
-    # Otherwise, you get: TypeError("Subscripted generics cannot be used with class and instance checks"
-    loose_url: AnyUrl = cast(AnyUrl, file_url)
-
     logger.debug(
         snick.unwrap(
             """
@@ -369,7 +365,7 @@ async def job_script_upload_file_by_url(
     return await secure_services.file.job_script.upsert(
         parent_id=job_script.id,
         filename=filename,
-        upload_content=loose_url,
+        upload_content=file_url,
         previous_filename=previous_filename,
         file_type=file_type,
     )

@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from typing import Any, Generic, Protocol, TypeVar
 
 import httpx
+from aioboto3.session import Session
 from botocore.response import StreamingBody
 from buzz import enforce_defined, handle_errors, require_condition
 from fastapi import HTTPException, UploadFile, status
@@ -552,6 +553,50 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             "Either a file or a previous filename must be provided", status_code=status.HTTP_400_BAD_REQUEST
         )
 
+    async def _get_file_data_from_url(self, file_url: AnyUrl) -> io.BytesIO:
+        """
+        Get file data given a URL.
+
+        Suppports fetching data with the following protocols: http, https, s3
+        """
+        url_string = enforce_defined(
+            file_url.unicode_string(),
+            "Supplied URL is malformed",
+            raise_exc_class=ServiceError,
+            raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
+        )
+
+        file_obj = io.BytesIO()
+
+        match file_url.scheme:
+            case "http" | "https":
+                response = httpx.get(file_url.unicode_string())
+                file_obj.write(response.content)
+            case "s3":
+                bucket_name = enforce_defined(
+                    file_url.unicode_host(),
+                    f"Couldn't extract bucket name from {file_url}",
+                    raise_exc_class=ServiceError,
+                    raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
+                )
+                key = enforce_defined(
+                    file_url.path,
+                    f"Couldn't extract bucket key from {file_url}",
+                    raise_exc_class=ServiceError,
+                    raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
+                )
+
+                session = Session()
+                async with session.resource("s3", url_string) as s3:
+                    bucket = await s3.Bucket(bucket_name)
+                    s3_obj = await bucket.Object(key)
+                    await s3_obj.download_fileobj(file_obj)
+            case _:
+                raise ServiceError(f"Unsupported protocol to get file data by url for {file_url}")
+
+        file_obj.seek(0)
+        return file_obj
+
     async def upload_file_content(
         self, instance: FileModel, upload_content: str | bytes | AnyUrl | UploadFile
     ) -> None:
@@ -565,8 +610,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             file_obj = io.BytesIO(upload_content)
             size = file_obj.getbuffer().nbytes
         elif isinstance(upload_content, AnyUrl):
-            downloaded_file = httpx.get(upload_content.unicode_string())
-            file_obj = io.BytesIO(downloaded_file.content)
+            file_obj = await self._get_file_data_from_url(upload_content)
             size = file_obj.getbuffer().nbytes
         elif hasattr(upload_content, "file") and hasattr(upload_content, "size"):
             file_obj = upload_content.file
