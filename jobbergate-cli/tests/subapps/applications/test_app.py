@@ -43,8 +43,19 @@ def test_list_all__renders_paginated_results(
     )
 
 
-@pytest.mark.parametrize("id_flag,separator", [("--id", "="), ("-i", " ")])
-def test_get_one__success__using_id(
+@pytest.mark.parametrize(
+    "selector_template",
+    [
+        "{id}",
+        "-i {id}",
+        "--id={id}",
+        "--id {id}",
+        "{identifier}",
+        "--identifier={identifier}",
+        "--identifier {identifier}",
+    ],
+)
+def test_get_one__success(
     respx_mock,
     make_test_app,
     dummy_context,
@@ -52,10 +63,16 @@ def test_get_one__success__using_id(
     dummy_domain,
     cli_runner,
     mocker,
-    id_flag,
-    separator,
+    selector_template,
 ):
-    respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/1").mock(
+    application_data = dummy_application_data[0]
+    id = application_data["id"]
+    identifier = application_data["identifier"]
+
+    url_selector = identifier if "identifier" in selector_template else id
+    cli_selector = selector_template.format(id=id, identifier=identifier)
+
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{url_selector}").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dummy_application_data[0],
@@ -63,34 +80,7 @@ def test_get_one__success__using_id(
     )
     test_app = make_test_app("get-one", get_one)
     mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
-    result = cli_runner.invoke(test_app, shlex.split(f"get-one {id_flag}{separator}1"))
-    assert result.exit_code == 0, f"get-one failed: {result.stdout}"
-    mocked_render.assert_called_once_with(
-        dummy_context,
-        ApplicationResponse(**dummy_application_data[0]),
-        title="Application",
-        hidden_fields=HIDDEN_FIELDS,
-    )
-
-
-def test_get_one__success__using_identifier(
-    respx_mock,
-    make_test_app,
-    dummy_context,
-    dummy_application_data,
-    dummy_domain,
-    cli_runner,
-    mocker,
-):
-    respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/dummy").mock(
-        return_value=httpx.Response(
-            httpx.codes.OK,
-            json=dummy_application_data[0],
-        ),
-    )
-    test_app = make_test_app("get-one", get_one)
-    mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
-    result = cli_runner.invoke(test_app, shlex.split("get-one --identifier=dummy"))
+    result = cli_runner.invoke(test_app, shlex.split(f"get-one {cli_selector}"))
     assert result.exit_code == 0, f"get-one failed: {result.stdout}"
     mocked_render.assert_called_once_with(
         dummy_context,
@@ -104,14 +94,18 @@ def test_get_one__fails_with_neither_id_or_identifier(make_test_app, cli_runner)
     test_app = make_test_app("get-one", get_one)
     result = cli_runner.invoke(test_app, shlex.split("get-one"))
     assert result.exit_code != 0
-    assert "You must supply either" in result.stdout
+    assert "You must supply one and only one selection value" in result.stdout
 
 
-def test_get_one__fails_with_both_id_and_identifier(make_test_app, cli_runner):
+@pytest.mark.parametrize(
+    "cli_selector",
+    ["1 --id 2", "foo --identifier bar", "--id 1 --identifier dummy"],
+)
+def test_get_one__fails_with_both_id_and_identifier(make_test_app, cli_runner, cli_selector):
     test_app = make_test_app("get-one", get_one)
-    result = cli_runner.invoke(test_app, shlex.split("get-one --id=1 --identifier=dummy"))
+    result = cli_runner.invoke(test_app, shlex.split(f"get-one {cli_selector}"))
     assert result.exit_code != 0
-    assert "You may not supply both" in result.stdout
+    assert "You must supply one and only one selection value" in result.stdout
 
 
 @pytest.mark.parametrize(
@@ -223,7 +217,16 @@ def test_create__warns_but_does_not_abort_if_upload_fails(
 
 
 @pytest.mark.parametrize(
-    "id_flag,application_path_flag,separator", [("--id", "--application-path", "="), ("-i", "-a", " ")]
+    "selector_template",
+    [
+        "{id}",
+        "-i {id}",
+        "--id={id}",
+        "--id {id}",
+        "{identifier}",
+        "--identifier={identifier}",
+        "--identifier {identifier}",
+    ],
 )
 def test_update__success_by_id(
     respx_mock,
@@ -234,29 +237,31 @@ def test_update__success_by_id(
     dummy_domain,
     cli_runner,
     mocker,
-    id_flag,
-    application_path_flag,
-    separator,
+    selector_template,
 ):
-    response_data = dummy_application_data[0]
-    application_id = response_data["id"]
+    application_data = dummy_application_data[0]
+    id = application_data["id"]
+    identifier = application_data["identifier"]
 
-    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}")
+    url_selector = identifier if "identifier" in selector_template else id
+    cli_selector = selector_template.format(id=id, identifier=identifier)
+
+    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-script-templates/{url_selector}")
     update_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
-            json=response_data,
+            json=application_data,
         ),
     )
 
     mocked_upload = mocker.patch("jobbergate_cli.subapps.applications.app.upload_application")
     mocked_upload.return_value = True
 
-    get_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}")
+    get_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{url_selector}")
     get_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
-            json=response_data,
+            json=application_data,
         ),
     )
 
@@ -267,66 +272,7 @@ def test_update__success_by_id(
         shlex.split(
             unwrap(
                 f"""
-                update {id_flag}{separator}{application_id} --update-identifier=dummy-identifier
-                       {application_path_flag}{separator}{dummy_application_dir}
-                       --application-desc="This application is kinda dumb, actually"
-                """
-            )
-        ),
-    )
-    assert result.exit_code == 0, f"update failed: {result.stdout}"
-    assert update_route.called
-    assert get_route.called
-    assert mocked_upload.called
-
-    mocked_render.assert_called_once_with(
-        dummy_context,
-        ApplicationResponse(**response_data),
-        title="Updated Application",
-        hidden_fields=HIDDEN_FIELDS,
-    )
-
-
-def test_update__success_by_identifier(
-    respx_mock,
-    make_test_app,
-    dummy_context,
-    dummy_application_data,
-    dummy_application_dir,
-    dummy_domain,
-    cli_runner,
-    mocker,
-):
-    response_data = dummy_application_data[0]
-    application_identifier = response_data["identifier"]
-
-    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-script-templates/{application_identifier}")
-    update_route.mock(
-        return_value=httpx.Response(
-            httpx.codes.OK,
-            json=response_data,
-        ),
-    )
-
-    mocked_upload = mocker.patch("jobbergate_cli.subapps.applications.app.upload_application")
-    mocked_upload.return_value = True
-
-    get_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/dummy-identifier")
-    get_route.mock(
-        return_value=httpx.Response(
-            httpx.codes.OK,
-            json=response_data,
-        ),
-    )
-
-    test_app = make_test_app("update", update)
-    mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
-    result = cli_runner.invoke(
-        test_app,
-        shlex.split(
-            unwrap(
-                f"""
-                update --identifier={application_identifier} --update-identifier=dummy-identifier
+                update {cli_selector} --update-identifier=dummy-identifier
                        --application-path={dummy_application_dir}
                        --application-desc="This application is kinda dumb, actually"
                 """
@@ -340,7 +286,7 @@ def test_update__success_by_identifier(
 
     mocked_render.assert_called_once_with(
         dummy_context,
-        ApplicationResponse(**response_data),
+        ApplicationResponse(**application_data),
         title="Updated Application",
         hidden_fields=HIDDEN_FIELDS,
     )
@@ -461,24 +407,30 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
     )
 
 
-@pytest.mark.parametrize("id_flag,separator", [("--id", "="), ("-i", " ")])
-def test_delete__success_by_id(respx_mock, make_test_app, dummy_domain, cli_runner, id_flag, separator):
-    delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/job-script-templates/1")
+@pytest.mark.parametrize(
+    "selector_template",
+    [
+        "{id}",
+        "-i {id}",
+        "--id={id}",
+        "--id {id}",
+        "{identifier}",
+        "--identifier={identifier}",
+        "--identifier {identifier}",
+    ],
+)
+def test_delete__success(respx_mock, make_test_app, dummy_domain, cli_runner, selector_template):
+    id = 1
+    identifier = "some-identifier"
+
+    url_selector = identifier if "identifier" in selector_template else id
+    cli_selector = selector_template.format(id=id, identifier=identifier)
+
+    delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/job-script-templates/{url_selector}")
     delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
 
     test_app = make_test_app("delete", delete)
-    result = cli_runner.invoke(test_app, shlex.split(f"delete {id_flag}{separator}1"))
-    assert result.exit_code == 0, f"delete failed: {result.stdout}"
-    assert delete_route.called
-    assert "Application delete succeeded" in result.stdout
-
-
-def test_delete__success_by_identifier(respx_mock, make_test_app, dummy_domain, cli_runner):
-    delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/job-script-templates/dummy")
-    delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
-
-    test_app = make_test_app("delete", delete)
-    result = cli_runner.invoke(test_app, shlex.split("delete --identifier=dummy"))
+    result = cli_runner.invoke(test_app, shlex.split(f"delete {cli_selector}"))
     assert result.exit_code == 0, f"delete failed: {result.stdout}"
     assert delete_route.called
     assert "Application delete succeeded" in result.stdout
@@ -496,7 +448,19 @@ class TestDownloadApplicationFiles:
         """
         return make_test_app("download", download_files)
 
-    def test_download__success__using_id(
+    @pytest.mark.parametrize(
+        "selector_template",
+        [
+            "{id}",
+            "-i {id}",
+            "--id={id}",
+            "--id {id}",
+            "{identifier}",
+            "--identifier={identifier}",
+            "--identifier {identifier}",
+        ],
+    )
+    def test_download__success(
         self,
         respx_mock,
         test_app,
@@ -506,60 +470,22 @@ class TestDownloadApplicationFiles:
         cli_runner,
         mocker,
         tmp_path,
-    ):
-        """
-        Test that the download application files subcommand works as expected.
-        """
-        respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/1").mock(
-            return_value=httpx.Response(
-                httpx.codes.OK,
-                json=dummy_application_data[0],
-            ),
-        )
-        mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.terminal_message")
-
-        list_of_files = [f"file-{i}" for i in range(3)]
-
-        mocked_save_files = mocker.patch(
-            "jobbergate_cli.subapps.applications.app.save_application_files", return_value=list_of_files
-        )
-
-        with mock.patch.object(pathlib.Path, "cwd", return_value=tmp_path):
-            result = cli_runner.invoke(test_app, shlex.split("download --id=1"))
-
-        mocked_save_files.assert_called_with(
-            dummy_context,
-            application_data=ApplicationResponse(**dummy_application_data[0]),
-            destination_path=tmp_path,
-        )
-
-        assert result.exit_code == 0, f"download failed: {result.stdout}"
-        mocked_render.assert_called_once_with(
-            f"A total of {len(list_of_files)} application files were successfully downloaded.",
-            subject="Application download succeeded",
-        )
-
-    def test_download__success__using_identifier(
-        self,
-        respx_mock,
-        test_app,
-        dummy_application_data,
-        dummy_domain,
-        dummy_context,
-        cli_runner,
-        mocker,
-        tmp_path,
+        selector_template,
     ):
         """
         Test that the download application files subcommand works as expected.
         """
         application_data = dummy_application_data[0]
+        id = application_data["id"]
         identifier = application_data["identifier"]
 
-        respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{identifier}").mock(
+        url_selector = identifier if "identifier" in selector_template else id
+        cli_selector = selector_template.format(id=id, identifier=identifier)
+
+        respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{url_selector}").mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
-                json=dummy_application_data[0],
+                json=application_data,
             ),
         )
         mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.terminal_message")
@@ -571,11 +497,11 @@ class TestDownloadApplicationFiles:
         )
 
         with mock.patch.object(pathlib.Path, "cwd", return_value=tmp_path):
-            result = cli_runner.invoke(test_app, shlex.split(f"download --identifier={identifier}"))
+            result = cli_runner.invoke(test_app, shlex.split(f"download {cli_selector}"))
 
         mocked_save_files.assert_called_with(
             dummy_context,
-            application_data=ApplicationResponse(**dummy_application_data[0]),
+            application_data=ApplicationResponse(**application_data),
             destination_path=tmp_path,
         )
 
@@ -591,7 +517,7 @@ class TestDownloadApplicationFiles:
         """
         result = cli_runner.invoke(test_app, shlex.split("download"))
         assert result.exit_code != 0
-        assert "You must supply either" in result.stdout
+        assert "You must supply one and only one selection value" in result.stdout
 
     def test_download__fails_with_both_id_and_identifier(self, test_app, cli_runner):
         """
@@ -599,104 +525,69 @@ class TestDownloadApplicationFiles:
         """
         result = cli_runner.invoke(test_app, shlex.split("download --id=1 --identifier=dummy"))
         assert result.exit_code != 0
-        assert "You may not supply both" in result.stdout
+        assert "You must supply one and only one selection value" in result.stdout
 
 
-class TestCloneApplication:
-    def test_clone__success_by_id(
-        self,
-        respx_mock,
-        make_test_app,
-        dummy_application_data,
-        dummy_domain,
+@pytest.mark.parametrize(
+    "selector_template",
+    [
+        "{id}",
+        "-i {id}",
+        "--id={id}",
+        "--id {id}",
+        "{identifier}",
+        "--identifier={identifier}",
+        "--identifier {identifier}",
+    ],
+)
+def test_clone__success(
+    respx_mock,
+    make_test_app,
+    dummy_application_data,
+    dummy_domain,
+    dummy_context,
+    cli_runner,
+    mocker,
+    selector_template,
+):
+    """
+    Test that the clone application subcommand works as expected.
+    """
+
+    application_data = dummy_application_data[0]
+    id = application_data["id"]
+    identifier = application_data["identifier"]
+
+    url_selector = identifier if "identifier" in selector_template else id
+    cli_selector = selector_template.format(id=id, identifier=identifier)
+
+    clone_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-script-templates/clone/{url_selector}").mock(
+        return_value=httpx.Response(
+            httpx.codes.CREATED,
+            json=application_data,
+        ),
+    )
+    mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
+
+    test_app = make_test_app("clone", clone)
+    result = cli_runner.invoke(
+        test_app,
+        shlex.split(
+            "clone {} --application-identifier={} --application-name={} --application-desc={}".format(
+                cli_selector,
+                shlex.quote(application_data["identifier"]),
+                shlex.quote(application_data["name"]),
+                shlex.quote(application_data["description"]),
+            ),
+        ),
+    )
+
+    assert clone_route.called
+
+    assert result.exit_code == 0, f"clone failed: {result.stdout}"
+    mocked_render.assert_called_once_with(
         dummy_context,
-        cli_runner,
-        mocker,
-    ):
-        """
-        Test that the clone application subcommand works as expected.
-        """
-
-        application_data = dummy_application_data[0]
-
-        clone_route = respx_mock.post(
-            f"{dummy_domain}/jobbergate/job-script-templates/clone/{application_data['id']}"
-        ).mock(
-            return_value=httpx.Response(
-                httpx.codes.CREATED,
-                json=application_data,
-            ),
-        )
-        mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
-
-        test_app = make_test_app("clone", clone)
-        result = cli_runner.invoke(
-            test_app,
-            shlex.split(
-                "clone --id={} --application-identifier={} --application-name={} --application-desc={}".format(
-                    application_data["id"],
-                    shlex.quote(application_data["identifier"]),
-                    shlex.quote(application_data["name"]),
-                    shlex.quote(application_data["description"]),
-                ),
-            ),
-        )
-
-        assert clone_route.called
-
-        assert result.exit_code == 0, f"clone failed: {result.stdout}"
-        mocked_render.assert_called_once_with(
-            dummy_context,
-            ApplicationResponse(**application_data),
-            title="Cloned Application",
-            hidden_fields=HIDDEN_FIELDS,
-        )
-
-    def test_clone__success_by_identifier(
-        self,
-        respx_mock,
-        make_test_app,
-        dummy_application_data,
-        dummy_domain,
-        dummy_context,
-        cli_runner,
-        mocker,
-    ):
-        """
-        Test that the clone application subcommand works as expected.
-        """
-
-        application_data = dummy_application_data[0]
-
-        clone_route = respx_mock.post(
-            f"{dummy_domain}/jobbergate/job-script-templates/clone/{application_data['identifier']}"
-        ).mock(
-            return_value=httpx.Response(
-                httpx.codes.CREATED,
-                json=application_data,
-            ),
-        )
-        mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
-
-        test_app = make_test_app("clone", clone)
-        result = cli_runner.invoke(
-            test_app,
-            shlex.split(
-                "clone --identifier={} --application-identifier={} --application-name={} --application-desc={}".format(
-                    application_data["identifier"],
-                    shlex.quote("new_" + application_data["identifier"]),
-                    shlex.quote(application_data["name"]),
-                    shlex.quote(application_data["description"]),
-                ),
-            ),
-        )
-
-        assert clone_route.called
-
-        assert result.exit_code == 0, f"clone failed: {result.stdout}"
-        mocked_render.assert_called_once_with(
-            dummy_context,
-            ApplicationResponse(**application_data),
-            title="Cloned Application",
-            hidden_fields=HIDDEN_FIELDS,
-        )
+        ApplicationResponse(**application_data),
+        title="Cloned Application",
+        hidden_fields=HIDDEN_FIELDS,
+    )

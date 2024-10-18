@@ -25,6 +25,7 @@ from jobbergate_cli.subapps.job_scripts.tools import (
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
 from jobbergate_cli.subapps.job_submissions.tools import job_submissions_factory
 from jobbergate_cli.subapps.pagination import handle_pagination
+from jobbergate_cli.subapps.tools import sanitize_application_selection, sanitize_id_selection
 from jobbergate_cli.text_tools import dedent
 
 
@@ -94,12 +95,15 @@ def list_all(
 @app.command()
 def get_one(
     ctx: typer.Context,
-    id: int = typer.Option(..., "--id", "-i", help="The specific id of the job script."),
+    id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be selected."),
+    id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id."),
 ):
     """
     Get a single job script by id.
     """
     jg_ctx: JobbergateContext = ctx.obj
+    id = sanitize_id_selection(id, id_option)
+
     result = fetch_job_script_data(jg_ctx, id)
     render_single_result(
         jg_ctx,
@@ -112,6 +116,9 @@ def get_one(
 @app.command()
 def create_stand_alone(
     ctx: typer.Context,
+    job_script_path: pathlib.Path = typer.Argument(
+        ..., help="The path to the job script file to upload", file_okay=True, readable=True
+    ),
     name: str = typer.Option(
         ...,
         help=dedent("The name of the job script to create."),
@@ -120,10 +127,13 @@ def create_stand_alone(
         None,
         help="Optional text describing the job script.",
     ),
-    job_script_path: pathlib.Path = typer.Option(..., help="The path to the job script file to upload"),
     supporting_file_path: Optional[List[pathlib.Path]] = typer.Option(
         None,
+        "--supporting-file",
+        "-s",
         help="A path for one of the supporting files to upload",
+        file_okay=True,
+        readable=True,
     ),
 ):
     """
@@ -226,6 +236,10 @@ def create_locally(
 @app.command()
 def create(
     ctx: typer.Context,
+    id_or_identifier: Optional[str] = typer.Argument(
+        None,
+        help="The specific id or identifier of the application from which to create the job script.",
+    ),
     name: Optional[str] = typer.Option(
         None,
         "--name",
@@ -241,11 +255,11 @@ def create(
         None,
         "--application-id",
         "-i",
-        help="The id of the application from which to create the job script.",
+        help="Alternative way to specify the application id.",
     ),
     application_identifier: Optional[str] = typer.Option(
         None,
-        help="The identifier of the application from which to create the job script.",
+        help="Alternative way to specify the application identifier.",
     ),
     description: Optional[str] = typer.Option(
         None,
@@ -298,12 +312,12 @@ def create(
     Create a new job script from an application.
     """
     jg_ctx: JobbergateContext = ctx.obj
+    selector = sanitize_application_selection(id_or_identifier, application_id, application_identifier)
 
     job_script_result = render_job_script(
         jg_ctx,
+        selector,
         name,
-        application_id,
-        application_identifier,
         description,
         sbatch_params,
         param_file,
@@ -391,11 +405,12 @@ def create(
 @app.command()
 def update(
     ctx: typer.Context,
-    id: int = typer.Option(
-        ...,
+    id: Optional[int] = typer.Argument(None, help="The id of the job script to update"),
+    id_option: Optional[int] = typer.Option(
+        None,
         "--id",
         "-i",
-        help="The id of the job script to update",
+        help="Alternative way to specify the id of the job script to update",
     ),
     name: Optional[str] = typer.Option(
         None,
@@ -410,6 +425,7 @@ def update(
     Update an existing job script.
     """
     jg_ctx: JobbergateContext = ctx.obj
+    id = sanitize_id_selection(id, id_option)
 
     # Make static type checkers happy
     assert jg_ctx.client is not None
@@ -444,17 +460,19 @@ def update(
 @app.command()
 def delete(
     ctx: typer.Context,
-    id: int = typer.Option(
-        ...,
+    id: Optional[int] = typer.Argument(None, help="The id of the job script to delete"),
+    id_option: Optional[int] = typer.Option(
+        None,
         "--id",
         "-i",
-        help="The id of the job script to delete",
+        help="Alternative way to specify the job script id",
     ),
 ):
     """
     Delete an existing job script.
     """
     jg_ctx: JobbergateContext = ctx.obj
+    id = sanitize_id_selection(id, id_option)
 
     # Make static type checkers happy
     assert jg_ctx.client is not None
@@ -476,13 +494,15 @@ def delete(
 @app.command()
 def show_files(
     ctx: typer.Context,
-    id: int = typer.Option(..., help="The specific id of the job script."),
+    id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be cloned."),
+    id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id."),
     plain: bool = typer.Option(False, help="Show the files in plain text."),
 ):
     """
     Show the files for a single job script by id.
     """
     jg_ctx: JobbergateContext = ctx.obj
+    id = sanitize_id_selection(id, id_option)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = pathlib.Path(tmp_dir)
@@ -508,12 +528,14 @@ def show_files(
 @app.command()
 def download_files(
     ctx: typer.Context,
-    id: int = typer.Option(..., help="The specific id of the job script."),
+    id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be downloaded."),
+    id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id."),
 ):
     """
     Download the files from a job script to the current working directory.
     """
     jg_ctx: JobbergateContext = ctx.obj
+    id = sanitize_id_selection(id, id_option)
     downloaded_files = download_job_script_files(id, jg_ctx, pathlib.Path.cwd())
 
     terminal_message(
@@ -529,11 +551,12 @@ def download_files(
 @app.command()
 def clone(
     ctx: typer.Context,
-    id: int = typer.Option(
-        ...,
+    id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be updated."),
+    id_option: Optional[int] = typer.Option(
+        None,
         "--id",
         "-i",
-        help="The id of the job script to update",
+        help="Alternative way to specify id.",
     ),
     name: Optional[str] = typer.Option(
         None,
@@ -548,6 +571,7 @@ def clone(
     Clone an existing job script, so the user can own and modify a copy of it.
     """
     jg_ctx: JobbergateContext = ctx.obj
+    id = sanitize_id_selection(id, id_option)
 
     # Make static type checkers happy
     assert jg_ctx.client is not None

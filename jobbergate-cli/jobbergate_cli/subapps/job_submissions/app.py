@@ -15,6 +15,7 @@ from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobSubmissionResponse
 from jobbergate_cli.subapps.job_submissions.tools import fetch_job_submission_data, job_submissions_factory
 from jobbergate_cli.subapps.pagination import handle_pagination
+from jobbergate_cli.subapps.tools import sanitize_id_selection
 
 
 # move hidden field logic to the API
@@ -39,6 +40,9 @@ app = typer.Typer(help="Commands to interact with job submissions")
 @app.command()
 def create(
     ctx: typer.Context,
+    job_script_id: Optional[int] = typer.Argument(
+        None, help="The id of the job_script from which to create the job submission"
+    ),
     name: str = typer.Option(
         ...,
         "--name",
@@ -49,11 +53,11 @@ def create(
         None,
         help="A helpful description of the job submission",
     ),
-    job_script_id: int = typer.Option(
-        ...,
+    job_script_id_option: Optional[int] = typer.Option(
+        None,
         "--job-script-id",
         "-i",
-        help="The id of the job_script from which to create the job submission",
+        help="Alternative way to specify the job script id",
     ),
     cluster_name: str = typer.Option(
         None,
@@ -90,6 +94,7 @@ def create(
     Create a new job submission.
     """
     jg_ctx: JobbergateContext = ctx.obj
+    job_script_id = sanitize_id_selection(job_script_id, job_script_id_option)
 
     try:
         submissions_handler = job_submissions_factory(
@@ -172,12 +177,14 @@ def list_all(
 @app.command()
 def get_one(
     ctx: typer.Context,
-    id: int = typer.Option(..., "--id", "-i", help="The specific id of the job submission."),
+    id: Optional[int] = typer.Argument(None, help="The specific id of the job submission to be selected."),
+    id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id"),
 ):
     """
     Get a single job submission by id
     """
     jg_ctx: JobbergateContext = ctx.obj
+    id = sanitize_id_selection(id, id_option)
 
     # Make static type checkers happy
     assert jg_ctx is not None, "JobbergateContext is uninitialized"
@@ -203,17 +210,22 @@ def get_one(
 @app.command()
 def delete(
     ctx: typer.Context,
-    id: int = typer.Option(
+    id: Optional[int] = typer.Argument(
+        None,
+        help="The id of the job submission to delete",
+    ),
+    id_option: Optional[int] = typer.Option(
         ...,
         "--id",
         "-i",
-        help="The id of the job submission to delete",
+        help="Alternative way to specify id",
     ),
 ):
     """
     Delete an existing job submission.
     """
     jg_ctx: JobbergateContext = ctx.obj
+    id = sanitize_id_selection(id, id_option)
 
     # Make static type checkers happy
     assert jg_ctx.client is not None, "Client is uninitialized"
