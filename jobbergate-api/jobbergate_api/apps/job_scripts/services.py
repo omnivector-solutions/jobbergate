@@ -6,6 +6,7 @@ from buzz import enforce_defined, require_condition
 from fastapi import UploadFile, status
 from loguru import logger
 from pendulum.datetime import DateTime as PendulumDateTime
+from pydantic import AnyUrl
 from sqlalchemy import delete, func, select, update
 
 from jobbergate_api.apps.constants import FileType
@@ -128,7 +129,7 @@ class JobScriptFileService(FileService):
         self,
         parent_id: int,
         filename: str,
-        upload_content: str | bytes | UploadFile | None,
+        upload_content: str | bytes | AnyUrl | UploadFile | None,
         previous_filename: str | None = None,
         **upsert_kwargs,
     ) -> FileModel:
