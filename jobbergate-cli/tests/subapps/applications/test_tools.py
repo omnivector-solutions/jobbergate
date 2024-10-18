@@ -60,7 +60,7 @@ def test_fetch_application_data__success__using_id(
         ),
     )
 
-    result = fetch_application_data(dummy_context, id=app_id)
+    result = fetch_application_data(dummy_context, id_or_identifier=app_id)
     assert fetch_route.called
     assert result == ApplicationResponse.model_validate(app_data)
 
@@ -81,19 +81,9 @@ def test_fetch_application_data__success__using_identifier(
         ),
     )
 
-    result = fetch_application_data(dummy_context, identifier=app_identifier)
+    result = fetch_application_data(dummy_context, id_or_identifier=app_identifier)
     assert fetch_route.called
     assert result == ApplicationResponse.model_validate(app_data)
-
-
-def test_fetch_application_data__fails_with_both_id_or_identifier(dummy_context):
-    with pytest.raises(Abort, match="You may not supply both"):
-        fetch_application_data(dummy_context, id=1, identifier="one")
-
-
-def test_fetch_application_data__fails_with_neither_id_or_identifier(dummy_context):
-    with pytest.raises(Abort, match="You must supply either"):
-        fetch_application_data(dummy_context)
 
 
 def test_load_application_data__success(dummy_module_source, dummy_config_source):
@@ -291,7 +281,7 @@ class TestUploadApplicationFiles:
         mocked_routes,
     ):
         with mocked_routes as routes:
-            upload_application(dummy_context, dummy_application_dir, self.application_id, None)
+            upload_application(dummy_context, dummy_application_dir, self.application_id)
 
             # Ensure just the filename is included, nothing extra from path
             filename_check = b'filename="jobbergate.py"\r\n'
@@ -306,28 +296,28 @@ class TestUploadApplicationFiles:
     def test_upload_application__fails_directory_does_not_exists(self, dummy_application_dir, dummy_context):
         application_path = dummy_application_dir / "does-not-exist"
         with pytest.raises(Abort, match="Application directory"):
-            upload_application(dummy_context, application_path, self.application_id, None)
+            upload_application(dummy_context, application_path, self.application_id)
 
     @respx.mock(assert_all_mocked=True)
     def test_upload_application__fails_config_file_not_found(self, dummy_application_dir, dummy_context):
         file_path = dummy_application_dir / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
         file_path.unlink()
         with pytest.raises(Abort, match="Application config file"):
-            upload_application(dummy_context, dummy_application_dir, self.application_id, None)
+            upload_application(dummy_context, dummy_application_dir, self.application_id)
 
     @respx.mock(assert_all_mocked=True)
     def test_upload_application__fails_module_file_not_found(self, dummy_application_dir, dummy_context):
         file_path = dummy_application_dir / JOBBERGATE_APPLICATION_MODULE_FILE_NAME
         file_path.unlink()
         with pytest.raises(Abort, match="Application module file"):
-            upload_application(dummy_context, dummy_application_dir, self.application_id, None)
+            upload_application(dummy_context, dummy_application_dir, self.application_id)
 
     @respx.mock(assert_all_mocked=True)
     def test_upload_application__fails_no_template_found(self, dummy_application_dir, dummy_context):
         file_path = dummy_application_dir / "templates" / "job-script-template.py.j2"
         file_path.unlink()
         with pytest.raises(Abort, match="No template files found in"):
-            upload_application(dummy_context, dummy_application_dir, self.application_id, None)
+            upload_application(dummy_context, dummy_application_dir, self.application_id)
 
 
 class TestDownloadApplicationFiles:

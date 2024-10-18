@@ -13,8 +13,13 @@ from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ApplicationResponse, JobbergateContext
-from jobbergate_cli.subapps.applications.tools import fetch_application_data, save_application_files, upload_application
+from jobbergate_cli.subapps.applications.tools import (
+    fetch_application_data,
+    save_application_files,
+    upload_application,
+)
 from jobbergate_cli.subapps.pagination import handle_pagination
+from jobbergate_cli.subapps.tools import sanitize_application_selection
 
 
 # TODO: move hidden field logic to the API
@@ -101,22 +106,28 @@ def list_all(
 @app.command()
 def get_one(
     ctx: typer.Context,
+    id_or_identifier: Optional[str] = typer.Argument(
+        None,
+        help="The specific id number or identifier of the application to be selected.",
+    ),
     id: Optional[int] = typer.Option(
         None,
         "--id",
         "-i",
-        help=f"The specific id of the application. {ID_NOTE}",
+        help=f"Alternative way to specify id. {ID_NOTE}",
     ),
     identifier: Optional[str] = typer.Option(
         None,
-        help=f"The human-friendly identifier of the application. {IDENTIFIER_NOTE}",
+        help=f"Alternative way to specify identtifier. {IDENTIFIER_NOTE}",
     ),
 ):
     """
     Get a single application by id or identifier
     """
     jg_ctx: JobbergateContext = ctx.obj
-    result = fetch_application_data(jg_ctx, id=id, identifier=identifier)
+    result = fetch_application_data(
+        jg_ctx, id_or_identifier=sanitize_application_selection(id_or_identifier, id, identifier)
+    )
     render_single_result(
         jg_ctx,
         result,
@@ -182,7 +193,7 @@ def create(
 
     try:
         if application_path is not None:
-            upload_application(jg_ctx, application_path, application_id=application_id, application_identifier=None)
+            upload_application(jg_ctx, application_path, application_id)
             result["application_uploaded"] = True
     except Abort as e:
         raise e
@@ -208,15 +219,19 @@ def create(
 @app.command()
 def update(
     ctx: typer.Context,
+    id_or_identifier: Optional[str] = typer.Argument(
+        None,
+        help="The specific id or identifier of the application to be selected.",
+    ),
     id: Optional[int] = typer.Option(
         None,
         "--id",
         "-i",
-        help=f"The specific id of the application to update. {ID_NOTE}",
+        help=f"Alternative way to specify id. {ID_NOTE}",
     ),
     identifier: Optional[str] = typer.Option(
         None,
-        help=f"The human-friendly identifier of the application to update. {IDENTIFIER_NOTE}",
+        help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}",
     ),
     application_path: Optional[pathlib.Path] = typer.Option(
         None,
@@ -240,25 +255,7 @@ def update(
     """
     Update an existing application.
     """
-    identification: Any = id
-    if id is None and identifier is None:
-        terminal_message(
-            """
-            You must supply either [yellow]id[/yellow] or [yellow]identifier[/yellow].
-            """,
-            subject="Invalid params",
-        )
-        raise typer.Exit()
-    elif id is not None and identifier is not None:
-        terminal_message(
-            """
-            You may not supply both [yellow]id[/yellow] and [yellow]identifier[/yellow].
-            """,
-            subject="Invalid params",
-        )
-        raise typer.Exit()
-    elif identifier is not None:
-        identification = identifier
+    identification = sanitize_application_selection(id_or_identifier, id, identifier)
 
     req_data = dict()
 
@@ -290,7 +287,7 @@ def update(
 
     try:
         if application_path is not None:
-            upload_application(jg_ctx, application_path, application_id=id, application_identifier=identifier)
+            upload_application(jg_ctx, application_path, identification)
     except Abort as e:
         terminal_message(
             "The application files could not be uploaded.",
@@ -302,7 +299,7 @@ def update(
         if not id and update_identifier:
             # We need to fetch from new identifier if it was updated
             identifier = update_identifier
-        result = fetch_application_data(jg_ctx, id=id, identifier=identifier)
+        result = fetch_application_data(jg_ctx, identification)
 
         render_single_result(
             jg_ctx,
@@ -315,15 +312,19 @@ def update(
 @app.command()
 def delete(
     ctx: typer.Context,
+    id_or_identifier: Optional[str] = typer.Argument(
+        None,
+        help="The specific id or identifier of the application to be selected.",
+    ),
     id: Optional[int] = typer.Option(
         None,
         "--id",
         "-i",
-        help=f"The specific id of the application to delete. {ID_NOTE}",
+        help=f"Alternative way to specify id. {ID_NOTE}",
     ),
     identifier: Optional[str] = typer.Option(
         None,
-        help=f"The human-friendly identifier of the application to update. {IDENTIFIER_NOTE}",
+        help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}",
     ),
 ):
     """
@@ -334,25 +335,7 @@ def delete(
     # Make static type checkers happy
     assert jg_ctx.client is not None
 
-    identification: Any = id
-    if id is None and identifier is None:
-        terminal_message(
-            """
-            You must supply either [yellow]id[/yellow] or [yellow]identifier[/yellow].
-            """,
-            subject="Invalid params",
-        )
-        raise typer.Exit()
-    elif id is not None and identifier is not None:
-        terminal_message(
-            """
-            You may not supply both [yellow]id[/yellow] and [yellow]identifier[/yellow].
-            """,
-            subject="Invalid params",
-        )
-        raise typer.Exit()
-    elif identifier is not None:
-        identification = identifier
+    identification = sanitize_application_selection(id_or_identifier, id, identifier)
 
     # Delete the upload. The API will also remove the application data files
     make_request(
@@ -375,13 +358,19 @@ def delete(
 @app.command()
 def download_files(
     ctx: typer.Context,
+    id_or_identifier: Optional[str] = typer.Argument(
+        None,
+        help="The specific id or identifier of the application to be selected.",
+    ),
     id: Optional[int] = typer.Option(
         None,
-        help=f"The specific id of the application. {ID_NOTE}",
+        "--id",
+        "-i",
+        help=f"Alternative way to specify id. {ID_NOTE}",
     ),
     identifier: Optional[str] = typer.Option(
         None,
-        help=f"The human-friendly identifier of the application. {IDENTIFIER_NOTE}",
+        help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}",
     ),
 ):
     """
@@ -389,7 +378,7 @@ def download_files(
     """
     jg_ctx: JobbergateContext = ctx.obj
 
-    result = fetch_application_data(jg_ctx, id=id, identifier=identifier)
+    result = fetch_application_data(jg_ctx, sanitize_application_selection(id_or_identifier, id, identifier))
     saved_files = save_application_files(
         jg_ctx,
         application_data=result,
@@ -408,13 +397,19 @@ def download_files(
 @app.command()
 def clone(
     ctx: typer.Context,
+    id_or_identifier: Optional[str] = typer.Argument(
+        None,
+        help="The specific id or identifier of the application to be selected.",
+    ),
     id: Optional[int] = typer.Option(
         None,
-        help=f"The specific id of the application. {ID_NOTE}",
+        "--id",
+        "-i",
+        help=f"Alternative way to specify id. {ID_NOTE}",
     ),
     identifier: Optional[str] = typer.Option(
         None,
-        help=f"The human-friendly identifier of the application. {IDENTIFIER_NOTE}",
+        help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}",
     ),
     application_identifier: Optional[str] = typer.Option(
         None,
@@ -436,25 +431,7 @@ def clone(
     """
     Clone an application, so the user can own and modify a copy of it.
     """
-    identification: Any = id
-    if id is None and identifier is None:
-        terminal_message(
-            """
-            You must supply either [yellow]id[/yellow] or [yellow]identifier[/yellow].
-            """,
-            subject="Invalid params",
-        )
-        raise typer.Exit()
-    elif id is not None and identifier is not None:
-        terminal_message(
-            """
-            You may not supply both [yellow]id[/yellow] and [yellow]identifier[/yellow].
-            """,
-            subject="Invalid params",
-        )
-        raise typer.Exit()
-    elif identifier is not None:
-        identification = identifier
+    identification = sanitize_application_selection(id_or_identifier, id, identifier)
 
     req_data = dict()
 

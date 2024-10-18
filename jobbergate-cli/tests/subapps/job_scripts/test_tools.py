@@ -347,16 +347,12 @@ def test_render_job_script__providing_a_name(
 
     actual_job_script_data = render_job_script(
         dummy_context,
+        id_or_identifier=1,
         name=desired_job_script_data["name"],
-        application_id=1,
         fast=True,
     )
 
-    mocked_fetch_application_data.assert_called_once_with(
-        dummy_context,
-        id=1,
-        identifier=None,
-    )
+    mocked_fetch_application_data.assert_called_once_with(dummy_context, 1)
 
     assert actual_job_script_data == JobScriptResponse.model_validate(desired_job_script_data)
 
@@ -420,16 +416,12 @@ def test_render_job_script__set_name_dynamically_from_application_config(
 
     actual_job_script_data = render_job_script(
         dummy_context,
+        id_or_identifier=1,
         name=new_name,
-        application_id=1,
         fast=True,
     )
 
-    mocked_fetch_application_data.assert_called_once_with(
-        dummy_context,
-        id=1,
-        identifier=None,
-    )
+    mocked_fetch_application_data.assert_called_once_with(dummy_context, 1)
 
     assert actual_job_script_data == JobScriptResponse.model_validate(desired_job_script_data)
 
@@ -493,16 +485,12 @@ def test_render_job_script__set_name_dynamically_from_jobbergate_config(
 
     actual_job_script_data = render_job_script(
         dummy_context,
+        id_or_identifier=1,
         name=new_name,
-        application_id=1,
         fast=True,
     )
 
-    mocked_fetch_application_data.assert_called_once_with(
-        dummy_context,
-        id=1,
-        identifier=None,
-    )
+    mocked_fetch_application_data.assert_called_once_with(dummy_context, 1)
 
     assert actual_job_script_data == JobScriptResponse.model_validate(desired_job_script_data)
 
@@ -565,16 +553,12 @@ def test_render_job_script__without_a_name(
 
     actual_job_script_data = render_job_script(
         dummy_context,
+        id_or_identifier=application_response.application_id,
         name=None,
-        application_id=application_response.application_id,
         fast=True,
     )
 
-    mocked_fetch_application_data.assert_called_once_with(
-        dummy_context,
-        id=application_response.application_id,
-        identifier=None,
-    )
+    mocked_fetch_application_data.assert_called_once_with(dummy_context, application_response.application_id)
 
     assert actual_job_script_data == JobScriptResponse.model_validate(desired_job_script_data)
 

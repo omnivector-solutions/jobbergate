@@ -49,7 +49,7 @@ def test_list_all__renders_paginated_results(
     )
 
 
-@pytest.mark.parametrize("id_flag,separator", [("--id", "="), ("-i", " ")])
+@pytest.mark.parametrize("selector_template", ["{id}", "-i {id}", "--id={id}", "--id {id}"])
 def test_get_one__success(
     respx_mock,
     make_test_app,
@@ -58,10 +58,14 @@ def test_get_one__success(
     dummy_domain,
     cli_runner,
     mocker,
-    id_flag,
-    separator,
+    selector_template,
 ):
-    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/1").mock(
+    job_script_data = dummy_job_script_data[0]
+    id = job_script_data["id"]
+
+    cli_selector = selector_template.format(id=id)
+
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/{id}").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dummy_job_script_data[0],
@@ -69,7 +73,7 @@ def test_get_one__success(
     )
     test_app = make_test_app("get-one", get_one)
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
-    result = cli_runner.invoke(test_app, shlex.split(f"get-one {id_flag}{separator}1"))
+    result = cli_runner.invoke(test_app, shlex.split(f"get-one {cli_selector}"))
     assert result.exit_code == 0, f"get-one failed: {result.stdout}"
     mocked_render.assert_called_once_with(
         dummy_context,
@@ -83,10 +87,6 @@ def test_create_stand_alone__success(
     respx_mock,
     make_test_app,
     dummy_context,
-    dummy_module_source,
-    dummy_application_data,
-    dummy_job_script_data,
-    dummy_job_submission_data,
     dummy_domain,
     dummy_render_class,
     cli_runner,
@@ -142,10 +142,9 @@ def test_create_stand_alone__success(
         shlex.split(
             unwrap(
                 f"""
-                create-stand-alone --name=dummy-name
-                       --job-script-path={dummy_job_script}
-                       --supporting-file-path={dummy_support_1}
-                       --supporting-file-path={dummy_support_2}
+                create-stand-alone {dummy_job_script} --name=dummy-name
+                       --supporting-file={dummy_support_1}
+                       --supporting-file={dummy_support_2}
                 """
             )
         ),
@@ -185,7 +184,8 @@ def test_create_stand_alone__success(
 
 
 @pytest.mark.parametrize(
-    "name_flag,application_id_flag,separator", [("--name", "--application-id", "="), ("-n", "-i", " ")]
+    "selector_template",
+    ["{id}", "-i {id}", "--application-id={id}", "--application-id {id}"],
 )
 def test_create__non_fast_mode_and_job_submission(
     respx_mock,
@@ -201,19 +201,20 @@ def test_create__non_fast_mode_and_job_submission(
     tmp_path,
     attach_persona,
     mocker,
-    name_flag,
-    application_id_flag,
-    separator,
+    selector_template,
 ):
     application_response = ApplicationResponse(**dummy_application_data[0])
+    id = application_response.application_id
+    identifier = application_response.identifier
+
+    url_selector = identifier if "identifier" in selector_template else id
+    cli_selector = selector_template.format(id=id, identifier=identifier)
 
     job_script_data = dummy_job_script_data[0]
 
     job_submission_data = dummy_job_submission_data[0]
 
-    render_route = respx_mock.post(
-        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.application_id}"
-    )
+    render_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{url_selector}")
     render_route.mock(
         return_value=httpx.Response(
             httpx.codes.CREATED,
@@ -265,8 +266,8 @@ def test_create__non_fast_mode_and_job_submission(
         shlex.split(
             unwrap(
                 f"""
-                create {name_flag}{separator}dummy-name
-                       {application_id_flag}{separator}{application_response.application_id}
+                create {cli_selector}
+                       --name dummy-name
                        --param-file={param_file_path}
                        {sbatch_params}
                 """
@@ -278,8 +279,7 @@ def test_create__non_fast_mode_and_job_submission(
     assert result.exit_code == 0, f"create failed: {result.stdout}"
     mocked_fetch_application_data.assert_called_once_with(
         dummy_context,
-        id=application_response.application_id,
-        identifier=None,
+        application_response.application_id,
     )
 
     assert render_route.call_count == 1
@@ -404,11 +404,7 @@ def test_create__with_fast_mode_and_no_job_submission(
         ),
     )
     assert result.exit_code == 0, f"create failed: {result.stdout}"
-    mocked_fetch_application_data.assert_called_once_with(
-        dummy_context,
-        id=application_response.application_id,
-        identifier=None,
-    )
+    mocked_fetch_application_data.assert_called_once_with(dummy_context, application_response.application_id)
     assert render_route.call_count == 1
     content = json.loads(render_route.calls.last.request.content)
     assert content == {
@@ -442,7 +438,6 @@ def test_create__submit_is_none_and_cluster_name_is_defined(
     respx_mock,
     make_test_app,
     dummy_context,
-    dummy_module_source,
     dummy_application_data,
     dummy_job_script_data,
     dummy_domain,
@@ -541,7 +536,7 @@ def test_create_job_script_locally__success(
     )
 
 
-@pytest.mark.parametrize("id_flag,separator", [("--id", "="), ("-i", " ")])
+@pytest.mark.parametrize("selector_template", ["{id}", "-i {id}", "--id={id}", "--id {id}"])
 def test_update__makes_request_and_renders_results(
     respx_mock,
     make_test_app,
@@ -550,11 +545,12 @@ def test_update__makes_request_and_renders_results(
     dummy_domain,
     cli_runner,
     mocker,
-    id_flag,
-    separator,
+    selector_template,
 ):
     job_script_data = dummy_job_script_data[0]
     job_script_id = job_script_data["id"]
+
+    cli_selector = selector_template.format(id=job_script_id)
 
     new_job_script_data = {
         **job_script_data,
@@ -571,7 +567,7 @@ def test_update__makes_request_and_renders_results(
         shlex.split(
             unwrap(
                 f"""
-                update {id_flag}{separator}{job_script_id}
+                update {cli_selector}
                        --name='new-test-name'
                        --description='new-test-description'
                 """
@@ -587,27 +583,29 @@ def test_update__makes_request_and_renders_results(
     )
 
 
-@pytest.mark.parametrize("id_flag,separator", [("--id", "="), ("-i", " ")])
+@pytest.mark.parametrize("selector_template", ["{id}", "-i {id}", "--id={id}", "--id {id}"])
 def test_delete__makes_request_and_sends_terminal_message(
     respx_mock,
     make_test_app,
     dummy_domain,
     cli_runner,
-    id_flag,
-    separator,
+    selector_template,
 ):
     job_script_id = 13
+
+    cli_selector = selector_template.format(id=job_script_id)
 
     delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/job-scripts/{job_script_id}").mock(
         return_value=httpx.Response(httpx.codes.NO_CONTENT),
     )
     test_app = make_test_app("delete", delete)
-    result = cli_runner.invoke(test_app, shlex.split(f"delete {id_flag}{separator}{job_script_id}"))
+    result = cli_runner.invoke(test_app, shlex.split(f"delete {cli_selector}"))
     assert result.exit_code == 0, f"delete failed: {result.stdout}"
     assert delete_route.called
     assert "JOB SCRIPT DELETE SUCCEEDED"
 
 
+@pytest.mark.parametrize("selector_template", ["{id}", "-i {id}", "--id={id}", "--id {id}"])
 def test_show_files__success(
     respx_mock,
     make_test_app,
@@ -616,12 +614,17 @@ def test_show_files__success(
     dummy_template_source,
     cli_runner,
     mocker,
+    selector_template,
 ):
     """
     Verify that the ``show-files`` subcommand works as expected.
     """
     job_script_data = dummy_job_script_data[0]
-    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/1").mock(
+    id = job_script_data["id"]
+
+    cli_selector = selector_template.format(id=id)
+
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/{id}").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=job_script_data,
@@ -642,7 +645,7 @@ def test_show_files__success(
     test_app = make_test_app("show-files", show_files)
     mocked_terminal_message = mocker.patch("jobbergate_cli.subapps.job_scripts.app.terminal_message")
 
-    result = cli_runner.invoke(test_app, shlex.split("show-files --id=1"))
+    result = cli_runner.invoke(test_app, shlex.split(f"show-files {cli_selector}"))
     assert result.exit_code == 0, f"get-one failed: {result.stdout}"
     mocked_terminal_message.assert_called_once_with(
         dummy_template_source,
@@ -663,6 +666,7 @@ class TestDownloadJobScriptFiles:
         """
         return make_test_app("download", download_files)
 
+    @pytest.mark.parametrize("selector_template", ["{id}", "-i {id}", "--id={id}", "--id {id}"])
     def test_download__success(
         self,
         respx_mock,
@@ -673,13 +677,17 @@ class TestDownloadJobScriptFiles:
         cli_runner,
         mocker,
         tmp_path,
+        selector_template,
     ):
         """
         Test that the ``download`` subcommand works as expected.
         """
-
         job_script_data = dummy_job_script_data[0]
-        respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/1").mock(
+        id = job_script_data["id"]
+
+        cli_selector = selector_template.format(id=id)
+
+        respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/{id}").mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
                 json=job_script_data,
@@ -692,7 +700,7 @@ class TestDownloadJobScriptFiles:
                 "jobbergate_cli.subapps.job_scripts.app.download_job_script_files",
                 return_value=list(f["filename"] for f in job_script_data["files"]),
             ) as mocked_save_job_script_files:
-                result = cli_runner.invoke(test_app, shlex.split("download --id=1"))
+                result = cli_runner.invoke(test_app, shlex.split(f"download {cli_selector}"))
 
                 mocked_save_job_script_files.assert_called_once_with(1, dummy_context, tmp_path)
 
@@ -704,6 +712,7 @@ class TestDownloadJobScriptFiles:
 
 
 class TestCloneJobScript:
+    @pytest.mark.parametrize("selector_template", ["{id}", "-i {id}", "--id={id}", "--id {id}"])
     def test_clone__success(
         self,
         respx_mock,
@@ -713,14 +722,18 @@ class TestCloneJobScript:
         dummy_context,
         cli_runner,
         mocker,
+        selector_template,
     ):
         """
         Test that the clone application subcommand works as expected.
         """
 
         job_script_data = dummy_job_script_data[0]
+        id = job_script_data["id"]
 
-        clone_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-scripts/clone/{job_script_data['id']}").mock(
+        cli_selector = selector_template.format(id=id)
+
+        clone_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-scripts/clone/{id}").mock(
             return_value=httpx.Response(
                 httpx.codes.CREATED,
                 json=job_script_data,
@@ -732,8 +745,8 @@ class TestCloneJobScript:
         result = cli_runner.invoke(
             test_app,
             shlex.split(
-                "clone --id={} --name={} --description={}".format(
-                    job_script_data["id"],
+                "clone {} --name={} --description={}".format(
+                    cli_selector,
                     shlex.quote(job_script_data["name"]),
                     shlex.quote(job_script_data["description"]),
                 ),
