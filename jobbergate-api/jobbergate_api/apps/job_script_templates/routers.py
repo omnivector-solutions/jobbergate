@@ -17,7 +17,7 @@ from fastapi import (
 from fastapi import Response as FastAPIResponse
 from fastapi_pagination import Page
 from loguru import logger
-from pydantic import AnyHttpUrl, AnyUrl
+from pydantic import AnyUrl
 from sqlalchemy.exc import IntegrityError
 
 from jobbergate_api.apps.constants import FileType
@@ -483,7 +483,7 @@ async def job_script_upload_file_by_url(
     runtime_config: RunTimeConfig | None = Body(
         None, description="Runtime configuration is optional when the workflow file already exists"
     ),
-    file_url: AnyHttpUrl = Query(..., description="URL of the file to upload"),
+    file_url: AnyUrl = Query(..., description="URL of the file to upload"),
     secure_services: SecureService = Depends(
         secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
     ),

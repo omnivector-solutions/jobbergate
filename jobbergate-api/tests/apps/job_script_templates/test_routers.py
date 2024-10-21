@@ -1,6 +1,8 @@
 """Test the router for the Job Script Template resource."""
 
 import json
+from io import BytesIO
+from unittest import mock
 
 import httpx
 import pytest
@@ -681,14 +683,17 @@ class TestJobTemplateFiles:
         assert template_file["file_type"] == file_type
 
     @pytest.mark.parametrize(
-        "is_owner, permissions",
+        "is_owner, permissions, protocol",
         [
-            (True, [Permissions.JOB_TEMPLATES_CREATE]),
-            (False, [Permissions.ADMIN]),
-            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.MAINTAINER]),
+            (True, [Permissions.JOB_TEMPLATES_CREATE], "http"),
+            (False, [Permissions.ADMIN], "http"),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.MAINTAINER], "http"),
+            (True, [Permissions.JOB_TEMPLATES_CREATE], "https"),
+            (False, [Permissions.ADMIN], "https"),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.MAINTAINER], "https"),
         ],
     )
-    async def test_upsert_new_file_by_url(
+    async def test_upsert_new_file_by_url__http_https(
         self,
         client,
         tester_email,
@@ -698,12 +703,13 @@ class TestJobTemplateFiles:
         dummy_template,
         is_owner,
         permissions,
+        protocol,
         respx_mock,
     ):
         parent_id = job_template_data.id
         file_type = "ENTRYPOINT"
 
-        file_url = "http://dummy-domain.com/dummy-file.py.j2"
+        file_url = f"{protocol}://dummy-domain.com/dummy-file.py.j2"
         respx_mock.get(file_url).mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
@@ -718,6 +724,80 @@ class TestJobTemplateFiles:
             f"jobbergate/job-script-templates/{parent_id}/upload-by-url/template/{file_type}",
             params=dict(file_url=file_url),
         )
+
+        # First, check the response from the upload endpoint
+        assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
+        response_data = response.json()
+        assert response_data is not None
+        assert response_data["parent_id"] == parent_id
+        assert response_data["filename"] == "dummy-file.py.j2"
+        assert response_data["file_type"] == file_type
+
+        # Next, check that the object was inserted into the s3 bucket
+        s3_object = await synth_bucket.Object(f"job_script_template_files/{parent_id}/dummy-file.py.j2")
+        response = await s3_object.get()
+        file_content = await response["Body"].read()
+        assert dummy_template == file_content.decode()
+
+        # Finally, see that the file is included in the parent template file list
+        inject_security_header(requester_email, Permissions.JOB_TEMPLATES_READ)
+        response = await client.get(f"jobbergate/job-script-templates/{parent_id}")
+        assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
+
+        response_data = response.json()
+
+        template_files = response_data["template_files"]
+        assert len(template_files) == 1
+        template_file = template_files.pop()
+        assert template_file["parent_id"] == parent_id
+        assert template_file["filename"] == "dummy-file.py.j2"
+        assert template_file["file_type"] == file_type
+
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_TEMPLATES_CREATE]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.MAINTAINER]),
+        ],
+    )
+    async def test_upsert_new_file_by_url__s3(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_template_data,
+        synth_bucket,
+        dummy_template,
+        is_owner,
+        permissions,
+    ):
+        parent_id = job_template_data.id
+        file_type = "ENTRYPOINT"
+
+        file_url = f"s3://dummy-domain.com/dummy-file.py.j2"
+
+        requester_email = tester_email if is_owner else "another_" + tester_email
+
+        async def _mock_download(byte_buffer: BytesIO) -> None:
+            byte_buffer.write(dummy_template.encode())
+            byte_buffer.seek(0)
+
+        with mock.patch("jobbergate_api.apps.services.Session") as mock_session_class:
+            (
+                mock_session_class.return_value
+                .resource.return_value
+                .__aenter__.return_value
+                .Bucket.return_value
+                .Object.return_value
+                .download_fileobj.side_effect
+            ) = _mock_download  # fmt: skip
+
+            inject_security_header(requester_email, *permissions)
+            response = await client.put(
+                f"jobbergate/job-script-templates/{parent_id}/upload-by-url/template/{file_type}",
+                params=dict(file_url=file_url),
+            )
 
         # First, check the response from the upload endpoint
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
@@ -1145,14 +1225,17 @@ class TestJobTemplateWorkflowFile:
         assert workflow_file["runtime_config"] == runtime_config
 
     @pytest.mark.parametrize(
-        "is_owner, permissions",
+        "is_owner, permissions, protocol",
         [
-            (True, [Permissions.JOB_TEMPLATES_CREATE]),
-            (False, [Permissions.ADMIN]),
-            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.MAINTAINER]),
+            (True, [Permissions.JOB_TEMPLATES_CREATE], "http"),
+            (False, [Permissions.ADMIN], "http"),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.MAINTAINER], "http"),
+            (True, [Permissions.JOB_TEMPLATES_CREATE], "https"),
+            (False, [Permissions.ADMIN], "https"),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.MAINTAINER], "https"),
         ],
     )
-    async def test_create_by_url__success(
+    async def test_create_by_url__http_httpx_success(
         self,
         client,
         tester_email,
@@ -1162,12 +1245,13 @@ class TestJobTemplateWorkflowFile:
         dummy_application_source_file,
         is_owner,
         permissions,
+        protocol,
         respx_mock,
     ):
         parent_id = job_template_data.id
         runtime_config = {"foo": "bar"}
 
-        file_url = "http://dummy-domain.com/dummy-file.py.j2"
+        file_url = f"{protocol}://dummy-domain.com/dummy-file.py.j2"
         respx_mock.get(file_url).mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
@@ -1183,6 +1267,81 @@ class TestJobTemplateWorkflowFile:
             params=dict(file_url=file_url),
             data=json.dumps(runtime_config),
         )
+
+        # First, check the response from the upload endpoint
+        assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
+        response_data = response.json()
+        assert response_data is not None
+        assert response_data["parent_id"] == parent_id
+        assert response_data["filename"] == WORKFLOW_FILE_NAME
+        assert response_data["runtime_config"] == runtime_config
+
+        # Next, check that the object was inserted into the s3 bucket
+        s3_object = await synth_bucket.Object(f"workflow_files/{parent_id}/{WORKFLOW_FILE_NAME}")
+        response = await s3_object.get()
+        file_content = await response["Body"].read()
+        assert dummy_application_source_file == file_content.decode()
+
+        # Finally, see that the file is included in the parent template file list
+        inject_security_header(requester_email, Permissions.JOB_TEMPLATES_READ)
+        response = await client.get(f"jobbergate/job-script-templates/{parent_id}")
+        assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
+
+        response_data = response.json()
+
+        workflow_files = response_data["workflow_files"]
+        assert len(workflow_files) == 1
+        workflow_file = workflow_files.pop()
+        assert workflow_file["parent_id"] == parent_id
+        assert workflow_file["filename"] == WORKFLOW_FILE_NAME
+        assert workflow_file["runtime_config"] == runtime_config
+
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_TEMPLATES_CREATE]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_TEMPLATES_CREATE, Permissions.MAINTAINER]),
+        ],
+    )
+    async def test_create_by_url__s3_success(
+        self,
+        client,
+        tester_email,
+        inject_security_header,
+        job_template_data,
+        synth_bucket,
+        dummy_application_source_file,
+        is_owner,
+        permissions,
+    ):
+        parent_id = job_template_data.id
+        runtime_config = {"foo": "bar"}
+
+        file_url = f"s3://dummy-domain.com/dummy-file.py.j2"
+
+        requester_email = tester_email if is_owner else "another_" + tester_email
+
+        async def _mock_download(byte_buffer: BytesIO) -> None:
+            byte_buffer.write(dummy_application_source_file.encode())
+            byte_buffer.seek(0)
+
+        with mock.patch("jobbergate_api.apps.services.Session") as mock_session_class:
+            (
+                mock_session_class.return_value
+                .resource.return_value
+                .__aenter__.return_value
+                .Bucket.return_value
+                .Object.return_value
+                .download_fileobj.side_effect
+            ) = _mock_download  # fmt: skip
+
+            inject_security_header(requester_email, *permissions)
+            response = await client.put(
+                f"jobbergate/job-script-templates/{parent_id}/upload-by-url/workflow",
+                params=dict(file_url=file_url),
+                data=json.dumps(runtime_config),
+            )
 
         # First, check the response from the upload endpoint
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"

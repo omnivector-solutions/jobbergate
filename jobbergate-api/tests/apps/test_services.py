@@ -807,8 +807,13 @@ class TestFileService:
 
         with mock.patch("jobbergate_api.apps.services.Session") as mock_session_class:
             (
-                mock_session_class.return_value.resource.return_value.__aenter__.return_value.Bucket.return_value.Object.return_value.download_fileobj.side_effect
-            ) = _mock_download
+                mock_session_class.return_value
+                .resource.return_value
+                .__aenter__.return_value
+                .Bucket.return_value
+                .Object.return_value
+                .download_fileobj.side_effect
+            ) = _mock_download  # fmt: skip
 
             file_obj = await dummy_file_service._get_file_data_from_url(AnyUrl(file_url))
 

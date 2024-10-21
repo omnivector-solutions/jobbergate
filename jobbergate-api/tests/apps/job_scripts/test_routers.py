@@ -1,5 +1,8 @@
 """Tests for the /job-scripts/ endpoint."""
 
+from io import BytesIO
+from unittest import mock
+
 import httpx
 import pytest
 from fastapi import status
@@ -856,14 +859,17 @@ class TestJobScriptFiles:
         assert file_content.decode() == job_script_data_as_string
 
     @pytest.mark.parametrize(
-        "is_owner, permissions",
+        "is_owner, permissions, protocol",
         [
-            (True, [Permissions.JOB_SCRIPTS_CREATE]),
-            (False, [Permissions.ADMIN]),
-            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.MAINTAINER]),
+            (True, [Permissions.JOB_SCRIPTS_CREATE], "http"),
+            (False, [Permissions.ADMIN], "http"),
+            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.MAINTAINER], "http"),
+            (True, [Permissions.JOB_SCRIPTS_CREATE], "https"),
+            (False, [Permissions.ADMIN], "https"),
+            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.MAINTAINER], "https"),
         ],
     )
-    async def test_upsert_new_file_by_url(
+    async def test_upsert_new_file_by_url__http_https(
         self,
         client,
         inject_security_header,
@@ -871,10 +877,11 @@ class TestJobScriptFiles:
         synth_services,
         is_owner,
         permissions,
+        protocol,
         respx_mock,
     ):
         dummy_content = "print('Hello World!')".encode()
-        respx_mock.get("http://dummy-domain.com/dummy-file.py").mock(
+        respx_mock.get(f"{protocol}://dummy-domain.com/dummy-file.py").mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
                 content=dummy_content,
@@ -890,8 +897,74 @@ class TestJobScriptFiles:
         inject_security_header(requester_email, *permissions)
         response = await client.put(
             f"jobbergate/job-scripts/{id}/upload-by-url/{file_type}",
-            params=dict(file_url="http://dummy-domain.com/dummy-file.py"),
+            params=dict(file_url=f"{protocol}://dummy-domain.com/dummy-file.py"),
         )
+
+        assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
+
+        # Check the response from the upload endpoint
+        response_data = response.json()
+        assert response_data is not None
+        assert response_data["parent_id"] == id
+        assert response_data["filename"] == "dummy-file.py"
+        assert response_data["file_type"] == file_type
+
+        # Check the database
+        job_script_file = await synth_services.file.job_script.get(id, "dummy-file.py")
+        assert job_script_file is not None
+        assert job_script_file.parent_id == id
+        assert job_script_file.filename == "dummy-file.py"
+        assert job_script_file.file_type == file_type
+        assert job_script_file.file_key == f"job_script_files/{id}/dummy-file.py"
+
+        # Check the file content on s3
+        file_content = await synth_services.file.job_script.get_file_content(job_script_file)
+        assert file_content == dummy_content
+
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_SCRIPTS_CREATE]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_SCRIPTS_CREATE, Permissions.MAINTAINER]),
+        ],
+    )
+    async def test_upsert_new_file_by_url__s3(
+        self,
+        client,
+        inject_security_header,
+        job_script_data,
+        synth_services,
+        is_owner,
+        permissions,
+    ):
+        dummy_content = "print('Hello World!')".encode()
+
+        id = job_script_data.id
+        file_type = "ENTRYPOINT"
+
+        owner_email = job_script_data.owner_email
+        requester_email = owner_email if is_owner else "another_" + owner_email
+
+        async def _mock_download(byte_buffer: BytesIO) -> None:
+            byte_buffer.write(dummy_content)
+            byte_buffer.seek(0)
+
+        with mock.patch("jobbergate_api.apps.services.Session") as mock_session_class:
+            (
+                mock_session_class.return_value
+                .resource.return_value
+                .__aenter__.return_value
+                .Bucket.return_value
+                .Object.return_value
+                .download_fileobj.side_effect
+            ) = _mock_download  # fmt: skip
+
+            inject_security_header(requester_email, *permissions)
+            response = await client.put(
+                f"jobbergate/job-scripts/{id}/upload-by-url/{file_type}",
+                params=dict(file_url=f"s3://dummy-domain.com/dummy-file.py"),
+            )
 
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
 
