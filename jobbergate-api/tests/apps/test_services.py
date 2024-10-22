@@ -4,14 +4,17 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from io import BytesIO
+from itertools import product
 from unittest import mock
 
+import httpx
 import pytest
+from pydantic import AnyUrl
 from fastapi import HTTPException, UploadFile
 from fastapi_pagination.default import Params
 
 from jobbergate_api.apps.models import Base, CrudMixin, FileMixin
-from jobbergate_api.apps.services import CrudService, FileService
+from jobbergate_api.apps.services import CrudService, FileService, ServiceError
 
 
 class DummyCrud(CrudMixin, Base):
@@ -700,6 +703,29 @@ class TestFileService:
         file_data = await dummy_file_service.get_file_content(upserted_instance)
         assert file_data == file_content
 
+    @pytest.mark.parametrize("file_content", [b"dummy bytes content", b""])
+    async def test_upsert__with_url(self, file_content, dummy_file_service, respx_mock):
+        """
+        Test that the ``upsert()`` method can create a file from a file url.
+        """
+        respx_mock.get("http://dummy-domain.com/dummy-file.txt").mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                content=file_content,
+            ),
+        )
+        upserted_instance = await dummy_file_service.upsert(
+            13,
+            "file-one.txt",
+            AnyUrl("http://dummy-domain.com/dummy-file.txt"),
+        )
+
+        assert upserted_instance.parent_id == 13
+        assert upserted_instance.filename == "file-one.txt"
+
+        file_data = await dummy_file_service.get_file_content(upserted_instance)
+        assert file_data == file_content
+
     @pytest.mark.parametrize(
         "filename, content",
         [
@@ -739,6 +765,82 @@ class TestFileService:
                 with pytest.raises(HTTPException, match="Uploaded files cannot exceed 1 bytes") as exc_info:
                     await dummy_file_service.upsert(13, "file-one.txt", dummy_upload_file)
         assert exc_info.value.status_code == 413
+
+    @pytest.mark.parametrize(
+        "file_content,protocol",
+        product(
+            [b"dummy bytes content", b""],
+            ["http", "https"],
+        ),
+    )
+    async def test__get_file_data_from_url__http_https(
+        self, file_content, protocol, dummy_file_service, respx_mock
+    ):
+        """
+        Test that the ``_get_file_data_from_url()`` method can download file data from http/https urls.
+        """
+        file_url = f"{protocol}://dummy-domain.com/dummy-file.txt"
+        respx_mock.get(file_url).mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                content=file_content,
+            ),
+        )
+        file_obj = await dummy_file_service._get_file_data_from_url(AnyUrl(file_url))
+        assert file_obj.read() == file_content
+
+    @pytest.mark.parametrize(
+        "file_content",
+        [b"dummy bytes content", b""],
+    )
+    async def test__get_file_data_from_url__s3_success(self, file_content, dummy_file_service):
+        """
+        Test that the ``_get_file_data_from_url()`` method can download file data from http/https urls.
+        """
+        bucket_name = "dummy-domain.com"
+        key = "path/dummy-file.txt"
+        file_url = f"s3://{bucket_name}/{key}"
+
+        async def _mock_download(byte_buffer: BytesIO) -> None:
+            byte_buffer.write(file_content)
+            byte_buffer.seek(0)
+
+        with mock.patch("jobbergate_api.apps.services.Session") as mock_session_class:
+            (
+                mock_session_class.return_value
+                .resource.return_value
+                .__aenter__.return_value
+                .Bucket.return_value
+                .Object.return_value
+                .download_fileobj.side_effect
+            ) = _mock_download  # fmt: skip
+
+            file_obj = await dummy_file_service._get_file_data_from_url(AnyUrl(file_url))
+
+        assert file_obj.read() == file_content
+
+    @pytest.mark.parametrize(
+        "file_url,error_stub",
+        [
+            [b"s3:", "Couldn't extract bucket name"],
+            [b"s3://ultra-hpc.io", "Couldn't extract bucket key"],
+        ],
+    )
+    async def test__get_file_data_from_url__s3_fails_on_invalid_url(
+        self, file_url, error_stub, dummy_file_service
+    ):
+        """
+        Test that the ``_get_file_data_from_url()`` method raises exeptions on invalid s3 urls.
+        """
+        with pytest.raises(ServiceError, match=error_stub):
+            await dummy_file_service._get_file_data_from_url(AnyUrl(file_url))
+
+    async def test__get_file_data_from_url__fails_on_unsupported_protocol(self, dummy_file_service):
+        """
+        Test that the ``_get_file_data_from_url()`` method raises exeptions on unsupported protocols.
+        """
+        with pytest.raises(ServiceError, match="Unsupported protocol"):
+            await dummy_file_service._get_file_data_from_url(AnyUrl("ftp://ultra-hpc.io/target-file.txt"))
 
     async def test_delete__success(self, make_upload_file, dummy_file_service):
         """

@@ -2,12 +2,14 @@
 
 from typing import cast
 
-from buzz import handle_errors
+from buzz import require_condition, handle_errors
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Path, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
 from fastapi_pagination import Page
 from loguru import logger
+from pydantic import AnyUrl
+import snick
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.dependencies import SecureService, secure_services
@@ -301,6 +303,71 @@ async def job_script_get_file(
         content=await secure_services.file.job_script.get_file_content(job_script_file),
         media_type="text/plain",
         headers={"filename": job_script_file.filename},
+    )
+
+
+@router.put(
+    "/{id}/upload-by-url/{file_type}",
+    status_code=status.HTTP_200_OK,
+    description=snick.unwrap(
+        """
+        Endpoint to upload a file to a job script from a provided URL.
+        If a previous filename is provided, the file will be renamed from that.
+        Upload file is optional in this scenario since the file content can be copied from previous file.
+        """
+    ),
+    response_model=JobScriptFileDetailedView,
+)
+async def job_script_upload_file_by_url(
+    id: int = Path(...),
+    file_type: FileType = Path(...),
+    filename: str | None = Query(None, max_length=255),
+    file_url: AnyUrl = Query(..., description="URL of the file to upload"),
+    previous_filename: str | None = Query(
+        None,
+        description="Previous name of the file in case a rename is needed",
+        max_length=255,
+    ),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)
+    ),
+):
+    """Upload a file to a job script from a URL."""
+    if filename is None:
+        url_path = file_url.path or ""
+        (*_, filename) = url_path.split("/")
+        require_condition(
+            filename != "",
+            f"Filename could not be extracted from the provided URL: {file_url}",
+            raise_exc_class=HTTPException,
+            exc_builder=lambda exc_class, msg: exc_class(status_code=status.HTTP_400_BAD_REQUEST, detail=msg),
+        )
+
+    # This is needed to make static type checkers happy. It shouldn't be able to happen
+    assert filename is not None
+
+    logger.debug(
+        snick.unwrap(
+            f"""
+            Uploading file {filename=} from {file_url}
+            to job script {id=}
+            with {file_type=} and {previous_filename=}
+            """
+        )
+    )
+
+    job_script = await secure_services.crud.job_script.get(id)
+    if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
+        secure_services.crud.job_script.ensure_attribute(
+            job_script, owner_email=secure_services.identity_payload.email
+        )
+
+    return await secure_services.file.job_script.upsert(
+        parent_id=job_script.id,
+        filename=filename,
+        upload_content=file_url,
+        previous_filename=previous_filename,
+        file_type=file_type,
     )
 
 
