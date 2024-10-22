@@ -5135,6 +5135,58 @@ helper functions in the class.</p>
 
 
 
+<h7 id="jobbergate_api.apps.job_script_templates.routers.job_script_template_upload_file_by_url" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">job_script_template_upload_file_by_url</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_script_template_upload_file_by_url</span><span class="p">(</span><span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span> <span class="n">file_type</span><span class="p">:</span> <span class="n">FileType</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">),</span> <span class="n">file_url</span><span class="p">:</span> <span class="n">AnyUrl</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;URL of the file to upload&#39;</span><span class="p">),</span> <span class="n">previous_filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Previous name of the file in case a rename is needed&#39;</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">),</span> <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">secure_services</span><span class="p">(</span><span class="n">Permissions</span><span class="o">.</span><span class="n">ADMIN</span><span class="p">,</span> <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_TEMPLATES_CREATE</span><span class="p">,</span> <span class="n">ensure_email</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Upload a file to a job script template by id or identifier using file URL.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_script_templates.routers.job_script_upload_file_by_url" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">job_script_upload_file_by_url</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_script_upload_file_by_url</span><span class="p">(</span><span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(),</span> <span class="n">runtime_config</span><span class="p">:</span> <span class="n">RunTimeConfig</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Body</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Runtime configuration is optional when the workflow file already exists&#39;</span><span class="p">),</span> <span class="n">file_url</span><span class="p">:</span> <span class="n">AnyUrl</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;URL of the file to upload&#39;</span><span class="p">),</span> <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">secure_services</span><span class="p">(</span><span class="n">Permissions</span><span class="o">.</span><span class="n">ADMIN</span><span class="p">,</span> <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_TEMPLATES_CREATE</span><span class="p">,</span> <span class="n">ensure_email</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Upload a file to a job script workflow by id or identifier from a URL.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
 <h7 id="jobbergate_api.apps.job_script_templates.routers.job_script_workflow_delete_file" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">job_script_workflow_delete_file</span>
 
@@ -6715,6 +6767,32 @@ helper functions in the class.</p>
 </div>
 
 
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_scripts.routers.job_script_upload_file_by_url" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">job_script_upload_file_by_url</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_script_upload_file_by_url</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="o">...</span><span class="p">),</span> <span class="n">file_type</span><span class="p">:</span> <span class="n">FileType</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="o">...</span><span class="p">),</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">),</span> <span class="n">file_url</span><span class="p">:</span> <span class="n">AnyUrl</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;URL of the file to upload&#39;</span><span class="p">),</span> <span class="n">previous_filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Previous name of the file in case a rename is needed&#39;</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">),</span> <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">secure_services</span><span class="p">(</span><span class="n">Permissions</span><span class="o">.</span><span class="n">ADMIN</span><span class="p">,</span> <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_SCRIPTS_CREATE</span><span class="p">,</span> <span class="n">ensure_email</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Upload a file to a job script from a URL.</p>
+
+  </div>
+
+</div>
+
+
 
   </div>
 
@@ -7294,7 +7372,7 @@ deleted before the agent handles its submissions.</p>
   </span>
 
 </h8>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">upsert</span><span class="p">(</span><span class="n">parent_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">upload_content</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="n">UploadFile</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">previous_filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">upsert_kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileModel</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">upsert</span><span class="p">(</span><span class="n">parent_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">upload_content</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="n">AnyUrl</span> <span class="o">|</span> <span class="n">UploadFile</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">previous_filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">upsert_kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileModel</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -11199,7 +11277,7 @@ information, see this discussion: https://github.com/python/typing/issues/213</p
   </span>
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">upload_file_content</span><span class="p">(</span><span class="n">instance</span><span class="p">:</span> <span class="n">FileModel</span><span class="p">,</span> <span class="n">upload_content</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="n">UploadFile</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">upload_file_content</span><span class="p">(</span><span class="n">instance</span><span class="p">:</span> <span class="n">FileModel</span><span class="p">,</span> <span class="n">upload_content</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="n">AnyUrl</span> <span class="o">|</span> <span class="n">UploadFile</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -11225,7 +11303,7 @@ information, see this discussion: https://github.com/python/typing/issues/213</p
   </span>
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">upsert</span><span class="p">(</span><span class="n">parent_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">upload_content</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="n">UploadFile</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">previous_filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">upsert_kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileModel</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">upsert</span><span class="p">(</span><span class="n">parent_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">upload_content</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="n">AnyUrl</span> <span class="o">|</span> <span class="n">UploadFile</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">previous_filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">upsert_kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileModel</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
