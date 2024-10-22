@@ -775,7 +775,7 @@ class TestJobTemplateFiles:
         parent_id = job_template_data.id
         file_type = "ENTRYPOINT"
 
-        file_url = f"s3://dummy-domain.com/dummy-file.py.j2"
+        file_url = "s3://dummy-domain.com/dummy-file.py.j2"
 
         requester_email = tester_email if is_owner else "another_" + tester_email
 
@@ -1318,7 +1318,7 @@ class TestJobTemplateWorkflowFile:
         parent_id = job_template_data.id
         runtime_config = {"foo": "bar"}
 
-        file_url = f"s3://dummy-domain.com/dummy-file.py.j2"
+        file_url = "s3://dummy-domain.com/dummy-file.py.j2"
 
         requester_email = tester_email if is_owner else "another_" + tester_email
 

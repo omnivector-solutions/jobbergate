@@ -963,7 +963,7 @@ class TestJobScriptFiles:
             inject_security_header(requester_email, *permissions)
             response = await client.put(
                 f"jobbergate/job-scripts/{id}/upload-by-url/{file_type}",
-                params=dict(file_url=f"s3://dummy-domain.com/dummy-file.py"),
+                params=dict(file_url="s3://dummy-domain.com/dummy-file.py"),
             )
 
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
