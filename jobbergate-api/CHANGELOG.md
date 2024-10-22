@@ -4,6 +4,11 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+- Added endpoints to upload by URL [[PENG-2426](https://sharing.clickup.com/t/h/c/18022949/PENG-2426/PYUL64MXH5P0MWB)]
+  - For Job Script files
+  - For Job Script Template files
+  - For Job Script Template workflow files
+
 
 ## 5.3.0 -- 2024-09-09
 

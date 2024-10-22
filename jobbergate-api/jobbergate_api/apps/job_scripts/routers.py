@@ -348,7 +348,7 @@ async def job_script_upload_file_by_url(
 
     logger.debug(
         snick.unwrap(
-            """
+            f"""
             Uploading file {filename=} from {file_url}
             to job script {id=}
             with {file_type=} and {previous_filename=}

@@ -346,7 +346,7 @@ async def job_script_template_upload_file_by_url(
 
     logger.debug(
         snick.unwrap(
-            """
+            f"""
             Uploading file {filename=} from {file_url}
             to job template {id_or_identifier=};
             {file_type=}; {previous_filename=}
