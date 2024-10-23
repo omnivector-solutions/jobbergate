@@ -17,6 +17,7 @@ def test_SENTRY_TRACE_RATE__requires_float_in_valid_range():
         Settings(SENTRY_TRACE_RATE=1.1)
 
 
+@pytest.mark.skip(reason="There are no required fields in the Settings class at the moment")
 def test_Validation_error__when_parameter_is_missing():
     original_value = os.environ.get("OIDC_DOMAIN")
     try:
