@@ -17,6 +17,7 @@ def init_sentry():
             integrations=[sentry_logging],
             traces_sample_rate=1.0,
             environment=SETTINGS.SENTRY_ENV,
+            propagate_traces=False,  # Do not propagate traces to child processes (e.g. sbatch subprocesses)
         )
 
         logger.debug("##### Enabled Sentry since a valid DSN key was provided.")

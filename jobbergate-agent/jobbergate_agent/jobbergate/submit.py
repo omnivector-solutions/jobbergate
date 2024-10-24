@@ -174,7 +174,7 @@ class SubprocessAsUserHandler(SubprocessHandler):
         self.gid = pwan.pw_gid
 
     def run(self, *args, **kwargs):
-        kwargs.update(user=self.uid, group=self.gid)
+        kwargs.update(user=self.uid, group=self.gid, env={})
         # Tests indicate that the change on the working directory precedes the change of user on the subprocess.
         # With that, the user running the agent can face permission denied errors on cwd,
         # depending on the setting on the filesystem and permissions on the directory.
