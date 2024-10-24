@@ -793,31 +793,40 @@ class TestFileService:
         "file_content",
         [b"dummy bytes content", b""],
     )
-    async def test__get_file_data_from_url__s3_success(self, file_content, dummy_file_service):
+    async def test__get_file_data_from_url__s3_success(self, file_content, dummy_file_service, respx_mock):
         """
-        Test that the ``_get_file_data_from_url()`` method can download file data from http/https urls.
+        Test that the ``_get_file_data_from_url()`` method can download file data from s3 urls.
+
+        Note that the s3 url is rewritten as an https url.
         """
-        bucket_name = "dummy-domain.com"
-        key = "path/dummy-file.txt"
-        file_url = f"s3://{bucket_name}/{key}"
-
-        async def _mock_download(byte_buffer: BytesIO) -> None:
-            byte_buffer.write(file_content)
-            byte_buffer.seek(0)
-
-        with mock.patch("jobbergate_api.apps.services.Session") as mock_session_class:
-            (
-                mock_session_class.return_value
-                .resource.return_value
-                .__aenter__.return_value
-                .Bucket.return_value
-                .Object.return_value
-                .download_fileobj.side_effect
-            ) = _mock_download  # fmt: skip
-
-            file_obj = await dummy_file_service._get_file_data_from_url(AnyUrl(file_url))
-
+        s3_url = "s3://dummy-bucket/dummy-file.txt"
+        https_url = "https://dummy-bucket.s3.amazonaws.com/dummy-file.txt"
+        respx_mock.get(https_url).mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                content=file_content,
+            ),
+        )
+        file_obj = await dummy_file_service._get_file_data_from_url(AnyUrl(s3_url))
         assert file_obj.read() == file_content
+
+    async def test__get_file_data_from_url__raises_500_if_download_fails(
+        self, dummy_file_service, respx_mock
+    ):
+        """
+        Test that the ``_get_file_data_from_url()`` method raises a 500 error if the download fails.
+        """
+        file_url = "https://dummy-domain.com/dummy-file.txt"
+
+        respx_mock.get(file_url).mock(return_value=httpx.Response(httpx.codes.IM_A_TEAPOT))
+        with pytest.raises(ServiceError, match="Failed to download") as exc_info:
+            await dummy_file_service._get_file_data_from_url(AnyUrl(file_url))
+        assert exc_info.value.status_code == 500
+
+        respx_mock.get(file_url).mock(side_effect=RuntimeError)
+        with pytest.raises(ServiceError, match="Failed to download") as exc_info:
+            await dummy_file_service._get_file_data_from_url(AnyUrl(file_url))
+        assert exc_info.value.status_code == 500
 
     @pytest.mark.parametrize(
         "file_url,error_stub",

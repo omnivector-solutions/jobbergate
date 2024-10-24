@@ -2,7 +2,6 @@
 Provide functions to configure logging.
 """
 
-import dataclasses
 import inspect
 import logging
 import sys
@@ -37,41 +36,10 @@ class InterceptHandler(logging.Handler):
         logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
-@dataclasses.dataclass
-class RouteFilterParams:
-    """
-    Defines the params for a UvicornRouteFilter.
-    """
-
-    route: str
-    verb: str = "GET"
-
-
-class UvicornRouteFilter(logging.Filter):
-    """
-    Define a logging filter for uvicorn routes.
-    """
-
-    def __init__(self, rfp: RouteFilterParams):
-        """
-        Initialize with route filter params.
-        """
-        self.rfp = rfp
-
-    def filter(self, record):
-        """
-        Filter messages matching the verb and route.
-        """
-        return f"{self.rfp.verb} {self.rfp.route}" not in record.getMessage()
-
-
-def init_logging(supress_routes: list[RouteFilterParams] | None = None):
+def init_logging():
     """
     Initialize logging by setting log level for normal logger and for the SQL logging.
     """
-    if supress_routes is None:
-        supress_routes = []
-
     engine_logger = logging.getLogger("sqlalchemy.engine")
     engine_logger.setLevel(settings.SQL_LOG_LEVEL.value)
     engine_logger.handlers = [InterceptHandler()]
@@ -79,10 +47,6 @@ def init_logging(supress_routes: list[RouteFilterParams] | None = None):
     pool_logger = logging.getLogger("sqlalchemy.pool")
     pool_logger.setLevel(settings.SQL_LOG_LEVEL.value)
     pool_logger.handlers = [InterceptHandler()]
-
-    uvicorn_logger = logging.getLogger("uvicorn.access")
-    for rfp in supress_routes:
-        uvicorn_logger.addFilter(UvicornRouteFilter(rfp))
 
     logger.remove()
     logger.add(sys.stderr, level=settings.LOG_LEVEL)

@@ -1,8 +1,6 @@
 """Test the router for the Job Script Template resource."""
 
 import json
-from io import BytesIO
-from unittest import mock
 
 import httpx
 import pytest
@@ -771,33 +769,27 @@ class TestJobTemplateFiles:
         dummy_template,
         is_owner,
         permissions,
+        respx_mock,
     ):
         parent_id = job_template_data.id
         file_type = "ENTRYPOINT"
 
-        file_url = "s3://dummy-domain.com/dummy-file.py.j2"
+        s3_url = "s3://dummy-bucket/dummy-file.py.j2"
+        https_url = "https://dummy-bucket.s3.amazonaws.com/dummy-file.py.j2"
+        respx_mock.get(https_url).mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                content=dummy_template.encode(),
+            ),
+        )
 
         requester_email = tester_email if is_owner else "another_" + tester_email
 
-        async def _mock_download(byte_buffer: BytesIO) -> None:
-            byte_buffer.write(dummy_template.encode())
-            byte_buffer.seek(0)
-
-        with mock.patch("jobbergate_api.apps.services.Session") as mock_session_class:
-            (
-                mock_session_class.return_value
-                .resource.return_value
-                .__aenter__.return_value
-                .Bucket.return_value
-                .Object.return_value
-                .download_fileobj.side_effect
-            ) = _mock_download  # fmt: skip
-
-            inject_security_header(requester_email, *permissions)
-            response = await client.put(
-                f"jobbergate/job-script-templates/{parent_id}/upload-by-url/template/{file_type}",
-                params=dict(file_url=file_url),
-            )
+        inject_security_header(requester_email, *permissions)
+        response = await client.put(
+            f"jobbergate/job-script-templates/{parent_id}/upload-by-url/template/{file_type}",
+            params=dict(file_url=s3_url),
+        )
 
         # First, check the response from the upload endpoint
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
@@ -1314,34 +1306,28 @@ class TestJobTemplateWorkflowFile:
         dummy_application_source_file,
         is_owner,
         permissions,
+        respx_mock,
     ):
         parent_id = job_template_data.id
         runtime_config = {"foo": "bar"}
 
-        file_url = "s3://dummy-domain.com/dummy-file.py.j2"
+        s3_url = "s3://dummy-bucket/dummy-file.py.j2"
+        https_url = "https://dummy-bucket.s3.amazonaws.com/dummy-file.py.j2"
+        respx_mock.get(https_url).mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                content=dummy_application_source_file.encode(),
+            ),
+        )
 
         requester_email = tester_email if is_owner else "another_" + tester_email
 
-        async def _mock_download(byte_buffer: BytesIO) -> None:
-            byte_buffer.write(dummy_application_source_file.encode())
-            byte_buffer.seek(0)
-
-        with mock.patch("jobbergate_api.apps.services.Session") as mock_session_class:
-            (
-                mock_session_class.return_value
-                .resource.return_value
-                .__aenter__.return_value
-                .Bucket.return_value
-                .Object.return_value
-                .download_fileobj.side_effect
-            ) = _mock_download  # fmt: skip
-
-            inject_security_header(requester_email, *permissions)
-            response = await client.put(
-                f"jobbergate/job-script-templates/{parent_id}/upload-by-url/workflow",
-                params=dict(file_url=file_url),
-                data=json.dumps(runtime_config),
-            )
+        inject_security_header(requester_email, *permissions)
+        response = await client.put(
+            f"jobbergate/job-script-templates/{parent_id}/upload-by-url/workflow",
+            params=dict(file_url=s3_url),
+            data=json.dumps(runtime_config),
+        )
 
         # First, check the response from the upload endpoint
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
