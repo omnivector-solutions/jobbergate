@@ -40,7 +40,7 @@ class JobbergateContext(ContextProtocol):
         """
         The authentication handler for the context.
 
-        This is a cached property to ensure that the handler is only created then needed,
+        This is a cached property to ensure that the handler is only created when needed,
         so commands that require no authentication face no configuration errors.
         """
         with check_expressions(
