@@ -12,7 +12,7 @@ from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobbergateContext, JobSubmissionResponse
+from jobbergate_cli.schemas import ContextProtocol, JobSubmissionResponse
 from jobbergate_cli.subapps.job_submissions.tools import fetch_job_submission_data, job_submissions_factory
 from jobbergate_cli.subapps.pagination import handle_pagination
 from jobbergate_cli.subapps.tools import resolve_selection
@@ -93,7 +93,7 @@ def create(
     """
     Create a new job submission.
     """
-    jg_ctx: JobbergateContext = ctx.obj
+    jg_ctx: ContextProtocol = ctx.obj
     job_script_id = resolve_selection(job_script_id, job_script_id_option)
 
     try:
@@ -144,7 +144,7 @@ def list_all(
     """
     Show available job submissions.
     """
-    jg_ctx: JobbergateContext = ctx.obj
+    jg_ctx: ContextProtocol = ctx.obj
 
     params: Dict[str, Any] = dict(user_only=not show_all)
     if search is not None:
@@ -183,11 +183,8 @@ def get_one(
     """
     Get a single job submission by id
     """
-    jg_ctx: JobbergateContext = ctx.obj
+    jg_ctx: ContextProtocol = ctx.obj
     id = resolve_selection(id, id_option)
-
-    # Make static type checkers happy
-    assert jg_ctx is not None, "JobbergateContext is uninitialized"
 
     value_mappers = None
     organization_id = jg_ctx.authentication_handler.get_identity_data().organization_id
@@ -224,11 +221,8 @@ def delete(
     """
     Delete an existing job submission.
     """
-    jg_ctx: JobbergateContext = ctx.obj
+    jg_ctx: ContextProtocol = ctx.obj
     id = resolve_selection(id, id_option)
-
-    # Make static type checkers happy
-    assert jg_ctx.client is not None, "Client is uninitialized"
 
     make_request(
         jg_ctx.client,

@@ -13,6 +13,7 @@ from jobbergate_cli.context import JobbergateContext
 from jobbergate_cli.exceptions import Abort, handle_abort, handle_authentication_error
 from jobbergate_cli.logging import init_logs, init_sentry
 from jobbergate_cli.render import render_demo, render_json, terminal_message
+from jobbergate_cli.schemas import ContextProtocol
 from jobbergate_cli.subapps.applications.app import app as applications_app
 from jobbergate_cli.subapps.job_scripts.app import app as job_scripts_app
 from jobbergate_cli.subapps.job_submissions.app import app as job_submissions_app
@@ -65,7 +66,8 @@ def main(
     init_logs(verbose=verbose)
     init_sentry()
 
-    ctx.obj = JobbergateContext(full_output=full, raw_output=raw)
+    context: ContextProtocol = JobbergateContext(full_output=full, raw_output=raw)
+    ctx.obj = context  # local variable to enable type checking and make mypy happy with the syntax
 
 
 @app.command(rich_help_panel="Authentication")

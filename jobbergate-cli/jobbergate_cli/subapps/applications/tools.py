@@ -26,7 +26,7 @@ from jobbergate_cli.schemas import (
     ApplicationResponse,
     JobbergateApplicationConfig,
     JobbergateConfig,
-    JobbergateContext,
+    ContextProtocol,
     LocalApplication,
     LocalTemplateFile,
     LocalWorkflowFile,
@@ -104,7 +104,7 @@ def fetch_application_data_locally(
     )
 
 
-def fetch_application_data(jg_ctx: JobbergateContext, id_or_identifier: int | str) -> ApplicationResponse:
+def fetch_application_data(jg_ctx: ContextProtocol, id_or_identifier: int | str) -> ApplicationResponse:
     """
     Retrieve an application from the API by id or identifier.
 
@@ -116,9 +116,6 @@ def fetch_application_data(jg_ctx: JobbergateContext, id_or_identifier: int | st
     Returns:
         An instance of ApplicationResponse containing the application data.
     """
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
-
     stub = f"id={id_or_identifier}" if isinstance(id_or_identifier, int) else f"identifier={id_or_identifier}"
     return cast(
         ApplicationResponse,
@@ -213,7 +210,7 @@ def get_upload_files(application_path: pathlib.Path):
 
 
 def upload_application(
-    jg_ctx: JobbergateContext,
+    jg_ctx: ContextProtocol,
     application_path: pathlib.Path,
     id_or_identifier: int | str,
 ):
@@ -226,12 +223,6 @@ def upload_application(
         application_id: The id of the application for which to upload data.
         application_identifier: The identifier of the application for which to upload data.
     """
-
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
-
-    identification = id_or_identifier
-
     Abort.require_condition(application_path.is_dir(), f"Application directory {application_path} does not exist")
 
     config_file_path = application_path / JOBBERGATE_APPLICATION_CONFIG_FILE_NAME
@@ -249,7 +240,7 @@ def upload_application(
 
     make_request(
         jg_ctx.client,
-        f"/jobbergate/job-script-templates/{identification}",
+        f"/jobbergate/job-script-templates/{id_or_identifier}",
         "PUT",
         expect_response=False,
         abort_message="Request to upload application configuration was not accepted by the API",
@@ -272,7 +263,7 @@ def upload_application(
 
             make_request(
                 jg_ctx.client,
-                f"/jobbergate/job-script-templates/{identification}/upload/template/{file_type.value}",
+                f"/jobbergate/job-script-templates/{id_or_identifier}/upload/template/{file_type.value}",
                 "PUT",
                 expect_response=False,
                 abort_message="Request to upload application files was not accepted by the API",
@@ -285,7 +276,7 @@ def upload_application(
     with open(module_file_path, "rb") as module_file:
         make_request(
             jg_ctx.client,
-            f"/jobbergate/job-script-templates/{identification}/upload/workflow",
+            f"/jobbergate/job-script-templates/{id_or_identifier}/upload/workflow",
             "PUT",
             expect_response=False,
             abort_message="Request to upload application module was not accepted by the API",
@@ -299,15 +290,13 @@ def upload_application(
 
 
 def save_application_files(
-    jg_ctx: JobbergateContext,
+    jg_ctx: ContextProtocol,
     application_data: ApplicationResponse,
     destination_path: pathlib.Path,
 ) -> List[pathlib.Path]:
     """
     Save the application files from the API response into a local destination.
     """
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
 
     logger.debug(f"Saving application files to {destination_path.as_posix()}")
     saved_files: List[pathlib.Path] = []

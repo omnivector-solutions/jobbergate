@@ -5,7 +5,7 @@ Provide a ``typer`` app that can interact with Cluster data in a cruddy manner.
 import typer
 
 from jobbergate_cli.render import terminal_message
-from jobbergate_cli.schemas import JobbergateContext
+from jobbergate_cli.schemas import ContextProtocol
 from jobbergate_cli.subapps.clusters.tools import get_client_ids
 
 
@@ -19,9 +19,6 @@ def list_all(
     """
     Show available clusters
     """
-    jg_ctx: JobbergateContext = ctx.obj
-
-    # Make static type checkers happy
-    assert jg_ctx is not None
+    jg_ctx: ContextProtocol = ctx.obj
 
     terminal_message("\n".join(get_client_ids(jg_ctx)), subject="Cluster Names", color="yellow", indent=True)

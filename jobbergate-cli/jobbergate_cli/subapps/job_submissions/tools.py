@@ -15,12 +15,12 @@ from jobbergate_cli.config import settings
 from jobbergate_cli.constants import FileType
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobbergateContext, JobSubmissionCreateRequestData, JobSubmissionResponse
+from jobbergate_cli.schemas import ContextProtocol, JobSubmissionCreateRequestData, JobSubmissionResponse
 from jobbergate_cli.subapps.job_scripts.tools import download_job_script_files
 
 
 def _map_cluster_name(
-    jg_ctx: JobbergateContext,
+    jg_ctx: ContextProtocol,
     base_cluster_name: str,
 ) -> str:
     """
@@ -56,7 +56,7 @@ class JobSubmissionABC(ABC):
         sbatch_arguments: An optional list of arguments to pass to inject into the job script.
     """
 
-    jg_ctx: JobbergateContext
+    jg_ctx: ContextProtocol
     job_script_id: int
     name: str
     execution_directory: Path | None = None
@@ -96,8 +96,6 @@ class JobSubmissionABC(ABC):
 
     def make_post_request(self, job_submission_data: JobSubmissionCreateRequestData) -> JobSubmissionResponse:
         """Make the POST request to the API to create the job submission."""
-        # Make static type checkers happy
-        assert self.jg_ctx.client is not None, "jg_ctx.client is uninitialized"
         return cast(
             JobSubmissionResponse,
             make_request(
@@ -194,7 +192,7 @@ class OnsiteJobSubmission(JobSubmissionABC):
 
 
 def job_submissions_factory(
-    jg_ctx: JobbergateContext,
+    jg_ctx: ContextProtocol,
     job_script_id: int,
     name: str,
     execution_directory: Path | None = None,
@@ -228,14 +226,12 @@ def job_submissions_factory(
 
 
 def fetch_job_submission_data(
-    jg_ctx: JobbergateContext,
+    jg_ctx: ContextProtocol,
     job_submission_id: int,
 ) -> JobSubmissionResponse:
     """
     Retrieve a job submission from the API by ``id``
     """
-    # Make static type checkers happy
-    assert jg_ctx.client is not None, "Client is uninitialized"
 
     return cast(
         JobSubmissionResponse,

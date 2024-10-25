@@ -4,14 +4,14 @@ Provide Pydantic models for various data items.
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Protocol, TypeVar
 
 import httpx
 import pydantic
 import pydantic.generics
+from jobbergate_core.auth.handler import JobbergateAuthHandler
 
 from jobbergate_cli.constants import FileType
-from jobbergate_core.auth.handler import JobbergateAuthHandler
 
 
 class TokenSet(pydantic.BaseModel, extra="ignore"):
@@ -53,15 +53,22 @@ class DeviceCodeData(pydantic.BaseModel, extra="ignore"):
     interval: int
 
 
-class JobbergateContext(pydantic.BaseModel, arbitrary_types_allowed=True):
+class ContextProtocol(Protocol):
     """
-    A data object describing context passed from the main entry point.
+    A protocol describing context passed from the main entry point.
+
+    It aims to help static type checkers at the same time that prevents
+    circular import issues on the actual implementation.
     """
 
-    client: httpx.Client
-    authentication_handler: JobbergateAuthHandler
-    raw_output: bool = False
-    full_output: bool = False
+    raw_output: bool
+    full_output: bool
+
+    @property
+    def client(self) -> httpx.Client: ...
+
+    @property
+    def authentication_handler(self) -> JobbergateAuthHandler: ...
 
 
 class JobbergateConfig(pydantic.BaseModel, extra="allow"):

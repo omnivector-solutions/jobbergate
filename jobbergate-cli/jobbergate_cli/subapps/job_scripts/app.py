@@ -13,7 +13,7 @@ from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobbergateContext, JobScriptCreateRequest, JobScriptResponse
+from jobbergate_cli.schemas import ContextProtocol, JobScriptCreateRequest, JobScriptResponse
 from jobbergate_cli.subapps.job_scripts.tools import (
     download_job_script_files,
     fetch_job_script_data,
@@ -64,11 +64,7 @@ def list_all(
     """
     Show available job scripts
     """
-    jg_ctx: JobbergateContext = ctx.obj
-
-    # Make static type checkers happy
-    assert jg_ctx is not None
-    assert jg_ctx.client is not None
+    jg_ctx: ContextProtocol = ctx.obj
 
     params: Dict[str, Any] = dict(user_only=not show_all)
     if search is not None:
@@ -101,7 +97,7 @@ def get_one(
     """
     Get a single job script by id.
     """
-    jg_ctx: JobbergateContext = ctx.obj
+    jg_ctx: ContextProtocol = ctx.obj
     id = resolve_selection(id, id_option)
 
     result = fetch_job_script_data(jg_ctx, id)
@@ -142,11 +138,8 @@ def create_stand_alone(
     """
     Create and upload files for a standalone job script (i.e., unrelated to any application).
     """
-    jg_ctx: JobbergateContext = ctx.obj
+    jg_ctx: ContextProtocol = ctx.obj
     job_script_path = resolve_selection(job_script_path, job_script_path_option, option_name="job_script_path")
-
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
 
     request_data = JobScriptCreateRequest(
         name=name,
@@ -219,7 +212,7 @@ def create_locally(
 
     The templates will be overwritten with the rendered files.
     """
-    jg_ctx: JobbergateContext = ctx.obj
+    jg_ctx: ContextProtocol = ctx.obj
 
     render_job_script_locally(
         jg_ctx,
@@ -315,7 +308,7 @@ def create(
     """
     Create a new job script from an application.
     """
-    jg_ctx: JobbergateContext = ctx.obj
+    jg_ctx: ContextProtocol = ctx.obj
     selector = resolve_application_selection(id_or_identifier, application_id, application_identifier)
 
     job_script_result = render_job_script(
@@ -428,11 +421,8 @@ def update(
     """
     Update an existing job script.
     """
-    jg_ctx: JobbergateContext = ctx.obj
+    jg_ctx: ContextProtocol = ctx.obj
     id = resolve_selection(id, id_option)
-
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
 
     update_params: Dict[str, Any] = dict()
     if name is not None:
@@ -475,11 +465,8 @@ def delete(
     """
     Delete an existing job script.
     """
-    jg_ctx: JobbergateContext = ctx.obj
+    jg_ctx: ContextProtocol = ctx.obj
     id = resolve_selection(id, id_option)
-
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
 
     make_request(
         jg_ctx.client,
@@ -505,7 +492,7 @@ def show_files(
     """
     Show the files for a single job script by id.
     """
-    jg_ctx: JobbergateContext = ctx.obj
+    jg_ctx: ContextProtocol = ctx.obj
     id = resolve_selection(id, id_option)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -538,7 +525,7 @@ def download_files(
     """
     Download the files from a job script to the current working directory.
     """
-    jg_ctx: JobbergateContext = ctx.obj
+    jg_ctx: ContextProtocol = ctx.obj
     id = resolve_selection(id, id_option)
     downloaded_files = download_job_script_files(id, jg_ctx, pathlib.Path.cwd())
 
@@ -574,11 +561,8 @@ def clone(
     """
     Clone an existing job script, so the user can own and modify a copy of it.
     """
-    jg_ctx: JobbergateContext = ctx.obj
+    jg_ctx: ContextProtocol = ctx.obj
     id = resolve_selection(id, id_option)
-
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
 
     update_params: Dict[str, Any] = dict()
     if name is not None:
