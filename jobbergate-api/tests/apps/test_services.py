@@ -810,23 +810,23 @@ class TestFileService:
         file_obj = await dummy_file_service._get_file_data_from_url(AnyUrl(s3_url))
         assert file_obj.read() == file_content
 
-    async def test__get_file_data_from_url__raises_500_if_download_fails(
+    async def test__get_file_data_from_url__raises_400_if_download_fails(
         self, dummy_file_service, respx_mock
     ):
         """
-        Test that the ``_get_file_data_from_url()`` method raises a 500 error if the download fails.
+        Test that the ``_get_file_data_from_url()`` method raises a 400 error if the download fails.
         """
         file_url = "https://dummy-domain.com/dummy-file.txt"
 
         respx_mock.get(file_url).mock(return_value=httpx.Response(httpx.codes.IM_A_TEAPOT))
         with pytest.raises(ServiceError, match="Failed to download") as exc_info:
             await dummy_file_service._get_file_data_from_url(AnyUrl(file_url))
-        assert exc_info.value.status_code == 500
+        assert exc_info.value.status_code == 400
 
         respx_mock.get(file_url).mock(side_effect=RuntimeError)
         with pytest.raises(ServiceError, match="Failed to download") as exc_info:
             await dummy_file_service._get_file_data_from_url(AnyUrl(file_url))
-        assert exc_info.value.status_code == 500
+        assert exc_info.value.status_code == 400
 
     @pytest.mark.parametrize(
         "file_url,error_stub",

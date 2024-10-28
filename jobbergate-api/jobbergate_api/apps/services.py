@@ -584,7 +584,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         with handle_errors(
             f"Failed to download file from {file_url}",
             raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR),
+            raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
         ):
             response = httpx.get(file_url_string)
             response.raise_for_status()
