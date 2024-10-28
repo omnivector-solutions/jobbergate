@@ -1635,40 +1635,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#jobbergate_api.logging.RouteFilterParams" class="md-nav__link">
-    RouteFilterParams
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_api.logging.UvicornRouteFilter" class="md-nav__link">
-    UvicornRouteFilter
-  </a>
-  
-    <nav class="md-nav" aria-label="UvicornRouteFilter">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_api.logging.UvicornRouteFilter.__init__" class="md-nav__link">
-    __init__()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_api.logging.UvicornRouteFilter.filter" class="md-nav__link">
-    filter()
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#jobbergate_api.logging.init_logging" class="md-nav__link">
     init_logging()
   </a>
@@ -2797,40 +2763,6 @@
           <li class="md-nav__item">
   <a href="#jobbergate_api.logging.InterceptHandler.emit" class="md-nav__link">
     emit()
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_api.logging.RouteFilterParams" class="md-nav__link">
-    RouteFilterParams
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_api.logging.UvicornRouteFilter" class="md-nav__link">
-    UvicornRouteFilter
-  </a>
-  
-    <nav class="md-nav" aria-label="UvicornRouteFilter">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_api.logging.UvicornRouteFilter.__init__" class="md-nav__link">
-    __init__()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_api.logging.UvicornRouteFilter.filter" class="md-nav__link">
-    filter()
   </a>
   
 </li>
@@ -11871,132 +11803,6 @@ environment variable to a blank string.</p>
 
 </div>
 
-<div class="doc doc-object doc-class">
-
-
-
-
-<h5 id="jobbergate_api.logging.RouteFilterParams" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">RouteFilterParams</span>
-
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
-  </span>
-
-</h5>
-
-
-  <div class="doc doc-contents ">
-
-  
-      <p>Defines the params for a UvicornRouteFilter.</p>
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-
-<h5 id="jobbergate_api.logging.UvicornRouteFilter" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">UvicornRouteFilter</span>
-
-
-</h5>
-
-
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="logging.Filter">Filter</span></code></p>
-
-  
-      <p>Define a logging filter for uvicorn routes.</p>
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h6 id="jobbergate_api.logging.UvicornRouteFilter.__init__" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">__init__</span>
-
-
-</h6>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__init__</span><span class="p">(</span><span class="n">rfp</span><span class="p">:</span> <span class="n">RouteFilterParams</span><span class="p">)</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Initialize with route filter params.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h6 id="jobbergate_api.logging.UvicornRouteFilter.filter" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">filter</span>
-
-
-</h6>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">filter</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Filter messages matching the verb and route.</p>
-
-  </div>
-
-</div>
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
 
 
 <div class="doc doc-object doc-function">
@@ -12009,7 +11815,7 @@ environment variable to a blank string.</p>
 
 
 </h5>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">init_logging</span><span class="p">(</span><span class="n">supress_routes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">RouteFilterParams</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">init_logging</span><span class="p">()</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
