@@ -25,7 +25,6 @@ services:
       - AWS_ACCESS_KEY_ID=compose-s3-key
       - AWS_SECRET_ACCESS_KEY=compose-s3-secret
       - ARMASEC_DOMAIN=keycloak.local:8080/realms/jobbergate-local
-      - ARMASEC_AUDIENCE=https://local.omnivector.solutions
       - ARMASEC_DEBUG=false
       - ARMASEC_USE_HTTPS=false
       - LOG_LEVEL=DEBUG

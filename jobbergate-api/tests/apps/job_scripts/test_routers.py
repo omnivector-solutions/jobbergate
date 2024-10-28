@@ -1,8 +1,5 @@
 """Tests for the /job-scripts/ endpoint."""
 
-from io import BytesIO
-from unittest import mock
-
 import httpx
 import pytest
 from fastapi import status
@@ -937,8 +934,17 @@ class TestJobScriptFiles:
         synth_services,
         is_owner,
         permissions,
+        respx_mock,
     ):
         dummy_content = "print('Hello World!')".encode()
+        s3_url = "s3://dummy-bucket/dummy-file.py"
+        https_url = "https://dummy-bucket.s3.amazonaws.com/dummy-file.py"
+        respx_mock.get(https_url).mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                content=dummy_content,
+            ),
+        )
 
         id = job_script_data.id
         file_type = "ENTRYPOINT"
@@ -946,25 +952,11 @@ class TestJobScriptFiles:
         owner_email = job_script_data.owner_email
         requester_email = owner_email if is_owner else "another_" + owner_email
 
-        async def _mock_download(byte_buffer: BytesIO) -> None:
-            byte_buffer.write(dummy_content)
-            byte_buffer.seek(0)
-
-        with mock.patch("jobbergate_api.apps.services.Session") as mock_session_class:
-            (
-                mock_session_class.return_value
-                .resource.return_value
-                .__aenter__.return_value
-                .Bucket.return_value
-                .Object.return_value
-                .download_fileobj.side_effect
-            ) = _mock_download  # fmt: skip
-
-            inject_security_header(requester_email, *permissions)
-            response = await client.put(
-                f"jobbergate/job-scripts/{id}/upload-by-url/{file_type}",
-                params=dict(file_url="s3://dummy-domain.com/dummy-file.py"),
-            )
+        inject_security_header(requester_email, *permissions)
+        response = await client.put(
+            f"jobbergate/job-scripts/{id}/upload-by-url/{file_type}",
+            params=dict(file_url=s3_url),
+        )
 
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
 

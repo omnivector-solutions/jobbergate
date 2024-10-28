@@ -7,7 +7,6 @@ from contextlib import contextmanager
 from typing import Any, Generic, Protocol, TypeVar
 
 import httpx
-from aioboto3.session import Session
 from botocore.response import StreamingBody
 from buzz import enforce_defined, handle_errors, require_condition
 from fastapi import HTTPException, UploadFile, status
@@ -559,19 +558,10 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
 
         Suppports fetching data with the following protocols: http, https, s3
         """
-        url_string = enforce_defined(
-            file_url.unicode_string(),
-            "Supplied URL is malformed",
-            raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
-        )
-
         file_obj = io.BytesIO()
+        file_url_string: str
 
         match file_url.scheme:
-            case "http" | "https":
-                response = httpx.get(file_url.unicode_string())
-                file_obj.write(response.content)
             case "s3":
                 bucket_name = enforce_defined(
                     file_url.unicode_host(),
@@ -585,15 +575,21 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
                     raise_exc_class=ServiceError,
                     raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
                 )
-
-                session = Session()
-                async with session.resource("s3", url_string) as s3:
-                    bucket = await s3.Bucket(bucket_name)
-                    s3_obj = await bucket.Object(key)
-                    await s3_obj.download_fileobj(file_obj)
+                file_url_string = f"https://{bucket_name}.s3.amazonaws.com{key}"
+            case "http" | "https":
+                file_url_string = file_url.unicode_string()
             case _:
                 raise ServiceError(f"Unsupported protocol to get file data by url for {file_url}")
 
+        with handle_errors(
+            f"Failed to download file from {file_url}",
+            raise_exc_class=ServiceError,
+            raise_kwargs=dict(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR),
+        ):
+            response = httpx.get(file_url_string)
+            response.raise_for_status()
+
+        file_obj.write(response.content)
         file_obj.seek(0)
         return file_obj
 
