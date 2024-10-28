@@ -19,7 +19,7 @@ from jobbergate_api.apps.job_script_templates.routers import router as job_scrip
 from jobbergate_api.apps.job_scripts.routers import router as job_scripts_router
 from jobbergate_api.apps.job_submissions.routers import router as job_submissions_router
 from jobbergate_api.config import settings
-from jobbergate_api.logging import init_logging
+from jobbergate_api.logging import init_logging, RouteFilterParams
 from jobbergate_api.storage import engine_factory, handle_fk_error
 
 subapp = FastAPI(
@@ -75,7 +75,6 @@ async def health_check():
     """
     Provide a health-check endpoint for the app.
     """
-    logger.debug("CHECKING HEALTH")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -89,7 +88,8 @@ async def lifespan(_: FastAPI):
     This is the preferred method of handling lifespan events in FastAPI.
     For mor details, see: https://fastapi.tiangolo.com/advanced/events/
     """
-    init_logging()
+    # Supress logging on the health check endpoint
+    init_logging(supress_routes=[RouteFilterParams(verb="GET", route="/jobbergate/health")])
 
     yield
 
