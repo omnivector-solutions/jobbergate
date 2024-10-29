@@ -17,4 +17,3 @@ VOLUME /app/dev_tools
 VOLUME /app/alembic
 
 ENTRYPOINT /app/dev_tools/entrypoint.sh
-#CMD ["uvicorn", "jobbergate_api.main:app", "--host", "0.0.0.0", "--port", "80"]

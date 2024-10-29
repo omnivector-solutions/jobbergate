@@ -5,9 +5,11 @@ Provide command for starting a local development server for the API.
 from time import sleep
 
 import typer
-import uvicorn
 from loguru import logger
 from sqlalchemy import create_engine, text
+from granian import Granian
+from granian.constants import Loops as GranianLoops, Interfaces as GranianInterfaces
+from granian.log import LogLevels as GranianLogLevels
 
 from jobbergate_api.storage import build_db_url
 
@@ -30,6 +32,7 @@ def _wait_for_db(wait_count, wait_interval):
             engine = create_engine(database_url)
             with engine.connect() as db:
                 db.execute(text("select version()"))
+            logger.debug("Database is up!")
             return
         except Exception as err:
             logger.warning(f"Database is not yet healthy: {err}")
@@ -54,10 +57,17 @@ def dev_server(
         logger.error("Database is not available")
         typer.Exit(1)
 
-    uvicorn.run(
-        "jobbergate_api.main:app",
-        host="0.0.0.0",
-        port=port,
-        reload=True,
-        log_level=log_level.lower(),
-    )
+    logger.debug("Initializing web server")
+    try:
+        server = Granian(
+            "jobbergate_api.main:app",
+            address="0.0.0.0",
+            port=port,
+            reload=True,
+            log_level=GranianLogLevels[log_level.lower()],
+            loop=GranianLoops.uvloop,
+            interface=GranianInterfaces.ASGI,
+        )
+        server.serve()
+    except Exception as err:
+        logger.error(f"Failed to initialize web server: {err}")
