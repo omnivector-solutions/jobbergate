@@ -18,7 +18,7 @@ This file keeps track of all notable changes to jobbergate-api
   - For Job Script files
   - For Job Script Template files
   - For Job Script Template workflow files
-
+- Added re-submit endpoint to job submissions [[PENG-1676](https://app.clickup.com/t/18022949/PENG-1676)]
 
 ## 5.3.0 -- 2024-09-09
 

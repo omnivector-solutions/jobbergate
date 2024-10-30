@@ -24,6 +24,7 @@ from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionUpdateRequest,
     PendingJobSubmission,
 )
+from jobbergate_api.apps.job_submissions.tools import get_cloned_description
 from jobbergate_api.apps.permissions import Permissions, can_bypass_ownership_check
 from jobbergate_api.apps.schemas import ListParams
 from jobbergate_api.email_notification import notify_submission_rejected
@@ -85,6 +86,31 @@ async def job_submission_create(
         status=submission_status,
     )
     return new_job_submission
+
+
+@router.post(
+    "/clone/{id}",
+    status_code=status.HTTP_201_CREATED,
+    response_model=JobSubmissionDetailedView,
+    description="Endpoint for cloning a job script to a new entry owned by the user",
+)
+async def job_submission_clone(
+    id: int = Path(...),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_CREATE, ensure_email=True)
+    ),
+):
+    """Clone a job_submission given its id."""
+    logger.info(f"Cloning job submission {id=}")
+
+    original_instance = await secure_services.crud.job_submission.get(id)
+    cloned_instance = await secure_services.crud.job_submission.clone_instance(
+        original_instance,
+        owner_email=secure_services.identity_payload.email,
+        description=get_cloned_description(original_instance.description, original_instance.id),
+    )
+
+    return cloned_instance
 
 
 @router.get(
