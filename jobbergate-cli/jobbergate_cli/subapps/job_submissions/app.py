@@ -15,7 +15,7 @@ from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import JobbergateContext, JobSubmissionResponse
 from jobbergate_cli.subapps.job_submissions.tools import fetch_job_submission_data, job_submissions_factory
 from jobbergate_cli.subapps.pagination import handle_pagination
-from jobbergate_cli.subapps.tools import sanitize_id_selection
+from jobbergate_cli.subapps.tools import resolve_id_selection
 
 
 # move hidden field logic to the API
@@ -94,7 +94,7 @@ def create(
     Create a new job submission.
     """
     jg_ctx: JobbergateContext = ctx.obj
-    job_script_id = sanitize_id_selection(job_script_id, job_script_id_option)
+    job_script_id = resolve_id_selection(job_script_id, job_script_id_option)
 
     try:
         submissions_handler = job_submissions_factory(
@@ -184,7 +184,7 @@ def get_one(
     Get a single job submission by id
     """
     jg_ctx: JobbergateContext = ctx.obj
-    id = sanitize_id_selection(id, id_option)
+    id = resolve_id_selection(id, id_option)
 
     # Make static type checkers happy
     assert jg_ctx is not None, "JobbergateContext is uninitialized"
@@ -225,7 +225,7 @@ def delete(
     Delete an existing job submission.
     """
     jg_ctx: JobbergateContext = ctx.obj
-    id = sanitize_id_selection(id, id_option)
+    id = resolve_id_selection(id, id_option)
 
     # Make static type checkers happy
     assert jg_ctx.client is not None, "Client is uninitialized"

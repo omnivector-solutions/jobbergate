@@ -19,7 +19,7 @@ from jobbergate_cli.subapps.applications.tools import (
     upload_application,
 )
 from jobbergate_cli.subapps.pagination import handle_pagination
-from jobbergate_cli.subapps.tools import sanitize_application_selection
+from jobbergate_cli.subapps.tools import resolve_application_selection
 
 
 # TODO: move hidden field logic to the API
@@ -118,7 +118,7 @@ def get_one(
     ),
     identifier: Optional[str] = typer.Option(
         None,
-        help=f"Alternative way to specify identtifier. {IDENTIFIER_NOTE}",
+        help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}",
     ),
 ):
     """
@@ -126,7 +126,7 @@ def get_one(
     """
     jg_ctx: JobbergateContext = ctx.obj
     result = fetch_application_data(
-        jg_ctx, id_or_identifier=sanitize_application_selection(id_or_identifier, id, identifier)
+        jg_ctx, id_or_identifier=resolve_application_selection(id_or_identifier, id, identifier)
     )
     render_single_result(
         jg_ctx,
@@ -255,7 +255,7 @@ def update(
     """
     Update an existing application.
     """
-    identification = sanitize_application_selection(id_or_identifier, id, identifier)
+    identification = resolve_application_selection(id_or_identifier, id, identifier)
 
     req_data = dict()
 
@@ -335,7 +335,7 @@ def delete(
     # Make static type checkers happy
     assert jg_ctx.client is not None
 
-    identification = sanitize_application_selection(id_or_identifier, id, identifier)
+    identification = resolve_application_selection(id_or_identifier, id, identifier)
 
     # Delete the upload. The API will also remove the application data files
     make_request(
@@ -378,7 +378,7 @@ def download_files(
     """
     jg_ctx: JobbergateContext = ctx.obj
 
-    result = fetch_application_data(jg_ctx, sanitize_application_selection(id_or_identifier, id, identifier))
+    result = fetch_application_data(jg_ctx, resolve_application_selection(id_or_identifier, id, identifier))
     saved_files = save_application_files(
         jg_ctx,
         application_data=result,
@@ -431,7 +431,7 @@ def clone(
     """
     Clone an application, so the user can own and modify a copy of it.
     """
-    identification = sanitize_application_selection(id_or_identifier, id, identifier)
+    identification = resolve_application_selection(id_or_identifier, id, identifier)
 
     req_data = dict()
 
