@@ -25,7 +25,7 @@ from jobbergate_cli.subapps.job_scripts.tools import (
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
 from jobbergate_cli.subapps.job_submissions.tools import job_submissions_factory
 from jobbergate_cli.subapps.pagination import handle_pagination
-from jobbergate_cli.subapps.tools import resolve_application_selection, resolve_id_selection
+from jobbergate_cli.subapps.tools import resolve_application_selection, resolve_selection
 from jobbergate_cli.text_tools import dedent
 
 
@@ -102,7 +102,7 @@ def get_one(
     Get a single job script by id.
     """
     jg_ctx: JobbergateContext = ctx.obj
-    id = resolve_id_selection(id, id_option)
+    id = resolve_selection(id, id_option)
 
     result = fetch_job_script_data(jg_ctx, id)
     render_single_result(
@@ -116,8 +116,8 @@ def get_one(
 @app.command()
 def create_stand_alone(
     ctx: typer.Context,
-    job_script_path: pathlib.Path = typer.Argument(
-        ..., help="The path to the job script file to upload", file_okay=True, readable=True
+    job_script_path: Optional[pathlib.Path] = typer.Argument(
+        None, help="The path to the job script file to upload", file_okay=True, readable=True
     ),
     name: str = typer.Option(
         ...,
@@ -126,6 +126,9 @@ def create_stand_alone(
     description: Optional[str] = typer.Option(
         None,
         help="Optional text describing the job script.",
+    ),
+    job_script_path_option: Optional[pathlib.Path] = typer.Option(
+        None, "--job-script-path", help="The path to the job script file to upload", file_okay=True, readable=True
     ),
     supporting_file_path: Optional[List[pathlib.Path]] = typer.Option(
         None,
@@ -140,6 +143,7 @@ def create_stand_alone(
     Create and upload files for a standalone job script (i.e., unrelated to any application).
     """
     jg_ctx: JobbergateContext = ctx.obj
+    job_script_path = resolve_selection(job_script_path, job_script_path_option, option_name="job_script_path")
 
     # Make static type checkers happy
     assert jg_ctx.client is not None
@@ -425,7 +429,7 @@ def update(
     Update an existing job script.
     """
     jg_ctx: JobbergateContext = ctx.obj
-    id = resolve_id_selection(id, id_option)
+    id = resolve_selection(id, id_option)
 
     # Make static type checkers happy
     assert jg_ctx.client is not None
@@ -472,7 +476,7 @@ def delete(
     Delete an existing job script.
     """
     jg_ctx: JobbergateContext = ctx.obj
-    id = resolve_id_selection(id, id_option)
+    id = resolve_selection(id, id_option)
 
     # Make static type checkers happy
     assert jg_ctx.client is not None
@@ -502,7 +506,7 @@ def show_files(
     Show the files for a single job script by id.
     """
     jg_ctx: JobbergateContext = ctx.obj
-    id = resolve_id_selection(id, id_option)
+    id = resolve_selection(id, id_option)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = pathlib.Path(tmp_dir)
@@ -535,7 +539,7 @@ def download_files(
     Download the files from a job script to the current working directory.
     """
     jg_ctx: JobbergateContext = ctx.obj
-    id = resolve_id_selection(id, id_option)
+    id = resolve_selection(id, id_option)
     downloaded_files = download_job_script_files(id, jg_ctx, pathlib.Path.cwd())
 
     terminal_message(
@@ -571,7 +575,7 @@ def clone(
     Clone an existing job script, so the user can own and modify a copy of it.
     """
     jg_ctx: JobbergateContext = ctx.obj
-    id = resolve_id_selection(id, id_option)
+    id = resolve_selection(id, id_option)
 
     # Make static type checkers happy
     assert jg_ctx.client is not None

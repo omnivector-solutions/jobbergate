@@ -2,6 +2,8 @@
 Tools for the subapps.
 """
 
+from typing import TypeVar
+
 from click import UsageError
 
 
@@ -31,9 +33,12 @@ def resolve_application_selection(
     return valid_args[0]
 
 
-def resolve_id_selection(*args: int | None, option_name: str = "id") -> int:
+SelectionType = TypeVar("SelectionType")
+
+
+def resolve_selection(*args: SelectionType | None, option_name: str = "id") -> SelectionType:
     """
-    Resolve the id selection parameters.
+    Resolve the multiple optional selection parameters to ensure one value is indeed selected.
     """
     valid_args = [i for i in args if i is not None]
     counter = len(valid_args)
