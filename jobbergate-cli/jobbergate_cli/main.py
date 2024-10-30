@@ -66,8 +66,10 @@ def main(
     init_logs(verbose=verbose)
     init_sentry()
 
+    # Stored first as a local variable to enable type checking and make mypy happy with the syntax
+    # Then stored in the context object to be passed to the subcommands
     context: ContextProtocol = JobbergateContext(full_output=full, raw_output=raw)
-    ctx.obj = context  # local variable to enable type checking and make mypy happy with the syntax
+    ctx.obj = context
 
 
 @app.command(rich_help_panel="Authentication")

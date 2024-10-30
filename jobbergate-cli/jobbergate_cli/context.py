@@ -48,7 +48,6 @@ class JobbergateContext(ContextProtocol):
             raise_exc_class=Abort,
             raise_kwargs=dict(support=True, subject="Configuration error"),
         ) as check:
-            check(settings.OIDC_USE_HTTPS is not None, "OIDC_USE_HTTPS")
             check(settings.OIDC_DOMAIN, "OIDC_DOMAIN")
             check(settings.OIDC_CLIENT_ID, "OIDC_CLIENT_ID")
 

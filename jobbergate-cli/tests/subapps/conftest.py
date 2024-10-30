@@ -52,7 +52,7 @@ def dummy_context(mocker, tmp_path, dummy_domain) -> Generator[ContextProtocol, 
     context = JobbergateContext()
 
     with mocker.patch.object(authentication_handler, attribute="acquire_access", return_value=dummy_auth):
-        # it is all it takes to replace both cached properties
+        # This is all it takes to replace both cached properties
         context.client = httpx.Client(base_url=dummy_domain)
         context.authentication_handler = authentication_handler
         yield context
