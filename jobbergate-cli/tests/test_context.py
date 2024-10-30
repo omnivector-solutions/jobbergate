@@ -38,7 +38,6 @@ def test_authentication_handler_is_lazy_on_context(mocked_auth_handler, tweak_se
     local_settings = dict(
         OIDC_USE_HTTPS=True,
         OIDC_DOMAIN="example.com",
-        OIDC_AUDIENCE="audience",
         OIDC_CLIENT_ID="client-id",
         OIDC_CLIENT_SECRET="client-secret",
     )
@@ -51,7 +50,6 @@ def test_authentication_handler_is_lazy_on_context(mocked_auth_handler, tweak_se
     mocked_auth_handler.assert_called_once_with(
         cache_directory=settings.JOBBERGATE_USER_TOKEN_DIR,
         login_domain=f"https://{local_settings['OIDC_DOMAIN']}",
-        login_audience=local_settings["OIDC_AUDIENCE"],
         login_client_id=local_settings["OIDC_CLIENT_ID"],
         login_client_secret=local_settings["OIDC_CLIENT_SECRET"],
         login_url_handler=show_login_message,
@@ -60,14 +58,12 @@ def test_authentication_handler_is_lazy_on_context(mocked_auth_handler, tweak_se
 
 
 @mock.patch("jobbergate_cli.context.JobbergateAuthHandler")
-@pytest.mark.parametrize("missing_setting", ["OIDC_DOMAIN", "OIDC_AUDIENCE", "OIDC_CLIENT_ID"])
+@pytest.mark.parametrize("missing_setting", ["OIDC_DOMAIN", "OIDC_CLIENT_ID"])
 def test_authentication_handler__fails_on_missing_setting(mocked_auth_handler, missing_setting, tweak_settings):
     ctx = JobbergateContext()
 
     local_settings = dict(
-        OIDC_USE_HTTPS=True,
         OIDC_DOMAIN="example.com",
-        OIDC_AUDIENCE="audience",
         OIDC_CLIENT_ID="client-id",
         OIDC_CLIENT_SECRET="client-secret",
     )

@@ -16,7 +16,6 @@ from jobbergate_core.auth.token import TokenType
 
 
 DUMMY_LOGIN_DOMAIN = "http://keycloak.local:8080/realms/jobbergate-local"
-DUMMY_LOGIN_AUDIENCE = "https://local.omnivector.solutions"
 DUMMY_LOGIN_CLIENT_ID = "cli"
 
 
@@ -28,7 +27,6 @@ def dummy_jobbergate_auth(tmp_path):
     return JobbergateAuthHandler(
         cache_directory=tmp_path,
         login_domain=DUMMY_LOGIN_DOMAIN,
-        login_audience=DUMMY_LOGIN_AUDIENCE,
         login_client_id=DUMMY_LOGIN_CLIENT_ID,
     )
 
@@ -39,7 +37,6 @@ def test_auth_base_case(tmp_path, dummy_jobbergate_auth):
     """
     assert dummy_jobbergate_auth.cache_directory == tmp_path
     assert dummy_jobbergate_auth.login_domain == DUMMY_LOGIN_DOMAIN
-    assert dummy_jobbergate_auth.login_audience == DUMMY_LOGIN_AUDIENCE
     assert dummy_jobbergate_auth.login_client_id == DUMMY_LOGIN_CLIENT_ID
 
     assert dummy_jobbergate_auth._access_token.content == ""

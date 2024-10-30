@@ -94,7 +94,6 @@ services:
     environment:
       - ARMADA_API_BASE=http://jobbergate-api:80
       - OIDC_DOMAIN=keycloak.local:8080/realms/jobbergate-local
-      - OIDC_AUDIENCE=https://local.omnivector.solutions
       - OIDC_CLIENT_ID=cli
       - OIDC_USE_HTTPS=false
       - JOBBERGATE_CACHE_DIR=/cache
@@ -263,7 +262,6 @@ services:
       - JOBBERGATE_AGENT_DEFAULT_SLURM_WORK_DIR=/slurm-work-dir
       - JOBBERGATE_AGENT_BASE_API_URL=http://jobbergate-api:80
       - JOBBERGATE_AGENT_OIDC_DOMAIN=keycloak.local:8080/realms/jobbergate-local
-      - JOBBERGATE_AGENT_OIDC_AUDIENCE=https://local.omnivector.solutions
       - JOBBERGATE_AGENT_OIDC_CLIENT_ID=local-slurm
       - JOBBERGATE_AGENT_OIDC_CLIENT_SECRET=SVkaJ2f9xeYfOVzQPHXYyiwr12za4xGF
       - JOBBERGATE_AGENT_OIDC_USE_HTTPS=false

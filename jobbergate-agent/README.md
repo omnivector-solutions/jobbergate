@@ -21,7 +21,6 @@ To install the package from Pypi simply run `pip install jobbergate-agent`.
     JOBBERGATE_AGENT_X_SLURM_USER_NAME="<sbatch-user-name>"
     JOBBERGATE_AGENT_SENTRY_DSN="<sentry-dsn-key>"
     JOBBERGATE_AGENT_OIDC_DOMAIN="<OIDC-domain>"
-    JOBBERGATE_AGENT_OIDC_AUDIENCE="<OIDC-audience>"
     JOBBERGATE_AGENT_OIDC_CLIENT_ID="<OIDC-app-client-id>"
     JOBBERGATE_AGENT_OIDC_CLIENT_SECRET="<OIDC-app-client-secret>"
     ```

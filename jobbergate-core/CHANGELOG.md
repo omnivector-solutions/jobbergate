@@ -4,6 +4,7 @@ This file keeps track of all notable changes to jobbergate-core
 
 ## Unreleased
 
+- Removed the `OIDC_AUDIENCE` setting
 
 ## 5.3.0 -- 2024-09-09
 

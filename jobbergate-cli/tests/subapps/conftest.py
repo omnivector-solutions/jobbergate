@@ -47,11 +47,7 @@ def dummy_context(mocker, tmp_path, dummy_domain) -> Generator[ContextProtocol, 
         request.headers["Authorization"] = "Bearer XXXXXXXX"
         return request
 
-    authentication_handler = JobbergateAuthHandler(
-        cache_directory=Path(tmp_path),
-        login_domain="test-domain",
-        login_audience="test-audience",
-    )
+    authentication_handler = JobbergateAuthHandler(cache_directory=Path(tmp_path), login_domain="test-domain")
 
     context = JobbergateContext()
 

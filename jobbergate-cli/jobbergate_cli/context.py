@@ -50,14 +50,12 @@ class JobbergateContext(ContextProtocol):
         ) as check:
             check(settings.OIDC_USE_HTTPS is not None, "OIDC_USE_HTTPS")
             check(settings.OIDC_DOMAIN, "OIDC_DOMAIN")
-            check(settings.OIDC_AUDIENCE, "OIDC_AUDIENCE")
             check(settings.OIDC_CLIENT_ID, "OIDC_CLIENT_ID")
 
         protocol = "https" if settings.OIDC_USE_HTTPS else "http"
         return JobbergateAuthHandler(
             cache_directory=settings.JOBBERGATE_USER_TOKEN_DIR,
             login_domain=f"{protocol}://{settings.OIDC_DOMAIN}",
-            login_audience=settings.OIDC_AUDIENCE,
             login_client_id=settings.OIDC_CLIENT_ID,
             login_client_secret=settings.OIDC_CLIENT_SECRET,
             login_url_handler=show_login_message,

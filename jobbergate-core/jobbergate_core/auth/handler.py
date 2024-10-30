@@ -93,7 +93,6 @@ class JobbergateAuthHandler:
     Arguments:
         cache_directory: Directory to be used for the caching tokens.
         login_domain: Domain used for the login.
-        login_audience: Audience of the login.
         login_client_id: Client ID used for login.
 
     Note:
@@ -115,7 +114,6 @@ class JobbergateAuthHandler:
         >>> jobbergate_auth = JobbergateAuthHandler(
         ...     cache_directory=Path("."),
         ...     login_domain="http://keycloak.local:8080/realms/jobbergate-local",
-        ...     login_audience="https://local.omnivector.solutions",
         ...     login_client_id="cli",
         ... )
         >>> jobbergate_base_url = "http://localhost:8000/jobbergate"
@@ -130,7 +128,6 @@ class JobbergateAuthHandler:
 
     cache_directory: Path
     login_domain: str
-    login_audience: str
     login_client_id: str = "default"
     login_client_secret: str | None = None
     login_url_handler: Callable[[DeviceCodeData], None] = print_login_url
@@ -212,7 +209,6 @@ class JobbergateAuthHandler:
                     method="POST",
                     request_kwargs={
                         "data": {
-                            "audience": self.login_audience,
                             "client_id": self.login_client_id,
                             "client_secret": self.login_client_secret,
                             "grant_type": "client_credentials",
@@ -316,7 +312,6 @@ class JobbergateAuthHandler:
                     "data": {
                         "client_id": self.login_client_id,
                         "grant_type": "client_credentials",
-                        "audience": self.login_audience,
                     }
                 },
                 sensitive_keys={"device_code"},
@@ -357,7 +352,6 @@ class JobbergateAuthHandler:
                 request_kwargs={
                     "data": {
                         "client_id": self.login_client_id,
-                        "audience": self.login_audience,
                         "grant_type": "refresh_token",
                         "refresh_token": self._refresh_token.content,
                     },

@@ -65,7 +65,6 @@ class Settings(BaseSettings):
 
     # Auth0 config for machine-to-machine security
     OIDC_DOMAIN: Optional[str] = None
-    OIDC_AUDIENCE: Optional[str] = None
     OIDC_CLIENT_ID: Optional[str] = None
     OIDC_USE_HTTPS: bool = True
     OIDC_CLIENT_SECRET: Optional[str] = None
