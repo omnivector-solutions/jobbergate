@@ -7,7 +7,7 @@ import copy
 import io
 import pathlib
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Tuple, Union, cast
 
 import yaml
 from loguru import logger
@@ -104,11 +104,7 @@ def fetch_application_data_locally(
     )
 
 
-def fetch_application_data(
-    jg_ctx: JobbergateContext,
-    id: Optional[int] = None,
-    identifier: Optional[str] = None,
-) -> ApplicationResponse:
+def fetch_application_data(jg_ctx: JobbergateContext, id_or_identifier: int | str) -> ApplicationResponse:
     """
     Retrieve an application from the API by id or identifier.
 
@@ -120,35 +116,15 @@ def fetch_application_data(
     Returns:
         An instance of ApplicationResponse containing the application data.
     """
-    identification: Any = id
-    if id is None and identifier is None:
-        raise Abort(
-            """
-            You must supply either [yellow]id[/yellow] or [yellow]identifier[/yellow].
-            """,
-            subject="Invalid params",
-            warn_only=True,
-        )
-    elif id is not None and identifier is not None:
-        raise Abort(
-            """
-            You may not supply both [yellow]id[/yellow] and [yellow]identifier[/yellow].
-            """,
-            subject="Invalid params",
-            warn_only=True,
-        )
-    elif identifier is not None:
-        identification = identifier
-
     # Make static type checkers happy
     assert jg_ctx.client is not None
 
-    stub = f"id={id}" if id is not None else f"identifier={identifier}"
+    stub = f"id={id_or_identifier}" if isinstance(id_or_identifier, int) else f"identifier={id_or_identifier}"
     return cast(
         ApplicationResponse,
         make_request(
             jg_ctx.client,
-            f"/jobbergate/job-script-templates/{identification}",
+            f"/jobbergate/job-script-templates/{id_or_identifier}",
             "GET",
             expected_status=200,
             abort_message=f"Couldn't retrieve application {stub} from API",
@@ -239,8 +215,7 @@ def get_upload_files(application_path: pathlib.Path):
 def upload_application(
     jg_ctx: JobbergateContext,
     application_path: pathlib.Path,
-    application_id: Optional[int],
-    application_identifier: Optional[str],
+    id_or_identifier: int | str,
 ):
     """
     Upload an application given an application path and the application id.
@@ -255,25 +230,7 @@ def upload_application(
     # Make static type checkers happy
     assert jg_ctx.client is not None
 
-    identification: Any = application_id
-    if application_id is None and application_identifier is None:
-        raise Abort(
-            """
-            You must supply either [yellow]id[/yellow] or [yellow]identifier[/yellow].
-            """,
-            subject="Invalid params",
-            warn_only=True,
-        )
-    elif application_id is not None and application_identifier is not None:
-        raise Abort(
-            """
-            You may not supply both [yellow]id[/yellow] and [yellow]identifier[/yellow].
-            """,
-            subject="Invalid params",
-            warn_only=True,
-        )
-    elif application_identifier is not None:
-        identification = application_identifier
+    identification = id_or_identifier
 
     Abort.require_condition(application_path.is_dir(), f"Application directory {application_path} does not exist")
 

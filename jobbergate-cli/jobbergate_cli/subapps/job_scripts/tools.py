@@ -304,9 +304,8 @@ def render_job_script_locally(
 
 def render_job_script(
     jg_ctx: JobbergateContext,
+    id_or_identifier: int | str,
     name: Optional[str] = None,
-    application_id: Optional[int] = None,
-    application_identifier: Optional[str] = None,
     description: Optional[str] = None,
     sbatch_params: Optional[List[str]] = None,
     param_file: Optional[pathlib.Path] = None,
@@ -331,7 +330,7 @@ def render_job_script(
     # Make static type checkers happy
     assert jg_ctx.client is not None
 
-    app_data = fetch_application_data(jg_ctx, id=application_id, identifier=application_identifier)
+    app_data = fetch_application_data(jg_ctx, id_or_identifier)
 
     if not app_data.workflow_files:
         raise Abort(
