@@ -12,16 +12,14 @@ from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
+from jobbergate_cli.schemas import ApplicationResponse, ContextProtocol
 from jobbergate_cli.subapps.applications.tools import (
     fetch_application_data,
     save_application_files,
     upload_application,
 )
-from jobbergate_cli.schemas import ApplicationResponse, ContextProtocol
-from jobbergate_cli.subapps.applications.tools import fetch_application_data, save_application_files, upload_application
 from jobbergate_cli.subapps.pagination import handle_pagination
 from jobbergate_cli.subapps.tools import resolve_application_selection
-
 
 # TODO: move hidden field logic to the API
 HIDDEN_FIELDS = [
