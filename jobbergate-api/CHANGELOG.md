@@ -3,8 +3,8 @@
 This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
-- Modernized Dockerile to use multi-stage builds [ASP-4598]
-
+- Modernized Dockerfile to use multi-stage builds [ASP-4598]
+- Bumped dependencies (FastAPI and fastapi-pagination)
 
 ## 5.4.0a0 -- 2024-11-04
 - Silenced logging in the `/health` endpoint
