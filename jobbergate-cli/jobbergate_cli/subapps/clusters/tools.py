@@ -11,13 +11,11 @@ from loguru import logger
 from jobbergate_cli.config import settings
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import ClusterCacheData, JobbergateContext
+from jobbergate_cli.schemas import ClusterCacheData, ContextProtocol
 from jobbergate_cli.text_tools import conjoin
 
 
-def pull_client_ids_from_api(ctx: JobbergateContext) -> List[str]:
-    assert ctx.client is not None
-
+def pull_client_ids_from_api(ctx: ContextProtocol) -> List[str]:
     response_data = cast(
         Dict,
         make_request(
@@ -49,9 +47,6 @@ def pull_client_ids_from_api(ctx: JobbergateContext) -> List[str]:
 
 
 def save_clusters_to_cache(client_ids: List[str]):
-    # Make static type checkers happy
-    assert settings.JOBBERGATE_CLUSTER_LIST_PATH is not None
-
     cache_data = ClusterCacheData(
         updated_at=datetime.utcnow(),
         client_ids=client_ids,
@@ -62,9 +57,6 @@ def save_clusters_to_cache(client_ids: List[str]):
 
 
 def load_clusters_from_cache() -> Optional[List[str]]:
-    # Make static type checkers happy
-    assert settings.JOBBERGATE_CLUSTER_LIST_PATH is not None
-
     try:
         cache_data = ClusterCacheData(**json.loads(settings.JOBBERGATE_CLUSTER_LIST_PATH.read_text()))
     except Exception as err:
@@ -78,9 +70,7 @@ def load_clusters_from_cache() -> Optional[List[str]]:
     return cache_data.client_ids
 
 
-def get_client_ids(ctx: JobbergateContext) -> List[str]:
-    assert ctx.client is not None
-
+def get_client_ids(ctx: ContextProtocol) -> List[str]:
     client_ids = load_clusters_from_cache()
     if client_ids is None:
         client_ids = pull_client_ids_from_api(ctx)
@@ -89,7 +79,7 @@ def get_client_ids(ctx: JobbergateContext) -> List[str]:
     return client_ids
 
 
-def validate_client_id(ctx: JobbergateContext, client_id: str):
+def validate_client_id(ctx: ContextProtocol, client_id: str):
     client_ids = get_client_ids(ctx)
     Abort.require_condition(
         client_id in client_ids,

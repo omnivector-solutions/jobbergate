@@ -20,7 +20,7 @@ from jobbergate_cli.exceptions import Abort, JobbergateCliError
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import (
     JobbergateConfig,
-    JobbergateContext,
+    ContextProtocol,
     JobScriptCreateRequest,
     JobScriptFile,
     JobScriptRenderRequestData,
@@ -73,15 +73,12 @@ def validate_parameter_file(parameter_path: pathlib.Path) -> Dict[str, Any]:
 
 
 def fetch_job_script_data(
-    jg_ctx: JobbergateContext,
+    jg_ctx: ContextProtocol,
     id: int,
 ) -> JobScriptResponse:
     """
     Retrieve a job_script from the API by ``id``
     """
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
-
     return cast(
         JobScriptResponse,
         make_request(
@@ -232,7 +229,7 @@ def render_template(
 
 
 def render_job_script_locally(
-    jg_ctx: JobbergateContext,
+    jg_ctx: ContextProtocol,
     job_script_name: str,
     application_path: pathlib.Path,
     output_path: pathlib.Path,
@@ -252,9 +249,6 @@ def render_job_script_locally(
         param_file: Path to a parameters file.
         fast: Whether to use default answers (when available) instead of asking the user.
     """
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
-
     app_data = fetch_application_data_locally(application_path)
 
     if not app_data.workflow_files:
@@ -303,7 +297,7 @@ def render_job_script_locally(
 
 
 def render_job_script(
-    jg_ctx: JobbergateContext,
+    jg_ctx: ContextProtocol,
     id_or_identifier: int | str,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -327,9 +321,6 @@ def render_job_script(
     Returns:
         The new job script.
     """
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
-
     app_data = fetch_application_data(jg_ctx, id_or_identifier)
 
     if not app_data.workflow_files:
@@ -382,9 +373,6 @@ def render_job_script(
         ),
     )
 
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
-
     job_script_result = cast(
         JobScriptResponse,
         make_request(
@@ -403,7 +391,7 @@ def render_job_script(
 
 
 def upload_job_script_files(
-    jg_ctx: JobbergateContext,
+    jg_ctx: ContextProtocol,
     job_script_id: int,
     job_script_path: pathlib.Path,
     supporting_file_paths: list[pathlib.Path] | None = None,
@@ -466,14 +454,11 @@ def upload_job_script_files(
 
 
 def save_job_script_file(
-    jg_ctx: JobbergateContext, destination_path: pathlib.Path, job_script_file: JobScriptFile
+    jg_ctx: ContextProtocol, destination_path: pathlib.Path, job_script_file: JobScriptFile
 ) -> pathlib.Path:
     """
     Save a job script file from the API response to the destination path.
     """
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
-
     filename = job_script_file.filename
     file_path = destination_path / filename
     file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -490,9 +475,7 @@ def save_job_script_file(
     return file_path
 
 
-def download_job_script_files(
-    id: int, jg_ctx: JobbergateContext, destination_path: pathlib.Path
-) -> List[JobScriptFile]:
+def download_job_script_files(id: int, jg_ctx: ContextProtocol, destination_path: pathlib.Path) -> List[JobScriptFile]:
     """
     Download all job script files from the API and save them to the destination path.
     """

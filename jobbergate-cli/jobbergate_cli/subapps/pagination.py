@@ -8,11 +8,11 @@ import pydantic
 from jobbergate_cli.constants import PaginationChoices
 from jobbergate_cli.render import StyleMapper, render_paginated_list_results
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
+from jobbergate_cli.schemas import ContextProtocol, ListResponseEnvelope
 
 
 def handle_pagination(
-    jg_ctx: JobbergateContext,
+    jg_ctx: ContextProtocol,
     url_path: str,
     abort_message: str = "There was an error communicating with the API",
     params: Optional[Dict[str, Any]] = None,
@@ -22,9 +22,6 @@ def handle_pagination(
     nested_response_model_cls: Type[pydantic.BaseModel] | None = None,
     value_mappers: Optional[Dict[str, Callable[[Any], Any]]] = None,
 ):
-    assert jg_ctx is not None
-    assert jg_ctx.client is not None
-
     current_page = 1
 
     while True:

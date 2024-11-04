@@ -21,7 +21,6 @@ Note: Before running this demo, you will need to have the following config setti
 - ARMADA_API_BASE
 - OIDC_DOMAIN
 - OIDC_CLIENT_ID
-- OIDC_AUDIENCE
 
 These can either be set in a `.env` file or as environment variables.
 
@@ -32,7 +31,6 @@ environment using `docker-compose`. You will also need the following config sett
 
 - OIDC_DOMAIN=http://keycloak.local:8080/realms/jobbergate-local
 - OIDC_CLIENT_ID=cli
-- OIDC_AUDIENCE=https://local.omnivector.solutions
 - ARMADA_API_BASE=http://localhost:8000
 
 Note: After logging in the first time, running this demo again will use the token saved
@@ -52,7 +50,6 @@ load_dotenv()
 
 domain = os.getenv("OIDC_DOMAIN")
 client_id = os.getenv("OIDC_CLIENT_ID")
-audience = os.getenv("OIDC_AUDIENCE")
 base_api_url = os.getenv("ARMADA_API_BASE")
 
 access_token_file = pathlib.Path("./access.token")
@@ -84,7 +81,6 @@ def login():
         data=dict(
             client_id=client_id,
             grant_type="client_credentials",
-            audience=audience,
         ),
     )
     device_code_data = response.json()
@@ -122,7 +118,6 @@ def refresh(refresh_token):
         f"{domain}/protocol/openid-connect/token",
         data=dict(
             client_id=client_id,
-            audience=audience,
             grant_type="refresh_token",
             refresh_token=refresh_token,
         ),

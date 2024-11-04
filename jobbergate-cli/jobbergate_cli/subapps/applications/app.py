@@ -12,7 +12,7 @@ from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import ApplicationResponse, JobbergateContext
+from jobbergate_cli.schemas import ApplicationResponse, ContextProtocol
 from jobbergate_cli.subapps.applications.tools import (
     fetch_application_data,
     save_application_files,
@@ -20,7 +20,6 @@ from jobbergate_cli.subapps.applications.tools import (
 )
 from jobbergate_cli.subapps.pagination import handle_pagination
 from jobbergate_cli.subapps.tools import resolve_application_selection
-
 
 # TODO: move hidden field logic to the API
 HIDDEN_FIELDS = [
@@ -74,11 +73,7 @@ def list_all(
     """
     Show available applications
     """
-    jg_ctx: JobbergateContext = ctx.obj
-
-    # Make static type checkers happy
-    assert jg_ctx is not None
-    assert jg_ctx.client is not None
+    jg_ctx: ContextProtocol = ctx.obj
 
     params: Dict[str, Any] = dict(
         include_null_identifier=show_all,
@@ -124,7 +119,7 @@ def get_one(
     """
     Get a single application by id or identifier
     """
-    jg_ctx: JobbergateContext = ctx.obj
+    jg_ctx: ContextProtocol = ctx.obj
     result = fetch_application_data(
         jg_ctx, id_or_identifier=resolve_application_selection(id_or_identifier, id, identifier)
     )
@@ -171,10 +166,7 @@ def create(
     if application_desc:
         req_data["description"] = application_desc
 
-    jg_ctx: JobbergateContext = ctx.obj
-
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
+    jg_ctx: ContextProtocol = ctx.obj
 
     result = cast(
         Dict[str, Any],
@@ -268,10 +260,7 @@ def update(
     if application_name:
         req_data["name"] = application_name
 
-    jg_ctx: JobbergateContext = ctx.obj
-
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
+    jg_ctx: ContextProtocol = ctx.obj
 
     if req_data:
         make_request(
@@ -330,10 +319,7 @@ def delete(
     """
     Delete an existing application.
     """
-    jg_ctx: JobbergateContext = ctx.obj
-
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
+    jg_ctx: ContextProtocol = ctx.obj
 
     identification = resolve_application_selection(id_or_identifier, id, identifier)
 
@@ -376,7 +362,7 @@ def download_files(
     """
     Download the files from an application to the current working directory.
     """
-    jg_ctx: JobbergateContext = ctx.obj
+    jg_ctx: ContextProtocol = ctx.obj
 
     result = fetch_application_data(jg_ctx, resolve_application_selection(id_or_identifier, id, identifier))
     saved_files = save_application_files(
@@ -444,10 +430,7 @@ def clone(
     if application_name:
         req_data["name"] = application_name
 
-    jg_ctx: JobbergateContext = ctx.obj
-
-    # Make static type checkers happy
-    assert jg_ctx.client is not None
+    jg_ctx: ContextProtocol = ctx.obj
 
     result = cast(
         ApplicationResponse,

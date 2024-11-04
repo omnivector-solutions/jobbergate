@@ -12,7 +12,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.markdown import Markdown
 
-from jobbergate_cli.schemas import JobbergateContext, ListResponseEnvelope
+from jobbergate_cli.schemas import ContextProtocol, ListResponseEnvelope
 from jobbergate_cli.text_tools import dedent
 from jobbergate_cli.text_tools import indent as indent_text
 
@@ -105,7 +105,7 @@ def render_json(data: Any):
 
 
 def render_list_results(
-    ctx: JobbergateContext,
+    ctx: ContextProtocol,
     envelope: ListResponseEnvelope,
     style_mapper: StyleMapper | None = None,
     hidden_fields: list[str] | None = None,
@@ -179,7 +179,7 @@ def render_dict(
 
 
 def render_single_result(
-    ctx: JobbergateContext,
+    ctx: ContextProtocol,
     result: dict[str, Any] | pydantic.BaseModel,
     hidden_fields: list[str] | None = None,
     title: str = "Result",
@@ -212,7 +212,7 @@ def render_single_result(
 
 
 def render_paginated_list_results(
-    ctx: JobbergateContext,
+    ctx: ContextProtocol,
     envelope: ListResponseEnvelope,
     title: str = "Results List",
     style_mapper: Optional[StyleMapper] = None,

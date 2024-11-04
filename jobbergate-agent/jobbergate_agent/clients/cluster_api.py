@@ -25,7 +25,6 @@ def acquire_token(token: Token) -> Token:
 
     logger.debug("Attempting to acquire token from OIDC")
     oidc_body = dict(
-        audience=SETTINGS.OIDC_AUDIENCE,
         client_id=SETTINGS.OIDC_CLIENT_ID,
         client_secret=SETTINGS.OIDC_CLIENT_SECRET,
         grant_type="client_credentials",

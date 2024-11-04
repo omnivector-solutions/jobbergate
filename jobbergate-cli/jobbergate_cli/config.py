@@ -64,9 +64,8 @@ class Settings(BaseSettings):
     JOBBERGATE_LEGACY_NAME_CONVENTION: Optional[bool] = False
 
     # Auth0 config for machine-to-machine security
-    OIDC_DOMAIN: str
-    OIDC_AUDIENCE: str
-    OIDC_CLIENT_ID: str
+    OIDC_DOMAIN: Optional[str] = None
+    OIDC_CLIENT_ID: Optional[str] = None
     OIDC_USE_HTTPS: bool = True
     OIDC_CLIENT_SECRET: Optional[str] = None
 

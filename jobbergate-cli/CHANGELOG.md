@@ -5,6 +5,8 @@ This file keeps track of all notable changes to jobbergate-cli
 ## Unreleased
 
 - Enabled positional arguments to select entries using the cli [ASP-5649]
+- Modified internal details to ensure commands that require no authentication face no configuration errors [ASP-5745]
+- Removed the `OIDC_AUDIENCE` setting
 
 ## 5.3.0 -- 2024-09-09
 

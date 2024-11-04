@@ -5,17 +5,15 @@ Provide main entry point for the Jobbergate CLI App.
 import sys
 from typing import Any
 
-import httpx
 import importlib_metadata
 import typer
-from jobbergate_core.auth.handler import JobbergateAuthHandler
 
-from jobbergate_cli.auth import show_login_message, track_login_progress
 from jobbergate_cli.config import settings
+from jobbergate_cli.context import JobbergateContext
 from jobbergate_cli.exceptions import Abort, handle_abort, handle_authentication_error
 from jobbergate_cli.logging import init_logs, init_sentry
 from jobbergate_cli.render import render_demo, render_json, terminal_message
-from jobbergate_cli.schemas import JobbergateContext
+from jobbergate_cli.schemas import ContextProtocol
 from jobbergate_cli.subapps.applications.app import app as applications_app
 from jobbergate_cli.subapps.job_scripts.app import app as job_scripts_app
 from jobbergate_cli.subapps.job_submissions.app import app as job_submissions_app
@@ -68,27 +66,10 @@ def main(
     init_logs(verbose=verbose)
     init_sentry()
 
-    protocol = "https" if settings.OIDC_USE_HTTPS else "http"
-    authentication_handler = JobbergateAuthHandler(
-        cache_directory=settings.JOBBERGATE_USER_TOKEN_DIR,
-        login_domain=f"{protocol}://{settings.OIDC_DOMAIN}",
-        login_audience=settings.OIDC_AUDIENCE,
-        login_client_id=settings.OIDC_CLIENT_ID,
-        login_client_secret=settings.OIDC_CLIENT_SECRET,
-        login_url_handler=show_login_message,
-        login_sequence_handler=track_login_progress,
-    )
-
-    ctx.obj = JobbergateContext(
-        client=httpx.Client(
-            base_url=settings.ARMADA_API_BASE,
-            auth=authentication_handler,
-            timeout=settings.JOBBERGATE_REQUESTS_TIMEOUT,
-        ),
-        authentication_handler=authentication_handler,
-        full_output=full,
-        raw_output=raw,
-    )
+    # Stored first as a local variable to enable type checking and make mypy happy with the syntax
+    # Then stored in the context object to be passed to the subcommands
+    context: ContextProtocol = JobbergateContext(full_output=full, raw_output=raw)
+    ctx.obj = context
 
 
 @app.command(rich_help_panel="Authentication")

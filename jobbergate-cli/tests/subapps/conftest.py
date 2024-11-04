@@ -9,8 +9,9 @@ from typer import Context, Typer
 from typer.testing import CliRunner
 
 from jobbergate_cli.constants import JOBBERGATE_APPLICATION_CONFIG_FILE_NAME, JOBBERGATE_APPLICATION_MODULE_FILE_NAME
+from jobbergate_cli.context import JobbergateContext
 from jobbergate_cli.exceptions import handle_abort, handle_authentication_error
-from jobbergate_cli.schemas import IdentityData, JobbergateApplicationConfig, JobbergateContext
+from jobbergate_cli.schemas import IdentityData, JobbergateApplicationConfig, ContextProtocol
 from jobbergate_cli.subapps.applications.tools import load_application_from_source
 from jobbergate_cli.text_tools import dedent
 
@@ -41,20 +42,20 @@ def make_test_app(dummy_context):
 
 
 @pytest.fixture
-def dummy_context(mocker, tmp_path, dummy_domain) -> Generator[JobbergateContext, None, None]:
+def dummy_context(mocker, tmp_path, dummy_domain) -> Generator[ContextProtocol, None, None]:
     def dummy_auth(request: httpx.Request) -> httpx.Request:
         request.headers["Authorization"] = "Bearer XXXXXXXX"
         return request
 
-    authentication_handler = JobbergateAuthHandler(
-        cache_directory=Path(tmp_path),
-        login_domain="test-domain",
-        login_audience="test-audience",
-    )
+    authentication_handler = JobbergateAuthHandler(cache_directory=Path(tmp_path), login_domain="test-domain")
+
+    context = JobbergateContext()
+
     with mocker.patch.object(authentication_handler, attribute="acquire_access", return_value=dummy_auth):
-        yield JobbergateContext(
-            client=httpx.Client(base_url=dummy_domain), authentication_handler=authentication_handler
-        )
+        # This is all it takes to replace both cached properties
+        context.client = httpx.Client(base_url=dummy_domain)
+        context.authentication_handler = authentication_handler
+        yield context
 
 
 @pytest.fixture
