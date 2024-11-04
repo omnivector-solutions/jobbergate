@@ -3,7 +3,7 @@
 This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
-
+- Bumped dependencies (FastAPI and fastapi-pagination)
 
 ## 5.2.0 -- 2024-07-01
 - Fixed issue when retrieving large files on get routes after upgrading to FastAPI 0.111
