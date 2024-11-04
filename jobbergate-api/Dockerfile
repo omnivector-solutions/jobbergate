@@ -1,16 +1,27 @@
-FROM python:3.11-slim-buster
+FROM python:3.11-slim-buster AS builder
+
+WORKDIR /app
 
 RUN apt update && apt install -y curl libpq-dev gcc
 
-RUN curl -sSL https://install.python-poetry.org | \
-    POETRY_HOME=/opt/poetry POETRY_VERSION=1.5.1 python && \
-    cd /usr/local/bin && \
-    ln -s /opt/poetry/bin/poetry && \
-    poetry config virtualenvs.create false
+RUN pip install poetry==1.5.1
 
-COPY ./pyproject.toml ./poetry.lock* /app/
+COPY ./pyproject.toml ./poetry.lock /app
+
+RUN poetry config virtualenvs.in-project true \
+    && poetry install --no-root \
+    && rm -rf "$POETRY_CACHE_DIR"
+
+
+FROM python:3.11-slim-buster AS runner
+
 WORKDIR /app
-RUN poetry install --no-root
+
+RUN apt update && apt install -y curl
+
+COPY --from=builder /app /app
+
+ENV PATH="/app/.venv/bin:$PATH"
 
 COPY ./alembic /app/alembic
 COPY ./jobbergate_api /app/jobbergate_api
