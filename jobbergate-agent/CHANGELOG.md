@@ -3,6 +3,9 @@
 This file keeps track of all notable changes to jobbergate-agent
 
 ## Unreleased
+
+
+## 5.4.0a0 -- 2024-11-04
 - Changed auto-update task to reuse current scheduler instead of creating a new one
 - Fixed environment variables from the machine running the agent propagating to slurm jobs (notice `--export=ALL` is the default behavior for sbatch)
 - Removed the `OIDC_AUDIENCE` setting
