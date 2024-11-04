@@ -2076,20 +2076,6 @@ advanced users.</p>
           </td>
         </tr>
         <tr>
-          <td><code>login_audience</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Audience of the login.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
           <td><code>login_client_id</code></td>
           <td>
                 <code>str</code>
@@ -2125,7 +2111,6 @@ class to authenticate a request:
 &gt;&gt;&gt; jobbergate_auth = JobbergateAuthHandler(
 ...     cache_directory=Path(&quot;.&quot;),
 ...     login_domain=&quot;http://keycloak.local:8080/realms/jobbergate-local&quot;,
-...     login_audience=&quot;https://local.omnivector.solutions&quot;,
 ...     login_client_id=&quot;cli&quot;,
 ... )
 &gt;&gt;&gt; jobbergate_base_url = &quot;http://localhost:8000/jobbergate&quot;
@@ -2576,20 +2561,6 @@ advanced users.</p>
           </td>
         </tr>
         <tr>
-          <td><code>login_audience</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Audience of the login.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
           <td><code>login_client_id</code></td>
           <td>
                 <code>str</code>
@@ -2625,7 +2596,6 @@ class to authenticate a request:
 &gt;&gt;&gt; jobbergate_auth = JobbergateAuthHandler(
 ...     cache_directory=Path(&quot;.&quot;),
 ...     login_domain=&quot;http://keycloak.local:8080/realms/jobbergate-local&quot;,
-...     login_audience=&quot;https://local.omnivector.solutions&quot;,
 ...     login_client_id=&quot;cli&quot;,
 ... )
 &gt;&gt;&gt; jobbergate_base_url = &quot;http://localhost:8000/jobbergate&quot;
@@ -3763,20 +3733,6 @@ advanced users.</p>
           </td>
         </tr>
         <tr>
-          <td><code>login_audience</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Audience of the login.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
           <td><code>login_client_id</code></td>
           <td>
                 <code>str</code>
@@ -3812,7 +3768,6 @@ class to authenticate a request:
 &gt;&gt;&gt; jobbergate_auth = JobbergateAuthHandler(
 ...     cache_directory=Path(&quot;.&quot;),
 ...     login_domain=&quot;http://keycloak.local:8080/realms/jobbergate-local&quot;,
-...     login_audience=&quot;https://local.omnivector.solutions&quot;,
 ...     login_client_id=&quot;cli&quot;,
 ... )
 &gt;&gt;&gt; jobbergate_base_url = &quot;http://localhost:8000/jobbergate&quot;

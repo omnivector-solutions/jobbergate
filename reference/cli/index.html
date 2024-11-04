@@ -1078,6 +1078,46 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_cli.context" class="md-nav__link">
+    context
+  </a>
+  
+    <nav class="md-nav" aria-label="context">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.context.JobbergateContext" class="md-nav__link">
+    JobbergateContext
+  </a>
+  
+    <nav class="md-nav" aria-label="JobbergateContext">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.context.JobbergateContext.authentication_handler" class="md-nav__link">
+    authentication_handler
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.context.JobbergateContext.client" class="md-nav__link">
+    client
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_cli.exceptions" class="md-nav__link">
     exceptions
   </a>
@@ -1352,6 +1392,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_cli.schemas.ContextProtocol" class="md-nav__link">
+    ContextProtocol
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_cli.schemas.DeviceCodeData" class="md-nav__link">
     DeviceCodeData
   </a>
@@ -1444,13 +1491,6 @@
         
       </ul>
     </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_cli.schemas.JobbergateContext" class="md-nav__link">
-    JobbergateContext
-  </a>
   
 </li>
         
@@ -1970,6 +2010,46 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_cli.context" class="md-nav__link">
+    context
+  </a>
+  
+    <nav class="md-nav" aria-label="context">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.context.JobbergateContext" class="md-nav__link">
+    JobbergateContext
+  </a>
+  
+    <nav class="md-nav" aria-label="JobbergateContext">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.context.JobbergateContext.authentication_handler" class="md-nav__link">
+    authentication_handler
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.context.JobbergateContext.client" class="md-nav__link">
+    client
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_cli.exceptions" class="md-nav__link">
     exceptions
   </a>
@@ -2244,6 +2324,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_cli.schemas.ContextProtocol" class="md-nav__link">
+    ContextProtocol
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_cli.schemas.DeviceCodeData" class="md-nav__link">
     DeviceCodeData
   </a>
@@ -2336,13 +2423,6 @@
         
       </ul>
     </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_cli.schemas.JobbergateContext" class="md-nav__link">
-    JobbergateContext
-  </a>
   
 </li>
         
@@ -3208,6 +3288,137 @@ Can load configuration from a dotenv file if supplied.</p>
 
 
 
+<h4 id="jobbergate_cli.context" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">context</span>
+
+
+</h4>
+
+  <div class="doc doc-contents ">
+  
+      <p>Provides a data object for context passed from the main entry point.</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h5 id="jobbergate_cli.context.JobbergateContext" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobbergateContext</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h5>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.ContextProtocol" href="#jobbergate_cli.schemas.ContextProtocol">ContextProtocol</a></code></p>
+
+  
+      <p>A data object describing context passed from the main entry point.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+
+<h6 id="jobbergate_cli.context.JobbergateContext.authentication_handler" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">authentication_handler</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">authentication_handler</span><span class="p">:</span> <span class="n">JobbergateAuthHandler</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The authentication handler for the context.</p>
+<p>This is a cached property to ensure that the handler is only created when needed,
+so commands that require no authentication face no configuration errors.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+
+<h6 id="jobbergate_cli.context.JobbergateContext.client" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">client</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">client</span><span class="p">:</span> <span class="n">Client</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Client for making requests to the Jobbergate API.</p>
+  </div>
+
+</div>
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
 <h4 id="jobbergate_cli.exceptions" class="doc doc-heading">
           <span class="doc doc-object-name doc-module-name">exceptions</span>
 
@@ -3902,7 +4113,7 @@ to the columns of the table.</p>
 
 
 </h5>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_list_results</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">envelope</span><span class="p">:</span> <span class="n">ListResponseEnvelope</span><span class="p">,</span> <span class="n">style_mapper</span><span class="p">:</span> <span class="n">StyleMapper</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">hidden_fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Results List&#39;</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_list_results</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">ContextProtocol</span><span class="p">,</span> <span class="n">envelope</span><span class="p">:</span> <span class="n">ListResponseEnvelope</span><span class="p">,</span> <span class="n">style_mapper</span><span class="p">:</span> <span class="n">StyleMapper</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">hidden_fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Results List&#39;</span><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3925,7 +4136,7 @@ to the columns of the table.</p>
         <tr>
           <td><code>ctx</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateContext" href="#jobbergate_cli.schemas.JobbergateContext">JobbergateContext</a></code>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.ContextProtocol" href="#jobbergate_cli.schemas.ContextProtocol">ContextProtocol</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4010,7 +4221,7 @@ to the columns of the table.</p>
 
 
 </h5>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_single_result</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">hidden_fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Result&#39;</span><span class="p">,</span> <span class="n">value_mappers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_single_result</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">ContextProtocol</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">hidden_fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Result&#39;</span><span class="p">,</span> <span class="n">value_mappers</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4033,7 +4244,7 @@ to the columns of the table.</p>
         <tr>
           <td><code>ctx</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateContext" href="#jobbergate_cli.schemas.JobbergateContext">JobbergateContext</a></code>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.ContextProtocol" href="#jobbergate_cli.schemas.ContextProtocol">ContextProtocol</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4643,6 +4854,48 @@ to the columns of the table.</p>
 
 
 
+<h5 id="jobbergate_cli.schemas.ContextProtocol" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">ContextProtocol</span>
+
+
+</h5>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+
+  
+      <p>A protocol describing context passed from the main entry point.</p>
+<p>It aims to help static type checkers at the same time that prevents
+circular import issues on the actual implementation.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
 <h5 id="jobbergate_cli.schemas.DeviceCodeData" class="doc doc-heading">
           <span class="doc doc-object-name doc-class-name">DeviceCodeData</span>
 
@@ -5078,46 +5331,6 @@ JobbergateApplicationConfig model.</p>
   </div>
 
 </div>
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-
-<h5 id="jobbergate_cli.schemas.JobbergateContext" class="doc doc-heading">
-          <span class="doc doc-object-name doc-class-name">JobbergateContext</span>
-
-
-</h5>
-
-
-  <div class="doc doc-contents ">
-          <p class="doc doc-class-bases">
-            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
-
-  
-      <p>A data object describing context passed from the main entry point.</p>
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
 
 
 
@@ -7481,7 +7694,7 @@ to True.</p>
 
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">fetch_application_data</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ApplicationResponse</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">fetch_application_data</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">ContextProtocol</span><span class="p">,</span> <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ApplicationResponse</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -7504,7 +7717,7 @@ to True.</p>
         <tr>
           <td><code>jg_ctx</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateContext" href="#jobbergate_cli.schemas.JobbergateContext">JobbergateContext</a></code>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.ContextProtocol" href="#jobbergate_cli.schemas.ContextProtocol">ContextProtocol</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -7973,7 +8186,7 @@ for backward compatibility.</p>
 
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">save_application_files</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">application_data</span><span class="p">:</span> <span class="n">ApplicationResponse</span><span class="p">,</span> <span class="n">destination_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">save_application_files</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">ContextProtocol</span><span class="p">,</span> <span class="n">application_data</span><span class="p">:</span> <span class="n">ApplicationResponse</span><span class="p">,</span> <span class="n">destination_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -7995,7 +8208,7 @@ for backward compatibility.</p>
 
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">upload_application</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">application_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">upload_application</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">ContextProtocol</span><span class="p">,</span> <span class="n">application_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8018,7 +8231,7 @@ for backward compatibility.</p>
         <tr>
           <td><code>jg_ctx</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateContext" href="#jobbergate_cli.schemas.JobbergateContext">JobbergateContext</a></code>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.ContextProtocol" href="#jobbergate_cli.schemas.ContextProtocol">ContextProtocol</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -8540,7 +8753,7 @@ for backward compatibility.</p>
 
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">download_job_script_files</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">jg_ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">destination_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">JobScriptFile</span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">download_job_script_files</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">jg_ctx</span><span class="p">:</span> <span class="n">ContextProtocol</span><span class="p">,</span> <span class="n">destination_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">JobScriptFile</span><span class="p">]</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8562,7 +8775,7 @@ for backward compatibility.</p>
 
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">fetch_job_script_data</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobScriptResponse</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">fetch_job_script_data</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">ContextProtocol</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobScriptResponse</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8811,7 +9024,7 @@ Otherwise, the question will be prompted to the user.</p>
 
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_job_script</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sbatch_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">param_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">fast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobScriptResponse</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_job_script</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">ContextProtocol</span><span class="p">,</span> <span class="n">id_or_identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sbatch_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">param_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">fast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobScriptResponse</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8834,7 +9047,7 @@ Otherwise, the question will be prompted to the user.</p>
         <tr>
           <td><code>jg_ctx</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateContext" href="#jobbergate_cli.schemas.JobbergateContext">JobbergateContext</a></code>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.ContextProtocol" href="#jobbergate_cli.schemas.ContextProtocol">ContextProtocol</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -8983,7 +9196,7 @@ Otherwise, the question will be prompted to the user.</p>
 
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_job_script_locally</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">job_script_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">application_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">output_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">sbatch_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">param_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">fast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_job_script_locally</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">ContextProtocol</span><span class="p">,</span> <span class="n">job_script_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">application_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">output_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">sbatch_params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">param_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">fast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -9006,7 +9219,7 @@ Otherwise, the question will be prompted to the user.</p>
         <tr>
           <td><code>jg_ctx</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateContext" href="#jobbergate_cli.schemas.JobbergateContext">JobbergateContext</a></code>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.ContextProtocol" href="#jobbergate_cli.schemas.ContextProtocol">ContextProtocol</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -9209,7 +9422,7 @@ Otherwise, the question will be prompted to the user.</p>
 
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">save_job_script_file</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">destination_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">job_script_file</span><span class="p">:</span> <span class="n">JobScriptFile</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">save_job_script_file</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">ContextProtocol</span><span class="p">,</span> <span class="n">destination_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">job_script_file</span><span class="p">:</span> <span class="n">JobScriptFile</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -9231,7 +9444,7 @@ Otherwise, the question will be prompted to the user.</p>
 
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">upload_job_script_files</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">job_script_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">job_script_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">supporting_file_paths</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">upload_job_script_files</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">ContextProtocol</span><span class="p">,</span> <span class="n">job_script_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">job_script_path</span><span class="p">:</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">supporting_file_paths</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -9254,7 +9467,7 @@ Otherwise, the question will be prompted to the user.</p>
         <tr>
           <td><code>jg_ctx</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateContext" href="#jobbergate_cli.schemas.JobbergateContext">JobbergateContext</a></code>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.ContextProtocol" href="#jobbergate_cli.schemas.ContextProtocol">ContextProtocol</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -9645,7 +9858,7 @@ Otherwise, the question will be prompted to the user.</p>
         <tr>
           <td><code>jg_ctx</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateContext" href="#jobbergate_cli.schemas.JobbergateContext">JobbergateContext</a></code>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.ContextProtocol" href="#jobbergate_cli.schemas.ContextProtocol">ContextProtocol</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -10072,7 +10285,7 @@ the current working directory.</p>
 
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">fetch_job_submission_data</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">job_submission_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionResponse</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">fetch_job_submission_data</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">ContextProtocol</span><span class="p">,</span> <span class="n">job_submission_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionResponse</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -10094,7 +10307,7 @@ the current working directory.</p>
 
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_submissions_factory</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">JobbergateContext</span><span class="p">,</span> <span class="n">job_script_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">execution_directory</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">cluster_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sbatch_arguments</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionABC</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_submissions_factory</span><span class="p">(</span><span class="n">jg_ctx</span><span class="p">:</span> <span class="n">ContextProtocol</span><span class="p">,</span> <span class="n">job_script_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">execution_directory</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">cluster_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sbatch_arguments</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionABC</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
