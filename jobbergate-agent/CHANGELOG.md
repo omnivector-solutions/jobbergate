@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-agent
 ## Unreleased
 
 
+## 5.2.1 -- 2024-11-04
 ## 5.2.0 -- 2024-07-01
 - Change pydantic.BaseSettings config to use `extra=ignore`
 - Migrated to Pydantic version 2 [PENG-2278]
