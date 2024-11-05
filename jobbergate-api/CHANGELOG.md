@@ -3,6 +3,9 @@
 This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
+
+
+## 5.3.1 -- 2024-11-05
 - Bumped dependencies (FastAPI and fastapi-pagination)
 
 ## 5.3.0 -- 2024-09-09
