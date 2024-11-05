@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-core
 ## Unreleased
 
 
+## 5.3.1 -- 2024-11-05
 ## 5.3.0 -- 2024-09-09
 
 - Refined authentication handler to get it ready to be used on the CLI and enable auto-login [ASP-4779]
