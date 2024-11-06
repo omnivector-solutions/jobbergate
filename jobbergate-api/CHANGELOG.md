@@ -3,7 +3,7 @@
 This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
-
+- Added back `libpq-dev` and `gcc` to the Dockerfile
 
 ## 5.4.0a1 -- 2024-11-05
 - Modernized Dockerfile to use multi-stage builds [ASP-4598]
