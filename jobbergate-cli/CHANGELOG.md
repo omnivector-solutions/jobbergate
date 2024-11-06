@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-cli
 ## Unreleased
 
 
+## 5.4.0a2 -- 2024-11-06
 ## 5.4.0a1 -- 2024-11-05
 ## 5.4.0a0 -- 2024-11-04
 - Enabled positional arguments to select entries using the cli [ASP-5649]

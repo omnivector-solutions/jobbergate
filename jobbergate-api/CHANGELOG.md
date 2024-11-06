@@ -3,6 +3,9 @@
 This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
+
+
+## 5.4.0a2 -- 2024-11-06
 - Added back `libpq-dev` and `gcc` to the Dockerfile
 
 ## 5.4.0a1 -- 2024-11-05
