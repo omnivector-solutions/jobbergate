@@ -17,7 +17,7 @@ FROM python:3.11-slim-buster AS runner
 
 WORKDIR /app
 
-RUN apt update && apt install -y curl
+RUN apt update && apt install -y curl libpq-dev gcc
 
 COPY --from=builder /app /app
 
