@@ -92,7 +92,7 @@ async def job_submission_create(
     "/clone/{id}",
     status_code=status.HTTP_201_CREATED,
     response_model=JobSubmissionDetailedView,
-    description="Endpoint for cloning a job script to a new entry owned by the user",
+    description="Endpoint for cloning a job submission under the CREATED status for a new run on the cluster",
 )
 async def job_submission_clone(
     id: int = Path(...),
@@ -107,6 +107,7 @@ async def job_submission_clone(
     cloned_instance = await secure_services.crud.job_submission.clone_instance(
         original_instance,
         owner_email=secure_services.identity_payload.email,
+        status=JobSubmissionStatus.CREATED,
         description=get_cloned_description(original_instance.description, original_instance.id),
     )
 
