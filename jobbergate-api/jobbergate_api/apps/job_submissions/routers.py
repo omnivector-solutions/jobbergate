@@ -24,7 +24,6 @@ from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionUpdateRequest,
     PendingJobSubmission,
 )
-from jobbergate_api.apps.job_submissions.tools import get_cloned_description
 from jobbergate_api.apps.permissions import Permissions, can_bypass_ownership_check
 from jobbergate_api.apps.schemas import ListParams
 from jobbergate_api.email_notification import notify_submission_rejected
@@ -104,11 +103,18 @@ async def job_submission_clone(
     logger.info(f"Cloning job submission {id=}")
 
     original_instance = await secure_services.crud.job_submission.get(id)
+
+    if original_instance.job_script_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot resubmit a job submission without a parent job script",
+        )
+
     cloned_instance = await secure_services.crud.job_submission.clone_instance(
         original_instance,
         owner_email=secure_services.identity_payload.email,
         status=JobSubmissionStatus.CREATED,
-        description=get_cloned_description(original_instance.description, original_instance.id),
+        slurm_job_id=None,
     )
 
     return cloned_instance

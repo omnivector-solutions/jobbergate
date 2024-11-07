@@ -350,6 +350,88 @@ async def test_create_job_submission_without_client_id(
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_CREATE))
+async def test_clone_job_submission__success(
+    permission,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    tester_email,
+    job_script_data_as_string,
+    synth_session,
+    synth_services,
+):
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    job_script_file_name = "entrypoint.sh"
+
+    await synth_services.file.job_script.upsert(
+        parent_id=base_job_script.id,
+        filename=job_script_file_name,
+        upload_content=job_script_data_as_string,
+        file_type="ENTRYPOINT",
+    )
+
+    inserted_job_script_id = base_job_script.id
+    slurm_job_id = 1234
+
+    create_data = fill_job_submission_data(
+        job_script_id=inserted_job_script_id,
+        slurm_job_id=slurm_job_id,
+        status=JobSubmissionStatus.ABORTED,
+        owner_email=tester_email,
+    )
+    original_instance = await synth_services.crud.job_submission.create(**create_data)
+
+    new_owner_email = "new_" + tester_email
+
+    inject_security_header(new_owner_email, permission)
+    response = await client.post(f"/jobbergate/job-submissions/clone/{original_instance.id}")
+
+    assert response.status_code == status.HTTP_201_CREATED, f"Clone failed: {response.text}"
+    response_data = response.json()
+
+    assert response_data["cloned_from_id"] == original_instance.id
+    assert response_data["id"] != original_instance.id
+    assert response_data["owner_email"] == new_owner_email
+    assert response_data["slurm_job_id"] is None
+    assert response_data["status"] == JobSubmissionStatus.CREATED
+
+    assert response_data["client_id"] == original_instance.client_id
+    assert response_data["description"] == original_instance.description
+    assert response_data["execution_directory"] == original_instance.execution_directory
+    assert response_data["job_script_id"] == original_instance.job_script_id
+    assert response_data["name"] == original_instance.name
+    assert response_data["sbatch_arguments"] == original_instance.sbatch_arguments
+
+
+async def test_clone_job_submission__fail_unauthorized(fill_job_submission_data, client, synth_services):
+    original_instance = await synth_services.crud.job_submission.create(**fill_job_submission_data())
+
+    response = await client.post(f"/jobbergate/job-submissions/clone/{original_instance.id}")
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+async def test_clone_job_submission__not_found(inject_security_header, tester_email, client, synth_services):
+    assert (await synth_services.crud.job_submission.count()) == 0
+    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_CREATE)
+    response = await client.post("/jobbergate/job-submissions/clone/0")
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+async def test_clone_job_submission__no_parent_job_script(
+    inject_security_header, tester_email, fill_job_submission_data, client, synth_services
+):
+    original_instance = await synth_services.crud.job_submission.create(**fill_job_submission_data())
+    inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_CREATE)
+    response = await client.post(f"/jobbergate/job-submissions/clone/{original_instance.id}")
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
 @pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ))
 async def test_get_job_submission_by_id(
     permission,

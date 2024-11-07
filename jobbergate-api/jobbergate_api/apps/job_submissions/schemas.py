@@ -104,6 +104,10 @@ job_submission_meta_mapper = MetaMapper(
         description="The arguments used to submit the job to the slurm queue",
         example=["--exclusive", "--job-name=example-job"],
     ),
+    cloned_from_id=MetaField(
+        description="Indicates the id this entry has been cloned from, if any.",
+        example=101,
+    ),
 )
 
 
@@ -159,6 +163,7 @@ class JobSubmissionBaseView(TableResource):
     client_id: str
     status: JobSubmissionStatus
     slurm_job_state: Optional[SlurmJobState] = None
+    cloned_from_id: Optional[int] = None
 
     model_config = ConfigDict(json_schema_extra=job_submission_meta_mapper)
 
