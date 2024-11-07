@@ -5,7 +5,15 @@ import httpx
 import pytest
 
 from jobbergate_cli.schemas import JobSubmissionResponse
-from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS, create, delete, get_one, list_all, style_mapper
+from jobbergate_cli.subapps.job_submissions.app import (
+    HIDDEN_FIELDS,
+    clone,
+    create,
+    delete,
+    get_one,
+    list_all,
+    style_mapper,
+)
 from jobbergate_cli.text_tools import unwrap
 
 
@@ -163,3 +171,47 @@ def test_delete__makes_request_and_sends_terminal_message(
     assert result.exit_code == 0, f"delete failed: {result.stdout}"
     assert delete_route.called
     assert "JOB SUBMISSION DELETE SUCCEEDED"
+
+
+class TestCloneJobSubmission:
+    @pytest.mark.parametrize("selector_template", ["{id}", "-i {id}", "--id={id}", "--id {id}"])
+    def test_clone__success(
+        self,
+        respx_mock,
+        make_test_app,
+        dummy_job_submission_data,
+        dummy_domain,
+        dummy_context,
+        cli_runner,
+        mocker,
+        selector_template,
+    ):
+        """
+        Test that the clone application subcommand works as expected.
+        """
+
+        job_submission_data = dummy_job_submission_data[0]
+        id = job_submission_data["id"]
+
+        cli_selector = selector_template.format(id=id)
+
+        clone_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions/clone/{id}").mock(
+            return_value=httpx.Response(
+                httpx.codes.CREATED,
+                json=job_submission_data,
+            ),
+        )
+        mocked_render = mocker.patch("jobbergate_cli.subapps.job_submissions.app.render_single_result")
+
+        test_app = make_test_app("clone", clone)
+        result = cli_runner.invoke(test_app, shlex.split(f"clone {cli_selector}"))
+
+        assert clone_route.called
+
+        assert result.exit_code == 0, f"clone failed: {result.stdout}"
+        mocked_render.assert_called_once_with(
+            dummy_context,
+            JobSubmissionResponse(**job_submission_data),
+            title="Cloned Job Submission",
+            hidden_fields=HIDDEN_FIELDS,
+        )
