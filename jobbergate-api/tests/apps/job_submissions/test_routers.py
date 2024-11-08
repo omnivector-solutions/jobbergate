@@ -3,6 +3,7 @@ Tests for the /job-submissions/ endpoint.
 """
 
 import json
+from datetime import datetime
 
 import pytest
 from fastapi import status
@@ -397,6 +398,8 @@ async def test_clone_job_submission__success(
     assert response_data["owner_email"] == new_owner_email
     assert response_data["slurm_job_id"] is None
     assert response_data["status"] == JobSubmissionStatus.CREATED
+    assert datetime.fromisoformat(response_data["created_at"]) > original_instance.created_at
+    assert datetime.fromisoformat(response_data["updated_at"]) > original_instance.updated_at
 
     assert response_data["client_id"] == original_instance.client_id
     assert response_data["description"] == original_instance.description

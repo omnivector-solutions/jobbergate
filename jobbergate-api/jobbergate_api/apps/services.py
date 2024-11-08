@@ -231,10 +231,8 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         data.update(incoming_data)
         data["cloned_from_id"] = original_instance.id
 
-        if "created_at" in data:
-            del data["created_at"]
-        if "updated_at" in data:
-            del data["updated_at"]
+        data.pop("created_at", None)
+        data.pop("updated_at", None)
 
         return await self.create(**data)
 
