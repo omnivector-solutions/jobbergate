@@ -4,7 +4,7 @@ Provide a ``typer`` app that can interact with Job Submission data in a cruddy m
 
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 import typer
 
@@ -20,6 +20,7 @@ from jobbergate_cli.subapps.tools import resolve_selection
 
 # move hidden field logic to the API
 HIDDEN_FIELDS = [
+    "cloned_from_id",
     "created_at",
     "execution_directory",
     "is_archived",
@@ -235,4 +236,42 @@ def delete(
     terminal_message(
         "The job submission was successfully deleted.",
         subject="Job submission delete succeeded",
+    )
+
+
+@app.command()
+def clone(
+    ctx: typer.Context,
+    id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be updated."),
+    id_option: Optional[int] = typer.Option(
+        None,
+        "--id",
+        "-i",
+        help="Alternative way to specify id.",
+    ),
+):
+    """
+    Clone an existing job submission under the CREATED status, so it is re-submitted to the cluster.
+    """
+    jg_ctx: ContextProtocol = ctx.obj
+    id = resolve_selection(id, id_option)
+
+    job_script_result = cast(
+        JobSubmissionResponse,
+        make_request(
+            jg_ctx.client,
+            f"/jobbergate/job-submissions/clone/{id}",
+            "POST",
+            expected_status=201,
+            abort_message="Couldn't clone job submission",
+            support=True,
+            response_model_cls=JobSubmissionResponse,
+        ),
+    )
+
+    render_single_result(
+        jg_ctx,
+        job_script_result,
+        hidden_fields=HIDDEN_FIELDS,
+        title="Cloned Job Submission",
     )

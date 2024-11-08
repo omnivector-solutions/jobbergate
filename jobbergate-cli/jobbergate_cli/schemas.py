@@ -245,6 +245,7 @@ class JobSubmissionResponse(pydantic.BaseModel, extra="ignore"):
     updated_at: Optional[datetime] = None
     report_message: Optional[str] = None
     sbatch_arguments: Optional[list[str]] = None
+    cloned_from_id: Optional[int] = None
 
 
 class JobScriptCreateRequest(pydantic.BaseModel):
