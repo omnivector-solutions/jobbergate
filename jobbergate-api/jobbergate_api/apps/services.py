@@ -231,6 +231,9 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
         data.update(incoming_data)
         data["cloned_from_id"] = original_instance.id
 
+        data.pop("created_at", None)
+        data.pop("updated_at", None)
+
         return await self.create(**data)
 
     async def delete(self, locator: Any) -> None:

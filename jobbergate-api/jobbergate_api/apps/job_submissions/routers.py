@@ -87,6 +87,39 @@ async def job_submission_create(
     return new_job_submission
 
 
+@router.post(
+    "/clone/{id}",
+    status_code=status.HTTP_201_CREATED,
+    response_model=JobSubmissionDetailedView,
+    description="Endpoint for cloning a job submission under the CREATED status for a new run on the cluster",
+)
+async def job_submission_clone(
+    id: int = Path(...),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_CREATE, ensure_email=True)
+    ),
+):
+    """Clone a job_submission given its id."""
+    logger.info(f"Cloning job submission {id=}")
+
+    original_instance = await secure_services.crud.job_submission.get(id)
+
+    if original_instance.job_script_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot resubmit a job submission without a parent job script",
+        )
+
+    cloned_instance = await secure_services.crud.job_submission.clone_instance(
+        original_instance,
+        owner_email=secure_services.identity_payload.email,
+        status=JobSubmissionStatus.CREATED,
+        slurm_job_id=None,
+    )
+
+    return cloned_instance
+
+
 @router.get(
     "/{id}",
     description="Endpoint to get a job_submission",

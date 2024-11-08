@@ -108,6 +108,8 @@ class TestCrudService:
         assert cloned_instance.name == original_instance.name
         assert cloned_instance.description == original_instance.description
         assert cloned_instance.cloned_from_id == original_instance.id
+        assert cloned_instance.created_at > original_instance.created_at
+        assert cloned_instance.updated_at > original_instance.updated_at
 
     async def test_clone_instance__type_error_on_unknown_column(self, dummy_crud_service, tester_email):
         """
