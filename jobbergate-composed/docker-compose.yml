@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   jobbergate-api:
     build:
@@ -7,10 +5,17 @@ services:
       dockerfile: Dockerfile-dev
     networks:
       - jobbergate-net
-    volumes:
-      - ../jobbergate-api/jobbergate_api/:/app/jobbergate_api/
-      - ../jobbergate-api/dev_tools/:/app/dev_tools/
-      - ../jobbergate-api/alembic/:/app/alembic/
+    develop:
+      watch:
+        - action: sync
+          path: ../jobbergate-api/jobbergate_api
+          target: /app/jobbergate_api
+        - action: sync
+          path: ../jobbergate-api/dev_tools
+          target: /app/dev_tools
+        - action: sync
+          path: ../jobbergate-api/alembic
+          target: /app/alembic
     environment:
       - DATABASE_HOST=db
       - DATABASE_USER=compose-db-user
