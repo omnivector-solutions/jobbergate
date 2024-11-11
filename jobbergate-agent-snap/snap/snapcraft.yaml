@@ -1,6 +1,6 @@
 name: jobbergate-agent
 base: core24
-version: '0.2.0'
+version: '0.3.0'
 summary: The Jobbergate Agent snap
 adopt-info: metadata
 license: MIT
@@ -36,7 +36,7 @@ description: |
   For learning more about Jobbergate and how it can be used on Vantage, please visit https://docs.vantagehpc.io
 
 grade: stable
-confinement: strict
+confinement: classic
 
 parts:
   jobbergate-agent:
