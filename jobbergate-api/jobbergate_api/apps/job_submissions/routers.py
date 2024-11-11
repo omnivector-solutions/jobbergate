@@ -114,7 +114,10 @@ async def job_submission_clone(
         original_instance,
         owner_email=secure_services.identity_payload.email,
         status=JobSubmissionStatus.CREATED,
+        report_message=None,
         slurm_job_id=None,
+        slurm_job_info=None,
+        slurm_job_state=None,
     )
 
     return cloned_instance

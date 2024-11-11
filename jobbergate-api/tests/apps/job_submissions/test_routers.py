@@ -396,8 +396,11 @@ async def test_clone_job_submission__success(
     assert response_data["cloned_from_id"] == original_instance.id
     assert response_data["id"] != original_instance.id
     assert response_data["owner_email"] == new_owner_email
-    assert response_data["slurm_job_id"] is None
     assert response_data["status"] == JobSubmissionStatus.CREATED
+    assert response_data["report_message"] is None
+    assert response_data["slurm_job_id"] is None
+    assert response_data["slurm_job_info"] is None
+    assert response_data["slurm_job_state"] is None
     assert datetime.fromisoformat(response_data["created_at"]) > original_instance.created_at
     assert datetime.fromisoformat(response_data["updated_at"]) > original_instance.updated_at
 
