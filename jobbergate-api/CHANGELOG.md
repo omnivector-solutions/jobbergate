@@ -3,7 +3,7 @@
 This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
-
+- Patched a couple fields that are not supposed to be cloned on job submissions
 
 ## 5.4.0a3 -- 2024-11-08
 - Added clone capability to job submissions so they can be resubmitted to the cluster when needed [PENG-1676, ASP-4597]
