@@ -3,6 +3,9 @@
 This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
+
+
+## 5.4.0a4 -- 2024-11-12
 - Patched a couple fields that are not supposed to be cloned on job submissions
 
 ## 5.4.0a3 -- 2024-11-08
