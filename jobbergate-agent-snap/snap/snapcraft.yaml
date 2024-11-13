@@ -1,6 +1,6 @@
 name: jobbergate-agent
-base: core24
-version: '0.3.0'
+base: core22
+version: '0.4.0'
 summary: The Jobbergate Agent snap
 adopt-info: metadata
 license: MIT
@@ -51,10 +51,10 @@ parts:
     - g++
     - dpkg-dev
     stage-packages:
-    - python3.12-minimal
-    - python3.12-venv
-    - libpython3.12-minimal
-    - libpython3.12-stdlib
+    - python3.10-minimal
+    - python3.10-venv
+    - libpython3.10-minimal
+    - libpython3.10-stdlib
     build-attributes:
     - enable-patchelf
 
@@ -82,7 +82,7 @@ apps:
     daemon: simple
     install-mode: disable
     environment:
-      PYTHONPATH: "$SNAP/lib/python3.12/site-packages:${PYTHONPATH}"
+      PYTHONPATH: "$SNAP/lib/python3.10/site-packages:${PYTHONPATH}"
 
   start:
     command: commands/daemon.start
