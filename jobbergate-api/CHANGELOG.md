@@ -4,21 +4,11 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+## 5.4.0 -- 2024-11-18
 
-## 5.4.0a4 -- 2024-11-12
-- Patched a couple fields that are not supposed to be cloned on job submissions
-
-## 5.4.0a3 -- 2024-11-08
 - Added clone capability to job submissions so they can be resubmitted to the cluster when needed [PENG-1676, ASP-4597]
-
-## 5.4.0a2 -- 2024-11-06
-- Added back `libpq-dev` and `gcc` to the Dockerfile
-
-## 5.4.0a1 -- 2024-11-05
 - Modernized Dockerfile to use multi-stage builds [ASP-4598]
 - Bumped dependencies (FastAPI and fastapi-pagination)
-
-## 5.4.0a0 -- 2024-11-04
 - Silenced logging in the `/health` endpoint
 - Added endpoints to upload by URL [[PENG-2426](https://sharing.clickup.com/t/h/c/18022949/PENG-2426/PYUL64MXH5P0MWB)]
   - For Job Script files
