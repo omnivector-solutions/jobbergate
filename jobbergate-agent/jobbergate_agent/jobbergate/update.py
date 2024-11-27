@@ -1,14 +1,26 @@
+import asyncio
 import json
-from typing import List
+from itertools import chain
+from typing import List, get_args, cast
+from collections.abc import Iterator
 
+import msgpack
 from jobbergate_core.tools.sbatch import InfoHandler
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
-from jobbergate_agent.jobbergate.schemas import ActiveJobSubmission, SlurmJobData
+from jobbergate_agent.clients.influx import INFLUXDB_CLIENT
+from jobbergate_agent.jobbergate.schemas import (
+    ActiveJobSubmission,
+    SlurmJobData,
+    JobSubmissionMetricsMaxResponse,
+    InfluxDBMeasurement,
+    InfluxDBMeasure,
+)
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobbergateApiError, SbatchError
 from jobbergate_agent.utils.logging import log_error
+from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT
 
 
 async def fetch_job_data(slurm_job_id: int, info_handler: InfoHandler) -> SlurmJobData:
@@ -70,6 +82,132 @@ async def update_job_data(
         response.raise_for_status()
 
 
+async def fetch_influx_data(
+    time: int, host: str, step: int, task: int, job: int, measurement: INFLUXDB_MEASUREMENT
+) -> list[InfluxDBMeasure]:
+    """
+    Fetch data from InfluxDB for a given host, step and task.
+    """
+    query = f"""
+    SELECT * FROM {measurement} WHERE time > $time AND host = $host AND step = $step AND task = $task AND job = $job
+    """
+    with JobbergateApiError.handle_errors("Failed to fetch data from InfluxDB", do_except=log_error):
+        assert INFLUXDB_CLIENT is not None
+        params = dict(time=time, host=host, step=str(step), task=str(task), job=str(job))
+        logger.debug(f"Querying InfluxDB with: {query=}, {params=}")
+        result = INFLUXDB_CLIENT.query(query, bind_params=params, epoch="us")
+        logger.debug("Successfully fetched data from InfluxDB")
+        return [
+            InfluxDBMeasure(
+                time=point["time"],
+                host=point["host"],
+                job=point["job"],
+                step=point["step"],
+                task=point["task"],
+                value=point["value"],
+                measurement=measurement,
+            )
+            for point in result.get_points()
+        ]
+
+
+def fetch_influx_measurements() -> list[InfluxDBMeasurement]:
+    """
+    Fetch measurements from InfluxDB.
+    """
+    with JobbergateApiError.handle_errors("Failed to fetch measurements from InfluxDB", do_except=log_error):
+        logger.debug("Fetching measurements from InfluxDB")
+        assert INFLUXDB_CLIENT is not None
+        measurements: list[InfluxDBMeasurement] = INFLUXDB_CLIENT.get_list_measurements()
+        logger.debug(f"Fetched measurements from InfluxDB: {measurements=}")
+        return measurements
+
+
+def aggregate_influx_measures(
+    data_points: Iterator[InfluxDBMeasure],
+) -> list[tuple[int, str, str, str, float, float, float, float, float, float, float, float, float, float]]:
+    """Aggregate the list of data points by time, host, step and task.
+
+    The output data is a list of tuples with the following format:
+    [
+        (time, host, step, task, CPUFrequency, CPUTime, CPUUtilization, GPUMemMB,
+        GPUUtilization, Pages, RSS, VMSize, ReadMB, WriteMB),
+        ...
+    ]
+    """
+    measurement_names = get_args(INFLUXDB_MEASUREMENT)
+    default_measurements: dict[str, float] = {measurement: 0.0 for measurement in measurement_names}
+
+    aggregated_data: dict[tuple[int, str, str, str], dict[str, float]] = {}
+
+    for measure in data_points:
+        key = (measure["time"], measure["host"], measure["step"], measure["task"])
+
+        # aggregate measurements lazily to avoid creating a new dict for each point
+        if key not in aggregated_data:
+            aggregated_data[key] = default_measurements.copy()
+        aggregated_data[key][measure["measurement"]] = measure["value"]
+
+    return cast(
+        list[tuple[int, str, str, str, float, float, float, float, float, float, float, float, float, float]],
+        [
+            (
+                time,
+                host,
+                step,
+                task,
+                *(aggregated_data[(time, host, step, task)][measurement] for measurement in measurement_names),
+            )
+            for (time, host, step, task) in aggregated_data
+        ],
+    )
+
+
+async def update_job_metrics(active_job_submittion: ActiveJobSubmission) -> None:
+    """Update job metrics for a job submission.
+
+    This function fetches the metrics from InfluxDB and sends to the API.
+    """
+    with JobbergateApiError.handle_errors(
+        f"Could not update job metrics for slurm job {active_job_submittion.slurm_job_id} via the API",
+        do_except=log_error,
+    ):
+        response = await jobbergate_api_client.get(
+            f"jobbergate/job-submissions/agent/metrics/{active_job_submittion.id}"
+        )
+        response.raise_for_status()
+        job_max_times = JobSubmissionMetricsMaxResponse(**response.json())
+
+        influx_measurements = fetch_influx_measurements()
+
+        tasks = (
+            fetch_influx_data(
+                job_max_time.max_time,
+                job_max_time.node_host,
+                job_max_time.step,
+                job_max_time.task,
+                active_job_submittion.slurm_job_id,
+                measurement["name"],
+            )
+            for job_max_time in job_max_times.max_times
+            for measurement in influx_measurements
+        )
+        results = await asyncio.gather(*list(tasks))
+        data_points = chain.from_iterable(results)
+        aggregated_data_points = aggregate_influx_measures(data_points)
+        packed_data = msgpack.packb(aggregated_data_points)
+
+        request_payload = {
+            "slurm_job_id": active_job_submittion.slurm_job_id,
+            "binary_data": packed_data,
+        }
+        response = await jobbergate_api_client.put(
+            f"jobbergate/job-submissions/agent/metrics/{active_job_submittion.id}",
+            data=request_payload,
+        )
+        response.raise_for_status()
+
+
 async def update_active_jobs() -> None:
     """
     Update slurm job state for active jobs.
@@ -83,6 +221,14 @@ async def update_active_jobs() -> None:
 
     skip = "skipping to next active job"
     for active_job_submission in active_job_submissions:
+        if SETTINGS.INFLUX_INTEGRATION_ENABLED:
+            logger.debug(f"Updating job metrics for job_submission {active_job_submission.id}")
+            try:
+                await update_job_metrics(active_job_submission)
+            except Exception:
+                logger.error("Update job metrics failed... skipping for job data update")
+                pass
+
         logger.debug(f"Fetching slurm job state of job_submission {active_job_submission.id}")
 
         try:

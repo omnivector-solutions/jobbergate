@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 import buzz
-from pydantic import AnyHttpUrl, Field, ValidationError, model_validator
+from pydantic import AnyHttpUrl, Field, ValidationError, model_validator, field_validator, AnyUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Self
 
@@ -60,6 +60,21 @@ class Settings(BaseSettings):
     # Job submission settings
     WRITE_SUBMISSION_FILES: bool = True
 
+    # InfluxDB settings for job metric collection
+    INFLUX_DSN: Optional[AnyUrl] = Field(
+        None, description="InfluxDB DSN. Only supports the schemes 'influxdb', 'https+influxdb' and 'udp+influxdb'"
+    )
+    INFLUX_POOL_SIZE: int = Field(10, ge=1, description="Number of InfluxDB connections to pool")
+    INFLUX_SSL: bool = Field(False, description="Use SSL for InfluxDB connection")
+    INFLUX_VERIFY_SSL: bool = Field(False, description="Verify SSL certificate for InfluxDB connection")
+    INFLUX_TIMEOUT: Optional[int] = Field(None, ge=1, description="Timeout for InfluxDB connection")
+    INFLUX_UDP_PORT: int = Field(4444, ge=1, le=65535, description="UDP port for InfluxDB connection")
+    INFLUX_CERT_PATH: Optional[Path] = Field(None, description="Path to InfluxDB certificate file")
+    INFLUX_INTEGRATION_ENABLED: bool = Field(
+        False,
+        description="Control parameter for indicating if InfluxDB integration is enabled. It shouldn't be manually configured.",
+    )
+
     @model_validator(mode="after")
     def compute_extra_settings(self) -> Self:
         """
@@ -80,6 +95,32 @@ class Settings(BaseSettings):
         if self.SINGLE_USER_SUBMITTER is None:
             self.SINGLE_USER_SUBMITTER = self.X_SLURM_USER_NAME
         return self
+
+    @model_validator(mode="after")
+    def validate_influxdb_settings(self) -> Self:
+        if self.INFLUX_DSN is not None:
+            self.INFLUX_INTEGRATION_ENABLED = True
+
+            if self.INFLUX_SSL:
+                buzz.require_condition(
+                    self.INFLUX_CERT_PATH is not None,
+                    "INFLUX_CERT_PATH must be provided when INFLUX_SSL is enabled",
+                    ValueError,
+                )
+
+            if self.INFLUX_DSN.scheme not in ["influxdb", "https+influxdb", "udp+influxdb"]:
+                raise ValueError("INFLUX_DSN scheme must be one of 'influxdb', 'https+influxdb' or 'udp+influxdb'")
+        return self
+
+    @field_validator("INFLUX_INTEGRATION_ENABLED", mode="before")
+    @classmethod
+    def validate_influxdb_integration_enabled_value(cls, value: bool):
+        buzz.require_condition(
+            not value,
+            "The INFLUX_INTEGRATION_ENABLED configuration should not be manually configured",
+            ValueError,
+        )
+        return value
 
     model_config = SettingsConfigDict(env_prefix="JOBBERGATE_AGENT_", env_file=_get_env_file(), extra="ignore")
 
