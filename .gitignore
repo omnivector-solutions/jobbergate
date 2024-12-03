@@ -111,3 +111,5 @@ site/
 
 # local dotenv files
 *.env
+
+*.msgpack
