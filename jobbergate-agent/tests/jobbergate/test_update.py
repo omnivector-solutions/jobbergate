@@ -701,7 +701,7 @@ async def test_update_job_metrics__error_sending_metrics_to_api(
         )
         respx.put(
             f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/metrics/{job_submission_id}",
-            data={"slurm_job_id": slurm_job_id, "binary_data": b"dummy-msgpack-data"},
+            content=b"dummy-msgpack-data",
         ).mock(return_value=httpx.Response(status_code=400))
 
         with pytest.raises(
@@ -795,7 +795,7 @@ async def test_update_job_metrics__success(
         )
         respx.put(
             f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/metrics/{job_submission_id}",
-            data={"slurm_job_id": slurm_job_id, "binary_data": b"dummy-msgpack-data"},
+            content=b"dummy-msgpack-data",
         ).mock(return_value=httpx.Response(status_code=200))
 
         await update_job_metrics(active_job_submission)

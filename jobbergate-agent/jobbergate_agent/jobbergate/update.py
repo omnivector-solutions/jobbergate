@@ -197,13 +197,8 @@ async def update_job_metrics(active_job_submittion: ActiveJobSubmission) -> None
         aggregated_data_points = aggregate_influx_measures(data_points)
         packed_data = msgpack.packb(aggregated_data_points)
 
-        request_payload = {
-            "slurm_job_id": active_job_submittion.slurm_job_id,
-            "binary_data": packed_data,
-        }
         response = await jobbergate_api_client.put(
-            f"jobbergate/job-submissions/agent/metrics/{active_job_submittion.id}",
-            data=request_payload,
+            f"jobbergate/job-submissions/agent/metrics/{active_job_submittion.id}", content=packed_data
         )
         response.raise_for_status()
 
