@@ -216,7 +216,7 @@ async def update_active_jobs() -> None:
 
     skip = "skipping to next active job"
     for active_job_submission in active_job_submissions:
-        if SETTINGS.INFLUX_INTEGRATION_ENABLED:
+        if SETTINGS.influx_integration_enabled:
             logger.debug(f"Updating job metrics for job_submission {active_job_submission.id}")
             try:
                 await update_job_metrics(active_job_submission)

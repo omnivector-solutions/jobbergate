@@ -361,7 +361,7 @@ async def test_update_active_jobs(
         "jobbergate_agent.jobbergate.update.update_job_data", side_effect=_mocked_update_job_data
     )
 
-    with tweak_settings(INFLUX_INTEGRATION_ENABLED=True):
+    with tweak_settings(INFLUX_DSN="https://influxdb:8086"):
         await update_active_jobs()
 
     mock_update_job_metrics.assert_has_calls(

@@ -14,7 +14,7 @@ def test_client_is_None_if_integration_is_disabled(
     mocked_InfluxDBClient: mock.MagicMock, tweak_settings: Callable[..., contextlib._GeneratorContextManager]
 ):
     """Test that the client is None if the Influx integration is disabled."""
-    with tweak_settings(INFLUX_INTEGRATION_ENABLED=False):
+    with tweak_settings(INFLUX_DSN=None):
         client = initialize_influx_client()
     mocked_InfluxDBClient.assert_not_called()
     mocked_InfluxDBClient.from_dsn.assert_not_called()
@@ -53,7 +53,6 @@ def test_client_is_initialized(
         INFLUX_TIMEOUT=timeout,
         INFLUX_UDP_PORT=udp_port,
         INFLUX_CERT_PATH=cert,
-        INFLUX_INTEGRATION_ENABLED=True,
     ):
         client = initialize_influx_client()
 

@@ -5,10 +5,10 @@ import pytest
 from jobbergate_agent.settings import Settings
 
 
-def test_settings__manually_set_influx_integration_flag():
+def test_settings__check_influx_integration_flag():
     """Test that the InfluxDB integration flag cannot be manually set."""
-    with pytest.raises(ValueError):
-        Settings(INFLUX_DSN=None, INFLUX_INTEGRATION_ENABLED=True)
+    settings = Settings(INFLUX_DSN=None)
+    assert settings.influx_integration_enabled is False
 
 
 @pytest.mark.parametrize(

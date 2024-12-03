@@ -8,7 +8,7 @@ from jobbergate_agent.settings import SETTINGS
 
 def initialize_influx_client() -> None | InfluxDBClient:
     """Initialize the InfluxDB client."""
-    if SETTINGS.INFLUX_INTEGRATION_ENABLED:
+    if SETTINGS.influx_integration_enabled:
         logger.debug("InfluxDB integration is enabled. Initializing InfluxDB client...")
         return InfluxDBClient.from_dsn(
             str(SETTINGS.INFLUX_DSN),
