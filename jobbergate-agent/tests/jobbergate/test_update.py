@@ -1,17 +1,16 @@
 import json
 import random
-import time
 from datetime import datetime
-from typing import get_args, cast
+from typing import get_args
 from unittest import mock
-from collections.abc import Callable, Generator, Iterator
+from collections.abc import Callable
 import contextlib
 
 import httpx
 import pytest
 import respx
 
-from jobbergate_agent.jobbergate.schemas import ActiveJobSubmission, SlurmJobData, InfluxDBMeasure
+from jobbergate_agent.jobbergate.schemas import ActiveJobSubmission, SlurmJobData
 from jobbergate_agent.jobbergate.update import (
     fetch_active_submissions,
     fetch_job_data,
@@ -19,78 +18,11 @@ from jobbergate_agent.jobbergate.update import (
     update_job_data,
     fetch_influx_data,
     fetch_influx_measurements,
-    aggregate_influx_measures,
     update_job_metrics,
 )
 from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobbergateApiError
-
-
-@pytest.fixture()
-def generate_job_metrics_data() -> Callable[[int, int, int, int, int], Generator[InfluxDBMeasure]]:
-    """Generates sample InfluxDB data with multiple points per measurement."""
-
-    def _generate_influxdb_data(
-        num_points_per_measurement: int, num_hosts: int, num_jobs: int, num_steps: int, num_tasks: int
-    ) -> Generator[InfluxDBMeasure]:
-        current_time = int(datetime.now().timestamp())
-
-        for host in range(1, num_hosts + 1):
-            for job in range(1, num_jobs + 1):
-                for step in range(1, num_steps + 1):
-                    for task in range(1, num_tasks + 1):
-                        for measurement in get_args(INFLUXDB_MEASUREMENT):
-                            for _ in range(num_points_per_measurement):
-                                yield {
-                                    "time": current_time,
-                                    "host": f"host_{host}",
-                                    "job": str(job),
-                                    "step": str(step),
-                                    "task": str(task),
-                                    "value": random.random() * 100,
-                                    "measurement": measurement,
-                                }
-                                current_time += random.randint(30, 60)  # increment time by a random interval
-
-    return _generate_influxdb_data
-
-
-@pytest.fixture()
-def aggregate_job_metrics_data():
-    """Generates aggregated InfluxDB data with multiple points per measurement."""
-
-    def _aggregate_influxdb_data(
-        data_points: Iterator[InfluxDBMeasure],
-    ) -> list[tuple[int, str, str, str, float, float, float, float, float, float, float, float, float, float]]:
-        measurement_names = get_args(INFLUXDB_MEASUREMENT)
-        default_measurements: dict[str, float] = {measurement: 0.0 for measurement in measurement_names}
-
-        aggregated_data: dict[tuple[int, str, str, str], dict[str, float]] = {}
-
-        for measure in data_points:
-            key = (measure["time"], measure["host"], measure["step"], measure["task"])
-
-            # aggregate measurements lazily to avoid creating a new dict for each point
-            if key not in aggregated_data:
-                aggregated_data[key] = default_measurements.copy()
-            aggregated_data[key][measure["measurement"]] = measure["value"]
-
-        return cast(
-            list[tuple[int, str, str, str, float, float, float, float, float, float, float, float, float, float]],
-            [
-                (
-                    time,
-                    host,
-                    step,
-                    task,
-                    *(aggregated_data[(time, host, step, task)][measurement] for measurement in measurement_names),
-                )
-                for (time, host, step, task) in aggregated_data
-            ],
-        )
-
-    return _aggregate_influxdb_data
 
 
 @pytest.fixture()
@@ -548,65 +480,6 @@ async def test_fetch_influx_measurements__raises_JobbergateApiError_if_query_fai
         fetch_influx_measurements()
 
     mocked_influxdb_client.get_list_measurements.assert_called_once_with()
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "num_points_per_measurement, num_hosts, num_jobs, num_steps, num_tasks",
-    [
-        (3, 5, 2, 7, 4),
-        (1, 1, 1, 1, 1),
-        (7, 3, 10, 4, 2),
-    ],
-)
-async def test_aggregate_influx_measures__success(
-    num_points_per_measurement: int,
-    num_hosts: int,
-    num_jobs: int,
-    num_steps: int,
-    num_tasks: int,
-    generate_job_metrics_data: Callable[[int, int, int, int, int], Generator[InfluxDBMeasure]],
-    aggregate_job_metrics_data: Callable[
-        [Iterator[InfluxDBMeasure]],
-        list[tuple[int, str, str, str, float, float, float, float, float, float, float, float, float, float]],
-    ],
-):
-    """
-    Test that the ``aggregate_influx_measures()`` function can successfully aggregate
-    a list of InfluxDBMeasure data points.
-    """
-    data_points = list(
-        generate_job_metrics_data(
-            num_points_per_measurement,
-            num_hosts,
-            num_jobs,
-            num_steps,
-            num_tasks,
-        )
-    )
-
-    start_time = time.monotonic()
-    result = aggregate_influx_measures(iter(data_points))
-    end_time = time.monotonic()
-
-    expected_result = aggregate_job_metrics_data(iter(data_points))
-
-    assert result == expected_result
-
-    print(f"Aggregated {len(data_points)} data points in {end_time - start_time:.5f} seconds")
-
-
-@pytest.mark.asyncio
-async def test_aggregate_influx_measures__empty_data_points():
-    """
-    Test that the ``aggregate_influx_measures()`` function returns an empty list
-    when given an empty iterator of data points.
-    """
-    data_points = []
-
-    result = aggregate_influx_measures(iter(data_points))
-
-    assert result == []
 
 
 @pytest.mark.asyncio

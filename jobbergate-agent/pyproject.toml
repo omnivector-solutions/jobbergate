@@ -36,6 +36,7 @@ auto-name-enum = "^2.0.0"
 pydantic-settings = "^2.3.3"
 msgpack = "^1.1.0"
 influxdb = "^5.3.2"
+numba = "^0.60.0"
 
 [tool.stickywheel]
 # This will resolve the relative path to the jobbergate-core package at build time
@@ -97,7 +98,7 @@ show_missing = true
 plugins = "pydantic.mypy"
 
 [[tool.mypy.overrides]]
-module = ["dataclasses", "toml", "requests", "jose.*", "apscheduler.*", "influxdb", "msgpack"]
+module = ["dataclasses", "toml", "requests", "jose.*", "apscheduler.*", "influxdb", "msgpack", "numba"]
 ignore_missing_imports = true
 
 [build-system]

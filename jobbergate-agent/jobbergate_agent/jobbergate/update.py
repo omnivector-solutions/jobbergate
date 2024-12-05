@@ -1,8 +1,7 @@
 import asyncio
 import json
 from itertools import chain
-from typing import List, get_args, cast
-from collections.abc import Iterator
+from typing import List
 
 import msgpack
 from jobbergate_core.tools.sbatch import InfoHandler
@@ -21,6 +20,7 @@ from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobbergateApiError, SbatchError
 from jobbergate_agent.utils.logging import log_error
 from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT
+from jobbergate_agent.utils.compute import aggregate_influx_measures
 
 
 async def fetch_job_data(slurm_job_id: int, info_handler: InfoHandler) -> SlurmJobData:
@@ -121,46 +121,6 @@ def fetch_influx_measurements() -> list[InfluxDBMeasurement]:
         measurements: list[InfluxDBMeasurement] = INFLUXDB_CLIENT.get_list_measurements()
         logger.debug(f"Fetched measurements from InfluxDB: {measurements=}")
         return measurements
-
-
-def aggregate_influx_measures(
-    data_points: Iterator[InfluxDBMeasure],
-) -> list[tuple[int, str, str, str, float, float, float, float, float, float, float, float, float, float]]:
-    """Aggregate the list of data points by time, host, step and task.
-
-    The output data is a list of tuples with the following format:
-    [
-        (time, host, step, task, CPUFrequency, CPUTime, CPUUtilization, GPUMemMB,
-        GPUUtilization, Pages, RSS, VMSize, ReadMB, WriteMB),
-        ...
-    ]
-    """
-    measurement_names = get_args(INFLUXDB_MEASUREMENT)
-    default_measurements: dict[str, float] = {measurement: 0.0 for measurement in measurement_names}
-
-    aggregated_data: dict[tuple[int, str, str, str], dict[str, float]] = {}
-
-    for measure in data_points:
-        key = (measure["time"], measure["host"], measure["step"], measure["task"])
-
-        # aggregate measurements lazily to avoid creating a new dict for each point
-        if key not in aggregated_data:
-            aggregated_data[key] = default_measurements.copy()
-        aggregated_data[key][measure["measurement"]] = measure["value"]
-
-    return cast(
-        list[tuple[int, str, str, str, float, float, float, float, float, float, float, float, float, float]],
-        [
-            (
-                time,
-                host,
-                step,
-                task,
-                *(aggregated_data[(time, host, step, task)][measurement] for measurement in measurement_names),
-            )
-            for (time, host, step, task) in aggregated_data
-        ],
-    )
 
 
 async def update_job_metrics(active_job_submittion: ActiveJobSubmission) -> None:
