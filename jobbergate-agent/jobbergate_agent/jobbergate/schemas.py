@@ -1,10 +1,10 @@
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, TypedDict
 
 import pydantic
 from pydantic import ConfigDict
 
-from jobbergate_agent.jobbergate.constants import FileType
+from jobbergate_agent.jobbergate.constants import FileType, INFLUXDB_MEASUREMENT
 
 
 class JobScriptFile(pydantic.BaseModel, extra="ignore"):
@@ -78,3 +78,45 @@ class SlurmJobData(pydantic.BaseModel, extra="ignore"):
     job_state: Optional[str] = None
     job_info: Optional[str] = None
     state_reason: Optional[str] = None
+
+
+class InfluxDBMeasurement(TypedDict):
+    """
+    Map each entry in the list returned by `InfluxDBClient(...).get_list_measurements(...)`.
+    """
+
+    name: INFLUXDB_MEASUREMENT
+
+
+class InfluxDBMeasure(TypedDict):
+    """
+    Map each entry in the generator returned by InfluxDBClient(...).query(...).get_points().
+    """
+
+    time: int
+    host: str
+    job: str
+    step: str
+    task: str
+    value: float
+    measurement: INFLUXDB_MEASUREMENT
+
+
+class JobSubmissionMetricsMaxTimes(pydantic.BaseModel):
+    """
+    Model for the max_times field of the JobSubmissionMetricsMaxResponse.
+    """
+
+    max_time: int
+    node_host: str
+    step: int
+    task: int
+
+
+class JobSubmissionMetricsMaxResponse(pydantic.BaseModel):
+    """
+    Model for the response of the `/jobbergate/job-submissions/agent/metrics/{job_submission_id}` endpoint.
+    """
+
+    job_submission_id: int
+    max_times: list[JobSubmissionMetricsMaxTimes]

@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-agent
 
 ## Unreleased
 
+- Implement logic to retrieve job metrics data from InfluxDB and send it to the API. ([PENG-2457](https://sharing.clickup.com/t/h/c/18022949/PENG-2457/BU7UOA63B936N27))
+
 ## 5.4.0 -- 2024-11-18
 
 - Changed auto-update task to reuse current scheduler instead of creating a new one
