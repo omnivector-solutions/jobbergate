@@ -25,6 +25,13 @@ AGENT_VARIABLES_MAP: dict[str, Union[str, int]] = {
     "SLURM_USER_MAPPER": "",
     "SINGLE_USER_SUBMITTER": "ubuntu",
     "WRITE_SUBMISSION_FILES": "true",
+    "INFLUX_DSN": "",
+    "INFLUX_POOL_SIZE": 10,
+    "INFLUX_SSL": "false",
+    "INFLUX_VERIFY_SSL": "false",
+    "INFLUX_TIMEOUT": "",
+    "INFLUX_UDP_PORT": 4444,
+    "INFLUX_CERT_PATH": "",
 }
 
 

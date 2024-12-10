@@ -1,6 +1,6 @@
 name: jobbergate-agent
 base: core22
-version: '0.4.0'
+version: '0.5.0'
 summary: The Jobbergate Agent snap
 adopt-info: metadata
 license: MIT
@@ -32,6 +32,20 @@ description: |
   - single-user-submitter: The system user name that the agent will use to submit jobs to the SLURM cluster on behalf of in case the *single-user-submitter* is not set. This is optional and defaults to *ubuntu*.
 
   - write-submission-files: A boolean value (true, false) that indicates whether the agent should write submission files to disk. This is optional and defaults to false.
+
+  - influx-dsn: The DSN of the InfluxDB server that the agent will use to fetch job metrics data. It only allows the following schemes: 'influxdb', 'https+influxdb' and 'udp+influxdb'. This is optional and defaults to none.
+
+  - influx-pool-size: The size of the InfluxDB connection pool that the agent will use to fetch job metrics data. This is optional and defaults to 10.
+
+  - influx-ssl: A boolean value (true, false) that indicates whether the agent should use SSL to connect to the InfluxDB server. If true, `influx-cert-path` must be provided. This is optional and defaults to false.
+
+  - influx-verify-ssl: A boolean value (true, false) that indicates whether the agent should verify the SSL certificate of the InfluxDB server. This is optional and defaults to false.
+
+  - influx-timeout: The timeout in seconds that the agent will use when connecting to the InfluxDB server. This is optional and defaults to none.
+
+  - influx-udp-port: The UDP port that the agent will use to connect to the InfluxDB server. This is optional and defaults to 4444.
+
+  - influx-cert-path: The absolute path to the SSL certificate that the agent will use to connect to the InfluxDB server. This is optional and defaults to none.
 
   For learning more about Jobbergate and how it can be used on Vantage, please visit https://docs.vantagehpc.io
 
