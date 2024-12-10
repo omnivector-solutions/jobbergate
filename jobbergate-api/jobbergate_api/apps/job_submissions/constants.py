@@ -227,6 +227,22 @@ class JobSubmissionMetricSampleRate(enum.IntEnum):
 
 
 class JobSubmissionMetricAggregateNames(AutoNameEnum):
+    """
+    An enumeration representing different time intervals for aggregating job submission metrics.
+
+    Attributes:
+        metrics_nodes_mv_1_week_by_node: Aggregation of metrics by node over a 1-week period.
+        metrics_nodes_mv_1_hour_by_node: Aggregation of metrics by node over a 1-hour period.
+        metrics_nodes_mv_10_minutes_by_node: Aggregation of metrics by node over a 10-minute period.
+        metrics_nodes_mv_1_minute_by_node: Aggregation of metrics by node over a 1-minute period.
+        metrics_nodes_mv_10_seconds_by_node: Aggregation of metrics by node over a 10-second period.
+        metrics_nodes_mv_1_week_all_nodes: Aggregation of metrics for all nodes over a 1-week period.
+        metrics_nodes_mv_1_hour_all_nodes: Aggregation of metrics for all nodes over a 1-hour period.
+        metrics_nodes_mv_10_minutes_all_nodes: Aggregation of metrics for all nodes over a 10-minute period.
+        metrics_nodes_mv_1_minute_all_nodes: Aggregation of metrics for all nodes over a 1-minute period.
+        metrics_nodes_mv_10_seconds_all_nodes: Aggregation of metrics for all nodes over a 10-second period.
+    """
+
     metrics_nodes_mv_1_week_by_node = auto()
     metrics_nodes_mv_1_hour_by_node = auto()
     metrics_nodes_mv_10_minutes_by_node = auto()

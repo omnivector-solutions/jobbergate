@@ -15,7 +15,7 @@ from jobbergate_api.apps.job_submissions.models import JobSubmissionMetric
 from sqlalchemy import select, insert, text as sa_text
 from sqlalchemy.sql.functions import max
 import msgpack
-from sqlalchemy.exc import IntegrityError, InterfaceError
+from sqlalchemy.exc import IntegrityError
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.dependencies import SecureService, secure_services
@@ -523,7 +523,7 @@ async def job_submissions_agent_metrics_upload(
 
     logger.debug(f"Getting slurm_job_id of job submission {job_submission_id}")
     job_submission = await secure_services.crud.job_submission.get(
-        job_submission_id, ensure_attributes={"client_id": "foo"}
+        job_submission_id, ensure_attributes={"client_id": secure_services.identity_payload.client_id}
     )
     slurm_job_id = job_submission.slurm_job_id  # type: ignore
     logger.debug(f"Got slurm_job_id {slurm_job_id}")
@@ -571,13 +571,7 @@ async def job_submissions_agent_metrics_upload(
     try:
         await secure_services.session.execute(query)
     except IntegrityError as e:
-        logger.error(f"Failed to insert metrics: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to insert metrics",
-        )
-    except InterfaceError as e:
-        logger.error(f"Failed to insert metrics: {e}")
+        logger.error(f"Failed to insert metrics: {e.args}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Failed to insert metrics",

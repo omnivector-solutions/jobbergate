@@ -23,7 +23,6 @@ def validate_job_metric_upload_input(
     Returns:
         Iterable[list[Any] | tuple[Any]]: The validated data.
     """
-    logger.error(expected_types)
     if not isinstance(data, list):
         raise ValueError("Decoded data must be a list.")
     if not all(map(lambda x: isinstance(x, list) or isinstance(x, tuple), data)):
