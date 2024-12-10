@@ -2,6 +2,7 @@
 Describe constants for the job_submissions module.
 """
 
+import enum
 from dataclasses import dataclass
 
 from auto_name_enum import AutoNameEnum, auto
@@ -209,3 +210,46 @@ slurm_job_state_details = {
         is_abort_status=True,
     ),
 }
+
+
+class JobSubmissionMetricSampleRate(enum.IntEnum):
+    """
+    Defines the set of possible sample rates for job submission metrics.
+
+    All values are in seconds.
+    """
+
+    ten_seconds = 10
+    one_minute = 60
+    ten_minutes = 600
+    one_hour = 3600
+    one_week = 604800
+
+
+class JobSubmissionMetricAggregateNames(AutoNameEnum):
+    """
+    An enumeration representing different time intervals for aggregating job submission metrics.
+
+    Attributes:
+        metrics_nodes_mv_1_week_by_node: Aggregation of metrics by node over a 1-week period.
+        metrics_nodes_mv_1_hour_by_node: Aggregation of metrics by node over a 1-hour period.
+        metrics_nodes_mv_10_minutes_by_node: Aggregation of metrics by node over a 10-minute period.
+        metrics_nodes_mv_1_minute_by_node: Aggregation of metrics by node over a 1-minute period.
+        metrics_nodes_mv_10_seconds_by_node: Aggregation of metrics by node over a 10-second period.
+        metrics_nodes_mv_1_week_all_nodes: Aggregation of metrics for all nodes over a 1-week period.
+        metrics_nodes_mv_1_hour_all_nodes: Aggregation of metrics for all nodes over a 1-hour period.
+        metrics_nodes_mv_10_minutes_all_nodes: Aggregation of metrics for all nodes over a 10-minute period.
+        metrics_nodes_mv_1_minute_all_nodes: Aggregation of metrics for all nodes over a 1-minute period.
+        metrics_nodes_mv_10_seconds_all_nodes: Aggregation of metrics for all nodes over a 10-second period.
+    """
+
+    metrics_nodes_mv_1_week_by_node = auto()
+    metrics_nodes_mv_1_hour_by_node = auto()
+    metrics_nodes_mv_10_minutes_by_node = auto()
+    metrics_nodes_mv_1_minute_by_node = auto()
+    metrics_nodes_mv_10_seconds_by_node = auto()
+    metrics_nodes_mv_1_week_all_nodes = auto()
+    metrics_nodes_mv_1_hour_all_nodes = auto()
+    metrics_nodes_mv_10_minutes_all_nodes = auto()
+    metrics_nodes_mv_1_minute_all_nodes = auto()
+    metrics_nodes_mv_10_seconds_all_nodes = auto()

@@ -46,6 +46,7 @@ clean:  ## Clean up build artifacts and other junk
 	@rm -fr build/
 	@rm -fr dist/
 	@rm -fr *.egg-info
+	@find . -name '*.msgpack' -delete
 
 # Recipe stolen from: https://gist.github.com/prwhite/8168133?permalink_comment_id=4160123#gistcomment-4160123
 help:  ## Show help message
