@@ -158,7 +158,9 @@ async def update_job_metrics(active_job_submittion: ActiveJobSubmission) -> None
         packed_data = msgpack.packb(aggregated_data_points)
 
         response = await jobbergate_api_client.put(
-            f"jobbergate/job-submissions/agent/metrics/{active_job_submittion.id}", content=packed_data
+            f"jobbergate/job-submissions/agent/metrics/{active_job_submittion.id}",
+            content=packed_data,
+            headers={"Content-Type": "application/octet-stream"},
         )
         response.raise_for_status()
 
