@@ -244,7 +244,7 @@ async def test_update_active_jobs(
     mocker.patch("jobbergate_agent.jobbergate.update.InfoHandler", return_value=mocked_sbatch)
 
     mocked_influxdb_client = mock.MagicMock()
-    mocker.patch("jobbergate_agent.jobbergate.update.INFLUXDB_CLIENT", return_value=mocked_influxdb_client)
+    mocker.patch("jobbergate_agent.jobbergate.update.influxdb_client", return_value=mocked_influxdb_client)
 
     active_job_submissions = [
         ActiveJobSubmission(id=1, slurm_job_id=11),  # Will update
@@ -332,7 +332,7 @@ async def test_update_active_jobs(
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergate_agent.jobbergate.update.INFLUXDB_CLIENT")
+@mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
 async def test_fetch_influx_data__success(mocked_influxdb_client: mock.MagicMock):
     """
     Test that the ``fetch_influx_data()`` function can successfully retrieve
@@ -377,7 +377,7 @@ async def test_fetch_influx_data__success(mocked_influxdb_client: mock.MagicMock
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergate_agent.jobbergate.update.INFLUXDB_CLIENT")
+@mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
 async def test_fetch_influx_data__raises_JobbergateApiError_if_query_fails(mocked_influxdb_client: mock.MagicMock):
     """
     Test that the ``fetch_influx_data()`` function will raise a JobbergateApiError
@@ -415,10 +415,10 @@ async def test_fetch_influx_data__raises_JobbergateApiError_if_query_fails(mocke
 async def test_fetch_influx_data__raises_JobbergateApiError_if_influxdb_client_is_None():
     """
     Test that the ``fetch_influx_data()`` function will raise a JobbergateApiError
-    if the INFLUXDB_CLIENT is None.
+    if the influxdb_client is None.
     """
     measurement = random.choice(get_args(INFLUXDB_MEASUREMENT))
-    with mock.patch("jobbergate_agent.jobbergate.update.INFLUXDB_CLIENT", None):
+    with mock.patch("jobbergate_agent.jobbergate.update.influxdb_client", None):
         with pytest.raises(JobbergateApiError, match="Failed to fetch data from InfluxDB"):
             await fetch_influx_data(
                 time=random.randint(0, 1000),
@@ -439,7 +439,7 @@ async def test_fetch_influx_data__raises_JobbergateApiError_if_influxdb_client_i
         [],
     ],
 )
-@mock.patch("jobbergate_agent.jobbergate.update.INFLUXDB_CLIENT")
+@mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
 async def test_fetch_influx_measurements__success(
     mocked_influxdb_client: mock.MagicMock, measurements: list[dict[str, str]]
 ):
@@ -458,15 +458,15 @@ async def test_fetch_influx_measurements__success(
 async def test_fetch_influx_measurements__raises_JobbergateApiError_if_influxdb_client_is_None():
     """
     Test that the ``fetch_influx_measurements()`` function will raise a JobbergateApiError
-    if the INFLUXDB_CLIENT is None.
+    if the influxdb_client is None.
     """
-    with mock.patch("jobbergate_agent.jobbergate.update.INFLUXDB_CLIENT", None):
+    with mock.patch("jobbergate_agent.jobbergate.update.influxdb_client", None):
         with pytest.raises(JobbergateApiError, match="Failed to fetch measurements from InfluxDB"):
             fetch_influx_measurements()
 
 
 @pytest.mark.asyncio
-@mock.patch("jobbergate_agent.jobbergate.update.INFLUXDB_CLIENT")
+@mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
 async def test_fetch_influx_measurements__raises_JobbergateApiError_if_query_fails(
     mocked_influxdb_client: mock.MagicMock,
 ):

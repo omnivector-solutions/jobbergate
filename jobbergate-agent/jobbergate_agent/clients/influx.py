@@ -24,4 +24,4 @@ def initialize_influx_client() -> None | InfluxDBClient:
         return None
 
 
-INFLUXDB_CLIENT = initialize_influx_client()
+influxdb_client = initialize_influx_client()

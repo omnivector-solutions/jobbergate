@@ -8,7 +8,7 @@ from jobbergate_core.tools.sbatch import InfoHandler
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
-from jobbergate_agent.clients.influx import INFLUXDB_CLIENT
+from jobbergate_agent.clients.influx import influxdb_client
 from jobbergate_agent.jobbergate.schemas import (
     ActiveJobSubmission,
     SlurmJobData,
@@ -92,10 +92,10 @@ async def fetch_influx_data(
     SELECT * FROM {measurement} WHERE time > $time AND host = $host AND step = $step AND task = $task AND job = $job
     """
     with JobbergateApiError.handle_errors("Failed to fetch data from InfluxDB", do_except=log_error):
-        assert INFLUXDB_CLIENT is not None
+        assert influxdb_client is not None
         params = dict(time=time, host=host, step=str(step), task=str(task), job=str(job))
         logger.debug(f"Querying InfluxDB with: {query=}, {params=}")
-        result = INFLUXDB_CLIENT.query(query, bind_params=params, epoch="us")
+        result = influxdb_client.query(query, bind_params=params, epoch="us")
         logger.debug("Successfully fetched data from InfluxDB")
         return [
             InfluxDBMeasure(
@@ -117,8 +117,8 @@ def fetch_influx_measurements() -> list[InfluxDBMeasurement]:
     """
     with JobbergateApiError.handle_errors("Failed to fetch measurements from InfluxDB", do_except=log_error):
         logger.debug("Fetching measurements from InfluxDB")
-        assert INFLUXDB_CLIENT is not None
-        measurements: list[InfluxDBMeasurement] = INFLUXDB_CLIENT.get_list_measurements()
+        assert influxdb_client is not None
+        measurements: list[InfluxDBMeasurement] = influxdb_client.get_list_measurements()
         logger.debug(f"Fetched measurements from InfluxDB: {measurements=}")
         return measurements
 

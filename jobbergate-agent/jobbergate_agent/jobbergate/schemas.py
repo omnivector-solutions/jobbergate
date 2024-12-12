@@ -102,7 +102,7 @@ class InfluxDBMeasure(TypedDict):
     measurement: INFLUXDB_MEASUREMENT
 
 
-class JobSubmissionMetricsMaxTimes(pydantic.BaseModel):
+class JobSubmissionMetricsMaxTime(pydantic.BaseModel):
     """
     Model for the max_times field of the JobSubmissionMetricsMaxResponse.
     """
@@ -119,4 +119,4 @@ class JobSubmissionMetricsMaxResponse(pydantic.BaseModel):
     """
 
     job_submission_id: int
-    max_times: list[JobSubmissionMetricsMaxTimes]
+    max_times: list[JobSubmissionMetricsMaxTime]
