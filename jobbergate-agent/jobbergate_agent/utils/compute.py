@@ -19,7 +19,7 @@ def measure_memory_usage(func: Callable) -> Callable:
     """Decorator to measure the memory usage of a function.
 
     Args:
-        func: Function to measure memory usage of.
+        func: Function whose memory usage should be measured.
 
     Returns:
         Decorated function.
