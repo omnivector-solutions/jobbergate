@@ -10,9 +10,8 @@ import numpy as np
 from loguru import logger
 from numba import njit
 
-from jobbergate_agent.jobbergate.schemas import InfluxDBMeasure
-
 from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT
+from jobbergate_agent.jobbergate.schemas import InfluxDBMeasure, JobMetricData
 
 
 def measure_memory_usage(func: Callable) -> Callable:
@@ -64,7 +63,7 @@ def _aggregate_with_numba(
 @measure_memory_usage
 def aggregate_influx_measures(
     data_points: Iterator[InfluxDBMeasure],
-) -> list[tuple[int, str, str, str, float, float, float, float, float, float, float, float, float, float]]:
+) -> JobMetricData:
     """Aggregate the list of data points by time, host, step and task.
 
     The output data is a list of tuples with the following format:
@@ -112,7 +111,7 @@ def aggregate_influx_measures(
     reverse_task_mapping = {v: k for k, v in task_mapping.items()}
 
     return cast(
-        list[tuple[int, str, str, str, float, float, float, float, float, float, float, float, float, float]],
+        JobMetricData,
         [
             (
                 int(unique_key[0]),  # time

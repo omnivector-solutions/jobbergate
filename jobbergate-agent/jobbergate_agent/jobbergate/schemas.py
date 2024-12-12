@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional, TypedDict
+from typing import List, Optional, TypedDict, TypeAlias
 
 import pydantic
 from pydantic import ConfigDict
@@ -120,3 +120,13 @@ class JobSubmissionMetricsMaxResponse(pydantic.BaseModel):
 
     job_submission_id: int
     max_times: list[JobSubmissionMetricsMaxTime]
+
+
+"""
+Type alias for job metric structure. It matches the following sequence of data
+(time, host, step, task, CPUFrequency, CPUTime, CPUUtilization, GPUMemMB,
+GPUUtilization, Pages, RSS, VMSize, ReadMB, WriteMB)
+"""
+JobMetricData: TypeAlias = list[
+    tuple[int, str, str, str, float, float, float, float, float, float, float, float, float, float]
+]

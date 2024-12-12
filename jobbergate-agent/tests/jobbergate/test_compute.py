@@ -11,7 +11,7 @@ from unittest import mock
 import numpy as np
 
 from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT
-from jobbergate_agent.jobbergate.schemas import InfluxDBMeasure
+from jobbergate_agent.jobbergate.schemas import InfluxDBMeasure, JobMetricData
 from jobbergate_agent.utils.compute import (
     aggregate_influx_measures,
     measure_memory_usage,
@@ -26,7 +26,7 @@ def generate_and_aggregate_job_metrics_data() -> (
         [int, int, int, int, int],
         tuple[
             list[InfluxDBMeasure],
-            list[tuple[int, str, str, str, float, float, float, float, float, float, float, float, float, float]],
+            JobMetricData,
         ],
     ]
 ):
@@ -40,7 +40,7 @@ def generate_and_aggregate_job_metrics_data() -> (
         num_points_per_measurement: int, num_hosts: int, num_jobs: int, num_steps: int, num_tasks: int
     ) -> tuple[
         list[InfluxDBMeasure],
-        list[tuple[int, str, str, str, float, float, float, float, float, float, float, float, float, float]],
+        JobMetricData,
     ]:
         # Initialize data structures
         current_time = int(datetime.now().timestamp())
@@ -82,7 +82,7 @@ def generate_and_aggregate_job_metrics_data() -> (
 
         # Create aggregated list
         aggregated_list = cast(
-            list[tuple[int, str, str, str, float, float, float, float, float, float, float, float, float, float]],
+            JobMetricData,
             [
                 (
                     time,
@@ -119,7 +119,7 @@ async def test_aggregate_influx_measures__success(
         [int, int, int, int, int],
         tuple[
             list[InfluxDBMeasure],
-            list[tuple[int, str, str, str, float, float, float, float, float, float, float, float, float, float]],
+            JobMetricData,
         ],
     ],
 ):
