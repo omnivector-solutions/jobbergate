@@ -99,12 +99,11 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_influxdb_settings(self) -> Self:
         if self.influx_integration_enabled:
-            if self.INFLUX_SSL:
-                buzz.require_condition(
-                    self.INFLUX_CERT_PATH is not None,
-                    "INFLUX_CERT_PATH must be provided when INFLUX_SSL is enabled",
-                    ValueError,
-                )
+            buzz.require_condition(
+                not self.INFLUX_SSL or self.INFLUX_CERT_PATH is not None,
+                "INFLUX_CERT_PATH must be provided when INFLUX_SSL is enabled",
+                ValueError,
+            )
 
             assert self.INFLUX_DSN is not None
             if self.INFLUX_DSN.scheme not in ["influxdb", "https+influxdb", "udp+influxdb"]:
