@@ -13,19 +13,6 @@ from jobbergate_api.apps.job_submissions.constants import (
 )
 
 
-def _force_cast(object: Any, expected_type: Type[Any]) -> Any:
-    """Forcefully cast a value to the expected type.
-
-    Args:
-        value (Any): The value to be cast.
-        expected_type (Type[Any]): The type to cast the value to.
-
-    Returns:
-        Any: The value cast to the expected type.
-    """
-    return expected_type(object)
-
-
 def validate_job_metric_upload_input(
     data: Any, expected_types: tuple[Type[Any], ...]
 ) -> Iterable[tuple[Any]]:
@@ -42,6 +29,10 @@ def validate_job_metric_upload_input(
     Returns:
         Iterable[list[Any] | tuple[Any]]: The validated data.
     """
+
+    def _force_cast(object: Any, expected_type: Type[Any]) -> Any:
+        return expected_type(object)
+
     if not isinstance(data, list):
         raise ValueError("Decoded data must be a list.")
     if not all(isinstance(x, (list, tuple)) for x in data):

@@ -11,7 +11,6 @@ from jobbergate_api.apps.job_submissions.constants import (
 )
 from jobbergate_api.apps.job_submissions.helpers import (
     build_job_metric_aggregation_query,
-    _force_cast,
     validate_job_metric_upload_input,
 )
 
@@ -150,41 +149,6 @@ class TestValidateJobMetricUploadInput:
         expected_types = (int, str, float)
         result = validate_job_metric_upload_input(data, expected_types)
         assert result == [(1, "test", 3.5)]
-
-
-class TestForceCast:
-    """
-    Test suite for the `_force_cast` function.
-
-    This test suite contains tests to verify the behavior of the `_force_cast` function,
-    which is responsible for casting values to specified types.
-
-    Classes:
-        TestForceCast: Contains test cases for the `_force_cast` function.
-
-    TestForceCast:
-        test_success: Tests that `_force_cast` successfully casts values to the expected types.
-        test_force_cast_failure: Tests that `_force_cast` raises appropriate errors when the cast fails.
-    """
-
-    def test_success(self):
-        """
-        Test that `_force_cast` successfully casts a value to the expected type.
-        """
-        assert _force_cast("123", int) == 123
-        assert _force_cast("123.45", float) == 123.45
-        assert _force_cast(123, str) == "123"
-
-    def test_force_cast_failure(self):
-        """
-        Test that `_force_cast` raises an error when the cast fails.
-        """
-        with pytest.raises(ValueError):
-            _force_cast("not an int", int)
-        with pytest.raises(ValueError):
-            _force_cast("not a float", float)
-        with pytest.raises(TypeError):
-            _force_cast(123, list)
 
 
 class TestBuildJobMetricAggregationQuery:
