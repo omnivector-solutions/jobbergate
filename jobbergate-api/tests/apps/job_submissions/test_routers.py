@@ -2591,7 +2591,7 @@ async def test_job_submissions_metrics__start_time_less_greater_than_end_time(
     synth_session,
 ):
     """
-    Test GET /job-submissions/{job_submission_id}/metrics returns 422 when the start_time
+    Test GET /job-submissions/{job_submission_id}/metrics returns 400 when the start_time
     query param is greater than the end_time.
     """
     job_submission_id = random.randint(1, 100)
@@ -2614,7 +2614,7 @@ async def test_job_submissions_metrics__start_time_less_greater_than_end_time(
             f"/jobbergate/job-submissions/{job_submission_id}/metrics", params=http_query_params
         )
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
     mocked_session_execute.assert_not_awaited()
     mocked_session_execute.return_value.fetchall.assert_not_called()
     mocked_sa_text.assert_not_called()

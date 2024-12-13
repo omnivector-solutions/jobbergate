@@ -610,7 +610,7 @@ async def job_submissions_metrics(
     logger.debug(f"Getting metrics for job submission {job_submission_id}")
     if end_time is not None and end_time < start_time:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="End time must be greater than the start time.",
         )
     end_time = end_time or datetime.now(tz=timezone.utc)
