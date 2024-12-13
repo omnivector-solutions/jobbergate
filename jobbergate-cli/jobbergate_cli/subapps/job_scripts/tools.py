@@ -10,8 +10,8 @@ from concurrent import futures
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from jinja2 import Template
-from jinja2.exceptions import UndefinedError
+from jinja2.sandbox import SandboxedEnvironment
+from jinja2.exceptions import SecurityError, UndefinedError
 from loguru import logger
 
 from jobbergate_cli.config import settings
@@ -206,13 +206,20 @@ def render_template(
             log_message=f"Unable to process jinja template filename={template_path}",
         ),
     ):
-        template = Template(file_content)
+        sandbox_env = SandboxedEnvironment()
+        template = sandbox_env.from_string(file_content)
 
     render_contexts = [parameters, {"data": parameters}]
 
     for context in render_contexts:
         try:
             return template.render(**context)
+        except SecurityError:
+            raise Abort(
+                f"Security errors raised when rendering filename={template_path}",
+                subject="Unable to render jinja template",
+                log_message=f"Security error rendering filename={template_path}",
+            )
         except UndefinedError as e:
             logger.debug(
                 "Unable to render filename={} with context={} -- Error: {}",
