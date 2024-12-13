@@ -7,6 +7,19 @@ from typing import Any, Type
 from loguru import logger
 
 
+def _force_cast(object: Any, expected_type: Type[Any]) -> Any:
+    """Forcefully cast a value to the expected type.
+
+    Args:
+        value (Any): The value to be cast.
+        expected_type (Type[Any]): The type to cast the value to.
+
+    Returns:
+        Any: The value cast to the expected type.
+    """
+    return expected_type(object)
+
+
 def validate_job_metric_upload_input(
     data: Any, expected_types: tuple[Type[Any], ...]
 ) -> Iterable[tuple[Any]]:
@@ -25,9 +38,9 @@ def validate_job_metric_upload_input(
     """
     if not isinstance(data, list):
         raise ValueError("Decoded data must be a list.")
-    if not all(map(lambda x: isinstance(x, list) or isinstance(x, tuple), data)):
-        raise ValueError("Decoded data must be either a list of lists or tuples")
-    if not all(map(lambda x: len(x) == len(expected_types), data)):
+    if not all(isinstance(x, (list, tuple)) for x in data):
+        raise ValueError("All elements of the inner data must be a Sequence")
+    if not all(len(x) == len(expected_types) for x in data):
         raise ValueError("Every iterable in `data` must match the length of `expected_types`.")
     # postgres limits the number of query params to 2**15 - 1
     # https://www.postgresql.org/docs/17/protocol-message-formats.html
@@ -40,7 +53,9 @@ def validate_job_metric_upload_input(
     for idx, aggregated_data in enumerate(data):
         # for each element in the inner list or tuple, force apply the expected type
         try:
-            data[idx] = tuple(map(lambda x: expected_types[x[0]](x[1]), enumerate(aggregated_data)))
+            data[idx] = tuple(
+                _force_cast(data, expected_types[idx]) for idx, data in enumerate(aggregated_data)
+            )
         except Exception as e:
             logger.error(f"Failed to cast data to expected types: {e}")
             raise ValueError("Failed to cast data to expected types.")

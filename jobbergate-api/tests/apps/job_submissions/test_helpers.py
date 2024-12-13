@@ -2,7 +2,7 @@
 
 from math import ceil
 import pytest
-from jobbergate_api.apps.job_submissions.helpers import validate_job_metric_upload_input
+from jobbergate_api.apps.job_submissions.helpers import validate_job_metric_upload_input, _force_cast
 
 
 class TestValidateJobMetricUploadInput:
@@ -63,11 +63,11 @@ class TestValidateJobMetricUploadInput:
 
         The expected types for the elements are specified as a tuple: (int, str, float).
 
-        The test expects a ValueError to be raised with the message "Decoded data must be either a list of lists or tuples".
+        The test expects a ValueError to be raised with the message "All elements of the inner data must be a Sequence".
         """
         data = [[1, "test", 3.5], "invalid inner type"]
         expected_types = (int, str, float)
-        with pytest.raises(ValueError, match="Decoded data must be either a list of lists or tuples"):
+        with pytest.raises(ValueError, match="All elements of the inner data must be a Sequence"):
             validate_job_metric_upload_input(data, expected_types)
 
     def test_validate_job_metric_upload_input_invalid_length(self):
@@ -139,3 +139,38 @@ class TestValidateJobMetricUploadInput:
         expected_types = (int, str, float)
         result = validate_job_metric_upload_input(data, expected_types)
         assert result == [(1, "test", 3.5)]
+
+
+class TestForceCast:
+    """
+    Test suite for the `_force_cast` function.
+
+    This test suite contains tests to verify the behavior of the `_force_cast` function,
+    which is responsible for casting values to specified types.
+
+    Classes:
+        TestForceCast: Contains test cases for the `_force_cast` function.
+
+    TestForceCast:
+        test_success: Tests that `_force_cast` successfully casts values to the expected types.
+        test_force_cast_failure: Tests that `_force_cast` raises appropriate errors when the cast fails.
+    """
+
+    def test_success(self):
+        """
+        Test that `_force_cast` successfully casts a value to the expected type.
+        """
+        assert _force_cast("123", int) == 123
+        assert _force_cast("123.45", float) == 123.45
+        assert _force_cast(123, str) == "123"
+
+    def test_force_cast_failure(self):
+        """
+        Test that `_force_cast` raises an error when the cast fails.
+        """
+        with pytest.raises(ValueError):
+            _force_cast("not an int", int)
+        with pytest.raises(ValueError):
+            _force_cast("not a float", float)
+        with pytest.raises(TypeError):
+            _force_cast(123, list)
