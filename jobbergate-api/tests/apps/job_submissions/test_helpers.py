@@ -1,8 +1,19 @@
 """Core module for testing the helper functions of the job submissions app."""
 
 from math import ceil
+from textwrap import dedent
+
 import pytest
-from jobbergate_api.apps.job_submissions.helpers import validate_job_metric_upload_input, _force_cast
+
+from jobbergate_api.apps.job_submissions.constants import (
+    JobSubmissionMetricAggregateNames,
+    JobSubmissionMetricSampleRate,
+)
+from jobbergate_api.apps.job_submissions.helpers import (
+    build_job_metric_aggregation_query,
+    _force_cast,
+    validate_job_metric_upload_input,
+)
 
 
 class TestValidateJobMetricUploadInput:
@@ -174,3 +185,82 @@ class TestForceCast:
             _force_cast("not a float", float)
         with pytest.raises(TypeError):
             _force_cast(123, list)
+
+
+class TestBuildJobMetricAggregationQuery:
+    """
+    Test suite for the `build_job_metric_aggregation_query` function.
+
+    This test suite contains various test cases to validate the behavior of the
+    `build_job_metric_aggregation_query` function under different scenarios. The
+    function is expected to build a SQL query string based on the provided node and sample rate.
+
+    Test Cases:
+    - `test_build_query_with_node`: Tests the function with a specific node.
+    - `test_build_query_without_node`: Tests the function without a specific node.
+    - `test_build_query_invalid_sample_rate`: Tests that the function raises an error for an invalid sample rate.
+    """
+
+    def test_build_query_with_node(self):
+        """
+        Test the `build_job_metric_aggregation_query` function with a specific node.
+
+        This test checks if the function correctly builds a SQL query string when provided with a node.
+        """
+        node = "node1"
+        sample_rate = JobSubmissionMetricSampleRate.ten_seconds
+        expected_query = dedent(
+            f"""
+            SELECT bucket,
+                node_host,
+                cpu_frequency,
+                cpu_time,
+                cpu_utilization,
+                gpu_memory,
+                gpu_utilization,
+                page_faults,
+                memory_rss,
+                memory_virtual,
+                disk_read,
+                disk_write
+            FROM {JobSubmissionMetricAggregateNames.metrics_nodes_mv_10_seconds_by_node}
+            WHERE job_submission_id = :job_submission_id AND node_host = :node_host
+            AND bucket >= :start_time
+            AND bucket <= :end_time
+            ORDER BY bucket
+            """
+        )
+        result = build_job_metric_aggregation_query(node, sample_rate)
+        assert result == expected_query
+
+    def test_build_query_without_node(self):
+        """
+        Test the `build_job_metric_aggregation_query` function without a specific node.
+
+        This test checks if the function correctly builds a SQL query string when no node is provided.
+        """
+        node = None
+        sample_rate = JobSubmissionMetricSampleRate.one_minute
+        expected_query = dedent(
+            f"""
+            SELECT bucket,
+                node_host,
+                cpu_frequency,
+                cpu_time,
+                cpu_utilization,
+                gpu_memory,
+                gpu_utilization,
+                page_faults,
+                memory_rss,
+                memory_virtual,
+                disk_read,
+                disk_write
+            FROM {JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_minute_all_nodes}
+            WHERE job_submission_id = :job_submission_id
+            AND bucket >= :start_time
+            AND bucket <= :end_time
+            ORDER BY bucket
+            """
+        )
+        result = build_job_metric_aggregation_query(node, sample_rate)
+        assert result == expected_query

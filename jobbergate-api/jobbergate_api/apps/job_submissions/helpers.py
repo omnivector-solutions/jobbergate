@@ -2,9 +2,15 @@
 
 from collections.abc import Iterable
 from math import ceil
-from typing import Any, Type
+from textwrap import dedent
+from typing import Any, assert_never, Type
 
 from loguru import logger
+
+from jobbergate_api.apps.job_submissions.constants import (
+    JobSubmissionMetricSampleRate,
+    JobSubmissionMetricAggregateNames,
+)
 
 
 def _force_cast(object: Any, expected_type: Type[Any]) -> Any:
@@ -60,3 +66,68 @@ def validate_job_metric_upload_input(
             logger.error(f"Failed to cast data to expected types: {e}")
             raise ValueError("Failed to cast data to expected types.")
     return data
+
+
+def build_job_metric_aggregation_query(node: str | None, sample_rate: JobSubmissionMetricSampleRate) -> str:
+    """
+    Build a SQL query string to aggregate job metrics based on the provided node and sample rate.
+
+    Args:
+        node (str | None): The node host identifier. If None, the query will aggregate metrics for all nodes.
+        sample_rate (JobSubmissionMetricSampleRate): The sample rate for the metrics aggregation. Determines the view name to use.
+
+    Returns:
+        str: The SQL query string for aggregating job metrics.
+    """
+    if node is not None:
+        where_statement = "WHERE job_submission_id = :job_submission_id AND node_host = :node_host"
+        match sample_rate:
+            case JobSubmissionMetricSampleRate.ten_seconds:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_10_seconds_by_node
+            case JobSubmissionMetricSampleRate.one_minute:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_minute_by_node
+            case JobSubmissionMetricSampleRate.ten_minutes:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_10_minutes_by_node
+            case JobSubmissionMetricSampleRate.one_hour:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_hour_by_node
+            case JobSubmissionMetricSampleRate.one_week:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_week_by_node
+            case _ as unreachable:
+                assert_never(unreachable)
+    else:
+        where_statement = "WHERE job_submission_id = :job_submission_id"
+        match sample_rate:
+            case JobSubmissionMetricSampleRate.ten_seconds:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_10_seconds_all_nodes
+            case JobSubmissionMetricSampleRate.one_minute:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_minute_all_nodes
+            case JobSubmissionMetricSampleRate.ten_minutes:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_10_minutes_all_nodes
+            case JobSubmissionMetricSampleRate.one_hour:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_hour_all_nodes
+            case JobSubmissionMetricSampleRate.one_week:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_week_all_nodes
+            case _ as unreachable:
+                assert_never(unreachable)
+
+    return dedent(
+        f"""
+        SELECT bucket,
+            node_host,
+            cpu_frequency,
+            cpu_time,
+            cpu_utilization,
+            gpu_memory,
+            gpu_utilization,
+            page_faults,
+            memory_rss,
+            memory_virtual,
+            disk_read,
+            disk_write
+        FROM {view_name}
+        {where_statement}
+        AND bucket >= :start_time
+        AND bucket <= :end_time
+        ORDER BY bucket
+        """
+    )

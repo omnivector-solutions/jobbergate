@@ -3,8 +3,7 @@ Router for the JobSubmission resource.
 """
 
 from datetime import datetime, timedelta, timezone
-from textwrap import dedent
-from typing import Any, assert_never
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Body
 from fastapi import Response as FastAPIResponse
@@ -23,7 +22,6 @@ from jobbergate_api.apps.job_submissions.constants import (
     JobSubmissionStatus,
     slurm_job_state_details,
     JobSubmissionMetricSampleRate,
-    JobSubmissionMetricAggregateNames,
 )
 from jobbergate_api.apps.job_submissions.schemas import (
     ActiveJobSubmission,
@@ -39,7 +37,10 @@ from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionAgentMaxTimes,
     JobSubmissionMetricSchema,
 )
-from jobbergate_api.apps.job_submissions.helpers import validate_job_metric_upload_input
+from jobbergate_api.apps.job_submissions.helpers import (
+    validate_job_metric_upload_input,
+    build_job_metric_aggregation_query,
+)
 from jobbergate_api.apps.permissions import Permissions, can_bypass_ownership_check
 from jobbergate_api.apps.schemas import ListParams
 from jobbergate_api.email_notification import notify_submission_rejected
@@ -615,58 +616,7 @@ async def job_submissions_metrics(
         )
     end_time = end_time or datetime.now(tz=timezone.utc)
 
-    if node is not None:
-        where_statement = "WHERE job_submission_id = :job_submission_id AND node_host = :node_host"
-        match sample_rate:
-            case JobSubmissionMetricSampleRate.ten_seconds:
-                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_10_seconds_by_node
-            case JobSubmissionMetricSampleRate.one_minute:
-                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_minute_by_node
-            case JobSubmissionMetricSampleRate.ten_minutes:
-                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_10_minutes_by_node
-            case JobSubmissionMetricSampleRate.one_hour:
-                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_hour_by_node
-            case JobSubmissionMetricSampleRate.one_week:
-                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_week_by_node
-            case _ as unreachable:
-                assert_never(unreachable)
-    else:
-        where_statement = "WHERE job_submission_id = :job_submission_id"
-        match sample_rate:
-            case JobSubmissionMetricSampleRate.ten_seconds:
-                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_10_seconds_all_nodes
-            case JobSubmissionMetricSampleRate.one_minute:
-                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_minute_all_nodes
-            case JobSubmissionMetricSampleRate.ten_minutes:
-                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_10_minutes_all_nodes
-            case JobSubmissionMetricSampleRate.one_hour:
-                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_hour_all_nodes
-            case JobSubmissionMetricSampleRate.one_week:
-                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_week_all_nodes
-            case _ as unreachable:
-                assert_never(unreachable)
-
-    query = dedent(
-        f"""
-        SELECT bucket,
-            node_host,
-            cpu_frequency,
-            cpu_time,
-            cpu_utilization,
-            gpu_memory,
-            gpu_utilization,
-            page_faults,
-            memory_rss,
-            memory_virtual,
-            disk_read,
-            disk_write
-        FROM {view_name}
-        {where_statement}
-        AND bucket >= :start_time
-        AND bucket <= :end_time
-        ORDER BY bucket
-        """
-    )
+    query = build_job_metric_aggregation_query(node, sample_rate)
     query_params = {
         "job_submission_id": job_submission_id,
         "start_time": start_time,
