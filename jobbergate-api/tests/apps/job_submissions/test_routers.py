@@ -2,18 +2,63 @@
 Tests for the /job-submissions/ endpoint.
 """
 
+import itertools
 import json
-from datetime import datetime
+import random
+import uuid
+from datetime import datetime, timezone, timedelta
+from textwrap import dedent
+from unittest import mock
 
 import pytest
+import msgpack
 from fastapi import status
+from sqlalchemy import insert, select
 
-from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus, SlurmJobState
+from jobbergate_api.apps.job_submissions.constants import (
+    JobSubmissionStatus,
+    SlurmJobState,
+    JobSubmissionMetricAggregateNames,
+    JobSubmissionMetricSampleRate,
+)
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.rabbitmq_notification import rabbitmq_connect
+from jobbergate_api.apps.job_submissions.models import JobSubmissionMetric
+from jobbergate_api.apps.job_submissions.schemas import JobSubmissionMetricSchema, JobSubmissionAgentMaxTimes
 
 # Not using the synth_session fixture in a route that needs the database is unsafe
 pytest.mark.usefixtures("synth_session")
+
+
+def generate_job_submission_metric_columns(base_time: int, num_rows: int = 5) -> list[tuple]:
+    """
+    Generate a list of JobSubmissionMetric objects for a given job_submission_id.
+
+    For simplicity, generate a list of JobSubmissionMetric objects with random values for each field
+    and all matching the same tuple (job_submission_id, node_host, step, task).
+    """
+    node_host = str(uuid.uuid4())
+    step = random.randint(0, 100)
+    task = random.randint(0, 100)
+    return [
+        (
+            base_time + i,
+            node_host,
+            step,
+            task,
+            random.uniform(0, 5),
+            random.uniform(0, 5),
+            random.uniform(0, 5),
+            random.randint(0, 5),
+            random.uniform(0, 5),
+            random.randint(0, 5),
+            random.randint(0, 5),
+            random.randint(0, 5),
+            random.randint(0, 5),
+            random.randint(0, 5),
+        )
+        for i in range(num_rows)
+    ]
 
 
 @pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_CREATE))
@@ -2079,3 +2124,498 @@ async def test_job_submissions_agent_active__returns_400_if_token_does_not_carry
     response = await client.get("/jobbergate/job-submissions/agent/active")
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "Access token does not contain\\n  1: client_id" in response.text
+
+
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ))
+async def test_job_submissions_agent_metrics__returns_successful_request__empty_list(
+    permission,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+):
+    """
+    Test GET /job-submissions/agent/metrics/{job_submission_id} returns 200 with no data.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    inject_security_header("who@cares.com", permission, client_id="dummy-client")
+    response = await client.get(f"/jobbergate/job-submissions/agent/metrics/{inserted_job_submission_id}")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {"job_submission_id": inserted_job_submission_id, "max_times": []}
+
+
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ))
+async def test_job_submissions_agent_metrics__returns_successful_request(
+    permission,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+    synth_session,
+):
+    """
+    Test GET /job-submissions/agent/metrics/{job_submission_id} returns 200 with data.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    base_time = int(datetime.now().timestamp())
+
+    job_metrics = generate_job_submission_metric_columns(base_time)
+    query = insert(JobSubmissionMetric).values(
+        [
+            {
+                "time": item[0],
+                "job_submission_id": inserted_job_submission_id,
+                "slurm_job_id": inserted_submission.slurm_job_id,
+                "node_host": item[1],
+                "step": item[2],
+                "task": item[3],
+                "cpu_frequency": item[4],
+                "cpu_time": item[5],
+                "cpu_utilization": item[6],
+                "gpu_memory": item[7],
+                "gpu_utilization": item[8],
+                "page_faults": item[9],
+                "memory_rss": item[10],
+                "memory_virtual": item[11],
+                "disk_read": item[12],
+                "disk_write": item[13],
+            }
+            for item in job_metrics
+        ]
+    )
+    await synth_session.execute(query)
+
+    inject_security_header("who@cares.com", permission, client_id="dummy-client")
+    response = await client.get(f"/jobbergate/job-submissions/agent/metrics/{inserted_job_submission_id}")
+    assert response.status_code == status.HTTP_200_OK
+    max_time_element = max(job_metrics, key=lambda item: item[0])
+    assert response.json() == {
+        "job_submission_id": inserted_job_submission_id,
+        "max_times": [
+            JobSubmissionAgentMaxTimes(
+                max_time=max_time_element[0],
+                node_host=max_time_element[1],
+                step=max_time_element[2],
+                task=max_time_element[3],
+            ).model_dump()
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    "permission, data",
+    [
+        (Permissions.ADMIN, "dummy-string-data"),
+        (Permissions.JOB_SUBMISSIONS_UPDATE, {"dummy": "data"}),
+    ],
+)
+@mock.patch("jobbergate_api.apps.job_submissions.routers.validate_job_metric_upload_input")
+async def test_job_submissions_agent_metrics_upload__400_uploading_invalid_data(
+    mocked_validate_job_metric_upload_input,
+    permission,
+    data,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+):
+    """
+    Test PUT /job-submissions/agent/metrics/{job_submission_id} returns 400 when the input data
+    is invalid.
+    """
+    mocked_validate_job_metric_upload_input.side_effect = ValueError("Invalid data")
+
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    encoded_data = msgpack.packb(data)
+
+    inject_security_header("who@cares.com", permission, client_id="dummy-client")
+    response = await client.put(
+        f"/jobbergate/job-submissions/agent/metrics/{inserted_job_submission_id}",
+        content=encoded_data,
+        headers={"Content-Type": "application/octet-stream"},
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {"detail": "Invalid data"}
+    mocked_validate_job_metric_upload_input.assert_called_once_with(
+        data, (int, str, int, int, float, float, float, int, float, int, int, int, int, int)
+    )
+
+
+@pytest.mark.parametrize(
+    "permission, num_rows",
+    [
+        (Permissions.ADMIN, 3),
+        (Permissions.JOB_SUBMISSIONS_UPDATE, 8),
+    ],
+)
+async def test_job_submissions_agent_metrics_upload__successful_request(
+    permission,
+    num_rows,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+    synth_session,
+):
+    """
+    Test PUT /job-submissions/agent/metrics/{job_submission_id} returns 204 upon a successful request.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    base_time = int(datetime.now().timestamp())
+    raw_data = generate_job_submission_metric_columns(base_time, num_rows)
+    encoded_data = msgpack.packb(raw_data)
+
+    inject_security_header("who@cares.com", permission, client_id="dummy-client")
+    response = await client.put(
+        f"/jobbergate/job-submissions/agent/metrics/{inserted_job_submission_id}",
+        content=encoded_data,
+        headers={"Content-Type": "application/octet-stream"},
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+    query = select(JobSubmissionMetric).where(
+        JobSubmissionMetric.job_submission_id == inserted_job_submission_id
+    )
+    result = await synth_session.execute(query)
+    scalars = result.scalars()
+    assert all(
+        (
+            scalar.time,
+            scalar.node_host,
+            scalar.step,
+            scalar.task,
+            scalar.cpu_frequency,
+            scalar.cpu_time,
+            scalar.cpu_utilization,
+            scalar.gpu_memory,
+            scalar.gpu_utilization,
+            scalar.page_faults,
+            scalar.memory_rss,
+            scalar.memory_virtual,
+            scalar.disk_read,
+            scalar.disk_write,
+        )
+        in raw_data
+        for scalar in scalars
+    )
+
+
+@pytest.mark.parametrize(
+    "permission, num_rows",
+    [
+        (Permissions.ADMIN, 3),
+        (Permissions.JOB_SUBMISSIONS_UPDATE, 8),
+    ],
+)
+async def test_job_submissions_agent_metrics_upload__400_duplicated_data(
+    permission,
+    num_rows,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+    synth_session,
+):
+    """
+    Test PUT /job-submissions/agent/metrics/{job_submission_id} returns 400 when uploading
+    duplicated data.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    base_time = int(datetime.now().timestamp())
+    raw_data = generate_job_submission_metric_columns(base_time, num_rows)
+    encoded_data = msgpack.packb(raw_data)
+
+    query = insert(JobSubmissionMetric).values(
+        [
+            {
+                "time": data_point[0],
+                "node_host": data_point[1],
+                "step": data_point[2],
+                "task": data_point[3],
+                "cpu_frequency": data_point[4],
+                "cpu_time": data_point[5],
+                "cpu_utilization": data_point[6],
+                "gpu_memory": data_point[7],
+                "gpu_utilization": data_point[8],
+                "page_faults": data_point[9],
+                "memory_rss": data_point[10],
+                "memory_virtual": data_point[11],
+                "disk_read": data_point[12],
+                "disk_write": data_point[13],
+                "job_submission_id": inserted_job_submission_id,
+                "slurm_job_id": inserted_submission.slurm_job_id,
+            }
+            for data_point in raw_data
+        ]
+    )
+    await synth_session.execute(query)
+
+    inject_security_header("who@cares.com", permission, client_id="dummy-client")
+    response = await client.put(
+        f"/jobbergate/job-submissions/agent/metrics/{inserted_job_submission_id}",
+        content=encoded_data,
+        headers={"Content-Type": "application/octet-stream"},
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {"detail": "Failed to insert metrics"}
+
+
+@pytest.mark.parametrize(
+    "permission, sample_rate, node_host",
+    list(
+        itertools.product(
+            (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ),
+            map(lambda enum: enum.value, JobSubmissionMetricSampleRate),
+            ("node_1", "dummy-node", None),
+        )
+    ),
+)
+@mock.patch("jobbergate_api.apps.job_submissions.routers.sa_text")
+async def test_job_submissions_metrics__aggregation_by_all_nodes(
+    mocked_sa_text,
+    permission,
+    sample_rate,
+    node_host,
+    client,
+    inject_security_header,
+    synth_session,
+):
+    """
+    Test GET /job-submissions/{job_submission_id}/metrics returns 200.
+    """
+    num_rows = random.randint(1, 10)
+    job_submission_id = random.randint(1, 100)
+    random_hour_interval = random.randint(1, 23)
+
+    mocked_session_execute = mock.AsyncMock()
+    mocked_session_execute.return_value.fetchall = mock.Mock()
+
+    base_time = int(datetime.now().timestamp())
+    raw_data = generate_job_submission_metric_columns(base_time, num_rows)
+
+    mocked_session_execute.return_value.fetchall.return_value = [
+        JobSubmissionMetricSchema.from_iterable(data_point).model_dump(exclude=["step", "task"]).values()
+        for data_point in raw_data
+    ]
+
+    if node_host is not None:
+        where_statement = "WHERE job_submission_id = :job_submission_id AND node_host = :node_host"
+        match sample_rate:
+            case JobSubmissionMetricSampleRate.ten_seconds:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_10_seconds_by_node
+            case JobSubmissionMetricSampleRate.one_minute:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_minute_by_node
+            case JobSubmissionMetricSampleRate.ten_minutes:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_10_minutes_by_node
+            case JobSubmissionMetricSampleRate.one_hour:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_hour_by_node
+            case JobSubmissionMetricSampleRate.one_week:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_week_by_node
+    else:
+        where_statement = "WHERE job_submission_id = :job_submission_id"
+        match sample_rate:
+            case JobSubmissionMetricSampleRate.ten_seconds:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_10_seconds_all_nodes
+            case JobSubmissionMetricSampleRate.one_minute:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_minute_all_nodes
+            case JobSubmissionMetricSampleRate.ten_minutes:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_10_minutes_all_nodes
+            case JobSubmissionMetricSampleRate.one_hour:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_hour_all_nodes
+            case JobSubmissionMetricSampleRate.one_week:
+                view_name = JobSubmissionMetricAggregateNames.metrics_nodes_mv_1_week_all_nodes
+
+    expected_sql_query = dedent(
+        f"""
+        SELECT bucket,
+            node_host,
+            cpu_frequency,
+            cpu_time,
+            cpu_utilization,
+            gpu_memory,
+            gpu_utilization,
+            page_faults,
+            memory_rss,
+            memory_virtual,
+            disk_read,
+            disk_write
+        FROM {view_name}
+        {where_statement}
+        AND bucket >= :start_time
+        AND bucket <= :end_time
+        ORDER BY bucket
+        """
+    )
+
+    start_time = datetime(2021, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    end_time = start_time + timedelta(hours=random_hour_interval)
+
+    http_query_params = {
+        "start_time": start_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "end_time": end_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "sample_rate": sample_rate,
+    }
+
+    sql_query_params = {
+        "job_submission_id": job_submission_id,
+        "start_time": start_time,
+        "end_time": end_time,
+    }
+
+    if node_host is not None:
+        http_query_params["node"] = node_host
+        sql_query_params["node_host"] = node_host
+
+    with mock.patch.object(synth_session, "execute", mocked_session_execute):
+        inject_security_header("who@cares.com", permission, client_id="dummy-client")
+        response = await client.get(
+            f"/jobbergate/job-submissions/{job_submission_id}/metrics", params=http_query_params
+        )
+
+    assert response.status_code == status.HTTP_200_OK
+    mocked_session_execute.assert_awaited_once_with(mocked_sa_text.return_value, sql_query_params)
+    mocked_session_execute.return_value.fetchall.assert_called_once_with()
+    mocked_sa_text.assert_called_once_with(expected_sql_query)
+    assert response.json() == [
+        JobSubmissionMetricSchema.from_iterable(
+            (
+                data_point[0],
+                data_point[1],
+                # skip both task and step because the API aggregates in the node level
+                # data_point[2],
+                # data_point[3],
+                data_point[4],
+                data_point[5],
+                data_point[6],
+                data_point[7],
+                data_point[8],
+                data_point[9],
+                data_point[10],
+                data_point[11],
+                data_point[12],
+                data_point[13],
+            ),
+            skip_optional=True,
+        ).model_dump()
+        for data_point in raw_data
+    ]
+
+
+@pytest.mark.parametrize("permission", [Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ])
+@mock.patch("jobbergate_api.apps.job_submissions.routers.sa_text")
+async def test_job_submissions_metrics__start_time_less_greater_than_end_time(
+    mocked_sa_text,
+    permission,
+    client,
+    inject_security_header,
+    synth_session,
+):
+    """
+    Test GET /job-submissions/{job_submission_id}/metrics returns 400 when the start_time
+    query param is greater than the end_time.
+    """
+    job_submission_id = random.randint(1, 100)
+    random_hour_interval = random.randint(1, 23)
+
+    mocked_session_execute = mock.AsyncMock()
+    mocked_session_execute.return_value.fetchall = mock.Mock()
+
+    end_time = datetime(2021, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    start_time = end_time + timedelta(hours=random_hour_interval)
+
+    http_query_params = {
+        "start_time": start_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "end_time": end_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+
+    with mock.patch.object(synth_session, "execute", mocked_session_execute):
+        inject_security_header("who@cares.com", permission, client_id="dummy-client")
+        response = await client.get(
+            f"/jobbergate/job-submissions/{job_submission_id}/metrics", params=http_query_params
+        )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    mocked_session_execute.assert_not_awaited()
+    mocked_session_execute.return_value.fetchall.assert_not_called()
+    mocked_sa_text.assert_not_called()
+    assert response.json() == {"detail": "End time must be greater than the start time."}
