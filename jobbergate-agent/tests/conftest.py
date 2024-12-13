@@ -2,6 +2,7 @@ import contextlib
 import random
 import string
 from datetime import datetime, timezone
+from typing import Callable
 from unittest import mock
 
 import httpx
@@ -49,7 +50,7 @@ def caplog(caplog):
 
 
 @pytest.fixture
-def tweak_settings():
+def tweak_settings() -> Callable[..., contextlib._GeneratorContextManager]:
     """
     Provides a fixture to use as a context manager where the project settings may be
     temporarily changed.
