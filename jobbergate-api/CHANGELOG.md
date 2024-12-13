@@ -3,6 +3,9 @@
 This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
+
+
+## 5.4.1 -- 2024-12-13
 - Fixed issue on the Job Template rendering process by running it inside a Jinja Sandbox Environment
 
 ## 5.4.0 -- 2024-11-18
