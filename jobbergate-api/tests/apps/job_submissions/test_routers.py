@@ -6,7 +6,7 @@ import itertools
 import json
 import random
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from textwrap import dedent
 from unittest import mock
 
@@ -2528,7 +2528,7 @@ async def test_job_submissions_metrics__aggregation_by_all_nodes(
     )
 
     start_time = datetime(2021, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-    end_time = datetime(2021, 1, 1, random_hour_interval, 0, 0, tzinfo=timezone.utc)
+    end_time = start_time + timedelta(hours=random_hour_interval)
 
     http_query_params = {
         "start_time": start_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -2600,8 +2600,8 @@ async def test_job_submissions_metrics__start_time_less_greater_than_end_time(
     mocked_session_execute = mock.AsyncMock()
     mocked_session_execute.return_value.fetchall = mock.Mock()
 
-    start_time = datetime(2021, 1, 1, random_hour_interval, 0, 0, tzinfo=timezone.utc)
     end_time = datetime(2021, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    start_time = end_time + timedelta(hours=random_hour_interval)
 
     http_query_params = {
         "start_time": start_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
