@@ -92,7 +92,7 @@ async def fetch_influx_data(
     SELECT * FROM {measurement} WHERE time > $time AND host = $host AND step = $step AND task = $task AND job = $job
     """
     with JobbergateApiError.handle_errors("Failed to fetch data from InfluxDB", do_except=log_error):
-        assert influxdb_client is not None
+        assert influxdb_client is not None  # mypy assertion
         params = dict(time=time, host=host, step=str(step), task=str(task), job=str(job))
         logger.debug(f"Querying InfluxDB with: {query=}, {params=}")
         result = influxdb_client.query(query, bind_params=params, epoch="us")

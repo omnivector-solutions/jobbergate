@@ -105,7 +105,7 @@ class Settings(BaseSettings):
                 ValueError,
             )
 
-            assert self.INFLUX_DSN is not None
+            assert self.INFLUX_DSN is not None  # mypy assertion
             if self.INFLUX_DSN.scheme not in ["influxdb", "https+influxdb", "udp+influxdb"]:
                 raise ValueError("INFLUX_DSN scheme must be one of 'influxdb', 'https+influxdb' or 'udp+influxdb'")
         return self
