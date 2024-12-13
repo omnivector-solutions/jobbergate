@@ -80,7 +80,7 @@ class SlurmJobData(pydantic.BaseModel, extra="ignore"):
     state_reason: Optional[str] = None
 
 
-class InfluxDBMeasurement(TypedDict):
+class InfluxDBMeasurementDict(TypedDict):
     """
     Map each entry in the list returned by `InfluxDBClient(...).get_list_measurements(...)`.
     """
@@ -88,7 +88,7 @@ class InfluxDBMeasurement(TypedDict):
     name: INFLUXDB_MEASUREMENT
 
 
-class InfluxDBMeasure(TypedDict):
+class InfluxDBPointDict(TypedDict):
     """
     Map each entry in the generator returned by InfluxDBClient(...).query(...).get_points().
     """

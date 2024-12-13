@@ -11,7 +11,7 @@ from loguru import logger
 from numba import njit
 
 from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT
-from jobbergate_agent.jobbergate.schemas import InfluxDBMeasure, JobMetricData
+from jobbergate_agent.jobbergate.schemas import InfluxDBPointDict, JobMetricData
 
 
 def measure_memory_usage(func: Callable) -> Callable:
@@ -62,7 +62,7 @@ def _aggregate_with_numba(
 
 @measure_memory_usage
 def aggregate_influx_measures(
-    data_points: Iterator[InfluxDBMeasure],
+    data_points: Iterator[InfluxDBPointDict],
 ) -> JobMetricData:
     """Aggregate the list of data points by time, host, step and task.
 

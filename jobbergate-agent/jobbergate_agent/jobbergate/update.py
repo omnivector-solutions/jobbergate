@@ -13,8 +13,8 @@ from jobbergate_agent.jobbergate.schemas import (
     ActiveJobSubmission,
     SlurmJobData,
     JobSubmissionMetricsMaxResponse,
-    InfluxDBMeasurement,
-    InfluxDBMeasure,
+    InfluxDBMeasurementDict,
+    InfluxDBPointDict,
 )
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobbergateApiError, SbatchError
@@ -84,7 +84,7 @@ async def update_job_data(
 
 async def fetch_influx_data(
     time: int, host: str, step: int, task: int, job: int, measurement: INFLUXDB_MEASUREMENT
-) -> list[InfluxDBMeasure]:
+) -> list[InfluxDBPointDict]:
     """
     Fetch data from InfluxDB for a given host, step and task.
     """
@@ -98,7 +98,7 @@ async def fetch_influx_data(
         result = influxdb_client.query(query, bind_params=params, epoch="us")
         logger.debug("Successfully fetched data from InfluxDB")
         return [
-            InfluxDBMeasure(
+            InfluxDBPointDict(
                 time=point["time"],
                 host=point["host"],
                 job=point["job"],
@@ -111,14 +111,14 @@ async def fetch_influx_data(
         ]
 
 
-def fetch_influx_measurements() -> list[InfluxDBMeasurement]:
+def fetch_influx_measurements() -> list[InfluxDBMeasurementDict]:
     """
     Fetch measurements from InfluxDB.
     """
     with JobbergateApiError.handle_errors("Failed to fetch measurements from InfluxDB", do_except=log_error):
         logger.debug("Fetching measurements from InfluxDB")
         assert influxdb_client is not None
-        measurements: list[InfluxDBMeasurement] = influxdb_client.get_list_measurements()
+        measurements: list[InfluxDBMeasurementDict] = influxdb_client.get_list_measurements()
         logger.debug(f"Fetched measurements from InfluxDB: {measurements=}")
         return measurements
 

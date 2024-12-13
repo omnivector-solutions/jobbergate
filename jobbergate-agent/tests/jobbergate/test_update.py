@@ -336,7 +336,7 @@ async def test_update_active_jobs(
 async def test_fetch_influx_data__success(mocked_influxdb_client: mock.MagicMock):
     """
     Test that the ``fetch_influx_data()`` function can successfully retrieve
-    data from InfluxDB as a list of ``InfluxDBMeasure``.
+    data from InfluxDB as a list of ``InfluxDBPointDict``.
     """
     time = random.randint(0, 1000)  # noqa: F811
     host = "test-host"

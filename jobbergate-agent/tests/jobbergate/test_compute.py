@@ -11,7 +11,7 @@ from unittest import mock
 import numpy as np
 
 from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT
-from jobbergate_agent.jobbergate.schemas import InfluxDBMeasure, JobMetricData
+from jobbergate_agent.jobbergate.schemas import InfluxDBPointDict, JobMetricData
 from jobbergate_agent.utils.compute import (
     aggregate_influx_measures,
     measure_memory_usage,
@@ -25,7 +25,7 @@ def generate_and_aggregate_job_metrics_data() -> (
     Callable[
         [int, int, int, int, int],
         tuple[
-            list[InfluxDBMeasure],
+            list[InfluxDBPointDict],
             JobMetricData,
         ],
     ]
@@ -39,7 +39,7 @@ def generate_and_aggregate_job_metrics_data() -> (
     def _generate_and_aggregate(
         num_points_per_measurement: int, num_hosts: int, num_jobs: int, num_steps: int, num_tasks: int
     ) -> tuple[
-        list[InfluxDBMeasure],
+        list[InfluxDBPointDict],
         JobMetricData,
     ]:
         # Initialize data structures
@@ -63,7 +63,7 @@ def generate_and_aggregate_job_metrics_data() -> (
 
                             for measurement in measurement_names:
                                 value = random.random() * 100
-                                measure = InfluxDBMeasure(
+                                measure = InfluxDBPointDict(
                                     **{
                                         "time": current_time,
                                         "host": f"host_{host}",
@@ -118,14 +118,14 @@ async def test_aggregate_influx_measures__success(
     generate_and_aggregate_job_metrics_data: Callable[
         [int, int, int, int, int],
         tuple[
-            list[InfluxDBMeasure],
+            list[InfluxDBPointDict],
             JobMetricData,
         ],
     ],
 ):
     """
     Test that the ``aggregate_influx_measures()`` function can successfully aggregate
-    a list of InfluxDBMeasure data points.
+    a list of InfluxDBPointDict data points.
     """
     measures, expected_aggregated_data = generate_and_aggregate_job_metrics_data(
         num_points_per_measurement, num_hosts, num_jobs, num_steps, num_tasks
