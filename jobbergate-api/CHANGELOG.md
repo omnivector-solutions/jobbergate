@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+- Implemented logic for receiving job metrics from the agent and making them available for a client [[PENG-2456](https://sharing.clickup.com/t/h/c/18022949/PENG-2456/43YCG8RCBBQJELQ)]
+
 ## 5.4.0 -- 2024-11-18
 
 - Added clone capability to job submissions so they can be resubmitted to the cluster when needed [PENG-1676, ASP-4597]

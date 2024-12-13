@@ -100,7 +100,7 @@ services:
       - DEFAULT_CLUSTER_NAME=local-slurm
 
   db:
-    image: postgres
+    image: timescale/timescaledb:latest-pg17
     restart: always
     networks:
       - jobbergate-net
@@ -119,7 +119,7 @@ services:
       retries: 5
 
   test-db:
-    image: postgres
+    image: timescale/timescaledb:latest-pg17
     restart: always
     networks:
       - jobbergate-net
@@ -363,6 +363,7 @@ volumes:
   var_log_slurm:
   jobbergate-agent-cache:
   jobbergate-cli-cache:
+  timeseries_data:
 
 networks:
   jobbergate-net:
