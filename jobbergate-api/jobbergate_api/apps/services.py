@@ -12,8 +12,8 @@ from buzz import enforce_defined, handle_errors, require_condition
 from fastapi import HTTPException, UploadFile, status
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
-from jinja2 import Template
-from jinja2.exceptions import UndefinedError
+from jinja2.sandbox import SandboxedEnvironment
+from jinja2.exceptions import SecurityError, UndefinedError
 from loguru import logger
 from pydantic import AnyUrl
 from sqlalchemy import delete, func, not_, select, update
@@ -720,13 +720,25 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
         ):
-            template = Template(file_content.decode("utf-8"))
+            sandbox_env = SandboxedEnvironment()
+            template = sandbox_env.from_string(file_content.decode("utf-8"))
 
         render_contexts = [parameters, {"data": parameters}]
 
         for context in render_contexts:
             try:
                 return template.render(**context)
+            except SecurityError as e:
+                logger.debug(
+                    "Security error rendering filename={} with context={} -- Error: {}",
+                    instance.filename,
+                    context,
+                    str(e),
+                )
+                raise ServiceError(
+                    f"Jinja can not render filename={instance.filename}",
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                )
             except UndefinedError as e:
                 logger.debug(
                     "Unable to render filename={} with context={} -- Error: {}",
