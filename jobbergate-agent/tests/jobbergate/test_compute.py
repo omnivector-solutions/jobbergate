@@ -2,7 +2,6 @@
 
 import pytest
 import random
-import time
 from collections.abc import Callable
 from datetime import datetime
 from typing import cast, get_args
@@ -131,11 +130,7 @@ async def test_aggregate_influx_measures__success(
         num_points_per_measurement, num_hosts, num_jobs, num_steps, num_tasks
     )
 
-    start_time = time.monotonic()
     aggregated_data = aggregate_influx_measures(iter(measures))
-    end_time = time.monotonic()
-
-    print(f"Aggregated {len(measures)} data points in {end_time - start_time:.5f} seconds")
 
     for data_point in aggregated_data:
         assert data_point in expected_aggregated_data
