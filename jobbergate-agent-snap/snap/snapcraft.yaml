@@ -57,7 +57,7 @@ parts:
     source: .
     plugin: python
     python-packages:
-    - jobbergate-agent
+    - jobbergate-agent==5.5.0a0
     build-packages:
     - python3
     - libapt-pkg-dev
