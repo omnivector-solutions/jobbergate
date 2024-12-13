@@ -525,7 +525,7 @@ async def job_submissions_agent_metrics_upload(
     job_submission = await secure_services.crud.job_submission.get(
         job_submission_id, ensure_attributes={"client_id": secure_services.identity_payload.client_id}
     )
-    slurm_job_id = job_submission.slurm_job_id  # type: ignore
+    slurm_job_id = job_submission.slurm_job_id
     logger.debug(f"Got slurm_job_id {slurm_job_id}")
 
     logger.debug("Decoding binary data")
