@@ -182,6 +182,14 @@ def test_render_template__fail_when_unable_to_render(tmp_path):
     with pytest.raises(Abort, match="Unable to render"):
         render_template(template_path, parameters)
 
+def test_render_template__fail_sandbox_violation(tmp_path):
+    template_path = tmp_path / "dummy.j2"
+    template_path.write_text("{{ foo.__str__() }}")
+
+    parameters = dict(foo="bla")
+
+    with pytest.raises(Abort, match="Security errors raised when rendering"):
+        render_template(template_path, parameters)
 
 def test_render_template__fails_if_template_does_not_exist(tmp_path):
     non_exist = tmp_path / "does/not/exist"
