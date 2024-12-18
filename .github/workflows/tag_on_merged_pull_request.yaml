@@ -13,6 +13,9 @@ on:
       - release/**
     types: [closed]
 
+permissions:
+  contents: write
+
 jobs:
   create-tag:
     if: (github.event.pull_request.merged && startsWith(github.head_ref, 'prepare-release/'))
@@ -20,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          token: ${{ secrets.TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: bluwy/substitute-string-action@v1
         name: Get Tag
