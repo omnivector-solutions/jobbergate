@@ -114,7 +114,7 @@ async def fetch_influx_data(
         assert influxdb_client is not None  # mypy assertion
 
         logger.debug(f"Querying InfluxDB with: {query=}, {params=}")
-        result = influxdb_client.query(query, bind_params=params, epoch="us")
+        result = influxdb_client.query(query, bind_params=params, epoch="s")
         logger.debug("Successfully fetched data from InfluxDB")
 
         return [

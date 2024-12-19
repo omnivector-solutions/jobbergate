@@ -382,7 +382,7 @@ async def test_fetch_influx_data__success_with_all_set(mocked_influxdb_client: m
     assert result[0]["task"] == task
     assert result[0]["value"] == measurement_value
     assert result[0]["measurement"] == measurement
-    mocked_influxdb_client.query.assert_called_once_with(query, bind_params=params, epoch="us")
+    mocked_influxdb_client.query.assert_called_once_with(query, bind_params=params, epoch="s")
 
 
 @pytest.mark.asyncio
@@ -425,7 +425,7 @@ async def test_fetch_influx_data__success_with_all_None(mocked_influxdb_client: 
     assert result[0]["task"] == task
     assert result[0]["value"] == measurement_value
     assert result[0]["measurement"] == measurement
-    mocked_influxdb_client.query.assert_called_once_with(query, bind_params=params, epoch="us")
+    mocked_influxdb_client.query.assert_called_once_with(query, bind_params=params, epoch="s")
 
 
 @pytest.mark.asyncio
@@ -495,7 +495,7 @@ async def test_fetch_influx_data__raises_JobbergateAgentError_if_query_fails(moc
             task=task,
         )
 
-    mocked_influxdb_client.query.assert_called_once_with(query, bind_params=params, epoch="us")
+    mocked_influxdb_client.query.assert_called_once_with(query, bind_params=params, epoch="s")
 
 
 @pytest.mark.asyncio
