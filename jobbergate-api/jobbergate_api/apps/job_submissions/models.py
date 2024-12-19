@@ -5,7 +5,7 @@ Database model for the JobSubmission resource.
 from __future__ import annotations
 from datetime import datetime, timezone
 
-from sqlalchemy import ARRAY, Dialect, Enum, ForeignKey, Integer, String, Float, Index, PrimaryKeyConstraint
+from sqlalchemy import ARRAY, Dialect, Enum, ForeignKey, Integer, String, Float, Index, PrimaryKeyConstraint, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
 from sqlalchemy.sql.expression import Select
 from sqlalchemy.types import DateTime, TypeDecorator
@@ -164,13 +164,13 @@ class JobSubmissionMetric(CommonMixin, Base):
     cpu_frequency: Mapped[float] = mapped_column(Float, nullable=False)
     cpu_time: Mapped[float] = mapped_column(Float, nullable=False)
     cpu_utilization: Mapped[float] = mapped_column(Float, nullable=False)
-    gpu_memory: Mapped[int] = mapped_column(Integer, nullable=False)
+    gpu_memory: Mapped[int] = mapped_column(BigInteger, nullable=False)
     gpu_utilization: Mapped[float] = mapped_column(Float, nullable=False)
-    page_faults: Mapped[int] = mapped_column(Integer, nullable=False)
-    memory_rss: Mapped[int] = mapped_column(Integer, nullable=False)
-    memory_virtual: Mapped[int] = mapped_column(Integer, nullable=False)
-    disk_read: Mapped[int] = mapped_column(Integer, nullable=False)
-    disk_write: Mapped[int] = mapped_column(Integer, nullable=False)
+    page_faults: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    memory_rss: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    memory_virtual: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    disk_read: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    disk_write: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
     __table_args__ = (
         PrimaryKeyConstraint("time", "job_submission_id", "node_host", "step", "task"),
