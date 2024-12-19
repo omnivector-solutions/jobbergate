@@ -173,7 +173,7 @@ async def update_job_metrics(active_job_submittion: ActiveJobSubmission) -> None
                 fetch_influx_data(
                     active_job_submittion.slurm_job_id,
                     measurement["name"],
-                    time=job_max_time.max_time,
+                    time=int(job_max_time.max_time * 1e9),  # convert to ns since the agent sends in seconds
                     host=job_max_time.node_host,
                     step=job_max_time.step,
                     task=job_max_time.task,
