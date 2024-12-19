@@ -18,7 +18,7 @@ from jobbergate_agent.jobbergate.schemas import (
     InfluxDBPointDict,
 )
 from jobbergate_agent.settings import SETTINGS
-from jobbergate_agent.utils.exception import JobbergateApiError, SbatchError
+from jobbergate_agent.utils.exception import JobbergateApiError, SbatchError, JobbergateAgentError
 from jobbergate_agent.utils.logging import log_error
 from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT
 from jobbergate_agent.utils.compute import aggregate_influx_measures
@@ -95,7 +95,7 @@ async def fetch_influx_data(
     """
     Fetch data from InfluxDB for a given host, step and task.
     """
-    with JobbergateApiError.handle_errors("Failed to fetch measures from InfluxDB", do_except=log_error):
+    with JobbergateAgentError.handle_errors("Failed to fetch measures from InfluxDB", do_except=log_error):
         all_none = all(arg is None for arg in [time, host, step, task])
         all_set = all(arg is not None for arg in [time, host, step, task])
 

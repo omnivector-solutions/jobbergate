@@ -24,7 +24,7 @@ from jobbergate_agent.jobbergate.update import (
 )
 from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT
 from jobbergate_agent.settings import SETTINGS
-from jobbergate_agent.utils.exception import JobbergateApiError
+from jobbergate_agent.utils.exception import JobbergateApiError, JobbergateAgentError
 
 
 @pytest.fixture()
@@ -438,7 +438,7 @@ async def test_fetch_influx_data__success_with_all_None(mocked_influxdb_client: 
     ],
 )
 @mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
-async def test_fetch_influx_data__raises_JobbergateApiError_if_bad_arguments_are_passed(
+async def test_fetch_influx_data__raises_JobbergateAgentError_if_bad_arguments_are_passed(
     mocked_influxdb_client: mock.MagicMock,
     time: int | None,
     host: int | None,
@@ -449,7 +449,7 @@ async def test_fetch_influx_data__raises_JobbergateApiError_if_bad_arguments_are
     measurement = random.choice(get_args(INFLUXDB_MEASUREMENT))
 
     with pytest.raises(
-        JobbergateApiError, match="Invalid argument combination: all optional arguments must be either set or None."
+        JobbergateAgentError, match="Invalid argument combination: all optional arguments must be either set or None."
     ):
         await fetch_influx_data(
             job,
@@ -465,9 +465,9 @@ async def test_fetch_influx_data__raises_JobbergateApiError_if_bad_arguments_are
 
 @pytest.mark.asyncio
 @mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
-async def test_fetch_influx_data__raises_JobbergateApiError_if_query_fails(mocked_influxdb_client: mock.MagicMock):
+async def test_fetch_influx_data__raises_JobbergateAgentError_if_query_fails(mocked_influxdb_client: mock.MagicMock):
     """
-    Test that the ``fetch_influx_data()`` function will raise a JobbergateApiError
+    Test that the ``fetch_influx_data()`` function will raise a JobbergateAgentError
     if the query to InfluxDB fails.
     """
     measurement = random.choice(get_args(INFLUXDB_MEASUREMENT))
@@ -485,7 +485,7 @@ async def test_fetch_influx_data__raises_JobbergateApiError_if_query_fails(mocke
     """)
     params = dict(time=time, host=host, step=str(step), task=str(task), job=str(job))
 
-    with pytest.raises(JobbergateApiError, match="Failed to fetch measures from InfluxDB -- Exception: BOOM!"):
+    with pytest.raises(JobbergateAgentError, match="Failed to fetch measures from InfluxDB -- Exception: BOOM!"):
         await fetch_influx_data(
             job=job,
             measurement=measurement,
@@ -499,14 +499,14 @@ async def test_fetch_influx_data__raises_JobbergateApiError_if_query_fails(mocke
 
 
 @pytest.mark.asyncio
-async def test_fetch_influx_data__raises_JobbergateApiError_if_influxdb_client_is_None():
+async def test_fetch_influx_data__raises_JobbergateAgentError_if_influxdb_client_is_None():
     """
-    Test that the ``fetch_influx_data()`` function will raise a JobbergateApiError
+    Test that the ``fetch_influx_data()`` function will raise a JobbergateAgentError
     if the influxdb_client is None.
     """
     measurement = random.choice(get_args(INFLUXDB_MEASUREMENT))
     with mock.patch("jobbergate_agent.jobbergate.update.influxdb_client", None):
-        with pytest.raises(JobbergateApiError, match="Failed to fetch measures from InfluxDB -- AssertionError:"):
+        with pytest.raises(JobbergateAgentError, match="Failed to fetch measures from InfluxDB -- AssertionError:"):
             await fetch_influx_data(
                 time=random.randint(0, 1000),
                 host="test-host",
