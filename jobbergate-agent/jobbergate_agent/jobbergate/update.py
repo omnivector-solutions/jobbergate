@@ -184,6 +184,9 @@ async def update_job_metrics(active_job_submittion: ActiveJobSubmission) -> None
         results = await asyncio.gather(*list(tasks))
         data_points = chain.from_iterable(results)
         aggregated_data_points = aggregate_influx_measures(data_points)
+        if not aggregated_data_points:
+            # defer the API call since there's no data to be sent
+            return
         packed_data = msgpack.packb(aggregated_data_points)
 
         response = await jobbergate_api_client.put(
