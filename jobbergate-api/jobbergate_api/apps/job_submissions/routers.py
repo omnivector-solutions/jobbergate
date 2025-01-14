@@ -12,7 +12,7 @@ from fastapi_pagination import Page
 from loguru import logger
 from jobbergate_api.apps.job_submissions.models import JobSubmissionMetric
 from sqlalchemy import select, insert, text as sa_text
-from sqlalchemy.sql.functions import max
+from sqlalchemy.sql.functions import max, min
 import msgpack
 from sqlalchemy.exc import IntegrityError
 
@@ -36,6 +36,7 @@ from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionAgentMetricsRequest,
     JobSubmissionAgentMaxTimes,
     JobSubmissionMetricSchema,
+    JobSubmissionMetricTimestamps,
 )
 from jobbergate_api.apps.job_submissions.helpers import (
     validate_job_metric_upload_input,
@@ -627,3 +628,42 @@ async def job_submissions_metrics(
 
     result = await secure_services.session.execute(sa_text(query), query_params)
     return [JobSubmissionMetricSchema.from_iterable(row, skip_optional=True) for row in result.fetchall()]
+
+
+@router.get(
+    "/{job_submission_id}/metrics/timestamps",
+    description="Endpoint to get the min and max timestamps for a job submission metrics",
+    response_model=JobSubmissionMetricTimestamps,
+    tags=["Metrics"],
+    responses={
+        status.HTTP_200_OK: {"description": "Timestamps for the job submission metrics"},
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Either there are no metrics for the job submission or the job submission does not exist"
+        },
+    },
+)
+async def job_submissions_metrics_timestamps(
+    job_submission_id: int,
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)
+    ),
+):
+    """Get the min and max timestamps for a job submission's metrics."""
+    logger.debug(f"Getting timestamps for job submission {job_submission_id}")
+    query = (
+        select(
+            max(JobSubmissionMetric.time).label("max"),
+            min(JobSubmissionMetric.time).label("min"),
+        )
+        .where(JobSubmissionMetric.job_submission_id == job_submission_id)
+        .group_by(JobSubmissionMetric.job_submission_id)
+    )
+    result = (await secure_services.session.execute(query)).one_or_none()
+    if result is None:
+        logger.debug(f"No metrics found for job submission {job_submission_id}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No metrics found for job submission {job_submission_id} or job submission does not exist",
+        )
+    logger.debug(f"Returning timestamps for job submission {job_submission_id}")
+    return JobSubmissionMetricTimestamps.model_validate(result)

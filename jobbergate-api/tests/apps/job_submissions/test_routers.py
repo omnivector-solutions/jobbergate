@@ -2619,3 +2619,155 @@ async def test_job_submissions_metrics__start_time_less_greater_than_end_time(
     mocked_session_execute.return_value.fetchall.assert_not_called()
     mocked_sa_text.assert_not_called()
     assert response.json() == {"detail": "End time must be greater than the start time."}
+
+
+@pytest.mark.parametrize(
+    "permission, num_rows",
+    [
+        (Permissions.ADMIN, 3),
+        (Permissions.JOB_SUBMISSIONS_READ, 8),
+    ],
+)
+async def test_job_submissions_metrics_timestamps__successful_request(
+    permission,
+    num_rows,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+    synth_session,
+):
+    """
+    Test GET /job-submissions/{job_submission_id}/metrics/timestamps returns 200 upon a successful request.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    base_time = int(datetime.now().timestamp())
+    raw_data = generate_job_submission_metric_columns(base_time, num_rows)
+
+    formatted_data = [
+        {
+            "time": data_point[0],
+            "node_host": data_point[1],
+            "step": data_point[2],
+            "task": data_point[3],
+            "cpu_frequency": data_point[4],
+            "cpu_time": data_point[5],
+            "cpu_utilization": data_point[6],
+            "gpu_memory": data_point[7],
+            "gpu_utilization": data_point[8],
+            "page_faults": data_point[9],
+            "memory_rss": data_point[10],
+            "memory_virtual": data_point[11],
+            "disk_read": data_point[12],
+            "disk_write": data_point[13],
+            "job_submission_id": inserted_job_submission_id,
+            "slurm_job_id": inserted_submission.slurm_job_id,
+        }
+        for data_point in raw_data
+    ]
+
+    query = insert(JobSubmissionMetric).values(formatted_data)
+    await synth_session.execute(query)
+
+    inject_security_header("who@cares.com", permission)
+    response = await client.get(
+        f"/jobbergate/job-submissions/{inserted_job_submission_id}/metrics/timestamps"
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    response_data = response.json()
+    assert response_data == {
+        "max": max(formatted_data, key=lambda x: x["time"])["time"],
+        "min": min(formatted_data, key=lambda x: x["time"])["time"],
+    }
+
+
+@pytest.mark.parametrize(
+    "permission, job_submission_id",
+    [
+        (Permissions.ADMIN, 64537),
+        (Permissions.JOB_SUBMISSIONS_READ, 4967),
+    ],
+)
+async def test_job_submissions_metrics_timestamps__job_submission_not_found(
+    permission,
+    job_submission_id,
+    client,
+    inject_security_header,
+    synth_services,
+):
+    """
+    Test GET /job-submissions/{job_submission_id}/metrics/timestamps returns 404
+    when the job submission doesn't exist
+    """
+
+    inject_security_header("who@cares.com", permission)
+    response = await client.get(f"/jobbergate/job-submissions/{job_submission_id}/metrics/timestamps")
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    response_data = response.json()
+    assert (
+        response_data["detail"]
+        == f"No metrics found for job submission {job_submission_id} or job submission does not exist"
+    )
+
+
+@pytest.mark.parametrize(
+    "permission",
+    [Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ],
+)
+async def test_job_submissions_metrics_timestamps__job_submission_has_no_metric(
+    permission,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+):
+    """
+    Test GET /job-submissions/{job_submission_id}/metrics/timestamps returns 404 when
+    the job submission exists but has no metrics.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    inject_security_header("who@cares.com", permission, client_id="dummy-client")
+    response = await client.get(
+        f"/jobbergate/job-submissions/{inserted_job_submission_id}/metrics/timestamps"
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    response_data = response.json()
+    assert (
+        response_data["detail"]
+        == f"No metrics found for job submission {inserted_job_submission_id} or job submission does not exist"
+    )
