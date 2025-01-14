@@ -316,3 +316,12 @@ class JobSubmissionMetricSchema(BaseModel):
             raise ValueError("The iterable must have the same length as the model fields.")
 
         return cls(**{field: value for field, value in zip(fields, iterable)})
+
+
+class JobSubmissionMetricTimestamps(BaseModel):
+    """Model for the timestamps of the JobSubmissionMetric resource."""
+
+    min: int
+    max: int
+
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
