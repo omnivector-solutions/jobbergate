@@ -2628,7 +2628,7 @@ async def test_job_submissions_metrics__start_time_less_greater_than_end_time(
         (Permissions.JOB_SUBMISSIONS_READ, 8),
     ],
 )
-async def job_submissions_metrics_timestamps__successful_request(
+async def test_job_submissions_metrics_timestamps__successful_request(
     permission,
     num_rows,
     fill_job_script_data,
@@ -2685,7 +2685,7 @@ async def job_submissions_metrics_timestamps__successful_request(
     query = insert(JobSubmissionMetric).values(formatted_data)
     await synth_session.execute(query)
 
-    inject_security_header("who@cares.com", permission, client_id="dummy-client")
+    inject_security_header("who@cares.com", permission)
     response = await client.get(
         f"/jobbergate/job-submissions/{inserted_job_submission_id}/metrics/timestamps"
     )
@@ -2705,18 +2705,19 @@ async def job_submissions_metrics_timestamps__successful_request(
         (Permissions.JOB_SUBMISSIONS_READ, 4967),
     ],
 )
-async def job_submissions_metrics_timestamps__job_submission_not_found(
+async def test_job_submissions_metrics_timestamps__job_submission_not_found(
     permission,
     job_submission_id,
     client,
     inject_security_header,
+    synth_services,
 ):
     """
     Test GET /job-submissions/{job_submission_id}/metrics/timestamps returns 404
     when the job submission doesn't exist
     """
 
-    inject_security_header("who@cares.com", permission, client_id="dummy-client")
+    inject_security_header("who@cares.com", permission)
     response = await client.get(f"/jobbergate/job-submissions/{job_submission_id}/metrics/timestamps")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -2729,12 +2730,9 @@ async def job_submissions_metrics_timestamps__job_submission_not_found(
 
 @pytest.mark.parametrize(
     "permission",
-    [
-        (Permissions.ADMIN,),
-        (Permissions.JOB_SUBMISSIONS_READ,),
-    ],
+    [Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ],
 )
-async def job_submissions_metrics_timestamps__job_submission_has_no_metric(
+async def test_job_submissions_metrics_timestamps__job_submission_has_no_metric(
     permission,
     fill_job_script_data,
     fill_job_submission_data,
@@ -2770,6 +2768,6 @@ async def job_submissions_metrics_timestamps__job_submission_has_no_metric(
 
     response_data = response.json()
     assert (
-        response_data
+        response_data["detail"]
         == f"No metrics found for job submission {inserted_job_submission_id} or job submission does not exist"
     )

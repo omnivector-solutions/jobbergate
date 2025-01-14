@@ -5,7 +5,18 @@ Database model for the JobSubmission resource.
 from __future__ import annotations
 from datetime import datetime, timezone
 
-from sqlalchemy import ARRAY, Dialect, Enum, ForeignKey, Integer, String, Float, Index, PrimaryKeyConstraint, BigInteger
+from sqlalchemy import (
+    ARRAY,
+    Dialect,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    Float,
+    Index,
+    PrimaryKeyConstraint,
+    BigInteger,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
 from sqlalchemy.sql.expression import Select
 from sqlalchemy.types import DateTime, TypeDecorator
