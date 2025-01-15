@@ -1,9 +1,9 @@
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Annotated, Optional
 
 import buzz
-from pydantic import AnyHttpUrl, Field, ValidationError, model_validator
+from pydantic import AnyHttpUrl, confloat, Field, ValidationError, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Self
 
@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     # Sentry
     SENTRY_DSN: Optional[AnyHttpUrl] = None
     SENTRY_ENV: str = "local"
+    SENTRY_TRACES_SAMPLE_RATE: Annotated[float, confloat(gt=0, le=1.0)] = 0.01
+    SENTRY_SAMPLE_RATE: Annotated[float, confloat(gt=0.0, le=1.0)] = 0.25
+    SENTRY_PROFILING_SAMPLE_RATE: Annotated[float, confloat(gt=0.0, le=1.0)] = 0.01
 
     # OIDC config for machine-to-machine security
     OIDC_DOMAIN: str
