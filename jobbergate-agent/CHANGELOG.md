@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-agent
 
 ## Unreleased
 
+- Added custom settings for configuring Sentry's sample rates [[PENG-2592](https://sharing.clickup.com/t/h/c/18022949/PENG-2592/QQUQ1ABLAP6QSYX)]
+
 ## 5.4.0 -- 2024-11-18
 
 - Changed auto-update task to reuse current scheduler instead of creating a new one
