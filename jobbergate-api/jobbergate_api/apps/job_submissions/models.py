@@ -28,7 +28,7 @@ class JobSubmission(CrudMixin, Base):
         slurm_job_id: The id of the job in the slurm queue.
         slurm_job_state: The Slurm Job state as reported by the agent
         slurm_job_info: Detailed information about the  Slurm Job as reported by the agent
-        client_id: The id of the custer this submission runs on.
+        client_id: The id of the cluster this submission runs on.
         status: The status of the job submission.
         report_message: The message returned by the job.
         sbatch_arguments: The arguments used to submit the job to the slurm queue.

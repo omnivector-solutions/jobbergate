@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     DEFAULT_SLURM_WORK_DIR: Path = Path("/tmp")
 
     # cluster api info
-    BASE_API_URL: str = "https://armada-k8s.staging.omnivector.solutions"
+    BASE_API_URL: str = "https://apis.vantagehpc.io"
 
     # Sentry
     SENTRY_DSN: Optional[AnyHttpUrl] = None
@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     SENTRY_PROFILING_SAMPLE_RATE: Annotated[float, confloat(gt=0.0, le=1.0)] = 0.01
 
     # OIDC config for machine-to-machine security
-    OIDC_DOMAIN: str
+    OIDC_DOMAIN: str = "auth.vantagehpc.io/realms/vantage"
     OIDC_CLIENT_ID: str
     OIDC_CLIENT_SECRET: str
     OIDC_USE_HTTPS: bool = True
