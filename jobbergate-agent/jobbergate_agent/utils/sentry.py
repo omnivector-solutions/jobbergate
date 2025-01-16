@@ -15,7 +15,9 @@ def init_sentry():
         sentry_sdk.init(
             dsn=SETTINGS.SENTRY_DSN,
             integrations=[sentry_logging],
-            traces_sample_rate=1.0,
+            sample_rate=SETTINGS.SENTRY_SAMPLE_RATE,
+            profiles_sample_rate=SETTINGS.SENTRY_PROFILING_SAMPLE_RATE,
+            traces_sample_rate=SETTINGS.SENTRY_TRACES_SAMPLE_RATE,
             environment=SETTINGS.SENTRY_ENV,
             propagate_traces=False,  # Do not propagate traces to child processes (e.g. sbatch subprocesses)
         )

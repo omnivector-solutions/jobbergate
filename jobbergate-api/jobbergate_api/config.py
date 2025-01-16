@@ -5,11 +5,11 @@ Pull settings from environment variables or a .env file if available.
 """
 
 from enum import Enum
-from typing import Optional
+from typing import Annotated, Optional
 
 from buzz import require_condition
 from loguru import logger
-from pydantic import Field, HttpUrl, model_validator
+from pydantic import confloat, Field, HttpUrl, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -89,9 +89,9 @@ class Settings(BaseSettings):
 
     # Sentry configuration
     SENTRY_DSN: Optional[HttpUrl] = None
-    SENTRY_SAMPLE_RATE: float = Field(1.0, gt=0.0, le=1.0)
-    SENTRY_PROFILING_SAMPLE_RATE: float = Field(1.0, gt=0.0, le=1.0)
-    SENTRY_TRACING_SAMPLE_RATE: float = Field(1.0, gt=0.0, le=1.0)
+    SENTRY_TRACES_SAMPLE_RATE: Annotated[float, confloat(gt=0, le=1.0)] = 0.01
+    SENTRY_SAMPLE_RATE: Annotated[float, confloat(gt=0.0, le=1.0)] = 0.25
+    SENTRY_PROFILING_SAMPLE_RATE: Annotated[float, confloat(gt=0.0, le=1.0)] = 0.01
 
     # Maximum number of bytes allowed for file uploads
     MAX_UPLOAD_FILE_SIZE: int = 5 * 1024 * 1024  # 100 MB
