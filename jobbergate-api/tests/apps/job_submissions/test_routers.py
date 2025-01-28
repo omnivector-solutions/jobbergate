@@ -2208,8 +2208,8 @@ async def test_job_submissions_agent_metrics__returns_successful_request(
                 "gpu_utilization": item[8],
                 "page_faults": item[9],
                 "memory_rss": item[10],
-                "memory_virtual": item[11],
-                "disk_read": item[12],
+                "disk_read": item[11],
+                "memory_virtual": item[12],
                 "disk_write": item[13],
             }
             for item in job_metrics
@@ -2355,8 +2355,8 @@ async def test_job_submissions_agent_metrics_upload__successful_request(
             scalar.gpu_utilization,
             scalar.page_faults,
             scalar.memory_rss,
-            scalar.memory_virtual,
             scalar.disk_read,
+            scalar.memory_virtual,
             scalar.disk_write,
         )
         in raw_data
@@ -2419,8 +2419,8 @@ async def test_job_submissions_agent_metrics_upload__400_duplicated_data(
                 "gpu_utilization": data_point[8],
                 "page_faults": data_point[9],
                 "memory_rss": data_point[10],
-                "memory_virtual": data_point[11],
-                "disk_read": data_point[12],
+                "disk_read": data_point[11],
+                "memory_virtual": data_point[12],
                 "disk_write": data_point[13],
                 "job_submission_id": inserted_job_submission_id,
                 "slurm_job_id": inserted_submission.slurm_job_id,
@@ -2673,8 +2673,8 @@ async def test_job_submissions_metrics_timestamps__successful_request(
             "gpu_utilization": data_point[8],
             "page_faults": data_point[9],
             "memory_rss": data_point[10],
-            "memory_virtual": data_point[11],
-            "disk_read": data_point[12],
+            "disk_read": data_point[11],
+            "memory_virtual": data_point[12],
             "disk_write": data_point[13],
             "job_submission_id": inserted_job_submission_id,
             "slurm_job_id": inserted_submission.slurm_job_id,
