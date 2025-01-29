@@ -46,7 +46,7 @@ jobs:
         name: Bump version on the API
         working-directory: jobbergate-api
         run: |
-          ../release-scripts/prepare-release.sh ${{ github.event.inputs.bump_rule }}
+          poetry version ${{ github.event.inputs.bump_rule }}
           echo "Poetry version is: $(poetry version --short)"
           echo "::set-output name=version::$(poetry version --short)"
 
@@ -54,7 +54,7 @@ jobs:
         name: Bump version on the CLI
         working-directory: jobbergate-cli
         run: |
-          ../release-scripts/prepare-release.sh ${{ github.event.inputs.bump_rule }}
+          poetry version ${{ github.event.inputs.bump_rule }}
           echo "Poetry version is: $(poetry version --short)"
           echo "::set-output name=version::$(poetry version --short)"
 
@@ -62,7 +62,7 @@ jobs:
         name: Bump version on the Core
         working-directory: jobbergate-core
         run: |
-          ../release-scripts/prepare-release.sh ${{ github.event.inputs.bump_rule }}
+          poetry version ${{ github.event.inputs.bump_rule }}
           echo "Poetry version is: $(poetry version --short)"
           echo "::set-output name=version::$(poetry version --short)"
 
@@ -70,7 +70,7 @@ jobs:
         name: Bump version on the Agent
         working-directory: jobbergate-agent
         run: |
-          ../release-scripts/prepare-release.sh ${{ github.event.inputs.bump_rule }}
+          poetry version ${{ github.event.inputs.bump_rule }}
           echo "Poetry version is: $(poetry version --short)"
           echo "::set-output name=version::$(poetry version --short)"
 
@@ -78,13 +78,18 @@ jobs:
         name: Bump version on the Documentation
         working-directory: jobbergate-docs
         run: |
-          ../release-scripts/prepare-release.sh ${{ github.event.inputs.bump_rule }}
+          poetry version ${{ github.event.inputs.bump_rule }}
           echo "Poetry version is: $(poetry version --short)"
           echo "::set-output name=version::$(poetry version --short)"
 
       - name: Fail if poetry packages version don't match
         if: ${{ steps.api-package.outputs.version != steps.agent-package.outputs.version != steps.core-package.outputs.version != steps.cli-package.outputs.version != steps.docs.outputs.version}}
         run: echo "Poetry packages version don't match!"
+
+      - name: Update Changelog
+        run: |
+          pipx install towncrier==24.8.0
+          towncrier build --version=${{ steps.api-package.outputs.version }}
 
       - uses: peter-evans/create-pull-request@v4
         name: Create Pull Request

@@ -1,0 +1,37 @@
+[tool.towncrier]
+directory = "changelog.d"
+filename = "CHANGELOG.md"
+start_string = "<!-- towncrier release notes start -->\n"
+title_format = "## [{version}](https://github.com/omnivector-solutions/jobbergate/releases/tag/{version}) - {project_date}"
+issue_format = "[ASP-{issue}](https://jiratoolchain.collaborationlayer-traton.com/browse/ASP-{issue})"
+underlines = ["", "", ""]
+
+[[tool.towncrier.type]]
+directory = "core"
+name = "Core"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "agent"
+name = "Agent"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "api"
+name = "API"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "cli"
+name = "CLI"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "docs"
+name = "Documentation"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "misc"
+name = "Misc"
+showcontent = false
