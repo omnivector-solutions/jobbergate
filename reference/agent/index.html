@@ -1347,13 +1347,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#jobbergate_agent.utils.exception.handle_errors_async" class="md-nav__link">
-    handle_errors_async()
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -2069,13 +2062,6 @@
           <li class="md-nav__item">
   <a href="#jobbergate_agent.utils.exception.SlurmParameterParserError" class="md-nav__link">
     SlurmParameterParserError
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_agent.utils.exception.handle_errors_async" class="md-nav__link">
-    handle_errors_async()
   </a>
   
 </li>
@@ -3999,179 +3985,6 @@ Reject the submission if there are support files with WRITE_SUBMISSION_FILES set
 
 </div>
 
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h6 id="jobbergate_agent.utils.exception.handle_errors_async" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">handle_errors_async</span>
-
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-async"><code>async</code></small>
-  </span>
-
-</h6>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">handle_errors_async</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">raise_exc_class</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="ne">Exception</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">raise_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">raise_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">handle_exc_class</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="ne">Exception</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="ne">Exception</span><span class="p">],</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">do_finally</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Coroutine</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="n">noop</span><span class="p">,</span> <span class="n">do_except</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">DoExceptParams</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">DoExceptParams</span><span class="p">],</span> <span class="n">Coroutine</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="n">noop</span><span class="p">,</span> <span class="n">do_else</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Coroutine</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="n">noop</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Async context manager that will intercept exceptions and repackage them with a message attached.</p>
-
-<details class="example" open>
-  <summary>Example</summary>
-  <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">with</span> <span class="n">handle_errors</span><span class="p">(</span><span class="s2">&quot;It didn&#39;t work&quot;</span><span class="p">):</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">some_code_that_might_raise_an_exception</span><span class="p">()</span>
-</span></code></pre></div>
-</details>
-
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>message</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The message to attach to the raised exception.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>raise_exc_class</code></td>
-          <td>
-                <code><span title="typing.Union">Union</span>[<span title="typing.Type">Type</span>[Exception], None]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The exception type to raise with the constructed message
-if an exception is caught in the managed context.</p>
-<p>Defaults to Exception.</p>
-<p>If <code>None</code> is passed, no new exception will be raised and only the
-<code>do_except</code>, <code>do_else</code>, and <code>do_finally</code>
-functions will be called.</p>
-            </div>
-          </td>
-          <td>
-                <code>Exception</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>raise_args</code></td>
-          <td>
-                <code><span title="typing.Optional">Optional</span>[<span title="typing.Iterable">Iterable</span>[<span title="typing.Any">Any</span>]]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Additional positional args (after the constructed message) that will
-be passed when raising an instance of the <code>raise_exc_class</code>.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>raise_kwargs</code></td>
-          <td>
-                <code><span title="typing.Optional">Optional</span>[<span title="typing.Mapping">Mapping</span>[str, <span title="typing.Any">Any</span>]]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Keyword args that will be passed when raising an instance of the <code>raise_exc_class</code>.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>handle_exc_class</code></td>
-          <td>
-                <code><span title="typing.Union">Union</span>[<span title="typing.Type">Type</span>[Exception], <span title="typing.Tuple">Tuple</span>[<span title="typing.Type">Type</span>[Exception], ...]]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Limits the class of exceptions that will be intercepted.
-Any other exception types will not be caught and re-packaged.
-Defaults to Exception (will handle all exceptions). May also be
-provided as a tuple of multiple exception types to handle.</p>
-            </div>
-          </td>
-          <td>
-                <code>Exception</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>do_finally</code></td>
-          <td>
-                <code><span title="typing.Callable">Callable</span>[[], None] | <span title="typing.Callable">Callable</span>[[], <span title="typing.Coroutine">Coroutine</span>[<span title="typing.Any">Any</span>, <span title="typing.Any">Any</span>, None]]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A function that should always be called at the end of the block. Should take no parameters.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="buzz.tools.noop">noop</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>do_except</code></td>
-          <td>
-                <code><span title="typing.Callable">Callable</span>[[<span title="buzz.tools.DoExceptParams">DoExceptParams</span>], None] | <span title="typing.Callable">Callable</span>[[<span title="buzz.tools.DoExceptParams">DoExceptParams</span>], <span title="typing.Coroutine">Coroutine</span>[<span title="typing.Any">Any</span>, <span title="typing.Any">Any</span>, None]]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A function that should be called only if there was an exception.
-Must accept one parameter that is an instance of the
-<code>DoExceptParams</code> dataclass. Note that the <code>do_except</code>
-method is passed the <em>original exception</em>.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="buzz.tools.noop">noop</span></code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>do_else</code></td>
-          <td>
-                <code><span title="typing.Callable">Callable</span>[[], None] | <span title="typing.Callable">Callable</span>[[], <span title="typing.Coroutine">Coroutine</span>[<span title="typing.Any">Any</span>, <span title="typing.Any">Any</span>, None]]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A function that should be called only if there were no
-exceptions encountered.</p>
-            </div>
-          </td>
-          <td>
-                <code><span title="buzz.tools.noop">noop</span></code>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  </div>
-
-</div>
 
 
 
