@@ -46,6 +46,7 @@ parts:
     - jobbergate-agent
     build-packages:
     - python3
+    - python3-distutils
     - libapt-pkg-dev
     - gcc
     - g++
