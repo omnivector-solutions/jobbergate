@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-agent
 
 ## Unreleased
 
+
+## 5.4.4 -- 2025-01-31
 - Upgraded py-buzz dependency to ^5.0 to use builtin `handle_errors_async` [[PENG-2678](https://sharing.clickup.com/t/h/c/18022949/PENG-2678/M7PTQRUNIW5T2NK)]
 
 ## 5.4.3 -- 2025-01-16
