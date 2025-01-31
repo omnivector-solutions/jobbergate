@@ -4,12 +4,16 @@ This file keeps track of all notable changes to jobbergate-agent
 
 ## Unreleased
 
+- Upgraded py-buzz dependency to ^5.0 to use builtin `handle_errors_async` [[PENG-2678](https://sharing.clickup.com/t/h/c/18022949/PENG-2678/M7PTQRUNIW5T2NK)]
 
 ## 5.4.3 -- 2025-01-16
+
 - Added custom settings for configuring Sentry's sample rates [[PENG-2592](https://sharing.clickup.com/t/h/c/18022949/PENG-2592/QQUQ1ABLAP6QSYX)]
 
 ## 5.4.2 -- 2024-12-16
+
 ## 5.4.1 -- 2024-12-13
+
 ## 5.4.0 -- 2024-11-18
 
 - Changed auto-update task to reuse current scheduler instead of creating a new one
@@ -22,6 +26,7 @@ This file keeps track of all notable changes to jobbergate-agent
 - Cache slurm submissions to avoid the resubmission of the same job if the job status update fails [PENG-2342]
 
 ## 5.2.0 -- 2024-07-01
+
 - Change pydantic.BaseSettings config to use `extra=ignore`
 - Migrated to Pydantic version 2 [PENG-2278]
   - Upgraded pydantic to 2.7
