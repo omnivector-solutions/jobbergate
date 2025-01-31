@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-api
 ## Unreleased
 
 
+## 5.4.4 -- 2025-01-31
 ## 5.4.3 -- 2025-01-16
 - Adjusted the default values for the Sentry's sample rates [[PENG-2592](https://sharing.clickup.com/t/h/c/18022949/PENG-2592/QQUQ1ABLAP6QSYX)]
 
