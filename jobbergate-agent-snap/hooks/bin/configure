@@ -4,6 +4,7 @@
 import os
 import subprocess
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Union
 
@@ -28,6 +29,15 @@ AGENT_VARIABLES_MAP: dict[str, Union[str, int]] = {
 }
 
 
+@contextmanager
+def handle_error(message: str):
+    """Handle any errors encountered in this context manager."""
+    try:
+        yield
+    except Exception as exc:
+        sys.exit(f"Failed to {message} (from configure hook) -- {exc}")
+
+
 def run_bash(bash_string: str) -> str:
     """Run bash command and return output as string."""
     return subprocess.check_output(bash_string.split()).decode().rstrip()
@@ -35,18 +45,14 @@ def run_bash(bash_string: str) -> str:
 
 def daemon_starter():
     """Start the daemon."""
-    try:
-        run_bash(f"snapctl start {SNAP_INSTANCE_NAME}.daemon")
-    except Exception:
-        sys.exit(1)
+    with handle_error(f"start {SNAP_INSTANCE_NAME}.daemon"):
+        run_bash(f"snapctl start --enable {SNAP_INSTANCE_NAME}.daemon")
 
 
 def daemon_stopper():
     """Stop the daemon."""
-    try:
-        run_bash(f"snapctl stop {SNAP_INSTANCE_NAME}.daemon")
-    except Exception:
-        sys.exit(1)
+    with handle_error(f"stop {SNAP_INSTANCE_NAME}.daemon"):
+        run_bash(f"snapctl stop --disable {SNAP_INSTANCE_NAME}.daemon")
 
 
 def snapctl_get(snap_config_value: str) -> Union[str, None]:
@@ -65,15 +71,16 @@ def snapctl_get(snap_config_value: str) -> Union[str, None]:
 
 def configure_dotenv_files():
     """Configure the .env files based on the snap mode."""
-    env_file_content = ""
-    for env_var, env_value in AGENT_VARIABLES_MAP.items():
-        snapctl_value = snapctl_get(env_var.lower().replace("_", "-"))
-        if snapctl_value is not None:
-            env_value = snapctl_value
-        elif bool(env_value) is False:
-            continue
-        env_file_content += f"{DOTENV_PREFIX}{env_var}={env_value}\n"
-    DOTENV_FILE_LOCATION.write_text(env_file_content)
+    with handle_error(f"configure .env for {SNAP_INSTANCE_NAME}.daemon"):
+        env_file_content = ""
+        for env_var, env_value in AGENT_VARIABLES_MAP.items():
+            snapctl_value = snapctl_get(env_var.lower().replace("_", "-"))
+            if snapctl_value is not None:
+                env_value = snapctl_value
+            elif bool(env_value) is False:
+                continue
+            env_file_content += f"{DOTENV_PREFIX}{env_var}={env_value}\n"
+        DOTENV_FILE_LOCATION.write_text(env_file_content)
 
 
 if __name__ == "__main__":
