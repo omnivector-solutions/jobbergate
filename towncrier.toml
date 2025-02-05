@@ -1,5 +1,5 @@
 [tool.towncrier]
-directory = "changelog.d"
+directory = "changes"
 filename = "CHANGELOG.md"
 start_string = "<!-- towncrier release notes start -->\n"
 title_format = "## [{version}](https://github.com/omnivector-solutions/jobbergate/releases/tag/{version}) - {project_date}"
