@@ -10,32 +10,26 @@ underlines = ["", "", ""]
 [[tool.towncrier.section]]
 name = "Core"
 path = "core"
-showcontent = true
 
 [[tool.towncrier.section]]
 name = "Agent"
 path = "agent"
-showcontent = true
 
 [[tool.towncrier.section]]
 name = "API"
 path = "api"
-showcontent = true
 
 [[tool.towncrier.section]]
 name = "CLI"
 path = "cli"
-showcontent = true
 
 [[tool.towncrier.section]]
 name = "Documentation"
 path = "docs"
-showcontent = true
 
 [[tool.towncrier.section]]
 name = "Misc"
 path = "misc"
-showcontent = false
 
 [[tool.towncrier.type]]
 directory = "security"
