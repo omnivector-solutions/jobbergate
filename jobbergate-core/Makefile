@@ -27,6 +27,10 @@ format: install
 qa: test mypy lint format
 	echo "All quality checks pass!"
 
+.PHONY: changes
+changes:
+	towncrier create --dir .. --section Core
+
 .PHONY: clean
 clean: ## Remove cache files and similars
 	@find . -iname '*.pyc' -delete

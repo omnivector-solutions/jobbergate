@@ -1,37 +1,68 @@
 [tool.towncrier]
+name = "Jobbergate"
 directory = "changes"
 filename = "CHANGELOG.md"
 start_string = "<!-- towncrier release notes start -->\n"
-title_format = "## [{version}](https://github.com/omnivector-solutions/jobbergate/releases/tag/{version}) - {project_date}"
-issue_format = "[ASP-{issue}](https://jiratoolchain.collaborationlayer-traton.com/browse/ASP-{issue})"
+title_format = "# [{version}](https://github.com/omnivector-solutions/jobbergate/releases/tag/{version}) - {project_date}"
+issue_format = "[PR #{issue}](https://github.com/tomnivector-solutions/jobbergate/pull/{issue})"
 underlines = ["", "", ""]
 
-[[tool.towncrier.type]]
-directory = "core"
+[[tool.towncrier.section]]
 name = "Core"
+path = "core"
 showcontent = true
 
-[[tool.towncrier.type]]
-directory = "agent"
+[[tool.towncrier.section]]
 name = "Agent"
+path = "agent"
 showcontent = true
 
-[[tool.towncrier.type]]
-directory = "api"
+[[tool.towncrier.section]]
 name = "API"
+path = "api"
 showcontent = true
 
-[[tool.towncrier.type]]
-directory = "cli"
+[[tool.towncrier.section]]
 name = "CLI"
+path = "cli"
 showcontent = true
 
-[[tool.towncrier.type]]
-directory = "docs"
+[[tool.towncrier.section]]
 name = "Documentation"
+path = "docs"
+showcontent = true
+
+[[tool.towncrier.section]]
+name = "Misc"
+path = "misc"
+showcontent = false
+
+[[tool.towncrier.type]]
+directory = "security"
+name = "Security"
 showcontent = true
 
 [[tool.towncrier.type]]
-directory = "misc"
-name = "Misc"
-showcontent = false
+directory = "removed"
+name = "Removed"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "deprecated"
+name = "Deprecated"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "added"
+name = "Added"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "changed"
+name = "Changed"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "fixed"
+name = "Fixed"
+showcontent = true

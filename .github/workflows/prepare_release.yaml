@@ -89,7 +89,7 @@ jobs:
       - name: Update Changelog
         run: |
           pipx install towncrier==24.8.0
-          towncrier build --version=${{ steps.api-package.outputs.version }}
+          make changelog-build
 
       - uses: peter-evans/create-pull-request@v4
         name: Create Pull Request

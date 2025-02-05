@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+Refer to [changes](./changes) directory for unreleased changes.
+
 <!-- towncrier release notes start -->
 
 ## 5.4.0 -- 2024-11-18
