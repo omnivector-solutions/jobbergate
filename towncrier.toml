@@ -27,10 +27,6 @@ path = "cli"
 name = "Documentation"
 path = "docs"
 
-[[tool.towncrier.section]]
-name = "Misc"
-path = "misc"
-
 [[tool.towncrier.type]]
 directory = "security"
 name = "Security"
@@ -60,3 +56,8 @@ showcontent = true
 directory = "fixed"
 name = "Fixed"
 showcontent = true
+
+[[tool.towncrier.type]]
+directory = "misc"
+name = "Miscellaneous"
+showcontent = false
