@@ -29,7 +29,7 @@ Refer to [changes](./changes) directory for unreleased changes.
 - Modernized Dockerfile to use multi-stage builds ([ASP-4598](https://jira.scania.com/browse/ASP-4598))
 - Bumped dependencies (FastAPI and fastapi-pagination)
 - Silenced logging in the `/health` endpoint
-- Added endpoints to upload by URL [([PENG-2426](https://app.clickup.com/t/18022949/PENG-2426))(https://sharing.clickup.com/t/h/c/18022949/PENG-2426/PYUL64MXH5P0MWB)]
+- Added endpoints to upload by URL [[PENG-2426](https://sharing.clickup.com/t/h/c/18022949/PENG-2426/PYUL64MXH5P0MWB)]
   - For Job Script files
   - For Job Script Template files
   - For Job Script Template workflow files
@@ -59,9 +59,9 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 - Fixed issue preventing the creation of a job script from an empty template file
 - Enhance logging for file storage operations
-- Implemented an endpoint to fetch a cluster status by its client id [([PENG-2348](https://app.clickup.com/t/18022949/PENG-2348))(https://sharing.clickup.com/t/h/c/18022949/PENG-2348/QWZFBKV72ZNL293)]
-- Remove the audience setting [([PENG-2230](https://app.clickup.com/t/18022949/PENG-2230))(https://sharing.clickup.com/t/h/c/18022949/PENG-2230/O40JANAF6KCBE9R)]
-- Added `jobbergate:maintainer` role [([PENG-2323](https://app.clickup.com/t/18022949/PENG-2323))(https://app.clickup.com/t/18022949/PENG-2323)]
+- Implemented an endpoint to fetch a cluster status by its client id [[PENG-2348](https://sharing.clickup.com/t/h/c/18022949/PENG-2348/QWZFBKV72ZNL293)]
+- Remove the audience setting [[PENG-2230](https://sharing.clickup.com/t/h/c/18022949/PENG-2230/O40JANAF6KCBE9R)]
+- Added `jobbergate:maintainer` role [[PENG-2323](https://app.clickup.com/t/18022949/PENG-2323)]
   - `jobbergate:maintainer` acts as previous `jobbergate:admin` role, allowing users to update/delete entities owned by others
   - `jobbergate:admin` now grants access to all endpoints besides the `jobbergate:maintainer` role
 
