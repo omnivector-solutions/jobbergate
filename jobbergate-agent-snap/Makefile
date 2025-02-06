@@ -22,7 +22,7 @@ build: ## Build the snap
 
 .PHONY: changes
 changes:
-	towncrier create --dir .. --section Agent
+	towncrier create --dir .. --section "Agent Snap"
 
 .PHONY: clean
 clean: ## Clean all files/folders created by the project

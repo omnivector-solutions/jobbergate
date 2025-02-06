@@ -16,6 +16,10 @@ name = "Agent"
 path = "agent"
 
 [[tool.towncrier.section]]
+name = "Agent Snap"
+path = "agent-snap"
+
+[[tool.towncrier.section]]
 name = "API"
 path = "api"
 
