@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-agent
 
 ## Unreleased
 
+
+## 5.5.0 -- 2025-02-06
 - Upgraded py-buzz dependency to ^5.0 to use builtin `handle_errors_async` [[PENG-2678](https://sharing.clickup.com/t/h/c/18022949/PENG-2678/M7PTQRUNIW5T2NK)]
 - Added custom settings for configuring Sentry's sample rates [[PENG-2592](https://sharing.clickup.com/t/h/c/18022949/PENG-2592/QQUQ1ABLAP6QSYX)]
 

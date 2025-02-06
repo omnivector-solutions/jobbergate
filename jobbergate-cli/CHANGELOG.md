@@ -5,6 +5,7 @@ This file keeps track of all notable changes to jobbergate-cli
 ## Unreleased
 
 
+## 5.5.0 -- 2025-02-06
 ## 5.4.0 -- 2024-11-18
 
 - Added clone command to job submissions so they can be resubmitted to the cluster when needed [PENG-1677, ASP-4597]
