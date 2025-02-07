@@ -4,6 +4,8 @@ This file keeps track of all notable changes to jobbergate-api
 
 ## Unreleased
 
+
+## 5.5.0 -- 2025-02-07
 - Fixed issue on the Job Template rendering process by running it inside a Jinja Sandbox Environment
 - Adjusted the default values for the Sentry's sample rates [[PENG-2592](https://sharing.clickup.com/t/h/c/18022949/PENG-2592/QQUQ1ABLAP6QSYX)]
 - Implemented logic for receiving job metrics from the agent and making them available for a client [[PENG-2456](https://sharing.clickup.com/t/h/c/18022949/PENG-2456/43YCG8RCBBQJELQ)]
