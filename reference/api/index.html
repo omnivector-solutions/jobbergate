@@ -1276,6 +1276,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_api.apps.job_submissions.helpers" class="md-nav__link">
+    helpers
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_api.apps.job_submissions.models" class="md-nav__link">
     models
   </a>
@@ -2409,6 +2416,13 @@
           <li class="md-nav__item">
   <a href="#jobbergate_api.apps.job_submissions.constants" class="md-nav__link">
     constants
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.apps.job_submissions.helpers" class="md-nav__link">
+    helpers
   </a>
   
 </li>
@@ -7550,6 +7564,202 @@ deleted before the agent handles its submissions.</p>
 
 
 
+<h7 id="jobbergate_api.apps.job_submissions.constants.JobSubmissionMetricAggregateNames" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobSubmissionMetricAggregateNames</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="auto_name_enum.AutoNameEnum">AutoNameEnum</span></code></p>
+
+  
+      <p>An enumeration representing different time intervals for aggregating job submission metrics.</p>
+
+
+
+  <p><strong>Attributes:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>metrics_nodes_mv_1_week_by_node</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Aggregation of metrics by node over a 1-week period.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>metrics_nodes_mv_1_hour_by_node</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Aggregation of metrics by node over a 1-hour period.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>metrics_nodes_mv_10_minutes_by_node</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Aggregation of metrics by node over a 10-minute period.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>metrics_nodes_mv_1_minute_by_node</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Aggregation of metrics by node over a 1-minute period.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>metrics_nodes_mv_10_seconds_by_node</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Aggregation of metrics by node over a 10-second period.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>metrics_nodes_mv_1_week_all_nodes</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Aggregation of metrics for all nodes over a 1-week period.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>metrics_nodes_mv_1_hour_all_nodes</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Aggregation of metrics for all nodes over a 1-hour period.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>metrics_nodes_mv_10_minutes_all_nodes</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Aggregation of metrics for all nodes over a 10-minute period.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>metrics_nodes_mv_1_minute_all_nodes</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Aggregation of metrics for all nodes over a 1-minute period.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>metrics_nodes_mv_10_seconds_all_nodes</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Aggregation of metrics for all nodes over a 10-second period.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.constants.JobSubmissionMetricSampleRate" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobSubmissionMetricSampleRate</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="enum.IntEnum">IntEnum</span></code></p>
+
+  
+      <p>Defines the set of possible sample rates for job submission metrics.</p>
+<p>All values are in seconds.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
 <h7 id="jobbergate_api.apps.job_submissions.constants.JobSubmissionStatus" class="doc doc-heading">
           <span class="doc doc-object-name doc-class-name">JobSubmissionStatus</span>
 
@@ -7667,6 +7877,224 @@ deleted before the agent handles its submissions.</p>
 
 </div>
 
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+<h6 id="jobbergate_api.apps.job_submissions.helpers" class="doc doc-heading">
+          <span class="doc doc-object-name doc-module-name">helpers</span>
+
+
+</h6>
+
+  <div class="doc doc-contents ">
+  
+      <p>Core helper functions for job submissions.</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.helpers.build_job_metric_aggregation_query" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">build_job_metric_aggregation_query</span>
+
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">build_job_metric_aggregation_query</span><span class="p">(</span><span class="n">node</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">:</span> <span class="n">JobSubmissionMetricSampleRate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Build a SQL query string to aggregate job metrics based on the provided node and sample rate.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>node</code></td>
+          <td>
+                <code>str | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The node host identifier. If None, the query will aggregate metrics for all nodes.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>sample_rate</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.job_submissions.constants.JobSubmissionMetricSampleRate" href="#jobbergate_api.apps.job_submissions.constants.JobSubmissionMetricSampleRate">JobSubmissionMetricSampleRate</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The sample rate for the metrics aggregation. Determines the view name to use.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>str</code></td>          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The SQL query string for aggregating job metrics.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.helpers.validate_job_metric_upload_input" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">validate_job_metric_upload_input</span>
+
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">validate_job_metric_upload_input</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">expected_types</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Validate if the input data of job metric upload is correct once decoded.</p>
+<p>It will brute force apply the expected types to the data and raise an error in case it fails.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>data</code></td>
+          <td>
+                <code><span title="collections.abc.Iterable">Iterable</span>[list[<span title="typing.Any">Any</span>] | tuple[<span title="typing.Any">Any</span>]]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The decoded data, which should be a list of lists or tuples,
+where each inner list or tuple contains the data for a single job metric upload.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>expected_types</code></td>
+          <td>
+                <code>tuple[<span title="typing.Type">Type</span>[<span title="typing.Any">Any</span>], ...]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A tuple of types that each element in the inner lists or tuples
+should match.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><span title="collections.abc.Iterable">Iterable</span>[tuple[<span title="typing.Any">Any</span>]]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Iterable[list[Any] | tuple[Any]]: The validated data.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
 
 
 
@@ -7884,6 +8312,32 @@ helper functions in the class.</p>
 
 
 
+<h8 id="jobbergate_api.apps.job_submissions.models.JobSubmission.include_metrics" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">include_metrics</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">include_metrics</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="n">Select</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Include custom options on a query to eager load metrics.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
 <h8 id="jobbergate_api.apps.job_submissions.models.JobSubmission.include_parent" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">include_parent</span>
 
@@ -7951,6 +8405,263 @@ helper functions in the class.</p>
   <div class="doc doc-contents ">
   
       <p>Add additional sortable fields.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.models.JobSubmissionMetric" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobSubmissionMetric</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.models.CommonMixin" href="#jobbergate_api.apps.models.CommonMixin">CommonMixin</a></code>, <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.models.Base" href="#jobbergate_api.apps.models.Base">Base</a></code></p>
+
+  
+      <p>Job submission metric table definition.</p>
+
+
+
+  <p><strong>Attributes:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>time</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The time the metric was recorded.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>job_submission_id</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The id of the job submission this metric is for.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>slurm_job_id</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The id of the job in the slurm queue.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>node_host</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[str]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The node on which the metric was recorded.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>step</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The step for which the metric was recorded.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>task</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The task for which the metric was recorded.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>cpu_frequency</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[float]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The CPU frequency at the time.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>cpu_time</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[float]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The CPU time (system + user) consumed at the time.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>cpu_utilization</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[float]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The CPU utilization (% of available) consumed at the time.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>gpu_memory</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The GPU memory consumed at the time (in MB).</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>gpu_utilization</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[float]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The GPU utilizaiton (% of availavble) consumed at the time.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>page_faults</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The number of page faults at the time.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>memory_rss</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The resident set size of memory consumed at the time (in MB).</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>memory_virtual</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The virtual memory allocated at the time (in MB).</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>disc_read</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The amount of data read from disk at the time (in MB).</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>disk_write</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The amount of data written to disk at the time (in MB).</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_api.apps.job_submissions.models.JobSubmissionMetric.include_parent" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">include_parent</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">include_parent</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="n">Select</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Include custom options on a query to eager load parent data.</p>
 
   </div>
 
@@ -8216,6 +8927,58 @@ helper functions in the class.</p>
 
 
 
+<h7 id="jobbergate_api.apps.job_submissions.routers.job_submissions_agent_metrics" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">job_submissions_agent_metrics</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_submissions_agent_metrics</span><span class="p">(</span><span class="n">job_submission_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">secure_services</span><span class="p">(</span><span class="n">Permissions</span><span class="o">.</span><span class="n">ADMIN</span><span class="p">,</span> <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_SUBMISSIONS_READ</span><span class="p">,</span> <span class="n">commit</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ensure_client_id</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the max times for the tuple (node_host, step, task) of a job submission.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.routers.job_submissions_agent_metrics_upload" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">job_submissions_agent_metrics_upload</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_submissions_agent_metrics_upload</span><span class="p">(</span><span class="n">job_submission_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">body</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="n">Body</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;The binary data to upload&#39;</span><span class="p">),</span> <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">secure_services</span><span class="p">(</span><span class="n">Permissions</span><span class="o">.</span><span class="n">ADMIN</span><span class="p">,</span> <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_SUBMISSIONS_UPDATE</span><span class="p">,</span> <span class="n">ensure_client_id</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">commit</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Upload metrics for a job submission.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
 <h7 id="jobbergate_api.apps.job_submissions.routers.job_submissions_agent_pending" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">job_submissions_agent_pending</span>
 
@@ -8289,6 +9052,58 @@ helper functions in the class.</p>
 </div>
 
 
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.routers.job_submissions_metrics" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">job_submissions_metrics</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_submissions_metrics</span><span class="p">(</span><span class="n">job_submission_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Filter by node_host. If omitted, metrics will be gathered over all nodes.&#39;</span><span class="p">),</span> <span class="n">start_time</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">tz</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Start time for the metrics query. Defaults to one hour ago.&#39;</span><span class="p">),</span> <span class="n">sample_rate</span><span class="p">:</span> <span class="n">JobSubmissionMetricSampleRate</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="n">JobSubmissionMetricSampleRate</span><span class="o">.</span><span class="n">ten_minutes</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Sample rate in seconds for the metrics query.&#39;</span><span class="p">),</span> <span class="n">end_time</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;End time for the metrics query. If omitted, assume the window to be up to the present.&#39;</span><span class="p">),</span> <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">secure_services</span><span class="p">(</span><span class="n">Permissions</span><span class="o">.</span><span class="n">ADMIN</span><span class="p">,</span> <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_SUBMISSIONS_READ</span><span class="p">,</span> <span class="n">commit</span><span class="o">=</span><span class="kc">False</span><span class="p">)))</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the metrics for a job submission.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.routers.job_submissions_metrics_timestamps" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">job_submissions_metrics_timestamps</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_submissions_metrics_timestamps</span><span class="p">(</span><span class="n">job_submission_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">secure_services</span><span class="p">(</span><span class="n">Permissions</span><span class="o">.</span><span class="n">ADMIN</span><span class="p">,</span> <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_SUBMISSIONS_READ</span><span class="p">,</span> <span class="n">commit</span><span class="o">=</span><span class="kc">False</span><span class="p">)))</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the min and max timestamps for a job submission's metrics.</p>
+
+  </div>
+
+</div>
+
+
 
   </div>
 
@@ -8340,6 +9155,86 @@ helper functions in the class.</p>
 
   
       <p>Specialized model for the cluster-agent to pull an active job_submission.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.schemas.JobSubmissionAgentMaxTimes" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobSubmissionAgentMaxTimes</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Model for the max_times field of the JobSubmissionMetricsMaxResponse.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.schemas.JobSubmissionAgentMetricsRequest" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobSubmissionAgentMetricsRequest</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Request model for updating JobSubmission instances.</p>
 
 
   
@@ -8647,6 +9542,142 @@ helper functions in the class.</p>
 
   
       <p>Complete model to match the database for the JobSubmission resource in a list view.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.schemas.JobSubmissionMetricSchema" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobSubmissionMetricSchema</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Model for the JobSubmissionMetric resource.</p>
+<p>Both <code>step</code> and <code>task</code> are optional fields, as they are not relevant when the metrics are
+queried over all the nodes. As well as, all measurements are both <code>int</code> and <code>float</code> due to
+the aggregation done by the time series database over time. For better understanding on the
+math behind the aggregation, please refer to the alembic revision <code>99c3877d0f10</code>.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_api.apps.job_submissions.schemas.JobSubmissionMetricSchema.from_iterable" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">from_iterable</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">from_iterable</span><span class="p">(</span><span class="n">iterable</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">skip_optional</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Convert an iterable containing the fields of the model to an instance of the model.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_api.apps.job_submissions.schemas.JobSubmissionMetricSchema.validate_time" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">validate_time</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">validate_time</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">datetime</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Ensure that the time is always an int.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.schemas.JobSubmissionMetricTimestamps" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobSubmissionMetricTimestamps</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Model for the timestamps of the JobSubmissionMetric resource.</p>
 
 
   
