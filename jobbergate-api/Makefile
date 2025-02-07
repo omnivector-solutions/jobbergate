@@ -35,6 +35,10 @@ UPGRADE_TARGET ?= head
 db-upgrade: install  ## Upgrade the database to a specified target. Defaults to latest.
 	poetry run alembic --config=alembic/alembic.ini upgrade $(UPGRADE_TARGET)
 
+.PHONY: changes
+changes:
+	towncrier create --dir .. --section API
+
 clean:  ## Clean up build artifacts and other junk
 	@find . -iname '*.pyc' -delete
 	@find . -iname '*.pyo' -delete

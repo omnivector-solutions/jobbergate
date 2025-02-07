@@ -14,3 +14,15 @@ clean:
 	$(MAKE) -C jobbergate-api clean
 	$(MAKE) -C jobbergate-cli clean
 	$(MAKE) -C jobbergate-agent-snap clean
+
+.PHONY: changes
+changes:
+	towncrier create --dir .
+
+.PHONY: changelog-draft
+changelog-draft:
+	towncrier build --draft --version $$(poetry version --short --directory jobbergate-core)
+
+.PHONY: changelog-build
+changelog-build:
+	towncrier build --yes --version $$(poetry version --short --directory jobbergate-core)

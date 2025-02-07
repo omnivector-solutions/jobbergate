@@ -20,6 +20,10 @@ build: ## Build the snap
 	@git rev-parse --short HEAD > sha/commit-sha.txt
 	@snapcraft $(ARGS)
 
+.PHONY: changes
+changes:
+	towncrier create --dir .. --section "Agent Snap"
+
 .PHONY: clean
 clean: ## Clean all files/folders created by the project
 	@find . -iname '*.pyc' -delete
