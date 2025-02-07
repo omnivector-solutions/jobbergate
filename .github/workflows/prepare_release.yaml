@@ -74,6 +74,11 @@ jobs:
           echo "Poetry version is: $(poetry version --short)"
           echo "::set-output name=version::$(poetry version --short)"
 
+      - id: agent-snap
+        name: Sync version on Agent Snap
+        working-directory: jobbergate-agent-snap
+        run: make sync-version
+
       - id: docs
         name: Bump version on the Documentation
         working-directory: jobbergate-docs

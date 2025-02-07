@@ -24,6 +24,12 @@ build: ## Build the snap
 changes:
 	towncrier create --dir .. --section "Agent Snap"
 
+.PHONY: sync-version
+sync-version:
+	@new_version=$$(poetry version -s --directory ../jobbergate-agent) && \
+	sed -i '' "s/\(- jobbergate-agent==\).*/\1$${new_version}/" snap/snapcraft.yaml && \
+	echo "Version updated to $${new_version} in snap/snapcraft.yaml"
+
 .PHONY: clean
 clean: ## Clean all files/folders created by the project
 	@find . -iname '*.pyc' -delete
