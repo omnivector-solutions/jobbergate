@@ -2,17 +2,27 @@
 Router for the JobSubmission resource.
 """
 
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Body
 from fastapi import Response as FastAPIResponse
 from fastapi import status
 from fastapi_pagination import Page
 from loguru import logger
+from jobbergate_api.apps.job_submissions.models import JobSubmissionMetric
+from sqlalchemy import select, insert, text as sa_text
+from sqlalchemy.sql.functions import max, min
+import msgpack
+from sqlalchemy.exc import IntegrityError
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.dependencies import SecureService, secure_services
-from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus, slurm_job_state_details
+from jobbergate_api.apps.job_submissions.constants import (
+    JobSubmissionStatus,
+    slurm_job_state_details,
+    JobSubmissionMetricSampleRate,
+)
 from jobbergate_api.apps.job_submissions.schemas import (
     ActiveJobSubmission,
     JobSubmissionAgentRejectedRequest,
@@ -23,6 +33,14 @@ from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionListView,
     JobSubmissionUpdateRequest,
     PendingJobSubmission,
+    JobSubmissionAgentMetricsRequest,
+    JobSubmissionAgentMaxTimes,
+    JobSubmissionMetricSchema,
+    JobSubmissionMetricTimestamps,
+)
+from jobbergate_api.apps.job_submissions.helpers import (
+    validate_job_metric_upload_input,
+    build_job_metric_aggregation_query,
 )
 from jobbergate_api.apps.permissions import Permissions, can_bypass_ownership_check
 from jobbergate_api.apps.schemas import ListParams
@@ -442,3 +460,210 @@ async def job_submissions_agent_active(
         client_id=client_id,
     )
     return pages
+
+
+@router.get(
+    "/agent/metrics/{job_submission_id}",
+    description="Endpoint to get metrics for a job submission",
+    response_model=JobSubmissionAgentMetricsRequest,
+    tags=["Agent", "Metrics"],
+)
+async def job_submissions_agent_metrics(
+    job_submission_id: int,
+    secure_services: SecureService = Depends(
+        secure_services(
+            Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True
+        )
+    ),
+):
+    """Get the max times for the tuple (node_host, step, task) of a job submission."""
+    logger.debug(f"Agent is requesting metrics for job submission {job_submission_id}")
+
+    query = (
+        select(
+            max(JobSubmissionMetric.time).label("max_time"),
+            JobSubmissionMetric.node_host,
+            JobSubmissionMetric.step,
+            JobSubmissionMetric.task,
+        )
+        .where(JobSubmissionMetric.job_submission_id == job_submission_id)
+        .group_by(
+            JobSubmissionMetric.node_host,
+            JobSubmissionMetric.step,
+            JobSubmissionMetric.task,
+        )
+    )
+
+    result = await secure_services.session.execute(query)
+
+    return JobSubmissionAgentMetricsRequest(
+        job_submission_id=job_submission_id,
+        max_times=[JobSubmissionAgentMaxTimes.model_validate(row) for row in result.all()],
+    )
+
+
+@router.put(
+    "/agent/metrics/{job_submission_id}",
+    description="Endpoint to upload metrics for a job submission",
+    responses={
+        status.HTTP_204_NO_CONTENT: {"description": "Metrics uploaded successfully"},
+        status.HTTP_400_BAD_REQUEST: {"description": "Either invalid metrics data or duplicate metrics data"},
+    },
+    tags=["Agent", "Metrics"],
+)
+async def job_submissions_agent_metrics_upload(
+    job_submission_id: int,
+    body: bytes = Body(..., description="The binary data to upload"),
+    secure_services: SecureService = Depends(
+        secure_services(
+            Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True, commit=True
+        )
+    ),
+):
+    """Upload metrics for a job submission."""
+    logger.debug(f"Agent is uploading metrics for job submission {job_submission_id}")
+
+    logger.debug(f"Getting slurm_job_id of job submission {job_submission_id}")
+    job_submission = await secure_services.crud.job_submission.get(
+        job_submission_id, ensure_attributes={"client_id": secure_services.identity_payload.client_id}
+    )
+    slurm_job_id = job_submission.slurm_job_id
+    logger.debug(f"Got slurm_job_id {slurm_job_id}")
+
+    logger.debug("Decoding binary data")
+    data = msgpack.unpackb(body)
+
+    logger.debug("Asserting the decoded binary data structure")
+    try:
+        data = validate_job_metric_upload_input(
+            data, (int, str, int, int, float, float, float, int, float, int, int, int, int, int)
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    else:
+        logger.debug("Decoded data is valid")
+
+    logger.debug("Inserting metrics into the database")
+    query = insert(JobSubmissionMetric).values(
+        [
+            {
+                "time": data_point[0],
+                "node_host": data_point[1],
+                "step": data_point[2],
+                "task": data_point[3],
+                "cpu_frequency": data_point[4],
+                "cpu_time": data_point[5],
+                "cpu_utilization": data_point[6],
+                "gpu_memory": data_point[7],
+                "gpu_utilization": data_point[8],
+                "page_faults": data_point[9],
+                "memory_rss": data_point[10],
+                "disk_read": data_point[11],
+                "memory_virtual": data_point[12],
+                "disk_write": data_point[13],
+                "job_submission_id": job_submission_id,
+                "slurm_job_id": slurm_job_id,
+            }
+            for data_point in data
+        ]
+    )
+    try:
+        await secure_services.session.execute(query)
+    except IntegrityError as e:
+        logger.error(f"Failed to insert metrics: {e.args}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to insert metrics",
+        )
+
+    return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get(
+    "/{job_submission_id}/metrics",
+    description="Endpoint to get metrics for a job submission",
+    response_model=list[JobSubmissionMetricSchema],
+    tags=["Metrics"],
+)
+async def job_submissions_metrics(
+    job_submission_id: int,
+    node: str | None = Query(
+        None, description="Filter by node_host. If omitted, metrics will be gathered over all nodes."
+    ),
+    start_time: datetime = Query(
+        datetime.now(tz=timezone.utc) - timedelta(hours=1),
+        description="Start time for the metrics query. Defaults to one hour ago.",
+    ),
+    sample_rate: JobSubmissionMetricSampleRate = Query(
+        JobSubmissionMetricSampleRate.ten_minutes, description="Sample rate in seconds for the metrics query."
+    ),
+    end_time: datetime | None = Query(
+        None,
+        description="End time for the metrics query. If omitted, assume the window to be up to the present.",
+    ),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)
+    ),
+):
+    """Get the metrics for a job submission."""
+    logger.debug(f"Getting metrics for job submission {job_submission_id}")
+    if end_time is not None and end_time < start_time:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="End time must be greater than the start time.",
+        )
+    end_time = end_time or datetime.now(tz=timezone.utc)
+
+    query = build_job_metric_aggregation_query(node, sample_rate)
+    query_params = {
+        "job_submission_id": job_submission_id,
+        "start_time": start_time,
+        "end_time": end_time,
+    }
+    if node is not None:
+        query_params["node_host"] = node
+
+    result = await secure_services.session.execute(sa_text(query), query_params)
+    return [JobSubmissionMetricSchema.from_iterable(row, skip_optional=True) for row in result.fetchall()]
+
+
+@router.get(
+    "/{job_submission_id}/metrics/timestamps",
+    description="Endpoint to get the min and max timestamps for a job submission metrics",
+    response_model=JobSubmissionMetricTimestamps,
+    tags=["Metrics"],
+    responses={
+        status.HTTP_200_OK: {"description": "Timestamps for the job submission metrics"},
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Either there are no metrics for the job submission or the job submission does not exist"
+        },
+    },
+)
+async def job_submissions_metrics_timestamps(
+    job_submission_id: int,
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)
+    ),
+):
+    """Get the min and max timestamps for a job submission's metrics."""
+    logger.debug(f"Getting timestamps for job submission {job_submission_id}")
+    query = (
+        select(
+            max(JobSubmissionMetric.time).label("max"),
+            min(JobSubmissionMetric.time).label("min"),
+        )
+        .where(JobSubmissionMetric.job_submission_id == job_submission_id)
+        .group_by(JobSubmissionMetric.job_submission_id)
+    )
+    result = (await secure_services.session.execute(query)).one_or_none()
+    if result is None:
+        logger.debug(f"No metrics found for job submission {job_submission_id}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No metrics found for job submission {job_submission_id} or job submission does not exist",
+        )
+    logger.debug(f"Returning timestamps for job submission {job_submission_id}")
+    return JobSubmissionMetricTimestamps.model_validate(result)

@@ -2,7 +2,9 @@
 JobSubmission resource schema.
 """
 
-from typing import Optional
+from typing import Optional, Self
+from datetime import datetime
+from collections.abc import Iterable
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, field_validator
 
@@ -248,3 +250,78 @@ class JobSubmissionAgentUpdateRequest(BaseModel):
     slurm_job_state_reason: Optional[str] = None
 
     model_config = ConfigDict(json_schema_extra=job_submission_meta_mapper)
+
+
+class JobSubmissionAgentMaxTimes(BaseModel):
+    """Model for the max_times field of the JobSubmissionMetricsMaxResponse."""
+
+    max_time: int
+    node_host: str
+    step: int
+    task: int
+
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
+
+
+class JobSubmissionAgentMetricsRequest(BaseModel):
+    """Request model for updating JobSubmission instances."""
+
+    job_submission_id: int
+    max_times: list[JobSubmissionAgentMaxTimes]
+
+
+class JobSubmissionMetricSchema(BaseModel):
+    """Model for the JobSubmissionMetric resource.
+
+    Both `step` and `task` are optional fields, as they are not relevant when the metrics are
+    queried over all the nodes. As well as, all measurements are both `int` and `float` due to
+    the aggregation done by the time series database over time. For better understanding on the
+    math behind the aggregation, please refer to the alembic revision ``99c3877d0f10``.
+    """
+
+    time: int | datetime
+    node_host: str
+    step: Optional[int] = None
+    task: Optional[int] = None
+    cpu_frequency: int | float
+    cpu_time: float
+    cpu_utilization: float
+    gpu_memory: int | float
+    gpu_utilization: float
+    page_faults: int | float
+    memory_rss: int | float
+    memory_virtual: int | float
+    disk_read: int | float
+    disk_write: int | float
+
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
+
+    @field_validator("time", mode="before")
+    @classmethod
+    def validate_time(cls, v: int | datetime) -> int:
+        """Ensure that the time is always an int."""
+        if isinstance(v, datetime):
+            return int(v.timestamp())
+        return v
+
+    @classmethod
+    def from_iterable(cls, iterable: Iterable, skip_optional: bool = False) -> Self:
+        """Convert an iterable containing the fields of the model to an instance of the model."""
+        if skip_optional:
+            fields = list(field_name for field_name, field in cls.model_fields.items() if field.is_required())
+        else:
+            fields = list(cls.model_fields.keys())
+
+        if len(fields) != len(list(iterable)):
+            raise ValueError("The iterable must have the same length as the model fields.")
+
+        return cls(**{field: value for field, value in zip(fields, iterable)})
+
+
+class JobSubmissionMetricTimestamps(BaseModel):
+    """Model for the timestamps of the JobSubmissionMetric resource."""
+
+    min: int
+    max: int
+
+    model_config = ConfigDict(from_attributes=True, extra="ignore")

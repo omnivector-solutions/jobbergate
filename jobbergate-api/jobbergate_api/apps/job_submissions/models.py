@@ -3,14 +3,27 @@ Database model for the JobSubmission resource.
 """
 
 from __future__ import annotations
+from datetime import datetime, timezone
 
-from sqlalchemy import ARRAY, Enum, ForeignKey, Integer, String
+from sqlalchemy import (
+    ARRAY,
+    Dialect,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    Float,
+    Index,
+    PrimaryKeyConstraint,
+    BigInteger,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
 from sqlalchemy.sql.expression import Select
+from sqlalchemy.types import DateTime, TypeDecorator
 
 from jobbergate_api.apps.job_scripts.models import JobScript as JobScriptModel
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus, SlurmJobState
-from jobbergate_api.apps.models import Base, CrudMixin
+from jobbergate_api.apps.models import Base, CrudMixin, CommonMixin
 from jobbergate_api.safe_types import JobScript
 
 
@@ -64,6 +77,11 @@ class JobSubmission(CrudMixin, Base):
         back_populates="submissions",
         lazy="raise",
     )
+    metrics: Mapped[list["JobSubmissionMetric"]] = relationship(
+        "JobSubmissionMetric",
+        back_populates="job_submission",
+        lazy="raise",
+    )
 
     @classmethod
     def searchable_fields(cls):
@@ -98,3 +116,87 @@ class JobSubmission(CrudMixin, Base):
         Include custom options on a query to eager load parent data.
         """
         return query.options(selectinload(cls.job_script))
+
+    @classmethod
+    def include_metrics(cls, query: Select) -> Select:
+        """
+        Include custom options on a query to eager load metrics.
+        """
+        return query.options(selectinload(cls.metrics))
+
+
+class TimestampInt(TypeDecorator):
+    impl = DateTime(timezone=True)
+
+    def process_bind_param(self, value: int | None, dialect: Dialect) -> datetime | None:
+        if value is not None:
+            return datetime.fromtimestamp(value, tz=timezone.utc)
+        return value
+
+    def process_result_value(self, value: datetime | None, dialect: Dialect) -> int | None:
+        if value is not None:
+            return int(value.timestamp())
+        return value
+
+
+class JobSubmissionMetric(CommonMixin, Base):
+    """
+    Job submission metric table definition.
+
+    Attributes:
+        time: The time the metric was recorded.
+        job_submission_id: The id of the job submission this metric is for.
+        slurm_job_id: The id of the job in the slurm queue.
+        node_host: The node on which the metric was recorded.
+        step: The step for which the metric was recorded.
+        task: The task for which the metric was recorded.
+        cpu_frequency: The CPU frequency at the time.
+        cpu_time: The CPU time (system + user) consumed at the time.
+        cpu_utilization: The CPU utilization (% of available) consumed at the time.
+        gpu_memory: The GPU memory consumed at the time (in MB).
+        gpu_utilization: The GPU utilizaiton (% of availavble) consumed at the time.
+        page_faults: The number of page faults at the time.
+        memory_rss: The resident set size of memory consumed at the time (in MB).
+        memory_virtual: The virtual memory allocated at the time (in MB).
+        disc_read: The amount of data read from disk at the time (in MB).
+        disk_write: The amount of data written to disk at the time (in MB).
+    """
+
+    time: Mapped[int] = mapped_column(TimestampInt, nullable=False, index=True)
+    job_submission_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("job_submissions.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    slurm_job_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    node_host: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    step: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    task: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    cpu_frequency: Mapped[float] = mapped_column(Float, nullable=False)
+    cpu_time: Mapped[float] = mapped_column(Float, nullable=False)
+    cpu_utilization: Mapped[float] = mapped_column(Float, nullable=False)
+    gpu_memory: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    gpu_utilization: Mapped[float] = mapped_column(Float, nullable=False)
+    page_faults: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    memory_rss: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    memory_virtual: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    disk_read: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    disk_write: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+    __table_args__ = (
+        PrimaryKeyConstraint("time", "job_submission_id", "node_host", "step", "task"),
+        Index("idx_node_host_step_task", "node_host", "step", "task"),
+    )
+
+    job_submission: Mapped[JobSubmission] = relationship(
+        "JobSubmission",
+        back_populates="metrics",
+        lazy="raise",
+    )
+
+    @classmethod
+    def include_parent(cls, query: Select) -> Select:
+        """
+        Include custom options on a query to eager load parent data.
+        """
+        return query.options(selectinload(cls.job_submission))

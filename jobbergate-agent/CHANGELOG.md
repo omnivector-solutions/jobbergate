@@ -6,6 +6,7 @@ This file keeps track of all notable changes to jobbergate-agent
 
 - Upgraded py-buzz dependency to ^5.0 to use builtin `handle_errors_async` [[PENG-2678](https://sharing.clickup.com/t/h/c/18022949/PENG-2678/M7PTQRUNIW5T2NK)]
 - Added custom settings for configuring Sentry's sample rates [[PENG-2592](https://sharing.clickup.com/t/h/c/18022949/PENG-2592/QQUQ1ABLAP6QSYX)]
+- Implement logic to retrieve job metrics data from InfluxDB and send it to the API. ([PENG-2457](https://sharing.clickup.com/t/h/c/18022949/PENG-2457/BU7UOA63B936N27))
 
 ## 5.4.0 -- 2024-11-18
 
