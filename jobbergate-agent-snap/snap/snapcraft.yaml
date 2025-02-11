@@ -57,7 +57,7 @@ parts:
     source: .
     plugin: python
     python-packages:
-    - jobbergate-agent==5.4.0
+    - jobbergate-agent==5.5.0
     build-packages:
     - python3
     - python3-distutils

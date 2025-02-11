@@ -11,6 +11,57 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.5.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.5.0) - 2025-02-11
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+### Added
+
+- Implement logic to retrieve job metrics data from InfluxDB and send it to the API ([PENG-2457](https://sharing.clickup.com/t/h/c/18022949/PENG-2457/BU7UOA63B936N27)) ([PR #663](https://github.com/omnivector-solutions/jobbergate/pull/663))
+- Custom settings for configuring Sentry's sample rates [[PENG-2592](https://sharing.clickup.com/t/h/c/18022949/PENG-2592/QQUQ1ABLAP6QSYX)] ([PR #686](https://github.com/omnivector-solutions/jobbergate/pull/686))
+
+### Fixed
+
+- Upgraded py-buzz dependency to `^5.0` to use builtin `handle_errors_async` [[PENG-2678](https://sharing.clickup.com/t/h/c/18022949/PENG-2678/M7PTQRUNIW5T2NK)] ([PR #689](https://github.com/omnivector-solutions/jobbergate/pull/689))
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+### Added
+
+- Implemented logic for receiving job metrics from the agent and making them available for a client [[PENG-2456](https://sharing.clickup.com/t/h/c/18022949/PENG-2456/43YCG8RCBBQJELQ)] ([PR #665](https://github.com/omnivector-solutions/jobbergate/pull/665))
+
+### Changed
+
+- Adjusted the default values for the Sentry's sample rates [[PENG-2592](https://sharing.clickup.com/t/h/c/18022949/PENG-2592/QQUQ1ABLAP6QSYX)] ([PR #686](https://github.com/omnivector-solutions/jobbergate/pull/686))
+
+### Fixed
+
+- Fixed issue on the Job Template rendering process by running it inside a Jinja Sandbox Environment ([PR #671](https://github.com/omnivector-solutions/jobbergate/pull/671))
+
+
+## CLI
+
+### Fixed
+
+- Fixed issue on the Job Template rendering process by running it inside a Jinja Sandbox Environment ([PR #671](https://github.com/omnivector-solutions/jobbergate/pull/671))
+
+
+## Documentation
+
+No significant changes.
+
+
 ## 5.4.0 -- 2024-11-18
 
 ### Core
