@@ -1,23 +1,25 @@
 SHELL:=/bin/bash
 
+.PHONY: install
+install:  ## Install the dev tools
+
 .PHONY: lint
-lint: ## Run the linters
-	tox -e lint
+lint: install ## Run the linter
+	poetry run ruff check
 
 .PHONY: type
-type: ## Run the type checker
-	tox -e type
+type: install ## Run the type checker
+	poetry run mypy
 
 .PHONY: qa
 qa: lint type ## Run all quality assurance checks
 
 .PHONY: format
-format: ## Run the formatter
-	tox -e format
+format: install ## Run the formatter
+	poetry run ruff format
 
 .PHONY: build
 build: ## Build the snap
-	@git rev-parse --short HEAD > sha/commit-sha.txt
 	@snapcraft $(ARGS)
 
 .PHONY: changes
@@ -37,14 +39,14 @@ clean: ## Clean all files/folders created by the project
 	@find . -iname '*~' -delete
 	@find . -iname '*.swp' -delete
 	@find . -iname '__pycache__' -delete
-	@find . -iname '.zip' -delete
 	@find . -type f -name "*.snap" -delete
-	@find . -iname 'commit-sha.txt' -delete
 	@rm -r .mypy_cache || true
 	@rm -r .ruff_cache || true
-	@rm -r .tox || true
-	@rm -r .venv || true
 	@rm -r parts || true
 	@rm -r prime || true
 	@rm -r stage || true
+	@snapcraft clean
 
+.PHONY: help
+help: ## Display target comments in 'make help'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

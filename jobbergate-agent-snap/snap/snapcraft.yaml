@@ -68,7 +68,7 @@ parts:
     - python3.12-minimal
     #- python3.12-venv
     #- libpython3.12-minimal
-    #- libpython3.12-stdlib
+    - libpython3.12-stdlib
     build-attributes:
     - enable-patchelf
 
@@ -78,12 +78,12 @@ parts:
     organize:
       bin/: snap/hooks/
 
-  metadata:
-    plugin: nil
-    override-pull: |
-      craftctl default
-      COMMIT_SHA=$(cat $SNAPCRAFT_PROJECT_DIR/sha/commit-sha.txt)
-      craftctl set version="$(craftctl get version)-$COMMIT_SHA"
+  # metadata:
+  #   plugin: nil
+  #   override-pull: |
+  #     craftctl default
+  #     COMMIT_SHA=$(cat $SNAPCRAFT_PROJECT_DIR/sha/commit-sha.txt)
+  #     craftctl set version="$(craftctl get version)-$COMMIT_SHA"
 
   wrappers:
     plugin: dump
