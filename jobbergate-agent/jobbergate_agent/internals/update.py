@@ -7,15 +7,15 @@ from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
 
-# flake8 doesn't understand the scheduler is used in the self_update_agent function
-from jobbergate_agent.utils.scheduler import schedule_tasks, scheduler  # noqa: F401
+from jobbergate_agent.utils.process import restart_agent, detect_snap
+from jobbergate_agent.utils.scheduler import scheduler
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from apscheduler.job import Job
 
-package_name = "jobbergate_agent"
+package_name = "jobbergate-agent"
 
 
 async def _fetch_upstream_version_info() -> str:
@@ -70,7 +70,15 @@ def _need_update(current_version: str, upstream_version: str) -> bool:
 
 
 def _update_package(version: str) -> None:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", f"{package_name}=={version}"])
+    """Update jobbergate-agent package."""
+    if detect_snap():
+        logger.debug("Detected snap install. Calling snap refresh to update package")
+        subprocess.check_call(["snap", "refresh", package_name, "--stable", f"--revision={version}"])
+    else:
+        logger.debug("Detected normal install. Using pip to update package")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", f"{package_name}=={version}"])
+        logger.debug("Replacing current agent process with updated version")
+        restart_agent()
 
 
 async def self_update_agent() -> None:
@@ -98,13 +106,5 @@ async def self_update_agent() -> None:
 
         logger.debug(f"Updating {package_name} from version {current_version} to {upstream_version}...")
         _update_package(upstream_version)
-        logger.debug("Update completed successfully.")
-
-        logger.debug(f"Loading plugins from version {upstream_version}...")
-        schedule_tasks(scheduler)
-        scheduler.resume()
-        logger.debug("Plugins loaded successfully.")
-
-        logger.info("Resuming the scheduler")
     else:
         logger.debug("No update is required or update crosses a major version divide.")

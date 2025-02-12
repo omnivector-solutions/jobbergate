@@ -16,19 +16,19 @@ mypy: install ## Run static typer checks
 	poetry run mypy ${PACKAGE_NAME} --pretty
 
 .PHONY: lint
-lint: install
+lint: install ## Run linter over the code base
 	poetry run ruff check tests ${PACKAGE_NAME}
 
 .PHONY: format
-format: install
+format: install ## Run formatter over the code base
 	poetry run ruff format tests ${PACKAGE_NAME}
 
 .PHONY: qa
-qa: test mypy lint format
+qa: test mypy lint format ## Run all qa tests
 	echo "All quality checks pass!"
 
 .PHONY: changes
-changes:
+changes: ## Create a new change entry for the changelog
 	towncrier create --dir .. --section Agent
 
 .PHONY: clean

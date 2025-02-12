@@ -1,8 +1,8 @@
 name: jobbergate-agent
-base: core22
-version: '0.5.0'
+base: core24
+version: "0.0.0"
 summary: The Jobbergate Agent snap
-adopt-info: metadata
+adopt-info: jobbergate-agent
 license: MIT
 description: |
   The Jobbergate Agent Snap deploys the Jobbergate Agent Python package on your host system. This agent
@@ -18,6 +18,8 @@ description: |
   - oidc-client-secret: The client secret of the OIDC application that the agent will use for authentication.
 
   - task-jobs-interval-seconds: The interval in seconds at which the agent will run its internal task jobs, hence sending data to the Jobbergate API server. This is optional and defaults to 30 seconds.
+
+  - task-self-update-interval-seconds: The interval in seconds at which the agent will check for updates to itself. This is optional and defaults to 30 seconds (1 hour).
 
   - sbatch-path: The absolute path to the *sbatch* command on the host system. This is optional and defaults to /usr/bin/sbatch.
 
@@ -58,31 +60,27 @@ parts:
     - jobbergate-agent==5.5.0
     build-packages:
     - python3
-    - python3-distutils
     - libapt-pkg-dev
     - gcc
     - g++
     - dpkg-dev
     stage-packages:
-    - python3.10-minimal
-    - python3.10-venv
-    - libpython3.10-minimal
-    - libpython3.10-stdlib
+    - python3.12-minimal
+    - python3.12-venv
+    - libpython3.12-minimal
+    - libpython3.12-stdlib
     build-attributes:
     - enable-patchelf
+    override-stage: |
+     craftctl default
+     craftctl set version="$($SNAPCRAFT_PART_INSTALL/bin/python3 -m pip show jobbergate-agent | grep Version | awk '{print $2}')"
+
 
   hooks:
     plugin: dump
     source: hooks
     organize:
       bin/: snap/hooks/
-
-  metadata:
-    plugin: nil
-    override-pull: |
-      craftctl default
-      COMMIT_SHA=$(cat $SNAPCRAFT_PROJECT_DIR/sha/commit-sha.txt)
-      craftctl set version="$(craftctl get version)-$COMMIT_SHA"
 
   wrappers:
     plugin: dump
@@ -95,19 +93,25 @@ apps:
     daemon: simple
     install-mode: disable
     environment:
-      PYTHONPATH: "$SNAP/lib/python3.10/site-packages:${PYTHONPATH}"
+      PATH: "$SNAP/bin"
 
   start:
     command: commands/daemon.start
     daemon: simple
     install-mode: disable
+    environment:
+      PATH: "$SNAP/bin"
 
   stop:
     command: commands/daemon.stop
     daemon: simple
     install-mode: disable
+    environment:
+      PATH: "$SNAP/bin"
 
   restart:
     command: commands/daemon.restart
     daemon: simple
     install-mode: disable
+    environment:
+      PATH: "$SNAP/bin"

@@ -87,17 +87,56 @@ def test_need_update__check_improperly_formatted_versions(
         ("2.0.0", "/dummy/qux"),
     ],
 )
+@mock.patch("jobbergate_agent.internals.update.detect_snap")
+@mock.patch("jobbergate_agent.internals.update.restart_agent")
 @mock.patch("jobbergate_agent.internals.update.subprocess")
 @mock.patch("jobbergate_agent.internals.update.sys")
-def test_update_package(mocked_sys: mock.MagicMock, mocked_subprocess: mock.MagicMock, version: str, executable: str):
+def test_update_package__normal_install(
+    mocked_sys: mock.MagicMock,
+    mocked_subprocess: mock.MagicMock,
+    mocked_restart: mock.MagicMock,
+    mocked_detect_snap: mock.MagicMock,
+    version: str,
+    executable: str
+):
     """Test that _update_package runs without error."""
     mocked_subprocess.check_call.return_value = None
     mocked_sys.executable = executable
+    mocked_detect_snap.return_value = False
 
     _update_package(version)
 
     mocked_subprocess.check_call.assert_called_once_with(
-        [executable, "-m", "pip", "install", "--upgrade", f"jobbergate_agent=={version}"]
+        [executable, "-m", "pip", "install", "--upgrade", f"jobbergate-agent=={version}"]
+    )
+
+
+@pytest.mark.usefixtures("mock_access_token")
+@pytest.mark.parametrize(
+    "version, executable",
+    [
+        ("1.0.0", "/dummy/foo"),
+        ("1.0.1", "/dummy/bar"),
+        ("1.1.0", "/dummy/baz"),
+        ("2.0.0", "/dummy/qux"),
+    ],
+)
+@mock.patch("jobbergate_agent.internals.update.detect_snap")
+@mock.patch("jobbergate_agent.internals.update.subprocess")
+def test_update_package__snap_install(
+    mocked_subprocess: mock.MagicMock,
+    mocked_detect_snap: mock.MagicMock,
+    version: str,
+    executable: str
+):
+    """Test that _update_package runs without error."""
+    mocked_subprocess.check_call.return_value = None
+    mocked_detect_snap.return_value = True
+
+    _update_package(version)
+
+    mocked_subprocess.check_call.assert_called_once_with(
+        ["snap", "refresh", "jobbergate-agent", "--stable", f"--revision={version}"]
     )
 
 
@@ -120,9 +159,7 @@ def test_update_package(mocked_sys: mock.MagicMock, mocked_subprocess: mock.Magi
 @mock.patch("jobbergate_agent.internals.update.version")
 @mock.patch("jobbergate_agent.internals.update._need_update")
 @mock.patch("jobbergate_agent.internals.update.scheduler")
-@mock.patch("jobbergate_agent.internals.update.schedule_tasks")
 async def test_self_update_agent(
-    mocked_schedule_tasks: mock.MagicMock,
     mocked_scheduler: mock.MagicMock,
     mocked_need_update: mock.MagicMock,
     mocked_version: mock.MagicMock,
@@ -141,21 +178,16 @@ async def test_self_update_agent(
     mocked_fetch_upstream_version_info.return_value = upstream_version
     mocked_need_update.return_value = is_update_available
     mocked_scheduler.pause = mock.Mock()
-    mocked_scheduler.resume = mock.Mock()
 
     await self_update_agent()
 
-    mocked_version.assert_called_once_with("jobbergate_agent")
+    mocked_version.assert_called_once_with("jobbergate-agent")
     mocked_fetch_upstream_version_info.assert_called_once_with()
     mocked_need_update.assert_called_once_with(current_version, upstream_version)
     if is_update_available:
         mocked_scheduler.pause.assert_called_once_with()
         mocked_update_package.assert_called_once_with(upstream_version)
-        mocked_schedule_tasks.assert_called_once_with(mocked_scheduler)
-        mocked_scheduler.resume.assert_called_once_with()
 
     else:
         mocked_scheduler.pause.assert_not_called()
         mocked_update_package.assert_not_called()
-        mocked_schedule_tasks.assert_not_called()
-        mocked_scheduler.resume.assert_not_called()
