@@ -10,7 +10,7 @@ on:
 jobs:
   core-tests:
     name: "jobbergate-core tests"
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-24.04"
     steps:
       - uses: actions/checkout@v3
       - uses: Gr1N/setup-poetry@v8
@@ -44,7 +44,7 @@ jobs:
 
   api-tests:
     name: "jobbergate-api tests"
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-24.04"
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v3
@@ -65,7 +65,7 @@ jobs:
 
   cli-tests:
     name: "jobbergate-cli tests"
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-24.04"
     steps:
       - uses: actions/checkout@v3
       - uses: Gr1N/setup-poetry@v8
@@ -99,7 +99,7 @@ jobs:
 
   agent-tests:
     name: "jobbergate-agent tests"
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-24.04"
     steps:
       - uses: actions/checkout@v3
       - uses: Gr1N/setup-poetry@v8
