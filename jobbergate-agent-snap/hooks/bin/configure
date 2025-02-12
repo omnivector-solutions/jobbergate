@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/snap/jobbergate-agent/current/bin/python3
 """Snapcraft `configure` hook for the Jobergate Agent snap."""
 
 import os
