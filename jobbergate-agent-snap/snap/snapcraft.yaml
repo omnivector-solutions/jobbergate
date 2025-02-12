@@ -1,6 +1,6 @@
 name: jobbergate-agent
-base: core22
-version: '0.5.0'
+base: core24
+version: '5.5.0'
 summary: The Jobbergate Agent snap
 adopt-info: metadata
 license: MIT
@@ -54,22 +54,21 @@ confinement: classic
 
 parts:
   jobbergate-agent:
-    source: .
     plugin: python
-    python-packages:
-    - jobbergate-agent==5.5.0
+    # python-packages:
+    # - jobbergate-agent==5.5.0
     build-packages:
     - python3
-    - python3-distutils
-    - libapt-pkg-dev
-    - gcc
-    - g++
-    - dpkg-dev
+    - python3-poetry
+    #- libapt-pkg-dev
+    #- gcc
+    #- g++
+    #- dpkg-dev
     stage-packages:
-    - python3.10-minimal
-    - python3.10-venv
-    - libpython3.10-minimal
-    - libpython3.10-stdlib
+    - python3.12-minimal
+    #- python3.12-venv
+    #- libpython3.12-minimal
+    - libpython3.12-stdlib
     build-attributes:
     - enable-patchelf
 
@@ -78,13 +77,6 @@ parts:
     source: hooks
     organize:
       bin/: snap/hooks/
-
-  metadata:
-    plugin: nil
-    override-pull: |
-      craftctl default
-      COMMIT_SHA=$(cat $SNAPCRAFT_PROJECT_DIR/sha/commit-sha.txt)
-      craftctl set version="$(craftctl get version)-$COMMIT_SHA"
 
   wrappers:
     plugin: dump
@@ -97,7 +89,7 @@ apps:
     daemon: simple
     install-mode: disable
     environment:
-      PYTHONPATH: "$SNAP/lib/python3.10/site-packages:${PYTHONPATH}"
+      PATH: "$SNAP/bin"
 
   start:
     command: commands/daemon.start
