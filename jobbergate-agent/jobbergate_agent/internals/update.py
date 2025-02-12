@@ -74,17 +74,10 @@ def _update_package(version: str) -> None:
     """Update jobbergate-agent package."""
     python_bin = sys.executable
 
-    install_cmd = [python_bin, "-m", "pip", "install"]
-    uninstall_cmd = [python_bin, "-m", "pip", "uninstall"]
+    install_cmd = [f"{os.environ['SNAP_COMMON']}/bin/pip3", "install", "--break-system-packages", "--upgrade", f"{package_name}=={version}"]
+    #uninstall_cmd = [f"{os.environ['SNAP_COMMON']}/bin/pip3", "uninstall", "--break-system-packages", "-y", f"{package_name}")
 
-    if os.environ.get("SNAP"):
-        uninstall_cmd.extend(["--break-system-packages", "-y"])
-        install_cmd.append(f"--target={os.environ['PYTHONPATH']}")
-
-    install_cmd.append(f"{package_name}=={version}")
-    uninstall_cmd.append(f"{package_name}")
-
-    subprocess.check_call(uninstall_cmd)
+    #subprocess.check_call(uninstall_cmd)
     subprocess.check_call(install_cmd)
 
     os.execve(python_bin, [python_bin] + list(sys.argv), os.environ)
