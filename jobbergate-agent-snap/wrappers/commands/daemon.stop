@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -eu
 
 snapctl stop $SNAP_NAME.daemon

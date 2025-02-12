@@ -74,8 +74,8 @@ def _update_package(version: str) -> None:
     """Update jobbergate-agent package."""
     
     cmd = [sys.executable, "-m", "pip", "install", "--upgrade"]
-    if python_path := os.environ.get("PYTHONPATH"):
-        cmd.append(f"--target={python_path}")
+    if os.environ.get("SNAP"):
+        cmd.append(f"--target={os.environ['PYTHONPATH']}")
     cmd.append(f"{package_name}=={version}")
     subprocess.check_call(cmd)
 

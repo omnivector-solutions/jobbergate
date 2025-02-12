@@ -99,13 +99,22 @@ apps:
     command: commands/daemon.start
     daemon: simple
     install-mode: disable
+    environment:
+      PYTHONPATH: "$SNAP_COMMON/lib/python3.12/site-packages"
+      PATH: "$SNAP/bin"
 
   stop:
     command: commands/daemon.stop
     daemon: simple
     install-mode: disable
+    environment:
+      PYTHONPATH: "$SNAP_COMMON/lib/python3.12/site-packages"
+      PATH: "$SNAP/bin"
 
   restart:
     command: commands/daemon.restart
     daemon: simple
     install-mode: disable
+    environment:
+      PYTHONPATH: "$SNAP_COMMON/lib/python3.12/site-packages"
+      PATH: "$SNAP/bin"
