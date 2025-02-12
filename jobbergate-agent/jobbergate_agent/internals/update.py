@@ -72,12 +72,22 @@ def _need_update(current_version: str, upstream_version: str) -> bool:
 
 def _update_package(version: str) -> None:
     """Update jobbergate-agent package."""
-    
-    cmd = [sys.executable, "-m", "pip", "install", "--upgrade"]
+    python_bin = sys.executable
+
+    install_cmd = [python_bin, "-m", "pip", "install"]
+    uninstall_cmd = [python_bin, "-m", "pip", "uninstall"]
+
     if os.environ.get("SNAP"):
-        cmd.append(f"--target={os.environ['PYTHONPATH']}")
-    cmd.append(f"{package_name}=={version}")
-    subprocess.check_call(cmd)
+        uninstall_cmd.extend(["--break-system-packages", "-y"])
+        install_cmd.append(f"--target={os.environ['PYTHONPATH']}")
+
+    install_cmd.append(f"{package_name}=={version}")
+    uninstall_cmd.append(f"{package_name}")
+
+    subprocess.check_call(uninstall_cmd)
+    subprocess.check_call(install_cmd)
+
+    os.execve(python_bin, [python_bin] + list(sys.argv), os.environ)
 
 
 async def self_update_agent() -> None:
