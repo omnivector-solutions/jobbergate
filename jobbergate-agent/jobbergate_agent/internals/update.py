@@ -1,3 +1,4 @@
+import os
 import re
 import subprocess
 import sys
@@ -70,7 +71,16 @@ def _need_update(current_version: str, upstream_version: str) -> bool:
 
 
 def _update_package(version: str) -> None:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", f"{package_name}=={version}"])
+    """Update jobbergate-agent package."""
+    python_bin = sys.executable
+
+    install_cmd = [f"{os.environ['SNAP_COMMON']}/bin/pip3", "install", "--break-system-packages", "--upgrade", f"{package_name}=={version}"]
+    #uninstall_cmd = [f"{os.environ['SNAP_COMMON']}/bin/pip3", "uninstall", "--break-system-packages", "-y", f"{package_name}")
+
+    #subprocess.check_call(uninstall_cmd)
+    subprocess.check_call(install_cmd)
+
+    os.execve(python_bin, [python_bin] + list(sys.argv), os.environ)
 
 
 async def self_update_agent() -> None:
