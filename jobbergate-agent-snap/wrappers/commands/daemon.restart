@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eu
 
-snapctl restart $SNAP_NAME.daemon
-snapctl set-health okay
+/usr/bin/snapctl restart $SNAP_NAME.daemon
+/usr/bin/snapctl set-health okay
 exit 0

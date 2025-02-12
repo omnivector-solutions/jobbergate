@@ -57,7 +57,7 @@ parts:
     source: .
     plugin: python
     python-packages:
-    - jobbergate-agent==5.5.0
+    - jobbergate-agent==5.6.0a3
     build-packages:
     - python3
     - libapt-pkg-dev
@@ -93,7 +93,8 @@ apps:
     daemon: simple
     install-mode: disable
     environment:
-      PATH: "$SNAP/bin"
+      # PYTHONPATH: "$SNAP/lib/python3.12/site-packages"
+      PATH: "$SNAP/bin:${PATH}"
 
   start:
     command: commands/daemon.start
