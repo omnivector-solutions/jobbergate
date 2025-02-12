@@ -44,11 +44,21 @@ async def test__fetch_upstream_version_info__check_http_error(http_code: int):
     [
         ("1.0.0", "1.0.0", False),  # Same version
         ("1.0.0", "2.0.0", False),  # Different major version
+        ("1.0.9a1", "2.1.0", False),  # Different major not allowed even for alpha updates
         ("1.0.0", "1.1.0", True),  # Minor version update available
         ("1.0.0", "1.0.1", True),  # Patch version update available
         ("2.0.0", "1.0.0", False),  # Major version rollback
         ("1.2.0", "1.1.0", True),  # Minor version rollback
         ("1.0.1", "1.0.0", True),  # Patch version rollback
+        ("1.0.9a1", "1.0.9a2", True),  # Alpha version available
+        ("1.0.9a1", "1.0.9", True),  # Alpha version update to stable
+        ("1.0.9a1", "1.1.0", True),  # Alpha version update to stable
+        ("1.0.9a1", "1.0.8", False),  # Alpha rollback not allowed
+        ("1.0.9a1", "1.1.0a1", False),  # Alpha to alpha not allowed if minor is different
+        ("1.0.9a1", "1.1.0-alpha.1", False),  # Alpha to alpha not allowed if minor is different
+        ("2.3.9a1", "2.3.9-alpha.2", True),  # Check other format
+        ("1.2.10a1", "1.2.10-alpha2", True),  # Other upstream format
+        ("1.2.10-alpha.6", "1.2.10a5", False),  # Current in another format
     ],
 )
 def test_need_update(current_version: str, upstream_version: str, expected_result: bool):
@@ -65,7 +75,7 @@ def test_need_update(current_version: str, upstream_version: str, expected_resul
         ("1", "2"),  # Major version with no minor/patch
         ("1.0.1a", "1.1.0"),  # Pre-release improperly formatted
         ("1.0.1", "1.0.10b"),  # Pre-release improperly formatted
-        ("1.0.9a1", "1.0.9a2"),  # Alpha version is not an allowed format
+        ("1.1.1", "1.1.1alpha2"),  # Upstream alpha improperly formatted
     ],
 )
 def test_need_update__check_improperly_formatted_versions(
@@ -97,7 +107,7 @@ def test_update_package__normal_install(
     mocked_restart: mock.MagicMock,
     mocked_detect_snap: mock.MagicMock,
     version: str,
-    executable: str
+    executable: str,
 ):
     """Test that _update_package runs without error."""
     mocked_subprocess.check_call.return_value = None
@@ -124,10 +134,7 @@ def test_update_package__normal_install(
 @mock.patch("jobbergate_agent.internals.update.detect_snap")
 @mock.patch("jobbergate_agent.internals.update.subprocess")
 def test_update_package__snap_install(
-    mocked_subprocess: mock.MagicMock,
-    mocked_detect_snap: mock.MagicMock,
-    version: str,
-    executable: str
+    mocked_subprocess: mock.MagicMock, mocked_detect_snap: mock.MagicMock, version: str, executable: str
 ):
     """Test that _update_package runs without error."""
     mocked_subprocess.check_call.return_value = None

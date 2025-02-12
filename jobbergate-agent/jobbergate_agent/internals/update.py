@@ -34,7 +34,8 @@ def _need_update(current_version: str, upstream_version: str) -> bool:
     In case the current version is the same as the upstream version, return False.
     If the major versions are different, return False, as updates across major versions are not desired.
     Otherwise, return True, allowing updates and rollbacks across all minor and patch versions,
-    including handling for pre-release versions ('a' for alpha, 'b' for beta).
+    including handling for pre-release versions in case the release is tagged with `a` as alpha,
+    e.g. `1.0.0a1`.
     """
     current_major: int | str
     current_minor: int | str
@@ -44,7 +45,7 @@ def _need_update(current_version: str, upstream_version: str) -> bool:
     upstream_patch: int | str
 
     # regular expression to parse version strings: major.minor.patch
-    version_pattern = r"^(\d+)\.(\d+)\.(\d+)$"
+    version_pattern = r"^(\d+)\.(\d+)\.(\d+)(?:-(alpha)\.?(\d+)|a(\d+))?$"
 
     current_match = re.match(version_pattern, current_version)
     upstream_match = re.match(version_pattern, upstream_version)
@@ -54,17 +55,48 @@ def _need_update(current_version: str, upstream_version: str) -> bool:
             f"One of the following versions are improperly formatted: {current_version}, {upstream_version}"
         )
 
-    current_major, current_minor, current_patch = current_match.groups()
-    upstream_major, upstream_minor, upstream_patch = upstream_match.groups()
+    (
+        current_major,
+        current_minor,
+        current_patch,
+        current_prerelease_type,
+        current_prerelease_ver,
+        current_alpha,
+    ) = current_match.groups()
+    (
+        upstream_major,
+        upstream_minor,
+        upstream_patch,
+        upstream_prerelease_type,
+        upstream_prerelease_ver,
+        upstream_alpha,
+    ) = upstream_match.groups()
 
-    current_major, current_minor, current_patch = map(int, [current_major, current_minor, current_patch])
-    upstream_major, upstream_minor, upstream_patch = map(int, [upstream_major, upstream_minor, upstream_patch])
+    if current_prerelease_type:
+        current_alpha = current_prerelease_ver
+    if upstream_prerelease_type:
+        upstream_alpha = upstream_prerelease_ver
 
-    # major version check
+    current_major, current_minor, current_patch, current_alpha = map(
+        int, [current_major, current_minor, current_patch, current_alpha or 0]
+    )
+    upstream_major, upstream_minor, upstream_patch, upstream_alpha = map(
+        int, [upstream_major, upstream_minor, upstream_patch, upstream_alpha or 0]
+    )
+
+    # check tests/test_logicals/test_update.py for understanding the below logic
     if current_major != upstream_major:
         return False
-    # minor and patch version check
-    elif current_minor != upstream_minor or current_patch != upstream_patch:
+    elif current_minor != upstream_minor:
+        if upstream_alpha != 0:
+            return False
+        return True
+    elif current_patch != upstream_patch:
+        # don't rollback current alpha version
+        if current_alpha != 0 and current_patch > upstream_patch:
+            return False
+        return True
+    elif (upstream_alpha == 0 and current_alpha != 0) or upstream_alpha > current_alpha:
         return True
     return False
 
