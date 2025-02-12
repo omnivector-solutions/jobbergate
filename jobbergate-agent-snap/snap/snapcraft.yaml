@@ -54,12 +54,15 @@ confinement: classic
 
 parts:
   jobbergate-agent:
-    source: .
     plugin: python
-    python-packages:
-    - jobbergate-agent==5.5.0
+    source: https://github.com/omnivector-solutions/jobbergate.git
+    source-subdir: jobbergate-agent
+    source-branch: use_snap_common
+    #python-packages:
+    #- jobbergate-agent==5.5.0
     build-packages:
     - python3
+    - libapt-pkg-dev
     - gcc
     - g++
     - dpkg-dev
@@ -72,6 +75,7 @@ parts:
     - enable-patchelf
     override-stage: |
      craftctl default
+     #export PYTHONUSERBASE=$SNAPCRAFT_PART_INSTALL/lib/python3.12/site-packages
      craftctl set version="$($SNAPCRAFT_PART_INSTALL/bin/python3 -m pip show jobbergate-agent | grep Version | awk '{print $2}')"
 
 

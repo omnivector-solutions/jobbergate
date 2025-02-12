@@ -3,3 +3,4 @@
 set -eux
 
 cp -r $SNAP/lib $SNAP_COMMON/
+cp -L -r --preserve=all $SNAP/bin $SNAP_COMMON/
