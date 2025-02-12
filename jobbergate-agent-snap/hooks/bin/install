@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -eux
+
+cp -r $SNAP/lib $SNAP_COMMON/
