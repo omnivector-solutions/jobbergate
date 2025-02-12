@@ -60,8 +60,6 @@ parts:
     - jobbergate-agent==5.5.0
     build-packages:
     - python3
-    - python3-distutils
-    - libapt-pkg-dev
     - gcc
     - g++
     - dpkg-dev

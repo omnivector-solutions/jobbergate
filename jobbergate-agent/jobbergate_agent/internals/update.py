@@ -70,7 +70,13 @@ def _need_update(current_version: str, upstream_version: str) -> bool:
 
 
 def _update_package(version: str) -> None:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", f"{package_name}=={version}"])
+    """Update jobbergate-agent package."""
+    
+    cmd = [sys.executable, "-m", "pip", "install", "--upgrade"]
+    if os.environ.get("SNAP"):
+        cmd.append("--target=/var/snap/jobbergate-agent/common/lib/python3.12/site-packages")
+    cmd.append(f"{package_name}=={version}")
+    subprocess.check_call(cmd)
 
 
 async def self_update_agent() -> None:
