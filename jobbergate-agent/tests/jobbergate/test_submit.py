@@ -553,12 +553,12 @@ async def test_submit_job_script__raises_exception_if_execution_dir_does_not_exi
     mocked_sbatch = mock.MagicMock()
     mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
 
-    with pytest.raises(JobSubmissionError, match="The execution directory must exist and be an absolute path"):
+    with pytest.raises(JobSubmissionError, match="Execution does not exist or is not writable by the user"):
         await submit_job_script(pending_job_submission, user_mapper)
 
     mock_mark_as_rejected.assert_called_once_with(
         dummy_pending_job_submission_data["id"],
-        RegexArgMatcher(".*The execution directory must exist and be an absolute path.*"),
+        RegexArgMatcher(".*Execution does not exist or is not writable by the user.*"),
     )
 
 
@@ -577,12 +577,12 @@ async def test_submit_job_script__raises_exception_if_execution_dir_is_relative(
     mocked_sbatch = mock.MagicMock()
     mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
 
-    with pytest.raises(JobSubmissionError, match="The execution directory must exist and be an absolute path"):
+    with pytest.raises(JobSubmissionError, match="Execution directory must be an absolute path"):
         await submit_job_script(pending_job_submission, user_mapper)
 
     mock_mark_as_rejected.assert_called_once_with(
         dummy_pending_job_submission_data["id"],
-        RegexArgMatcher(".*The execution directory must exist and be an absolute path.*"),
+        RegexArgMatcher(".*Execution directory must be an absolute path.*"),
     )
 
 
