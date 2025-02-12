@@ -59,6 +59,7 @@ async def test__fetch_upstream_version_info__check_http_error(http_code: int):
         ("2.3.9a1", "2.3.9-alpha.2", True),  # Check other format
         ("1.2.10a1", "1.2.10-alpha2", True),  # Other upstream format
         ("1.2.10-alpha.6", "1.2.10a5", False),  # Current in another format
+        ("5.6.0a2", "5.5.0", False),  # Alpha rollback to upstream not allowed
     ],
 )
 def test_need_update(current_version: str, upstream_version: str, expected_result: bool):

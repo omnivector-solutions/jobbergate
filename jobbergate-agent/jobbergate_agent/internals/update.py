@@ -90,6 +90,8 @@ def _need_update(current_version: str, upstream_version: str) -> bool:
     elif current_minor != upstream_minor:
         if upstream_alpha != 0:
             return False
+        elif current_alpha and current_minor > upstream_minor:
+            return False
         return True
     elif current_patch != upstream_patch:
         # don't rollback current alpha version
