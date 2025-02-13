@@ -23,6 +23,8 @@ description: |
 
   - task-self-update-force-version: Force an update to the supplied version. For example 5.6.0
 
+  - task-self-update-snap-channel: Use the supplied snap channel for snap updates. Defaults to latest/stable
+
   - sbatch-path: The absolute path to the *sbatch* command on the host system. This is optional and defaults to /usr/bin/sbatch.
 
   - scontrol-path: The absolute path to the *scontrol* command on the host system. This is optional and defaults to /usr/bin/scontrol.

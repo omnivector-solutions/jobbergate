@@ -20,6 +20,7 @@ AGENT_VARIABLES_MAP: dict[str, Union[str, int]] = {
     "TASK_JOBS_INTERVAL_SECONDS": 30,
     "TASK_SELF_UPDATE_INTERVAL_SECONDS": 30,
     "TASK_SELF_UPDATE_FORCE_VERSION": "",
+    "TASK_SELF_UPDATE_SNAP_CHANNEL": "latest/stable",
     "CACHE_DIR": f"{SNAP_COMMON_PATH}/.cache",
     "SBATCH_PATH": "/usr/bin/sbatch",
     "SCONTROL_PATH": "/usr/bin/scontrol",
