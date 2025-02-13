@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import List, Optional, TypedDict, TypeAlias
 
 import pydantic
-from pydantic import ConfigDict
+from pydantic import ConfigDict, field_validator
 
 from jobbergate_agent.jobbergate.constants import FileType, INFLUXDB_MEASUREMENT
 
@@ -76,8 +76,23 @@ class SlurmJobData(pydantic.BaseModel, extra="ignore"):
 
     job_id: Optional[int] = None
     job_state: Optional[str] = None
-    job_info: Optional[str] = None
+    job_info: Optional[str] = "{}"
     state_reason: Optional[str] = None
+
+    @field_validator("job_state", mode="before")
+    @classmethod
+    def validate_job_state(cls, value: str | list[str] | None) -> str | None:
+        """
+        Validate the job_state field.
+        """
+        if value is None:
+            return None
+
+        if isinstance(value, list):
+            if len(value) != 1:
+                raise ValueError("job_state does not have exactly one value.")
+            return value[0]
+        return value
 
 
 class InfluxDBMeasurementDict(TypedDict):
