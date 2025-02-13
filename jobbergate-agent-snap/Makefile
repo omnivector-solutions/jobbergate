@@ -18,7 +18,7 @@ format: ## Run the formatter
 .PHONY: build
 build: clean ## Build the snap
 	@snapcraft -v
-	mv *.snap jobbergate-agnet.snap
+	mv *.snap jobbergate-agent.snap
 
 .PHONY: changes
 changes: ## Create a new change entry for the changelog
@@ -40,13 +40,13 @@ clean: ## Clean all files/folders created by the project
 	@find . -iname '.zip' -delete
 	@find . -type f -name "*.snap" -delete
 	@find . -iname 'commit-sha.txt' -delete
-	@rm -r .mypy_cache || true
-	@rm -r .ruff_cache || true
-	@rm -r .tox || true
-	@rm -r .venv || true
-	@rm -r parts || true
-	@rm -r prime || true
-	@rm -r stage || true
+	@rm -rf .mypy_cache
+	@rm -rf .ruff_cache
+	@rm -rf .tox
+	@rm -rf .venv
+	@rm -rf parts
+	@rm -rf prime
+	@rm -rf stage
 	@snapcraft clean
 
 .PHONY: help
