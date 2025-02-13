@@ -21,6 +21,8 @@ description: |
 
   - task-self-update-interval-seconds: The interval in seconds at which the agent will check for updates to itself. This is optional and defaults to 30 seconds (1 hour).
 
+  - task-self-update-force-version: Force an update to the supplied version. For example 5.6.0
+
   - sbatch-path: The absolute path to the *sbatch* command on the host system. This is optional and defaults to /usr/bin/sbatch.
 
   - scontrol-path: The absolute path to the *scontrol* command on the host system. This is optional and defaults to /usr/bin/scontrol.
@@ -57,7 +59,7 @@ parts:
     source: .
     plugin: python
     python-packages:
-    - jobbergate-agent==5.6.0a3
+    - jobbergate-agent==5.6.0a5
     build-packages:
     - python3
     - libapt-pkg-dev
