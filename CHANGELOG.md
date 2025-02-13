@@ -23,7 +23,7 @@ No significant changes.
 ### Fixed
 
 - Updated the schema for slurm job data to handle slurm updates ([PR #722](https://github.com/omnivector-solutions/jobbergate/pull/722))
-
+- Fix the migration run during the organization creation process removing the Dialect type from alembic migration.
 
 ## Agent Snap
 
