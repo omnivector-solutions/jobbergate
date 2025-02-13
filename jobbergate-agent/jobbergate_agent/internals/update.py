@@ -108,7 +108,7 @@ def _update_package(version: str) -> None:
     """Update jobbergate-agent package."""
     if detect_snap():
         logger.debug("Detected snap install. Calling snap refresh to update package")
-        subprocess.check_call(["snap", "refresh", package_name, "--stable", f"--revision={version}"])
+        subprocess.check_call(["snap", "refresh", package_name, f"--channel={SETTINGS.TASK_SELF_UPDATE_SNAP_CHANNEL}", f"--revision={version}"])
     else:
         logger.debug("Detected normal install. Using pip to update package")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", f"{package_name}=={version}"])

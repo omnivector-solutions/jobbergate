@@ -61,6 +61,7 @@ class Settings(BaseSettings):
     TASK_GARBAGE_COLLECTION_HOUR: Optional[int] = Field(None, ge=0, le=23)  # hour of day
     TASK_SELF_UPDATE_INTERVAL_SECONDS: Optional[int] = Field(None, ge=10)  # seconds
     TASK_SELF_UPDATE_FORCE_VERSION: Optional[str] = None
+    TASK_SELF_UPDATE_SNAP_CHANNEL: str = "latest/stable"
 
     # Job submission settings
     WRITE_SUBMISSION_FILES: bool = True
