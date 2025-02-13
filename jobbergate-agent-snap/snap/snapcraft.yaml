@@ -19,8 +19,6 @@ description: |
 
   - task-jobs-interval-seconds: The interval in seconds at which the agent will run its internal task jobs, hence sending data to the Jobbergate API server. This is optional and defaults to 30 seconds.
 
-  - task-self-update-interval-seconds: The interval in seconds at which the agent will check for updates to itself. This is optional and defaults to 30 seconds (1 hour).
-
   - sbatch-path: The absolute path to the *sbatch* command on the host system. This is optional and defaults to /usr/bin/sbatch.
 
   - scontrol-path: The absolute path to the *scontrol* command on the host system. This is optional and defaults to /usr/bin/scontrol.
