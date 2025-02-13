@@ -17,7 +17,7 @@ format: ## Run the formatter
 
 .PHONY: build
 build: ## Build the snap
-	@snapcraft $(ARGS)
+	@snapcraft -v
 	mv *.snap jobbergate-agnet.snap
 
 .PHONY: changes
