@@ -17,8 +17,8 @@ format: ## Run the formatter
 
 .PHONY: build
 build: ## Build the snap
-	@git rev-parse --short HEAD > sha/commit-sha.txt
 	@snapcraft $(ARGS)
+	mv *.snap jobbergate-agnet.snap
 
 .PHONY: changes
 changes:

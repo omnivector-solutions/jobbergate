@@ -183,13 +183,11 @@ jobs:
         working-directory: ./jobbergate-agent-snap
         run: |
           make build ARGS="-v"
-          SNAP_FILE_PATH=`find . -name '*.snap'`
-          echo "snap_file_path=$SNAP_FILE_PATH" >> "$GITHUB_OUTPUT"
 
       - name: Release to Edge
         working-directory: ./jobbergate-agent-snap
         run: |
-          snapcraft upload --release latest/edge,latest/candidate ${{ steps.build.outputs.snap_file_path }}
+          snapcraft upload --release latest/edge,latest/candidate jobbergate-agent.snap
 
       - name: Archive snap logs
         if: failure()
