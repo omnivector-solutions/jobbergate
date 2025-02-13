@@ -5,6 +5,7 @@ from importlib.metadata import version
 
 from loguru import logger
 
+from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
 
 from jobbergate_agent.utils.process import restart_agent, detect_snap
@@ -115,6 +116,16 @@ def _update_package(version: str) -> None:
         restart_agent()
 
 
+def _stop_schedule_jobs():
+    logger.debug("Pausing the scheduler...")
+    scheduler.pause()
+
+    logger.debug("Clearing the scheduler jobs...")
+    scheduler_jobs: list[Job] = scheduler.get_jobs()
+    for job in scheduler_jobs:
+        job.remove()
+
+
 async def self_update_agent() -> None:
     """Fetch the upstream version and update the agent if necessary.
 
@@ -123,21 +134,19 @@ async def self_update_agent() -> None:
 
     current_version = version(package_name)
     upstream_version = await _fetch_upstream_version_info()
+    forced_version = SETTINGS.TASK_SELF_UPDATE_FORCE_VERSION
     logger.debug(
         f"Jobbergate Agent version info: current_version={current_version}, upstream_version={upstream_version}"
     )
 
-    if _need_update(current_version, upstream_version):
+    if forced_version and forced_version != current_version:
+        logger.warning("The Jobbergate Agent has a forced update version that doesn't match the current version.")
+        _stop_schedule_jobs()
+        logger.debug(f"Updating {package_name} from version {current_version} to {forced_version}...")
+        _update_package(forced_version)
+    elif _need_update(current_version, upstream_version):
         logger.warning("The Jobbergate Agent is outdated in relation to the upstream version; an update is required.")
-
-        logger.debug("Pausing the scheduler...")
-        scheduler.pause()
-
-        logger.debug("Clearing the scheduler jobs...")
-        scheduler_jobs: list[Job] = scheduler.get_jobs()
-        for job in scheduler_jobs:
-            job.remove()
-
+        _stop_schedule_jobs()
         logger.debug(f"Updating {package_name} from version {current_version} to {upstream_version}...")
         _update_package(upstream_version)
     else:

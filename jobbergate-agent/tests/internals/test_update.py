@@ -167,7 +167,7 @@ def test_update_package__snap_install(
 @mock.patch("jobbergate_agent.internals.update.version")
 @mock.patch("jobbergate_agent.internals.update._need_update")
 @mock.patch("jobbergate_agent.internals.update.scheduler")
-async def test_self_update_agent(
+async def test_self_update_agent__unforced(
     mocked_scheduler: mock.MagicMock,
     mocked_need_update: mock.MagicMock,
     mocked_version: mock.MagicMock,
@@ -177,7 +177,9 @@ async def test_self_update_agent(
     upstream_version: str,
     is_update_available: bool,
 ):
-    """Test that self_update_agent runs without error the expected logic.
+    """Test that self_update_agent runs without error and uses the expected logic.
+
+    This test does not use the forced update logic.
 
     If an update is available, it is expected that the scheduler is shutdown
     and then restarted with the new version after the package update is done.
@@ -195,6 +197,51 @@ async def test_self_update_agent(
     if is_update_available:
         mocked_scheduler.pause.assert_called_once_with()
         mocked_update_package.assert_called_once_with(upstream_version)
+
+    else:
+        mocked_scheduler.pause.assert_not_called()
+        mocked_update_package.assert_not_called()
+
+
+@pytest.mark.usefixtures("mock_access_token")
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "current_version, forced_version, should_update",
+    [
+        ("1.0.0", "1.0.0", False),  # Same version
+        ("1.0.0", "2.0.0", True),  # Different version
+    ],
+)
+@mock.patch("jobbergate_agent.internals.update._fetch_upstream_version_info")
+@mock.patch("jobbergate_agent.internals.update._update_package")
+@mock.patch("jobbergate_agent.internals.update.version")
+@mock.patch("jobbergate_agent.internals.update.scheduler")
+async def test_self_update_agent__forced(
+    mocked_scheduler: mock.MagicMock,
+    mocked_version: mock.MagicMock,
+    mocked_update_package: mock.MagicMock,
+    mocked_fetch_upstream_version_info: mock.MagicMock,
+    current_version: str,
+    forced_version: str,
+    should_update: bool,
+    tweak_settings,
+):
+    """Test that self_update_agent runs without error and uses the expected logic.
+
+    This test uses the forced update logic.
+    """
+    mocked_version.return_value = current_version
+    mocked_fetch_upstream_version_info.return_value = current_version
+    mocked_scheduler.pause = mock.Mock()
+
+    with tweak_settings(TASK_SELF_UPDATE_FORCE_VERSION=forced_version):
+        await self_update_agent()
+
+    mocked_version.assert_called_once_with("jobbergate-agent")
+    mocked_fetch_upstream_version_info.assert_called_once_with()
+    if should_update:
+        mocked_scheduler.pause.assert_called_once_with()
+        mocked_update_package.assert_called_once_with(forced_version)
 
     else:
         mocked_scheduler.pause.assert_not_called()
