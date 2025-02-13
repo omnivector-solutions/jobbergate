@@ -63,12 +63,12 @@ drop_materialized_view_template = "DROP MATERIALIZED VIEW {view_name}"
 class TimestampInt(TypeDecorator):
     impl = DateTime(timezone=True)
 
-    def process_bind_param(self, value: int | None, dialect: sa.Dialect) -> datetime | None:
+    def process_bind_param(self, value: int | None, dialect) -> datetime | None:
         if value is not None:
             return datetime.fromtimestamp(value, tz=timezone.utc)
         return value
 
-    def process_result_value(self, value: datetime | None, dialect: sa.Dialect) -> int | None:
+    def process_result_value(self, value: datetime | None, dialect) -> int | None:
         if value is not None:
             return int(value.timestamp())
         return value
