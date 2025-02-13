@@ -11,6 +11,40 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.5.3](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.5.3) - 2025-02-13
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+### Fixed
+
+- Updated the schema for slurm job data to handle slurm updates ([PR #722](https://github.com/omnivector-solutions/jobbergate/pull/722))
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+No significant changes.
+
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.5.2](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.5.2) - 2025-02-13
 
 ## Core
