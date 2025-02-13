@@ -14,6 +14,7 @@ import respx
 
 from jobbergate_agent.jobbergate.schemas import JobScriptFile, PendingJobSubmission, SlurmJobData
 from jobbergate_agent.jobbergate.submit import (
+    SubprocessAsUserHandler,
     fetch_pending_submissions,
     get_job_script_file,
     mark_as_rejected,
@@ -22,6 +23,7 @@ from jobbergate_agent.jobbergate.submit import (
     retrieve_submission_file,
     submit_job_script,
     submit_pending_jobs,
+    validate_submit_dir,
     write_submission_file,
 )
 from jobbergate_agent.settings import SETTINGS
@@ -403,6 +405,52 @@ async def test_mark_as_rejected__raises_JobbergateApiError_if_the_response_is_no
         assert update_route.called
 
 
+class TestValidateSubmitDir:
+    """
+    Test the ``validate_submit_dir()`` function.
+    """
+
+    subprocess_handler = SubprocessAsUserHandler(username=getpass.getuser())
+
+    def test_validate_submit_dir__success(self, tmp_path):
+        """
+        Test that the function can successfully validate a submission directory.
+        """
+        submit_dir = tmp_path / "submit"
+        submit_dir.mkdir()
+
+        validate_submit_dir(submit_dir, self.subprocess_handler)
+
+    def test_validate_submit_dir__raises_exception_if_not_absolute_path(self):
+        """
+        Test that the function raises an exception if the submission directory is not an absolute path.
+        """
+        submit_dir = Path("./submit")
+
+        with pytest.raises(ValueError, match="must be an absolute path"):
+            validate_submit_dir(submit_dir, self.subprocess_handler)
+
+    def test_validate_submit_dir__raises_exception_if_dir_is_not_writable(self, tmp_path):
+        """
+        Test that the function raises an exception if the submission directory is not writable.
+        """
+        submit_dir = tmp_path / "submit"
+        submit_dir.mkdir()
+        submit_dir.chmod(0o444)
+
+        with pytest.raises(ValueError, match="not writable by the user"):
+            validate_submit_dir(submit_dir, self.subprocess_handler)
+
+    def test_validate_submit_dir__raises_exception_if_dir_does_not_exist(self, tmp_path):
+        """
+        Test that the function raises an exception if the submission directory does not exist.
+        """
+        submit_dir = tmp_path / "submit"
+
+        with pytest.raises(ValueError, match="Execution directory does not exist"):
+            validate_submit_dir(submit_dir, self.subprocess_handler)
+
+
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
 @pytest.mark.parametrize("job_submissions_name", ["dummy-job-submission", "really-long-job-submission-name" * 10])
@@ -553,12 +601,12 @@ async def test_submit_job_script__raises_exception_if_execution_dir_does_not_exi
     mocked_sbatch = mock.MagicMock()
     mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
 
-    with pytest.raises(JobSubmissionError, match="Execution does not exist or is not writable by the user"):
+    with pytest.raises(JobSubmissionError, match="Execution directory does not exist or is not writable by the user"):
         await submit_job_script(pending_job_submission, user_mapper)
 
     mock_mark_as_rejected.assert_called_once_with(
         dummy_pending_job_submission_data["id"],
-        RegexArgMatcher(".*Execution does not exist or is not writable by the user.*"),
+        RegexArgMatcher(".*Execution directory does not exist or is not writable by the user.*"),
     )
 
 

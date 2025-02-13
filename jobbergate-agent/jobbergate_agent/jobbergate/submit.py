@@ -205,7 +205,7 @@ def validate_submit_dir(submit_dir: Path, subprocess_handler: SubprocessAsUserHa
         subprocess_handler.run(cmd=("test", "-d", submit_dir.as_posix()))
         subprocess_handler.run(cmd=("test", "-w", submit_dir.as_posix()))
     except RuntimeError as e:
-        raise ValueError("Execution does not exist or is not writable by the user") from e
+        raise ValueError("Execution directory does not exist or is not writable by the user") from e
 
 
 async def submit_job_script(
