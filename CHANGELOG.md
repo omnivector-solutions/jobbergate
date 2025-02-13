@@ -11,6 +11,37 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.5.4](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.5.4) - 2025-02-13
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+- Fix the migration run during the organization creation process removing the Dialect type from alembic migration.
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.5.3](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.5.3) - 2025-02-13
 
 ## Core
@@ -23,7 +54,6 @@ No significant changes.
 ### Fixed
 
 - Updated the schema for slurm job data to handle slurm updates ([PR #722](https://github.com/omnivector-solutions/jobbergate/pull/722))
-- Fix the migration run during the organization creation process removing the Dialect type from alembic migration.
 
 ## Agent Snap
 
