@@ -55,7 +55,7 @@ parts:
     source: .
     plugin: python
     python-packages:
-    - jobbergate-agent==5.5.4
+    - jobbergate-agent==5.5.5
     build-packages:
     - python3
     - gcc
