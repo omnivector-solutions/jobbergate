@@ -28,6 +28,10 @@ docs: install
 docs-serve: install
 	poetry run mkdocs serve --config-file=docs/mkdocs.yaml --dev-addr=localhost:10000
 
+.PHONY: changes
+changes:
+	towncrier create --dir .. --section Documentation
+
 .PHONY: clean
 clean:
 	@find . -iname '*.pyc' -delete
