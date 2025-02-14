@@ -1185,6 +1185,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.validate_submit_dir" class="md-nav__link">
+    validate_submit_dir()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_agent.jobbergate.submit.write_submission_file" class="md-nav__link">
     write_submission_file()
   </a>
@@ -1995,6 +2002,13 @@
           <li class="md-nav__item">
   <a href="#jobbergate_agent.jobbergate.submit.submit_pending_jobs" class="md-nav__link">
     submit_pending_jobs()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.submit.validate_submit_dir" class="md-nav__link">
+    validate_submit_dir()
   </a>
   
 </li>
@@ -3720,6 +3734,31 @@ Reject the submission if there are support files with WRITE_SUBMISSION_FILES set
   <div class="doc doc-contents ">
   
       <p>Submit all pending jobs and update them with <code>SUBMITTED</code> status and slurm_job_id.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.submit.validate_submit_dir" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">validate_submit_dir</span>
+
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">validate_submit_dir</span><span class="p">(</span><span class="n">submit_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">subprocess_handler</span><span class="p">:</span> <span class="n">SubprocessAsUserHandler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Validate the submission directory.</p>
+<p>The directory must exist and be writable by the user, so this verification is delegated to the subprocess
+handler as the user that will run the sbatch command.</p>
+<p>This is needed since <code>submit_dir.exists()</code> would run as the agent user, which may face permission errors.</p>
 
   </div>
 
