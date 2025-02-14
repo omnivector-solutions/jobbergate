@@ -5,10 +5,16 @@ import os
 import pwd
 from dataclasses import dataclass
 from pathlib import Path
+from subprocess import CompletedProcess
 from tempfile import TemporaryDirectory
 
 from buzz import DoExceptParams, handle_errors_async
-from jobbergate_core.tools.sbatch import InfoHandler, SubmissionHandler, SubprocessHandler, inject_sbatch_params
+from jobbergate_core.tools.sbatch import (
+    InfoHandler,
+    SubmissionHandler,
+    SubprocessHandler,
+    inject_sbatch_params,
+)
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
@@ -173,7 +179,7 @@ class SubprocessAsUserHandler(SubprocessHandler):
         self.uid = pwan.pw_uid
         self.gid = pwan.pw_gid
 
-    def run(self, *args, **kwargs):
+    def run(self, *args, **kwargs) -> CompletedProcess:
         kwargs.update(user=self.uid, group=self.gid, env={})
         # Tests indicate that the change on the working directory precedes the change of user on the subprocess.
         # With that, the user running the agent can face permission denied errors on cwd,
@@ -182,6 +188,24 @@ class SubprocessAsUserHandler(SubprocessHandler):
         if cwd := kwargs.pop("cwd", None):
             kwargs["preexec_fn"] = lambda: os.chdir(cwd)
         return super().run(*args, **kwargs)
+
+
+def validate_submit_dir(submit_dir: Path, subprocess_handler: SubprocessAsUserHandler) -> None:
+    """
+    Validate the submission directory.
+
+    The directory must exist and be writable by the user, so this verification is delegated to the subprocess
+    handler as the user that will run the sbatch command.
+
+    This is needed since `submit_dir.exists()` would run as the agent user, which may face permission errors.
+    """
+    if not submit_dir.is_absolute():
+        raise ValueError("Execution directory must be an absolute path")
+    try:
+        subprocess_handler.run(cmd=("test", "-d", submit_dir.as_posix()))
+        subprocess_handler.run(cmd=("test", "-w", submit_dir.as_posix()))
+    except RuntimeError as e:
+        raise ValueError("Execution directory does not exist or is not writable by the user") from e
 
 
 async def submit_job_script(
@@ -221,10 +245,10 @@ async def submit_job_script(
         subprocess_handler = SubprocessAsUserHandler(username)
 
     submit_dir = pending_job_submission.execution_directory or SETTINGS.DEFAULT_SLURM_WORK_DIR
-    if not submit_dir.exists() or not submit_dir.is_absolute():
-        message = f"The execution directory must exist and be an absolute path, but got '{submit_dir.as_posix()}'"
-        await mark_as_rejected(pending_job_submission.id, message)
-        raise JobSubmissionError(message)
+    async with handle_errors_async(
+        "Execution directory is invalid", raise_exc_class=JobSubmissionError, do_except=_reject_handler
+    ):
+        validate_submit_dir(submit_dir, subprocess_handler)
 
     sbatch_handler = SubmissionHandler(
         sbatch_path=SETTINGS.SBATCH_PATH,
@@ -277,7 +301,7 @@ async def submit_pending_jobs() -> None:
     for pending_job_submission in pending_job_submissions:
         logger.debug(f"Submitting pending job_submission {pending_job_submission.id}")
         with JobSubmissionError.handle_errors(
-            (f"Failed to submit pending job_submission {pending_job_submission.id}" "...skipping to next pending job"),
+            f"Failed to submit pending job_submission {pending_job_submission.id}...skipping to next pending job",
             do_except=log_error,
             do_else=lambda: logger.debug(f"Finished submitting pending job_submission {pending_job_submission.id}"),
             re_raise=False,
