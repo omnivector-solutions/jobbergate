@@ -259,7 +259,6 @@ services:
     hostname: jobbergate-agent
     environment:
       - JOBBERGATE_AGENT_X_SLURM_USER_NAME=local-user
-      - JOBBERGATE_AGENT_DEFAULT_SLURM_WORK_DIR=/slurm-work-dir
       - JOBBERGATE_AGENT_BASE_API_URL=http://jobbergate-api:80
       - JOBBERGATE_AGENT_OIDC_DOMAIN=keycloak.local:8080/realms/jobbergate-local
       - JOBBERGATE_AGENT_OIDC_CLIENT_ID=local-slurm

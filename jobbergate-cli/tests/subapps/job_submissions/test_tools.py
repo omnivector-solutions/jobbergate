@@ -99,7 +99,7 @@ class TestJobSubmissionsExecutionDirectory:
 
         if execution_directory is None:
             # Default value
-            execution_directory = pathlib.Path.cwd()
+            execution_directory = pathlib.Path.home()
 
         expected_execution_directory = execution_directory.resolve()
         assert submission_handler.execution_directory == expected_execution_directory
