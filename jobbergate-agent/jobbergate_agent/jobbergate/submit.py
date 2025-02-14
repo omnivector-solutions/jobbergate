@@ -244,7 +244,7 @@ async def submit_job_script(
         logger.debug(f"Using local slurm user '{username}' for job submission")
         subprocess_handler = SubprocessAsUserHandler(username)
 
-    submit_dir = pending_job_submission.execution_directory or Path.home().resolve()
+    submit_dir = pending_job_submission.execution_directory or Path(f"/home/{username}")
     async with handle_errors_async(
         "Execution directory is invalid", raise_exc_class=JobSubmissionError, do_except=_reject_handler
     ):
