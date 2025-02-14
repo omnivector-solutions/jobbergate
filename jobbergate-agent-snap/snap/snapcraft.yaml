@@ -90,6 +90,7 @@ apps:
     install-mode: disable
     environment:
       PYTHONPATH: "$SNAP/lib/python3.12/site-packages"
+      PYTHONHOME: "$SNAP/usr"
       PATH: "$SNAP/bin:$PATH"
 
   start:
@@ -97,7 +98,6 @@ apps:
     daemon: simple
     install-mode: disable
     environment:
-      PYTHONPATH: "$SNAP/lib/python3.12/site-packages"
       PATH: "$SNAP/bin:$PATH"
 
   stop:
@@ -105,7 +105,6 @@ apps:
     daemon: simple
     install-mode: disable
     environment:
-      PYTHONPATH: "$SNAP/lib/python3.12/site-packages"
       PATH: "$SNAP/bin:$PATH"
 
   restart:
@@ -113,5 +112,4 @@ apps:
     daemon: simple
     install-mode: disable
     environment:
-      PYTHONPATH: "$SNAP/lib/python3.12/site-packages"
       PATH: "$SNAP/bin:$PATH"
