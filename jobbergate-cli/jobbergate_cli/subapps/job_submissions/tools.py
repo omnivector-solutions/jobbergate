@@ -74,7 +74,7 @@ class JobSubmissionABC(ABC):
         self.cluster_name = _map_cluster_name(self.jg_ctx, self.cluster_name)
 
         if self.execution_directory is None:
-            self.execution_directory = Path.home()
+            self.execution_directory = Path.cwd()
         if not self.execution_directory.is_absolute():
             self.execution_directory = self.execution_directory.resolve()
 
