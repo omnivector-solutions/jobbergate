@@ -51,6 +51,16 @@ grade: stable
 confinement: classic
 
 parts:
+  build-source:
+    source: http://github.com/omnivector-solutions/jobbergate
+    source-type: git
+    source-subdir: jobbergate-agent
+    plugin: python
+    python-packages:
+    - poetry==1.8.5
+    override-build: |
+      poetry build
+
   jobbergate-agent:
     source: .
     plugin: python
@@ -70,7 +80,9 @@ parts:
     - enable-patchelf
     override-stage: |
      craftctl default
-     craftctl set version="$($SNAPCRAFT_PART_INSTALL/bin/python3 -m pip show vantage-agent | grep Version | awk '{print $2}')"
+     craftctl set version="$(jg-version)"
+    after:
+    - build-source
 
   hooks:
     plugin: dump

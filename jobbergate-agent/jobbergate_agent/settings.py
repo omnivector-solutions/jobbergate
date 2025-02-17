@@ -1,6 +1,7 @@
+import json
 import sys
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Any
 
 import buzz
 from pydantic import AnyHttpUrl, confloat, Field, ValidationError, model_validator
@@ -26,7 +27,7 @@ def _get_env_file() -> Path | None:
 
 class Settings(BaseSettings):
     # Sbatch
-    SBATCH_PATH: Path = Path("/usr/bin/sbatch")
+    SBATCH_PATH: Path = Field(Path("/usr/bin/sbatch"), description="The path to the sbatch executable")
     SCONTROL_PATH: Path = Path("/usr/bin/scontrol")
     X_SLURM_USER_NAME: str = "ubuntu"
     DEFAULT_SLURM_WORK_DIR: Path = Path("/tmp")
@@ -117,12 +118,36 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="JOBBERGATE_AGENT_", env_file=_get_env_file(), extra="ignore")
 
 
-def init_settings() -> Settings:
-    try:
-        return Settings()
-    except ValidationError as e:
-        logger.error(e)
-        sys.exit(1)
+SETTINGS: Settings
+foo = "bar"
+
+def __getattr__(name: str) -> Any:
+    """
+    Allow SETTINGS loaded lazily.
+
+    This allows the Settings object to be imported without SETTINGS being initialized.
+    SETTINGS will be initialized in this function the first time it is imported. Further
+    imports will directly access the SETTINGS attribute of this module.
+    """
+    if name == "SETTINGS":
+        global SETTINGS
+        try:
+            return SETTINGS
+        except NameError:
+            pass
+
+        try:
+            SETTINGS = Settings()
+            return SETTINGS
+        except ValidationError as e:
+            logger.error(e)
+            sys.exit(1)
+
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
-SETTINGS = init_settings()
+def show_settings() -> None:
+    """
+    Show the schema for the settings of jobbergate-agent.
+    """
+    print(json.dumps(Settings.model_json_schema(), indent=2))

@@ -48,6 +48,8 @@ strategy = "exact"
 
 [tool.poetry.scripts]
 jg-run = "jobbergate_agent.main:main"
+jg-settings = "jobbergate_agent.settings:show_settings"
+jg-version = "jobbergate_agent.version:show_version"
 
 [tool.poetry.plugins.'jobbergate_agent.tasks']
 active-jobs = 'jobbergate_agent.tasks:active_submissions_task'
