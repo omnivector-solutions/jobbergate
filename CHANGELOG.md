@@ -11,6 +11,46 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.5.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.5.0) - 2025-02-18
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+### Changed
+
+- Change default execution_directory [PENG-2668](https://app.clickup.com/t/18022949/PENG-2668) [PR#732](https://github.com/omnivector-solutions/jobbergate/pull/732)
+
+### Fixed
+
+- Solved the permissions denied error the agent user could face at submission time when verifying the submission directory exists and is writable ([PR #713](https://github.com/omnivector-solutions/jobbergate/pull/713))
+
+
+## Agent Snap
+
+### Fixed
+
+- Updated snap to use base24 and use appropriate paths ([PR #720](https://github.com/omnivector-solutions/jobbergate/pull/720))
+
+
+## API
+
+No significant changes.
+
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.5.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.5.0) - 2025-02-11
 
 ## Core
