@@ -51,38 +51,55 @@ grade: stable
 confinement: classic
 
 parts:
+  python312:
+    source: .
+    plugin: nil
+    build-snaps:
+    - astral-uv
+    override-build: |
+      uv python install 3.12
+    override-stage: |
+      craftctl default
+      mkdir -p ${SNAPCRAFT_STAGE}/bin
+      mkdir -p ${SNAPCRAFT_STAGE}/usr/bin
+      [ ! -e "${SNAPCRAFT_STAGE}/bin/python3.12" ] && ln -s $(uv python find 3.12) ${SNAPCRAFT_STAGE}/bin/python3.12
+      [ ! -e "${SNAPCRAFT_STAGE}/usr/bin/python3" ] && ln -s $(uv python find 3.12) ${SNAPCRAFT_STAGE}/usr/bin/python3
+
   build-source:
+    after:
+    - python312
     source: http://github.com/omnivector-solutions/jobbergate
     source-type: git
     source-subdir: jobbergate-agent
+    source-branch: tucker/tinkering-with-snap
     plugin: python
     python-packages:
     - poetry==1.8.5
-    override-build: |
-      poetry build
+    build-environment:
+    - SNAPCRAFT_PYTHON_INTERPRETER: python3.12
 
-  jobbergate-agent:
-    source: .
-    plugin: python
-    python-packages:
-    - jobbergate-agent==5.5.0
-    build-packages:
-    - python3
-    - gcc
-    - g++
-    - dpkg-dev
-    stage-packages:
-    - python3.12-minimal
-    - python3.12-venv
-    - libpython3.12-minimal
-    - libpython3.12-stdlib
-    build-attributes:
-    - enable-patchelf
-    override-stage: |
-     craftctl default
-     craftctl set version="$(jg-version)"
-    after:
-    - build-source
+  # jobbergate-agent:
+  #   source: .
+  #   plugin: python
+  #   python-packages:
+  #   - jobbergate-agent==5.5.0
+  #   build-packages:
+  #   - python3
+  #   - gcc
+  #   - g++
+  #   - dpkg-dev
+  #   stage-packages:
+  #   - python3.12-minimal
+  #   - python3.12-venv
+  #   - libpython3.12-minimal
+  #   - libpython3.12-stdlib
+  #   build-attributes:
+  #   - enable-patchelf
+  #   override-stage: |
+  #    craftctl default
+  #    craftctl set version="$(jg-version)"
+  #   after:
+  #   - build-source
 
   hooks:
     plugin: dump
