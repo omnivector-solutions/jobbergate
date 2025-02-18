@@ -24,7 +24,7 @@ from jobbergate_agent.jobbergate.update import (
 )
 from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT
 from jobbergate_agent.settings import SETTINGS
-from jobbergate_agent.utils.exception import JobbergateApiError, JobbergateAgentError
+from jobbergate_agent.utils.exception import JobbergateApiError, JobbergateAgentError, SbatchError
 
 
 @pytest.fixture()
@@ -82,6 +82,55 @@ async def test_fetch_job_data__success():
         state_reason="NonZeroExitCode",
         foo="bar",
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
+async def test_fetch_job_data__handles_list_in_job_state():
+    """
+    Test that the ``fetch_job_data()`` function can successfully retrieve
+    job data from Slurm as a ``SlurmJobData`` when the job_state from slurm
+    is reported as a list.
+    """
+    mocked_sbatch = mock.MagicMock()
+    mocked_sbatch.get_job_info.return_value = dict(
+        job_state=["FAILED"],
+        job_id=123,
+        state_reason="NonZeroExitCode",
+        foo="bar",
+    )
+
+    result: SlurmJobData = await fetch_job_data(123, mocked_sbatch)
+
+    assert result.job_id == 123
+    assert result.job_state == "FAILED"
+    assert result.state_reason == "NonZeroExitCode"
+    assert result.job_info is not None
+    assert json.loads(result.job_info) == dict(
+        job_state=["FAILED"],
+        job_id=123,
+        state_reason="NonZeroExitCode",
+        foo="bar",
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("mock_access_token")
+async def test_fetch_job_data__raises_error_if_job_state_is_invalid_list():
+    """
+    Test that the ``fetch_job_data()`` function raises an exception
+    if the list slurm_job_state does not have exactly one value.
+    """
+    mocked_sbatch = mock.MagicMock()
+    mocked_sbatch.get_job_info.return_value = dict(
+        job_state=[],
+        job_id=123,
+        state_reason="NonZeroExitCode",
+        foo="bar",
+    )
+
+    with pytest.raises(SbatchError, match="does not have exactly one value"):
+        await fetch_job_data(123, mocked_sbatch)
 
 
 @pytest.mark.asyncio
