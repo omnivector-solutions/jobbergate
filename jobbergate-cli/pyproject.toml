@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jobbergate-cli"
-version = "5.5.0"
+version = "5.5.1a0"
 description = "Jobbergate CLI Client"
 authors = ["Omnivector Solutions <info@omnivector.solutions>"]
 license = "MIT"
