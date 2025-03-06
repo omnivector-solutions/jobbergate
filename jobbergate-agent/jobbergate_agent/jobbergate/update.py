@@ -124,7 +124,7 @@ async def fetch_influx_data(
                 job=point["job"],
                 step=point["step"],
                 task=point["task"],
-                value=point["value"],
+                value=point["value"] if point["value"] < 2**63-1 else 0,
                 measurement=measurement,
             )
             for point in result.get_points()
