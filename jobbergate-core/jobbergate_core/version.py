@@ -5,7 +5,14 @@ Provide the version of the package.
 from importlib import metadata
 
 
-try:
-    __version__ = metadata.version(__package__ or __name__)
-except metadata.PackageNotFoundError:
-    __version__ = "unknown"
+def get_version():
+    """
+    Get the version of the package.
+    """
+    try:
+        return metadata.version(__package__ or __name__)
+    except metadata.PackageNotFoundError:
+        return "unknown"
+
+
+__version__ = get_version()
