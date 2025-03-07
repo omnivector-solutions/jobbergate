@@ -436,6 +436,57 @@ async def test_fetch_influx_data__success_with_all_set(mocked_influxdb_client: m
 
 @pytest.mark.asyncio
 @mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
+async def test_fetch_influx_data__data_point_overflow(mocked_influxdb_client: mock.MagicMock):
+    """
+    Test that the ``fetch_influx_data()`` function prevents a overflow
+    when the data point value cannot be stored in disk as an int64.
+    """
+    time = random.randint(0, 1000)  # noqa: F811
+    host = "test-host"
+    step = random.randint(0, 1000)
+    task = random.randint(0, 1000)
+    job = random.randint(0, 1000)
+    measurement_value = 2**63 - 1 + random.uniform(1, 1000)
+    measurement = random.choice(get_args(INFLUXDB_MEASUREMENT))
+
+    mocked_influxdb_client.query.return_value.get_points.return_value = [
+        dict(
+            time=time,
+            host=host,
+            job=job,
+            step=step,
+            task=task,
+            value=measurement_value,
+        )
+    ]
+
+    query = dedent(f"""
+    SELECT * FROM {measurement} WHERE time > $time AND host = $host AND step = $step AND task = $task AND job = $job
+    """)
+    params = dict(time=time, host=host, step=str(step), task=str(task), job=str(job))
+
+    result = await fetch_influx_data(
+        time=time,
+        host=host,
+        step=step,
+        task=task,
+        job=job,
+        measurement=measurement,
+    )
+
+    assert len(result) == 1
+    assert result[0]["time"] == time
+    assert result[0]["host"] == host
+    assert result[0]["job"] == job
+    assert result[0]["step"] == step
+    assert result[0]["task"] == task
+    assert result[0]["value"] == 0
+    assert result[0]["measurement"] == measurement
+    mocked_influxdb_client.query.assert_called_once_with(query, bind_params=params, epoch="s")
+
+
+@pytest.mark.asyncio
+@mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
 async def test_fetch_influx_data__success_with_all_None(mocked_influxdb_client: mock.MagicMock):
     """
     Test that the ``fetch_influx_data()`` function can successfully retrieve
