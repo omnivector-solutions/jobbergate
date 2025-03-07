@@ -11,6 +11,47 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.5.6](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.5.6) - 2025-03-07
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+### Fixed
+
+- Solved the permissions denied error the agent user could face at submission time when verifying the submission directory exists and is writable ([PR #713](https://github.com/omnivector-solutions/jobbergate/pull/713))
+- Updated the `validate_job_state` validator to support data_parser 0.0.40.
+
+  In Slurm 24.11, the `--json` flag from the `scontrol show job` command uses the
+  data_parser 0.0.40. According to the official [documentation](https://slurm.schedmd.com/job_state_codes.html#overview),
+  the job flags can be returned alongside the job state, which can make the `job_state` key to have multiple keys. This
+  change prevents any validation error when fetching job's data by returning the first available state. ([PR #739](https://github.com/omnivector-solutions/jobbergate/pull/739))
+- Adjusted the `fetch_influx_data` function to return a measurement value 0 when the original value overflows the maximum int64 value. ([PR #740](https://github.com/omnivector-solutions/jobbergate/pull/740))
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+No significant changes.
+
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.5.5](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.5.5) - 2025-02-14
 
 ## Core
