@@ -89,8 +89,10 @@ class SlurmJobData(pydantic.BaseModel, extra="ignore"):
             return None
 
         if isinstance(value, list):
-            if len(value) != 1:
-                raise ValueError("job_state does not have exactly one value.")
+            if len(value) == 0:
+                raise ValueError("job_state does not have at least one value.")
+            # from data_parser 0.0.40, the Slurm API can return multiple states
+            # [Reference](https://slurm.schedmd.com/job_state_codes.html#overview)
             return value[0]
         return value
 
