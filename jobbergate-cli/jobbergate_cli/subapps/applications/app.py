@@ -10,7 +10,7 @@ import typer
 
 from jobbergate_cli.constants import SortOrder
 from jobbergate_cli.exceptions import Abort
-from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
+from jobbergate_cli.render import StyleMapper, render_paginated_list_results, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ApplicationResponse, ContextProtocol
 from jobbergate_cli.subapps.applications.tools import (
@@ -86,16 +86,31 @@ def list_all(
     if sort_field is not None:
         params["sort_field"] = sort_field
 
-    handle_pagination(
-        jg_ctx=jg_ctx,
-        url_path="/jobbergate/job-script-templates",
-        abort_message="Couldn't retrieve applications list from API",
-        params=params,
-        title="Applications List",
-        style_mapper=style_mapper,
-        hidden_fields=HIDDEN_FIELDS,
-        nested_response_model_cls=ApplicationResponse,
+    result = jg_ctx.sdk.job_templates.get_list(
+        include_null_identifier=show_all,
+        user_only=user_only,
+        search=search,
+        sort_ascending=sort_order is SortOrder.ASCENDING if sort_order is not SortOrder.UNSORTED else None,
+        sort_field=sort_field,
     )
+
+    render_paginated_list_results(
+        jg_ctx,
+        result,
+        hidden_fields=HIDDEN_FIELDS,
+        title="Application",
+    )
+
+    # handle_pagination(
+    #     jg_ctx=jg_ctx,
+    #     url_path="/jobbergate/job-script-templates",
+    #     abort_message="Couldn't retrieve applications list from API",
+    #     params=params,
+    #     title="Applications List",
+    #     style_mapper=style_mapper,
+    #     hidden_fields=HIDDEN_FIELDS,
+    #     nested_response_model_cls=ApplicationResponse,
+    # )
 
 
 @app.command()
@@ -120,9 +135,10 @@ def get_one(
     Get a single application by id or identifier
     """
     jg_ctx: ContextProtocol = ctx.obj
-    result = fetch_application_data(
-        jg_ctx, id_or_identifier=resolve_application_selection(id_or_identifier, id, identifier)
+    result = jg_ctx.sdk.job_templates.get_one(
+        id_or_identifier=resolve_application_selection(id_or_identifier, id, identifier),
     )
+
     render_single_result(
         jg_ctx,
         result,
