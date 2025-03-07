@@ -119,7 +119,7 @@ async def test_fetch_job_data__handles_list_in_job_state():
 async def test_fetch_job_data__raises_error_if_job_state_is_invalid_list():
     """
     Test that the ``fetch_job_data()`` function raises an exception
-    if the list slurm_job_state does not have exactly one value.
+    if the list slurm_job_state does not have at least one value.
     """
     mocked_sbatch = mock.MagicMock()
     mocked_sbatch.get_job_info.return_value = dict(
@@ -129,7 +129,7 @@ async def test_fetch_job_data__raises_error_if_job_state_is_invalid_list():
         foo="bar",
     )
 
-    with pytest.raises(SbatchError, match="does not have exactly one value"):
+    with pytest.raises(SbatchError, match="does not have at least one value"):
         await fetch_job_data(123, mocked_sbatch)
 
 
