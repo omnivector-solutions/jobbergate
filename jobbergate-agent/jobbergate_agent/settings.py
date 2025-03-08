@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     SBATCH_PATH: Path = Path("/usr/bin/sbatch")
     SCONTROL_PATH: Path = Path("/usr/bin/scontrol")
     X_SLURM_USER_NAME: str = "ubuntu"
-    DEFAULT_SLURM_WORK_DIR: Path = Path("/tmp")
+    DEFAULT_SLURM_WORK_DIR: str = "/home/{username}"
 
     # cluster api info
     BASE_API_URL: str = "https://apis.vantagehpc.io"
