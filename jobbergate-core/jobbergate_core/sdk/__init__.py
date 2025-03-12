@@ -1,12 +1,13 @@
+from datetime import datetime
 from enum import Enum
-from functools import cached_property
+from functools import cached_property, partial
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Self
 
 from pydantic import ConfigDict, Field, validate_call
 from pydantic.dataclasses import dataclass
 
-from jobbergate_core.apps.schemas import (
+from jobbergate_core.sdk.schemas import (
     JobTemplateDetailedView,
     JobTemplateListView,
     ListResponseEnvelope,
@@ -23,13 +24,109 @@ class FileType(str, Enum):
     SUPPORT = "SUPPORT"
 
 
+class RequestClientBinder:
+    def bind(self, client: Client) -> Self:
+        self._request_client = client
+        return self
+
+    def unbind(self) -> None:
+        delattr(self, "_request_client")
+
+    @property
+    def request_client(self) -> Client:
+        client = getattr(self, "_request_client", None)
+        if client is None:
+            raise ValueError("The request client has not been bound")
+        return client
+
+
+@dataclass(config=ConfigDict(arbitrary_types_allowed=True))
+class TemplateFileClient(RequestClientBinder):
+    parent_id: int
+    filename: str
+    file_type: FileType
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    @validate_call
+    def upsert(
+        cls, id_or_identifier: int | str, file_type: FileType, file_path: Path, request_client: Client
+    ) -> "TemplateFileClient":
+        with file_path.open("rb") as file:
+            response = RequestHandler(
+                client=request_client,
+                url_path=f"/jobbergate/job-script-templates/{id_or_identifier}/upload/template/{file_type.value}",
+                method="PUT",
+                request_kwargs=dict(
+                    files={"upload_file": (file_path.name, file, "text/plain")},
+                ),
+            )
+        data = response.raise_for_status().check_status_code(200).to_json()
+        return cls(**data).bind(request_client)
+
+    @validate_call
+    def delete(self) -> None:
+        (
+            RequestHandler(
+                client=self.request_client,
+                url_path=f"/jobbergate/job-script-templates/{self.parent_id}/upload/template/{self.filename}",
+                method="DELETE",
+            )
+            .raise_for_status()
+            .check_status_code(200)
+        )
+
+    @validate_call
+    def update(self, filename: str | None = None, file_type=FileType | None) -> "TemplateFileClient":
+        if filename is None and file_type is None:
+            raise ValueError("At least one of 'filename' or 'file_type' must be set")
+        data = dict(filename=filename, file_type=file_type)
+        response = RequestHandler(
+            client=self.request_client,
+            url_path=f"/jobbergate/job-script-templates/{self.parent_id}/upload/template/{self.filename}",
+            method="PUT",
+            request_kwargs=dict(data={k: v for k, v in data.items() if v is not None}),
+        )
+        data = response.raise_for_status().check_status_code(200).to_json()
+        return self.__class__(**data).bind(self.request_client)
+
+    @validate_call
+    def upload(self, file_path: Path) -> "TemplateFileClient":
+        with file_path.open("rb") as file:
+            response = RequestHandler(
+                client=self.request_client,
+                url_path=f"/jobbergate/job-script-templates/{self.parent_id}/upload/template/{self.file_type.value}",
+                method="PUT",
+                request_kwargs=dict(
+                    files={"upload_file": (self.filename, file, "text/plain")},
+                ),
+            )
+        data = response.raise_for_status().check_status_code(200).to_json()
+        return self.__class__(**data).bind(self.request_client)
+
+    @validate_call
+    def download(self, directory: Path = Path.cwd()) -> Path:
+        output_path = directory / self.filename
+        (
+            RequestHandler(
+                client=self.request_client,
+                url_path=f"/jobbergate/job-script-templates/{self.parent_id}/upload/template/{self.filename}",
+                method="GET",
+            )
+            .raise_for_status()
+            .check_status_code(200)
+            .to_file(output_path)
+        )
+        return output_path
+
+
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
 class TemplateFiles:
     client: Client
 
     @validate_call
     def upsert(self, id_or_identifier: int | str, file_type: FileType, file_path: Path) -> TemplateFileDetailedView:
-        # TODO: Add logic to handle renaming with filename and previous filename
         with file_path.open("rb") as file:
             response = RequestHandler(
                 client=self.client,
@@ -328,8 +425,8 @@ class JobTemplates:
         sort_field: str | None = None,
         include_archived: bool = False,
         include_parent: bool = False,
-        page: int = Field(1, ge=1),
         size: int = Field(50, ge=1, le=100),
+        page: int = Field(1, ge=1),
     ) -> ListResponseEnvelope[JobTemplateListView]:
         params = dict(
             include_null_identifier=include_null_identifier,
@@ -339,10 +436,10 @@ class JobTemplates:
             sort_field=sort_field,
             include_archived=include_archived,
             include_parent=include_parent,
-            page=page,
             size=size,
+            page=page,
         )
-        return (
+        result = (
             RequestHandler(
                 client=self.client,
                 url_path=self.base_path,
@@ -353,6 +450,7 @@ class JobTemplates:
             .check_status_code(200)
             .to_model(ListResponseEnvelope[JobTemplateListView])
         )
+        return result
 
     @validate_call
     def update(
