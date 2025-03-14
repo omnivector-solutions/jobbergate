@@ -36,7 +36,7 @@ class TemplateFiles:
                 url_path=f"/jobbergate/job-script-templates/{id_or_identifier}/upload/template/{file_type.value}",
                 method="PUT",
                 request_kwargs=dict(
-                    files={"upload_file": (file_path.name, file, "text/plain")},
+                    files={"upload_file": (file.name, file, "text/plain")},
                 ),
             )
         return response.raise_for_status().check_status_code(200).to_model(TemplateFileDetailedView)
@@ -144,6 +144,10 @@ class Files:
         return WorkflowFiles(client=self.client)
 
 
+def filter_null_out(data: dict[str, Any]) -> dict[str, Any]:
+    return {k: v for k, v in data.items() if v is not None}
+
+
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
 class JobTemplates:
     client: Client
@@ -166,7 +170,7 @@ class JobTemplates:
                 client=self.client,
                 url_path=f"{self.base_path}/clone/{base_id_or_identifier}",
                 method="POST",
-                request_kwargs=dict(data={k: v for k, v in data.items() if v is not None}),
+                request_kwargs=dict(data=filter_null_out(data)),
             )
             .raise_for_status()
             .check_status_code(201)
@@ -188,7 +192,7 @@ class JobTemplates:
                 client=self.client,
                 url_path=self.base_path,
                 method="POST",
-                request_kwargs=dict(data={k: v for k, v in data.items() if v is not None}),
+                request_kwargs=dict(data=filter_null_out(data)),
             )
             .raise_for_status()
             .check_status_code(201)
@@ -249,7 +253,7 @@ class JobTemplates:
                 client=self.client,
                 url_path=self.base_path,
                 method="GET",
-                request_kwargs=dict(params={k: v for k, v in params.items() if v is not None}),
+                request_kwargs=dict(params=filter_null_out(params)),
             )
             .raise_for_status()
             .check_status_code(200)
@@ -280,7 +284,7 @@ class JobTemplates:
                 client=self.client,
                 url_path=f"{self.base_path}/{id_or_identifier}",
                 method="PUT",
-                request_kwargs=dict(data={k: v for k, v in data.items() if v is not None}),
+                request_kwargs=dict(data=filter_null_out(data)),
             )
             .raise_for_status()
             .check_status_code(200)

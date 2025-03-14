@@ -2,120 +2,62 @@
 Provide schemas for the job script templates component.
 """
 
-import json
-from typing import Any, Generic, Optional, TypeVar
+import datetime
+from typing import Any, Generic, List, Optional, Type, TypeVar
 
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+import pendulum
+from pydantic import BaseModel, GetCoreSchemaHandler
+from pydantic_core import PydanticCustomError, core_schema
 
 
-class RunTimeConfig(BaseModel):
+class PydanticDateTime(pendulum.DateTime):
     """
-    Schema for the runtime config of a job template.
+    A `pendulum.DateTime` object. At runtime, this type decomposes into pendulum.DateTime automatically.
 
-    Notice this includes user supplied variables, so it has no predefined field.
-    It also loads the contend directly from the json at the request payload.
+    This type exists because Pydantic throws a fit on unknown types.
+
+    This code is borrowed and enhanced from the `pydantic-extra-types` module but provides conversion from
+    standard datetimes as well.
     """
 
-    @model_validator(mode="before")
+    __slots__: List[str] = []
+
     @classmethod
-    def coerce_string_to_dict(cls, data):
+    def __get_pydantic_core_schema__(cls, source: Type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         """
-        Get the validators.
+        Return a Pydantic CoreSchema with the Datetime validation.
+
+        Args:
+            source: The source type to be converted.
+            handler: The handler to get the CoreSchema.
+
+        Returns:
+            A Pydantic CoreSchema with the Datetime validation.
         """
-        if isinstance(data, str):
-            return json.loads(data)
-        else:
-            return data
+        return core_schema.no_info_wrap_validator_function(cls._validate, core_schema.datetime_schema())
 
-    model_config = ConfigDict(extra="allow")
-
-
-class JobTemplateCreateRequest(BaseModel):
-    """Schema for the request to create a job template."""
-
-    name: str
-    identifier: str | None = None
-    description: str | None = None
-    template_vars: dict[str, Any] | None = None
-
-    @field_validator("name")
     @classmethod
-    def not_empty_str(cls, value):
+    def _validate(cls, value: Any, handler: core_schema.ValidatorFunctionWrapHandler) -> Any:
         """
-        Do not allow a string value to be empty.
-        """
-        if value == "":
-            raise ValueError("Cannot be an empty string")
-        return value
+        Validate the datetime object and return it.
 
-    @field_validator("identifier")
-    @classmethod
-    def empty_str_to_none(cls, value):
-        """
-        Coerce an empty string value to None.
-        """
-        if value == "":
-            return None
-        return value
+        Args:
+            value: The value to validate.
+            handler: The handler to get the CoreSchema.
 
-
-class JobTemplateCloneRequest(BaseModel):
-    """Schema for the request to clone a job template."""
-
-    name: str | None = None
-    identifier: str | None = None
-    description: str | None = None
-    template_vars: dict[str, Any] | None = None
-
-    @field_validator("name")
-    @classmethod
-    def not_empty_str(cls, value):
+        Returns:
+            The validated value or raises a PydanticCustomError.
         """
-        Do not allow a string value to be empty.
-        """
-        if value == "":
-            raise ValueError("Cannot be an empty string")
-        return value
+        if isinstance(value, pendulum.DateTime):
+            return handler(value)
 
-    @field_validator("identifier")
-    @classmethod
-    def empty_str_to_none(cls, value):
-        """
-        Coerce an empty string value to None.
-        """
-        if value == "":
-            return None
-        return value
+        if isinstance(value, datetime.datetime):
+            return handler(pendulum.instance(value))
 
-
-class JobTemplateUpdateRequest(BaseModel):
-    """Schema for the request to update a job template."""
-
-    name: str | None = None
-    identifier: str | None = None
-    description: str | None = None
-    template_vars: dict[str, Any] | None = None
-    is_archived: bool | None = None
-
-    @field_validator("name")
-    @classmethod
-    def not_empty_str(cls, value):
-        """
-        Do not allow a string value to be empty.
-        """
-        if value == "":
-            raise ValueError("Cannot be an empty string")
-        return value
-
-    @field_validator("identifier")
-    @classmethod
-    def empty_str_to_none(cls, value):
-        """
-        Coerce an empty string value to None.
-        """
-        if value == "":
-            return None
-        return value
+        try:
+            return handler(pendulum.parse(value))
+        except Exception as exc:
+            raise PydanticCustomError("value_error", "value is not a valid timestamp") from exc
 
 
 class TemplateFileDetailedView(BaseModel):
@@ -124,8 +66,8 @@ class TemplateFileDetailedView(BaseModel):
     parent_id: int
     filename: str
     file_type: str
-    created_at: str
-    updated_at: str
+    created_at: PydanticDateTime
+    updated_at: PydanticDateTime
 
 
 class WorkflowFileDetailedView(BaseModel):
@@ -134,8 +76,8 @@ class WorkflowFileDetailedView(BaseModel):
     parent_id: int
     filename: str
     runtime_config: Optional[dict[str, Any]] = {}
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    created_at: PydanticDateTime
+    updated_at: PydanticDateTime
 
 
 class TableResource(BaseModel):
@@ -146,12 +88,10 @@ class TableResource(BaseModel):
     id: int
     name: str
     owner_email: str
-    created_at: str
-    updated_at: str
+    created_at: PydanticDateTime
+    updated_at: PydanticDateTime
     is_archived: bool
     description: str | None = None
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class JobTemplateListView(TableResource):
