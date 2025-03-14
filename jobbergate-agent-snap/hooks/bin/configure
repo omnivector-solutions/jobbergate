@@ -21,7 +21,6 @@ AGENT_VARIABLES_MAP: dict[str, Union[str, int]] = {
     "CACHE_DIR": f"{SNAP_COMMON_PATH}/.cache",
     "SBATCH_PATH": "/usr/bin/sbatch",
     "SCONTROL_PATH": "/usr/bin/scontrol",
-    "DEFAULT_SLURM_WORK_DIR": "/tmp",
     "SLURM_USER_MAPPER": "",
     "SINGLE_USER_SUBMITTER": "ubuntu",
     "WRITE_SUBMISSION_FILES": "true",
