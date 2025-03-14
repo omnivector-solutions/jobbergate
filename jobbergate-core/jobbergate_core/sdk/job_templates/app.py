@@ -1,13 +1,13 @@
-from datetime import datetime
+from contextlib import contextmanager
 from enum import Enum
-from functools import cached_property, partial
+from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, Self
+from typing import IO, Any, ClassVar, Generator
 
 from pydantic import ConfigDict, Field, validate_call
 from pydantic.dataclasses import dataclass
 
-from jobbergate_core.sdk.schemas import (
+from jobbergate_core.sdk.job_templates.schemas import (
     JobTemplateDetailedView,
     JobTemplateListView,
     ListResponseEnvelope,
@@ -22,103 +22,6 @@ class FileType(str, Enum):
 
     ENTRYPOINT = "ENTRYPOINT"
     SUPPORT = "SUPPORT"
-
-
-class RequestClientBinder:
-    def bind(self, client: Client) -> Self:
-        self._request_client = client
-        return self
-
-    def unbind(self) -> None:
-        delattr(self, "_request_client")
-
-    @property
-    def request_client(self) -> Client:
-        client = getattr(self, "_request_client", None)
-        if client is None:
-            raise ValueError("The request client has not been bound")
-        return client
-
-
-@dataclass(config=ConfigDict(arbitrary_types_allowed=True))
-class TemplateFileClient(RequestClientBinder):
-    parent_id: int
-    filename: str
-    file_type: FileType
-    created_at: datetime
-    updated_at: datetime
-
-    @classmethod
-    @validate_call
-    def upsert(
-        cls, id_or_identifier: int | str, file_type: FileType, file_path: Path, request_client: Client
-    ) -> "TemplateFileClient":
-        with file_path.open("rb") as file:
-            response = RequestHandler(
-                client=request_client,
-                url_path=f"/jobbergate/job-script-templates/{id_or_identifier}/upload/template/{file_type.value}",
-                method="PUT",
-                request_kwargs=dict(
-                    files={"upload_file": (file_path.name, file, "text/plain")},
-                ),
-            )
-        data = response.raise_for_status().check_status_code(200).to_json()
-        return cls(**data).bind(request_client)
-
-    @validate_call
-    def delete(self) -> None:
-        (
-            RequestHandler(
-                client=self.request_client,
-                url_path=f"/jobbergate/job-script-templates/{self.parent_id}/upload/template/{self.filename}",
-                method="DELETE",
-            )
-            .raise_for_status()
-            .check_status_code(200)
-        )
-
-    @validate_call
-    def update(self, filename: str | None = None, file_type=FileType | None) -> "TemplateFileClient":
-        if filename is None and file_type is None:
-            raise ValueError("At least one of 'filename' or 'file_type' must be set")
-        data = dict(filename=filename, file_type=file_type)
-        response = RequestHandler(
-            client=self.request_client,
-            url_path=f"/jobbergate/job-script-templates/{self.parent_id}/upload/template/{self.filename}",
-            method="PUT",
-            request_kwargs=dict(data={k: v for k, v in data.items() if v is not None}),
-        )
-        data = response.raise_for_status().check_status_code(200).to_json()
-        return self.__class__(**data).bind(self.request_client)
-
-    @validate_call
-    def upload(self, file_path: Path) -> "TemplateFileClient":
-        with file_path.open("rb") as file:
-            response = RequestHandler(
-                client=self.request_client,
-                url_path=f"/jobbergate/job-script-templates/{self.parent_id}/upload/template/{self.file_type.value}",
-                method="PUT",
-                request_kwargs=dict(
-                    files={"upload_file": (self.filename, file, "text/plain")},
-                ),
-            )
-        data = response.raise_for_status().check_status_code(200).to_json()
-        return self.__class__(**data).bind(self.request_client)
-
-    @validate_call
-    def download(self, directory: Path = Path.cwd()) -> Path:
-        output_path = directory / self.filename
-        (
-            RequestHandler(
-                client=self.request_client,
-                url_path=f"/jobbergate/job-script-templates/{self.parent_id}/upload/template/{self.filename}",
-                method="GET",
-            )
-            .raise_for_status()
-            .check_status_code(200)
-            .to_file(output_path)
-        )
-        return output_path
 
 
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
@@ -152,7 +55,7 @@ class TemplateFiles:
 
     @validate_call
     def download(self, id_or_identifier: int | str, filename: str, directory: Path = Path.cwd()) -> Path:
-        output_path = directory / filename
+        output_path = (directory / filename).resolve()
         (
             RequestHandler(
                 client=self.client,
@@ -166,6 +69,15 @@ class TemplateFiles:
         return output_path
 
 
+@contextmanager
+def open_optional_file(file_path: Path | None, mode: str = "rb") -> Generator[IO[Any] | None, None, None]:
+    if file_path is None:
+        yield None
+        return
+    with file_path.open(mode) as file:
+        yield file
+
+
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
 class WorkflowFiles:
     client: Client
@@ -174,18 +86,20 @@ class WorkflowFiles:
     def upsert(
         self,
         id_or_identifier: int | str,
-        file_path: Path,
+        file_path: Path | None,
         runtime_config: dict[str, Any] | None = None,
     ) -> WorkflowFileDetailedView:
-        with file_path.open("rb") as file:
+        request_kwargs: dict[str, Any] = dict()
+        if runtime_config is not None:
+            request_kwargs["data"] = {"runtime_config": runtime_config}
+        with open_optional_file(file_path) as file:
+            if file is not None:
+                request_kwargs["files"] = {"upload_file": (file.name, file, "text/plain")}
             response = RequestHandler(
                 client=self.client,
                 url_path=f"/jobbergate/job-script-templates/{id_or_identifier}/upload/workflow",
                 method="PUT",
-                request_kwargs=dict(
-                    files={"upload_file": (file_path.name, file, "text/plain")},
-                    data={"runtime_config": runtime_config},
-                ),
+                request_kwargs=request_kwargs,
             )
         return response.raise_for_status().check_status_code(200).to_model(WorkflowFileDetailedView)
 
@@ -228,115 +142,6 @@ class Files:
     @cached_property
     def workflow(self) -> WorkflowFiles:
         return WorkflowFiles(client=self.client)
-
-
-@dataclass(kw_only=True, config=ConfigDict(arbitrary_types_allowed=True))
-class BaseJobTemplate:
-    client: Client
-
-    name: str | None = None
-    id: int | None = None
-    identifier: str | None = None
-    description: str | None = None
-    template_vars: dict[str, Any] | None = None
-    is_archived: bool | None = None
-
-    base_path: ClassVar[str] = "/jobbergate/job-script-templates"
-
-    @property
-    def id_or_identifier(self) -> int | str:
-        if self.id is not None:
-            return self.id
-        elif self.identifier is not None:
-            return self.identifier
-        raise ValueError("Neither 'id' nor 'identifier' is set")
-
-    @validate_call
-    def clone(
-        self,
-        *,
-        name: str | None = None,
-        identifier: str | None = None,
-        description: str | None = None,
-        template_vars: dict[str, Any] | None = None,
-    ) -> JobTemplateDetailedView:
-        data = dict(name=name, identifier=identifier, description=description, template_vars=template_vars)
-        return (
-            RequestHandler(
-                client=self.client,
-                url_path=f"{self.base_path}/clone/{self.id_or_identifier}",
-                method="POST",
-                request_kwargs=dict(data={k: v for k, v in data.items() if v is not None}),
-            )
-            .raise_for_status()
-            .check_status_code(201)
-            .to_model(JobTemplateDetailedView)
-        )
-
-    @validate_call
-    def create(self) -> JobTemplateDetailedView:
-        if self.name is None:
-            raise ValueError("The 'name' attribute must be set")
-        data = dict(
-            name=self.name, identifier=self.identifier, description=self.description, template_vars=self.template_vars
-        )
-        return (
-            RequestHandler(
-                client=self.client,
-                url_path=self.base_path,
-                method="POST",
-                request_kwargs=dict(data={k: v for k, v in data.items() if v is not None}),
-            )
-            .raise_for_status()
-            .check_status_code(201)
-            .to_model(JobTemplateDetailedView)
-        )
-
-    @validate_call
-    def delete(self) -> None:
-        (
-            RequestHandler(client=self.client, url_path=f"{self.base_path}/{self.id_or_identifier}", method="DELETE")
-            .raise_for_status()
-            .check_status_code(204)
-        )
-
-    @validate_call
-    def get_details(self) -> JobTemplateDetailedView:
-        return (
-            RequestHandler(client=self.client, url_path=f"{self.base_path}/{self.id_or_identifier}", method="GET")
-            .raise_for_status()
-            .check_status_code(200)
-            .to_model(JobTemplateDetailedView)
-        )
-
-    @validate_call
-    def update(
-        self,
-        *,
-        name: str | None = None,
-        identifier: str | None = None,
-        description: str | None = None,
-        template_vars: dict[str, Any] | None = None,
-        is_archived: bool | None = None,
-    ) -> JobTemplateDetailedView:
-        data = dict(
-            name=name,
-            identifier=identifier,
-            description=description,
-            template_vars=template_vars,
-            is_archived=is_archived,
-        )
-        return (
-            RequestHandler(
-                client=self.client,
-                url_path=f"{self.base_path}/{self.id_or_identifier}",
-                method="PUT",
-                request_kwargs=dict(data={k: v for k, v in data.items() if v is not None}),
-            )
-            .raise_for_status()
-            .check_status_code(200)
-            .to_model(JobTemplateDetailedView)
-        )
 
 
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))

@@ -8,7 +8,7 @@ from functools import cached_property
 from buzz import check_expressions
 from httpx import Client
 from jobbergate_core.auth.handler import JobbergateAuthHandler
-from jobbergate_core.apps import JobTemplates
+from jobbergate_core.sdk.job_templates import JobTemplates
 
 from jobbergate_cli.auth import show_login_message, track_login_progress
 from jobbergate_cli.exceptions import Abort
