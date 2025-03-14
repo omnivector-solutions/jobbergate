@@ -1,0 +1,8 @@
+from enum import Enum
+
+
+class FileType(str, Enum):
+    """File type enum."""
+
+    ENTRYPOINT = "ENTRYPOINT"
+    SUPPORT = "SUPPORT"

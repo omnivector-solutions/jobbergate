@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from enum import Enum
+
 from functools import cached_property
 from pathlib import Path
 from typing import IO, Any, ClassVar, Generator
@@ -7,6 +7,7 @@ from typing import IO, Any, ClassVar, Generator
 from pydantic import ConfigDict, Field, validate_call
 from pydantic.dataclasses import dataclass
 
+from jobbergate_core.sdk.constants import FileType
 from jobbergate_core.sdk.job_templates.schemas import (
     JobTemplateDetailedView,
     JobTemplateListView,
@@ -17,19 +18,23 @@ from jobbergate_core.sdk.job_templates.schemas import (
 from jobbergate_core.tools.requests import Client, RequestHandler
 
 
-class FileType(str, Enum):
-    """File type enum."""
-
-    ENTRYPOINT = "ENTRYPOINT"
-    SUPPORT = "SUPPORT"
-
-
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
 class TemplateFiles:
     client: Client
 
     @validate_call
     def upsert(self, id_or_identifier: int | str, file_type: FileType, file_path: Path) -> TemplateFileDetailedView:
+        """
+        Upload or update a template file.
+
+        Args:
+            id_or_identifier: The ID or identifier of the job template.
+            file_type: The type of the file.
+            file_path: The path to the file to be uploaded.
+
+        Returns:
+            The detailed view of the template file.
+        """
         with file_path.open("rb") as file:
             response = RequestHandler(
                 client=self.client,
@@ -43,6 +48,13 @@ class TemplateFiles:
 
     @validate_call
     def delete(self, id_or_identifier: int | str, filename: str) -> None:
+        """
+        Delete a template file.
+
+        Args:
+            id_or_identifier: The ID or identifier of the job template.
+            filename: The name of the file to be deleted.
+        """
         (
             RequestHandler(
                 client=self.client,
@@ -55,6 +67,17 @@ class TemplateFiles:
 
     @validate_call
     def download(self, id_or_identifier: int | str, filename: str, directory: Path = Path.cwd()) -> Path:
+        """
+        Download a template file.
+
+        Args:
+            id_or_identifier: The ID or identifier of the job template.
+            filename: The name of the file to be downloaded.
+            directory: The directory where the file will be saved.
+
+        Returns:
+            The path to the downloaded file.
+        """
         output_path = (directory / filename).resolve()
         (
             RequestHandler(
@@ -89,6 +112,17 @@ class WorkflowFiles:
         file_path: Path | None,
         runtime_config: dict[str, Any] | None = None,
     ) -> WorkflowFileDetailedView:
+        """
+        Upload or update a workflow file.
+
+        Args:
+            id_or_identifier: The ID or identifier of the job template.
+            file_path: The path to the file to be uploaded.
+            runtime_config: The runtime configuration.
+
+        Returns:
+            The detailed view of the workflow file.
+        """
         request_kwargs: dict[str, Any] = dict()
         if runtime_config is not None:
             request_kwargs["data"] = {"runtime_config": runtime_config}
@@ -105,6 +139,12 @@ class WorkflowFiles:
 
     @validate_call
     def delete(self, id_or_identifier: int | str) -> None:
+        """
+        Delete a workflow file.
+
+        Args:
+            id_or_identifier: The ID or identifier of the job template.
+        """
         (
             RequestHandler(
                 client=self.client,
@@ -117,6 +157,16 @@ class WorkflowFiles:
 
     @validate_call
     def download(self, id_or_identifier: int | str, directory: Path = Path.cwd()) -> Path:
+        """
+        Download a workflow file.
+
+        Args:
+            id_or_identifier: The ID or identifier of the job template.
+            directory: The directory where the file will be saved.
+
+        Returns:
+            The path to the downloaded file.
+        """
         output_path = directory / "jobbergate.py"
         (
             RequestHandler(
@@ -137,10 +187,22 @@ class Files:
 
     @cached_property
     def template(self) -> TemplateFiles:
+        """
+        Get the TemplateFiles instance.
+
+        Returns:
+            The TemplateFiles instance.
+        """
         return TemplateFiles(client=self.client)
 
     @cached_property
     def workflow(self) -> WorkflowFiles:
+        """
+        Get the WorkflowFiles instance.
+
+        Returns:
+            The WorkflowFiles instance.
+        """
         return WorkflowFiles(client=self.client)
 
 
@@ -164,6 +226,19 @@ class JobTemplates:
         description: str | None = None,
         template_vars: dict[str, Any] | None = None,
     ) -> JobTemplateDetailedView:
+        """
+        Clone a job template.
+
+        Args:
+            base_id_or_identifier: The ID or identifier of the base job template.
+            name: The name of the new job template.
+            identifier: The identifier of the new job template.
+            description: The description of the new job template.
+            template_vars: The template variables.
+
+        Returns:
+            The detailed view of the cloned job template.
+        """
         data = dict(name=name, identifier=identifier, description=description, template_vars=template_vars)
         return (
             RequestHandler(
@@ -186,6 +261,18 @@ class JobTemplates:
         description: str | None = None,
         template_vars: dict[str, Any] | None = None,
     ) -> JobTemplateDetailedView:
+        """
+        Create a new job template.
+
+        Args:
+            name: The name of the job template.
+            identifier: The identifier of the job template.
+            description: The description of the job template.
+            template_vars: The template variables.
+
+        Returns:
+            The detailed view of the created job template.
+        """
         data = dict(name=name, identifier=identifier, description=description, template_vars=template_vars)
         return (
             RequestHandler(
@@ -201,6 +288,12 @@ class JobTemplates:
 
     @validate_call
     def delete(self, id_or_identifier: int | str) -> None:
+        """
+        Delete a job template.
+
+        Args:
+            id_or_identifier: The ID or identifier of the job template.
+        """
         (
             RequestHandler(
                 client=self.client,
@@ -213,6 +306,15 @@ class JobTemplates:
 
     @validate_call
     def get_one(self, id_or_identifier: int | str) -> JobTemplateDetailedView:
+        """
+        Get a single job template.
+
+        Args:
+            id_or_identifier: The ID or identifier of the job template.
+
+        Returns:
+            The detailed view of the job template.
+        """
         return (
             RequestHandler(
                 client=self.client,
@@ -237,6 +339,23 @@ class JobTemplates:
         size: int = Field(50, ge=1, le=100),
         page: int = Field(1, ge=1),
     ) -> ListResponseEnvelope[JobTemplateListView]:
+        """
+        List job templates.
+
+        Args:
+            include_null_identifier: Whether to include templates with null identifiers.
+            sort_ascending: Whether to sort in ascending order.
+            user_only: Whether to include only user-specific templates.
+            search: The search query.
+            sort_field: The field to sort by.
+            include_archived: Whether to include archived templates.
+            include_parent: Whether to include parent templates.
+            size: The number of templates per page.
+            page: The page number.
+
+        Returns:
+            The list response envelope containing job template list views.
+        """
         params = dict(
             include_null_identifier=include_null_identifier,
             sort_ascending=sort_ascending,
@@ -272,6 +391,20 @@ class JobTemplates:
         template_vars: dict[str, Any] | None = None,
         is_archived: bool | None = None,
     ) -> JobTemplateDetailedView:
+        """
+        Update a job template.
+
+        Args:
+            id_or_identifier: The ID or identifier of the job template.
+            name: The name of the job template.
+            identifier: The identifier of the job template.
+            description: The description of the job template.
+            template_vars: The template variables.
+            is_archived: Whether the job template is archived.
+
+        Returns:
+            The detailed view of the updated job template.
+        """
         data = dict(
             name=name,
             identifier=identifier,
@@ -293,4 +426,10 @@ class JobTemplates:
 
     @cached_property
     def files(self) -> Files:
+        """
+        Get the Files instance.
+
+        Returns:
+            The Files instance.
+        """
         return Files(client=self.client)
