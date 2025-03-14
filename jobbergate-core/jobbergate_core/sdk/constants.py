@@ -6,3 +6,6 @@ class FileType(str, Enum):
 
     ENTRYPOINT = "ENTRYPOINT"
     SUPPORT = "SUPPORT"
+
+
+APPLICATION_SCRIPT_FILE_NAME = "jobbergate.py"

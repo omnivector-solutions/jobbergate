@@ -1,14 +1,15 @@
+import json
 from contextlib import contextmanager
-
 from functools import cached_property
 from pathlib import Path
-from typing import IO, Any, ClassVar, Generator
+from typing import IO, Any, ClassVar, Generator, Type
 
 from pydantic import ConfigDict, Field, validate_call
 from pydantic.dataclasses import dataclass
 
-from jobbergate_core.sdk.constants import FileType
+from jobbergate_core.sdk.constants import APPLICATION_SCRIPT_FILE_NAME, FileType
 from jobbergate_core.sdk.job_templates.schemas import (
+    JobTemplateBaseDetailedView,
     JobTemplateDetailedView,
     JobTemplateListView,
     ListResponseEnvelope,
@@ -21,6 +22,7 @@ from jobbergate_core.tools.requests import Client, RequestHandler
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
 class TemplateFiles:
     client: Client
+    request_handler_cls: Type[RequestHandler] = RequestHandler
 
     @validate_call
     def upsert(self, id_or_identifier: int | str, file_type: FileType, file_path: Path) -> TemplateFileDetailedView:
@@ -36,12 +38,12 @@ class TemplateFiles:
             The detailed view of the template file.
         """
         with file_path.open("rb") as file:
-            response = RequestHandler(
+            response = self.request_handler_cls(
                 client=self.client,
                 url_path=f"/jobbergate/job-script-templates/{id_or_identifier}/upload/template/{file_type.value}",
                 method="PUT",
                 request_kwargs=dict(
-                    files={"upload_file": (file.name, file, "text/plain")},
+                    files={"upload_file": (file_path.name, file, "text/plain")},
                 ),
             )
         return response.raise_for_status().check_status_code(200).to_model(TemplateFileDetailedView)
@@ -56,7 +58,7 @@ class TemplateFiles:
             filename: The name of the file to be deleted.
         """
         (
-            RequestHandler(
+            self.request_handler_cls(
                 client=self.client,
                 url_path=f"/jobbergate/job-script-templates/{id_or_identifier}/upload/template/{filename}",
                 method="DELETE",
@@ -80,7 +82,7 @@ class TemplateFiles:
         """
         output_path = (directory / filename).resolve()
         (
-            RequestHandler(
+            self.request_handler_cls(
                 client=self.client,
                 url_path=f"/jobbergate/job-script-templates/{id_or_identifier}/upload/template/{filename}",
                 method="GET",
@@ -104,12 +106,13 @@ def open_optional_file(file_path: Path | None, mode: str = "rb") -> Generator[IO
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
 class WorkflowFiles:
     client: Client
+    request_handler_cls: Type[RequestHandler] = RequestHandler
 
     @validate_call
     def upsert(
         self,
         id_or_identifier: int | str,
-        file_path: Path | None,
+        file_path: Path | None = None,
         runtime_config: dict[str, Any] | None = None,
     ) -> WorkflowFileDetailedView:
         """
@@ -125,11 +128,11 @@ class WorkflowFiles:
         """
         request_kwargs: dict[str, Any] = dict()
         if runtime_config is not None:
-            request_kwargs["data"] = {"runtime_config": runtime_config}
+            request_kwargs["data"] = {"runtime_config": json.dumps(runtime_config)}
         with open_optional_file(file_path) as file:
             if file is not None:
-                request_kwargs["files"] = {"upload_file": (file.name, file, "text/plain")}
-            response = RequestHandler(
+                request_kwargs["files"] = {"upload_file": (APPLICATION_SCRIPT_FILE_NAME, file, "text/plain")}
+            response = self.request_handler_cls(
                 client=self.client,
                 url_path=f"/jobbergate/job-script-templates/{id_or_identifier}/upload/workflow",
                 method="PUT",
@@ -146,7 +149,7 @@ class WorkflowFiles:
             id_or_identifier: The ID or identifier of the job template.
         """
         (
-            RequestHandler(
+            self.request_handler_cls(
                 client=self.client,
                 url_path=f"/jobbergate/job-script-templates/{id_or_identifier}/upload/workflow",
                 method="DELETE",
@@ -167,9 +170,9 @@ class WorkflowFiles:
         Returns:
             The path to the downloaded file.
         """
-        output_path = directory / "jobbergate.py"
+        output_path = directory / APPLICATION_SCRIPT_FILE_NAME
         (
-            RequestHandler(
+            self.request_handler_cls(
                 client=self.client,
                 url_path=f"/jobbergate/job-script-templates/{id_or_identifier}/upload/workflow",
                 method="GET",
@@ -184,6 +187,7 @@ class WorkflowFiles:
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
 class Files:
     client: Client
+    request_handler_cls: Type[RequestHandler] = RequestHandler
 
     @cached_property
     def template(self) -> TemplateFiles:
@@ -193,7 +197,7 @@ class Files:
         Returns:
             The TemplateFiles instance.
         """
-        return TemplateFiles(client=self.client)
+        return TemplateFiles(client=self.client, request_handler_cls=self.request_handler_cls)
 
     @cached_property
     def workflow(self) -> WorkflowFiles:
@@ -203,7 +207,7 @@ class Files:
         Returns:
             The WorkflowFiles instance.
         """
-        return WorkflowFiles(client=self.client)
+        return WorkflowFiles(client=self.client, request_handler_cls=self.request_handler_cls)
 
 
 def filter_null_out(data: dict[str, Any]) -> dict[str, Any]:
@@ -213,6 +217,7 @@ def filter_null_out(data: dict[str, Any]) -> dict[str, Any]:
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
 class JobTemplates:
     client: Client
+    request_handler_cls: Type[RequestHandler] = RequestHandler
 
     base_path: ClassVar[str] = "/jobbergate/job-script-templates"
 
@@ -241,7 +246,7 @@ class JobTemplates:
         """
         data = dict(name=name, identifier=identifier, description=description, template_vars=template_vars)
         return (
-            RequestHandler(
+            self.request_handler_cls(
                 client=self.client,
                 url_path=f"{self.base_path}/clone/{base_id_or_identifier}",
                 method="POST",
@@ -260,7 +265,7 @@ class JobTemplates:
         identifier: str | None = None,
         description: str | None = None,
         template_vars: dict[str, Any] | None = None,
-    ) -> JobTemplateDetailedView:
+    ) -> JobTemplateBaseDetailedView:
         """
         Create a new job template.
 
@@ -275,7 +280,7 @@ class JobTemplates:
         """
         data = dict(name=name, identifier=identifier, description=description, template_vars=template_vars)
         return (
-            RequestHandler(
+            self.request_handler_cls(
                 client=self.client,
                 url_path=self.base_path,
                 method="POST",
@@ -283,7 +288,7 @@ class JobTemplates:
             )
             .raise_for_status()
             .check_status_code(201)
-            .to_model(JobTemplateDetailedView)
+            .to_model(JobTemplateBaseDetailedView)
         )
 
     @validate_call
@@ -295,7 +300,7 @@ class JobTemplates:
             id_or_identifier: The ID or identifier of the job template.
         """
         (
-            RequestHandler(
+            self.request_handler_cls(
                 client=self.client,
                 url_path=f"{self.base_path}/{id_or_identifier}",
                 method="DELETE",
@@ -316,7 +321,7 @@ class JobTemplates:
             The detailed view of the job template.
         """
         return (
-            RequestHandler(
+            self.request_handler_cls(
                 client=self.client,
                 url_path=f"{self.base_path}/{id_or_identifier}",
                 method="GET",
@@ -335,7 +340,7 @@ class JobTemplates:
         search: str | None = None,
         sort_field: str | None = None,
         include_archived: bool = False,
-        include_parent: bool = False,
+        # include_parent: bool = False,
         size: int = Field(50, ge=1, le=100),
         page: int = Field(1, ge=1),
     ) -> ListResponseEnvelope[JobTemplateListView]:
@@ -349,7 +354,6 @@ class JobTemplates:
             search: The search query.
             sort_field: The field to sort by.
             include_archived: Whether to include archived templates.
-            include_parent: Whether to include parent templates.
             size: The number of templates per page.
             page: The page number.
 
@@ -363,12 +367,11 @@ class JobTemplates:
             search=search,
             sort_field=sort_field,
             include_archived=include_archived,
-            include_parent=include_parent,
             size=size,
             page=page,
         )
         result = (
-            RequestHandler(
+            self.request_handler_cls(
                 client=self.client,
                 url_path=self.base_path,
                 method="GET",
@@ -390,7 +393,7 @@ class JobTemplates:
         description: str | None = None,
         template_vars: dict[str, Any] | None = None,
         is_archived: bool | None = None,
-    ) -> JobTemplateDetailedView:
+    ) -> JobTemplateBaseDetailedView:
         """
         Update a job template.
 
@@ -413,7 +416,7 @@ class JobTemplates:
             is_archived=is_archived,
         )
         return (
-            RequestHandler(
+            self.request_handler_cls(
                 client=self.client,
                 url_path=f"{self.base_path}/{id_or_identifier}",
                 method="PUT",
@@ -421,7 +424,7 @@ class JobTemplates:
             )
             .raise_for_status()
             .check_status_code(200)
-            .to_model(JobTemplateDetailedView)
+            .to_model(JobTemplateBaseDetailedView)
         )
 
     @cached_property
@@ -432,4 +435,4 @@ class JobTemplates:
         Returns:
             The Files instance.
         """
-        return Files(client=self.client)
+        return Files(client=self.client, request_handler_cls=self.request_handler_cls)
