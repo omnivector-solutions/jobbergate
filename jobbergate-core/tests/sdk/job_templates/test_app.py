@@ -559,7 +559,7 @@ class TestJobTemplates:
             return_value=Response(200, json=response_data),
         )
 
-        result = self.job_templates.list(**list_kwargs)
+        result = self.job_templates.get_list(**list_kwargs)
 
         assert route.call_count == 1
         assert len(result.items) == 1
@@ -572,7 +572,7 @@ class TestJobTemplates:
         route = respx_mock.get("/jobbergate/job-script-templates").mock(return_value=Response(500))
 
         with pytest.raises(JobbergateResponseError):
-            self.job_templates.list()
+            self.job_templates.get_list()
 
         assert route.call_count == 1
 
@@ -584,7 +584,7 @@ class TestJobTemplates:
         )
 
         with pytest.raises(JobbergateResponseError):
-            self.job_templates.list()
+            self.job_templates.get_list()
 
         assert route.call_count == 1
 
@@ -638,6 +638,18 @@ class TestJobTemplates:
             self.job_templates.update(1, name="updated")
 
         assert route.call_count == 1
+
+    def test_template_files(self) -> None:
+        """Test the files property of JobTemplates."""
+        assert isinstance(self.job_templates.files.template, TemplateFiles)
+        assert self.job_templates.files.template.client == self.job_templates.client
+        assert self.job_templates.files.template.request_handler_cls == self.job_templates.request_handler_cls
+
+    def test_workflow_files(self) -> None:
+        """Test the files property of JobTemplates."""
+        assert isinstance(self.job_templates.files.workflow, WorkflowFiles)
+        assert self.job_templates.files.workflow.client == self.job_templates.client
+        assert self.job_templates.files.workflow.request_handler_cls == self.job_templates.request_handler_cls
 
 
 def test_filter_null_out() -> None:

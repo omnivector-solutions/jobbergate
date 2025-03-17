@@ -1,8 +1,7 @@
 import json
-from contextlib import contextmanager
 from functools import cached_property
 from pathlib import Path
-from typing import IO, Any, ClassVar, Generator, Type
+from typing import Any, ClassVar, Type
 
 from pydantic import ConfigDict, Field, validate_call
 from pydantic.dataclasses import dataclass
@@ -12,10 +11,11 @@ from jobbergate_core.sdk.job_templates.schemas import (
     JobTemplateBaseDetailedView,
     JobTemplateDetailedView,
     JobTemplateListView,
-    ListResponseEnvelope,
     TemplateFileDetailedView,
     WorkflowFileDetailedView,
 )
+from jobbergate_core.sdk.schemas import ListResponseEnvelope
+from jobbergate_core.sdk.utils import filter_null_out, open_optional_file
 from jobbergate_core.tools.requests import Client, RequestHandler
 
 
@@ -92,15 +92,6 @@ class TemplateFiles:
             .to_file(output_path)
         )
         return output_path
-
-
-@contextmanager
-def open_optional_file(file_path: Path | None, mode: str = "rb") -> Generator[IO[Any] | None, None, None]:
-    if file_path is None:
-        yield None
-        return
-    with file_path.open(mode) as file:
-        yield file
 
 
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
@@ -210,10 +201,6 @@ class Files:
         return WorkflowFiles(client=self.client, request_handler_cls=self.request_handler_cls)
 
 
-def filter_null_out(data: dict[str, Any]) -> dict[str, Any]:
-    return {k: v for k, v in data.items() if v is not None}
-
-
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
 class JobTemplates:
     client: Client
@@ -244,13 +231,15 @@ class JobTemplates:
         Returns:
             The detailed view of the cloned job template.
         """
-        data = dict(name=name, identifier=identifier, description=description, template_vars=template_vars)
+        data = filter_null_out(
+            dict(name=name, identifier=identifier, description=description, template_vars=template_vars)
+        )
         return (
             self.request_handler_cls(
                 client=self.client,
                 url_path=f"{self.base_path}/clone/{base_id_or_identifier}",
                 method="POST",
-                request_kwargs=dict(data=filter_null_out(data)),
+                request_kwargs=dict(data=data),
             )
             .raise_for_status()
             .check_status_code(201)
@@ -260,8 +249,8 @@ class JobTemplates:
     @validate_call
     def create(
         self,
+        name: str,
         *,
-        name: str | None = None,
         identifier: str | None = None,
         description: str | None = None,
         template_vars: dict[str, Any] | None = None,
@@ -278,13 +267,15 @@ class JobTemplates:
         Returns:
             The detailed view of the created job template.
         """
-        data = dict(name=name, identifier=identifier, description=description, template_vars=template_vars)
+        data = filter_null_out(
+            dict(name=name, identifier=identifier, description=description, template_vars=template_vars)
+        )
         return (
             self.request_handler_cls(
                 client=self.client,
                 url_path=self.base_path,
                 method="POST",
-                request_kwargs=dict(data=filter_null_out(data)),
+                request_kwargs=dict(data=data),
             )
             .raise_for_status()
             .check_status_code(201)
@@ -332,7 +323,7 @@ class JobTemplates:
         )
 
     @validate_call
-    def list(
+    def get_list(
         self,
         include_null_identifier: bool = False,
         sort_ascending: bool = True,
@@ -340,7 +331,6 @@ class JobTemplates:
         search: str | None = None,
         sort_field: str | None = None,
         include_archived: bool = False,
-        # include_parent: bool = False,
         size: int = Field(50, ge=1, le=100),
         page: int = Field(1, ge=1),
     ) -> ListResponseEnvelope[JobTemplateListView]:
@@ -360,22 +350,24 @@ class JobTemplates:
         Returns:
             The list response envelope containing job template list views.
         """
-        params = dict(
-            include_null_identifier=include_null_identifier,
-            sort_ascending=sort_ascending,
-            user_only=user_only,
-            search=search,
-            sort_field=sort_field,
-            include_archived=include_archived,
-            size=size,
-            page=page,
+        params = filter_null_out(
+            dict(
+                include_null_identifier=include_null_identifier,
+                sort_ascending=sort_ascending,
+                user_only=user_only,
+                search=search,
+                sort_field=sort_field,
+                include_archived=include_archived,
+                size=size,
+                page=page,
+            )
         )
         result = (
             self.request_handler_cls(
                 client=self.client,
                 url_path=self.base_path,
                 method="GET",
-                request_kwargs=dict(params=filter_null_out(params)),
+                request_kwargs=dict(params=params),
             )
             .raise_for_status()
             .check_status_code(200)
@@ -408,19 +400,21 @@ class JobTemplates:
         Returns:
             The detailed view of the updated job template.
         """
-        data = dict(
-            name=name,
-            identifier=identifier,
-            description=description,
-            template_vars=template_vars,
-            is_archived=is_archived,
+        data = filter_null_out(
+            dict(
+                name=name,
+                identifier=identifier,
+                description=description,
+                template_vars=template_vars,
+                is_archived=is_archived,
+            )
         )
         return (
             self.request_handler_cls(
                 client=self.client,
                 url_path=f"{self.base_path}/{id_or_identifier}",
                 method="PUT",
-                request_kwargs=dict(data=filter_null_out(data)),
+                request_kwargs=dict(data=data),
             )
             .raise_for_status()
             .check_status_code(200)
