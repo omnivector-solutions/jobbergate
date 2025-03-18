@@ -1,5 +1,6 @@
 import json
 import random
+import uuid
 from datetime import datetime
 from typing import get_args
 from textwrap import dedent
@@ -618,27 +619,22 @@ async def test_fetch_influx_data__raises_JobbergateAgentError_if_influxdb_client
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "measurements",
-    [
-        [{"name": "measurement1"}, {"name": "measurement2"}],
-        [{"name": "measurement1"}],
-        [],
-    ],
-)
 @mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
-async def test_fetch_influx_measurements__success(
-    mocked_influxdb_client: mock.MagicMock, measurements: list[dict[str, str]]
-):
+async def test_fetch_influx_measurements__success(mocked_influxdb_client: mock.MagicMock):
     """
     Test that the ``fetch_influx_measurements()`` function can successfully retrieve
     measurements from InfluxDB.
     """
-    mocked_influxdb_client.get_list_measurements.return_value = measurements
+    expected_measurements = [{"name": measurement} for measurement in get_args(INFLUXDB_MEASUREMENT)]
+    extended_measurements = expected_measurements + [
+        {"name": str(uuid.uuid4())} for _ in range(1, random.randint(2, 11))
+    ]
+
+    mocked_influxdb_client.get_list_measurements.return_value = extended_measurements
 
     result = fetch_influx_measurements()
 
-    assert result == measurements
+    assert result == expected_measurements
 
 
 @pytest.mark.asyncio
