@@ -11,6 +11,43 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.5.7](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.5.7) - 2025-03-18
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+### Changed
+
+- Harden the `fetch_influx_measurements` function to only return the measurements defined in the `INFLUXDB_MEASUREMENT` constant.
+
+  This is necessary because some Slurm clusters might have other measurements enabled, which leads to an error when the agent
+  sends the metrics to the API.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+No significant changes.
+
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.5.6](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.5.6) - 2025-03-07
 
 ## Core
