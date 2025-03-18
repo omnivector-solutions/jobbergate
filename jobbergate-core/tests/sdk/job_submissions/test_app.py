@@ -1,4 +1,5 @@
 from typing import Any
+from unittest import mock
 
 import pendulum
 import pytest
@@ -7,6 +8,7 @@ from httpx import Response
 
 from jobbergate_core.sdk.job_submissions.app import JobSubmissions
 from jobbergate_core.sdk.job_submissions.constants import JobSubmissionStatus
+from jobbergate_core.sdk.job_submissions.schemas import JobSubmissionDetailedView
 from jobbergate_core.tools.requests import Client, JobbergateResponseError
 
 BASE_URL = "https://testserver"
@@ -329,4 +331,60 @@ class TestJobSubmissions:
         with pytest.raises(JobbergateResponseError):
             self.job_submissions.delete(1)
 
+        assert route.call_count == 1
+
+    @respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True)
+    @mock.patch("jobbergate_core.sdk.job_submissions.app.time.sleep")
+    def test_get_one_ensure_slurm_id(self, mocked_sleep, respx_mock) -> None:
+        """Test the get_one_ensure_slurm_id method of JobSubmissions (happy path)."""
+        response_data = job_submission_detailed_view_data_factory()
+        response_data["slurm_job_id"] = 12345
+        route = respx_mock.get("/jobbergate/job-submissions/1").mock(return_value=Response(200, json=response_data))
+
+        result = self.job_submissions.get_one_ensure_slurm_id(1, max_retries=3, waiting_interval=1)
+
+        assert mocked_sleep.call_count == 0
+        assert route.call_count == 1
+        assert result.slurm_job_id == response_data["slurm_job_id"]
+
+        assert isinstance(result, JobSubmissionDetailedView)
+
+    @respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True)
+    @mock.patch("jobbergate_core.sdk.job_submissions.app.time.sleep")
+    def test_get_one_ensure_slurm_id_rejected_status(self, mocked_sleep, respx_mock) -> None:
+        """Test the get_one_ensure_slurm_id method when the job submission is rejected."""
+        response_data = job_submission_detailed_view_data_factory()
+        response_data["status"] = JobSubmissionStatus.REJECTED
+        route = respx_mock.get("/jobbergate/job-submissions/1").mock(return_value=Response(200, json=response_data))
+
+        with pytest.raises(ValueError, match="was rejected and does not have a SLURM job ID"):
+            self.job_submissions.get_one_ensure_slurm_id(1, max_retries=3, waiting_interval=1)
+
+        assert mocked_sleep.call_count == 0
+        assert route.call_count == 1
+
+    @respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True)
+    @mock.patch("jobbergate_core.sdk.job_submissions.app.time.sleep")
+    def test_get_one_ensure_slurm_id_timeout(self, mocked_sleep, respx_mock) -> None:
+        """Test the get_one_ensure_slurm_id method when SLURM job ID is not set within retries."""
+        response_data = job_submission_detailed_view_data_factory()
+        response_data["slurm_job_id"] = None
+        route = respx_mock.get("/jobbergate/job-submissions/1").mock(return_value=Response(200, json=response_data))
+
+        with pytest.raises(TimeoutError, match="was not set within 3 retry attempts"):
+            self.job_submissions.get_one_ensure_slurm_id(1, max_retries=3, waiting_interval=1)
+
+        assert mocked_sleep.call_count == 2
+        assert route.call_count == 3
+
+    @respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True)
+    @mock.patch("jobbergate_core.sdk.job_submissions.app.time.sleep")
+    def test_get_one_ensure_slurm_id_request_error(self, mocked_sleep, respx_mock) -> None:
+        """Test the get_one_ensure_slurm_id method when a request error occurs."""
+        route = respx_mock.get("/jobbergate/job-submissions/1").mock(return_value=Response(500))
+
+        with pytest.raises(JobbergateResponseError):
+            self.job_submissions.get_one_ensure_slurm_id(1, max_retries=3, waiting_interval=1)
+
+        assert mocked_sleep.call_count == 0
         assert route.call_count == 1

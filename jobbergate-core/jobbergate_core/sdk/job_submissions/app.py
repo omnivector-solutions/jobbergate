@@ -117,29 +117,30 @@ class JobSubmissions:
 
     @validate_call
     def get_one_ensure_slurm_id(
-        self, id: int, time_out: int = 120, waiting_interval: int = 15
+        self, id: int, max_retries: int = 8, waiting_interval: int = 15
     ) -> JobSubmissionDetailedView:
         """
         Get a single job submission and ensure that the SLURM job ID is set.
 
         Args:
             id: The ID of the job submission.
-            time_out: The time out in seconds.
+            max_retries: The maximum number of retry attempts.
             waiting_interval: The interval in seconds to wait between checks.
 
         Returns:
             The detailed view of the job submission.
         """
-        expires_at = time_out + time.time()
-        while time.time() < expires_at:
+        for attempt in range(max_retries):
+            if attempt > 0:
+                time.sleep(waiting_interval)
+
             submission = self.get_one(id)
             if submission.slurm_job_id is not None:
                 return submission
             elif submission.status == JobSubmissionStatus.REJECTED:
                 raise ValueError(f"The job submission with ID {id} was rejected and does not have a SLURM job ID.")
-            time.sleep(waiting_interval)
 
-        raise TimeoutError("The SLURM job ID was not set within the time out.")
+        raise TimeoutError(f"The SLURM job ID was not set within {max_retries} retry attempts.")
 
     @validate_call
     def get_list(

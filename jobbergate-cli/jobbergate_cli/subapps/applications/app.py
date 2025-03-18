@@ -86,7 +86,7 @@ def list_all(
     if sort_field is not None:
         params["sort_field"] = sort_field
 
-    result = jg_ctx.sdk.list(
+    result = jg_ctx.sdk.job_templates.get_list(
         include_null_identifier=show_all,
         user_only=user_only,
         search=search,
@@ -135,7 +135,7 @@ def get_one(
     Get a single application by id or identifier
     """
     jg_ctx: ContextProtocol = ctx.obj
-    result = jg_ctx.sdk.get_one(
+    result = jg_ctx.sdk.job_templates.get_one(
         id_or_identifier=resolve_application_selection(id_or_identifier, id, identifier),
     )
 
