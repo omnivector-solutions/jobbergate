@@ -2,7 +2,7 @@ import asyncio
 import json
 from itertools import chain
 from textwrap import dedent
-from typing import List
+from typing import List, get_args
 
 import msgpack
 from jobbergate_core.tools.sbatch import InfoHandler
@@ -16,6 +16,7 @@ from jobbergate_agent.jobbergate.schemas import (
     JobSubmissionMetricsMaxResponse,
     InfluxDBMeasurementDict,
     InfluxDBPointDict,
+    InfluxDBGenericMeasurementDict,
 )
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobbergateApiError, SbatchError, JobbergateAgentError
@@ -138,9 +139,15 @@ def fetch_influx_measurements() -> list[InfluxDBMeasurementDict]:
     with JobbergateApiError.handle_errors("Failed to fetch measurements from InfluxDB", do_except=log_error):
         logger.debug("Fetching measurements from InfluxDB")
         assert influxdb_client is not None
-        measurements: list[InfluxDBMeasurementDict] = influxdb_client.get_list_measurements()
+        measurements: list[InfluxDBGenericMeasurementDict] = influxdb_client.get_list_measurements()
         logger.debug(f"Fetched measurements from InfluxDB: {measurements=}")
-        return measurements
+        logger.debug("Filtering compatible measurements")
+        return [
+            # ignore type since we're filtering the measurements
+            InfluxDBMeasurementDict(name=measurement["name"])  # type: ignore[typeddict-item]
+            for measurement in measurements
+            if measurement["name"] in get_args(INFLUXDB_MEASUREMENT)
+        ]
 
 
 async def update_job_metrics(active_job_submittion: ActiveJobSubmission) -> None:
