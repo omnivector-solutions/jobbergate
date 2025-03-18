@@ -105,6 +105,14 @@ class InfluxDBMeasurementDict(TypedDict):
     name: INFLUXDB_MEASUREMENT
 
 
+class InfluxDBGenericMeasurementDict(TypedDict):
+    """
+    Map a generic entry in the list returned by `InfluxDBClient(...).get_list_measurements(...)`.
+    """
+
+    name: str
+
+
 class InfluxDBPointDict(TypedDict):
     """
     Map each entry in the generator returned by InfluxDBClient(...).query(...).get_points().
