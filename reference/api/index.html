@@ -8135,6 +8135,168 @@ should match.</p>
 
 
 
+<h7 id="jobbergate_api.apps.job_submissions.models.JobProgress" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobProgress</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.models.CommonMixin" href="#jobbergate_api.apps.models.CommonMixin">CommonMixin</a></code>, <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.models.Base" href="#jobbergate_api.apps.models.Base">Base</a></code></p>
+
+  
+      <p>Job progress table definition.</p>
+
+
+
+  <p><strong>Attributes:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>id</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Primary key</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>job_submission_id</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Foreign key to the job submission</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>timestamp</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[<span title="pendulum.datetime.DateTime">DateTime</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>When the progress entry was recorded</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>slurm_job_state</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[str]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The state of the Slurm job at this point</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>additional_info</code></td>
+          <td>
+                <code><span title="sqlalchemy.orm.Mapped">Mapped</span>[str]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Any additional information about the job state</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_api.apps.job_submissions.models.JobProgress.include_parent" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">include_parent</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">include_parent</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="n">Select</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Include custom options on a query to eager load parent data.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_api.apps.job_submissions.models.JobProgress.sortable_fields" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">sortable_fields</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">sortable_fields</span><span class="p">()</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Add additional sortable fields.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
 <h7 id="jobbergate_api.apps.job_submissions.models.JobSubmission" class="doc doc-heading">
           <span class="doc doc-object-name doc-class-name">JobSubmission</span>
 
@@ -8353,6 +8515,32 @@ helper functions in the class.</p>
   <div class="doc doc-contents ">
   
       <p>Include custom options on a query to eager load parent data.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_api.apps.job_submissions.models.JobSubmission.include_progress" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">include_progress</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">include_progress</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="n">Select</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Include custom options on a query to eager load progress entries.</p>
 
   </div>
 
@@ -8875,6 +9063,32 @@ helper functions in the class.</p>
 
 
 
+<h7 id="jobbergate_api.apps.job_submissions.routers.job_submission_progress" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">job_submission_progress</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">job_submission_progress</span><span class="p">(</span><span class="n">job_submission_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">sort_ascending</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Sort the progress entries in ascending order&#39;</span><span class="p">),</span> <span class="n">sort_field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="s1">&#39;timestamp&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Sort the progress entries by a specific field&#39;</span><span class="p">),</span> <span class="n">secure_services</span><span class="p">:</span> <span class="n">SecureService</span> <span class="o">=</span> <span class="n">Depends</span><span class="p">(</span><span class="n">secure_services</span><span class="p">(</span><span class="n">Permissions</span><span class="o">.</span><span class="n">ADMIN</span><span class="p">,</span> <span class="n">Permissions</span><span class="o">.</span><span class="n">JOB_SUBMISSIONS_READ</span><span class="p">,</span> <span class="n">commit</span><span class="o">=</span><span class="kc">False</span><span class="p">)))</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Get progress entries for a job submission.</p>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
 <h7 id="jobbergate_api.apps.job_submissions.routers.job_submission_update" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">job_submission_update</span>
 
@@ -9155,6 +9369,46 @@ helper functions in the class.</p>
 
   
       <p>Specialized model for the cluster-agent to pull an active job_submission.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.schemas.JobProgressDetail" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobProgressDetail</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+  
+      <p>Base model for the JobProgress resource.</p>
 
 
   
@@ -9837,6 +10091,68 @@ math behind the aggregation, please refer to the alembic revision <code>99c3877d
 
 
 
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h7 id="jobbergate_api.apps.job_submissions.services.JobProgressService" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobProgressService</span>
+
+
+</h7>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_api.apps.services.CrudService" href="#jobbergate_api.apps.services.CrudService">CrudService</a></code></p>
+
+  
+      <p>Provide a CrudService that overloads the list query builder.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h8 id="jobbergate_api.apps.job_submissions.services.JobProgressService.build_list_query" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">build_list_query</span>
+
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">build_list_query</span><span class="p">(</span><span class="n">sort_ascending</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">search</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sort_field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">include_archived</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">include_files</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">include_parent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">additional_filters</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Select</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>List all entries in the job_progress table for a given job_submission_id.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
 
 <div class="doc doc-object doc-class">
 
