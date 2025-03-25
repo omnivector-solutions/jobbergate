@@ -24,8 +24,8 @@ from jobbergate_api.apps.job_script_templates.services import (
 )
 from jobbergate_api.apps.job_scripts.models import JobScript, JobScriptFile
 from jobbergate_api.apps.job_scripts.services import JobScriptCrudService, JobScriptFileService
-from jobbergate_api.apps.job_submissions.models import JobSubmission
-from jobbergate_api.apps.job_submissions.services import JobSubmissionService
+from jobbergate_api.apps.job_submissions.models import JobSubmission, JobProgress
+from jobbergate_api.apps.job_submissions.services import JobSubmissionService, JobProgressService
 from jobbergate_api.config import settings
 from jobbergate_api.safe_types import Bucket
 from jobbergate_api.security import PermissionMode
@@ -68,6 +68,7 @@ class CrudServices(NamedTuple):
     template: JobScriptTemplateService
     job_script: JobScriptCrudService
     job_submission: JobSubmissionService
+    job_progress: JobProgressService
 
 
 class FileServices(NamedTuple):
@@ -101,6 +102,7 @@ def service_factory(session: AsyncSession, bucket: Bucket) -> Iterator[Services]
         template=JobScriptTemplateService(model_type=JobScriptTemplate),
         job_script=JobScriptCrudService(model_type=JobScript),
         job_submission=JobSubmissionService(model_type=JobSubmission),
+        job_progress=JobProgressService(model_type=JobProgress),
     )
     file = FileServices(
         template=JobScriptTemplateFileService(model_type=JobScriptTemplateFile),

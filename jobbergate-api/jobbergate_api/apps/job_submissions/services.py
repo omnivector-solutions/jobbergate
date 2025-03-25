@@ -37,3 +37,29 @@ class JobSubmissionService(CrudService):
         if filter_slurm_job_ids:
             query = query.where(JobSubmission.slurm_job_id.in_(filter_slurm_job_ids))
         return query
+
+
+class JobProgressService(CrudService):
+    """
+    Provide a CrudService that overloads the list query builder.
+    """
+
+    def build_list_query(
+        self,
+        sort_ascending: bool = True,
+        search: str | None = None,
+        sort_field: str | None = None,
+        include_archived: bool = True,
+        include_files: bool = False,
+        include_parent: bool = False,
+        **additional_filters,
+    ) -> Select:
+        """
+        List all entries in the job_progress table for a given job_submission_id.
+        """
+        query: Select = super().build_list_query(
+            sort_ascending=sort_ascending,
+            sort_field=sort_field,
+            **additional_filters,
+        )
+        return query

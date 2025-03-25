@@ -37,6 +37,7 @@ from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionAgentMaxTimes,
     JobSubmissionMetricSchema,
     JobSubmissionMetricTimestamps,
+    JobProgressDetail,
 )
 from jobbergate_api.apps.job_submissions.helpers import (
     validate_job_metric_upload_input,
@@ -297,6 +298,15 @@ async def job_submission_agent_update(
         f"on client_id: {secure_services.identity_payload.client_id}"
     )
 
+    # Create a progress entry if the job state has changed
+    if job_submission.slurm_job_state != update_params.slurm_job_state:
+        await secure_services.crud.job_progress.create(
+            job_submission_id=id,
+            timestamp=datetime.now(timezone.utc),
+            slurm_job_state=update_params.slurm_job_state,
+            additional_info=update_params.slurm_job_state_reason,
+        )
+
     update_dict: dict[str, Any] = dict(
         slurm_job_id=update_params.slurm_job_id,
         slurm_job_state=update_params.slurm_job_state,
@@ -358,6 +368,14 @@ async def job_submissions_agent_submitted(
         report_message=submitted_request.slurm_job_state_reason,
         status=JobSubmissionStatus.SUBMITTED,
     )
+
+    await secure_services.crud.job_progress.create(
+        job_submission_id=submitted_request.id,
+        timestamp=datetime.now(timezone.utc),
+        slurm_job_state=submitted_request.slurm_job_state,
+        additional_info=submitted_request.slurm_job_state_reason,
+    )
+
     return FastAPIResponse(status_code=status.HTTP_202_ACCEPTED)
 
 
@@ -392,6 +410,14 @@ async def job_submissions_agent_rejected(
         status=JobSubmissionStatus.REJECTED,
         report_message=rejected_request.report_message,
     )
+
+    await secure_services.crud.job_progress.create(
+        job_submission_id=rejected_request.id,
+        timestamp=datetime.now(timezone.utc),
+        slurm_job_state="REJECTED",
+        additional_info=rejected_request.report_message,
+    )
+
     notify_submission_rejected(
         rejected_request.id,
         rejected_request.report_message,
@@ -667,3 +693,33 @@ async def job_submissions_metrics_timestamps(
         )
     logger.debug(f"Returning timestamps for job submission {job_submission_id}")
     return JobSubmissionMetricTimestamps.model_validate(result)
+
+
+@router.get(
+    "/{job_submission_id}/progress",
+    description="Endpoint to get progress entries for a job submission",
+    response_model=Page[JobProgressDetail],
+    tags=["Progress"],
+)
+async def job_submission_progress(
+    job_submission_id: int,
+    sort_ascending: bool = Query(
+        True,
+        description="Sort the progress entries in ascending order",
+    ),
+    sort_field: str = Query(
+        "timestamp",
+        description="Sort the progress entries by a specific field",
+    ),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)
+    ),
+):
+    """Get progress entries for a job submission."""
+    logger.debug(f"Fetching progress entries for job submission {job_submission_id}")
+    list_kwargs = {
+        "job_submission_id": job_submission_id,
+        "sort_ascending": sort_ascending,
+        "sort_field": sort_field,
+    }
+    return await secure_services.crud.job_progress.paginated_list(**list_kwargs)

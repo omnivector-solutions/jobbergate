@@ -325,3 +325,15 @@ class JobSubmissionMetricTimestamps(BaseModel):
     max: int
 
     model_config = ConfigDict(from_attributes=True, extra="ignore")
+
+
+class JobProgressDetail(BaseModel):
+    """
+    Base model for the JobProgress resource.
+    """
+
+    id: int
+    job_submission_id: int
+    timestamp: datetime
+    slurm_job_state: Optional[str] = None
+    additional_info: Optional[str] = None

@@ -23,7 +23,7 @@ from jobbergate_api.apps.job_submissions.constants import (
 )
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.rabbitmq_notification import rabbitmq_connect
-from jobbergate_api.apps.job_submissions.models import JobSubmissionMetric
+from jobbergate_api.apps.job_submissions.models import JobSubmissionMetric, JobProgress
 from jobbergate_api.apps.job_submissions.schemas import JobSubmissionMetricSchema, JobSubmissionAgentMaxTimes
 
 # Not using the synth_session fixture in a route that needs the database is unsafe
@@ -1431,6 +1431,7 @@ async def test_job_submissions_agent_submitted__success(
     client,
     inject_security_header,
     synth_services,
+    synth_session,
 ):
     """
     Test POST /job-submissions/agent/submitted correctly updates a marks a job_submission as SUBMITTED.
@@ -1467,6 +1468,13 @@ async def test_job_submissions_agent_submitted__success(
     assert instance.slurm_job_state == payload["slurm_job_state"]
     assert instance.slurm_job_info == payload["slurm_job_info"]
     assert instance.report_message is None
+
+    query = select(JobProgress).where(JobProgress.job_submission_id == inserted_job_submission_id)
+    result = (await synth_session.execute(query)).scalars().all()
+    assert len(result) == 1
+    assert result[0].job_submission_id == inserted_job_submission_id
+    assert result[0].slurm_job_state == SlurmJobState.RUNNING
+    assert result[0].additional_info is None
 
 
 async def test_job_submissions_agent_submitted__fails_if_status_is_not_CREATED(
@@ -1575,6 +1583,7 @@ async def test_job_submissions_agent_rejected__success(
     client,
     inject_security_header,
     synth_services,
+    synth_session,
 ):
     """
     Test POST /job-submissions/agent/rejected correctly updates a marks a job_submission as REJECTED.
@@ -1610,6 +1619,13 @@ async def test_job_submissions_agent_rejected__success(
     assert instance.id == inserted_job_submission_id
     assert instance.status == JobSubmissionStatus.REJECTED
     assert instance.report_message == payload["report_message"]
+
+    query = select(JobProgress).where(JobProgress.job_submission_id == inserted_job_submission_id)
+    result = (await synth_session.execute(query)).scalars().all()
+    assert len(result) == 1
+    assert result[0].job_submission_id == inserted_job_submission_id
+    assert result[0].slurm_job_state == "REJECTED"
+    assert result[0].additional_info == payload["report_message"]
 
 
 @pytest.mark.flaky(max_runs=3)
@@ -1717,6 +1733,7 @@ async def test_job_submissions_agent_update__success(
     client,
     inject_security_header,
     synth_services,
+    synth_session,
 ):
     """
     Test PUT /job-submissions/agent/{job_submission_id} correctly updates a job_submission.
@@ -1753,12 +1770,19 @@ async def test_job_submissions_agent_update__success(
     )
     assert response.status_code == status.HTTP_202_ACCEPTED
 
-    instance = await synth_services.crud.job_submission.get(inserted_job_submission_id)
-    assert instance.id == inserted_job_submission_id
-    assert instance.status == JobSubmissionStatus.SUBMITTED
-    assert instance.slurm_job_state == SlurmJobState.RUNNING
-    assert instance.slurm_job_info == "Dummy slurm job info"
-    assert instance.slurm_job_id == 111
+    job_submission_instance = await synth_services.crud.job_submission.get(inserted_job_submission_id)
+    assert job_submission_instance.id == inserted_job_submission_id
+    assert job_submission_instance.status == JobSubmissionStatus.SUBMITTED
+    assert job_submission_instance.slurm_job_state == SlurmJobState.RUNNING
+    assert job_submission_instance.slurm_job_info == "Dummy slurm job info"
+    assert job_submission_instance.slurm_job_id == 111
+
+    query = select(JobProgress).where(JobProgress.job_submission_id == inserted_job_submission_id)
+    result = (await synth_session.execute(query)).scalars().all()
+    assert len(result) == 1
+    assert result[0].job_submission_id == inserted_job_submission_id
+    assert result[0].slurm_job_state == SlurmJobState.RUNNING
+    assert result[0].additional_info is None
 
 
 @pytest.mark.parametrize(
@@ -1782,6 +1806,7 @@ async def test_job_submissions_agent_update__sets_aborted_status(
     inject_security_header,
     synth_services,
     slurm_job_state,
+    synth_session,
 ):
     """
     Test PUT /job-submissions/agent/{job_submission_id} correctly sets the status to aborted.
@@ -1826,6 +1851,13 @@ async def test_job_submissions_agent_update__sets_aborted_status(
     assert instance.slurm_job_id == 111
     assert instance.report_message == "User cancelled"
 
+    query = select(JobProgress).where(JobProgress.job_submission_id == inserted_job_submission_id)
+    result = (await synth_session.execute(query)).scalars().all()
+    assert len(result) == 1
+    assert result[0].job_submission_id == inserted_job_submission_id
+    assert result[0].slurm_job_state == slurm_job_state
+    assert result[0].additional_info == "User cancelled"
+
 
 async def test_job_submissions_agent_update__sets_done_status(
     fill_job_script_data,
@@ -1833,6 +1865,7 @@ async def test_job_submissions_agent_update__sets_done_status(
     client,
     inject_security_header,
     synth_services,
+    synth_session,
 ):
     """
     Test PUT /job-submissions/agent/{job_submission_id} correctly sets the status to done.
@@ -1874,6 +1907,13 @@ async def test_job_submissions_agent_update__sets_done_status(
     assert instance.slurm_job_state == SlurmJobState.COMPLETED
     assert instance.slurm_job_info == "Dummy slurm job info"
     assert instance.slurm_job_id == 111
+
+    query = select(JobProgress).where(JobProgress.job_submission_id == inserted_job_submission_id)
+    result = (await synth_session.execute(query)).scalars().all()
+    assert len(result) == 1
+    assert result[0].job_submission_id == inserted_job_submission_id
+    assert result[0].slurm_job_state == SlurmJobState.COMPLETED
+    assert result[0].additional_info is None
 
 
 @pytest.mark.parametrize(
@@ -2771,3 +2811,264 @@ async def test_job_submissions_metrics_timestamps__job_submission_has_no_metric(
         response_data["detail"]
         == f"No metrics found for job submission {inserted_job_submission_id} or job submission does not exist"
     )
+
+
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ))
+async def test_job_submission_progress__success(
+    permission,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+):
+    """
+    Test GET /job-submissions/{job_submission_id}/progress returns progress entries.
+
+    This test proves that progress entries for a job submission can be retrieved via a GET request
+    to the /job-submissions/{job_submission_id}/progress endpoint. We show this by:
+    1. Creating a job script and submission
+    2. Adding progress entries with different timestamps and states
+    3. Retrieving the progress entries and verifying they are returned in the correct order
+    """
+    # Create a job script and submission
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    # Create progress entries with different timestamps and states
+    progress_entries = [
+        {
+            "job_submission_id": inserted_job_submission_id,
+            "timestamp": datetime.now(timezone.utc) - timedelta(minutes=30),
+            "slurm_job_state": SlurmJobState.PENDING,
+            "additional_info": "Job is pending",
+        },
+        {
+            "job_submission_id": inserted_job_submission_id,
+            "timestamp": datetime.now(timezone.utc) - timedelta(minutes=20),
+            "slurm_job_state": SlurmJobState.RUNNING,
+            "additional_info": "Job is running",
+        },
+        {
+            "job_submission_id": inserted_job_submission_id,
+            "timestamp": datetime.now(timezone.utc) - timedelta(minutes=10),
+            "slurm_job_state": SlurmJobState.COMPLETED,
+            "additional_info": "Job completed successfully",
+        },
+    ]
+
+    for entry in progress_entries:
+        await synth_services.crud.job_progress.create(**entry)
+
+    # Test retrieving progress entries
+    inject_security_header("who@cares.com", permission)
+    response = await client.get(f"/jobbergate/job-submissions/{inserted_job_submission_id}/progress")
+    assert response.status_code == status.HTTP_200_OK
+
+    response_data = response.json()
+    assert len(response_data["items"]) == 3
+
+    # Verify entries are sorted by timestamp in ascending order by default
+    timestamps = [entry["timestamp"] for entry in response_data["items"]]
+    assert timestamps == sorted(timestamps)
+
+    # Verify entry data
+    for entry in response_data["items"]:
+        assert entry["job_submission_id"] == inserted_job_submission_id
+        assert "timestamp" in entry
+        assert "slurm_job_state" in entry
+        assert "additional_info" in entry
+
+
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ))
+async def test_job_submission_progress__sort_descending(
+    permission,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+):
+    """
+    Test GET /job-submissions/{job_submission_id}/progress with sort_ascending=false.
+
+    This test proves that progress entries can be retrieved in descending order when
+    sort_ascending=false is specified.
+    """
+    # Create a job script and submission
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    # Create progress entries with different timestamps
+    progress_entries = [
+        {
+            "job_submission_id": inserted_job_submission_id,
+            "timestamp": datetime.now(timezone.utc) - timedelta(minutes=30),
+            "slurm_job_state": SlurmJobState.PENDING,
+            "additional_info": "Job is pending",
+        },
+        {
+            "job_submission_id": inserted_job_submission_id,
+            "timestamp": datetime.now(timezone.utc) - timedelta(minutes=20),
+            "slurm_job_state": SlurmJobState.RUNNING,
+            "additional_info": "Job is running",
+        },
+        {
+            "job_submission_id": inserted_job_submission_id,
+            "timestamp": datetime.now(timezone.utc) - timedelta(minutes=10),
+            "slurm_job_state": SlurmJobState.COMPLETED,
+            "additional_info": "Job completed successfully",
+        },
+    ]
+
+    for entry in progress_entries:
+        await synth_services.crud.job_progress.create(**entry)
+
+    # Test retrieving progress entries in descending order
+    inject_security_header("who@cares.com", permission)
+    response = await client.get(
+        f"/jobbergate/job-submissions/{inserted_job_submission_id}/progress?sort_ascending=false"
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    response_data = response.json()
+    assert len(response_data["items"]) == 3
+
+    # Verify entries are sorted by timestamp in descending order
+    timestamps = [entry["timestamp"] for entry in response_data["items"]]
+    assert timestamps == sorted(timestamps, reverse=True)
+
+
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ))
+async def test_job_submission_progress__sort_by_state(
+    permission,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+):
+    """
+    Test GET /job-submissions/{job_submission_id}/progress with sort_field=slurm_job_state.
+
+    This test proves that progress entries can be sorted by slurm_job_state when
+    sort_field=slurm_job_state is specified.
+    """
+    # Create a job script and submission
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    # Create progress entries with different states
+    progress_entries = [
+        {
+            "job_submission_id": inserted_job_submission_id,
+            "timestamp": datetime.now(timezone.utc) - timedelta(minutes=30),
+            "slurm_job_state": SlurmJobState.PENDING,
+            "additional_info": "Job is pending",
+        },
+        {
+            "job_submission_id": inserted_job_submission_id,
+            "timestamp": datetime.now(timezone.utc) - timedelta(minutes=20),
+            "slurm_job_state": SlurmJobState.RUNNING,
+            "additional_info": "Job is running",
+        },
+        {
+            "job_submission_id": inserted_job_submission_id,
+            "timestamp": datetime.now(timezone.utc) - timedelta(minutes=10),
+            "slurm_job_state": SlurmJobState.COMPLETED,
+            "additional_info": "Job completed successfully",
+        },
+    ]
+
+    for entry in progress_entries:
+        await synth_services.crud.job_progress.create(**entry)
+
+    # Test retrieving progress entries sorted by state
+    inject_security_header("who@cares.com", permission)
+    response = await client.get(
+        f"/jobbergate/job-submissions/{inserted_job_submission_id}/progress?sort_field=slurm_job_state"
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    response_data = response.json()
+    assert len(response_data["items"]) == 3
+
+    # Verify entries are sorted by slurm_job_state
+    states = [entry["slurm_job_state"] for entry in response_data["items"]]
+    assert states == sorted(states)
+
+
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ))
+async def test_job_submission_progress__no_entries(
+    permission,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+):
+    """
+    Test GET /job-submissions/{job_submission_id}/progress returns empty list when no entries exist.
+
+    This test proves that the endpoint returns an empty list of progress entries when
+    no entries exist for the given job submission.
+    """
+    # Create a job script and submission
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(
+            client_id="dummy-client",
+            status=JobSubmissionStatus.SUBMITTED,
+            slurm_job_id=111,
+            slurm_job_state=SlurmJobState.PENDING,
+            slurm_job_info="Fake slurm job info",
+        ),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    # Test retrieving progress entries when none exist
+    inject_security_header("who@cares.com", permission)
+    response = await client.get(f"/jobbergate/job-submissions/{inserted_job_submission_id}/progress")
+    assert response.status_code == status.HTTP_200_OK
+
+    response_data = response.json()
+    assert len(response_data["items"]) == 0
