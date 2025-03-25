@@ -5,6 +5,7 @@ Database model for the JobSubmission resource.
 from __future__ import annotations
 from datetime import datetime, timezone
 
+from pendulum.datetime import DateTime as PendulumDateTime
 from sqlalchemy import (
     ARRAY,
     Dialect,
@@ -16,6 +17,7 @@ from sqlalchemy import (
     Index,
     PrimaryKeyConstraint,
     BigInteger,
+    DateTime as DateTimeColumn,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
 from sqlalchemy.sql.expression import Select
@@ -82,6 +84,11 @@ class JobSubmission(CrudMixin, Base):
         back_populates="job_submission",
         lazy="raise",
     )
+    progress_entries: Mapped[list["JobProgress"]] = relationship(
+        "JobProgress",
+        back_populates="job_submission",
+        lazy="raise",
+    )
 
     @classmethod
     def searchable_fields(cls):
@@ -123,6 +130,13 @@ class JobSubmission(CrudMixin, Base):
         Include custom options on a query to eager load metrics.
         """
         return query.options(selectinload(cls.metrics))
+
+    @classmethod
+    def include_progress(cls, query: Select) -> Select:
+        """
+        Include custom options on a query to eager load progress entries.
+        """
+        return query.options(selectinload(cls.progress_entries))
 
 
 class TimestampInt(TypeDecorator):
@@ -200,3 +214,53 @@ class JobSubmissionMetric(CommonMixin, Base):
         Include custom options on a query to eager load parent data.
         """
         return query.options(selectinload(cls.job_submission))
+
+
+class JobProgress(CommonMixin, Base):
+    """
+    Job progress table definition.
+
+    Attributes:
+        id: Primary key
+        job_submission_id: Foreign key to the job submission
+        timestamp: When the progress entry was recorded
+        slurm_job_state: The state of the Slurm job at this point
+        additional_info: Any additional information about the job state
+    """
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    job_submission_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("job_submissions.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    timestamp: Mapped[PendulumDateTime] = mapped_column(
+        DateTimeColumn(timezone=True), nullable=False, default=PendulumDateTime.utcnow
+    )
+    slurm_job_state: Mapped[str] = mapped_column(String, nullable=True)
+    additional_info: Mapped[str] = mapped_column(String, nullable=True)
+
+    job_submission: Mapped[JobSubmission] = relationship(
+        "JobSubmission",
+        back_populates="progress_entries",
+        lazy="raise",
+    )
+
+    @classmethod
+    def include_parent(cls, query: Select) -> Select:
+        """
+        Include custom options on a query to eager load parent data.
+        """
+        return query.options(selectinload(cls.job_submission))
+
+    @classmethod
+    def sortable_fields(cls):
+        """
+        Add additional sortable fields.
+        """
+        return {
+            cls.id,
+            cls.job_submission_id,
+            cls.timestamp,
+            cls.slurm_job_state,
+        }

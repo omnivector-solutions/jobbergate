@@ -88,6 +88,6 @@ class TestIntegration:
         result = await synth_services.crud.job_submission.update(submission_instance.id, name="new-name")
 
         actual_unloaded = inspect(result).unloaded
-        expected_unloaded = {"job_script", "metrics"}
+        expected_unloaded = {"job_script", "metrics", "progress_entries"}
 
         assert actual_unloaded == expected_unloaded
