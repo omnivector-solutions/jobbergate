@@ -11,6 +11,64 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.6.0a0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.6.0a0) - 2025-03-26
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+### Changed
+
+- Changed default `execution_directory` from `/tmp` to submitting user's home directory ([PR #732](https://github.com/omnivector-solutions/jobbergate/pull/732))
+- Harden the `fetch_influx_measurements` function to only return the measurements defined in the `INFLUXDB_MEASUREMENT` constant.
+
+  This is necessary because some Slurm clusters might have other measurements enabled, which leads to an error when the agent
+  sends the metrics to the API.
+
+### Fixed
+
+- Solved the permissions denied error the agent user could face at submission time when verifying the submission directory exists and is writable ([PR #713](https://github.com/omnivector-solutions/jobbergate/pull/713))
+- Updated the schema for slurm job data to handle slurm updates ([PR #722](https://github.com/omnivector-solutions/jobbergate/pull/722))
+- Updated the `validate_job_state` validator to support data_parser 0.0.40.
+
+  In Slurm 24.11, the `--json` flag from the `scontrol show job` command uses the
+  data_parser 0.0.40. According to the official [documentation](https://slurm.schedmd.com/job_state_codes.html#overview),
+  the job flags can be returned alongside the job state, which can make the `job_state` key to have multiple keys. This
+  change prevents any validation error when fetching job's data by returning the first available state. ([PR #739](https://github.com/omnivector-solutions/jobbergate/pull/739))
+- Adjusted the `fetch_influx_data` function to return a measurement value 0 when the original value overflows the maximum int64 value. ([PR #740](https://github.com/omnivector-solutions/jobbergate/pull/740))
+
+
+## Agent Snap
+
+### Fixed
+
+- Updated snap to use base24 and use appropriate paths ([PR #720](https://github.com/omnivector-solutions/jobbergate/pull/720))
+
+
+## API
+
+### Added
+
+- feat(api): [PENG-2948](https://sharing.clickup.com/t/h/c/18022949/PENG-2948/TURN7SDQ9GBJ28C) implement endpoint for tracking job submission progress.
+
+  This commit adds a database table whose purpose is to track events related to job submissions. At each job submission update, a new event is added in the database table.
+
+  As well as, a new endpoint is added for fetching the event entries from the database. ([PR #752](https://github.com/omnivector-solutions/jobbergate/pull/752))
+
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.5.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.5.0) - 2025-02-11
 
 ## Core
