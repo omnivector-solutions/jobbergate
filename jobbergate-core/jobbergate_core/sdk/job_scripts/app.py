@@ -222,7 +222,7 @@ class JobScripts:
                 page=page,
             )
         )
-        result = (
+        return (
             self.request_handler_cls(
                 client=self.client,
                 url_path=self.base_path,
@@ -233,7 +233,6 @@ class JobScripts:
             .check_status_code(200)
             .to_model(ListResponseEnvelope[JobScriptListView])
         )
-        return result
 
     @validate_call
     def get_one(self, id: int) -> JobScriptDetailedView:
