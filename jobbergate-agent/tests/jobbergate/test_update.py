@@ -172,7 +172,11 @@ async def test_fetch_active_submissions__success():
                 id=3,
                 slurm_job_id=33,
             ),
-        ]
+        ],
+        "page": 1,
+        "pages": 1,
+        "size": 3,
+        "total": 3,
     }
     with respx.mock:
         respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/active").mock(
@@ -533,7 +537,7 @@ async def test_fetch_influx_data__success_with_all_None(mocked_influxdb_client: 
 @pytest.mark.parametrize(
     "time, host, step, task",
     [
-        tuple(random.randint(1, 100) if i not in combination else None for i in range(4))
+        tuple(1 if i not in combination else None for i in range(4))
         for r in range(1, 4)
         for combination in combinations(range(4), r)
     ],
