@@ -19,6 +19,7 @@ from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
 from jobbergate_agent.jobbergate.constants import FileType
+from jobbergate_agent.jobbergate.pagination import fetch_paginated_result
 from jobbergate_agent.jobbergate.schemas import JobScriptFile, PendingJobSubmission, SlurmJobData
 from jobbergate_agent.jobbergate.update import fetch_job_data
 from jobbergate_agent.settings import SETTINGS
@@ -113,16 +114,14 @@ async def fetch_pending_submissions() -> list[PendingJobSubmission]:
     """
     Retrieve a list of pending job_submissions.
     """
-    with JobbergateApiError.handle_errors(
-        "Failed to fetch pending job submissions",
-        do_except=log_error,
-    ):
-        response = await jobbergate_api_client.get("/jobbergate/job-submissions/agent/pending")
-        response.raise_for_status()
-        pending_job_submissions = [PendingJobSubmission(**pjs) for pjs in response.json().get("items", [])]
+    with JobbergateApiError.handle_errors("Failed to fetch pending job submissions", do_except=log_error):
+        results = await fetch_paginated_result(
+            url="/jobbergate/job-submissions/agent/pending",
+            base_model=PendingJobSubmission,
+        )
 
-    logger.debug(f"Retrieved {len(pending_job_submissions)} pending job submissions")
-    return pending_job_submissions
+    logger.debug(f"Retrieved {len(results)} pending job submissions")
+    return results
 
 
 async def mark_as_submitted(job_submission_id: int, slurm_job_id: int, slurm_job_data: SlurmJobData):

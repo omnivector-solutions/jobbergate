@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional, TypedDict, TypeAlias
+from typing import Generic, List, Optional, TypeVar, TypedDict, TypeAlias
 
 import pydantic
 from pydantic import ConfigDict, field_validator
@@ -46,6 +46,21 @@ class ActiveJobSubmission(pydantic.BaseModel, extra="ignore"):
 
     id: int
     slurm_job_id: int
+
+
+EnvelopeT = TypeVar("EnvelopeT")
+
+
+class ListResponseEnvelope(pydantic.BaseModel, Generic[EnvelopeT]):
+    """
+    A model describing the structure of response envelopes from "list" endpoints.
+    """
+
+    items: list[EnvelopeT]
+    total: int
+    page: int
+    size: int
+    pages: int
 
 
 class SlurmSubmitError(pydantic.BaseModel):

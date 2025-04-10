@@ -10,6 +10,7 @@ from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
 from jobbergate_agent.clients.influx import influxdb_client
+from jobbergate_agent.jobbergate.pagination import fetch_paginated_result
 from jobbergate_agent.jobbergate.schemas import (
     ActiveJobSubmission,
     SlurmJobData,
@@ -51,12 +52,13 @@ async def fetch_active_submissions() -> List[ActiveJobSubmission]:
     Retrieve a list of active job_submissions.
     """
     with JobbergateApiError.handle_errors("Failed to fetch active job submissions", do_except=log_error):
-        response = await jobbergate_api_client.get("jobbergate/job-submissions/agent/active")
-        response.raise_for_status()
-        active_job_submissions = [ActiveJobSubmission(**ajs) for ajs in response.json().get("items", [])]
+        results = await fetch_paginated_result(
+            url="/jobbergate/job-submissions/agent/active",
+            base_model=ActiveJobSubmission,
+        )
 
-    logger.debug(f"Retrieved {len(active_job_submissions)} active job submissions")
-    return active_job_submissions
+    logger.debug(f"Retrieved {len(results)} active job submissions")
+    return results
 
 
 async def update_job_data(
