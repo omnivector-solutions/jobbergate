@@ -117,7 +117,6 @@ class SubmissionHandler:
             check(self.sbatch_path.is_absolute(), "sbatch_path is not an absolute path")
             check(self.sbatch_path.exists(), "sbatch_path does not exist")
             check(self.submission_directory.is_absolute(), "submission_directory is not an absolute path")
-            check(self.submission_directory.exists(), "submission_directory does not exist")
 
     def submit_job(self, job_script_path: Path) -> int:
         """Runs sbatch as the user to submit a job script and returns the slurm id assigned to it."""
