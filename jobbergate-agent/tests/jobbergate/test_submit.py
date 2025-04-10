@@ -52,6 +52,17 @@ def user_mapper():
     return SingleUserMapper(getpass.getuser())
 
 
+@pytest.fixture(scope="session", autouse=True)
+def mock_default_slurm_dir(tmpdir_factory):
+    """
+    Ensure that the default slurm directory is set to a temporary directory for the duration of the tests.
+    """
+    original_slurm_dir = SETTINGS.DEFAULT_SLURM_WORK_DIR
+    SETTINGS.DEFAULT_SLURM_WORK_DIR = str(tmpdir_factory.mktemp("slurm-default-dir"))
+    yield
+    SETTINGS.DEFAULT_SLURM_WORK_DIR = original_slurm_dir
+
+
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
 async def test_retrieve_submission_file__success():
@@ -259,7 +270,11 @@ async def test_fetch_pending_submissions__success(dummy_job_script_files):
                 job_script={"files": dummy_job_script_files},
                 slurm_job_id=333,
             ),
-        ]
+        ],
+        "page": 1,
+        "pages": 1,
+        "size": 3,
+        "total": 3,
     }
     async with respx.mock:
         respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/pending").mock(
