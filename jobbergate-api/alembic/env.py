@@ -1,3 +1,4 @@
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
@@ -65,7 +66,10 @@ def run_migrations_online():
 
     """
     ini_section = config.get_section(config.config_ini_section)
-    ini_section["sqlalchemy.url"] = build_db_url(asynchronous=False)
+    ini_section["sqlalchemy.url"] = build_db_url(
+        asynchronous=False,
+        override_db_name=os.environ.get("DATABASE_NAME")
+    )
     connectable = engine_from_config(
         ini_section,
         prefix="sqlalchemy.",
