@@ -2,12 +2,13 @@
 Test the module version.
 """
 
+from importlib import metadata
 import toml
 
-from jobbergate_core import __version__
+from jobbergate_core.version import get_version
 
 
-def test_version_matches_poetry():
+def test_version__matches_poetry():
     """
     Test that the version matches the version in pyproject.toml.
 
@@ -18,4 +19,12 @@ def test_version_matches_poetry():
     poetry_version = toml.load("pyproject.toml")["tool"]["poetry"]["version"]
     poetry_version = poetry_version.replace("-alpha.", "a").replace("-beta.", "b")
 
-    assert __version__ == poetry_version
+    assert get_version() == poetry_version
+
+
+def test_version__fallback_to_unknown(mocker):
+    """
+    Test that the version is set to "unknown" if the package is not found.
+    """
+    with mocker.patch("importlib.metadata.version", side_effect=metadata.PackageNotFoundError):
+        assert get_version() == "unknown"
