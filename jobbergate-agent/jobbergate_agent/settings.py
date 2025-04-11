@@ -33,6 +33,8 @@ class Settings(BaseSettings):
 
     # cluster api info
     BASE_API_URL: str = "https://apis.vantagehpc.io"
+    MAX_PAGES_PER_CYCLE: int = Field(5, ge=1)
+    ITEMS_PER_PAGE: int = Field(100, ge=1, le=100)
 
     # Sentry
     SENTRY_DSN: Optional[AnyHttpUrl] = None
