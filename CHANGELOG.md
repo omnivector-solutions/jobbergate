@@ -11,6 +11,42 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.6.1](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.6.1) - 2025-04-10
+
+## Core
+
+### Fixed
+
+- Removed the check for existence of the submission directory ([PR #755](https://github.com/omnivector-solutions/jobbergate/pull/755))
+
+
+## Agent
+
+### Fixed
+
+- Pending and active submissions can now handle multiple pages per cycle ([PR #756](https://github.com/omnivector-solutions/jobbergate/pull/756))
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+No significant changes.
+
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.6.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.6.0) - 2025-03-27
 
 ## Core
