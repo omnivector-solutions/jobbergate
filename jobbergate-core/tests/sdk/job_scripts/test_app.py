@@ -1,6 +1,5 @@
 from typing import Any
 
-import pendulum
 import pytest
 import respx
 from httpx import Response, codes
@@ -15,6 +14,7 @@ from jobbergate_core.sdk.job_scripts.schemas import (
     JobScriptListView,
 )
 from jobbergate_core.sdk.schemas import PydanticDateTime
+from jobbergate_core.sdk.utils import filter_null_out
 from jobbergate_core.tools.requests import Client, JobbergateResponseError
 
 BASE_URL = "https://testserver"
@@ -44,42 +44,6 @@ class JobScriptDetailedViewFactory(ModelFactory[JobScriptDetailedView]):
     """Factory for generating test data based on JobScriptDetailedView objects."""
 
     __model__ = JobScriptDetailedView
-
-
-def script_file_detailed_data_factory() -> dict[str, Any]:
-    """Factory to create a detailed job script file data."""
-    return {
-        "parent_id": 1,
-        "filename": "test.txt",
-        "file_type": "ENTRYPOINT",
-        "created_at": "2021-01-01T00:00:00Z",
-        "updated_at": "2021-01-01T00:00:00Z",
-    }
-
-
-def job_script_list_view_data_factory() -> dict[str, Any]:
-    """Factory to create a list view from job script data."""
-    return {
-        "id": 1,
-        "name": "template",
-        "owner_email": "testing",
-        "created_at": "2021-01-01T00:00:00Z",
-        "updated_at": "2021-01-01T00:00:00Z",
-        "is_archived": False,
-        "description": "a template",
-    }
-
-
-def job_script_base_view_data_factory() -> dict[str, Any]:
-    """Factory to create a list view from job script data."""
-    return job_script_list_view_data_factory()
-
-
-def job_script_detailed_view_data_factory() -> dict[str, Any]:
-    """Factory to create a detailed view from job template data."""
-    return job_script_base_view_data_factory() | {
-        "template_files": [script_file_detailed_data_factory()],
-    }
 
 
 class TestJobScriptFiles:
@@ -119,7 +83,7 @@ class TestJobScriptFiles:
             route = respx_mock.put(
                 f"/jobbergate/job-scripts/{job_script_id}/upload/{file_type.value}",
                 files={"upload_file": (file_path.name, file_content, "text/plain")},
-            ).mock(return_value=Response(codes.INTERNAL_SERVER_ERROR))
+            ).mock(return_value=Response(codes.BAD_REQUEST))
             self.job_script_files.upsert(job_script_id, file_type, file_path)
 
         assert route.call_count == 1
@@ -261,7 +225,6 @@ class TestJobScripts:
             route = respx_mock.post(f"/jobbergate/job-scripts/clone/{base_id}", data=clone_kwargs).mock(
                 return_value=Response(codes.CREATED, content=response_data.model_dump_json())
             )
-
             result = self.job_scripts.clone(base_id, **clone_kwargs)
 
         assert route.call_count == 1
@@ -270,6 +233,7 @@ class TestJobScripts:
     def test_clone_request_error(self, respx_mock, faker) -> None:
         """Test the clone method of JobScripts with a request error."""
         base_id = faker.random_int()
+
         with (
             respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True),
             pytest.raises(JobbergateResponseError),
@@ -284,6 +248,7 @@ class TestJobScripts:
     def test_clone_validation_error(self, respx_mock, faker) -> None:
         """Test the clone method of JobScripts with a validation error."""
         base_id = faker.random_int()
+
         with (
             respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True),
             pytest.raises(JobbergateResponseError),
@@ -340,6 +305,7 @@ class TestJobScripts:
     def test_delete(self, respx_mock, faker) -> None:
         """Test the delete method of JobScripts."""
         job_script_id = faker.random_int()
+
         with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True):
             route = respx_mock.delete(f"/jobbergate/job-scripts/{job_script_id}").mock(
                 return_value=Response(codes.NO_CONTENT)
@@ -352,6 +318,7 @@ class TestJobScripts:
     def test_delete_request_error(self, respx_mock, faker) -> None:
         """Test the delete method of JobScripts with a request error."""
         job_script_id = faker.random_int()
+
         with (
             respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True),
             pytest.raises(JobbergateResponseError),
@@ -429,141 +396,156 @@ class TestJobScripts:
         assert route.call_count == 1
         assert result == response_data
 
-    @respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True)
-    def test_list_request_error(self, respx_mock) -> None:
+    def test_list_request_error(self) -> None:
         """Test the list method of JobScripts with a request error."""
-        route = respx_mock.get("/jobbergate/job-scripts").mock(return_value=Response(500))
-
-        with pytest.raises(JobbergateResponseError):
+        with (
+            respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock,
+            pytest.raises(JobbergateResponseError),
+        ):
+            route = respx_mock.get("/jobbergate/job-scripts").mock(return_value=Response(codes.BAD_REQUEST))
             self.job_scripts.get_list()
 
         assert route.call_count == 1
 
-    @respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True)
-    def test_list_validation_error(self, respx_mock) -> None:
+    def test_list_validation_error(self) -> None:
         """Test the list method of JobScripts with a validation error."""
-        route = respx_mock.get("/jobbergate/job-scripts").mock(return_value=Response(200, json={"invalid": "data"}))
-
-        with pytest.raises(JobbergateResponseError):
+        with (
+            respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock,
+            pytest.raises(JobbergateResponseError),
+        ):
+            route = respx_mock.get("/jobbergate/job-scripts").mock(
+                return_value=Response(codes.OK, json={"invalid": "data"})
+            )
             self.job_scripts.get_list()
 
         assert route.call_count == 1
 
-    @respx.mock(base_url=BASE_URL, assert_all_called=False, assert_all_mocked=False)
-    def test_update(self, respx_mock) -> None:
+    @pytest.mark.parametrize("name", ["new_name", None])
+    @pytest.mark.parametrize("description", ["new_description", None])
+    def test_update(self, name, description) -> None:
         """Test the update method of JobScripts."""
-        response_data = job_script_base_view_data_factory()
-        update_kwargs: dict[str, Any] = {
-            "name": "created",
-            "description": "a template",
-            # "is_archived": True,
-        }
-        route = respx_mock.put(
-            "/jobbergate/job-scripts/1",
-            data=update_kwargs,
-        ).mock(return_value=Response(200, json=response_data))
+        response_data = JobScriptBaseViewFactory.build()
+        job_script_id = response_data.id
+        update_kwargs: dict[str, Any] = filter_null_out(
+            dict(
+                name=name,
+                description=description,
+            )
+        )
 
-        result = self.job_scripts.update(1, **update_kwargs)
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.put(
+                f"/jobbergate/job-scripts/{job_script_id}",
+                data=update_kwargs,
+            ).mock(return_value=Response(codes.OK, content=response_data.model_dump_json()))
+
+            result = self.job_scripts.update(job_script_id, **update_kwargs)
 
         assert route.call_count == 1
-        assert result.id == response_data["id"]
-        assert result.name == response_data["name"]
-        assert result.owner_email == response_data["owner_email"]
-        assert result.created_at == pendulum.parse(response_data["created_at"])
-        assert result.updated_at == pendulum.parse(response_data["updated_at"])
-        assert result.is_archived == response_data["is_archived"]
-        assert result.description == response_data["description"]
+        assert result == response_data
 
-    @respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True)
-    def test_update_request_error(self, respx_mock) -> None:
+    def test_update_request_error(self, faker) -> None:
         """Test the update method of JobScripts with a request error."""
-        route = respx_mock.put("/jobbergate/job-scripts/1").mock(return_value=Response(500))
-
-        with pytest.raises(JobbergateResponseError):
-            self.job_scripts.update(1, name="updated")
+        job_script_id = faker.random_int()
+        with (
+            respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock,
+            pytest.raises(JobbergateResponseError),
+        ):
+            route = respx_mock.put(f"/jobbergate/job-scripts/{job_script_id}").mock(
+                return_value=Response(codes.BAD_REQUEST)
+            )
+            self.job_scripts.update(job_script_id, name="updated")
 
         assert route.call_count == 1
 
-    @respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True)
-    def test_update_validation_error(self, respx_mock) -> None:
+    def test_update_validation_error(self, respx_mock, faker) -> None:
         """Test the update method of JobScripts with a validation error."""
-        route = respx_mock.put("/jobbergate/job-scripts/1").mock(return_value=Response(200, json={"invalid": "data"}))
-
-        with pytest.raises(JobbergateResponseError):
-            self.job_scripts.update(1, name="updated")
+        job_script_id = faker.random_int()
+        with (
+            respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True),
+            pytest.raises(JobbergateResponseError),
+        ):
+            route = respx_mock.put(f"/jobbergate/job-scripts/{job_script_id}").mock(
+                return_value=Response(codes.OK, json={"invalid": "data"})
+            )
+            self.job_scripts.update(job_script_id, name="updated")
 
         assert route.call_count == 1
 
-    @respx.mock(base_url=BASE_URL, assert_all_called=False, assert_all_mocked=False)
-    def test_render_from_template(self, respx_mock) -> None:
+    def test_render_from_template(self, faker) -> None:
         """Test the render_from_template method of JobScripts."""
-        response_data = job_script_detailed_view_data_factory()
+        response_data = JobScriptDetailedViewFactory.build()
+        template_id = faker.random_int()
         create_kwargs: dict[str, Any] = {
-            "name": "created",
-            "description": "a template",
+            "name": response_data.name,
+            "description": response_data.description or faker.sentence(),
         }
         render_kwargs: dict[str, Any] = {
             "template_output_name_mapping": {"template.j2": "script.py"},
             "sbatch_params": ["--partition=debug", "--time=1:00:00"],
             "param_dict": {"param": "value"},
         }
-        route = respx_mock.post(
-            "/jobbergate/job-scripts/render-from-template/1",
-            data={"create_request": create_kwargs, "render_request": render_kwargs},
-        ).mock(return_value=Response(201, json=response_data))
 
-        result = self.job_scripts.render_from_template(1, **create_kwargs, **render_kwargs)
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.post(
+                f"/jobbergate/job-scripts/render-from-template/{template_id}",
+                data={"create_request": create_kwargs, "render_request": render_kwargs},
+            ).mock(return_value=Response(codes.CREATED, content=response_data.model_dump_json()))
+
+            result = self.job_scripts.render_from_template(template_id, **create_kwargs, **render_kwargs)
 
         assert route.call_count == 1
-        assert result.id == response_data["id"]
-        assert result.name == response_data["name"]
-        assert result.owner_email == response_data["owner_email"]
-        assert result.created_at == pendulum.parse(response_data["created_at"])
-        assert result.updated_at == pendulum.parse(response_data["updated_at"])
-        assert result.is_archived == response_data["is_archived"]
-        assert result.description == response_data["description"]
+        assert result == response_data
 
-    @respx.mock(base_url=BASE_URL, assert_all_called=False, assert_all_mocked=False)
-    def test_render_from_template_request_error(self, respx_mock) -> None:
-        """Test the render_from_template method of JobScripts."""
+    def test_render_from_template_request_error(self, faker) -> None:
+        """Test the render_from_template method of JobScripts with a request error."""
+        template_id = faker.random_int()
         create_kwargs: dict[str, Any] = {
-            "name": "created",
-            "description": "a template",
+            "name": faker.text(),
+            "description": faker.sentence(),
         }
         render_kwargs: dict[str, Any] = {
             "template_output_name_mapping": {"template.j2": "script.py"},
             "sbatch_params": ["--partition=debug", "--time=1:00:00"],
             "param_dict": {"param": "value"},
         }
-        route = respx_mock.post(
-            "/jobbergate/job-scripts/render-from-template/1",
-            data={"create_request": create_kwargs, "render_request": render_kwargs},
-        ).mock(return_value=Response(500))
 
-        with pytest.raises(JobbergateResponseError):
-            self.job_scripts.render_from_template(1, **create_kwargs, **render_kwargs)
+        with (
+            respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock,
+            pytest.raises(JobbergateResponseError),
+        ):
+            route = respx_mock.post(
+                f"/jobbergate/job-scripts/render-from-template/{template_id}",
+                data={"create_request": create_kwargs, "render_request": render_kwargs},
+            ).mock(return_value=Response(codes.BAD_REQUEST))
+
+            self.job_scripts.render_from_template(template_id, **create_kwargs, **render_kwargs)
 
         assert route.call_count == 1
 
-    @respx.mock(base_url=BASE_URL, assert_all_called=False, assert_all_mocked=False)
-    def test_render_from_template_validation_error(self, respx_mock) -> None:
-        """Test the render_from_template method of JobScripts."""
+    def test_render_from_template_validation_error(self, faker) -> None:
+        """Test the render_from_template method of JobScripts with a validation error."""
+        template_id = faker.random_int()
         create_kwargs: dict[str, Any] = {
-            "name": "created",
-            "description": "a template",
+            "name": faker.text(),
+            "description": faker.sentence(),
         }
         render_kwargs: dict[str, Any] = {
             "template_output_name_mapping": {"template.j2": "script.py"},
             "sbatch_params": ["--partition=debug", "--time=1:00:00"],
             "param_dict": {"param": "value"},
         }
-        route = respx_mock.post(
-            "/jobbergate/job-scripts/render-from-template/1",
-            data={"create_request": create_kwargs, "render_request": render_kwargs},
-        ).mock(return_value=Response(201, json={"invalid": "data"}))
 
-        with pytest.raises(JobbergateResponseError):
-            self.job_scripts.render_from_template(1, **create_kwargs, **render_kwargs)
+        with (
+            respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock,
+            pytest.raises(JobbergateResponseError),
+        ):
+            route = respx_mock.post(
+                f"/jobbergate/job-scripts/render-from-template/{template_id}",
+                data={"create_request": create_kwargs, "render_request": render_kwargs},
+            ).mock(return_value=Response(codes.CREATED, json={"invalid": "data"}))
+
+            self.job_scripts.render_from_template(template_id, **create_kwargs, **render_kwargs)
 
         assert route.call_count == 1
 
