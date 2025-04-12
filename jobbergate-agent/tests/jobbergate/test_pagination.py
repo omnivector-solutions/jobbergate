@@ -38,7 +38,7 @@ def single_paged_items_wrapper(items: list[pydantic.BaseModel]) -> ListResponseE
         A ListResponseEnvelope containing the items.
     """
     total = len(items)
-    return ListResponseEnvelope(items=items, total=total, page=1, size=total, pages=1)
+    return ListResponseEnvelope(items=items, total=total, page=1, size=total, pages=0 if total == 0 else 1)
 
 
 def multi_paged_items_wrapper(items: list[pydantic.BaseModel], page_size: int) -> list[ListResponseEnvelope]:
@@ -53,7 +53,7 @@ def multi_paged_items_wrapper(items: list[pydantic.BaseModel], page_size: int) -
         A list of ListResponseEnvelope objects representing paginated data.
     """
     total = len(items)
-    pages = 1 if total == 0 else math.ceil(total / page_size)
+    pages = 0 if total == 0 else math.ceil(total / page_size)
     return [
         ListResponseEnvelope(
             items=items[i : i + page_size], total=total, page=i // page_size + 1, size=page_size, pages=pages
@@ -95,6 +95,26 @@ class TestFetchPage:
         assert route.call_count == 1
         assert mock_response == results
         assert all(isinstance(item, base_model) for item in results.items)
+
+    async def test_fetch_page__empty_response(self, base_model, factory, tweak_settings):
+        """
+        Test that `fetch_page` handles an empty response gracefully.
+        """
+        ITEMS_PER_PAGE = 10
+
+        mock_data = []
+        mock_response = single_paged_items_wrapper(items=mock_data)
+
+        with respx.mock, tweak_settings(ITEMS_PER_PAGE=ITEMS_PER_PAGE):
+            route = respx.get("mock-url", params=dict(size=ITEMS_PER_PAGE)).mock(
+                return_value=Response(200, content=mock_response.model_dump_json())
+            )
+
+            results = await fetch_page("mock-url", base_model, page=1)
+
+        assert route.call_count == 1
+        assert results.pages == 0
+        assert results == mock_response
 
     async def test_fetch_page__request_error(self, base_model, factory):
         """
@@ -204,14 +224,13 @@ class TestFetchPaginatedResult:
         """
         Test that `fetch_paginated_result` handles an empty response gracefully.
         """
-        TARGET_PAGE = 1
         ITEMS_PER_PAGE = 10
 
         mock_data = []
         mock_response = single_paged_items_wrapper(items=mock_data)
 
         with respx.mock, tweak_settings(ITEMS_PER_PAGE=ITEMS_PER_PAGE):
-            route = respx.get("mock-url", params=dict(page=TARGET_PAGE, size=ITEMS_PER_PAGE)).mock(
+            route = respx.get("mock-url", params=dict(size=ITEMS_PER_PAGE)).mock(
                 return_value=Response(200, content=mock_response.model_dump_json())
             )
 
