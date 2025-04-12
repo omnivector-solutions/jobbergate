@@ -81,6 +81,7 @@ def job_script_detailed_view_data_factory() -> dict[str, Any]:
         "template_files": [script_file_detailed_data_factory()],
     }
 
+
 class TestJobScriptFiles:
     job_script_files = JobScriptFiles(client=Client(base_url=BASE_URL))
 
