@@ -19,6 +19,7 @@ def wrap_items_on_paged_response():
             A ListResponseEnvelope containing the items.
         """
         total = len(items)
-        return ListResponseEnvelope(items=items, total=total, page=1, size=total, pages=1)
+        pages = 1 if total else 0
+        return ListResponseEnvelope(items=items, total=total, page=1, size=total, pages=pages)
 
     return helper
