@@ -5,7 +5,7 @@ Provide schemas for the job script templates component.
 from typing import Any
 
 from pydantic import BaseModel
-
+from jobbergate_core.sdk.constants import FileType
 from jobbergate_core.sdk.schemas import PydanticDateTime, TableResource
 
 
@@ -14,7 +14,7 @@ class TemplateFileDetailedView(BaseModel):
 
     parent_id: int
     filename: str
-    file_type: str
+    file_type: FileType
     created_at: PydanticDateTime
     updated_at: PydanticDateTime
 
