@@ -34,7 +34,7 @@ async def fetch_paginated_result(url: str, base_model: Type[T]) -> list[T]:
     for page in range(1, SETTINGS.MAX_PAGES_PER_CYCLE + 1):
         page_entries = await fetch_page(url, base_model, page)
         results.extend(page_entries.items)
-        if page_entries.pages == page_entries.page:
+        if page_entries.page >= page_entries.pages:
             break
 
     return results
