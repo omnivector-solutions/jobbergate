@@ -4,7 +4,6 @@ import snick
 from buzz import require_condition
 from fastapi import (
     APIRouter,
-    BackgroundTasks,
     Body,
     Depends,
     File,
@@ -22,9 +21,7 @@ from sqlalchemy.exc import IntegrityError
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.dependencies import SecureService, secure_services
-from jobbergate_api.apps.garbage_collector import garbage_collector
 from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
-from jobbergate_api.apps.job_script_templates.models import JobScriptTemplateFile, WorkflowFile
 from jobbergate_api.apps.job_script_templates.schemas import (
     JobTemplateBaseDetailedView,
     JobTemplateCloneRequest,
@@ -513,27 +510,3 @@ async def job_script_workflow_delete_file(
         )
     workflow_file = await secure_services.file.workflow.get(job_script_template.id, WORKFLOW_FILE_NAME)
     await secure_services.file.workflow.delete(workflow_file)
-
-
-@router.delete(
-    "/upload/garbage-collector",
-    status_code=status.HTTP_202_ACCEPTED,
-    description="Endpoint to delete all unused files from the job script template file storage",
-    tags=["Garbage collector"],
-)
-async def job_script_template_garbage_collector(
-    background_tasks: BackgroundTasks,
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_DELETE)
-    ),
-):
-    """Delete all unused files from jobbergate templates on the file storage."""
-    logger.info("Starting garbage collection from jobbergate file storage")
-    background_tasks.add_task(
-        garbage_collector,
-        secure_services.session,
-        secure_services.bucket,
-        [JobScriptTemplateFile, WorkflowFile],
-        background_tasks,
-    )
-    return {"description": "Garbage collection started"}

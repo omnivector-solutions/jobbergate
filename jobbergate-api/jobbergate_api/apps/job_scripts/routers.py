@@ -3,7 +3,7 @@
 from typing import cast
 
 from buzz import require_condition, handle_errors
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Path, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Path, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import UploadFile, status
 from fastapi_pagination import Page
@@ -13,10 +13,8 @@ import snick
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.dependencies import SecureService, secure_services
-from jobbergate_api.apps.garbage_collector import garbage_collector
 from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate
 from jobbergate_api.apps.job_script_templates.tools import coerce_id_or_identifier
-from jobbergate_api.apps.job_scripts.models import JobScriptFile
 from jobbergate_api.apps.job_scripts.schemas import (
     JobScriptBaseView,
     JobScriptCloneRequest,
@@ -33,24 +31,6 @@ from jobbergate_api.apps.schemas import ListParams
 from jobbergate_api.apps.services import ServiceError
 
 router = APIRouter(prefix="/job-scripts", tags=["Job Scripts"])
-
-
-@router.delete(
-    "/clean-unused-entries",
-    status_code=status.HTTP_202_ACCEPTED,
-    description="Endpoint to automatically clean unused job scripts depending on a threshold",
-    tags=["Garbage collector"],
-)
-def job_script_auto_clean_unused_entries(
-    background_tasks: BackgroundTasks,
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_DELETE)
-    ),
-):
-    """Automatically clean unused job scripts depending on a threshold."""
-    logger.info("Starting automatically cleanup for unused job scripts")
-    background_tasks.add_task(secure_services.crud.job_script.auto_clean_unused_job_scripts)
-    return {"description": "Automatically cleanup started"}
 
 
 @router.post(
@@ -440,27 +420,3 @@ async def job_script_delete_file(
         )
     job_script_file = await secure_services.file.job_script.get(job_script.id, file_name)
     await secure_services.file.job_script.delete(job_script_file)
-
-
-@router.delete(
-    "/upload/garbage-collector",
-    status_code=status.HTTP_202_ACCEPTED,
-    description="Endpoint to delete all unused files from the job script file storage",
-    tags=["Garbage collector"],
-)
-def job_script_garbage_collector(
-    background_tasks: BackgroundTasks,
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_DELETE)
-    ),
-):
-    """Delete all unused files from job scripts on the file storage."""
-    logger.info("Starting garbage collection from jobbergate file storage")
-    background_tasks.add_task(
-        garbage_collector,
-        secure_services.session,
-        secure_services.bucket,
-        [JobScriptFile],
-        background_tasks,
-    )
-    return {"description": "Garbage collection started"}
