@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.expression import Select
 
 from jobbergate_api.apps.file_validation import check_uploaded_file_syntax
+from jobbergate_api.apps.garbage_collector import GarbageCollector
 from jobbergate_api.apps.protocols import CrudModel, FileModel
 from jobbergate_api.config import settings
 from jobbergate_api.safe_types import Bucket
@@ -657,3 +658,12 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             f"Unable to render filename={instance.filename} with the provided parameters",
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         )
+
+    async def clean_unused_files(self, collector_cls: type[GarbageCollector] = GarbageCollector) -> None:
+        """
+        Delete unused files from the bucket.
+
+        This method is used to delete files that are not referenced by any row in the database.
+        """
+        collector = collector_cls(model_type=self.model_type, bucket=self.bucket, session=self.session)
+        await collector.run()
