@@ -146,7 +146,7 @@ engine_factory = EngineFactory()
 @dataclass
 class SecureSession:
     """
-    Provide a container class for an IdentityPayload and AsyncSesson for the current request.
+    Provide a container class for an IdentityPayload and AsyncSession for the current request.
     """
 
     identity_payload: IdentityPayload
