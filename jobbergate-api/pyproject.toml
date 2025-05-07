@@ -74,6 +74,7 @@ ruff = "^0.4.9"
 
 [tool.poetry.scripts]
 dev-tools = "dev_tools:app"
+jg-api-cron = "jobbergate_api.utils.cron:main"
 
 [tool.ruff]
 line-length = 110
