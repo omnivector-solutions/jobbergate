@@ -53,7 +53,6 @@ jg-run = "jobbergate_agent.main:main"
 active-jobs = 'jobbergate_agent.tasks:active_submissions_task'
 pending-jobs = 'jobbergate_agent.tasks:pending_submissions_task'
 report-status = 'jobbergate_agent.tasks:status_report_task'
-garbage-collection = 'jobbergate_agent.tasks:garbage_collection_task'
 self-update = 'jobbergate_agent.tasks:self_update_task'
 
 [tool.poetry.plugins.'jobbergate_agent.user_mapper']

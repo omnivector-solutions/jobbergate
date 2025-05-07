@@ -6,7 +6,6 @@ import pytest
 
 from jobbergate_agent.tasks import (
     active_submissions_task,
-    garbage_collection_task,
     pending_submissions_task,
     self_update_task,
     status_report_task,
@@ -21,7 +20,6 @@ def test_discover_tasks__success():
         "active-jobs": active_submissions_task,
         "pending-jobs": pending_submissions_task,
         "report-status": status_report_task,
-        "garbage-collection": garbage_collection_task,
         "self-update": self_update_task,
     }
     actual_result = load_plugins("tasks")
