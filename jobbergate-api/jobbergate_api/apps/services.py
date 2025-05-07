@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import io
 from contextlib import contextmanager
-from typing import Any, Generic, Protocol, TypeVar
+from typing import Any, Generic
 
 import httpx
 from botocore.response import StreamingBody
@@ -12,17 +12,17 @@ from buzz import enforce_defined, handle_errors, require_condition
 from fastapi import HTTPException, UploadFile, status
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
-from jinja2.sandbox import SandboxedEnvironment
 from jinja2.exceptions import SecurityError, UndefinedError
+from jinja2.sandbox import SandboxedEnvironment
 from loguru import logger
 from pydantic import AnyUrl
 from sqlalchemy import delete, func, not_, select, update
 from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapped
 from sqlalchemy.sql.expression import Select
 
 from jobbergate_api.apps.file_validation import check_uploaded_file_syntax
+from jobbergate_api.apps.protocols import CrudModel, FileModel
 from jobbergate_api.config import settings
 from jobbergate_api.safe_types import Bucket
 from jobbergate_api.storage import render_sql, search_clause, sort_clause
@@ -94,67 +94,6 @@ class DatabaseBoundService:
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_503_SERVICE_UNAVAILABLE),
         )
-
-
-class CrudModelProto(Protocol):
-    """
-    Provide a protocol for models that can be operated on by the CrudService.
-
-    This protocol enables type hints for editors and type checking with mypy.
-
-    These services would best be served by an intersection type so that the model_type is actually
-    specified to inherit from _both_ the mixins and the Base. This would allow static type checkers to
-    recognize that all of the columns in a mixin are available and that the class can be
-    instantiated in the create method. However, intersection types are not supported yet. For more
-    information, see this discussion: https://github.com/python/typing/issues/213
-    """
-
-    id: Mapped[int]
-    owner_email: Mapped[str]
-    is_archived: Mapped[bool]
-
-    def __init__(self, **kwargs):
-        """
-        Declare that the protocol can be instantiated.
-        """
-        ...
-
-    def __tablename__(self) -> str:
-        """
-        Declare that the protocol has a method to dynamically produce the table name.
-        """
-        ...
-
-    @classmethod
-    def searchable_fields(cls) -> set[str]:
-        """
-        Declare that the protocol has searchable fields.
-        """
-        ...
-
-    @classmethod
-    def sortable_fields(cls) -> set[str]:
-        """
-        Declare that the protocol has sortable fields.
-        """
-        ...
-
-    @classmethod
-    def include_files(cls, query: Select) -> Select:
-        """
-        Declare that the protocol has a method to include files in a query.
-        """
-        ...
-
-    @classmethod
-    def include_parent(cls, query: Select) -> Select:
-        """
-        Declare that the protocol has a method to include details about the parent entry in a query.
-        """
-        ...
-
-
-CrudModel = TypeVar("CrudModel", bound=CrudModelProto)
 
 
 class CrudService(DatabaseBoundService, Generic[CrudModel]):
@@ -415,39 +354,6 @@ class BucketBoundService:
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_503_SERVICE_UNAVAILABLE),
         )
-
-
-class FileModelProto(Protocol):
-    """
-    Provide a protocol for models that can be operated on by the FileService.
-
-    This protocol enables type hints for editors and type checking with mypy.
-
-    These services would best be served by an intersection type so that the model_type is actually
-    specified to inherit from _both_ the mixins and the Base. This would allow static type checkers to
-    recognize that all of the columns in a mixin are available and that the class can be
-    instantiated in the create method. However, intersection types are not supported yet. For more
-    information, see this discussion: https://github.com/python/typing/issues/213
-    """
-
-    parent_id: Mapped[int]
-    filename: Mapped[str]
-    file_key: str
-
-    def __init__(self, **kwargs):
-        """
-        Declare that the protocol can be instantiated.
-        """
-        ...
-
-    def __tablename__(self) -> str:
-        """
-        Declare that the protocol has a method to dynamically produce the table name.
-        """
-        ...
-
-
-FileModel = TypeVar("FileModel", bound=FileModelProto)
 
 
 class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
