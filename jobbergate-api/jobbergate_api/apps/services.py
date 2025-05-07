@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+from dataclasses import dataclass
 import io
 from contextlib import contextmanager
 from typing import Any, Generic, Protocol, TypeVar
@@ -26,6 +28,7 @@ from jobbergate_api.apps.file_validation import check_uploaded_file_syntax
 from jobbergate_api.config import settings
 from jobbergate_api.safe_types import Bucket
 from jobbergate_api.storage import render_sql, search_clause, sort_clause
+from jobbergate_api.utils.garbage_collector import GarbageCollector
 
 
 class ServiceError(HTTPException):
@@ -751,3 +754,12 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             f"Unable to render filename={instance.filename} with the provided parameters",
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         )
+
+    async def clean_unused_files(self) -> None:
+        """
+        Delete unused files from the bucket.
+
+        This method is used to delete files that are not referenced by any row in the database.
+        """
+        collector = GarbageCollector(model_type=self.model_type, bucket=self.bucket, session=self.session)
+        await collector.run()

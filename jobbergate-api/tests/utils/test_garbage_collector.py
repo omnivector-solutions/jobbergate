@@ -40,7 +40,7 @@ def garbage_collector(file_service):
     Create a garbage collector instance.
     """
     return GarbageCollector(
-        table=file_service.model_type,
+        model_type=file_service.model_type,
         bucket=file_service.bucket,
         session=file_service.session,
         semaphore=asyncio.Semaphore(),
