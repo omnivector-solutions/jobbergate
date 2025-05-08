@@ -1,4 +1,4 @@
-"""Database models for the smart template resource."""
+"""Tests for the smart template service module."""
 
 from itertools import product
 from typing import Any, NamedTuple

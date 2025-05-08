@@ -1,4 +1,4 @@
-"""Database models for the job scripts resource."""
+"""Tests for the job script service module."""
 
 from itertools import product
 from typing import Any, NamedTuple
