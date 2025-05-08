@@ -1,6 +1,6 @@
 """Services for the job_scripts resource, including module specific business logic."""
 
-from typing import Any, NamedTuple
+from typing import Any
 
 from buzz import enforce_defined, require_condition
 from fastapi import UploadFile, status
@@ -12,17 +12,8 @@ from sqlalchemy import delete, func, select, update
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.job_submissions.models import JobSubmission
-from jobbergate_api.apps.services import CrudService, FileModel, FileService, ServiceError
+from jobbergate_api.apps.services import AutoCleanResponse, CrudService, FileModel, FileService, ServiceError
 from jobbergate_api.config import settings
-
-
-class AutoCleanResponse(NamedTuple):
-    """
-    Named tuple for the response of clean_unused_entries.
-    """
-
-    archived: set[int]
-    deleted: set[int]
 
 
 class JobScriptCrudService(CrudService):
