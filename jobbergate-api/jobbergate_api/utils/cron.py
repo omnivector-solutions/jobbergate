@@ -33,9 +33,14 @@ async def cleanup_services(organization_id: str | None = None, commit=True) -> A
 async def run_cron_job(organization_id: str | None = None) -> None:
     """Run the cron jobs."""
     logger.info(f"Running cron jobs for organization ID: {organization_id}")
+    async with cleanup_services(organization_id, commit=True) as services:
+        for c in services.crud:
+            await c.clean_unused_entries()
+
     async with cleanup_services(organization_id, commit=False) as services:
-        for s in services.file:
-            await s.clean_unused_files()
+        for f in services.file:
+            await f.clean_unused_files()
+
     logger.success(f"Finished running cron jobs for organization ID: {organization_id}")
 
 
