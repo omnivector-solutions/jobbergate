@@ -1,14 +1,27 @@
 """Services for the job_script_templates resource, including module specific business logic."""
 
-from typing import Any
+from typing import Any, NamedTuple
 
 from buzz import require_condition
 from fastapi import status
-from sqlalchemy import not_
+from loguru import logger
+from pendulum.datetime import DateTime as PendulumDateTime
+from sqlalchemy import delete, func, not_, select, update
 from sqlalchemy.sql.expression import Select
 
 from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate
+from jobbergate_api.apps.job_scripts.models import JobScript
 from jobbergate_api.apps.services import CrudModel, CrudService, FileService, ServiceError
+from jobbergate_api.config import settings
+
+
+class AutoCleanResponse(NamedTuple):
+    """
+    Named tuple for the response of auto_clean_unused_job_scripts.
+    """
+
+    archived: set[int]
+    deleted: set[int]
 
 
 class JobScriptTemplateService(CrudService):
@@ -85,6 +98,67 @@ class JobScriptTemplateService(CrudService):
                 raise_exc_class=ServiceError,
                 raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
             )
+
+    async def auto_clean_unused_job_script_templates(self) -> AutoCleanResponse:
+        """
+        Automatically clean unused job script templates depending on a threshold.
+
+        Based on the last time each job script template was updated or used to create a job script,
+        this will archive job script templates that were unarchived and delete job script templates
+        that were archived.
+        """
+        result = AutoCleanResponse(archived=set(), deleted=set())
+
+        if days_to_delete := settings.AUTO_CLEAN_JOB_SCRIPT_TEMPLATES_DAYS_TO_DELETE:
+            threshold = PendulumDateTime.utcnow().subtract(days=days_to_delete).naive()
+            subquery_unused_job_script_templates = select(self.model_type.id).where(
+                self.model_type.is_archived.is_(True), self.model_type.updated_at < threshold
+            )
+            subquery_recent_child = (
+                select(JobScript.parent_template_id)
+                .where(JobScript.parent_template_id.in_(subquery_unused_job_script_templates))
+                .group_by(JobScript.parent_template_id)
+                .having(func.max(JobScript.created_at) >= threshold)
+            )
+
+            delete_query = (
+                delete(self.model_type)  # type: ignore
+                .where(
+                    self.model_type.id.in_(subquery_unused_job_script_templates),
+                    ~self.model_type.id.in_(subquery_recent_child),
+                )
+                .returning(self.model_type.id)
+            )
+            deleted = await self.session.execute(delete_query)
+            result.deleted.update(row[0] for row in deleted.all())
+        logger.debug(f"Job script templates deleted: {result.deleted}")
+
+        if days_to_archive := settings.AUTO_CLEAN_JOB_SCRIPT_TEMPLATES_DAYS_TO_ARCHIVE:
+            threshold = PendulumDateTime.utcnow().subtract(days=days_to_archive).naive()
+            subquery_unused_job_script_templates = select(self.model_type.id).where(
+                self.model_type.is_archived.is_(False), self.model_type.updated_at < threshold
+            )
+            subquery_recent_child = (
+                select(JobScript.parent_template_id)
+                .where(JobScript.parent_template_id.in_(subquery_unused_job_script_templates))
+                .group_by(JobScript.parent_template_id)
+                .having(func.max(JobScript.created_at) >= threshold)
+            )
+
+            update_query = (
+                update(self.model_type)  # type: ignore
+                .where(
+                    self.model_type.id.in_(subquery_unused_job_script_templates),
+                    ~self.model_type.id.in_(subquery_recent_child),
+                )
+                .values(is_archived=True)
+                .returning(self.model_type.id)
+            )
+            archived = await self.session.execute(update_query)
+            result.archived.update(row[0] for row in archived.all())
+        logger.debug(f"Job script templates marked as archived: {result.archived}")
+
+        return result
 
 
 class JobScriptTemplateFileService(FileService):
