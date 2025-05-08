@@ -309,7 +309,7 @@ def filter_test_entries(
 
 class TestAutoCleanUnusedJobScriptTemplates:
     """
-    Test the auto_clean_unused_job_script_templates method.
+    Test the clean_unused_entries method.
     """
 
     DAYS_TO_ARCHIVE = 1
@@ -374,7 +374,7 @@ class TestAutoCleanUnusedJobScriptTemplates:
             ),
             pendulum.travel_to(time_now.add(days=1_000), freeze=True),
         ):
-            result = await synth_services.crud.template.auto_clean_unused_job_script_templates()
+            result = await synth_services.crud.template.clean_unused_entries()
 
         assert result.archived == set()
         assert result.deleted == set()
@@ -419,7 +419,7 @@ class TestAutoCleanUnusedJobScriptTemplates:
             ),
             pendulum.travel_to(time_now.add(days=time_delta, minutes=1), freeze=True),
         ):
-            result = await synth_services.crud.template.auto_clean_unused_job_script_templates()
+            result = await synth_services.crud.template.clean_unused_entries()
 
         expected_archived_ids = filter_test_entries(
             dummy_data,
