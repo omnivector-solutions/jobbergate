@@ -111,6 +111,10 @@ class Settings(BaseSettings):
     AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE: int | None = None
     AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE: int | None = None
 
+    # Automatically clean up unused job submissions
+    AUTO_CLEAN_JOB_SUBMISSIONS_DAYS_TO_ARCHIVE: int | None = None
+    AUTO_CLEAN_JOB_SUBMISSIONS_DAYS_TO_DELETE: int | None = None
+
     @model_validator(mode="before")
     @classmethod
     def remove_blank_env(cls, values):
