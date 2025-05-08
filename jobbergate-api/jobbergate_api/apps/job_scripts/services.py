@@ -61,7 +61,7 @@ class JobScriptCrudService(CrudService):
         Automatically clean unused job scripts depending on a threshold.
 
         Based on the last time each job script was updated or used to create a job submission,
-        this will archived job scripts that were unarchived and delete jos script that were archived.
+        this will archive job scripts that were unarchived and delete job scripts that were archived.
         """
         result = AutoCleanResponse(archived=set(), deleted=set())
 
