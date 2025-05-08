@@ -295,6 +295,12 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
             logger.debug("Access to {} id={} is forbidden due to {}", self.name, instance.id, message)
             raise ServiceError(message, status_code=status.HTTP_403_FORBIDDEN)
 
+    def clean_unused_entries(self):
+        """
+        Clean database entries depending on a threshold.
+        """
+        ...
+
     @property
     def name(self):
         """

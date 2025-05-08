@@ -124,7 +124,7 @@ def filter_test_entries(
 
 class TestAutoCleanUnusedJobSubmissions:
     """
-    Test the auto_clean_unused_job_submissions method.
+    Test the clean_unused_entries method.
     """
 
     DAYS_TO_ARCHIVE = 1
@@ -177,7 +177,7 @@ class TestAutoCleanUnusedJobSubmissions:
             ),
             pendulum.travel_to(time_now.add(days=1_000), freeze=True),
         ):
-            result = await synth_services.crud.job_submission.auto_clean_unused_job_submissions()
+            result = await synth_services.crud.job_submission.clean_unused_entries()
 
         assert result.archived == set()
         assert result.deleted == set()
@@ -218,7 +218,7 @@ class TestAutoCleanUnusedJobSubmissions:
             ),
             pendulum.travel_to(time_now.add(days=time_delta, minutes=1), freeze=True),
         ):
-            result = await synth_services.crud.job_submission.auto_clean_unused_job_submissions()
+            result = await synth_services.crud.job_submission.clean_unused_entries()
 
         expected_archived_ids = filter_test_entries(
             dummy_data,

@@ -14,7 +14,7 @@ from jobbergate_api.config import settings
 
 class AutoCleanResponse(NamedTuple):
     """
-    Named tuple for the response of auto_clean_unused_job_scripts.
+    Named tuple for the response of clean_unused_entries.
     """
 
     archived: set[int]
@@ -53,7 +53,7 @@ class JobSubmissionService(CrudService):
             query = query.where(JobSubmission.slurm_job_id.in_(filter_slurm_job_ids))
         return query
 
-    async def auto_clean_unused_job_submissions(self) -> AutoCleanResponse:
+    async def clean_unused_entries(self) -> AutoCleanResponse:
         """
         Automatically clean unused job submissions depending on a threshold.
 

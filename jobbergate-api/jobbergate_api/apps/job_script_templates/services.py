@@ -17,7 +17,7 @@ from jobbergate_api.config import settings
 
 class AutoCleanResponse(NamedTuple):
     """
-    Named tuple for the response of auto_clean_unused_job_scripts.
+    Named tuple for the response of clean_unused_entries.
     """
 
     archived: set[int]
@@ -99,7 +99,7 @@ class JobScriptTemplateService(CrudService):
                 raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
             )
 
-    async def auto_clean_unused_job_script_templates(self) -> AutoCleanResponse:
+    async def clean_unused_entries(self) -> AutoCleanResponse:
         """
         Automatically clean unused job script templates depending on a threshold.
 

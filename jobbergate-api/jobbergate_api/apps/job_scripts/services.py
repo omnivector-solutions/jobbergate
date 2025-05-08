@@ -18,7 +18,7 @@ from jobbergate_api.config import settings
 
 class AutoCleanResponse(NamedTuple):
     """
-    Named tuple for the response of auto_clean_unused_job_scripts.
+    Named tuple for the response of clean_unused_entries.
     """
 
     archived: set[int]
@@ -56,7 +56,7 @@ class JobScriptCrudService(CrudService):
         await self.session.execute(query)
         await super().delete(locator)
 
-    async def auto_clean_unused_job_scripts(self) -> AutoCleanResponse:
+    async def clean_unused_entries(self) -> AutoCleanResponse:
         """
         Automatically clean unused job scripts depending on a threshold.
 
