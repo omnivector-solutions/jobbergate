@@ -1,24 +1,13 @@
 """Services for the job_submissions resource, including module specific business logic."""
 
-from typing import NamedTuple
-
 from loguru import logger
 from pendulum.datetime import DateTime as PendulumDateTime
 from sqlalchemy import delete, select, update
 from sqlalchemy.sql.expression import Select
 
 from jobbergate_api.apps.job_submissions.models import JobSubmission
-from jobbergate_api.apps.services import CrudService
+from jobbergate_api.apps.services import AutoCleanResponse, CrudService
 from jobbergate_api.config import settings
-
-
-class AutoCleanResponse(NamedTuple):
-    """
-    Named tuple for the response of clean_unused_entries.
-    """
-
-    archived: set[int]
-    deleted: set[int]
 
 
 class JobSubmissionService(CrudService):

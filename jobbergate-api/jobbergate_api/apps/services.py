@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import io
 from contextlib import contextmanager
-from typing import Any, Generic
+from typing import Any, Generic, NamedTuple
 
 import httpx
 from botocore.response import StreamingBody
@@ -27,6 +27,15 @@ from jobbergate_api.apps.protocols import CrudModel, FileModel
 from jobbergate_api.config import settings
 from jobbergate_api.safe_types import Bucket
 from jobbergate_api.storage import render_sql, search_clause, sort_clause
+
+
+class AutoCleanResponse(NamedTuple):
+    """
+    Named tuple for the response of clean_unused_entries.
+    """
+
+    archived: set[int]
+    deleted: set[int]
 
 
 class ServiceError(HTTPException):
