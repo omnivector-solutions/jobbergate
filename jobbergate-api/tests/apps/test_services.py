@@ -958,3 +958,19 @@ class TestFileService:
             )
 
         assert rendered_reference == rendered_backward_compatible
+
+    async def test_clean_unused_files(self, dummy_file_service):
+        """
+        Test that the ``clean_unused_files()`` method removes unused files from the storage.
+        """
+        mocked_collector = mock.AsyncMock()
+        mocked_collector_cls = mock.Mock(return_value=mocked_collector)
+
+        await dummy_file_service.clean_unused_files(collector_cls=mocked_collector_cls)
+
+        mocked_collector_cls.assert_called_once_with(
+            model_type=dummy_file_service.model_type,
+            bucket=dummy_file_service.bucket,
+            session=dummy_file_service.session,
+        )
+        mocked_collector.run.assert_called_once()

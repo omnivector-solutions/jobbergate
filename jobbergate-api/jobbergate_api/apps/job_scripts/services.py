@@ -1,6 +1,6 @@
 """Services for the job_scripts resource, including module specific business logic."""
 
-from typing import Any, NamedTuple
+from typing import Any
 
 from buzz import enforce_defined, require_condition
 from fastapi import UploadFile, status
@@ -12,17 +12,8 @@ from sqlalchemy import delete, func, select, update
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.job_submissions.models import JobSubmission
-from jobbergate_api.apps.services import CrudService, FileModel, FileService, ServiceError
+from jobbergate_api.apps.services import AutoCleanResponse, CrudService, FileModel, FileService, ServiceError
 from jobbergate_api.config import settings
-
-
-class AutoCleanResponse(NamedTuple):
-    """
-    Named tuple for the response of auto_clean_unused_job_scripts.
-    """
-
-    archived: set[int]
-    deleted: set[int]
 
 
 class JobScriptCrudService(CrudService):
@@ -56,16 +47,17 @@ class JobScriptCrudService(CrudService):
         await self.session.execute(query)
         await super().delete(locator)
 
-    async def auto_clean_unused_job_scripts(self) -> AutoCleanResponse:
+    async def clean_unused_entries(self) -> AutoCleanResponse:
         """
         Automatically clean unused job scripts depending on a threshold.
 
         Based on the last time each job script was updated or used to create a job submission,
-        this will archived job scripts that were unarchived and delete jos script that were archived.
+        this will archive job scripts that were unarchived and delete job scripts that were archived.
         """
         result = AutoCleanResponse(archived=set(), deleted=set())
 
-        if days_to_delete := settings.AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE:
+        if settings.AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE is not None:
+            days_to_delete = settings.AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE
             threshold = PendulumDateTime.utcnow().subtract(days=days_to_delete).naive()
             subquery_unused_job_script = select(self.model_type.id).where(
                 self.model_type.is_archived.is_(True), self.model_type.updated_at < threshold
@@ -89,7 +81,8 @@ class JobScriptCrudService(CrudService):
             result.deleted.update(row[0] for row in deleted.all())
         logger.debug(f"Job scripts deleted: {result.deleted}")
 
-        if days_to_archive := settings.AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE:
+        if settings.AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE is not None:
+            days_to_archive = settings.AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE
             threshold = PendulumDateTime.utcnow().subtract(days=days_to_archive).naive()
             subquery_unused_job_script = select(self.model_type.id).where(
                 self.model_type.is_archived.is_(False), self.model_type.updated_at < threshold
