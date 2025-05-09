@@ -51,7 +51,8 @@ class JobSubmissionService(CrudService):
         """
         result = AutoCleanResponse(archived=set(), deleted=set())
 
-        if days_to_delete := settings.AUTO_CLEAN_JOB_SUBMISSIONS_DAYS_TO_DELETE:
+        if settings.AUTO_CLEAN_JOB_SUBMISSIONS_DAYS_TO_DELETE is not None:
+            days_to_delete = settings.AUTO_CLEAN_JOB_SUBMISSIONS_DAYS_TO_DELETE
             threshold = PendulumDateTime.utcnow().subtract(days=days_to_delete).naive()
             query_unused_job_submissions = select(self.model_type.id).where(
                 self.model_type.is_archived.is_(True), self.model_type.updated_at < threshold
@@ -65,8 +66,10 @@ class JobSubmissionService(CrudService):
             deleted = await self.session.execute(delete_query)
             result.deleted.update(row[0] for row in deleted.all())
         logger.debug(f"Job submissions deleted: {result.deleted}")
+        logger.debug(f"{settings.AUTO_CLEAN_JOB_SUBMISSIONS_DAYS_TO_ARCHIVE=}")
 
-        if days_to_archive := settings.AUTO_CLEAN_JOB_SUBMISSIONS_DAYS_TO_ARCHIVE:
+        if settings.AUTO_CLEAN_JOB_SUBMISSIONS_DAYS_TO_ARCHIVE is not None:
+            days_to_archive = settings.AUTO_CLEAN_JOB_SUBMISSIONS_DAYS_TO_ARCHIVE
             threshold = PendulumDateTime.utcnow().subtract(days=days_to_archive).naive()
             query_unused_job_submissions = select(self.model_type.id).where(
                 self.model_type.is_archived.is_(False), self.model_type.updated_at < threshold

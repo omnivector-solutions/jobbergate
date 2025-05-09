@@ -100,7 +100,8 @@ class JobScriptTemplateService(CrudService):
         """
         result = AutoCleanResponse(archived=set(), deleted=set())
 
-        if days_to_delete := settings.AUTO_CLEAN_JOB_SCRIPT_TEMPLATES_DAYS_TO_DELETE:
+        if settings.AUTO_CLEAN_JOB_SCRIPT_TEMPLATES_DAYS_TO_DELETE is not None:
+            days_to_delete = settings.AUTO_CLEAN_JOB_SCRIPT_TEMPLATES_DAYS_TO_DELETE
             threshold = PendulumDateTime.utcnow().subtract(days=days_to_delete).naive()
             subquery_unused_job_script_templates = select(self.model_type.id).where(
                 self.model_type.is_archived.is_(True), self.model_type.updated_at < threshold
@@ -124,7 +125,8 @@ class JobScriptTemplateService(CrudService):
             result.deleted.update(row[0] for row in deleted.all())
         logger.debug(f"Job script templates deleted: {result.deleted}")
 
-        if days_to_archive := settings.AUTO_CLEAN_JOB_SCRIPT_TEMPLATES_DAYS_TO_ARCHIVE:
+        if settings.AUTO_CLEAN_JOB_SCRIPT_TEMPLATES_DAYS_TO_ARCHIVE is not None:
+            days_to_archive = settings.AUTO_CLEAN_JOB_SCRIPT_TEMPLATES_DAYS_TO_ARCHIVE
             threshold = PendulumDateTime.utcnow().subtract(days=days_to_archive).naive()
             subquery_unused_job_script_templates = select(self.model_type.id).where(
                 self.model_type.is_archived.is_(False), self.model_type.updated_at < threshold
