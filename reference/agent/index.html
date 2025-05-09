@@ -1360,13 +1360,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#jobbergate_agent.tasks.garbage_collection_task" class="md-nav__link">
-    garbage_collection_task()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#jobbergate_agent.tasks.pending_submissions_task" class="md-nav__link">
     pending_submissions_task()
   </a>
@@ -1383,13 +1376,6 @@
           <li class="md-nav__item">
   <a href="#jobbergate_agent.tasks.status_report_task" class="md-nav__link">
     status_report_task()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_agent.tasks.trigger_garbage_collections" class="md-nav__link">
-    trigger_garbage_collections()
   </a>
   
 </li>
@@ -2223,13 +2209,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#jobbergate_agent.tasks.garbage_collection_task" class="md-nav__link">
-    garbage_collection_task()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#jobbergate_agent.tasks.pending_submissions_task" class="md-nav__link">
     pending_submissions_task()
   </a>
@@ -2246,13 +2225,6 @@
           <li class="md-nav__item">
   <a href="#jobbergate_agent.tasks.status_report_task" class="md-nav__link">
     status_report_task()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_agent.tasks.trigger_garbage_collections" class="md-nav__link">
-    trigger_garbage_collections()
   </a>
   
 </li>
@@ -4447,28 +4419,6 @@ handler as the user that will run the sbatch command.</p>
 
 
 
-<h5 id="jobbergate_agent.tasks.garbage_collection_task" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">garbage_collection_task</span>
-
-
-</h5>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">garbage_collection_task</span><span class="p">(</span><span class="n">scheduler</span><span class="p">:</span> <span class="n">BaseScheduler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Job</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Schedule a task to perform garbage collection every dat at a specified time.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
 <h5 id="jobbergate_agent.tasks.pending_submissions_task" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">pending_submissions_task</span>
 
@@ -4524,32 +4474,6 @@ handler as the user that will run the sbatch command.</p>
   <div class="doc doc-contents ">
   
       <p>Schedule a task to report the status.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h5 id="jobbergate_agent.tasks.trigger_garbage_collections" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">trigger_garbage_collections</span>
-
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-async"><code>async</code></small>
-  </span>
-
-</h5>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">trigger_garbage_collections</span><span class="p">(</span><span class="n">interval_between_calls</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">60</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Trigger maintenance tasks on the Jobbergate API.</p>
 
   </div>
 
