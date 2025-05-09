@@ -11,6 +11,54 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.7.0a0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.7.0a0) - 2025-05-09
+
+## Core
+
+### Fixed
+
+- Removed the check for existence of the submission directory ([PR #755](https://github.com/omnivector-solutions/jobbergate/pull/755))
+
+
+## Agent
+
+### Removed
+
+- Removed tasks used to trigger the garbage collector endpoints on the API ([PR #768](https://github.com/omnivector-solutions/jobbergate/pull/768))
+
+### Fixed
+
+- Pending and active submissions can now handle multiple pages per cycle ([PR #756](https://github.com/omnivector-solutions/jobbergate/pull/756))
+- Patched pagination logic when handling an empty list os entries ([PR #765](https://github.com/omnivector-solutions/jobbergate/pull/765))
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+### Removed
+
+- Removed Garbage Collection endpoints ([PR #768](https://github.com/omnivector-solutions/jobbergate/pull/768))
+
+### Added
+
+- Added `jg-api-cron` script entry point to handle data cleanup ([PR #768](https://github.com/omnivector-solutions/jobbergate/pull/768))
+- Expanded logic to auto clean unused database entries to job templates and job submissions ([PR #769](https://github.com/omnivector-solutions/jobbergate/pull/769))
+
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.6.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.6.0) - 2025-03-27
 
 ## Core
