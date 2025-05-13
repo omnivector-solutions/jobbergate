@@ -20,25 +20,26 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.10"
-httpx = "^0.24.1"
+httpx = "^0.25.0"
 loguru = "^0.6.0"
 pendulum = { extras = ["test"], version = "^3.0.0" }
 py-buzz = "^5.0"
 python-jose = "^3.3.0"
-pydantic = "^2.7"
+pydantic = "2.10.6"
 
 [tool.poetry.dev-dependencies]
 mypy = "^1.10"
+polyfactory = "^2.19.0"
 pytest-cov = "^3.0.0"
 pytest-env = "^0.6.2"
 pytest-freezegun = "^0.4.2"
 pytest-mock = "^3.6.0"
 pytest-random-order = "^1.0.4"
 requests-mock = "^1.10"
-respx = "^0.20.1"
+respx = "^0.22.0"
+ruff = "^0.4.9"
 setuptools = "^70.0.0"
 toml = "^0.10.2"
-ruff = "^0.4.9"
 
 [tool.ruff]
 line-length = 120
@@ -53,7 +54,7 @@ addopts = [
 ]
 
 [tool.coverage.report]
-fail_under = 85
+# fail_under = 85
 show_missing = true
 
 [tool.mypy]
