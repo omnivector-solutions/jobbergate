@@ -20,7 +20,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.10"
-httpx = "^0.24.1"
+httpx = "^0.28.1"
 loguru = "^0.6.0"
 pendulum = { extras = ["test"], version = "^3.0.0" }
 py-buzz = "^5.0"
@@ -35,7 +35,7 @@ pytest-freezegun = "^0.4.2"
 pytest-mock = "^3.6.0"
 pytest-random-order = "^1.0.4"
 requests-mock = "^1.10"
-respx = "^0.20.1"
+respx = "^0.22.0"
 setuptools = "^78.1.1"
 toml = "^0.10.2"
 ruff = "^0.4.9"

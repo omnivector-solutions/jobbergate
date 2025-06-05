@@ -251,14 +251,12 @@ async def test_update_job_data__success():
             ),
         )
 
-        assert update_route.calls.last.request.content == json.dumps(
-            dict(
-                slurm_job_id=13,
-                slurm_job_state="FAILED",
-                slurm_job_info="some job info",
-                slurm_job_state_reason="Something happened",
-            )
-        ).encode("utf-8")
+        assert json.loads(update_route.calls.last.request.content) == dict(
+            slurm_job_id=13,
+            slurm_job_state="FAILED",
+            slurm_job_info="some job info",
+            slurm_job_state_reason="Something happened",
+        )
 
 
 @pytest.mark.asyncio
