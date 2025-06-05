@@ -53,7 +53,8 @@ if settings.SENTRY_DSN and settings.DEPLOY_ENV.lower() != "test":
         profiles_sample_rate=settings.SENTRY_PROFILING_SAMPLE_RATE,
         traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
     )
-    subapp.add_middleware(SentryAsgiMiddleware)
+    # Ignoring type args since mypy is not happy with type annotations on dependent packages
+    subapp.add_middleware(SentryAsgiMiddleware)  # type: ignore[arg-type]
 else:
     logger.info("Skipping Sentry")
 

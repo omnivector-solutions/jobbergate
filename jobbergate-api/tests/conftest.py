@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 import pytest
 from fastapi import status
-from httpx import AsyncClient, Response
+from httpx import AsyncClient, Response, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jobbergate_api.apps.dependencies import get_bucket_name, get_bucket_url, s3_bucket, service_factory
@@ -152,7 +152,7 @@ async def client():
     """
     Provide a client that can issue fake requests against fastapi endpoint functions in the backend.
     """
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client
 
 
@@ -172,7 +172,7 @@ def inject_security_header(client, build_rs256_token):
         client_id: typing.Optional[str] = None,
         organization_id: typing.Optional[str] = None,
     ):
-        claim_overrides = dict(
+        claim_overrides: dict[str, typing.Any] = dict(
             email=owner_email,
             client_id=client_id,
             permissions=permissions,
