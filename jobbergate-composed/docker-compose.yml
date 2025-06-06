@@ -210,7 +210,8 @@ services:
       timeout: 5s
 
   mysql:
-    image: mysql:5.7
+    image: mariadb:10.5.8
+    platform: linux/amd64
     networks:
       - jobbergate-net
     hostname: mysql

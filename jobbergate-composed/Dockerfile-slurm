@@ -32,7 +32,8 @@ RUN set -ex \
 
 # Prepare Filesystem
 RUN mkdir /var/spool/slurmctld \
-    && mkdir /var/spool/slurmd
+    && mkdir /var/spool/slurmd \
+    && mkdir /var/run/slurm
 
 COPY etc/slurmdbd.conf /etc/slurm/slurmdbd.conf
 COPY etc/slurm.conf /etc/slurm/slurm.conf
@@ -45,6 +46,7 @@ RUN chown -R slurm:slurm /var/spool/slurmctld \
     && chmod 600 /var/spool/slurmctld/jwt_hs256.key \
     && chmod 600 /etc/slurm/slurmdbd.conf \
     && chown -R slurm:slurm /var/spool/slurmd \
+    && chown -R slurm:slurm /var/run/slurm \
     && chown -R slurm:slurm /etc/slurm
 
 
