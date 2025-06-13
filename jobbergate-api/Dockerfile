@@ -4,7 +4,7 @@ WORKDIR /app
 
 RUN apt update && apt install -y curl libpq-dev gcc
 
-RUN pip install poetry==1.5.1
+RUN pip install poetry==2.1.1
 
 COPY ./pyproject.toml ./poetry.lock /app
 

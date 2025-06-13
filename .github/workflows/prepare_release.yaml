@@ -40,7 +40,7 @@ jobs:
 
       - uses: Gr1N/setup-poetry@v8
         with:
-          poetry-version: 1.5.1
+          poetry-version: 2.1.1
 
       - id: api-package
         name: Bump version on the API
