@@ -1,4 +1,4 @@
-# Jobbergate API Overview
+# Jobbergate API Overview Overview
 
 The [Jobbergate API](https://github.com/omnivector-solutions/jobbergate/jobbergate-api) is a RESTful API that functions
 as the Jobbergate platform's backbone. It offers access to the platform's data for various components, including the
@@ -8,13 +8,13 @@ The API's endpoints are secured via OpenID Connect, and they require a valid aut
 into the system.
 
 
-# Usage
+## Usage
 
 The Jobbergate API is a standard RESTful API. It can be accessed vi a command-line tool like
 [Curl](https://man7.org/linux/man-pages/man1/curl.1.html) or API testing tool like [Postman](https://www.postman.com/).
 
 
-## Getting an Auth Token
+### Getting an Auth Token
 
 To use the Jobbergate API, you need to obtain an access token first. This token both authenticates your requests and
 provides authorization according to your user's rights.
@@ -24,7 +24,7 @@ interface with this service from your application to get an authentication token
 Jobbergate CLI. Refer to the "Logging In" segment on the [CLI usage](./cli.md#usage) page.
 
 
-## Querying the API
+### Querying the API
 
 Once you have an auth token, you can interact with any of the Jobbergate API endpoints. The complete set of endpoints,
 parameters, and constraints are available through swagger documentation under `jobbergate/docs` wherever the API is
@@ -34,7 +34,7 @@ For all requests made to secured endpoints, you must include the auth token in t
 requests with a "Bearer" prefix.
 
 
-## Query Examples
+### Query Examples
 
 To demonstrate how to use the API, the following examples will show how to fetch a list of all available Job Scripts.
 
@@ -44,7 +44,7 @@ For these examples:
  - The Jobbergate API is deployed at "http://jobbergate.local"
 
 
-### curl
+#### curl
 
 From a linux terminal, you can use the [curl](https://man7.org/linux/man-pages/man1/curl.1.html) command to make a
 request to the API:
@@ -82,7 +82,7 @@ To see the result more clearly, you can use a tool like `jq` to format the JSON 
 ```
 
 
-### Python and httpx
+#### Python and httpx
 
 In python, you can use the [httpx](https://www.python-httpx.org/) package to send requests to and process responses from
 the API:
