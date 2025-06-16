@@ -13,10 +13,12 @@
 Jobbergate is a job templating and submission system that integrates with Slurm to
 enable the re-use and remote submission of job scripts to a Slurm cluster.
 
-There are 2 main components of Jobbergate that are hosted as sub-projects of this
+There are 4 main components of Jobbergate that are hosted as sub-projects of this
 repository:
 
 * [jobbergate-api](https://github.com/omnivector-solutions/jobbergate/jobbergate-api)
+* [jobbergate-core](https://github.com/omnivector-solutions/jobbergate/jobbergate-core)
+* [jobbergate-agent](https://github.com/omnivector-solutions/jobbergate/jobbergate-agent)
 * [jobbergate-cli](https://github.com/omnivector-solutions/jobbergate/jobbergate-cli)
 
 The complete documentation for Jobbergate can be viewed at the

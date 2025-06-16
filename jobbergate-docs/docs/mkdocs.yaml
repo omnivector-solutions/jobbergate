@@ -56,6 +56,10 @@ markdown_extensions:
   - pymdownx.inlinehilite:
   - pymdownx.snippets:
   - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.details:
   - admonition:
   - attr_list:
@@ -66,8 +70,8 @@ nav:
   - Elements:
       - Resources:
           - Overview: elements/resources/index.md
-          - Job Scripts: elements/resources/job_scripts.md
           - Job Script Templates: elements/resources/job_script_templates.md
+          - Job Scripts: elements/resources/job_scripts.md
           - Job Submissions: elements/resources/job_submissions.md
       - Apps:
           - Overview: elements/apps/index.md
