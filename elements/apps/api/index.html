@@ -367,11 +367,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../resources/job_scripts/" class="md-nav__link">
+      <a href="../../resources/job_script_templates/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Job Scripts
+    Job Script Templates
   </span>
   
 
@@ -387,11 +387,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../resources/job_script_templates/" class="md-nav__link">
+      <a href="../../resources/job_scripts/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Job Script Templates
+    Job Scripts
   </span>
   
 
@@ -522,6 +522,17 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Jobbergate API
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -531,6 +542,79 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    Usage
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getting-an-auth-token" class="md-nav__link">
+    Getting an Auth Token
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#querying-the-api" class="md-nav__link">
+    Querying the API
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query-examples" class="md-nav__link">
+    Query Examples
+  </a>
+  
+    <nav class="md-nav" aria-label="Query Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#curl" class="md-nav__link">
+    curl
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-and-httpx" class="md-nav__link">
+    Python and httpx
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -940,6 +1024,68 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    Usage
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getting-an-auth-token" class="md-nav__link">
+    Getting an Auth Token
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#querying-the-api" class="md-nav__link">
+    Querying the API
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query-examples" class="md-nav__link">
+    Query Examples
+  </a>
+  
+    <nav class="md-nav" aria-label="Query Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#curl" class="md-nav__link">
+    curl
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-and-httpx" class="md-nav__link">
+    Python and httpx
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -962,36 +1108,36 @@ as the Jobbergate platform's backbone. It offers access to the platform's data f
 Jobbergate CLI, agent, and any other interfaces requiring interaction with Jobbergate assets.</p>
 <p>The API's endpoints are secured via OpenID Connect, and they require a valid auth token that is created when a user logs
 into the system.</p>
-<h1 id="usage">Usage</h1>
+<h2 id="usage">Usage</h2>
 <p>The Jobbergate API is a standard RESTful API. It can be accessed vi a command-line tool like
 <a href="https://man7.org/linux/man-pages/man1/curl.1.html">Curl</a> or API testing tool like <a href="https://www.postman.com/">Postman</a>.</p>
-<h2 id="getting-an-auth-token">Getting an Auth Token</h2>
+<h3 id="getting-an-auth-token">Getting an Auth Token</h3>
 <p>To use the Jobbergate API, you need to obtain an access token first. This token both authenticates your requests and
 provides authorization according to your user's rights.</p>
 <p>The authentication for Jobbergate API is managed by an affiliated OIDC service. While it's possible to directly
 interface with this service from your application to get an authentication token, the simplest method is via the
 Jobbergate CLI. Refer to the "Logging In" segment on the <a href="../cli/#usage">CLI usage</a> page.</p>
-<h2 id="querying-the-api">Querying the API</h2>
+<h3 id="querying-the-api">Querying the API</h3>
 <p>Once you have an auth token, you can interact with any of the Jobbergate API endpoints. The complete set of endpoints,
 parameters, and constraints are available through swagger documentation under <code>jobbergate/docs</code> wherever the API is
 deployed.</p>
 <p>For all requests made to secured endpoints, you must include the auth token in the <code>Authorization</code> header of your
 requests with a "Bearer" prefix.</p>
-<h2 id="query-examples">Query Examples</h2>
+<h3 id="query-examples">Query Examples</h3>
 <p>To demonstrate how to use the API, the following examples will show how to fetch a list of all available Job Scripts.</p>
 <p>For these examples:</p>
 <ul>
 <li>The auth token will be "XXXXXXXX"</li>
-<li>The Jobbergate API is deployed at "http://jobbergate.local"</li>
+<li>The Jobbergate API is deployed at "<a href="http://jobbergate.local">http://jobbergate.local</a>"</li>
 </ul>
-<h3 id="curl">curl</h3>
+<h4 id="curl">curl</h4>
 <p>From a linux terminal, you can use the <a href="https://man7.org/linux/man-pages/man1/curl.1.html">curl</a> command to make a
 request to the API:</p>
 <div class="language-shell highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>--header<span class="w"> </span><span class="s2">&quot;Authorization: Bearer XXXXXXXX&quot;</span><span class="w">  </span>http://jobbergate.local/jobbergate/job-scripts
 </span></code></pre></div>
-<p>The output of the above command should look something like:
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>{&quot;results&quot;:[{&quot;id&quot;:1,&quot;created_at&quot;:&quot;2022-09-09T21:34:16.889289&quot;,&quot;updated_at&quot;:&quot;2022-09-09T21:34:16.889289&quot;,&quot;job_script_name&quot;:&quot;test script&quot;,&quot;job_script_description&quot;:null,&quot;job_script_owner_email&quot;:&quot;local-user@jobbergate.local&quot;,&quot;application_id&quot;:1}],&quot;pagination&quot;:{&quot;total&quot;:1,&quot;start&quot;:null,&quot;limit&quot;:null}}
-</span></code></pre></div></p>
+<p>The output of the above command should look something like:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span><span class="nt">&quot;results&quot;</span><span class="p">:[{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">&quot;created_at&quot;</span><span class="p">:</span><span class="s2">&quot;2022-09-09T21:34:16.889289&quot;</span><span class="p">,</span><span class="nt">&quot;updated_at&quot;</span><span class="p">:</span><span class="s2">&quot;2022-09-09T21:34:16.889289&quot;</span><span class="p">,</span><span class="nt">&quot;job_script_name&quot;</span><span class="p">:</span><span class="s2">&quot;test script&quot;</span><span class="p">,</span><span class="nt">&quot;job_script_description&quot;</span><span class="p">:</span><span class="kc">null</span><span class="p">,</span><span class="nt">&quot;job_script_owner_email&quot;</span><span class="p">:</span><span class="s2">&quot;local-user@jobbergate.local&quot;</span><span class="p">,</span><span class="nt">&quot;application_id&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">}],</span><span class="nt">&quot;pagination&quot;</span><span class="p">:{</span><span class="nt">&quot;total&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">&quot;start&quot;</span><span class="p">:</span><span class="kc">null</span><span class="p">,</span><span class="nt">&quot;limit&quot;</span><span class="p">:</span><span class="kc">null</span><span class="p">}}</span>
+</span></code></pre></div>
 <p>To see the result more clearly, you can use a tool like <code>jq</code> to format the JSON response:</p>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;results&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
@@ -1012,7 +1158,7 @@ request to the API:</p>
 </span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">  </span><span class="p">}</span>
 </span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="p">}</span>
 </span></code></pre></div>
-<h3 id="python-and-httpx">Python and httpx</h3>
+<h4 id="python-and-httpx">Python and httpx</h4>
 <p>In python, you can use the <a href="https://www.python-httpx.org/">httpx</a> package to send requests to and process responses from
 the API:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span> <span class="nn">json</span>

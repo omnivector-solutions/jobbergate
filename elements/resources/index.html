@@ -12,7 +12,7 @@
         <link rel="prev" href="../..">
       
       
-        <link rel="next" href="job_scripts/">
+        <link rel="next" href="job_script_templates/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#jobbergate-resources" class="md-skip">
+        <a href="#jobbergate-resources-overview" class="md-skip">
           Skip to content
         </a>
       
@@ -377,11 +377,11 @@
   
   
     <li class="md-nav__item">
-      <a href="job_scripts/" class="md-nav__link">
+      <a href="job_script_templates/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Job Scripts
+    Job Script Templates
   </span>
   
 
@@ -397,11 +397,11 @@
   
   
     <li class="md-nav__item">
-      <a href="job_script_templates/" class="md-nav__link">
+      <a href="job_scripts/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Job Script Templates
+    Job Scripts
   </span>
   
 
@@ -956,16 +956,63 @@
   
 
 
-<h1 id="jobbergate-resources">Jobbergate Resources</h1>
-<p>Jobbergate utilizes three primary resources for the efficient management of job script creation, templating, and
-submission. These resources are maintained in distinct database tables and can be accessed via individual API endpoints
+<h1 id="jobbergate-resources-overview">Jobbergate Resources Overview</h1>
+<p>Jobbergate utilizes three primary resources for the efficient management of templating, job script creation, and
+job submissions. These resources are maintained in distinct database tables and can be accessed via individual API endpoints
 or through specific subcommands in the CLI.</p>
-<p>The principal resources of Jobbergate include:</p>
-<ul>
-<li><a href="job_script_templates/">Job Scripts</a></li>
-<li><a href="job_script_templates/">Job Script Templates</a></li>
-<li><a href="job_script_templates/">Job Submissions</a></li>
-</ul>
+<p>As a framework, Jobbergate aims to enable application experts to create blueprint scripts in advance, containing the logic and technical specifications for both software and hardware needed to run cluster jobs.
+This template system leaves placeholders that end users can fill in to customize jobs for their specific needs.</p>
+<p>Jinja templates have been an integral part of the project since its inception (see <a href="../../authors/#attribution">Attribution</a>). Their primary uses are:</p>
+<ol>
+<li>To insert string values into the <code>#SBATCH</code> directives, used by Slurm to manage job scheduling and resource allocation.</li>
+<li>To insert string values into the script, which can be used to set variables, paths, or other configurations.</li>
+<li>To manage logic with <code>if</code>, <code>for</code>, and other statements supported by Jinja.</li>
+</ol>
+<p>Let's take this simple Jinja template code as an example:</p>
+<div class="language-jinja highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="x">#!/bin/python3</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="x">#SBATCH --name </span><span class="cp">{{</span> <span class="nv">data.name</span> <span class="cp">}}</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="x">#SBATCH --nodes </span><span class="cp">{{</span> <span class="nv">data.nodes</span> <span class="cp">}}</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="cp">{%</span> <span class="k">if</span> <span class="nv">data.sample_flag</span> <span class="cp">%}</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="x">print(&quot;do this&quot;)</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="cp">{%</span> <span class="k">else</span> <span class="cp">%}</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="x">print(&quot;do that&quot;)</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="x">work_dir = &quot;</span><span class="cp">{{</span> <span class="nv">data.workdir</span> <span class="cp">}}</span><span class="x">&quot;</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="x"># Remaining code (...)</span>
+</span></code></pre></div>
+<p>For illustration, the following rendering variables could be provided:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Big-Simulation&quot;</span><span class="p">,</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">&quot;nodes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">&quot;sample_flag&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">&quot;workdir&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/home/user/folder&quot;</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>And with that, the previous template can be rendered in an actual Python script:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="ch">#!/bin/python3</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1">#SBATCH --name Big-Simulation</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1">#SBATCH --nodes 10</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;do that&quot;</span><span class="p">)</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">work_dir</span> <span class="o">=</span> <span class="s2">&quot;/home/user/folder&quot;</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1"># Remaining code (...)</span>
+</span></code></pre></div>
+<p>The computation of rendering variables can include business logic, such as searching the file system, checking available modules, preparing supporting files, determining hardware specifications, and choosing the target templates (if the applications contains more than one). As a framework, Jobbergate enables application experts to create a Python script with a custom Question/Answer workflow that guides users through this process. This bundle of templates and application script is called a <a href="job_script_templates/">Job Script Template</a> (also named as <em>Jobbergate Application</em> on previous versions). The resulting <a href="job_scripts/">Job Script</a> is ready to become a <a href="job_submissions/">Job Submission</a> and run on the cluster for computation (from either on site or remote submissions mode). These are the three major entities on Jobbergate system, resulting in a typical workflow as follows:</p>
+<pre class="mermaid"><code>graph TD
+  application["Job Templates
+    (Adaptable Blueprints / Custom Q&amp;A Workflow)"]
+  job-script["Job-Scripts
+    (Technical Specs / Scripted actions to run)"]
+  job-submission["Job-Submissions
+    (Track job status)"]
+  application -- Render --&gt; job-script -- Send to Slurm --&gt; job-submission</code></pre>
 
 
 
@@ -1004,13 +1051,13 @@ or through specific subcommands in the CLI.</p>
         
         
           
-          <a href="job_scripts/" class="md-footer__link md-footer__link--next" aria-label="Next: Job Scripts">
+          <a href="job_script_templates/" class="md-footer__link md-footer__link--next" aria-label="Next: Job Script Templates">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Job Scripts
+                Job Script Templates
               </div>
             </div>
             <div class="md-footer__button md-icon">

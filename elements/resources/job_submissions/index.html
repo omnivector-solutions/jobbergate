@@ -9,7 +9,7 @@
       
       
       
-        <link rel="prev" href="../job_script_templates/">
+        <link rel="prev" href="../job_scripts/">
       
       
         <link rel="next" href="../../apps/">
@@ -367,11 +367,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../job_scripts/" class="md-nav__link">
+      <a href="../job_script_templates/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Job Scripts
+    Job Script Templates
   </span>
   
 
@@ -387,11 +387,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../job_script_templates/" class="md-nav__link">
+      <a href="../job_scripts/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Job Script Templates
+    Job Scripts
   </span>
   
 
@@ -412,6 +412,8 @@
       
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
+      
+        
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
@@ -441,6 +443,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -449,8 +453,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#job-submissions" class="md-nav__link">
-    Job Submissions
+  <a href="#data-model" class="md-nav__link">
+    Data Model
   </a>
   
 </li>
@@ -970,6 +974,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -978,8 +984,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#job-submissions" class="md-nav__link">
-    Job Submissions
+  <a href="#data-model" class="md-nav__link">
+    Data Model
   </a>
   
 </li>
@@ -1002,12 +1008,30 @@
   
 
 
-  <h1>Job Submissions</h1>
-
-<h2 id="job-submissions">Job Submissions</h2>
+<h1 id="job-submissions">Job Submissions</h1>
 <p>Job Submissions primarily monitor the status and metadata of a <a href="../job_scripts/">Job Script</a> dispatched by Jobbergate
 to a Slurm cluster. They possess identifying details linking them to the Job Script that was submitted and to the
 corresponding Job objects created by Slurm.</p>
+<h2 id="data-model">Data Model</h2>
+<pre class="mermaid"><code>erDiagram
+    JobSubmission {
+        int id pk
+        int job_script_id fk
+        str execution_directory
+        int slurm_job_id
+        enum[str] slurm_job_state
+        str slurm_job_info
+        str client_id
+        enum[str] status
+        str report_message
+        list[str] sbatch_arguments
+        str name
+        str description
+        str owner_email
+        datetime created_at
+        datetime updated_at
+        bool is_archived
+    }</code></pre>
 
 
 
@@ -1029,7 +1053,7 @@ corresponding Job objects created by Slurm.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../job_script_templates/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Job Script Templates">
+          <a href="../job_scripts/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Job Scripts">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
@@ -1039,7 +1063,7 @@ corresponding Job objects created by Slurm.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Job Script Templates
+                Job Scripts
               </div>
             </div>
           </a>
