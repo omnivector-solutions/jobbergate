@@ -115,6 +115,13 @@ class Settings(BaseSettings):
     AUTO_CLEAN_JOB_SUBMISSIONS_DAYS_TO_ARCHIVE: int | None = None
     AUTO_CLEAN_JOB_SUBMISSIONS_DAYS_TO_DELETE: int | None = None
 
+    # Metadata for the API Documentation
+    METADATA_API_TITLE: str = "Jobbergate-API"
+    METADATA_CONTACT_NAME: str = "Omnivector Solutions"
+    METADATA_CONTACT_URL: str = "https://omnivector.solutions"
+    METADATA_CONTACT_EMAIL: str = "info@omnivector.solutions"
+
+
     @model_validator(mode="before")
     @classmethod
     def remove_blank_env(cls, values):
