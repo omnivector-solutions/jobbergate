@@ -23,12 +23,12 @@ from jobbergate_api.logging import init_logging
 from jobbergate_api.storage import engine_factory, handle_fk_error
 
 subapp = FastAPI(
-    title="Jobbergate-API",
+    title=settings.METADATA_API_TITLE,
     version=__version__,
     contact={
-        "name": "Omnivector Solutions",
-        "url": "https://www.omnivector.solutions/",
-        "email": "info@omnivector.solutions",
+        "name": settings.METADATA_CONTACT_NAME,
+        "url": settings.METADATA_CONTACT_URL,
+        "email": settings.METADATA_CONTACT_EMAIL,
     },
     license_info={
         "name": "MIT License",
