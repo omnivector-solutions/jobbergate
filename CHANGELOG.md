@@ -11,6 +11,40 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.6.3](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.6.3) - 2025-06-24
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+### Added
+
+- Added the field `slurm_job_state` as a sortable column in the `JobSubmission` model.
+
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.6.2](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.6.2) - 2025-04-14
 
 ## Core
