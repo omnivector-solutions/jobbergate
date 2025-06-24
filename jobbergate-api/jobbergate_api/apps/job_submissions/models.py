@@ -107,6 +107,7 @@ class JobSubmission(CrudMixin, Base):
             cls.slurm_job_id,
             cls.client_id,
             cls.status,
+            cls.slurm_job_state,
             *super().sortable_fields(),
         }
 
