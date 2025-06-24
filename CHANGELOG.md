@@ -11,6 +11,40 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.6.4](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.6.4) - 2025-06-24
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+No significant changes.
+
+
+## CLI
+
+### Fixed
+
+- Bumped Typer to `^0.16.0` to patch compatibility issue when running with Click `<8.2` ([PR #796](https://github.com/omnivector-solutions/jobbergate/pull/796))
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.6.3](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.6.3) - 2025-06-24
 
 ## Core
