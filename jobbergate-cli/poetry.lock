@@ -509,7 +509,7 @@ ansicon = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
 name = "jobbergate-core"
-version = "5.2.0a2"
+version = "5.6.2"
 description = "Jobbergate Core"
 optional = false
 python-versions = "^3.10"
@@ -520,8 +520,9 @@ develop = true
 [package.dependencies]
 httpx = "^0.24.1"
 loguru = "^0.6.0"
-pendulum = "^3.0.0"
-py-buzz = "^4.0.0"
+pendulum = {version = "^3.0.0", extras = ["test"]}
+py-buzz = "^5.0"
+pydantic = "^2.7"
 python-jose = "^3.3.0"
 
 [package.source]
@@ -784,6 +785,7 @@ files = [
 
 [package.dependencies]
 python-dateutil = ">=2.6"
+time-machine = {version = ">=2.6.0", optional = true, markers = "implementation_name != \"pypy\" and extra == \"test\""}
 tzdata = ">=2020.1"
 
 [package.extras]
@@ -827,14 +829,14 @@ time-machine = ["time-machine (>=2)"]
 
 [[package]]
 name = "py-buzz"
-version = "4.1.0"
+version = "5.0.2"
 description = "\"That's not flying, it's falling with style\": Exceptions with extras"
 optional = false
-python-versions = ">=3.8,<4.0"
+python-versions = "<4.0,>=3.9"
 groups = ["main", "dev"]
 files = [
-    {file = "py_buzz-4.1.0-py3-none-any.whl", hash = "sha256:77dc0dc9c9923b6f8079dc2e2c3b4fbebd2308acaca1500f8eda2711cd308f97"},
-    {file = "py_buzz-4.1.0.tar.gz", hash = "sha256:ac11dba4922b2af114126044597d2fcd15e8c6a74368bed91f3c6732c8f09812"},
+    {file = "py_buzz-5.0.2-py3-none-any.whl", hash = "sha256:09961b02f182189105ee84f3a67ddb927c03c8af840b6f0c89e1a8458a5f33b0"},
+    {file = "py_buzz-5.0.2.tar.gz", hash = "sha256:1f6e0c4a19f02f6f3a20d1667319170a0ccc53c099538e31681563cca855db93"},
 ]
 
 [[package]]
@@ -1496,7 +1498,7 @@ version = "2.13.0"
 description = "Travel through time in your tests."
 optional = false
 python-versions = ">=3.8"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "time_machine-2.13.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:685d98593f13649ad5e7ce3e58efe689feca1badcf618ba397d3ab877ee59326"},
     {file = "time_machine-2.13.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:ccbce292380ebf63fb9a52e6b03d91677f6a003e0c11f77473efe3913a75f289"},
@@ -1555,6 +1557,7 @@ files = [
     {file = "time_machine-2.13.0-cp39-cp39-win_arm64.whl", hash = "sha256:3c87856105dcb25b5bbff031d99f06ef4d1c8380d096222e1bc63b496b5258e6"},
     {file = "time_machine-2.13.0.tar.gz", hash = "sha256:c23b2408e3adcedec84ea1131e238f0124a5bc0e491f60d1137ad7239b37c01a"},
 ]
+markers = {main = "implementation_name != \"pypy\""}
 
 [package.dependencies]
 python-dateutil = "*"
@@ -1574,14 +1577,14 @@ files = [
 
 [[package]]
 name = "typer"
-version = "0.12.3"
+version = "0.16.0"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
 optional = false
 python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "typer-0.12.3-py3-none-any.whl", hash = "sha256:070d7ca53f785acbccba8e7d28b08dcd88f79f1fbda035ade0aecec71ca5c914"},
-    {file = "typer-0.12.3.tar.gz", hash = "sha256:49e73131481d804288ef62598d97a1ceef3058905aa536a1134f90891ba35482"},
+    {file = "typer-0.16.0-py3-none-any.whl", hash = "sha256:1f79bed11d4d02d4310e3c1b7ba594183bcedb0ac73b27a9e5f28f6fb5b98855"},
+    {file = "typer-0.16.0.tar.gz", hash = "sha256:af377ffaee1dbe37ae9440cb4e8f11686ea5ce4e9bae01b84ae7c63b87f1dd3b"},
 ]
 
 [package.dependencies]
@@ -1703,4 +1706,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "06991320b652caf82774c353ef6c901d5fa045cc3b1c2683f9bb7d4b4ee1b74a"
+content-hash = "d36fc4acb8a39b13347fb5f7ea1f0f67803d2a28bef243edbf4fd92ad4673f85"
