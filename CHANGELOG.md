@@ -11,6 +11,40 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.6.5](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.6.5) - 2025-06-26
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+No significant changes.
+
+
+## CLI
+
+### Fixed
+
+- Update ARMADA_API_BASE, OIDC_DOMAIN, and OIDC_CLIENT_ID defaults ([PR #800](https://github.com/omnivector-solutions/jobbergate/pull/800))
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.6.4](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.6.4) - 2025-06-24
 
 ## Core
