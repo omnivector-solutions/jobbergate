@@ -35,7 +35,7 @@ class Settings(BaseSettings):
 
     JOBBERGATE_CACHE_DIR: Path = Field(Path.home() / ".local/share/jobbergate3")
 
-    ARMADA_API_BASE: str = Field("https://armada-k8s.staging.omnivector.solutions")
+    ARMADA_API_BASE: str = Field("https://apis.vantagecompute.ai")
 
     SBATCH_PATH: Optional[Path] = None
 
@@ -64,8 +64,8 @@ class Settings(BaseSettings):
     JOBBERGATE_LEGACY_NAME_CONVENTION: Optional[bool] = False
 
     # Auth0 config for machine-to-machine security
-    OIDC_DOMAIN: Optional[str] = None
-    OIDC_CLIENT_ID: Optional[str] = None
+    OIDC_DOMAIN: str = "auth.vantagecompute.ai/realms/vantage"
+    OIDC_CLIENT_ID: str = "default"
     OIDC_USE_HTTPS: bool = True
     OIDC_CLIENT_SECRET: Optional[str] = None
 
