@@ -44,7 +44,7 @@ jobs:
 
       - uses: Gr1N/setup-poetry@v8
         with:
-          poetry-version: 2.1.1
+          poetry-version: 1.5.1
 
       - id: poetry-package-version
         name: Get project's version
@@ -97,7 +97,7 @@ jobs:
 
       - uses: Gr1N/setup-poetry@v8
         with:
-          poetry-version: 2.1.1
+          poetry-version: 1.5.1
 
       - id: poetry-package-version
         name: Get version of project from poetry
