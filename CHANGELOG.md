@@ -11,47 +11,7 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
-# [5.7.0a1](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.7.0a1) - 2025-06-06
-
-## Core
-
-### Miscellaneous
-
-- [PR #776](https://github.com/omnivector-solutions/jobbergate/pull/776)
-
-
-## Agent
-
-### Miscellaneous
-
-- [PR #776](https://github.com/omnivector-solutions/jobbergate/pull/776)
-
-
-## Agent Snap
-
-No significant changes.
-
-
-## API
-
-### Miscellaneous
-
-- [PR #775](https://github.com/omnivector-solutions/jobbergate/pull/775)
-
-
-## CLI
-
-### Miscellaneous
-
-- [PR #776](https://github.com/omnivector-solutions/jobbergate/pull/776)
-
-
-## Documentation
-
-No significant changes.
-
-
-# [5.7.0a0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.7.0a0) - 2025-05-09
+# [5.7.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.7.0) - 2025-06-30
 
 ## Core
 
@@ -59,23 +19,28 @@ No significant changes.
 
 - Removed the check for existence of the submission directory ([PR #755](https://github.com/omnivector-solutions/jobbergate/pull/755))
 
+### Miscellaneous
+
+- [PR #776](https://github.com/omnivector-solutions/jobbergate/pull/776)
 
 ## Agent
-
-### Removed
-
-- Removed tasks used to trigger the garbage collector endpoints on the API ([PR #768](https://github.com/omnivector-solutions/jobbergate/pull/768))
 
 ### Fixed
 
 - Pending and active submissions can now handle multiple pages per cycle ([PR #756](https://github.com/omnivector-solutions/jobbergate/pull/756))
 - Patched pagination logic when handling an empty list os entries ([PR #765](https://github.com/omnivector-solutions/jobbergate/pull/765))
 
+### Removed
+
+- Removed tasks used to trigger the garbage collector endpoints on the API ([PR #768](https://github.com/omnivector-solutions/jobbergate/pull/768))
+
+### Miscellaneous
+
+- [PR #776](https://github.com/omnivector-solutions/jobbergate/pull/776)
 
 ## Agent Snap
 
 No significant changes.
-
 
 ## API
 
@@ -85,19 +50,31 @@ No significant changes.
 
 ### Added
 
+- Added the field `slurm_job_state` as a sortable column in the `JobSubmission` model.
+- Contact info on API's swagger page are now configurable by environment variables
 - Added `jg-api-cron` script entry point to handle data cleanup ([PR #768](https://github.com/omnivector-solutions/jobbergate/pull/768))
 - Expanded logic to auto clean unused database entries to job templates and job submissions ([PR #769](https://github.com/omnivector-solutions/jobbergate/pull/769))
 
+### Miscellaneous
+
+- [PR #775](https://github.com/omnivector-solutions/jobbergate/pull/775)
 
 ## CLI
 
-No significant changes.
+### Fixed
 
+- Bumped Typer to `^0.16.0` to patch compatibility issue when running with Click `<8.2` ([PR #796](https://github.com/omnivector-solutions/jobbergate/pull/796))
+- Update `ARMADA_API_BASE`, `OIDC_DOMAIN`, and `OIDC_CLIENT_ID` defaults ([PR #800](https://github.com/omnivector-solutions/jobbergate/pull/800))
+
+### Miscellaneous
+
+- [PR #776](https://github.com/omnivector-solutions/jobbergate/pull/776)
 
 ## Documentation
 
-No significant changes.
+### Added
 
+- Enhanced resource description on Job Templates, Job Scripts, and Job Submissions ([PR #789](https://github.com/omnivector-solutions/jobbergate/pull/789))
 
 # [5.6.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.6.0) - 2025-03-27
 
@@ -127,13 +104,11 @@ No significant changes.
   change prevents any validation error when fetching job's data by returning the first available state. ([PR #739](https://github.com/omnivector-solutions/jobbergate/pull/739))
 - Adjusted the `fetch_influx_data` function to return a measurement value 0 when the original value overflows the maximum int64 value. ([PR #740](https://github.com/omnivector-solutions/jobbergate/pull/740))
 
-
 ## Agent Snap
 
 ### Fixed
 
 - Updated snap to use base24 and use appropriate paths ([PR #720](https://github.com/omnivector-solutions/jobbergate/pull/720))
-
 
 ## API
 
@@ -145,23 +120,19 @@ No significant changes.
 
   As well as, a new endpoint is added for fetching the event entries from the database. ([PR #752](https://github.com/omnivector-solutions/jobbergate/pull/752))
 
-
 ## CLI
 
 No significant changes.
 
-
 ## Documentation
 
 No significant changes.
-
 
 # [5.5.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.5.0) - 2025-02-11
 
 ## Core
 
 No significant changes.
-
 
 ## Agent
 
@@ -174,11 +145,9 @@ No significant changes.
 
 - Upgraded py-buzz dependency to `^5.0` to use builtin `handle_errors_async` [[PENG-2678](https://sharing.clickup.com/t/h/c/18022949/PENG-2678/M7PTQRUNIW5T2NK)] ([PR #689](https://github.com/omnivector-solutions/jobbergate/pull/689))
 
-
 ## Agent Snap
 
 No significant changes.
-
 
 ## API
 
@@ -194,18 +163,15 @@ No significant changes.
 
 - Fixed issue on the Job Template rendering process by running it inside a Jinja Sandbox Environment ([PR #671](https://github.com/omnivector-solutions/jobbergate/pull/671))
 
-
 ## CLI
 
 ### Fixed
 
 - Fixed issue on the Job Template rendering process by running it inside a Jinja Sandbox Environment ([PR #671](https://github.com/omnivector-solutions/jobbergate/pull/671))
 
-
 ## Documentation
 
 No significant changes.
-
 
 ## 5.4.0 -- 2024-11-18
 
