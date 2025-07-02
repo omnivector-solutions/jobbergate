@@ -14,6 +14,9 @@ class JobScriptFileDetailedView(BaseModel):
     created_at: PydanticDateTime
     updated_at: PydanticDateTime
 
+    @property
+    def path(self) -> str:
+        return f"/jobbergate/job-scripts/{self.parent_id}/upload/{self.filename}"
 
 class JobScriptBaseView(TableResource):
     """

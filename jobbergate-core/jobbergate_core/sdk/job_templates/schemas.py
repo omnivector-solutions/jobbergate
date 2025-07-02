@@ -18,6 +18,9 @@ class TemplateFileDetailedView(BaseModel):
     created_at: PydanticDateTime
     updated_at: PydanticDateTime
 
+    @property
+    def path(self) -> str:
+        return f"/jobbergate/job-script-templates/{self.parent_id}/upload/template/{self.filename}"
 
 class WorkflowFileDetailedView(BaseModel):
     """Schema for the response to get a workflow file."""
@@ -28,6 +31,9 @@ class WorkflowFileDetailedView(BaseModel):
     created_at: PydanticDateTime
     updated_at: PydanticDateTime
 
+    @property
+    def path(self) -> str:
+        return f"/jobbergate/job-script-templates/{self.parent_id}/upload/workflow"
 
 class JobTemplateListView(TableResource):
     """Schema for the response to get a list of entries."""

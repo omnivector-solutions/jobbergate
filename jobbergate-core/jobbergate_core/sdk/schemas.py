@@ -63,7 +63,7 @@ class TableResource(BaseModel):
 
     id: int
     name: str
-    owner_email: str
+    # owner_email: str
     created_at: PydanticDateTime
     updated_at: PydanticDateTime
     is_archived: bool

@@ -482,12 +482,10 @@ def save_job_script_file(
     return file_path
 
 
-def download_job_script_files(id: int, jg_ctx: ContextProtocol, destination_path: pathlib.Path) -> List[JobScriptFile]:
+def download_job_script_files(result: JobScriptResponse, jg_ctx: ContextProtocol, destination_path: pathlib.Path) -> List[JobScriptFile]:
     """
     Download all job script files from the API and save them to the destination path.
     """
-
-    result = fetch_job_script_data(jg_ctx, id)
 
     with futures.ThreadPoolExecutor() as executor:
         executor.map(partial(save_job_script_file, jg_ctx, destination_path), result.files)
