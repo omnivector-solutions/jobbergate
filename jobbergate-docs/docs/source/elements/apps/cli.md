@@ -6,14 +6,52 @@ various tasks.
 
 The CLI operates under two primary modes:
 
- - **Resource Creation**: The CLI introduces `create` subcommands for every resource, allowing users to establish new
+- **Resource Creation**: The CLI introduces `create` subcommands for every resource, allowing users to establish new
    instances.
- - **Resource Viewing**: With `list` and `get-one` subcommands available for each resource, users can inspect different
+- **Resource Viewing**: With `list` and `get-one` subcommands available for each resource, users can inspect different
    detail levels about the resource entities stored in the database.
 
 To ensure secure access, the Jobbergate CLI offers a sign-in mechanism to the Jobbergate API. Once authenticated,
 users may use all the resources in Jobbergate that their account has been granted access to.
 
+## Installation
+
+Jobbergate-cli is available on [PyPI](https://pypi.org/project/jobbergate-cli/), and can be installed by a couple of ways compatible with the Python ecosystem:
+
+- [pip](https://pip.pypa.io/en/stable/):
+
+    ```shell
+    pip install jobbergate-cli
+    ```
+
+    !!! note
+
+        Installing on the system Python is not considered best practice as it may interfere with the system's package manager. Consider using a virtual environment or other installation methods.
+
+- [pipx](https://pypa.github.io/pipx/) allows for the global installation of Python applications in isolated environments:
+
+    ```shell
+    pipx install jobbergate-cli
+    ```
+
+- [uv](https://docs.astral.sh/uv/) executes and installs command-line tools provided by Python packages, similar to `pipx`:
+
+    ```shell
+    uv tool install jobbergate-cli
+    ```
+
+- [venv](https://docs.python.org/3/library/venv.html) is a built-in Python module that allows you to create isolated environments for Python projects. You can install in the directory that best suits your needs. For reference, `/srv/new-jobbergate-cli-venv` is the used on a few provisioning scripts. The commands to create the installation directory, set the virtual environment, install the cli, and create a symlink to enable it to be run from anywhere are as follows:
+
+    ```shell
+    mkdir /srv
+    /usr/bin/python3.12 -m venv /srv/new-jobbergate-cli-venv
+    /srv/new-jobbergate-cli-venv/bin/pip install jobbergate-cli
+    ln -s /srv/new-jobbergate-cli-venv/bin/jobbergate /usr/local/bin/jobbergate
+    ```
+
+### Configuration
+
+The base configuration file can be set on `/etc/default/jobbergate3-cli` or on a `.env` file in the current working directory. Consult your system administrator for configuration values.
 
 ## Discovering Command details
 
@@ -59,10 +97,8 @@ particular subcommand. For example, to better understand the usage of the `job-s
 run:
 
 ```shell
-$ jobbergate job-scripts create --help
+jobbergate job-scripts create --help
 ```
-
-
 
 ## Logging In
 
@@ -71,6 +107,7 @@ The first thing you need to do with the Jobbergate CLI is to log in:
 ```shell
 jobbergate login
 ```
+
 Upon executing the command, a message will appear like:
 
 ```
@@ -104,7 +141,6 @@ You should see a message like:
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-
 ## Checking the Auth Token
 
 To get access to the auth token you acquired by logging in, run this command:
@@ -112,6 +148,7 @@ To get access to the auth token you acquired by logging in, run this command:
 ```shell
 jobbergate show-token --plain
 ```
+
 Executing this command will display the authentication token in a plain text format, without any additional characters
 or formatting. This makes it easier for you to manually select and copy the token, especially in environments where
 clipboard access might be restricted, such as when using docker-compose or an SSH connection.
@@ -121,23 +158,20 @@ Once the token is displayed, you can copy the token to your clipboard to use wit
 It's essential to treat this token with care, as it provides access to the Jobbergate system under your user account.
 Ensure you don't share it with unauthorized individuals and avoid unintentionally exposing it in logs or scripts.
 
-
-
 ## Resource Commands
 
 Now that you are logged in, you can interact with any of the three main Jobbergate resources. Most of the resources
 provide the following sub-commands:
 
-* **create**: Create a new instance of the resource
-* **delete**: Delete an instance of the resource
-* **get-one**: Fetch details about a single instance of the resource
-* **list**: Fetch a listing of all the resources limited by filters
-* **update**: Update an instance of the resource.
+- **create**: Create a new instance of the resource
+- **delete**: Delete an instance of the resource
+- **get-one**: Fetch details about a single instance of the resource
+- **list**: Fetch a listing of all the resources limited by filters
+- **update**: Update an instance of the resource.
 
 Details for each subcommand can be viewed by passing the `--help` flag to any of them.
 
 Use the `--help` option to explore the CLI and disccover the usage and options for all the subcommands.
-
 
 ## Usability
 
