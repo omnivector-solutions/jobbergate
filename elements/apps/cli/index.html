@@ -579,6 +579,26 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    Installation
+  </a>
+  
+    <nav class="md-nav" aria-label="Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    Configuration
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#discovering-command-details" class="md-nav__link">
     Discovering Command details
   </a>
@@ -1019,6 +1039,26 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    Installation
+  </a>
+  
+    <nav class="md-nav" aria-label="Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    Configuration
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#discovering-command-details" class="md-nav__link">
     Discovering Command details
   </a>
@@ -1091,61 +1131,94 @@ various tasks.</p>
 </ul>
 <p>To ensure secure access, the Jobbergate CLI offers a sign-in mechanism to the Jobbergate API. Once authenticated,
 users may use all the resources in Jobbergate that their account has been granted access to.</p>
+<h2 id="installation">Installation</h2>
+<p>Jobbergate-cli is available on <a href="https://pypi.org/project/jobbergate-cli/">PyPI</a>, and can be installed by a couple of ways compatible with the Python ecosystem:</p>
+<ul>
+<li>
+<p><a href="https://pip.pypa.io/en/stable/">pip</a>:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>jobbergate-cli
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Installing on the system Python is not considered best practice as it may interfere with the system's package manager. Consider using a virtual environment or other installation methods.</p>
+</div>
+</li>
+<li>
+<p><a href="https://pypa.github.io/pipx/">pipx</a> allows for the global installation of Python applications in isolated environments:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pipx<span class="w"> </span>install<span class="w"> </span>jobbergate-cli
+</span></code></pre></div>
+</li>
+<li>
+<p><a href="https://docs.astral.sh/uv/">uv</a> executes and installs command-line tools provided by Python packages, similar to <code>pipx</code>:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>jobbergate-cli
+</span></code></pre></div>
+</li>
+<li>
+<p><a href="https://docs.python.org/3/library/venv.html">venv</a> is a built-in Python module that allows you to create isolated environments for Python projects. You can install in the directory that best suits your needs. For reference, <code>/srv/new-jobbergate-cli-venv</code> is the used on a few provisioning scripts. The commands to create the installation directory, set the virtual environment, install the cli, and create a symlink to enable it to be run from anywhere are as follows:</p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>mkdir<span class="w"> </span>/srv
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>/usr/bin/python3.12<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>/srv/new-jobbergate-cli-venv
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>/srv/new-jobbergate-cli-venv/bin/pip<span class="w"> </span>install<span class="w"> </span>jobbergate-cli
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>ln<span class="w"> </span>-s<span class="w"> </span>/srv/new-jobbergate-cli-venv/bin/jobbergate<span class="w"> </span>/usr/local/bin/jobbergate
+</span></code></pre></div>
+</li>
+</ul>
+<h3 id="configuration">Configuration</h3>
+<p>The base configuration file can be set on <code>/etc/default/jobbergate3-cli</code> or on a <code>.env</code> file in the current working directory. Consult your system administrator for configuration values.</p>
 <h2 id="discovering-command-details">Discovering Command details</h2>
 <p>You can start learning about the commands and usage of the Jobbergate CLI by starting with this command:</p>
-<div class="language-shell highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>$<span class="w"> </span>jobbergate<span class="w"> </span>--help
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Usage:<span class="w"> </span>jobbergate<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span>COMMAND<span class="w"> </span><span class="o">[</span>ARGS<span class="o">]</span>...
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span>Welcome<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>Jobbergate<span class="w"> </span>CLI!
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span>More<span class="w"> </span>information<span class="w"> </span>can<span class="w"> </span>be<span class="w"> </span>shown<span class="w"> </span><span class="k">for</span><span class="w"> </span>each<span class="w"> </span><span class="nb">command</span><span class="w"> </span>listed<span class="w"> </span>below<span class="w"> </span>by<span class="w"> </span>running<span class="w"> </span>it
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span>with<span class="w"> </span>the<span class="w"> </span>--help<span class="w"> </span>option.
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>Options:
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span>--verbose<span class="w"> </span>/<span class="w"> </span>--no-verbose<span class="w">        </span>Enable<span class="w"> </span>verbose<span class="w"> </span>logging<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>terminal
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">                                  </span><span class="o">[</span>default:<span class="w"> </span>no-verbose<span class="o">]</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span>--full<span class="w"> </span>/<span class="w"> </span>--no-full<span class="w">              </span>Print<span class="w"> </span>all<span class="w"> </span>fields<span class="w"> </span>from<span class="w"> </span>CRUD<span class="w"> </span>commands
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">                                  </span><span class="o">[</span>default:<span class="w"> </span>no-full<span class="o">]</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">  </span>--raw<span class="w"> </span>/<span class="w"> </span>--no-raw<span class="w">                </span>Print<span class="w"> </span>output<span class="w"> </span>from<span class="w"> </span>CRUD<span class="w"> </span>commands<span class="w"> </span>as<span class="w"> </span>raw<span class="w"> </span>json
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">                                  </span><span class="o">[</span>default:<span class="w"> </span>no-raw<span class="o">]</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span>--version<span class="w"> </span>/<span class="w"> </span>--no-version<span class="w">        </span>Print<span class="w"> </span>the<span class="w"> </span>version<span class="w"> </span>of<span class="w"> </span>jobbergate-cli<span class="w"> </span>and<span class="w"> </span><span class="nb">exit</span>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">                                  </span><span class="o">[</span>default:<span class="w"> </span>no-version<span class="o">]</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">  </span>--install-completion<span class="w"> </span><span class="o">[</span>bash<span class="p">|</span>zsh<span class="p">|</span>fish<span class="p">|</span>powershell<span class="p">|</span>pwsh<span class="o">]</span>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">                                  </span>Install<span class="w"> </span>completion<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>specified<span class="w"> </span>shell.
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">  </span>--show-completion<span class="w"> </span><span class="o">[</span>bash<span class="p">|</span>zsh<span class="p">|</span>fish<span class="p">|</span>powershell<span class="p">|</span>pwsh<span class="o">]</span>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">                                  </span>Show<span class="w"> </span>completion<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>specified<span class="w"> </span>shell,<span class="w"> </span>to
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w">                                  </span>copy<span class="w"> </span>it<span class="w"> </span>or<span class="w"> </span>customize<span class="w"> </span>the<span class="w"> </span>installation.
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w">  </span>--help<span class="w">                          </span>Show<span class="w"> </span>this<span class="w"> </span>message<span class="w"> </span>and<span class="w"> </span>exit.
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>Commands:
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">  </span>applications<span class="w">     </span>Commands<span class="w"> </span>to<span class="w"> </span>interact<span class="w"> </span>with<span class="w"> </span>applications
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">  </span>job-scripts<span class="w">      </span>Commands<span class="w"> </span>to<span class="w"> </span>interact<span class="w"> </span>with<span class="w"> </span>job<span class="w"> </span>scripts
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">  </span>job-submissions<span class="w">  </span>Commands<span class="w"> </span>to<span class="w"> </span>interact<span class="w"> </span>with<span class="w"> </span>job<span class="w"> </span>submissions
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="w">  </span>login<span class="w">            </span>Log<span class="w"> </span><span class="k">in</span><span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>jobbergate-cli<span class="w"> </span>by<span class="w"> </span>storing<span class="w"> </span>the<span class="w"> </span>supplied...
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="w">  </span><span class="nb">logout</span><span class="w">           </span>Logs<span class="w"> </span>out<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>jobbergate-cli.
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="w">  </span>show-token<span class="w">       </span>Show<span class="w"> </span>the<span class="w"> </span>token<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>logged<span class="w"> </span><span class="k">in</span><span class="w"> </span>user.
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>$<span class="w"> </span>jobbergate<span class="w"> </span>--help
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>Usage:<span class="w"> </span>jobbergate<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span>COMMAND<span class="w"> </span><span class="o">[</span>ARGS<span class="o">]</span>...
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span>Welcome<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>Jobbergate<span class="w"> </span>CLI!
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span>More<span class="w"> </span>information<span class="w"> </span>can<span class="w"> </span>be<span class="w"> </span>shown<span class="w"> </span><span class="k">for</span><span class="w"> </span>each<span class="w"> </span><span class="nb">command</span><span class="w"> </span>listed<span class="w"> </span>below<span class="w"> </span>by<span class="w"> </span>running<span class="w"> </span>it
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span>with<span class="w"> </span>the<span class="w"> </span>--help<span class="w"> </span>option.
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>Options:
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">  </span>--verbose<span class="w"> </span>/<span class="w"> </span>--no-verbose<span class="w">        </span>Enable<span class="w"> </span>verbose<span class="w"> </span>logging<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>terminal
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">                                  </span><span class="o">[</span>default:<span class="w"> </span>no-verbose<span class="o">]</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">  </span>--full<span class="w"> </span>/<span class="w"> </span>--no-full<span class="w">              </span>Print<span class="w"> </span>all<span class="w"> </span>fields<span class="w"> </span>from<span class="w"> </span>CRUD<span class="w"> </span>commands
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">                                  </span><span class="o">[</span>default:<span class="w"> </span>no-full<span class="o">]</span>
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">  </span>--raw<span class="w"> </span>/<span class="w"> </span>--no-raw<span class="w">                </span>Print<span class="w"> </span>output<span class="w"> </span>from<span class="w"> </span>CRUD<span class="w"> </span>commands<span class="w"> </span>as<span class="w"> </span>raw<span class="w"> </span>json
+</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">                                  </span><span class="o">[</span>default:<span class="w"> </span>no-raw<span class="o">]</span>
+</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">  </span>--version<span class="w"> </span>/<span class="w"> </span>--no-version<span class="w">        </span>Print<span class="w"> </span>the<span class="w"> </span>version<span class="w"> </span>of<span class="w"> </span>jobbergate-cli<span class="w"> </span>and<span class="w"> </span><span class="nb">exit</span>
+</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">                                  </span><span class="o">[</span>default:<span class="w"> </span>no-version<span class="o">]</span>
+</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">  </span>--install-completion<span class="w"> </span><span class="o">[</span>bash<span class="p">|</span>zsh<span class="p">|</span>fish<span class="p">|</span>powershell<span class="p">|</span>pwsh<span class="o">]</span>
+</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">                                  </span>Install<span class="w"> </span>completion<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>specified<span class="w"> </span>shell.
+</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="w">  </span>--show-completion<span class="w"> </span><span class="o">[</span>bash<span class="p">|</span>zsh<span class="p">|</span>fish<span class="p">|</span>powershell<span class="p">|</span>pwsh<span class="o">]</span>
+</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="w">                                  </span>Show<span class="w"> </span>completion<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>specified<span class="w"> </span>shell,<span class="w"> </span>to
+</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="w">                                  </span>copy<span class="w"> </span>it<span class="w"> </span>or<span class="w"> </span>customize<span class="w"> </span>the<span class="w"> </span>installation.
+</span><span id="__span-4-23"><a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="w">  </span>--help<span class="w">                          </span>Show<span class="w"> </span>this<span class="w"> </span>message<span class="w"> </span>and<span class="w"> </span>exit.
+</span><span id="__span-4-24"><a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a>
+</span><span id="__span-4-25"><a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a>Commands:
+</span><span id="__span-4-26"><a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a><span class="w">  </span>applications<span class="w">     </span>Commands<span class="w"> </span>to<span class="w"> </span>interact<span class="w"> </span>with<span class="w"> </span>applications
+</span><span id="__span-4-27"><a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a><span class="w">  </span>job-scripts<span class="w">      </span>Commands<span class="w"> </span>to<span class="w"> </span>interact<span class="w"> </span>with<span class="w"> </span>job<span class="w"> </span>scripts
+</span><span id="__span-4-28"><a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a><span class="w">  </span>job-submissions<span class="w">  </span>Commands<span class="w"> </span>to<span class="w"> </span>interact<span class="w"> </span>with<span class="w"> </span>job<span class="w"> </span>submissions
+</span><span id="__span-4-29"><a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a><span class="w">  </span>login<span class="w">            </span>Log<span class="w"> </span><span class="k">in</span><span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>jobbergate-cli<span class="w"> </span>by<span class="w"> </span>storing<span class="w"> </span>the<span class="w"> </span>supplied...
+</span><span id="__span-4-30"><a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a><span class="w">  </span><span class="nb">logout</span><span class="w">           </span>Logs<span class="w"> </span>out<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>jobbergate-cli.
+</span><span id="__span-4-31"><a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a><span class="w">  </span>show-token<span class="w">       </span>Show<span class="w"> </span>the<span class="w"> </span>token<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>logged<span class="w"> </span><span class="k">in</span><span class="w"> </span>user.
 </span></code></pre></div>
 <p>If you want to delve deeper and understand the usage of a specific subcommand, you can use the <code>--help</code> flag with that
 particular subcommand. For example, to better understand the usage of the <code>job-scripts create</code> subcommand, you would
 run:</p>
-<div class="language-shell highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>$<span class="w"> </span>jobbergate<span class="w"> </span>job-scripts<span class="w"> </span>create<span class="w"> </span>--help
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>jobbergate<span class="w"> </span>job-scripts<span class="w"> </span>create<span class="w"> </span>--help
 </span></code></pre></div>
 <h2 id="logging-in">Logging In</h2>
 <p>The first thing you need to do with the Jobbergate CLI is to log in:</p>
-<p><div class="language-shell highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>jobbergate<span class="w"> </span>login
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>jobbergate<span class="w"> </span>login
 </span></code></pre></div>
-Upon executing the command, a message will appear like:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>╭───────────────────────────────────────────── Waiting for login ──────────────────────────────────────────────────────╮
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>│                                                                                                                      │
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>│   To complete login, please open the following link in a browser:                                                    │
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>│                                                                                                                      │
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>│     http://keycloak.local:8080/realms/jobbergate-local/device?user_code=BMVJ-NLZS                                    │
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>│                                                                                                                      │
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>│   Waiting up to 5.0 minutes for you to complete the process...                                                       │
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>│                                                                                                                      │
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>Waiting for web login... ━╺━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   3% 0:04:50
+<p>Upon executing the command, a message will appear like:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>╭───────────────────────────────────────────── Waiting for login ──────────────────────────────────────────────────────╮
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>│                                                                                                                      │
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>│   To complete login, please open the following link in a browser:                                                    │
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>│                                                                                                                      │
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>│     http://keycloak.local:8080/realms/jobbergate-local/device?user_code=BMVJ-NLZS                                    │
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>│                                                                                                                      │
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>│   Waiting up to 5.0 minutes for you to complete the process...                                                       │
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>│                                                                                                                      │
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>Waiting for web login... ━╺━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   3% 0:04:50
 </span></code></pre></div>
 <p>Next, you will need to:</p>
 <ol>
@@ -1155,17 +1228,17 @@ Upon executing the command, a message will appear like:</p>
 <li>Return to your terminal</li>
 </ol>
 <p>You should see a message like:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>╭──────────────────────────────────────────────── Logged in! ──────────────────────────────────────────────────────────╮
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>│                                                                                                                      │
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>│   User was logged in with email &#39;local-user@jobbergate.local&#39;                                                        │
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>│                                                                                                                      │
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>╭──────────────────────────────────────────────── Logged in! ──────────────────────────────────────────────────────────╮
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>│                                                                                                                      │
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>│   User was logged in with email &#39;local-user@jobbergate.local&#39;                                                        │
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>│                                                                                                                      │
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 </span></code></pre></div>
 <h2 id="checking-the-auth-token">Checking the Auth Token</h2>
 <p>To get access to the auth token you acquired by logging in, run this command:</p>
-<p><div class="language-shell highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>jobbergate<span class="w"> </span>show-token<span class="w"> </span>--plain
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>jobbergate<span class="w"> </span>show-token<span class="w"> </span>--plain
 </span></code></pre></div>
-Executing this command will display the authentication token in a plain text format, without any additional characters
+<p>Executing this command will display the authentication token in a plain text format, without any additional characters
 or formatting. This makes it easier for you to manually select and copy the token, especially in environments where
 clipboard access might be restricted, such as when using docker-compose or an SSH connection.</p>
 <p>Once the token is displayed, you can copy the token to your clipboard to use with API requests.</p>
