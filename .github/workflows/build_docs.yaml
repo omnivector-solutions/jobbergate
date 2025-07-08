@@ -3,13 +3,14 @@ name: Build Documentation
 on:
   push:
     paths:
-      - 'jobbergate-docs/docs/**'
-      - 'jobbergate-api/jobbergate_api/**'
-      - 'jobbergate-cli/jobbergate_cli/**'
-      - 'jobbergate-core/jobbergate_core/**'
-      - 'jobbergate-agent/jobbergate_agent/**'
+      - "jobbergate-docs/docs/**"
+      - "jobbergate-api/jobbergate_api/**"
+      - "jobbergate-cli/jobbergate_cli/**"
+      - "jobbergate-core/jobbergate_core/**"
+      - "jobbergate-agent/jobbergate_agent/**"
+      - ".github/workflows/build_docs.yaml"
     branches:
-      - 'main'
+      - "main"
 
 jobs:
   build:
