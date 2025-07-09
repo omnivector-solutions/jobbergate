@@ -8,6 +8,7 @@ from functools import cached_property
 from buzz import check_expressions
 from httpx import Client
 from jobbergate_core.auth.handler import JobbergateAuthHandler
+from jobbergate_core.sdk import Apps
 
 from jobbergate_cli.auth import show_login_message, track_login_progress
 from jobbergate_cli.exceptions import Abort
@@ -60,3 +61,10 @@ class JobbergateContext(ContextProtocol):
             login_url_handler=show_login_message,
             login_sequence_handler=track_login_progress,
         )
+
+    @cached_property
+    def sdk(self) -> Apps:
+        """
+        SDK for accessing Jobbergate API.
+        """
+        return Apps(client=self.client)
