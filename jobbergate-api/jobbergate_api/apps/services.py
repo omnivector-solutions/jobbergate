@@ -247,10 +247,19 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
 
         Decomposed into a separate function so that deriving subclasses can add
         additional logic into the query.
+
+        Additional filters can be:
+        - Single values: {"status": "ACTIVE"} -> WHERE status = 'ACTIVE'
+        - Multiple values (collections): {"status": {"ACTIVE", "DONE"}} -> WHERE status IN ('ACTIVE', 'DONE')
+        - Supports lists, tuples, sets: {"status": ["ACTIVE", "DONE"]} -> WHERE status IN ('ACTIVE', 'DONE')
         """
         query = select(self.model_type)
         for key, value in additional_filters.items():
-            query = query.where(self.model_type.__table__.c[key] == value)  # type: ignore
+            column = self.model_type.__table__.c[key]  # type: ignore
+            if isinstance(value, (set, list, tuple)):
+                query = query.where(column.in_(value))
+            else:
+                query = query.where(column == value)
         if not include_archived:
             query = query.where(not_(self.model_type.is_archived))
         if search:
@@ -273,7 +282,11 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
             query = self.model_type.include_parent(query)
         if include_files:
             query = self.model_type.include_files(query)
-        logger.trace(f"Query: {render_sql(self.session, query)}")
+        try:
+            logger.trace(f"Query: {render_sql(self.session, query)}")
+        except Exception:
+            # render_sql might fail with complex query parameters (e.g., sets)
+            logger.trace("Query: <complex query - unable to render>")
         return query
 
     async def paginated_list(self, **filter_kwargs) -> Page[CrudModel]:

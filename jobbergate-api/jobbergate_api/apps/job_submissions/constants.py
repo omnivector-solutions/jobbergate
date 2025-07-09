@@ -19,6 +19,7 @@ class JobSubmissionStatus(AutoNameEnum):
     REJECTED = auto()
     DONE = auto()
     ABORTED = auto()
+    CANCELLED = auto()
 
 
 class SlurmJobState(AutoNameEnum):

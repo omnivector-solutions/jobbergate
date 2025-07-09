@@ -121,7 +121,6 @@ class Settings(BaseSettings):
     METADATA_CONTACT_URL: str = "https://omnivector.solutions"
     METADATA_CONTACT_EMAIL: str = "info@omnivector.solutions"
 
-
     @model_validator(mode="before")
     @classmethod
     def remove_blank_env(cls, values):
