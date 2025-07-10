@@ -11,6 +11,40 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.6.6](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.6.6) - 2025-07-10
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+### Added
+
+- Modified the `configure` hook of the snap so it is possible to configure Sentry variables to enable proper tracing in the agent.
+
+
+## API
+
+No significant changes.
+
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.6.5](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.6.5) - 2025-06-26
 
 ## Core
