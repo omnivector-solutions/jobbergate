@@ -141,13 +141,14 @@ def list_all(
         None,
         help="Filter job-submissions by the job-script-id they were created from.",
     ),
+    include_archived: bool = typer.Option(False, "--include-archived", help="Include archived entries in the results"),
 ):
     """
     Show available job submissions.
     """
     jg_ctx: ContextProtocol = ctx.obj
 
-    params: Dict[str, Any] = dict(user_only=not show_all)
+    params: Dict[str, Any] = dict(user_only=not show_all, include_archived=include_archived)
     if search is not None:
         params["search"] = search
     if sort_order is not SortOrder.UNSORTED:
