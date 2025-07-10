@@ -2,7 +2,7 @@
 JobSubmission resource schema.
 """
 
-from typing import Optional, Self
+from typing import Self
 from datetime import datetime
 from collections.abc import Iterable
 
@@ -119,12 +119,12 @@ class JobSubmissionCreateRequest(BaseModel):
     """
 
     name: LengthLimitedStr
-    description: Optional[LengthLimitedStr] = None
+    description: LengthLimitedStr | None = None
     job_script_id: NonNegativeInt
-    slurm_job_id: Optional[NonNegativeInt] = None
-    execution_directory: Optional[LengthLimitedStr] = None
-    client_id: Optional[LengthLimitedStr] = None
-    sbatch_arguments: Optional[list[LengthLimitedStr]] = Field(None, max_length=50)
+    slurm_job_id: NonNegativeInt | None = None
+    execution_directory: LengthLimitedStr | None = None
+    client_id: LengthLimitedStr | None = None
+    sbatch_arguments: list[LengthLimitedStr] | None = Field(None, max_length=50)
 
     @field_validator("execution_directory", mode="before")
     @classmethod
@@ -140,10 +140,11 @@ class JobSubmissionUpdateRequest(BaseModel):
     Request model for updating JobSubmission instances.
     """
 
-    name: Optional[LengthLimitedStr] = None
-    description: Optional[LengthLimitedStr] = None
-    execution_directory: Optional[LengthLimitedStr] = None
-    status: Optional[JobSubmissionStatus] = None
+    name: LengthLimitedStr | None = None
+    description: LengthLimitedStr | None = None
+    execution_directory: LengthLimitedStr | None = None
+    status: JobSubmissionStatus | None = None
+    is_archived: bool | None = None
 
     @field_validator("execution_directory", mode="before")
     def empty_str_to_none(cls, v):
@@ -160,12 +161,12 @@ class JobSubmissionBaseView(TableResource):
     Omits parent relationship.
     """
 
-    job_script_id: Optional[int] = None
-    slurm_job_id: Optional[int] = None
+    job_script_id: int | None = None
+    slurm_job_id: int | None = None
     client_id: str
     status: JobSubmissionStatus
-    slurm_job_state: Optional[SlurmJobState] = None
-    cloned_from_id: Optional[int] = None
+    slurm_job_state: SlurmJobState | None = None
+    cloned_from_id: int | None = None
 
     model_config = ConfigDict(json_schema_extra=job_submission_meta_mapper)
 
@@ -175,7 +176,7 @@ class JobSubmissionListView(JobSubmissionBaseView):
     Complete model to match the database for the JobSubmission resource in a list view.
     """
 
-    job_script: Optional[JobScriptBaseView] = None
+    job_script: JobScriptBaseView | None = None
 
 
 class JobSubmissionDetailedView(JobSubmissionBaseView):
@@ -183,10 +184,10 @@ class JobSubmissionDetailedView(JobSubmissionBaseView):
     Complete model to match the database for the JobSubmission resource in a detailed view.
     """
 
-    execution_directory: Optional[str]
-    report_message: Optional[str]
-    slurm_job_info: Optional[str]
-    sbatch_arguments: Optional[list[str]]
+    execution_directory: str | None
+    report_message: str | None
+    slurm_job_info: str | None
+    sbatch_arguments: list[str] | None
 
 
 class PendingJobSubmission(BaseModel):
@@ -199,10 +200,10 @@ class PendingJobSubmission(BaseModel):
     id: int
     name: str
     owner_email: str
-    execution_directory: Optional[str] = None
+    execution_directory: str | None = None
     execution_parameters: dict = Field(default_factory=dict)
     job_script: JobScriptDetailedView
-    sbatch_arguments: Optional[list[str]] = None
+    sbatch_arguments: list[str] | None = None
 
     model_config = ConfigDict(
         from_attributes=True, extra="ignore", json_schema_extra=job_submission_meta_mapper
@@ -227,7 +228,7 @@ class JobSubmissionAgentSubmittedRequest(BaseModel):
     slurm_job_id: NonNegativeInt
     slurm_job_state: SlurmJobState
     slurm_job_info: str
-    slurm_job_state_reason: Optional[str] = None
+    slurm_job_state_reason: str | None = None
 
     model_config = ConfigDict(json_schema_extra=job_submission_meta_mapper)
 
@@ -247,7 +248,7 @@ class JobSubmissionAgentUpdateRequest(BaseModel):
     slurm_job_id: NonNegativeInt
     slurm_job_state: SlurmJobState
     slurm_job_info: str
-    slurm_job_state_reason: Optional[str] = None
+    slurm_job_state_reason: str | None = None
 
     model_config = ConfigDict(json_schema_extra=job_submission_meta_mapper)
 
@@ -281,8 +282,8 @@ class JobSubmissionMetricSchema(BaseModel):
 
     time: int | datetime
     node_host: str
-    step: Optional[int] = None
-    task: Optional[int] = None
+    step: int | None = None
+    task: int | None = None
     cpu_frequency: int | float
     cpu_time: float
     cpu_utilization: float
@@ -335,5 +336,5 @@ class JobProgressDetail(BaseModel):
     id: int
     job_submission_id: int
     timestamp: datetime
-    slurm_job_state: Optional[str] = None
-    additional_info: Optional[str] = None
+    slurm_job_state: str | None = None
+    additional_info: str | None = None

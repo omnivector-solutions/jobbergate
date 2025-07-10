@@ -184,10 +184,7 @@ async def job_submission_get_list(
     """List job_submissions for the authenticated user."""
     logger.debug("Fetching job submissions")
 
-    list_kwargs = list_params.model_dump(
-        exclude_unset=True,
-        exclude={"user_only", "include_archived"},
-    )
+    list_kwargs = list_params.model_dump(exclude_unset=True, exclude={"user_only"})
     list_kwargs["include_parent"] = True
 
     if list_params.user_only:

@@ -680,30 +680,6 @@ async def test_get_job_submissions__user_only(
     assert unpack_response(response, key="name", sort=True) == ["sub1", "sub3"]
 
 
-async def test_get_job_submissions__include_archived(
-    client,
-    fill_all_job_submission_data,
-    inject_security_header,
-    synth_session,
-    unpack_response,
-    synth_services,
-):
-    """
-    Test that the is archived field makes no effect when listing job_submissions.
-
-    The archive feature is shared across all tables, but it is not planned to work on job submissions yet,
-    ir order to keep feature parity with version 3.x. It may be implemented in the future.
-    """
-    all_create_data = fill_all_job_submission_data({"is_archived": False}, {"is_archived": True})
-
-    for create_data in all_create_data:
-        await synth_services.crud.job_submission.create(**create_data)
-
-    inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_READ)
-    response = await client.get("/jobbergate/job-submissions", params=dict(user_only=False))
-    assert unpack_response(response, key="is_archived", sort=True) == [False, True]
-
-
 async def test_get_job_submissions__from_job_script_id(
     client,
     fill_job_script_data,
