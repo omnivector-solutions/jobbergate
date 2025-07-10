@@ -69,6 +69,7 @@ def list_all(
     search: Optional[str] = typer.Option(None, help="Apply a search term to results"),
     sort_order: SortOrder = typer.Option(SortOrder.DESCENDING, help="Specify sort order"),
     sort_field: Optional[str] = typer.Option("id", help="The field by which results should be sorted"),
+    include_archived: bool = typer.Option(False, "--include-archived", help="Include archived entries in the results"),
 ):
     """
     Show available applications
@@ -78,6 +79,7 @@ def list_all(
     params: Dict[str, Any] = dict(
         include_null_identifier=show_all,
         user_only=user_only,
+        include_archived=include_archived,
     )
     if search is not None:
         params["search"] = search
@@ -243,13 +245,18 @@ def update(
         None,
         help="Optional new application name to be set",
     ),
+    is_archived: Optional[bool] = typer.Option(
+        None,
+        "--is-archived",
+        help="Optional value to update is_archived field on this entry",
+    ),
 ):
     """
     Update an existing application.
     """
     identification = resolve_application_selection(id_or_identifier, id, identifier)
 
-    req_data = dict()
+    req_data: dict[str, Any] = dict()
 
     if update_identifier:
         req_data["identifier"] = update_identifier
@@ -259,6 +266,9 @@ def update(
 
     if application_name:
         req_data["name"] = application_name
+
+    if is_archived is not None:
+        req_data["is_archived"] = is_archived
 
     jg_ctx: ContextProtocol = ctx.obj
 

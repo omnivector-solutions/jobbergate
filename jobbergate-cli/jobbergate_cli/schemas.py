@@ -243,6 +243,7 @@ class JobSubmissionResponse(pydantic.BaseModel, extra="ignore"):
     status: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    is_archived: Optional[bool] = None
     report_message: Optional[str] = None
     sbatch_arguments: Optional[list[str]] = None
     cloned_from_id: Optional[int] = None

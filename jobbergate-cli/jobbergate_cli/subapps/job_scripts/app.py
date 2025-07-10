@@ -60,13 +60,14 @@ def list_all(
         None,
         help="Filter job-scripts by the application-id they were created from.",
     ),
+    include_archived: bool = typer.Option(False, "--include-archived", help="Include archived entries in the results"),
 ):
     """
     Show available job scripts
     """
     jg_ctx: ContextProtocol = ctx.obj
 
-    params: Dict[str, Any] = dict(user_only=not show_all)
+    params: Dict[str, Any] = dict(user_only=not show_all, include_archived=include_archived)
     if search is not None:
         params["search"] = search
     if sort_order is not SortOrder.UNSORTED:
@@ -417,6 +418,11 @@ def update(
         None,
         help="Optional new text describing the job script.",
     ),
+    is_archived: Optional[bool] = typer.Option(
+        None,
+        "--is-archived",
+        help="Optional value to update is_archived field on this entry",
+    ),
 ):
     """
     Update an existing job script.
@@ -424,11 +430,13 @@ def update(
     jg_ctx: ContextProtocol = ctx.obj
     id = resolve_selection(id, id_option)
 
-    update_params: Dict[str, Any] = dict()
+    update_params: dict[str, Any] = dict()
     if name is not None:
         update_params.update(name=name)
     if description is not None:
         update_params.update(description=description)
+    if is_archived is not None:
+        update_params.update(is_archived=is_archived)
 
     job_script_result = cast(
         JobScriptResponse,
