@@ -31,6 +31,11 @@ AGENT_VARIABLES_MAP: dict[str, Union[str, int]] = {
     "INFLUX_TIMEOUT": "",
     "INFLUX_UDP_PORT": 4444,
     "INFLUX_CERT_PATH": "",
+    "SENTRY_DSN": "",
+    "SENTRY_ENV": "snap-env",
+    "SENTRY_TRACES_SAMPLE_RATE": "0.01",
+    "SENTRY_SAMPLE_RATE": "0.25",
+    "SENTRY_PROFILING_SAMPLE_RATE": "0.01",
 }
 
 
