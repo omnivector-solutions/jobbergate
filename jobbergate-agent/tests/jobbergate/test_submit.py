@@ -28,7 +28,8 @@ from jobbergate_agent.jobbergate.submit import (
 )
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError
-from jobbergate_agent.utils.user_mapper import SingleUserMapper, SlurmUserMapper, manufacture
+from jobbergate_agent.user_mapper.base import SlurmUserMapper, manufacture
+from jobbergate_agent.user_mapper.single_user import SingleUserMapper
 
 
 class RegexArgMatcher:
