@@ -25,7 +25,7 @@ from jobbergate_agent.jobbergate.update import fetch_job_data
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError
 from jobbergate_agent.utils.logging import log_error
-from jobbergate_agent.utils.user_mapper import SlurmUserMapper, manufacture
+from jobbergate_agent.user_mapper.base import SlurmUserMapper, manufacture
 
 
 async def retrieve_submission_file(file: JobScriptFile) -> str:
