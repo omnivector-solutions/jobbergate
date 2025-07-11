@@ -5,8 +5,7 @@ summary: The Jobbergate Agent snap
 adopt-info: jobbergate-agent
 license: MIT
 description: |
-  The Jobbergate Agent Snap deploys the Jobbergate Agent Python package on your host system. This agent
-  is an essencial component of the Jobbergate platform for managing and submitting jobs to HPC clusters.
+  The Jobbergate Agent Snap deploys the Jobbergate Agent Python package on your host system.
 
   This snap requires a few configuration values to be set before it can be used. These values are:
   - base-api-url: The URL of the Jobbergate API server where the agent will send its data. Setting/unsetting this value is more interesting when using the snap in a development environment; do not change it otherwise.
