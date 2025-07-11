@@ -36,6 +36,18 @@ The optional values are:
 
 - write-submission-files: A boolean value (true, false) that indicates whether the agent should write submission files to disk. This is optional and defaults to false.
 
+Sentry's configuration:
+
+- sentry-dsn: The Sentry DSN in case you want to enable error reporting to Sentry. This is optional and defaults to an empty string.
+
+- sentry-env: The Sentry environment in case you want to enable error reporting to Sentry. This is optional and defaults to `snap-env`.
+
+- sentry-traces-sample-rate: The Sentry traces sample rate in case you want to enable error reporting to Sentry. This is optional and defaults to `0.01`.
+
+- sentry-sample-rate: The Sentry sample rate in case you want to enable error reporting to Sentry. This is optional and defaults to `0.25`.
+
+- sentry-profiling-sample-rate: The Sentry profiling sample rate in case you want to enable error reporting to Sentry. This is optional and defaults to `0.01`.
+
 Any configuration can be set using the *snap* command line, e.g.:
 ```bash
 sudo snap set jobbergate-agent oidc-client-id=foo
