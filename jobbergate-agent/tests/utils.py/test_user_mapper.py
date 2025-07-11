@@ -1,6 +1,7 @@
 import pytest
 
-from jobbergate_agent.utils.user_mapper import SingleUserMapper, manufacture
+from jobbergate_agent.user_mapper.base import manufacture
+from jobbergate_agent.user_mapper.single_user import SingleUserMapper
 
 
 class TestSingleUserMapper:
