@@ -11,6 +11,48 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.7.1](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.7.1) - 2025-07-11
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+### Added
+
+- Modified the `configure` hook of the snap so it is possible to configure Sentry variables to enable proper tracing in the agent.
+
+### Fixed
+
+- Adjusted the number of characters in the snap description.
+
+
+## API
+
+### Fixed
+
+- The field `is_archived` was added on job-submission update route and `include_archived` parameter was added to its listing route ([PR #812](https://github.com/omnivector-solutions/jobbergate/pull/812))
+
+
+## CLI
+
+### Fixed
+
+- Update commands accepting the `is_archived` field to allow updates and `include_archived` option is added to listing commands ([PR #812](https://github.com/omnivector-solutions/jobbergate/pull/812))
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.7.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.7.0) - 2025-06-30
 
 ## Core
