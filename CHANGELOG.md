@@ -11,6 +11,40 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.6.7](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.6.7) - 2025-07-11
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+### Fixed
+
+- Adjusted the number of characters in the snap description.
+
+
+## API
+
+No significant changes.
+
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.6.6](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.6.6) - 2025-07-10
 
 ## Core
