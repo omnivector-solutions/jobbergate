@@ -217,7 +217,8 @@ class ActiveJobSubmission(BaseModel):
 
     id: int
     name: str
-    slurm_job_id: int
+    status: JobSubmissionStatus
+    slurm_job_id: int | None
     model_config = ConfigDict(from_attributes=True, extra="ignore")
 
 
