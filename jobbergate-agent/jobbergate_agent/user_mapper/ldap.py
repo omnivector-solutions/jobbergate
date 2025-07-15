@@ -56,15 +56,21 @@ def ldap_connection(ldap_settings: LDAPSettings) -> Iterator[Connection]:
         auto_bind="NONE",
         client_strategy=RESTARTABLE,
     )
-    msad_ldap_conn.start_tls()
-    if not msad_ldap_conn.bind():
-        raise RuntimeError("Couldn't open a connection to MSAD")
-    logger.debug("Connected to MSAD server")
 
-    yield msad_ldap_conn
+    try:
+        msad_ldap_conn.start_tls()
+        if not msad_ldap_conn.bind():
+            raise RuntimeError("Couldn't open a connection to MSAD")
 
-    msad_ldap_conn.unbind()
-    logger.debug("Closed connection to MSAD server")
+        logger.debug("Connected to MSAD server")
+        yield msad_ldap_conn
+
+    finally:
+        try:
+            msad_ldap_conn.unbind()
+            logger.debug("Closed connection to MSAD server")
+        except Exception as e:
+            logger.warning(f"Error during connection cleanup: {e}")
 
 
 def get_msad_user_details(email: str, ldap_settings: LDAPSettings) -> UserDetails:
@@ -93,7 +99,7 @@ def get_msad_user_details(email: str, ldap_settings: LDAPSettings) -> UserDetail
         return UserDetails(uid=uid, email=email)
     except Exception as e:
         logger.debug(f"Received {match=}")
-        raise ValueError(f"Failed to extract data for {uid=}; {email=} -- {e}") from e
+        raise ValueError(f"Failed to extract data from LDAP entry: {e}") from e
 
 
 @dataclass
