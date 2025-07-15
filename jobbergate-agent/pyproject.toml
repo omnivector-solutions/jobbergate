@@ -43,7 +43,7 @@ self-update = "jobbergate_agent.tasks:self_update_task"
 
 [tool.poetry.plugins.'jobbergate_agent.user_mapper']
 single-user-mapper = "jobbergate_agent.user_mapper.single_user:SingleUserMapper"
-ldap-user-mapper = "jobbergate_agent.user_mapper.ldap:user_mapper_factory"
+ldap-cached-mapper = "jobbergate_agent.user_mapper.ldap:user_mapper_factory"
 
 [project.urls]
 Repository = "https://github.com/omnivector-solutions/jobbergate"
