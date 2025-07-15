@@ -20,13 +20,15 @@ from jobbergate_agent.utils.compute import (
 
 
 @pytest.fixture()
-def generate_and_aggregate_job_metrics_data() -> Callable[
-    [int, int, int, int, int],
-    tuple[
-        list[InfluxDBPointDict],
-        JobMetricData,
-    ],
-]:
+def generate_and_aggregate_job_metrics_data() -> (
+    Callable[
+        [int, int, int, int, int],
+        tuple[
+            list[InfluxDBPointDict],
+            JobMetricData,
+        ],
+    ]
+):
     """
     Generates sample InfluxDB data and its aggregated counterpart.
 
