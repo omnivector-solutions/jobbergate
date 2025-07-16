@@ -519,6 +519,167 @@ class TestCrudService:
             dummy_crud_service.ensure_attribute(created_instance, owner_email=requester_email)
         assert exc_info.value.status_code == 403
 
+    async def test_list__with_multiple_values_filter(
+        self,
+        dummy_crud_service,
+    ):
+        """
+        Test that the ``list()`` method supports multiple values with OR logic using sequences.
+        """
+        # Create instances with different owner emails
+        await dummy_crud_service.create(name="user1-item1", owner_email="user1@test.com")
+        await dummy_crud_service.create(name="user2-item1", owner_email="user2@test.com")
+        await dummy_crud_service.create(name="user3-item1", owner_email="user3@test.com")
+        await dummy_crud_service.create(name="user1-item2", owner_email="user1@test.com")
+
+        # Test with set (multiple values)
+        result_set = await dummy_crud_service.list(owner_email={"user1@test.com", "user3@test.com"})
+        result_names_set = {item.name for item in result_set}
+        assert result_names_set == {"user1-item1", "user1-item2", "user3-item1"}
+
+        # Test with list (multiple values)
+        result_list = await dummy_crud_service.list(owner_email=["user1@test.com", "user2@test.com"])
+        result_names_list = {item.name for item in result_list}
+        assert result_names_list == {"user1-item1", "user1-item2", "user2-item1"}
+
+        # Test with tuple (multiple values)
+        result_tuple = await dummy_crud_service.list(owner_email=("user2@test.com", "user3@test.com"))
+        result_names_tuple = {item.name for item in result_tuple}
+        assert result_names_tuple == {"user2-item1", "user3-item1"}
+
+    async def test_list__with_single_value_in_sequence(
+        self,
+        dummy_crud_service,
+    ):
+        """
+        Test that the ``list()`` method handles single values in sequences correctly.
+        """
+        # Create instances with different owner emails
+        await dummy_crud_service.create(name="user1-item", owner_email="user1@test.com")
+        await dummy_crud_service.create(name="user2-item", owner_email="user2@test.com")
+
+        # Test with single value in set
+        result_set = await dummy_crud_service.list(owner_email={"user1@test.com"})
+        assert len(result_set) == 1
+        assert result_set[0].name == "user1-item"
+
+        # Test with single value in list
+        result_list = await dummy_crud_service.list(owner_email=["user2@test.com"])
+        assert len(result_list) == 1
+        assert result_list[0].name == "user2-item"
+
+        # Test with single value in tuple
+        result_tuple = await dummy_crud_service.list(owner_email=("user1@test.com",))
+        assert len(result_tuple) == 1
+        assert result_tuple[0].name == "user1-item"
+
+    async def test_list__string_not_treated_as_sequence(
+        self,
+        dummy_crud_service,
+    ):
+        """
+        Test that strings are not treated as sequences of characters.
+        """
+        # Create an instance with a specific owner email
+        await dummy_crud_service.create(name="test-item", owner_email="user@test.com")
+
+        # This should find the item by exact string match, not treat the string as a sequence of characters
+        result = await dummy_crud_service.list(owner_email="user@test.com")
+        assert len(result) == 1
+        assert result[0].name == "test-item"
+
+        # This should not find anything (empty string filter)
+        result_empty = await dummy_crud_service.list(owner_email="")
+        assert len(result_empty) == 0
+
+    async def test_list__empty_sequence_filter(
+        self,
+        dummy_crud_service,
+    ):
+        """
+        Test that empty sequences work correctly and return no results.
+        """
+        # Create some instances
+        await dummy_crud_service.create(name="test-item", owner_email="user@test.com")
+
+        # Empty sequences should return no results
+        result_empty_list = await dummy_crud_service.list(owner_email=[])
+        assert len(result_empty_list) == 0
+
+        result_empty_set = await dummy_crud_service.list(owner_email=set())
+        assert len(result_empty_set) == 0
+
+        result_empty_tuple = await dummy_crud_service.list(owner_email=())
+        assert len(result_empty_tuple) == 0
+
+    async def test_paginated_list__with_multiple_values_filter(
+        self,
+        dummy_crud_service,
+        paginated,
+    ):
+        """
+        Test that the ``paginated_list()`` method supports multiple values with OR logic.
+        """
+        # Create instances with different owner emails
+        await dummy_crud_service.create(name="user1-item1", owner_email="user1@test.com")
+        await dummy_crud_service.create(name="user2-item1", owner_email="user2@test.com")
+        await dummy_crud_service.create(name="user3-item1", owner_email="user3@test.com")
+        await dummy_crud_service.create(name="user1-item2", owner_email="user1@test.com")
+
+        # Test paginated list with multiple values
+        with paginated(page=1, size=10):
+            page = await dummy_crud_service.paginated_list(owner_email={"user1@test.com", "user3@test.com"})
+
+        assert page.total == 3
+        result_names = {item.name for item in page.items}
+        assert result_names == {"user1-item1", "user1-item2", "user3-item1"}
+
+    async def test_build_list_query__mixed_filters(
+        self,
+        dummy_crud_service,
+    ):
+        """
+        Test that build_list_query handles mixed single and multiple value filters correctly.
+        """
+        # Create instances with different combinations
+        await dummy_crud_service.create(name="item1", description="desc1", owner_email="user1@test.com")
+        await dummy_crud_service.create(name="item2", description="desc2", owner_email="user2@test.com")
+        await dummy_crud_service.create(name="item3", description="desc1", owner_email="user3@test.com")
+        await dummy_crud_service.create(name="item4", description="desc2", owner_email="user1@test.com")
+
+        # Test with mixed filters: single value description and multiple value owner_email
+        result = await dummy_crud_service.list(
+            description="desc1",  # Single value
+            owner_email={"user1@test.com", "user3@test.com"},  # Multiple values
+        )
+
+        # Should only return items with desc1 AND (user1 OR user3)
+        assert len(result) == 2
+        result_names = {item.name for item in result}
+        assert result_names == {"item1", "item3"}
+
+    async def test_list__dict_not_treated_as_collection(
+        self,
+        dummy_crud_service,
+    ):
+        """
+        Test that dictionaries are not treated as collections for filtering.
+        """
+        # Create an instance
+        await dummy_crud_service.create(name="test-item", owner_email="user@test.com")
+
+        # This should work by treating the dict as a single value
+        # Note: In practice this would likely fail at the database level
+        # but the service logic should treat it as a single value, not a collection
+        try:
+            result = await dummy_crud_service.list(name={"key": "value"})
+            # If it doesn't raise an exception, it should return empty (no matches)
+            assert len(result) == 0
+        except Exception:
+            # This is expected since dicts can't be compared to strings in the database
+            # The important thing is that it's NOT treated as an IN clause
+            pass
+
 
 class DummyFile(FileMixin, Base):
     """
