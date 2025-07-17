@@ -5,7 +5,7 @@ from textwrap import dedent
 from typing import List, get_args
 
 import msgpack
-from jobbergate_core.tools.sbatch import InfoHandler
+from jobbergate_core.tools.sbatch import InfoHandler, ScancelHandler
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
@@ -22,7 +22,7 @@ from jobbergate_agent.jobbergate.schemas import (
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobbergateApiError, SbatchError, JobbergateAgentError
 from jobbergate_agent.utils.logging import log_error
-from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT
+from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT, JobSubmissionStatus
 from jobbergate_agent.utils.compute import aggregate_influx_measures
 
 
@@ -213,12 +213,30 @@ async def update_active_jobs() -> None:
     logger.debug("Started updating slurm job data for active jobs...")
 
     sbatch_handler = InfoHandler(scontrol_path=SETTINGS.SCONTROL_PATH)
+    scancel_handler = ScancelHandler(scancel_path=SETTINGS.SCANCEL_PATH)
 
     logger.debug("Fetching active jobs")
     active_job_submissions = await fetch_active_submissions()
 
     skip = "skipping to next active job"
     for active_job_submission in active_job_submissions:
+        if active_job_submission.status == JobSubmissionStatus.CANCELLED:
+            if active_job_submission.slurm_job_id:
+                logger.debug(f"Cancelling slurm job {active_job_submission.slurm_job_id}")
+                try:
+                    scancel_handler.cancel_job(active_job_submission.slurm_job_id)
+                except RuntimeError as e:
+                    logger.error(f"Failed to cancel slurm job {active_job_submission.slurm_job_id}: {e}")
+            else:
+                await update_job_data(
+                    active_job_submission.id,
+                    SlurmJobData(
+                        job_state="CANCELLED",
+                        state_reason="Job was cancelled by the user before slurm job was created",
+                    ),
+                )
+                continue
+
         if SETTINGS.influx_integration_enabled:
             logger.debug(f"Updating job metrics for job_submission {active_job_submission.id}")
             try:

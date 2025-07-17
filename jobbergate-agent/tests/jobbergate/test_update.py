@@ -297,6 +297,9 @@ async def test_update_active_jobs(
     mocked_sbatch = mock.MagicMock()
     mocker.patch("jobbergate_agent.jobbergate.update.InfoHandler", return_value=mocked_sbatch)
 
+    mocked_scancel = mock.MagicMock()
+    mocker.patch("jobbergate_agent.jobbergate.update.ScancelHandler", return_value=mocked_scancel)
+
     mocked_influxdb_client = mock.MagicMock()
     mocker.patch("jobbergate_agent.jobbergate.update.influxdb_client", return_value=mocked_influxdb_client)
 
