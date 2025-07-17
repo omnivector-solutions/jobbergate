@@ -157,3 +157,22 @@ class SubmissionHandler:
             logger.error(message)
             raise RuntimeError(message) from e
         return destination_file
+
+
+@dataclass(frozen=True)
+class ScancelHandler:
+    """Cancels jobs on the cluster."""
+
+    scancel_path: Path = Path("/usr/bin/scancel")
+    subprocess_handler: SubprocessHandler = field(default_factory=SubprocessHandler)
+
+    def __post_init__(self):
+        with check_expressions("Check paths", raise_exc_class=ValueError) as check:
+            check(self.scancel_path.is_absolute(), "scancel_path is not an absolute path")
+            check(self.scancel_path.exists(), "scancel_path does not exist")
+
+    def cancel_job(self, slurm_id: int) -> None:
+        """Cancels a job with the given slurm id."""
+        command = (self.scancel_path.as_posix(), str(slurm_id))
+        self.subprocess_handler.run(command, capture_output=True, text=True)
+        logger.debug(f"Cancelled job with {slurm_id=}")
