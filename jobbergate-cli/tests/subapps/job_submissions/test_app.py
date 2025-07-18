@@ -7,6 +7,7 @@ import pytest
 from jobbergate_cli.schemas import JobSubmissionResponse
 from jobbergate_cli.subapps.job_submissions.app import (
     HIDDEN_FIELDS,
+    cancel,
     clone,
     create,
     delete,
@@ -213,5 +214,49 @@ class TestCloneJobSubmission:
             dummy_context,
             JobSubmissionResponse(**job_submission_data),
             title="Cloned Job Submission",
+            hidden_fields=HIDDEN_FIELDS,
+        )
+
+
+class TestCancelJobSubmission:
+    @pytest.mark.parametrize("selector_template", ["{id}", "-i {id}", "--id={id}", "--id {id}"])
+    def test_cancel__success(
+        self,
+        respx_mock,
+        make_test_app,
+        dummy_job_submission_data,
+        dummy_domain,
+        dummy_context,
+        cli_runner,
+        mocker,
+        selector_template,
+    ):
+        """
+        Test that the cancel application subcommand works as expected.
+        """
+
+        job_submission_data = dummy_job_submission_data[0]
+        id = job_submission_data["id"]
+
+        cli_selector = selector_template.format(id=id)
+
+        cancel_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-submissions/cancel/{id}").mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                json=job_submission_data,
+            ),
+        )
+        mocked_render = mocker.patch("jobbergate_cli.subapps.job_submissions.app.render_single_result")
+
+        test_app = make_test_app("cancel", cancel)
+        result = cli_runner.invoke(test_app, shlex.split(f"cancel {cli_selector}"))
+
+        assert cancel_route.called
+
+        assert result.exit_code == 0, f"cancel failed: {result.stdout}"
+        mocked_render.assert_called_once_with(
+            dummy_context,
+            JobSubmissionResponse(**job_submission_data),
+            title="Cancelled Job Submission",
             hidden_fields=HIDDEN_FIELDS,
         )
