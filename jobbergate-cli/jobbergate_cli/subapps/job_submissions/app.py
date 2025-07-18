@@ -243,7 +243,7 @@ def delete(
 @app.command()
 def clone(
     ctx: typer.Context,
-    id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be updated."),
+    id: Optional[int] = typer.Argument(None, help="The specific id of the job submission to be updated."),
     id_option: Optional[int] = typer.Option(
         None,
         "--id",
@@ -257,7 +257,7 @@ def clone(
     jg_ctx: ContextProtocol = ctx.obj
     id = resolve_selection(id, id_option)
 
-    job_script_result = cast(
+    job_submission_result = cast(
         JobSubmissionResponse,
         make_request(
             jg_ctx.client,
@@ -272,7 +272,40 @@ def clone(
 
     render_single_result(
         jg_ctx,
-        job_script_result,
+        job_submission_result,
         hidden_fields=HIDDEN_FIELDS,
         title="Cloned Job Submission",
+    )
+
+
+@app.command()
+def cancel(
+    ctx: typer.Context,
+    id: Optional[int] = typer.Argument(None, help="The specific id of the job submission to be cancelled."),
+    id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id"),
+):
+    """
+    Cancel an existing job submission.
+    """
+    jg_ctx: ContextProtocol = ctx.obj
+    id = resolve_selection(id, id_option)
+
+    job_submission_result = cast(
+        JobSubmissionResponse,
+        make_request(
+            jg_ctx.client,
+            f"/jobbergate/job-submissions/cancel/{id}",
+            "PUT",
+            expected_status=200,
+            abort_message="Couldn't cancel job submission",
+            support=True,
+            response_model_cls=JobSubmissionResponse,
+        ),
+    )
+
+    render_single_result(
+        jg_ctx,
+        job_submission_result,
+        hidden_fields=HIDDEN_FIELDS,
+        title="Cancelled Job Submission",
     )
