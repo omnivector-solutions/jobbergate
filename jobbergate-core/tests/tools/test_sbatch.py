@@ -6,7 +6,7 @@ from textwrap import dedent
 
 import pytest
 
-from jobbergate_core.tools.sbatch import InfoHandler, SubmissionHandler, inject_sbatch_params
+from jobbergate_core.tools.sbatch import InfoHandler, ScancelHandler, SubmissionHandler, inject_sbatch_params
 
 
 @pytest.fixture()
@@ -22,6 +22,11 @@ def scontrol_path(tmp_path):
     path.write_text("#!/bin/bash\n")
     return path
 
+@pytest.fixture()
+def scancel_path(tmp_path):
+    path = tmp_path / "scancel"
+    path.write_text("#!/bin/bash\n")
+    return path
 
 class TestSubmissionHandler:
     @pytest.mark.parametrize(
@@ -269,3 +274,34 @@ class TestInjectSbatchParameters:
             job_script_data_as_string, sbatch_params, "Sbatch params injected at rendering time"
         )
         assert actual_result == expected_result
+
+class TestScancelHandler:
+    def test_run__success(self, mocker, scancel_path):
+        response = subprocess.CompletedProcess(args=[], stdout="", returncode=0)
+        mocked_run = mocker.patch("jobbergate_core.tools.sbatch.subprocess.run", return_value=response)
+
+        sbatch_handler = ScancelHandler(scancel_path=scancel_path)
+
+        sbatch_handler.cancel_job(123)
+
+        mocked_run.assert_called_once_with(
+            (scancel_path.as_posix(), "123"),
+            check=True,
+            shell=False,
+            capture_output=True,
+            text=True,
+        )
+    
+    def test_run__fail_on_scancel_error(self, mocker, scancel_path):
+        mocker.patch(
+            "jobbergate_core.tools.sbatch.subprocess.run",
+            side_effect=subprocess.CalledProcessError(1, "scancel", stderr="Error: Invalid argument"),
+        )
+
+        sbatch_handler = ScancelHandler(scancel_path=scancel_path)
+
+        with pytest.raises(
+            RuntimeError,
+            match="^Failed to run command with code 1: Error: Invalid argument",
+        ):
+            sbatch_handler.cancel_job(123)

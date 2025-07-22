@@ -1,29 +1,129 @@
 import asyncio
 import json
-from itertools import chain
+from abc import ABC, abstractmethod
+from itertools import chain, product
 from textwrap import dedent
 from typing import List, get_args
 
 import msgpack
-from jobbergate_core.tools.sbatch import InfoHandler
+from jobbergate_core.tools.sbatch import InfoHandler, ScancelHandler
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
 from jobbergate_agent.clients.influx import influxdb_client
+from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT, JobSubmissionStatus
 from jobbergate_agent.jobbergate.pagination import fetch_paginated_result
 from jobbergate_agent.jobbergate.schemas import (
     ActiveJobSubmission,
-    SlurmJobData,
-    JobSubmissionMetricsMaxResponse,
+    InfluxDBGenericMeasurementDict,
     InfluxDBMeasurementDict,
     InfluxDBPointDict,
-    InfluxDBGenericMeasurementDict,
+    JobSubmissionMetricsMaxResponse,
+    SlurmJobData,
 )
 from jobbergate_agent.settings import SETTINGS
-from jobbergate_agent.utils.exception import JobbergateApiError, SbatchError, JobbergateAgentError
-from jobbergate_agent.utils.logging import log_error
-from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT
 from jobbergate_agent.utils.compute import aggregate_influx_measures
+from jobbergate_agent.utils.exception import JobbergateAgentError, JobbergateApiError, SbatchError
+from jobbergate_agent.utils.logging import log_error
+
+
+class JobProcessStrategyABC(ABC):
+    """
+    Base class for job process strategies.
+    """
+
+    def __init__(self, data: ActiveJobSubmission):
+        self.data = data
+
+    @abstractmethod
+    def need_to_run(self) -> bool:
+        raise NotImplementedError("Subclasses must implement the need_to_run method.")
+
+    @abstractmethod
+    async def run(self) -> None:
+        raise NotImplementedError("Subclasses must implement the run method.")
+
+
+class PendingJobCancellationStrategy(JobProcessStrategyABC):
+    """
+    Strategy for handling pending job cancellations.
+    """
+
+    def need_to_run(self) -> bool:
+        return self.data.status == JobSubmissionStatus.CANCELLED and self.data.slurm_job_id is None
+
+    async def run(self) -> None:
+        logger.debug(f"Updating job submission {self.data.id} to cancelled state")
+        await update_job_data(
+            self.data.id,
+            SlurmJobData(
+                job_state="CANCELLED",
+                state_reason="Job was cancelled by the user before a slurm job was created",
+            ),
+        )
+
+
+class ActiveJobCancellationStrategy(JobProcessStrategyABC):
+    """
+    Strategy for canceling jobs.
+    """
+
+    def need_to_run(self) -> bool:
+        return self.data.status == JobSubmissionStatus.CANCELLED and self.data.slurm_job_id is not None
+
+    async def run(self) -> None:
+        if self.data.slurm_job_id is None:
+            logger.error(f"Cannot cancel job for job submission {self.data.id}: slurm_job_id is None")
+            return
+
+        logger.debug(f"Cancelling job for job submission {self.data.id}")
+        scancel_handler = ScancelHandler(scancel_path=SETTINGS.SCANCEL_PATH)
+        try:
+            scancel_handler.cancel_job(self.data.slurm_job_id)
+        except RuntimeError as e:
+            logger.error(f"Failed to cancel slurm job {self.data.slurm_job_id}: {e}")
+
+
+class JobMetricsStrategy(JobProcessStrategyABC):
+    """
+    Strategy for updating job metrics.
+    """
+
+    def need_to_run(self) -> bool:
+        return SETTINGS.influx_integration_enabled and self.data.slurm_job_id is not None
+
+    async def run(self) -> None:
+        logger.debug(f"Updating job metrics for job submission {self.data.id}")
+        try:
+            await update_job_metrics(self.data)
+        except Exception:
+            logger.error("Update job metrics failed... skipping for job data update")
+
+
+class JobDataUpdateStrategy(JobProcessStrategyABC):
+    """
+    Strategy for updating job data.
+    """
+
+    def need_to_run(self) -> bool:
+        return self.data.slurm_job_id is not None
+
+    async def run(self) -> None:
+        if self.data.slurm_job_id is None:
+            logger.error(f"Cannot update job data for job submission {self.data.id}: slurm_job_id is None")
+            return
+
+        scontrol_handler = InfoHandler(scontrol_path=SETTINGS.SCONTROL_PATH)
+        try:
+            slurm_job_data: SlurmJobData = await fetch_job_data(self.data.slurm_job_id, scontrol_handler)
+        except Exception as e:
+            logger.error(f"Failed to update job data for job submission {self.data.id}: {e}")
+            return
+
+        try:
+            await update_job_data(self.data.id, slurm_job_data)
+        except Exception:
+            logger.error("API update failed...")
 
 
 async def fetch_job_data(slurm_job_id: int, info_handler: InfoHandler) -> SlurmJobData:
@@ -51,6 +151,7 @@ async def fetch_active_submissions() -> List[ActiveJobSubmission]:
     """
     Retrieve a list of active job_submissions.
     """
+    logger.debug("Fetching active jobs")
     with JobbergateApiError.handle_errors("Failed to fetch active job submissions", do_except=log_error):
         results = await fetch_paginated_result(
             url="/jobbergate/job-submissions/agent/active",
@@ -157,6 +258,10 @@ async def update_job_metrics(active_job_submittion: ActiveJobSubmission) -> None
 
     This function fetches the metrics from InfluxDB and sends to the API.
     """
+    if active_job_submittion.slurm_job_id is None:
+        logger.error(f"Cannot update job metrics for job submission {active_job_submittion.id}: slurm_job_id is None")
+        return
+
     with JobbergateApiError.handle_errors(
         f"Could not update job metrics for slurm job {active_job_submittion.slurm_job_id} via the API",
         do_except=log_error,
@@ -212,32 +317,18 @@ async def update_active_jobs() -> None:
     """
     logger.debug("Started updating slurm job data for active jobs...")
 
-    sbatch_handler = InfoHandler(scontrol_path=SETTINGS.SCONTROL_PATH)
-
-    logger.debug("Fetching active jobs")
     active_job_submissions = await fetch_active_submissions()
 
-    skip = "skipping to next active job"
-    for active_job_submission in active_job_submissions:
-        if SETTINGS.influx_integration_enabled:
-            logger.debug(f"Updating job metrics for job_submission {active_job_submission.id}")
-            try:
-                await update_job_metrics(active_job_submission)
-            except Exception:
-                logger.error("Update job metrics failed... skipping for job data update")
-                pass
+    process_strategies: tuple[type[JobProcessStrategyABC], ...] = (
+        PendingJobCancellationStrategy,
+        ActiveJobCancellationStrategy,
+        JobMetricsStrategy,
+        JobDataUpdateStrategy,
+    )
 
-        logger.debug(f"Fetching slurm job state of job_submission {active_job_submission.id}")
-
-        try:
-            slurm_job_data: SlurmJobData = await fetch_job_data(active_job_submission.slurm_job_id, sbatch_handler)
-        except Exception:
-            logger.debug(f"Fetch job data failed...{skip}")
-            continue
-
-        try:
-            await update_job_data(active_job_submission.id, slurm_job_data)
-        except Exception:
-            logger.debug(f"API update failed...{skip}")
+    for active_job, StrategyClass in product(active_job_submissions, process_strategies):
+        strategy = StrategyClass(data=active_job)
+        if strategy.need_to_run():
+            await strategy.run()
 
     logger.debug("...Finished updating slurm job data for active jobs")
