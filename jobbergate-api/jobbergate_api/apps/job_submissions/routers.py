@@ -403,7 +403,7 @@ async def job_submissions_agent_submitted(
     job_submission = await secure_services.crud.job_submission.get(
         submitted_request.id, ensure_attributes={"client_id": secure_services.identity_payload.client_id}
     )
-    if job_submission.status != JobSubmissionStatus.CREATED:
+    if job_submission.status not in {JobSubmissionStatus.CREATED, JobSubmissionStatus.CANCELLED}:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Only CREATED Job Submissions can be marked as SUBMITTED",
@@ -411,14 +411,18 @@ async def job_submissions_agent_submitted(
 
     logger.info(f"Marking job_submissions {submitted_request.id} as SUBMITTED")
 
-    await secure_services.crud.job_submission.update(
-        submitted_request.id,
+    update_kwargs = dict(
         slurm_job_id=submitted_request.slurm_job_id,
         slurm_job_state=submitted_request.slurm_job_state,
         slurm_job_info=submitted_request.slurm_job_info,
         report_message=submitted_request.slurm_job_state_reason,
         status=JobSubmissionStatus.SUBMITTED,
     )
+
+    if job_submission.status == JobSubmissionStatus.CANCELLED:
+        update_kwargs["status"] = JobSubmissionStatus.CANCELLED
+
+    await secure_services.crud.job_submission.update(submitted_request.id, **update_kwargs)
 
     await secure_services.crud.job_progress.create(
         job_submission_id=submitted_request.id,

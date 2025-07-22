@@ -1453,6 +1453,59 @@ async def test_job_submissions_agent_submitted__success(
     assert result[0].additional_info is None
 
 
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE))
+async def test_job_submissions_agent_submitted_cancelled_job__success(
+    permission,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+    synth_session,
+):
+    """
+    Test POST /job-submissions/agent/submitted correctly updates a canceled job_submission.
+
+    If a cancelled job is still submitted by the agent due to racing conditions,
+    we should ensure it stays cancelled so it is processed accordingly on the next agent run.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(client_id="dummy-client", status=JobSubmissionStatus.CANCELLED),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    payload = dict(
+        id=inserted_job_submission_id,
+        slurm_job_id=111,
+        slurm_job_state=SlurmJobState.RUNNING,
+        slurm_job_info="Fake slurm job info",
+    )
+
+    inject_security_header("who@cares.com", permission, client_id="dummy-client")
+    response = await client.post("/jobbergate/job-submissions/agent/submitted", json=payload)
+    assert response.status_code == status.HTTP_202_ACCEPTED
+
+    instance = await synth_services.crud.job_submission.get(inserted_job_submission_id)
+    assert instance.id == inserted_job_submission_id
+    assert instance.status == JobSubmissionStatus.CANCELLED
+    assert instance.slurm_job_id == payload["slurm_job_id"]
+    assert instance.slurm_job_state == payload["slurm_job_state"]
+    assert instance.slurm_job_info == payload["slurm_job_info"]
+    assert instance.report_message is None
+
+    query = select(JobProgress).where(JobProgress.job_submission_id == inserted_job_submission_id)
+    result = (await synth_session.execute(query)).scalars().all()
+    assert len(result) == 1
+    assert result[0].job_submission_id == inserted_job_submission_id
+    assert result[0].slurm_job_state == SlurmJobState.RUNNING
+    assert result[0].additional_info is None
+
+
 async def test_job_submissions_agent_submitted__fails_if_status_is_not_CREATED(
     fill_job_script_data,
     fill_job_submission_data,
