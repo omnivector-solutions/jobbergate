@@ -54,13 +54,16 @@ class PendingJobCancellationStrategy(JobProcessStrategyABC):
 
     async def run(self) -> None:
         logger.debug(f"Updating job submission {self.data.id} to cancelled state")
-        await update_job_data(
-            self.data.id,
-            SlurmJobData(
-                job_state="CANCELLED",
-                state_reason="Job was cancelled by the user before a slurm job was created",
-            ),
-        )
+        try:
+            await update_job_data(
+                self.data.id,
+                SlurmJobData(
+                    job_state="CANCELLED",
+                    state_reason="Job was cancelled by the user before a slurm job was created",
+                ),
+            )
+        except Exception as e:
+            logger.error(f"API update failed: {e}")
 
 
 class ActiveJobCancellationStrategy(JobProcessStrategyABC):
@@ -122,8 +125,8 @@ class JobDataUpdateStrategy(JobProcessStrategyABC):
 
         try:
             await update_job_data(self.data.id, slurm_job_data)
-        except Exception:
-            logger.error("API update failed...")
+        except Exception as e:
+            logger.error(f"API update failed: {e}")
 
 
 async def fetch_job_data(slurm_job_id: int, info_handler: InfoHandler) -> SlurmJobData:
