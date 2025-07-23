@@ -1376,6 +1376,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_core.tools.sbatch.ScancelHandler" class="md-nav__link">
+    ScancelHandler
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_core.tools.sbatch.SubmissionHandler" class="md-nav__link">
     SubmissionHandler
   </a>
@@ -1892,6 +1899,13 @@
           <li class="md-nav__item">
   <a href="#jobbergate_core.tools.sbatch.InfoHandler" class="md-nav__link">
     InfoHandler
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_core.tools.sbatch.ScancelHandler" class="md-nav__link">
+    ScancelHandler
   </a>
   
 </li>
@@ -5289,6 +5303,70 @@ Expiration date and permissions are some examples of data that can be found.</p>
   <div class="doc doc-contents ">
   
       <p>Gets job info as the user.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_core.tools.sbatch.ScancelHandler" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">ScancelHandler</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Cancels jobs on the cluster.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h7 id="jobbergate_core.tools.sbatch.ScancelHandler.cancel_job" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">cancel_job</span>
+
+
+</h7>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">cancel_job</span><span class="p">(</span><span class="n">slurm_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Cancels a job with the given slurm id.</p>
 
   </div>
 

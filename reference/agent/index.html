@@ -998,6 +998,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.constants.JobSubmissionStatus" class="md-nav__link">
+    JobSubmissionStatus
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1251,6 +1258,41 @@
   
     <nav class="md-nav" aria-label="update">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.update.ActiveJobCancellationStrategy" class="md-nav__link">
+    ActiveJobCancellationStrategy
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.update.JobDataUpdateStrategy" class="md-nav__link">
+    JobDataUpdateStrategy
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.update.JobMetricsStrategy" class="md-nav__link">
+    JobMetricsStrategy
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.update.JobProcessStrategyABC" class="md-nav__link">
+    JobProcessStrategyABC
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.update.PendingJobCancellationStrategy" class="md-nav__link">
+    PendingJobCancellationStrategy
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#jobbergate_agent.jobbergate.update.fetch_active_submissions" class="md-nav__link">
@@ -1847,6 +1889,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.constants.JobSubmissionStatus" class="md-nav__link">
+    JobSubmissionStatus
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2100,6 +2149,41 @@
   
     <nav class="md-nav" aria-label="update">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.update.ActiveJobCancellationStrategy" class="md-nav__link">
+    ActiveJobCancellationStrategy
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.update.JobDataUpdateStrategy" class="md-nav__link">
+    JobDataUpdateStrategy
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.update.JobMetricsStrategy" class="md-nav__link">
+    JobMetricsStrategy
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.update.JobProcessStrategyABC" class="md-nav__link">
+    JobProcessStrategyABC
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_agent.jobbergate.update.PendingJobCancellationStrategy" class="md-nav__link">
+    PendingJobCancellationStrategy
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#jobbergate_agent.jobbergate.update.fetch_active_submissions" class="md-nav__link">
@@ -2894,6 +2978,47 @@ This client should be used for most agent actions.</p>
 
   
       <p>File type enum.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.constants.JobSubmissionStatus" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobSubmissionStatus</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="auto_name_enum.AutoNameEnum">AutoNameEnum</span></code></p>
+
+  
+      <p>Defines the set of possible statuses for a Job Submission.</p>
+<p>Notice only the statuses that are relevant to the cluster-agent are defined here.</p>
 
 
   
@@ -4068,6 +4193,206 @@ handler as the user that will run the sbatch command.</p>
 
 
 
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.update.ActiveJobCancellationStrategy" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">ActiveJobCancellationStrategy</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_agent.jobbergate.update.JobProcessStrategyABC" href="#jobbergate_agent.jobbergate.update.JobProcessStrategyABC">JobProcessStrategyABC</a></code></p>
+
+  
+      <p>Strategy for canceling jobs.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.update.JobDataUpdateStrategy" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobDataUpdateStrategy</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_agent.jobbergate.update.JobProcessStrategyABC" href="#jobbergate_agent.jobbergate.update.JobProcessStrategyABC">JobProcessStrategyABC</a></code></p>
+
+  
+      <p>Strategy for updating job data.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.update.JobMetricsStrategy" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobMetricsStrategy</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_agent.jobbergate.update.JobProcessStrategyABC" href="#jobbergate_agent.jobbergate.update.JobProcessStrategyABC">JobProcessStrategyABC</a></code></p>
+
+  
+      <p>Strategy for updating job metrics.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.update.JobProcessStrategyABC" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">JobProcessStrategyABC</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="abc.ABC">ABC</span></code></p>
+
+  
+      <p>Base class for job process strategies.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h6 id="jobbergate_agent.jobbergate.update.PendingJobCancellationStrategy" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">PendingJobCancellationStrategy</span>
+
+
+</h6>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><a class="autorefs autorefs-internal" title="jobbergate_agent.jobbergate.update.JobProcessStrategyABC" href="#jobbergate_agent.jobbergate.update.JobProcessStrategyABC">JobProcessStrategyABC</a></code></p>
+
+  
+      <p>Strategy for handling pending job cancellations.</p>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
 
 
 
