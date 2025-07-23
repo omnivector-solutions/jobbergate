@@ -1,13 +1,16 @@
+import json
+from typing import Any
 import pytest
 import respx
 from httpx import Response, codes
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from jobbergate_core.sdk.constants import APPLICATION_SCRIPT_FILE_NAME, FileType
+from jobbergate_core.sdk.constants import APPLICATION_SCRIPT_FILE_NAME
 from jobbergate_core.sdk.job_templates.app import JobTemplates, TemplateFiles, WorkflowFiles
 from jobbergate_core.sdk.job_templates.schemas import (
     JobTemplateBaseDetailedView,
     JobTemplateDetailedView,
+    JobTemplateListView,
     TemplateFileDetailedView,
     WorkflowFileDetailedView,
 )
@@ -17,6 +20,7 @@ from jobbergate_core.tools.requests import Client, JobbergateResponseError
 BASE_URL = "https://testserver"
 
 ModelFactory.add_provider(PydanticDateTime, lambda: ModelFactory.__faker__.date_time())
+
 
 class TemplateFileDetailedViewFactory(ModelFactory[TemplateFileDetailedView]):
     """Factory for generating test data based on TemplateFileDetailedView objects."""
@@ -40,6 +44,12 @@ class JobTemplateDetailedViewFactory(ModelFactory[JobTemplateDetailedView]):
     """Factory for generating test data based on JobTemplateDetailedView objects."""
 
     __model__ = JobTemplateDetailedView
+
+
+class JobTemplateListViewFactory(ModelFactory[JobTemplateListView]):
+    """Factory for generating test data based on JobTemplateListView objects."""
+
+    __model__ = JobTemplateListView
 
 
 class TestTemplateFiles:
@@ -67,32 +77,44 @@ class TestTemplateFiles:
 
     def test_upsert_validation_error(self, tmp_path, faker) -> None:
         """Test the upsert method of TemplateFiles with a validation error."""
-        file_path = tmp_path / "test.txt"
-        file_content = b"content"
-        route = respx_mock.put(
-            "/jobbergate/job-script-templates/1/upload/template/ENTRYPOINT",
-            files={"upload_file": (file_path.name, file_content, "text/plain")},
-        ).mock(return_value=Response(200, json={"invalid": "data"}))
-
+        response_data = TemplateFileDetailedViewFactory.build()
+        file_path = tmp_path / response_data.filename
+        file_content = faker.binary()
+        job_template_id = response_data.parent_id
+        file_type = response_data.file_type
         file_path.write_bytes(file_content)
-        with pytest.raises(JobbergateResponseError, match="Failed to validate response to model"):
-            self.template_files.upsert(1, FileType.ENTRYPOINT, file_path)
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.put(
+                f"/jobbergate/job-script-templates/{job_template_id}/upload/template/{file_type.value}",
+                files={"upload_file": (file_path.name, file_content, "text/plain")},
+            ).mock(return_value=Response(codes.OK, json={"invalid": "data"}))
+
+            with pytest.raises(JobbergateResponseError, match="Failed to validate response to model"):
+                self.template_files.upsert(job_template_id, file_type, file_path)
 
         assert route.call_count == 1
 
-    def test_upsert_io_error(self, respx_mock, tmp_path) -> None:
+    def test_upsert_io_error(self, tmp_path, faker) -> None:
         """Test the upsert method of TemplateFiles with an IO error."""
-        file_path = tmp_path / "test.txt"
-        file_content = b"content"
-        route = respx_mock.put(
-            "/jobbergate/job-script-templates/1/upload/template/ENTRYPOINT",
-            files={"upload_file": (file_path.name, file_content, "text/plain")},
-        ).mock(return_value=Response(200, json=template_file_detailed_data_factory()))
+        response_data = TemplateFileDetailedViewFactory.build()
+        file_path = tmp_path / response_data.filename
+        file_content = faker.binary()
+        job_template_id = response_data.parent_id
+        file_type = response_data.file_type
+        file_path.write_bytes(file_content)
 
-        with pytest.raises(OSError):
-            self.template_files.upsert(1, FileType.ENTRYPOINT, file_path / "does-not-exist")
+        with respx.mock(base_url=BASE_URL, assert_all_called=False, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.put(
+                f"/jobbergate/job-script-templates/{job_template_id}/upload/template/{file_type.value}",
+                files={"upload_file": (file_path.name, file_content, "text/plain")},
+            ).mock(return_value=Response(codes.OK, content=response_data.model_dump_json()))
+
+            with pytest.raises(OSError):
+                self.template_files.upsert(job_template_id, file_type, file_path.parent / "does-not-exist")
 
         assert route.call_count == 0
+
     def test_delete(self, faker) -> None:
         """Test the delete method of TemplateFiles."""
         file_name = faker.file_name()
@@ -101,7 +123,7 @@ class TestTemplateFiles:
         with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
             route = respx_mock.delete(
                 f"/jobbergate/job-script-templates/{job_template_id}/upload/template/{file_name}"
-            ).mock(return_value=Response(codes.NO_CONTENT))
+            ).mock(return_value=Response(codes.OK))
 
             self.template_files.delete(job_template_id, file_name)
 
@@ -121,10 +143,14 @@ class TestWorkflowFiles:
         file_path.write_bytes(file_content)
 
         with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route_kwargs: dict[str, Any] = dict(
+                files={"upload_file": (file_path.name, file_content, "text/plain")},
+            )
+            if runtime_config is not None:
+                route_kwargs["data"] = {"runtime_config": json.dumps(runtime_config)}
             route = respx_mock.put(
                 f"/jobbergate/job-script-templates/{job_template_id}/upload/workflow",
-                files={"upload_file": (file_path.name, file_content, "text/plain")},
-                data={"runtime_config": runtime_config},
+                **route_kwargs,
             ).mock(return_value=Response(codes.OK, content=response_data.model_dump_json()))
 
             result = self.workflow_files.upsert(job_template_id, file_path, runtime_config=runtime_config)
@@ -138,7 +164,7 @@ class TestWorkflowFiles:
 
         with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
             route = respx_mock.delete(f"/jobbergate/job-script-templates/{job_template_id}/upload/workflow").mock(
-                return_value=Response(codes.NO_CONTENT)
+                return_value=Response(codes.OK)
             )
 
             self.workflow_files.delete(job_template_id)
@@ -186,34 +212,29 @@ class TestJobTemplates:
         assert route.call_count == 1
         assert result == response_data
 
-    def test_list(self, faker) -> None:
+    def test_list(self, faker, wrap_items_on_paged_response) -> None:
         """Test the list method of JobTemplates."""
-        response_data = {
-            "items": JobTemplateBaseDetailedViewFactory.batch(5),
-            "total": 5,
-            "page": 1,
-            "size": 5,
-            "pages": 1,
-        }
+        size = 5
+        response_data = wrap_items_on_paged_response(JobTemplateListViewFactory.batch(size))
         list_kwargs = {
             "include_null_identifier": True,
             "sort_ascending": True,
             "user_only": True,
             "sort_field": "name",
             "include_archived": True,
-            "size": 5,
+            "size": size,
             "page": faker.random_int(),
         }
 
         with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
             route = respx_mock.get("/jobbergate/job-script-templates", params=list_kwargs).mock(
-                return_value=Response(codes.OK, json=response_data)
+                return_value=Response(codes.OK, content=response_data.model_dump_json())
             )
 
             result = self.job_templates.get_list(**list_kwargs)
 
         assert route.call_count == 1
-        assert result.items == response_data["items"]
+        assert result == response_data
 
     def test_update(self, faker) -> None:
         """Test the update method of JobTemplates."""

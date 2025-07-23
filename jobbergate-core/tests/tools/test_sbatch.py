@@ -22,11 +22,13 @@ def scontrol_path(tmp_path):
     path.write_text("#!/bin/bash\n")
     return path
 
+
 @pytest.fixture()
 def scancel_path(tmp_path):
     path = tmp_path / "scancel"
     path.write_text("#!/bin/bash\n")
     return path
+
 
 class TestSubmissionHandler:
     @pytest.mark.parametrize(
@@ -275,6 +277,7 @@ class TestInjectSbatchParameters:
         )
         assert actual_result == expected_result
 
+
 class TestScancelHandler:
     def test_run__success(self, mocker, scancel_path):
         response = subprocess.CompletedProcess(args=[], stdout="", returncode=0)
@@ -291,7 +294,7 @@ class TestScancelHandler:
             capture_output=True,
             text=True,
         )
-    
+
     def test_run__fail_on_scancel_error(self, mocker, scancel_path):
         mocker.patch(
             "jobbergate_core.tools.sbatch.subprocess.run",
