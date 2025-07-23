@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     # Sbatch
     SBATCH_PATH: Path = Path("/usr/bin/sbatch")
     SCONTROL_PATH: Path = Path("/usr/bin/scontrol")
+    SCANCEL_PATH: Path = Path("/usr/bin/scancel")
     X_SLURM_USER_NAME: str = "ubuntu"
     DEFAULT_SLURM_WORK_DIR: str = "/home/{username}"
 
@@ -95,7 +96,11 @@ class Settings(BaseSettings):
             "SCONTROL_PATH must be an absolute path to an existing file",
             ValueError,
         )
-
+        buzz.require_condition(
+            self.SCANCEL_PATH.is_absolute(),
+            "SCANCEL_PATH must be an absolute path to an existing file",
+            ValueError,
+        )
         # If using single user, but don't have the setting, use default slurm user
         if self.SINGLE_USER_SUBMITTER is None:
             self.SINGLE_USER_SUBMITTER = self.X_SLURM_USER_NAME

@@ -1453,6 +1453,59 @@ async def test_job_submissions_agent_submitted__success(
     assert result[0].additional_info is None
 
 
+@pytest.mark.parametrize("permission", (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE))
+async def test_job_submissions_agent_submitted_cancelled_job__success(
+    permission,
+    fill_job_script_data,
+    fill_job_submission_data,
+    client,
+    inject_security_header,
+    synth_services,
+    synth_session,
+):
+    """
+    Test POST /job-submissions/agent/submitted correctly updates a canceled job_submission.
+
+    If a cancelled job is still submitted by the agent due to racing conditions,
+    we should ensure it stays cancelled so it is processed accordingly on the next agent run.
+    """
+    base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+
+    inserted_job_script_id = base_job_script.id
+
+    inserted_submission = await synth_services.crud.job_submission.create(
+        job_script_id=inserted_job_script_id,
+        **fill_job_submission_data(client_id="dummy-client", status=JobSubmissionStatus.CANCELLED),
+    )
+    inserted_job_submission_id = inserted_submission.id
+
+    payload = dict(
+        id=inserted_job_submission_id,
+        slurm_job_id=111,
+        slurm_job_state=SlurmJobState.RUNNING,
+        slurm_job_info="Fake slurm job info",
+    )
+
+    inject_security_header("who@cares.com", permission, client_id="dummy-client")
+    response = await client.post("/jobbergate/job-submissions/agent/submitted", json=payload)
+    assert response.status_code == status.HTTP_202_ACCEPTED
+
+    instance = await synth_services.crud.job_submission.get(inserted_job_submission_id)
+    assert instance.id == inserted_job_submission_id
+    assert instance.status == JobSubmissionStatus.CANCELLED
+    assert instance.slurm_job_id == payload["slurm_job_id"]
+    assert instance.slurm_job_state == payload["slurm_job_state"]
+    assert instance.slurm_job_info == payload["slurm_job_info"]
+    assert instance.report_message is None
+
+    query = select(JobProgress).where(JobProgress.job_submission_id == inserted_job_submission_id)
+    result = (await synth_session.execute(query)).scalars().all()
+    assert len(result) == 1
+    assert result[0].job_submission_id == inserted_job_submission_id
+    assert result[0].slurm_job_state == SlurmJobState.RUNNING
+    assert result[0].additional_info is None
+
+
 async def test_job_submissions_agent_submitted__fails_if_status_is_not_CREATED(
     fill_job_script_data,
     fill_job_submission_data,
@@ -2105,7 +2158,7 @@ async def test_job_submissions_agent_active__success(
         ),
         dict(
             name="sub4",
-            status=JobSubmissionStatus.SUBMITTED,
+            status=JobSubmissionStatus.CANCELLED,
             client_id="dummy-client",
             slurm_job_id=44,
         ),
@@ -3048,3 +3101,130 @@ async def test_job_submission_progress__no_entries(
 
     response_data = response.json()
     assert len(response_data["items"]) == 0
+
+
+class TestCancelJobSubmission:
+    """
+    Test suite for the cancel job submission endpoint.
+    """
+
+    @pytest.mark.parametrize(
+        "is_owner, permissions",
+        [
+            (True, [Permissions.JOB_SUBMISSIONS_UPDATE]),
+            (False, [Permissions.ADMIN]),
+            (False, [Permissions.JOB_SUBMISSIONS_UPDATE, Permissions.MAINTAINER]),
+        ],
+    )
+    @pytest.mark.parametrize("initial_status", [JobSubmissionStatus.SUBMITTED, JobSubmissionStatus.CREATED])
+    async def test_cancel_job_submission__success(
+        self,
+        is_owner,
+        permissions,
+        initial_status,
+        fill_job_script_data,
+        fill_job_submission_data,
+        client,
+        inject_security_header,
+        synth_services,
+    ):
+        """
+        Test POST /jobbergate/job-submissions/{job_submission_id}/cancel returns 200 on success.
+        """
+        base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+        inserted_job_script_id = base_job_script.id
+
+        inserted_submission = await synth_services.crud.job_submission.create(
+            job_script_id=inserted_job_script_id,
+            **fill_job_submission_data(status=initial_status),
+        )
+        inserted_job_submission_id = inserted_submission.id
+
+        owner_email = inserted_submission.owner_email
+        requester_email = owner_email if is_owner else "another_" + owner_email
+
+        inject_security_header(requester_email, *permissions)
+        response = await client.put(f"/jobbergate/job-submissions/cancel/{inserted_job_submission_id}")
+        assert response.status_code == status.HTTP_200_OK
+
+        job_submission_instance = await synth_services.crud.job_submission.get(inserted_job_submission_id)
+        assert job_submission_instance.id == inserted_submission.id
+        assert job_submission_instance.status == JobSubmissionStatus.CANCELLED
+        assert job_submission_instance.slurm_job_state == inserted_submission.slurm_job_state
+        assert job_submission_instance.slurm_job_info == inserted_submission.slurm_job_info
+        assert job_submission_instance.slurm_job_id == inserted_submission.slurm_job_id
+
+    async def test_cancel_job_submission__not_found(
+        self,
+        client,
+        inject_security_header,
+        synth_services,
+    ):
+        """
+        Test POST /jobbergate/job-submissions/{job_submission_id}/cancel returns 404 when job submission does not exist.
+        """
+        inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_UPDATE)
+        response = await client.put("/jobbergate/job-submissions/cancel/9999")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    async def test_cancel_job_submission__forbidden(
+        self,
+        fill_job_script_data,
+        fill_job_submission_data,
+        tester_email,
+        client,
+        inject_security_header,
+        synth_services,
+    ):
+        """
+        Test POST /jobbergate/job-submissions/{job_submission_id}/cancel returns 403 when user does not have permission.
+        """
+        base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+        inserted_job_script_id = base_job_script.id
+
+        inserted_submission = await synth_services.crud.job_submission.create(
+            job_script_id=inserted_job_script_id,
+            **fill_job_submission_data(status=JobSubmissionStatus.SUBMITTED),
+        )
+        inserted_job_submission_id = inserted_submission.id
+
+        inject_security_header(tester_email, "INVALID_PERMISSION")
+        response = await client.put(f"/jobbergate/job-submissions/cancel/{inserted_job_submission_id}")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+        instance = await synth_services.crud.job_submission.get(inserted_job_submission_id)
+        assert instance.status == inserted_submission.status
+
+    @pytest.mark.parametrize(
+        "initial_status",
+        [JobSubmissionStatus.CANCELLED, JobSubmissionStatus.DONE, JobSubmissionStatus.ABORTED],
+    )
+    async def test_cancel_job_submission__bad_request(
+        self,
+        initial_status,
+        fill_job_script_data,
+        fill_job_submission_data,
+        tester_email,
+        client,
+        inject_security_header,
+        synth_services,
+    ):
+        """
+        Test POST /jobbergate/job-submissions/{job_submission_id}/cancel returns 400 when request is invalid.
+        """
+        base_job_script = await synth_services.crud.job_script.create(**fill_job_script_data())
+        inserted_job_script_id = base_job_script.id
+
+        inserted_submission = await synth_services.crud.job_submission.create(
+            job_script_id=inserted_job_script_id,
+            **fill_job_submission_data(status=initial_status),
+        )
+        inserted_job_submission_id = inserted_submission.id
+
+        inject_security_header(tester_email, Permissions.JOB_SUBMISSIONS_UPDATE)
+        response = await client.put(f"/jobbergate/job-submissions/cancel/{inserted_job_submission_id}")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+        instance = await synth_services.crud.job_submission.get(inserted_job_submission_id)
+        assert instance.status == inserted_submission.status

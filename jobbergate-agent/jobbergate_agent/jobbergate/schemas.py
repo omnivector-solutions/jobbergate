@@ -45,7 +45,8 @@ class ActiveJobSubmission(pydantic.BaseModel, extra="ignore"):
     """
 
     id: int
-    slurm_job_id: int
+    status: str | None = None
+    slurm_job_id: int | None = None
 
 
 EnvelopeT = TypeVar("EnvelopeT")

@@ -252,6 +252,60 @@ async def job_submission_update(
     )
 
 
+@router.put(
+    "/cancel/{id}",
+    status_code=status.HTTP_200_OK,
+    description="Endpoint to cancel a job_submission",
+    response_model=JobSubmissionDetailedView,
+)
+async def job_submission_cancel(
+    id: int = Path(),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_email=True)
+    ),
+):
+    """Cancel a job_submission given its id."""
+    logger.debug(f"Cancelling job submission {id=}")
+
+    job_submission = await secure_services.crud.job_submission.get(id)
+
+    # Ensure user can only cancel their own jobs (unless they have admin permissions)
+    if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
+        secure_services.crud.job_submission.ensure_attribute(
+            job_submission, owner_email=secure_services.identity_payload.email
+        )
+
+    # Only allow cancelling jobs that are in CREATED or SUBMITTED status
+    if job_submission.status not in {JobSubmissionStatus.CREATED, JobSubmissionStatus.SUBMITTED}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot cancel job submission with status '{job_submission.status}'. "
+            "Only jobs with 'CREATED' or 'SUBMITTED' status can be cancelled.",
+        )
+
+    logger.info(f"Marking job_submission {id} as CANCELLED by user")
+
+    # Update the job submission status to CANCELLED
+    updated_job_submission = await secure_services.crud.job_submission.update(
+        id, status=JobSubmissionStatus.CANCELLED
+    )
+
+    # Create a progress entry to track the cancellation
+    await secure_services.crud.job_progress.create(
+        job_submission_id=id,
+        timestamp=datetime.now(timezone.utc),
+        additional_info="Job cancelled by user",
+    )
+
+    # Publish status change notification
+    await publish_status_change(
+        updated_job_submission,
+        organization_id=secure_services.identity_payload.organization_id,
+    )
+
+    return updated_job_submission
+
+
 # The "agent" routes are used for agents to fetch pending job submissions and update their statuses
 @router.put(
     "/agent/{id}",
@@ -277,16 +331,16 @@ async def job_submission_agent_update(
         id, ensure_attributes={"client_id": secure_services.identity_payload.client_id}
     )
 
-    if job_submission.status != JobSubmissionStatus.SUBMITTED:
+    if job_submission.status not in {JobSubmissionStatus.SUBMITTED, JobSubmissionStatus.CANCELLED}:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only SUBMITTED jobs may be updated by the agent",
+            detail=f"Only SUBMITTED or CANCELLED jobs may be updated by the agent, got {job_submission.status}",
         )
 
     if job_submission.slurm_job_id != update_params.slurm_job_id:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Update slurm job id does not match the job id on record for job submission {id}",
+            detail=f"Update slurm job id does not match the job id on record for job submission {id=}",
         )
 
     logger.info(
@@ -349,7 +403,7 @@ async def job_submissions_agent_submitted(
     job_submission = await secure_services.crud.job_submission.get(
         submitted_request.id, ensure_attributes={"client_id": secure_services.identity_payload.client_id}
     )
-    if job_submission.status != JobSubmissionStatus.CREATED:
+    if job_submission.status not in {JobSubmissionStatus.CREATED, JobSubmissionStatus.CANCELLED}:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Only CREATED Job Submissions can be marked as SUBMITTED",
@@ -357,14 +411,18 @@ async def job_submissions_agent_submitted(
 
     logger.info(f"Marking job_submissions {submitted_request.id} as SUBMITTED")
 
-    await secure_services.crud.job_submission.update(
-        submitted_request.id,
+    update_kwargs = dict(
         slurm_job_id=submitted_request.slurm_job_id,
         slurm_job_state=submitted_request.slurm_job_state,
         slurm_job_info=submitted_request.slurm_job_info,
         report_message=submitted_request.slurm_job_state_reason,
         status=JobSubmissionStatus.SUBMITTED,
     )
+
+    if job_submission.status == JobSubmissionStatus.CANCELLED:
+        update_kwargs["status"] = JobSubmissionStatus.CANCELLED
+
+    await secure_services.crud.job_submission.update(submitted_request.id, **update_kwargs)
 
     await secure_services.crud.job_progress.create(
         job_submission_id=submitted_request.id,
@@ -479,7 +537,7 @@ async def job_submissions_agent_active(
     logger.info(f"Fetching active job_submissions for {client_id=}")
 
     pages = await secure_services.crud.job_submission.paginated_list(
-        status=JobSubmissionStatus.SUBMITTED,
+        status={JobSubmissionStatus.SUBMITTED, JobSubmissionStatus.CANCELLED},
         client_id=client_id,
     )
     return pages

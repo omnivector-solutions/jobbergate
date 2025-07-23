@@ -217,7 +217,8 @@ class ActiveJobSubmission(BaseModel):
 
     id: int
     name: str
-    slurm_job_id: int
+    status: JobSubmissionStatus
+    slurm_job_id: int | None
     model_config = ConfigDict(from_attributes=True, extra="ignore")
 
 
@@ -245,9 +246,9 @@ class JobSubmissionAgentRejectedRequest(BaseModel):
 class JobSubmissionAgentUpdateRequest(BaseModel):
     """Request model for updating JobSubmission instances."""
 
-    slurm_job_id: NonNegativeInt
     slurm_job_state: SlurmJobState
     slurm_job_info: str
+    slurm_job_id: NonNegativeInt | None = None
     slurm_job_state_reason: str | None = None
 
     model_config = ConfigDict(json_schema_extra=job_submission_meta_mapper)
