@@ -3,6 +3,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, ClassVar, Type
 
+from httpx import codes
 from pydantic import ConfigDict, Field, validate_call
 from pydantic.dataclasses import dataclass
 
@@ -46,7 +47,7 @@ class TemplateFiles:
                     files={"upload_file": (file_path.name, file, "text/plain")},
                 ),
             )
-        return response.raise_for_status().check_status_code(200).to_model(TemplateFileDetailedView)
+        return response.raise_for_status().check_status_code(codes.OK).to_model(TemplateFileDetailedView)
 
     @validate_call
     def delete(self, id_or_identifier: int | str, filename: str) -> None:
@@ -64,7 +65,7 @@ class TemplateFiles:
                 method="DELETE",
             )
             .raise_for_status()
-            .check_status_code(200)
+            .check_status_code(codes.OK)
         )
 
     @validate_call
@@ -88,7 +89,7 @@ class TemplateFiles:
                 method="GET",
             )
             .raise_for_status()
-            .check_status_code(200)
+            .check_status_code(codes.OK)
             .to_file(output_path)
         )
         return output_path
@@ -129,7 +130,7 @@ class WorkflowFiles:
                 method="PUT",
                 request_kwargs=request_kwargs,
             )
-        return response.raise_for_status().check_status_code(200).to_model(WorkflowFileDetailedView)
+        return response.raise_for_status().check_status_code(codes.OK).to_model(WorkflowFileDetailedView)
 
     @validate_call
     def delete(self, id_or_identifier: int | str) -> None:
@@ -169,7 +170,7 @@ class WorkflowFiles:
                 method="GET",
             )
             .raise_for_status()
-            .check_status_code(200)
+            .check_status_code(codes.OK)
             .to_file(output_path)
         )
         return output_path
@@ -242,7 +243,7 @@ class JobTemplates:
                 request_kwargs=dict(data=data),
             )
             .raise_for_status()
-            .check_status_code(201)
+            .check_status_code(codes.CREATED)
             .to_model(JobTemplateDetailedView)
         )
 
@@ -278,7 +279,7 @@ class JobTemplates:
                 request_kwargs=dict(data=data),
             )
             .raise_for_status()
-            .check_status_code(201)
+            .check_status_code(codes.CREATED)
             .to_model(JobTemplateBaseDetailedView)
         )
 
@@ -297,7 +298,7 @@ class JobTemplates:
                 method="DELETE",
             )
             .raise_for_status()
-            .check_status_code(204)
+            .check_status_code(codes.NO_CONTENT)
         )
 
     @validate_call
@@ -318,7 +319,7 @@ class JobTemplates:
                 method="GET",
             )
             .raise_for_status()
-            .check_status_code(200)
+            .check_status_code(codes.OK)
             .to_model(JobTemplateDetailedView)
         )
 
@@ -370,7 +371,7 @@ class JobTemplates:
                 request_kwargs=dict(params=params),
             )
             .raise_for_status()
-            .check_status_code(200)
+            .check_status_code(codes.OK)
             .to_model(ListResponseEnvelope[JobTemplateListView])
         )
         return result
@@ -417,7 +418,7 @@ class JobTemplates:
                 request_kwargs=dict(data=data),
             )
             .raise_for_status()
-            .check_status_code(200)
+            .check_status_code(codes.OK)
             .to_model(JobTemplateBaseDetailedView)
         )
 

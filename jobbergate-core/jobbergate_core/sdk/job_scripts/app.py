@@ -71,7 +71,7 @@ class JobScriptFiles:
                 method="DELETE",
             )
             .raise_for_status()
-            .check_status_code(200)
+            .check_status_code(codes.OK)
         )
 
     @validate_call
@@ -95,7 +95,7 @@ class JobScriptFiles:
                 method="GET",
             )
             .raise_for_status()
-            .check_status_code(200)
+            .check_status_code(codes.OK)
             .to_file(output_path)
         )
         return output_path
@@ -307,7 +307,7 @@ class JobScripts:
                 request_kwargs=dict(data=data),
             )
             .raise_for_status()
-            .check_status_code(200)
+            .check_status_code(codes.OK)
             .to_model(JobScriptBaseView)
         )
 

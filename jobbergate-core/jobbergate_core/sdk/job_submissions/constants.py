@@ -11,3 +11,4 @@ class JobSubmissionStatus(str, Enum):
     REJECTED = "REJECTED"
     DONE = "DONE"
     ABORTED = "ABORTED"
+    CANCELLED = "CANCELLED"
