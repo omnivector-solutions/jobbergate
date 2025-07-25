@@ -1,6 +1,7 @@
 import time
 from typing import ClassVar, Type
 
+from httpx import codes
 from pydantic import ConfigDict, Field, validate_call
 from pydantic.dataclasses import dataclass
 
@@ -67,7 +68,7 @@ class JobSubmissions:
                 request_kwargs=dict(data=data),
             )
             .raise_for_status()
-            .check_status_code(201)
+            .check_status_code(codes.CREATED)
             .to_model(JobSubmissionDetailedView)
         )
 
@@ -89,7 +90,7 @@ class JobSubmissions:
                 method="POST",
             )
             .raise_for_status()
-            .check_status_code(201)
+            .check_status_code(codes.CREATED)
             .to_model(JobSubmissionDetailedView)
         )
 
@@ -111,7 +112,7 @@ class JobSubmissions:
                 method="GET",
             )
             .raise_for_status()
-            .check_status_code(200)
+            .check_status_code(codes.OK)
             .to_model(JobSubmissionDetailedView)
         )
 
@@ -201,7 +202,7 @@ class JobSubmissions:
                 request_kwargs=dict(params=params),
             )
             .raise_for_status()
-            .check_status_code(200)
+            .check_status_code(codes.OK)
             .to_model(ListResponseEnvelope[JobSubmissionListView])
         )
         return result
@@ -244,7 +245,7 @@ class JobSubmissions:
                 request_kwargs=dict(data=data),
             )
             .raise_for_status()
-            .check_status_code(200)
+            .check_status_code(codes.OK)
             .to_model(JobSubmissionDetailedView)
         )
 
@@ -263,5 +264,27 @@ class JobSubmissions:
                 method="DELETE",
             )
             .raise_for_status()
-            .check_status_code(204)
+            .check_status_code(codes.NO_CONTENT)
+        )
+
+    @validate_call
+    def cancel(self, id: int) -> JobSubmissionDetailedView:
+        """
+        Cancel a job submission.
+
+        Args:
+            id: The ID of the job submission.
+
+        Returns:
+            The detailed view of the canceled job submission.
+        """
+        return (
+            self.request_handler_cls(
+                client=self.client,
+                url_path=f"{self.base_path}/cancel/{id}",
+                method="PUT",
+            )
+            .raise_for_status()
+            .check_status_code(codes.OK)
+            .to_model(JobSubmissionDetailedView)
         )

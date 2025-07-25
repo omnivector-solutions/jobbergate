@@ -224,3 +224,48 @@ class TestJobSubmissions:
 
         assert mocked_sleep.call_count == 0
         assert route.call_count == 1
+
+    def test_cancel(self) -> None:
+        """Test the cancel method of JobSubmissions."""
+        response_data = JobSubmissionDetailedViewFactory.build(status=JobSubmissionStatus.CANCELLED)
+        job_submission_id = response_data.id
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.put(f"/jobbergate/job-submissions/cancel/{job_submission_id}").mock(
+                return_value=Response(codes.OK, content=response_data.model_dump_json())
+            )
+
+            result = self.job_submissions.cancel(job_submission_id)
+
+        assert route.call_count == 1
+        assert result == response_data
+
+    def test_cancel_request_error(self, faker) -> None:
+        """Test the cancel method of JobSubmissions with a request error."""
+        job_submission_id = faker.random_int()
+
+        with (
+            respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock,
+            pytest.raises(JobbergateResponseError),
+        ):
+            route = respx_mock.put(f"/jobbergate/job-submissions/cancel/{job_submission_id}").mock(
+                return_value=Response(codes.INTERNAL_SERVER_ERROR)
+            )
+            self.job_submissions.cancel(job_submission_id)
+
+        assert route.call_count == 1
+
+    def test_cancel_validation_error(self, faker) -> None:
+        """Test the cancel method of JobSubmissions with a validation error."""
+        job_submission_id = faker.random_int()
+
+        with (
+            respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock,
+            pytest.raises(JobbergateResponseError),
+        ):
+            route = respx_mock.put(f"/jobbergate/job-submissions/cancel/{job_submission_id}").mock(
+                return_value=Response(codes.OK, json={"invalid": "data"})
+            )
+            self.job_submissions.cancel(job_submission_id)
+
+        assert route.call_count == 1
