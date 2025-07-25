@@ -129,15 +129,77 @@ class TestTemplateFiles:
 
         assert route.call_count == 1
 
+    def test_delete_request_error(self, faker) -> None:
+        """Test the delete method of TemplateFiles with a request error."""
+        file_name = faker.file_name()
+        job_template_id = faker.random_int()
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.delete(
+                f"/jobbergate/job-script-templates/{job_template_id}/upload/template/{file_name}"
+            ).mock(return_value=Response(codes.NOT_FOUND))
+
+            with pytest.raises(JobbergateResponseError):
+                self.template_files.delete(job_template_id, file_name)
+
+        assert route.call_count == 1
+
+    def test_download(self, tmp_path, faker) -> None:
+        """Test the download method of TemplateFiles."""
+        file_name = faker.file_name()
+        file_content = faker.binary()
+        job_script_id = faker.random_int()
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.get(
+                f"/jobbergate/job-script-templates/{job_script_id}/upload/template/{file_name}"
+            ).mock(return_value=Response(codes.OK, content=file_content))
+            result = self.template_files.download(job_script_id, file_name, tmp_path)
+
+        assert result == tmp_path / file_name
+        assert route.call_count == 1
+        assert result.exists()
+        assert result.read_bytes() == file_content
+
+    def test_download_request_error(self, faker) -> None:
+        """Test the download method of TemplateFiles with a request error."""
+        file_name = faker.file_name()
+        job_script_id = faker.random_int()
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.get(
+                f"/jobbergate/job-script-templates/{job_script_id}/upload/template/{file_name}"
+            ).mock(return_value=Response(codes.NOT_FOUND))
+
+            with pytest.raises(JobbergateResponseError):
+                self.template_files.download(job_script_id, file_name)
+
+        assert route.call_count == 1
+
+    def test_download_io_error(self, faker) -> None:
+        """Test the download method of TemplateFiles with an IO error."""
+        file_name = faker.file_name()
+        job_script_id = faker.random_int()
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=False, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.get(
+                f"/jobbergate/job-script-templates/{job_script_id}/upload/template/{file_name}"
+            ).mock(return_value=Response(codes.NOT_FOUND))
+
+            with pytest.raises(JobbergateResponseError):
+                self.template_files.download(job_script_id, file_name)
+
+        assert route.call_count == 1
+
 
 class TestWorkflowFiles:
     workflow_files = WorkflowFiles(client=Client(base_url=BASE_URL))
 
     def test_upsert(self, tmp_path, faker) -> None:
         """Test the upsert method of WorkflowFiles."""
+        response_data = WorkflowFileDetailedViewFactory.build()
         file_path = tmp_path / APPLICATION_SCRIPT_FILE_NAME
         file_content = faker.binary()
-        response_data = WorkflowFileDetailedViewFactory.build()
         runtime_config = response_data.runtime_config
         job_template_id = response_data.parent_id
         file_path.write_bytes(file_content)
@@ -158,6 +220,58 @@ class TestWorkflowFiles:
         assert route.call_count == 1
         assert result == response_data
 
+    def test_upsert_validation_error(self, tmp_path, faker) -> None:
+        """Test the upsert method of WorkflowFiles with a validation error."""
+        response_data = WorkflowFileDetailedViewFactory.build()
+        file_path = tmp_path / APPLICATION_SCRIPT_FILE_NAME
+        file_content = faker.binary()
+        runtime_config = response_data.runtime_config
+        job_template_id = response_data.parent_id
+        file_path.write_bytes(file_content)
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route_kwargs: dict[str, Any] = dict(
+                files={"upload_file": (file_path.name, file_content, "text/plain")},
+            )
+            if runtime_config is not None:
+                route_kwargs["data"] = {"runtime_config": json.dumps(runtime_config)}
+            route = respx_mock.put(
+                f"/jobbergate/job-script-templates/{job_template_id}/upload/workflow",
+                **route_kwargs,
+            ).mock(return_value=Response(codes.OK, json={"invalid": "data"}))
+
+            with pytest.raises(JobbergateResponseError, match="Failed to validate response to model"):
+                self.workflow_files.upsert(job_template_id, file_path, runtime_config=runtime_config)
+
+        assert route.call_count == 1
+
+    def test_upsert_io_error(self, tmp_path, faker) -> None:
+        """Test the upsert method of WorkflowFiles with an IO error."""
+        response_data = WorkflowFileDetailedViewFactory.build()
+        file_path = tmp_path / APPLICATION_SCRIPT_FILE_NAME
+        file_content = faker.binary()
+        runtime_config = response_data.runtime_config
+        job_template_id = response_data.parent_id
+        file_path.write_bytes(file_content)
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=False, assert_all_mocked=True) as respx_mock:
+            route_kwargs: dict[str, Any] = dict(
+                files={"upload_file": (file_path.name, file_content, "text/plain")},
+            )
+            if runtime_config is not None:
+                route_kwargs["data"] = {"runtime_config": json.dumps(runtime_config)}
+            route = respx_mock.put(
+                f"/jobbergate/job-script-templates/{job_template_id}/upload/workflow",
+                **route_kwargs,
+            ).mock(return_value=Response(codes.OK, content=response_data.model_dump_json()))
+
+            with pytest.raises(OSError):
+                self.workflow_files.upsert(
+                    job_template_id, file_path.parent / "does-not-exist", runtime_config=runtime_config
+                )
+
+        assert route.call_count == 0
+
     def test_delete(self, faker) -> None:
         """Test the delete method of WorkflowFiles."""
         job_template_id = faker.random_int()
@@ -168,6 +282,64 @@ class TestWorkflowFiles:
             )
 
             self.workflow_files.delete(job_template_id)
+
+        assert route.call_count == 1
+
+    def test_delete_request_error(self, faker) -> None:
+        """Test the delete method of WorkflowFiles with a request error."""
+        job_template_id = faker.random_int()
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.delete(f"/jobbergate/job-script-templates/{job_template_id}/upload/workflow").mock(
+                return_value=Response(codes.NOT_FOUND)
+            )
+
+            with pytest.raises(JobbergateResponseError):
+                self.workflow_files.delete(job_template_id)
+
+        assert route.call_count == 1
+
+    def test_download(self, tmp_path, faker) -> None:
+        """Test the download method of WorkflowFiles."""
+        file_content = faker.binary()
+        job_script_id = faker.random_int()
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.get(f"/jobbergate/job-script-templates/{job_script_id}/upload/workflow").mock(
+                return_value=Response(codes.OK, content=file_content)
+            )
+            result = self.workflow_files.download(job_script_id, tmp_path)
+
+        assert result == tmp_path / APPLICATION_SCRIPT_FILE_NAME
+        assert route.call_count == 1
+        assert result.exists()
+        assert result.read_bytes() == file_content
+
+    def test_download_request_error(self, faker) -> None:
+        """Test the download method of WorkflowFiles with a request error."""
+        job_script_id = faker.random_int()
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.get(f"/jobbergate/job-script-templates/{job_script_id}/upload/workflow").mock(
+                return_value=Response(codes.NOT_FOUND)
+            )
+
+            with pytest.raises(JobbergateResponseError):
+                self.workflow_files.download(job_script_id)
+
+        assert route.call_count == 1
+
+    def test_download_io_error(self, faker) -> None:
+        """Test the download method of WorkflowFiles with an IO error."""
+        job_script_id = faker.random_int()
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=False, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.get(f"/jobbergate/job-script-templates/{job_script_id}/upload/workflow").mock(
+                return_value=Response(codes.NOT_FOUND)
+            )
+
+            with pytest.raises(JobbergateResponseError):
+                self.workflow_files.download(job_script_id)
 
         assert route.call_count == 1
 
@@ -197,6 +369,106 @@ class TestJobTemplates:
         assert route.call_count == 1
         assert result == response_data
 
+    def test_clone_request_error(self, faker) -> None:
+        """Test the clone method of JobTemplates with a request error."""
+        clone_kwargs = {
+            "name": faker.word(),
+            "template_vars": {"key": "value"},
+            "identifier": faker.uuid4(),
+            "description": faker.sentence(),
+        }
+        job_template_id = faker.random_int()
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.post(
+                f"/jobbergate/job-script-templates/clone/{job_template_id}",
+                data=clone_kwargs,
+            ).mock(return_value=Response(codes.NOT_FOUND))
+
+            with pytest.raises(JobbergateResponseError):
+                self.job_templates.clone(job_template_id, **clone_kwargs)
+
+        assert route.call_count == 1
+
+    def test_clone_validation_error(self, faker) -> None:
+        """Test the clone method of JobTemplates with a validation error."""
+        clone_kwargs = {
+            "name": faker.word(),
+            "template_vars": {"key": "value"},
+            "identifier": faker.uuid4(),
+            "description": faker.sentence(),
+        }
+        job_template_id = faker.random_int()
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.post(
+                f"/jobbergate/job-script-templates/clone/{job_template_id}",
+                data=clone_kwargs,
+            ).mock(return_value=Response(codes.CREATED, json={"invalid": "data"}))
+
+            with pytest.raises(JobbergateResponseError, match="Failed to validate response to model"):
+                self.job_templates.clone(job_template_id, **clone_kwargs)
+
+        assert route.call_count == 1
+
+    def test_create(self, faker) -> None:
+        """Test the create method of JobTemplates."""
+        response_data = JobTemplateBaseDetailedViewFactory.build()
+        data = {
+            "name": faker.word(),
+            "identifier": faker.uuid4(),
+            "description": faker.sentence(),
+            "template_vars": {"key": "value"},
+        }
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.post("/jobbergate/job-script-templates", data=data).mock(
+                return_value=Response(codes.CREATED, content=response_data.model_dump_json())
+            )
+
+            result = self.job_templates.create(**data)
+
+        assert route.call_count == 1
+        assert result == response_data
+
+    def test_create_request_error(self, faker) -> None:
+        """Test the create method of JobTemplates with a request error."""
+        data = {
+            "name": faker.word(),
+            "identifier": faker.uuid4(),
+            "description": faker.sentence(),
+            "template_vars": {"key": "value"},
+        }
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.post("/jobbergate/job-script-templates", data=data).mock(
+                return_value=Response(codes.NOT_FOUND)
+            )
+
+            with pytest.raises(JobbergateResponseError):
+                self.job_templates.create(**data)
+
+        assert route.call_count == 1
+
+    def test_create_validation_error(self, faker) -> None:
+        """Test the create method of JobTemplates with a validation error."""
+        data = {
+            "name": faker.word(),
+            "identifier": faker.uuid4(),
+            "description": faker.sentence(),
+            "template_vars": {"key": "value"},
+        }
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.post("/jobbergate/job-script-templates", data=data).mock(
+                return_value=Response(codes.CREATED, json={"invalid": "data"})
+            )
+
+            with pytest.raises(JobbergateResponseError, match="Failed to validate response to model"):
+                self.job_templates.create(**data)
+
+        assert route.call_count == 1
+
     def test_get_one(self, faker) -> None:
         """Test the get_one method of JobTemplates."""
         response_data = JobTemplateDetailedViewFactory.build()
@@ -211,6 +483,34 @@ class TestJobTemplates:
 
         assert route.call_count == 1
         assert result == response_data
+
+    def test_get_one_request_error(self, faker) -> None:
+        """Test the get_one method of JobTemplates with a request error."""
+        job_template_id = faker.random_int()
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.get(f"/jobbergate/job-script-templates/{job_template_id}").mock(
+                return_value=Response(codes.NOT_FOUND)
+            )
+
+            with pytest.raises(JobbergateResponseError):
+                self.job_templates.get_one(job_template_id)
+
+        assert route.call_count == 1
+
+    def test_get_one_validation_error(self, faker) -> None:
+        """Test the get_one method of JobTemplates with a validation error."""
+        job_template_id = faker.random_int()
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.get(f"/jobbergate/job-script-templates/{job_template_id}").mock(
+                return_value=Response(codes.OK, json={"invalid": "data"})
+            )
+
+            with pytest.raises(JobbergateResponseError, match="Failed to validate response to model"):
+                self.job_templates.get_one(job_template_id)
+
+        assert route.call_count == 1
 
     def test_list(self, faker, wrap_items_on_paged_response) -> None:
         """Test the list method of JobTemplates."""
@@ -236,6 +536,52 @@ class TestJobTemplates:
         assert route.call_count == 1
         assert result == response_data
 
+    def test_list_request_error(self, faker) -> None:
+        """Test the list method of JobTemplates with a request error."""
+        size = 5
+        list_kwargs = {
+            "include_null_identifier": True,
+            "sort_ascending": True,
+            "user_only": True,
+            "sort_field": "name",
+            "include_archived": True,
+            "size": size,
+            "page": faker.random_int(),
+        }
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.get("/jobbergate/job-script-templates", params=list_kwargs).mock(
+                return_value=Response(codes.NOT_FOUND)
+            )
+
+            with pytest.raises(JobbergateResponseError):
+                self.job_templates.get_list(**list_kwargs)
+
+        assert route.call_count == 1
+
+    def test_list_validation_error(self, faker) -> None:
+        """Test the list method of JobTemplates with a validation error."""
+        size = 5
+        list_kwargs = {
+            "include_null_identifier": True,
+            "sort_ascending": True,
+            "user_only": True,
+            "sort_field": "name",
+            "include_archived": True,
+            "size": size,
+            "page": faker.random_int(),
+        }
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.get("/jobbergate/job-script-templates", params=list_kwargs).mock(
+                return_value=Response(codes.OK, json={"invalid": "data"})
+            )
+
+            with pytest.raises(JobbergateResponseError, match="Failed to validate response to model"):
+                self.job_templates.get_list(**list_kwargs)
+
+        assert route.call_count == 1
+
     def test_update(self, faker) -> None:
         """Test the update method of JobTemplates."""
         response_data = JobTemplateBaseDetailedViewFactory.build()
@@ -257,6 +603,48 @@ class TestJobTemplates:
 
         assert route.call_count == 1
         assert result == response_data
+
+    def test_update_request_error(self, faker) -> None:
+        """Test the update method of JobTemplates with a request error."""
+        job_template_id = faker.random_int()
+        update_kwargs = {
+            "name": faker.word(),
+            "identifier": faker.uuid4(),
+            "description": faker.sentence(),
+            "template_vars": {"key": "value"},
+        }
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.put(
+                f"/jobbergate/job-script-templates/{job_template_id}",
+                data=update_kwargs,
+            ).mock(return_value=Response(codes.NOT_FOUND))
+
+            with pytest.raises(JobbergateResponseError):
+                self.job_templates.update(job_template_id, **update_kwargs)
+
+        assert route.call_count == 1
+
+    def test_update_validation_error(self, faker) -> None:
+        """Test the update method of JobTemplates with a validation error."""
+        job_template_id = faker.random_int()
+        update_kwargs = {
+            "name": faker.word(),
+            "identifier": faker.uuid4(),
+            "description": faker.sentence(),
+            "template_vars": {"key": "value"},
+        }
+
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
+            route = respx_mock.put(
+                f"/jobbergate/job-script-templates/{job_template_id}",
+                data=update_kwargs,
+            ).mock(return_value=Response(codes.OK, json={"invalid": "data"}))
+
+            with pytest.raises(JobbergateResponseError, match="Failed to validate response to model"):
+                self.job_templates.update(job_template_id, **update_kwargs)
+
+        assert route.call_count == 1
 
     def test_delete(self, faker) -> None:
         """Test the delete method of JobTemplates."""

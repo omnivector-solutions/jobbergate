@@ -51,9 +51,9 @@ class TestJobScriptFiles:
 
     def test_upsert(self, respx_mock, tmp_path, faker) -> None:
         """Test the upsert method of ScriptFiles."""
+        response_data = JobScriptFileDetailedViewFactory.build()
         file_path = tmp_path / faker.file_name()
         file_content = faker.binary()
-        response_data = JobScriptFileDetailedViewFactory.build()
         job_script_id = response_data.parent_id
         file_type = response_data.file_type
         file_path.write_bytes(file_content)
