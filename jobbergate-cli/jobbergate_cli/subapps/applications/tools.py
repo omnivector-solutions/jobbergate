@@ -7,9 +7,11 @@ import copy
 import io
 import pathlib
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Tuple, Union, cast
+from functools import cached_property
+from typing import Any, Dict, List, Union, cast
 
 import yaml
+from jobbergate_core.sdk import Apps
 from loguru import logger
 
 from jobbergate_cli.constants import (
@@ -24,9 +26,9 @@ from jobbergate_cli.render import render_dict, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import (
     ApplicationResponse,
+    ContextProtocol,
     JobbergateApplicationConfig,
     JobbergateConfig,
-    ContextProtocol,
     LocalApplication,
     LocalTemplateFile,
     LocalWorkflowFile,
@@ -129,60 +131,6 @@ def fetch_application_data(jg_ctx: ContextProtocol, id_or_identifier: int | str)
             support=True,
         ),
     )
-
-
-def load_application_data(
-    app_data: Union[ApplicationResponse, LocalApplication],
-    application_source_file: str,
-) -> Tuple[JobbergateApplicationConfig, JobbergateApplicationBase]:
-    """
-    Validates and loads the data for an application returned from the API's applications GET endpoint.
-
-    As part of the Jobbergate data restructure, sections of the legacy jobbergate.yaml
-    are now stored in different tables in the backend. This function reconstructs
-    them from app_data.workflow_file.runtime_config and app_data.template_vars
-    for backward compatibility.
-
-    Args:
-        app_data: A dictionary containing the application data.
-        application_source_file: The source file of the application.
-
-    Returns:
-        A tuple containing the application config and the application module.
-    """
-    if not app_data.workflow_files:  # make type checker happy
-        raise Abort(
-            "No workflow file found in application data",
-            subject="Invalid application data",
-            log_message="No workflow file found in application data",
-        )
-    try:
-        app_config = JobbergateApplicationConfig(
-            jobbergate_config=JobbergateConfig(**app_data.workflow_files[0].runtime_config),
-            application_config=app_data.template_vars,
-        )
-    except Exception as err:
-        logger.error("ERR: ", err)
-        raise Abort(
-            "The application config fetched from the API is not valid",
-            subject="Invalid application config",
-            support=True,
-            log_message="Invalid application config",
-            original_error=err,
-        )
-
-    try:
-        app_module = load_application_from_source(application_source_file, app_config)
-    except Exception as err:
-        raise Abort(
-            "The application source fetched from the API is not valid",
-            subject="Invalid application module",
-            support=True,
-            log_message="Invalid application module",
-            original_error=err,
-        )
-
-    return (app_config, app_module)
 
 
 @contextlib.contextmanager
@@ -363,7 +311,7 @@ def load_application_config_from_source(config_source: str) -> JobbergateApplica
     return config
 
 
-def load_application_from_source(app_source: str, app_config: JobbergateApplicationConfig) -> JobbergateApplicationBase:
+def load_application_from_source(app_source: str) -> type[JobbergateApplicationBase]:
     """
     Load the JobbergateApplication class from a text string containing the source file.
 
@@ -373,13 +321,10 @@ def load_application_from_source(app_source: str, app_config: JobbergateApplicat
 
     Args:
         app_source: The JobbergateApplication source code to load
-        app_config: The JobbergateApplicationConfig needed to instantiate the JobbergateApplication
     """
     app_locals: Dict[str, Any] = dict()
     exec(app_source, app_locals, app_locals)
-    jobbergate_application_class = app_locals["JobbergateApplication"]
-    application = jobbergate_application_class(app_config.model_dump())
-    return application
+    return app_locals["JobbergateApplication"]
 
 
 @dataclass
@@ -396,12 +341,55 @@ class ApplicationRuntime:
 
     app_data: Union[ApplicationResponse, LocalApplication]
     app_source_code: str
+    sdk: Apps
     supplied_params: Dict[str, Any] = field(default_factory=dict)
     fast_mode: bool = False
 
     def __post_init__(self) -> None:
-        self.app_config, self.app_module = load_application_data(self.app_data, self.app_source_code)
         self.answers: Dict[str, Any] = dict()
+
+    @cached_property
+    def app_config(self) -> JobbergateApplicationConfig:
+        """
+        The JobbergateApplicationConfig for the application.
+        """
+        if not self.app_data.workflow_files:  # make type checker happy
+            raise Abort(
+                "No workflow file found in application data",
+                subject="Invalid application data",
+                log_message="No workflow file found in application data",
+            )
+        try:
+            return JobbergateApplicationConfig(
+                jobbergate_config=JobbergateConfig(**self.app_data.workflow_files[0].runtime_config),
+                application_config=self.app_data.template_vars,
+            )
+        except Exception as err:
+            logger.error("ERR: ", err)
+            raise Abort(
+                "The application config fetched from the API is not valid",
+                subject="Invalid application config",
+                support=True,
+                log_message="Invalid application config",
+                original_error=err,
+            )
+
+    @cached_property
+    def app_module(self) -> JobbergateApplicationBase:
+        """
+        The JobbergateApplicationBase for the application.
+        """
+        try:
+            jobbergate_application_class = load_application_from_source(self.app_source_code)
+            return jobbergate_application_class(jobbergate_yaml=self.app_config.model_dump(), sdk=self.sdk)
+        except Exception as err:
+            raise Abort(
+                "The application source fetched from the API is not valid",
+                subject="Invalid application module",
+                support=True,
+                log_message="Invalid application module",
+                original_error=err,
+            )
 
     def execute_application(self):
         """Execute the jobbergate application python module."""

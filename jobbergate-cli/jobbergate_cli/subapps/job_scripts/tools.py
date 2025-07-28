@@ -271,6 +271,7 @@ def render_job_script_locally(
         app_data,
         application_source_code,
         fast_mode=fast,
+        sdk=jg_ctx.sdk,
         supplied_params=validate_parameter_file(param_file) if param_file else dict(),
     )
     application_runtime.execute_application()
@@ -354,6 +355,7 @@ def render_job_script(
         app_data,
         application_source_code,
         fast_mode=fast,
+        sdk=jg_ctx.sdk,
         supplied_params=validate_parameter_file(param_file) if param_file else dict(),
     )
     application_runtime.execute_application()

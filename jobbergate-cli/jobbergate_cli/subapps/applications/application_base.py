@@ -3,6 +3,8 @@
 import pathlib
 from typing import Any, Dict, List
 
+from jobbergate_core.sdk import Apps
+
 from jobbergate_cli.render import terminal_message
 from jobbergate_cli.text_tools import dedent_all
 
@@ -10,10 +12,18 @@ from jobbergate_cli.text_tools import dedent_all
 class JobbergateApplicationBase:
     """JobbergateApplicationBase."""
 
-    def __init__(self, jobbergate_yaml: Dict[str, Any]):
+    def __init__(self, jobbergate_yaml: Dict[str, Any], *, sdk: Apps | None = None):
         """Initialize class attributes."""
         self.jobbergate_config = jobbergate_yaml["jobbergate_config"]
         self.application_config = jobbergate_yaml.get("application_config", dict())
+        self._sdk = sdk
+
+    @property
+    def sdk(self) -> Apps:
+        """Return the SDK instance."""
+        if self._sdk is None:
+            raise ValueError("SDK is not initialized.")
+        return self._sdk
 
     def mainflow(self, data: Dict[str, Any]):
         """Implements the main question asking workflow."""
