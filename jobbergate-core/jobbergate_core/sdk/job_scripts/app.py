@@ -354,7 +354,7 @@ class JobScripts:
                 request_kwargs=dict(data=data),
             )
             .raise_for_status()
-            .check_status_code(201)
+            .check_status_code(codes.CREATED)
             .to_model(JobScriptDetailedView)
         )
 

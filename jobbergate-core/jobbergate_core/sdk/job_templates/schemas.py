@@ -4,7 +4,7 @@ Provide schemas for the job script templates component.
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, NonNegativeInt
 from jobbergate_core.sdk.constants import FileType
 from jobbergate_core.sdk.schemas import PydanticDateTime, TableResource
 
@@ -12,7 +12,7 @@ from jobbergate_core.sdk.schemas import PydanticDateTime, TableResource
 class TemplateFileDetailedView(BaseModel):
     """Schema for the response to get a template file."""
 
-    parent_id: int
+    parent_id: NonNegativeInt
     filename: str
     file_type: FileType
     created_at: PydanticDateTime
@@ -22,7 +22,7 @@ class TemplateFileDetailedView(BaseModel):
 class WorkflowFileDetailedView(BaseModel):
     """Schema for the response to get a workflow file."""
 
-    parent_id: int
+    parent_id: NonNegativeInt
     filename: str
     runtime_config: dict[str, Any] | None = {}
     created_at: PydanticDateTime
@@ -33,7 +33,7 @@ class JobTemplateListView(TableResource):
     """Schema for the response to get a list of entries."""
 
     identifier: str | None = None
-    cloned_from_id: int | None = None
+    cloned_from_id: NonNegativeInt | None = None
 
 
 class JobTemplateBaseDetailedView(JobTemplateListView):

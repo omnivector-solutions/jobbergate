@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, NonNegativeInt
 
 from jobbergate_core.sdk.constants import FileType
 from jobbergate_core.sdk.job_templates.schemas import JobTemplateListView
@@ -8,7 +8,7 @@ from jobbergate_core.sdk.schemas import PydanticDateTime, TableResource
 class JobScriptFileDetailedView(BaseModel):
     """Schema for the response to get a job-script file."""
 
-    parent_id: int
+    parent_id: NonNegativeInt
     filename: str
     file_type: FileType
     created_at: PydanticDateTime
@@ -22,8 +22,8 @@ class JobScriptBaseView(TableResource):
     Omits parent relationship.
     """
 
-    parent_template_id: int | None = None
-    cloned_from_id: int | None = None
+    parent_template_id: NonNegativeInt | None = None
+    cloned_from_id: NonNegativeInt | None = None
 
 
 class JobScriptListView(JobScriptBaseView):

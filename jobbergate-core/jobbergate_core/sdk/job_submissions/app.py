@@ -2,7 +2,7 @@ import time
 from typing import ClassVar, Type
 
 from httpx import codes
-from pydantic import ConfigDict, Field, validate_call
+from pydantic import ConfigDict, NonNegativeInt, PositiveInt, validate_call
 from pydantic.dataclasses import dataclass
 
 from jobbergate_core.sdk.job_submissions.constants import JobSubmissionStatus
@@ -25,11 +25,11 @@ class JobSubmissions:
     @validate_call
     def create(
         self,
-        job_script_id: int,
+        job_script_id: NonNegativeInt,
         name: str,
         *,
         description: str | None = None,
-        slurm_job_id: int | None = None,
+        slurm_job_id: NonNegativeInt | None = None,
         execution_directory: str | None = None,
         client_id: str | None = None,
         sbatch_arguments: list[str] | None = None,
@@ -73,7 +73,7 @@ class JobSubmissions:
         )
 
     @validate_call
-    def clone(self, id: int) -> JobSubmissionDetailedView:
+    def clone(self, id: NonNegativeInt) -> JobSubmissionDetailedView:
         """
         Clone a job submission under the CREATED status for a new run on the cluster.
 
@@ -95,7 +95,7 @@ class JobSubmissions:
         )
 
     @validate_call
-    def get_one(self, id: int) -> JobSubmissionDetailedView:
+    def get_one(self, id: NonNegativeInt) -> JobSubmissionDetailedView:
         """
         Get a single job submission.
 
@@ -118,7 +118,7 @@ class JobSubmissions:
 
     @validate_call
     def get_one_ensure_slurm_id(
-        self, id: int, max_retries: int = 8, waiting_interval: int = 15
+        self, id: NonNegativeInt, max_retries: PositiveInt = 8, waiting_interval: PositiveInt = 15
     ) -> JobSubmissionDetailedView:
         """
         Get a single job submission and ensure that the SLURM job ID is set.
@@ -152,11 +152,11 @@ class JobSubmissions:
         sort_field: str | None = None,
         include_archived: bool = False,
         include_parent: bool = False,
-        slurm_job_ids: list[int] | None = None,
+        slurm_job_ids: list[NonNegativeInt] | None = None,
         slurm_status: JobSubmissionStatus | None = None,
-        from_job_script_id: int | None = None,
-        size: int = Field(50, ge=1, le=100),
-        page: int = Field(1, ge=1),
+        from_job_script_id: NonNegativeInt | None = None,
+        size: PositiveInt = 50,
+        page: PositiveInt = 1,
     ) -> ListResponseEnvelope[JobSubmissionListView]:
         """
         List job submissions.
@@ -210,7 +210,7 @@ class JobSubmissions:
     @validate_call
     def update(
         self,
-        id: int,
+        id: NonNegativeInt,
         *,
         name: str | None = None,
         description: str | None = None,
@@ -250,7 +250,7 @@ class JobSubmissions:
         )
 
     @validate_call
-    def delete(self, id: int) -> None:
+    def delete(self, id: NonNegativeInt) -> None:
         """
         Delete a job submission.
 
@@ -268,7 +268,7 @@ class JobSubmissions:
         )
 
     @validate_call
-    def cancel(self, id: int) -> JobSubmissionDetailedView:
+    def cancel(self, id: NonNegativeInt) -> JobSubmissionDetailedView:
         """
         Cancel a job submission.
 

@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, ClassVar, Type
 
 from httpx import codes
-from pydantic import ConfigDict, Field, validate_call
+from pydantic import ConfigDict, NonNegativeInt, PositiveInt, validate_call
 from pydantic.dataclasses import dataclass
 
 from jobbergate_core.sdk.constants import APPLICATION_SCRIPT_FILE_NAME, FileType
@@ -26,7 +26,9 @@ class TemplateFiles:
     request_handler_cls: Type[RequestHandler] = RequestHandler
 
     @validate_call
-    def upsert(self, id_or_identifier: int | str, file_type: FileType, file_path: Path) -> TemplateFileDetailedView:
+    def upsert(
+        self, id_or_identifier: NonNegativeInt | str, file_type: FileType, file_path: Path
+    ) -> TemplateFileDetailedView:
         """
         Upload or update a template file.
 
@@ -50,7 +52,7 @@ class TemplateFiles:
         return response.raise_for_status().check_status_code(codes.OK).to_model(TemplateFileDetailedView)
 
     @validate_call
-    def delete(self, id_or_identifier: int | str, filename: str) -> None:
+    def delete(self, id_or_identifier: NonNegativeInt | str, filename: str) -> None:
         """
         Delete a template file.
 
@@ -69,7 +71,7 @@ class TemplateFiles:
         )
 
     @validate_call
-    def download(self, id_or_identifier: int | str, filename: str, directory: Path = Path.cwd()) -> Path:
+    def download(self, id_or_identifier: NonNegativeInt | str, filename: str, directory: Path = Path.cwd()) -> Path:
         """
         Download a template file.
 
@@ -103,7 +105,7 @@ class WorkflowFiles:
     @validate_call
     def upsert(
         self,
-        id_or_identifier: int | str,
+        id_or_identifier: NonNegativeInt | str,
         file_path: Path | None = None,
         runtime_config: dict[str, Any] | None = None,
     ) -> WorkflowFileDetailedView:
@@ -133,7 +135,7 @@ class WorkflowFiles:
         return response.raise_for_status().check_status_code(codes.OK).to_model(WorkflowFileDetailedView)
 
     @validate_call
-    def delete(self, id_or_identifier: int | str) -> None:
+    def delete(self, id_or_identifier: NonNegativeInt | str) -> None:
         """
         Delete a workflow file.
 
@@ -147,11 +149,11 @@ class WorkflowFiles:
                 method="DELETE",
             )
             .raise_for_status()
-            .check_status_code(200)
+            .check_status_code(codes.OK)
         )
 
     @validate_call
-    def download(self, id_or_identifier: int | str, directory: Path = Path.cwd()) -> Path:
+    def download(self, id_or_identifier: NonNegativeInt | str, directory: Path = Path.cwd()) -> Path:
         """
         Download a workflow file.
 
@@ -212,7 +214,7 @@ class JobTemplates:
     @validate_call
     def clone(
         self,
-        base_id_or_identifier: int | str,
+        base_id_or_identifier: NonNegativeInt | str,
         *,
         name: str | None = None,
         identifier: str | None = None,
@@ -284,7 +286,7 @@ class JobTemplates:
         )
 
     @validate_call
-    def delete(self, id_or_identifier: int | str) -> None:
+    def delete(self, id_or_identifier: NonNegativeInt | str) -> None:
         """
         Delete a job template.
 
@@ -302,7 +304,7 @@ class JobTemplates:
         )
 
     @validate_call
-    def get_one(self, id_or_identifier: int | str) -> JobTemplateDetailedView:
+    def get_one(self, id_or_identifier: NonNegativeInt | str) -> JobTemplateDetailedView:
         """
         Get a single job template.
 
@@ -332,8 +334,8 @@ class JobTemplates:
         search: str | None = None,
         sort_field: str | None = None,
         include_archived: bool = False,
-        size: int = Field(50, ge=1, le=100),
-        page: int = Field(1, ge=1),
+        size: PositiveInt = 50,
+        page: PositiveInt = 1,
     ) -> ListResponseEnvelope[JobTemplateListView]:
         """
         List job templates.
@@ -379,7 +381,7 @@ class JobTemplates:
     @validate_call
     def update(
         self,
-        id_or_identifier: int | str,
+        id_or_identifier: NonNegativeInt | str,
         *,
         name: str | None = None,
         identifier: str | None = None,

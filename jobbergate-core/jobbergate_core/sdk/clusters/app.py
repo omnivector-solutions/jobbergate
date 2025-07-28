@@ -5,7 +5,7 @@ SDK module t interact with cluster status API.
 from typing import ClassVar, Type
 
 from httpx import codes
-from pydantic import ConfigDict, NonNegativeInt, PositiveInt, validate_call
+from pydantic import ConfigDict, PositiveInt, validate_call
 from pydantic.dataclasses import dataclass
 
 from jobbergate_core.sdk.clusters.schemas import ClusterStatusView
@@ -26,7 +26,7 @@ class ClusterStatus:
     base_path: ClassVar[str] = "/jobbergate/cluster/status"
 
     @validate_call
-    def get_list(self, size: PositiveInt = 50, page: NonNegativeInt = 1) -> ListResponseEnvelope[ClusterStatusView]:
+    def get_list(self, size: PositiveInt = 50, page: PositiveInt = 1) -> ListResponseEnvelope[ClusterStatusView]:
         """
         Get a list of cluster statuses.
 
