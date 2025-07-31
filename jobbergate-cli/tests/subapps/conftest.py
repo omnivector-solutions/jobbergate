@@ -12,7 +12,6 @@ from jobbergate_cli.constants import JOBBERGATE_APPLICATION_CONFIG_FILE_NAME, JO
 from jobbergate_cli.context import JobbergateContext
 from jobbergate_cli.exceptions import handle_abort, handle_authentication_error
 from jobbergate_cli.schemas import IdentityData, JobbergateApplicationConfig, ContextProtocol
-from jobbergate_cli.subapps.applications.tools import load_application_from_source
 from jobbergate_cli.text_tools import dedent
 
 
@@ -90,6 +89,7 @@ def dummy_application_data():
             owner_email="tucker.beck@omnivector.solutions",
             created_at="2022-03-01 17:31:00",
             updated_at="2022-03-01 17:31:00",
+            template_vars={"foo": "bar"},
             template_files=[
                 {
                     "filename": "test-job-script.py.j2",
@@ -285,11 +285,6 @@ def dummy_template_source():
 @pytest.fixture
 def dummy_jobbergate_application_config(dummy_config_source):
     return JobbergateApplicationConfig(**yaml.safe_load(dummy_config_source))
-
-
-@pytest.fixture
-def dummy_jobbergate_application_module(dummy_module_source, dummy_jobbergate_application_config):
-    return load_application_from_source(dummy_module_source, dummy_jobbergate_application_config)
 
 
 @pytest.fixture

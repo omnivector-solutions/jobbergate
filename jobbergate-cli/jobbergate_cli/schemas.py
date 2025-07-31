@@ -10,6 +10,7 @@ import httpx
 import pydantic
 import pydantic.generics
 from jobbergate_core.auth.handler import JobbergateAuthHandler
+from jobbergate_core.sdk import Apps
 
 from jobbergate_cli.constants import FileType
 
@@ -69,6 +70,9 @@ class ContextProtocol(Protocol):
 
     @property
     def authentication_handler(self) -> JobbergateAuthHandler: ...
+
+    @property
+    def sdk(self) -> Apps: ...
 
 
 class JobbergateConfig(pydantic.BaseModel, extra="allow"):

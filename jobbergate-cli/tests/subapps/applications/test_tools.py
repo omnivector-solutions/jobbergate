@@ -1,6 +1,7 @@
 import datetime
 import importlib
 import pathlib
+from unittest.mock import MagicMock
 
 import httpx
 import pytest
@@ -29,8 +30,6 @@ from jobbergate_cli.subapps.applications.tools import (
     fetch_application_data,
     fetch_application_data_locally,
     load_application_config_from_source,
-    load_application_data,
-    load_application_from_source,
     load_default_config,
     save_application_files,
     upload_application,
@@ -84,75 +83,6 @@ def test_fetch_application_data__success__using_identifier(
     result = fetch_application_data(dummy_context, id_or_identifier=app_identifier)
     assert fetch_route.called
     assert result == ApplicationResponse.model_validate(app_data)
-
-
-def test_load_application_data__success(dummy_module_source, dummy_config_source):
-    expected_config = load_application_config_from_source(dummy_config_source)
-    application_data = ApplicationResponse(
-        id=1,
-        name="dummy",
-        owner_email="dummy@email.com",
-        created_at=datetime.datetime.now(),
-        updated_at=datetime.datetime.now(),
-        template_vars=expected_config.application_config,
-        workflow_files=[
-            WorkflowFileResponse(
-                filename="jobbergate.py",
-                parent_id=1,
-                runtime_config=expected_config.jobbergate_config.model_dump(),
-                created_at=datetime.datetime.now(),
-                updated_at=datetime.datetime.now(),
-            )
-        ],
-    )
-
-    actual_config, app_module = load_application_data(application_data, dummy_module_source)
-    assert isinstance(app_module, JobbergateApplicationBase)
-    assert isinstance(actual_config, JobbergateApplicationConfig)
-    assert actual_config == expected_config
-
-
-def test_load_application_data__fails_if_application_module_cannot_be_loaded_from_source(dummy_config_source):
-    expected_config = load_application_config_from_source(dummy_config_source)
-    application_data = ApplicationResponse(
-        id=1,
-        name="dummy",
-        owner_email="dummy@email.com",
-        created_at=datetime.datetime.now(),
-        updated_at=datetime.datetime.now(),
-        template_vars=expected_config.application_config,
-        workflow_files=[
-            WorkflowFileResponse(
-                filename="jobbergate.py",
-                parent_id=1,
-                runtime_config=expected_config.jobbergate_config.model_dump(),
-                created_at=datetime.datetime.now(),
-                updated_at=datetime.datetime.now(),
-            )
-        ],
-    )
-
-    with pytest.raises(Abort, match="The application source fetched from the API is not valid"):
-        load_application_data(application_data, "Not Python at all")
-
-
-def test_load_application_data__fails_if_application_config_is_not_valid_YAML(
-    dummy_module_source,
-    dummy_config_source,
-):
-    expected_config = load_application_config_from_source(dummy_config_source)
-    application_data = ApplicationResponse(
-        id=1,
-        name="dummy",
-        owner_email="dummy@email.com",
-        created_at=datetime.datetime.now(),
-        updated_at=datetime.datetime.now(),
-        template_vars=expected_config.application_config,
-        workflow_files=[],
-    )
-
-    with pytest.raises(Abort, match="No workflow file found in application data"):
-        load_application_data(application_data, dummy_module_source)
 
 
 def test_fetch_application_data_locally__success(
@@ -227,24 +157,6 @@ def test_fetch_application_data_locally_fails_if_no_template_files_found(tmp_pat
 
     with pytest.raises(Abort, match="No template files found in"):
         fetch_application_data_locally(tmp_path)
-
-
-def test_load_application_from_source__success(dummy_module_source, dummy_jobbergate_application_config):
-    application = load_application_from_source(dummy_module_source, dummy_jobbergate_application_config)
-    assert isinstance(application, JobbergateApplicationBase)
-    assert application.mainflow
-    assert application.jobbergate_config == dict(
-        default_template="job-script-template.py.j2",
-        template_files=[pathlib.Path("job-script-template.py.j2")],
-        supporting_files=None,
-        supporting_files_output_name=None,
-        user_supplied_key="user-supplied-value",
-    )
-    assert application.application_config == dict(
-        foo="foo",
-        bar="bar",
-        baz="baz",
-    )
 
 
 class TestUploadApplicationFiles:
@@ -424,6 +336,7 @@ class TestApplicationRuntime:
         return ApplicationRuntime(
             ApplicationResponse.model_validate(dummy_application_data[0]),
             dummy_module_source,
+            sdk=MagicMock(),
         )
 
     def test_flatten_param_dict__success(self, application_runtime):
@@ -433,9 +346,26 @@ class TestApplicationRuntime:
             "supporting_files_output_name": None,
             "supporting_files": None,
             "default_template": "test-job-script.py.j2",
+            "foo": "bar",
         }
 
         assert actual_result == expected_result
+
+    def test_get_app_config__success(self, application_runtime):
+        expected_config = JobbergateApplicationConfig(
+            application_config={"foo": "bar"},
+            jobbergate_config={"default_template": "test-job-script.py.j2"},
+        )
+
+        assert application_runtime.app_config == expected_config
+
+    def test_get_app_module__success(self, application_runtime):
+        app_module = application_runtime.app_module
+        assert isinstance(app_module, JobbergateApplicationBase)
+        assert getattr(app_module, "mainflow", None) is not None
+        assert app_module.sdk == application_runtime.sdk
+        assert app_module.jobbergate_config == application_runtime.app_config.jobbergate_config.model_dump()
+        assert app_module.application_config == application_runtime.app_config.application_config
 
     def test_execute_application__basic(
         self,

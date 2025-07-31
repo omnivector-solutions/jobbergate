@@ -32,7 +32,7 @@ class JobbergateResponseError(HTTPStatusError):
 ResponseModel = TypeVar("ResponseModel", bound=BaseModel)
 
 
-def deserialize_request_model(request_model: BaseModel, request_kwargs: dict[str, Any]):
+def deserialize_request_model(request_model: BaseModel, request_kwargs: dict[str, Any]) -> None:
     """
     Deserialize a pydantic model instance into request_kwargs for an httpx client request in place.
     """
