@@ -38,7 +38,7 @@ class TestClusterStatus:
         assert result == response_data
 
     @pytest.mark.parametrize("client_id", [None, 10, True, object()])
-    def test_get_one__bad_arguments(self, respx_mock, client_id) -> None:
+    def test_get_one_bad_arguments(self, respx_mock, client_id) -> None:
         """Test the get_one method of ClusterStatus."""
         with (
             respx.mock(base_url=BASE_URL, assert_all_called=False, assert_all_mocked=True),
