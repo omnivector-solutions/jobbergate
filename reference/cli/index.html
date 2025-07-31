@@ -1107,6 +1107,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.context.JobbergateContext.sdk" class="md-nav__link">
+    sdk
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2035,6 +2042,13 @@
           <li class="md-nav__item">
   <a href="#jobbergate_cli.context.JobbergateContext.client" class="md-nav__link">
     client
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.context.JobbergateContext.sdk" class="md-nav__link">
+    sdk
   </a>
   
 </li>
@@ -3391,6 +3405,31 @@ so commands that require no authentication face no configuration errors.</p>
   <div class="doc doc-contents ">
   
       <p>Client for making requests to the Jobbergate API.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+
+<h6 id="jobbergate_cli.context.JobbergateContext.sdk" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">sdk</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h6>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">sdk</span><span class="p">:</span> <span class="n">Apps</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>SDK for accessing Jobbergate API.</p>
   </div>
 
 </div>
@@ -5929,6 +5968,30 @@ This is a convenience to combine all of the identifying data and credentials for
 
 
 
+<div class="doc doc-object doc-attribute">
+
+
+
+
+<h8 id="jobbergate_cli.subapps.applications.application_base.JobbergateApplicationBase.sdk" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">sdk</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">sdk</span><span class="p">:</span> <span class="n">Apps</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Return the SDK instance.</p>
+  </div>
+
+</div>
+
 
 
 
@@ -5942,7 +6005,7 @@ This is a convenience to combine all of the identifying data and credentials for
 
 
 </h8>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__init__</span><span class="p">(</span><span class="n">jobbergate_yaml</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="fm">__init__</span><span class="p">(</span><span class="n">jobbergate_yaml</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">sdk</span><span class="p">:</span> <span class="n">Apps</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -7628,6 +7691,56 @@ to True.</p>
 
 
 
+<div class="doc doc-object doc-attribute">
+
+
+
+
+<h8 id="jobbergate_cli.subapps.applications.tools.ApplicationRuntime.app_config" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">app_config</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">app_config</span><span class="p">:</span> <span class="n">JobbergateApplicationConfig</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The JobbergateApplicationConfig for the application.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+
+<h8 id="jobbergate_cli.subapps.applications.tools.ApplicationRuntime.app_module" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">app_module</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h8>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">app_module</span><span class="p">:</span> <span class="n">JobbergateApplicationBase</span>
+</span></code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The JobbergateApplicationBase for the application.</p>
+  </div>
+
+</div>
+
 
 
 
@@ -7997,106 +8110,12 @@ multi-part file uploads with the client.</p>
 
 
 
-<h7 id="jobbergate_cli.subapps.applications.tools.load_application_data" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">load_application_data</span>
-
-
-</h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">load_application_data</span><span class="p">(</span><span class="n">app_data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ApplicationResponse</span><span class="p">,</span> <span class="n">LocalApplication</span><span class="p">],</span> <span class="n">application_source_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">JobbergateApplicationConfig</span><span class="p">,</span> <span class="n">JobbergateApplicationBase</span><span class="p">]</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Validates and loads the data for an application returned from the API's applications GET endpoint.</p>
-<p>As part of the Jobbergate data restructure, sections of the legacy jobbergate.yaml
-are now stored in different tables in the backend. This function reconstructs
-them from app_data.workflow_file.runtime_config and app_data.template_vars
-for backward compatibility.</p>
-
-
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>app_data</code></td>
-          <td>
-                <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.ApplicationResponse" href="#jobbergate_cli.schemas.ApplicationResponse">ApplicationResponse</a>, <a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.LocalApplication" href="#jobbergate_cli.schemas.LocalApplication">LocalApplication</a>]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A dictionary containing the application data.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>application_source_file</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The source file of the application.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><span title="typing.Tuple">Tuple</span>[<a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateApplicationConfig" href="#jobbergate_cli.schemas.JobbergateApplicationConfig">JobbergateApplicationConfig</a>, <a class="autorefs autorefs-internal" title="jobbergate_cli.subapps.applications.application_base.JobbergateApplicationBase" href="#jobbergate_cli.subapps.applications.application_base.JobbergateApplicationBase">JobbergateApplicationBase</a>]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A tuple containing the application config and the application module.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
 <h7 id="jobbergate_cli.subapps.applications.tools.load_application_from_source" class="doc doc-heading">
           <span class="doc doc-object-name doc-function-name">load_application_from_source</span>
 
 
 </h7>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">load_application_from_source</span><span class="p">(</span><span class="n">app_source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">app_config</span><span class="p">:</span> <span class="n">JobbergateApplicationConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobbergateApplicationBase</span>
+<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">load_application_from_source</span><span class="p">(</span><span class="n">app_source</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">JobbergateApplicationBase</span><span class="p">]</span>
 </span></code></pre></div>
 
   <div class="doc doc-contents ">
@@ -8126,20 +8145,6 @@ for backward compatibility.</p>
           <td>
             <div class="doc-md-description">
               <p>The JobbergateApplication source code to load</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>app_config</code></td>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="jobbergate_cli.schemas.JobbergateApplicationConfig" href="#jobbergate_cli.schemas.JobbergateApplicationConfig">JobbergateApplicationConfig</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The JobbergateApplicationConfig needed to instantiate the JobbergateApplication</p>
             </div>
           </td>
           <td>
