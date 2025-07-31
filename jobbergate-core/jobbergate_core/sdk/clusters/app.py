@@ -1,5 +1,5 @@
 """
-SDK module t interact with cluster status API.
+SDK module to interact with cluster status API.
 """
 
 from typing import ClassVar, Type
