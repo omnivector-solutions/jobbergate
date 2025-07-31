@@ -11,6 +11,42 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.8.0a1](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.8.0a1) - 2025-07-31
+
+## Core
+
+### Added
+
+- Created Software Development Kit (SDK) module to facilitate the integration with third-party tools and automation tools running on top of Jobbergate ([PR #764](https://github.com/omnivector-solutions/jobbergate/pull/764))
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+No significant changes.
+
+
+## CLI
+
+### Added
+
+- Included `sdk` property to `JobbergateApplicationBase` so it is available to application scripts at runtime ([PR #764](https://github.com/omnivector-solutions/jobbergate/pull/764))
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.8.0a0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.8.0a0) - 2025-07-23
 
 ## Core
