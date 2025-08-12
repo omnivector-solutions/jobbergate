@@ -403,7 +403,14 @@ class TestJobbergateAuthHandlerGetIdentityData:
     Test the get_identity_data method on JobbergateAuthHandler class.
     """
 
-    def test_get_identity_data__success(self, dummy_jobbergate_auth, jwt_token):
+    @pytest.mark.parametrize(
+        "org_field",
+        [
+            {"some-name": {"id": "some-id"}}, # New Keycloak json structure - PENG-3064
+            {"some-id": {"name": "some-name"}}, # Legacy Keycloak json structure for backward compatibility
+        ],
+    )
+    def test_get_identity_data__success(self, org_field, dummy_jobbergate_auth, jwt_token):
         """
         Test that the function works as expected.
         """
@@ -411,7 +418,7 @@ class TestJobbergateAuthHandlerGetIdentityData:
         access_token = jwt_token(
             azp="dummy-client",
             email="good@email.com",
-            organization={"some-id": "some-name"},
+            organization=org_field,
             exp=pendulum.tomorrow().int_timestamp,
         )
         dummy_jobbergate_auth._access_token = dummy_jobbergate_auth._access_token.replace(content=access_token)

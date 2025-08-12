@@ -383,12 +383,15 @@ class JobbergateAuthHandler:
         client_id = AuthenticationError.enforce_defined(
             token_data.get("azp"), "Could not retrieve client_id from token"
         )
-        org_dict = token_data.get("organization", {})
+        org_field = token_data.get("organization", {})
         AuthenticationError.require_condition(
-            len(org_dict) <= 1,
+            len(org_field) <= 1,
             message="More than one organization id found in token payload",
         )
-        organization_id = set(org_dict.keys()).pop() if org_dict else None
+        organization_id = None
+        if org_field:
+            sub_dict_name, sub_dict_value = next(iter(org_field.items()))
+            organization_id = sub_dict_value.get("id", sub_dict_name)
         return IdentityData(
             email=email,
             client_id=client_id,
