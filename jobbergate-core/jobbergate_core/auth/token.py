@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 from enum import Enum
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import pendulum
 from jose.jwt import decode
@@ -34,7 +34,7 @@ class TokenData(TypedDict, total=False):
     azp: str
     exp: int
     iat: int
-    organization: dict[str, str]
+    organization: dict[str, dict[str, Any]]
 
 
 @dataclass(frozen=True)
