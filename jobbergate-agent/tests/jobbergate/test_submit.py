@@ -420,6 +420,61 @@ async def test_mark_as_rejected__raises_JobbergateApiError_if_the_response_is_no
         assert update_route.called
 
 
+class TestSubprocessAsUserHandler:
+    """
+    Test the ``SubprocessAsUserHandler`` class.
+    """
+
+    @pytest.fixture
+    def mock_pwd(self):
+        with mock.patch("pwd.getpwnam", autospec=True) as mock_getpwnam:
+            mock_getpwnam.return_value.pw_uid = 123
+            mock_getpwnam.return_value.pw_gid = 456
+            yield mock_getpwnam
+
+    @pytest.fixture
+    def username(self):
+        return "nobody"
+
+    @pytest.fixture
+    def handler(self, mock_pwd, username):
+        return SubprocessAsUserHandler(username=username)
+
+    def test_init_sets_uid_gid(self, handler):
+        assert handler.uid == 123
+        assert handler.gid == 456
+
+    def test_run_calls_super_with_user_and_group(self, handler):
+        with (
+            mock.patch.object(handler.__class__.__bases__[0], "run", return_value="result") as mock_super_run,
+            mock.patch.object(handler, "extra_groups", new_callable=mock.PropertyMock(return_value={6, 7, 8})),
+        ):
+            result = handler.run("arg1", key="value")
+            assert result == "result"
+            called_kwargs = mock_super_run.call_args.kwargs
+            assert called_kwargs["user"] == 123
+            assert called_kwargs["group"] == 456
+            assert called_kwargs["env"] == {}
+            assert called_kwargs["extra_groups"] == {6, 7, 8}
+
+    def test_run_sets_preexec_fn_if_cwd(self, handler):
+        with mock.patch.object(handler.__class__.__bases__[0], "run", return_value="result") as mock_super_run:
+            handler.run(cmd=("ls",), cwd="/tmp")
+            assert "preexec_fn" in mock_super_run.call_args.kwargs
+
+    def test_extra_groups_returns_none_if_setting_false(self, handler, tweak_settings):
+        with tweak_settings(GET_EXTRA_GROUPS=False):
+            assert handler.extra_groups is None
+
+    def test_extra_groups_returns_groups(self, tweak_settings, handler):
+        with (
+            tweak_settings(GET_EXTRA_GROUPS=True),
+            mock.patch.object(handler.__class__.__bases__[0], "run", return_value=mock.Mock(stdout="456 789 123")),
+        ):
+            groups = handler.extra_groups
+            assert groups == {456, 789, 123} - {handler.gid}
+
+
 class TestValidateSubmitDir:
     """
     Test the ``validate_submit_dir()`` function.
