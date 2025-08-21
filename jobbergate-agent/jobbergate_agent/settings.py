@@ -65,6 +65,7 @@ class Settings(BaseSettings):
 
     # Job submission settings
     WRITE_SUBMISSION_FILES: bool = True
+    GET_EXTRA_GROUPS: bool = False
 
     # InfluxDB settings for job metric collection
     INFLUX_DSN: Optional[AnyUrl] = Field(

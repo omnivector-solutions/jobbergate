@@ -4,6 +4,7 @@ import asyncio
 import os
 import pwd
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 from subprocess import CompletedProcess
 from tempfile import TemporaryDirectory
@@ -179,7 +180,7 @@ class SubprocessAsUserHandler(SubprocessHandler):
         self.gid = pwan.pw_gid
 
     def run(self, *args, **kwargs) -> CompletedProcess:
-        kwargs.update(user=self.uid, group=self.gid, env={})
+        kwargs.update(user=self.uid, group=self.gid, extra_groups=self.extra_groups, env={})
         # Tests indicate that the change on the working directory precedes the change of user on the subprocess.
         # With that, the user running the agent can face permission denied errors on cwd,
         # depending on the setting on the filesystem and permissions on the directory.
@@ -187,6 +188,18 @@ class SubprocessAsUserHandler(SubprocessHandler):
         if cwd := kwargs.pop("cwd", None):
             kwargs["preexec_fn"] = lambda: os.chdir(cwd)
         return super().run(*args, **kwargs)
+
+    @cached_property
+    def extra_groups(self) -> set[int] | None:
+        if not SETTINGS.GET_EXTRA_GROUPS:
+            return None
+        try:
+            result = super().run(cmd=("id", "-G", self.username), capture_output=True, text=True)
+        except RuntimeError as e:
+            message = f"Failed to get supplementary groups for user {self.username}: {e}"
+            logger.error(message)
+            raise RuntimeError(message) from e
+        return {g for g in map(int, result.stdout.split()) if g != self.gid}
 
 
 def validate_submit_dir(submit_dir: Path, subprocess_handler: SubprocessAsUserHandler) -> None:
