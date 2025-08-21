@@ -1783,6 +1783,20 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.security.IdentityPayload.extract_organization--old-json-structure" class="md-nav__link">
+    Old json structure
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.security.IdentityPayload.extract_organization--new-json-structure" class="md-nav__link">
+    New json structure
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2916,6 +2930,20 @@
           <li class="md-nav__item">
   <a href="#jobbergate_api.security.IdentityPayload.extract_organization" class="md-nav__link">
     extract_organization()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.security.IdentityPayload.extract_organization--old-json-structure" class="md-nav__link">
+    Old json structure
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_api.security.IdentityPayload.extract_organization--new-json-structure" class="md-nav__link">
+    New json structure
   </a>
   
 </li>
@@ -13797,11 +13825,23 @@ checking.</p>
   <div class="doc doc-contents ">
   
       <p>Extract the organization_id from the organization payload.</p>
-<p>The payload is expected to look like:
-{
+<p>The payload is expected to look like:</p>
+<h6 id="jobbergate_api.security.IdentityPayload.extract_organization--old-json-structure">Old json structure</h6>
+<p>{
     ...,
     "organization": {
         "adf99e01-5cd5-41ac-a1af-191381ad7780": {
+            ...
+        }
+    }
+}</p>
+<p>or:</p>
+<h6 id="jobbergate_api.security.IdentityPayload.extract_organization--new-json-structure">New json structure</h6>
+<p>{
+    ...,
+    "organization": {
+        "orgname": {
+            "id": "adf99e01-5cd5-41ac-a1af-191381ad7780",
             ...
         }
     }
