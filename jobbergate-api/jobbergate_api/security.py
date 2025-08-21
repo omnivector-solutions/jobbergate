@@ -71,6 +71,8 @@ class IdentityPayload(TokenPayload):
         Extract the organization_id from the organization payload.
 
         The payload is expected to look like:
+
+        # Old json structure
         {
             ...,
             "organization": {
@@ -79,7 +81,21 @@ class IdentityPayload(TokenPayload):
                 }
             }
         }
+
+        or:
+
+        # New json structure
+        {
+            ...,
+            "organization": {
+                "orgname": {
+                    "id": "adf99e01-5cd5-41ac-a1af-191381ad7780",
+                    ...
+                }
+            }
+        }
         """
+
         organization_dict = values.pop("organization", None)
         if organization_dict is None or isinstance(organization_dict, str):
             # String is accepted for backwards compatibility with previous Keycloak setup
@@ -91,7 +107,12 @@ class IdentityPayload(TokenPayload):
             raise ValueError(f"Invalid organization payload: {organization_dict}")
         elif len(organization_dict) != 1:
             raise ValueError(f"Organization payload did not include exactly one value: {organization_dict}")
-        return {**values, "organization_id": next(iter(organization_dict))}
+
+        org_field = next(iter(organization_dict))
+        # Check if the organization field has the id field from Keycloak version
+        org_id = organization_dict[org_field].get("id", org_field)
+
+        return {**values, "organization_id": org_id}
 
 
 def lockdown_with_identity(
