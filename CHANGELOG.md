@@ -11,6 +11,42 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.7.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.7.0) - 2025-08-21
+
+## Core
+
+### Added
+
+- Added support for new `organization_id` format from Keycloak ([PR #834](https://github.com/omnivector-solutions/jobbergate/pull/834))
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+### Changed
+
+- Added support for new organization_id format from Keycloak ([PR #833](https://github.com/omnivector-solutions/jobbergate/pull/833))
+
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.6.7](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.6.7) - 2025-07-11
 
 ## Core
