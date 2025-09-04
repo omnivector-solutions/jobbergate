@@ -11,6 +11,44 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.8.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.8.0) - 2025-09-04
+
+## Core
+
+### Added
+
+- Added support for new `organization_id` format from Keycloak ([PR #834](https://github.com/omnivector-solutions/jobbergate/pull/834))
+
+
+## Agent
+
+### Added
+
+- Added the possibility to run subprocesses as the user using their multiple groups they belong to, so remote job submissions work on filesystems that rely on multiple group settings for granular access controls ([PR #837](https://github.com/omnivector-solutions/jobbergate/pull/837))
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+### Changed
+
+- Added support for new organization_id format from Keycloak ([PR #833](https://github.com/omnivector-solutions/jobbergate/pull/833))
+
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.8.0a1](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.8.0a1) - 2025-07-31
 
 ## Core
