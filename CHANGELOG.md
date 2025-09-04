@@ -11,57 +11,22 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
-# [5.8.0a1](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.8.0a1) - 2025-07-31
+# [5.8.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.8.0) - 2025-09-04
 
 ## Core
 
 ### Added
 
+- Added support for new `organization_id` format from Keycloak ([PR #834](https://github.com/omnivector-solutions/jobbergate/pull/834))
 - Created Software Development Kit (SDK) module to facilitate the integration with third-party tools and automation tools running on top of Jobbergate ([PR #764](https://github.com/omnivector-solutions/jobbergate/pull/764))
-
-
-## Agent
-
-No significant changes.
-
-
-## Agent Snap
-
-No significant changes.
-
-
-## API
-
-No significant changes.
-
-
-## CLI
-
-### Added
-
-- Included `sdk` property to `JobbergateApplicationBase` so it is available to application scripts at runtime ([PR #764](https://github.com/omnivector-solutions/jobbergate/pull/764))
-
-
-## Documentation
-
-No significant changes.
-
-
-# [5.8.0a0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.8.0a0) - 2025-07-23
-
-## Core
-
-### Added
-
 - Create a new command handler for `scancel` ([PR #830](https://github.com/omnivector-solutions/jobbergate/pull/830))
 
-
 ## Agent
 
 ### Added
 
+- Added the possibility to run subprocesses as the user using their multiple groups they belong to, so remote job submissions work on filesystems that rely on multiple group settings for granular access controls ([PR #837](https://github.com/omnivector-solutions/jobbergate/pull/837))
 - Enable the agent to process job cancellations on slurm using `scancel` command ([PR #830](https://github.com/omnivector-solutions/jobbergate/pull/830))
-
 
 ## Agent Snap
 
@@ -73,7 +38,6 @@ No significant changes.
 
 - Adjusted the number of characters in the snap description.
 
-
 ## API
 
 ### Added
@@ -84,22 +48,24 @@ No significant changes.
 
 - The field `is_archived` was added on job-submission update route and `include_archived` parameter was added to its listing route ([PR #812](https://github.com/omnivector-solutions/jobbergate/pull/812))
 
+### Changed
+
+- Added support for new organization_id format from Keycloak ([PR #833](https://github.com/omnivector-solutions/jobbergate/pull/833))
 
 ## CLI
 
 ### Added
 
+- Included `sdk` property to `JobbergateApplicationBase` so it is available to application scripts at runtime ([PR #764](https://github.com/omnivector-solutions/jobbergate/pull/764))
 - Sub-command to cancel a job-submission on the Slurm cluster ([PR #830](https://github.com/omnivector-solutions/jobbergate/pull/830))
 
 ### Fixed
 
 - Update commands accepting the `is_archived` field to allow updates and `include_archived` option is added to listing commands ([PR #812](https://github.com/omnivector-solutions/jobbergate/pull/812))
 
-
 ## Documentation
 
 No significant changes.
-
 
 # [5.7.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.7.0) - 2025-06-30
 
