@@ -12,11 +12,11 @@ jobs:
     name: "jobbergate-core tests"
     runs-on: "ubuntu-24.04"
     steps:
-      - uses: actions/checkout@v3
-      - uses: Gr1N/setup-poetry@v8
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
         with:
           poetry-version: 1.5.1
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
         with:
           python-version: "3.10"
           architecture: "x64"
@@ -32,7 +32,7 @@ jobs:
           make qa
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
         with:
           working-directory: jobbergate-core
           flags: core
@@ -47,7 +47,7 @@ jobs:
     runs-on: "ubuntu-24.04"
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - name: Run QA
         working-directory: jobbergate-composed
         run: |
@@ -55,7 +55,7 @@ jobs:
           docker compose --profile dev run --rm jobbergate-api-qa
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
         with:
           working-directory: jobbergate-api
           flags: api
@@ -69,11 +69,11 @@ jobs:
     name: "jobbergate-cli tests"
     runs-on: "ubuntu-24.04"
     steps:
-      - uses: actions/checkout@v3
-      - uses: Gr1N/setup-poetry@v8
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
         with:
           poetry-version: 1.5.1
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
         with:
           python-version: "3.10"
           architecture: "x64"
@@ -89,7 +89,7 @@ jobs:
           make qa
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
         with:
           working-directory: jobbergate-cli
           flags: cli
@@ -103,11 +103,11 @@ jobs:
     name: "jobbergate-agent tests"
     runs-on: "ubuntu-24.04"
     steps:
-      - uses: actions/checkout@v3
-      - uses: Gr1N/setup-poetry@v8
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
         with:
           poetry-version: 1.5.1
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
         with:
           python-version: "3.10"
           architecture: "x64"
@@ -123,7 +123,7 @@ jobs:
           make qa
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
         with:
           working-directory: jobbergate-agent
           flags: agent
@@ -137,8 +137,8 @@ jobs:
     name: "jobbergate-agent-snap tests"
     runs-on: "ubuntu-22.04"
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
         with:
           python-version: "3.12.3"
           architecture: "x64"
