@@ -71,6 +71,7 @@ types-PyYAML = "6.0.*"
 types-toml = "^0.10.8.7"
 flaky = "^3.7.0"
 ruff = "^0.4.9"
+faker = "^25.0.0"
 
 [tool.poetry.scripts]
 dev-tools = "dev_tools:app"

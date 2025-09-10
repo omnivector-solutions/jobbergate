@@ -4,8 +4,8 @@ import asyncio
 import contextlib
 import dataclasses
 import datetime
-import random
-import string
+from faker import Faker
+
 import typing
 from contextlib import asynccontextmanager
 from textwrap import dedent
@@ -21,9 +21,6 @@ from jobbergate_api.apps.models import Base
 from jobbergate_api.config import settings
 from jobbergate_api.main import app
 from jobbergate_api.storage import engine_factory
-
-# Charset for producing random strings
-CHARSET = string.ascii_letters + string.digits + string.punctuation
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -341,7 +338,7 @@ def job_script_data_as_string():
 
 
 @pytest.fixture
-def make_dummy_file(tmp_path):
+def make_dummy_file(tmp_path, faker: Faker):
     """
     Provide a fixture that will generate a temporary file with ``size`` random bytes of text data.
     """
@@ -351,7 +348,7 @@ def make_dummy_file(tmp_path):
         Auxillary function that builds the temporary file.
         """
         if not content:
-            content = "".join(random.choice(CHARSET) for _ in range(size))
+            content = faker.text(max_nb_chars=size)
         dummy_path = tmp_path / filename
         dummy_path.write_text(content)
         return dummy_path

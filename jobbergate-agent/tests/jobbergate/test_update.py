@@ -1,5 +1,5 @@
 import json
-import random
+from faker import Faker
 import uuid
 from datetime import datetime
 from typing import get_args
@@ -336,19 +336,19 @@ async def test_update_active_jobs(
 
 @pytest.mark.asyncio
 @mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
-async def test_fetch_influx_data__success_with_all_set(mocked_influxdb_client: mock.MagicMock):
+async def test_fetch_influx_data__success_with_all_set(mocked_influxdb_client: mock.MagicMock, faker: Faker):
     """
     Test that the ``fetch_influx_data()`` function can successfully retrieve
     data from InfluxDB as a list of ``InfluxDBPointDict`` when all arguments
     are passed.
     """
-    time = random.randint(0, 1000)  # noqa: F811
+    time = faker.random_int(min=0, max=1000)  # noqa: F811
     host = "test-host"
-    step = random.randint(0, 1000)
-    task = random.randint(0, 1000)
-    job = random.randint(0, 1000)
-    measurement_value = random.uniform(1, 1000)
-    measurement = random.choice(get_args(INFLUXDB_MEASUREMENT))
+    step = faker.random_int(min=0, max=1000)
+    task = faker.random_int(min=0, max=1000)
+    job = faker.random_int(min=0, max=1000)
+    measurement_value = faker.pyfloat(min_value=1, max_value=1000)
+    measurement = faker.random_element(get_args(INFLUXDB_MEASUREMENT))
 
     mocked_influxdb_client.query.return_value.get_points.return_value = [
         dict(
@@ -388,18 +388,18 @@ async def test_fetch_influx_data__success_with_all_set(mocked_influxdb_client: m
 
 @pytest.mark.asyncio
 @mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
-async def test_fetch_influx_data__data_point_overflow(mocked_influxdb_client: mock.MagicMock):
+async def test_fetch_influx_data__data_point_overflow(mocked_influxdb_client: mock.MagicMock, faker: Faker):
     """
     Test that the ``fetch_influx_data()`` function prevents a overflow
     when the data point value cannot be stored in disk as an int64.
     """
-    time = random.randint(0, 1000)  # noqa: F811
+    time = faker.random_int(min=0, max=1000)  # noqa: F811
     host = "test-host"
-    step = random.randint(0, 1000)
-    task = random.randint(0, 1000)
-    job = random.randint(0, 1000)
-    measurement_value = 2**63 - 1 + random.uniform(1, 1000)
-    measurement = random.choice(get_args(INFLUXDB_MEASUREMENT))
+    step = faker.random_int(min=0, max=1000)
+    task = faker.random_int(min=0, max=1000)
+    job = faker.random_int(min=0, max=1000)
+    measurement_value = 2**63 - 1 + faker.pyfloat(min_value=1, max_value=1000)
+    measurement = faker.random_element(get_args(INFLUXDB_MEASUREMENT))
 
     mocked_influxdb_client.query.return_value.get_points.return_value = [
         dict(
@@ -439,19 +439,19 @@ async def test_fetch_influx_data__data_point_overflow(mocked_influxdb_client: mo
 
 @pytest.mark.asyncio
 @mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
-async def test_fetch_influx_data__success_with_all_None(mocked_influxdb_client: mock.MagicMock):
+async def test_fetch_influx_data__success_with_all_None(mocked_influxdb_client: mock.MagicMock, faker: Faker):
     """
     Test that the ``fetch_influx_data()`` function can successfully retrieve
     data from InfluxDB as a list of ``InfluxDBPointDict`` when some arguments
     are None.
     """
-    time = random.randint(0, 1000)  # noqa: F811
+    time = faker.random_int(min=0, max=1000)  # noqa: F811
     host = "test-host"
-    step = random.randint(0, 1000)
-    task = random.randint(0, 1000)
-    job = random.randint(0, 1000)
-    measurement_value = random.uniform(1, 1000)
-    measurement = random.choice(get_args(INFLUXDB_MEASUREMENT))
+    step = faker.random_int(min=0, max=1000)
+    task = faker.random_int(min=0, max=1000)
+    job = faker.random_int(min=0, max=1000)
+    measurement_value = faker.pyfloat(min_value=1, max_value=1000)
+    measurement = faker.random_element(get_args(INFLUXDB_MEASUREMENT))
 
     mocked_influxdb_client.query.return_value.get_points.return_value = [
         dict(
@@ -496,9 +496,10 @@ async def test_fetch_influx_data__raises_JobbergateAgentError_if_bad_arguments_a
     host: int | None,
     step: int | None,
     task: int | None,
+    faker: Faker,
 ):
-    job = random.randint(0, 100)
-    measurement = random.choice(get_args(INFLUXDB_MEASUREMENT))
+    job = faker.random_int(min=0, max=100)
+    measurement = faker.random_element(get_args(INFLUXDB_MEASUREMENT))
 
     with pytest.raises(
         JobbergateAgentError, match="Invalid argument combination: all optional arguments must be either set or None."
@@ -517,20 +518,22 @@ async def test_fetch_influx_data__raises_JobbergateAgentError_if_bad_arguments_a
 
 @pytest.mark.asyncio
 @mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
-async def test_fetch_influx_data__raises_JobbergateAgentError_if_query_fails(mocked_influxdb_client: mock.MagicMock):
+async def test_fetch_influx_data__raises_JobbergateAgentError_if_query_fails(
+    mocked_influxdb_client: mock.MagicMock, faker: Faker
+):
     """
     Test that the ``fetch_influx_data()`` function will raise a JobbergateAgentError
     if the query to InfluxDB fails.
     """
-    measurement = random.choice(get_args(INFLUXDB_MEASUREMENT))
+    measurement = faker.random_element(get_args(INFLUXDB_MEASUREMENT))
 
     mocked_influxdb_client.query = mock.Mock(side_effect=Exception("BOOM!"))
 
-    time = random.randint(0, 1000)  # noqa: F811
+    time = faker.random_int(min=0, max=1000)  # noqa: F811
     host = "test-host"
-    step = random.randint(0, 1000)
-    task = random.randint(0, 1000)
-    job = random.randint(0, 1000)
+    step = faker.random_int(min=0, max=1000)
+    task = faker.random_int(min=0, max=1000)
+    job = faker.random_int(min=0, max=1000)
 
     query = dedent(f"""
     SELECT * FROM {measurement} WHERE time > $time AND host = $host AND step = $step AND task = $task AND job = $job
@@ -551,34 +554,34 @@ async def test_fetch_influx_data__raises_JobbergateAgentError_if_query_fails(moc
 
 
 @pytest.mark.asyncio
-async def test_fetch_influx_data__raises_JobbergateAgentError_if_influxdb_client_is_None():
+async def test_fetch_influx_data__raises_JobbergateAgentError_if_influxdb_client_is_None(faker: Faker):
     """
     Test that the ``fetch_influx_data()`` function will raise a JobbergateAgentError
     if the influxdb_client is None.
     """
-    measurement = random.choice(get_args(INFLUXDB_MEASUREMENT))
+    measurement = faker.random_element(get_args(INFLUXDB_MEASUREMENT))
     with mock.patch("jobbergate_agent.jobbergate.update.influxdb_client", None):
         with pytest.raises(JobbergateAgentError, match="Failed to fetch measures from InfluxDB -- AssertionError:"):
             await fetch_influx_data(
-                time=random.randint(0, 1000),
+                time=faker.random_int(min=0, max=1000),
                 host="test-host",
-                step=random.randint(0, 1000),
-                task=random.randint(0, 1000),
-                job=random.randint(0, 1000),
+                step=faker.random_int(min=0, max=1000),
+                task=faker.random_int(min=0, max=1000),
+                job=faker.random_int(min=0, max=1000),
                 measurement=measurement,
             )
 
 
 @pytest.mark.asyncio
 @mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
-async def test_fetch_influx_measurements__success(mocked_influxdb_client: mock.MagicMock):
+async def test_fetch_influx_measurements__success(mocked_influxdb_client: mock.MagicMock, faker: Faker):
     """
     Test that the ``fetch_influx_measurements()`` function can successfully retrieve
     measurements from InfluxDB.
     """
     expected_measurements = [{"name": measurement} for measurement in get_args(INFLUXDB_MEASUREMENT)]
     extended_measurements = expected_measurements + [
-        {"name": str(uuid.uuid4())} for _ in range(1, random.randint(2, 11))
+        {"name": str(uuid.uuid4())} for _ in range(1, faker.random_int(min=2, max=11))
     ]
 
     mocked_influxdb_client.get_list_measurements.return_value = extended_measurements

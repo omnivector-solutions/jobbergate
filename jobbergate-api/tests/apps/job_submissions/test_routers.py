@@ -4,7 +4,8 @@ Tests for the /job-submissions/ endpoint.
 
 import itertools
 import json
-import random
+from faker import Faker
+
 import uuid
 from datetime import datetime, timezone, timedelta
 from textwrap import dedent
@@ -37,25 +38,26 @@ def generate_job_submission_metric_columns(base_time: int, num_rows: int = 5) ->
     For simplicity, generate a list of JobSubmissionMetric objects with random values for each field
     and all matching the same tuple (job_submission_id, node_host, step, task).
     """
+    faker = Faker()
     node_host = str(uuid.uuid4())
-    step = random.randint(0, 100)
-    task = random.randint(0, 100)
+    step = faker.random_int(min=0, max=100)
+    task = faker.random_int(min=0, max=100)
     return [
         (
             base_time + i,
             node_host,
             step,
             task,
-            random.uniform(0, 5),
-            random.uniform(0, 5),
-            random.uniform(0, 5),
-            random.randint(0, 5),
-            random.uniform(0, 5),
-            random.randint(0, 5),
-            random.randint(0, 5),
-            random.randint(0, 5),
-            random.randint(0, 5),
-            random.randint(0, 5),
+            faker.pyfloat(min_value=0, max_value=5),
+            faker.pyfloat(min_value=0, max_value=5),
+            faker.pyfloat(min_value=0, max_value=5),
+            faker.random_int(min=0, max=5),
+            faker.pyfloat(min_value=0, max_value=5),
+            faker.random_int(min=0, max=5),
+            faker.random_int(min=0, max=5),
+            faker.random_int(min=0, max=5),
+            faker.random_int(min=0, max=5),
+            faker.random_int(min=0, max=5),
         )
         for i in range(num_rows)
     ]
@@ -2528,13 +2530,14 @@ async def test_job_submissions_metrics__aggregation_by_all_nodes(
     client,
     inject_security_header,
     synth_session,
+    faker: Faker,
 ):
     """
     Test GET /job-submissions/{job_submission_id}/metrics returns 200.
     """
-    num_rows = random.randint(1, 10)
-    job_submission_id = random.randint(1, 100)
-    random_hour_interval = random.randint(1, 23)
+    num_rows = faker.random_int(min=1, max=10)
+    job_submission_id = faker.random_int(min=1, max=100)
+    random_hour_interval = faker.random_int(min=1, max=23)
 
     mocked_session_execute = mock.AsyncMock()
     mocked_session_execute.return_value.fetchall = mock.Mock()
@@ -2658,13 +2661,14 @@ async def test_job_submissions_metrics__start_time_less_greater_than_end_time(
     client,
     inject_security_header,
     synth_session,
+    faker: Faker,
 ):
     """
     Test GET /job-submissions/{job_submission_id}/metrics returns 400 when the start_time
     query param is greater than the end_time.
     """
-    job_submission_id = random.randint(1, 100)
-    random_hour_interval = random.randint(1, 23)
+    job_submission_id = faker.random_int(min=1, max=100)
+    random_hour_interval = faker.random_int(min=1, max=23)
 
     mocked_session_execute = mock.AsyncMock()
     mocked_session_execute.return_value.fetchall = mock.Mock()

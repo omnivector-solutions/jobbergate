@@ -60,6 +60,7 @@ single-user-mapper = "jobbergate_agent.utils.user_mapper:SingleUserMapper"
 
 [tool.poetry.dev-dependencies]
 asynctest = "^0.13.0"
+faker = "^25.0.0"
 freezegun = "^1.2.2"
 mypy = "^1.10"
 polyfactory = "^2.19.0"
