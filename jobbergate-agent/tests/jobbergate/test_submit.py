@@ -457,9 +457,9 @@ class TestSubprocessAsUserHandler:
             assert called_kwargs["env"] == {}
             assert called_kwargs["extra_groups"] == {6, 7, 8}
 
-    def test_run_sets_preexec_fn_if_cwd(self, handler):
+    def test_run_sets_preexec_fn_if_cwd(self, handler, tmp_path: Path):
         with mock.patch.object(handler.__class__.__bases__[0], "run", return_value="result") as mock_super_run:
-            handler.run(cmd=("ls",), cwd="/tmp")
+            handler.run(cmd=("ls",), cwd=tmp_path)
             assert "preexec_fn" in mock_super_run.call_args.kwargs
 
     def test_extra_groups_returns_none_if_setting_false(self, handler, tweak_settings):
