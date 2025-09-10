@@ -833,7 +833,7 @@ class TestJobTemplateFiles:
         parent_id = job_template_data.id
         file_type = "ENTRYPOINT"
 
-        file_url = "http://dummy-domain.com{url_path}"
+        file_url = "https://dummy-domain.com{url_path}"
         respx_mock.get(file_url).mock(
             return_value=httpx.Response(
                 httpx.codes.OK,

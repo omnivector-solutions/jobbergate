@@ -74,11 +74,13 @@ def test_lockdown_with_identity_ensure_fields__success(opt_name):
         sub="dummy-sub",
         client_id="dummy-client-id",
         email="dummy-email@pytest.com",
-        organization={"dummy-organization-id": {
-            "name": "Dummy Organization",
-            "alias": "dummy-organization",
-            "attributes": {"logo": [""], "created_at": ["1689105153.0"]},
-        }},
+        organization={
+            "dummy-organization-id": {
+                "name": "Dummy Organization",
+                "alias": "dummy-organization",
+                "attributes": {"logo": [""], "created_at": ["1689105153.0"]},
+            }
+        },
     )
     token_payload = TokenPayload.model_validate(token_raw_data)
 
@@ -125,22 +127,25 @@ def test_lockdown_with_identity__backward_compatibility():
 
     expected_identity = IdentityPayload.model_validate(token_raw_data)
     assert actual_identity == expected_identity
-    
+
+
 def test_lockdown_extracting_organization_id_from_new_token_structure():
     """Check if the lockdown_with_identity decorator extracts organization_id from the new token structure."""
-    
+
     org_id = "cdec816e-a28a-43cd-8d75-017a700540a1"
 
     token_raw_data = dict(
         sub="dummy-sub",
         client_id="dummy-client-id",
         email="dummy-email@pytest.com",
-        organization={ org_id: {
-            "id": org_id,
-            "name": "Dummy Organization",
-            "alias": "dummy-organization",
-            "attributes": {"logo": [""], "created_at": ["1689105153.0"]},
-        }},
+        organization={
+            org_id: {
+                "id": org_id,
+                "name": "Dummy Organization",
+                "alias": "dummy-organization",
+                "attributes": {"logo": [""], "created_at": ["1689105153.0"]},
+            }
+        },
     )
     token_payload = TokenPayload.model_validate(token_raw_data)
 

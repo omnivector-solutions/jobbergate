@@ -17,11 +17,12 @@ from jobbergate_core.tools.requests import Client, RequestHandler
 class Apps:
     """
     Main class for Jobbergate SDK applications.
-    
+
     Arguments:
         client: An instance of Client to handle API requests.
         request_handler_cls: A class that handles requests, defaults to RequestHandler.
     """
+
     client: Client
     request_handler_cls: Type[RequestHandler] = RequestHandler
 

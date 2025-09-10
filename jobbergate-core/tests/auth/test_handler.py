@@ -15,7 +15,7 @@ from jobbergate_core.auth.exceptions import AuthenticationError
 from jobbergate_core.auth.token import TokenType
 
 
-DUMMY_LOGIN_DOMAIN = "http://keycloak.local:8080/realms/jobbergate-local"
+DUMMY_LOGIN_DOMAIN = "http://localhost:8080/realms/jobbergate-local"
 DUMMY_LOGIN_CLIENT_ID = "cli"
 
 
@@ -55,7 +55,7 @@ def test_insert_token_in_request_header(respx_mock, dummy_jobbergate_auth, valid
     dummy_headers = {"test-header": "test-value", "foo": "bar"}
     expected_headers = {**dummy_headers, "Authorization": valid_token.bearer_token}
 
-    test_endpoint = "http://test.com"
+    test_endpoint = "https://test.com"
     respx_mock.get(test_endpoint).mock()
     request = requests.Request("GET", test_endpoint, auth=dummy_jobbergate_auth, headers=dummy_headers)
 
@@ -406,8 +406,8 @@ class TestJobbergateAuthHandlerGetIdentityData:
     @pytest.mark.parametrize(
         "org_field",
         [
-            {"some-name": {"id": "some-id"}}, # New Keycloak json structure - PENG-3064
-            {"some-id": {"name": "some-name"}}, # Legacy Keycloak json structure for backward compatibility
+            {"some-name": {"id": "some-id"}},  # New Keycloak json structure - PENG-3064
+            {"some-id": {"name": "some-name"}},  # Legacy Keycloak json structure for backward compatibility
         ],
     )
     def test_get_identity_data__success(self, org_field, dummy_jobbergate_auth, jwt_token):

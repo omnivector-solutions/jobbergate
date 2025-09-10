@@ -152,7 +152,7 @@ async def client():
     """
     Provide a client that can issue fake requests against fastapi endpoint functions in the backend.
     """
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="https://test") as client:
         yield client
 
 
