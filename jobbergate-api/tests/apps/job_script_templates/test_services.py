@@ -2,6 +2,7 @@
 
 from itertools import product
 from typing import Any, NamedTuple
+from pathlib import Path
 
 import pendulum
 import pytest
@@ -13,14 +14,14 @@ from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAM
 
 
 @pytest.fixture
-def template_test_data() -> dict[str, Any]:
+def template_test_data(tmp_path: Path) -> dict[str, Any]:
     """Return a dictionary with dummy values."""
     return dict(
         name="test-name",
         identifier="test-identifier",
         description="test-description",
         owner_email="owner_email@test.com",
-        template_vars={"output_dir": "/tmp"},
+        template_vars={"output_dir": tmp_path.joinpath("tmp").as_posix()},
     )
 
 
@@ -70,7 +71,9 @@ class TestJobScriptTemplateCrudService:
         assert exc_info.value.status_code == 404
 
     @pytest.mark.parametrize("locator_attribute", ("id", "identifier"))
-    async def test_update__success(self, locator_attribute, template_test_data, synth_services):
+    async def test_update__success(
+        self, locator_attribute, template_test_data, synth_services, tmp_path: Path
+    ):
         """Test that the template is updated successfully."""
         instance = await synth_services.crud.template.create(**template_test_data)
         locator = getattr(instance, locator_attribute)
@@ -79,7 +82,7 @@ class TestJobScriptTemplateCrudService:
             name="new-name",
             identifier="new-identifier",
             description=None,
-            template_vars={"new_output_dir": "/tmp"},
+            template_vars={"new_output_dir": tmp_path.joinpath("another").as_posix()},
         )
 
         assert instance.name != "new-name"
@@ -87,10 +90,10 @@ class TestJobScriptTemplateCrudService:
 
         updated_instance = await synth_services.crud.template.update(locator, **update_data)
         assert updated_instance.id == instance.id
-        assert updated_instance.name == "new-name"
-        assert updated_instance.identifier == "new-identifier"
-        assert updated_instance.description is None
-        assert updated_instance.template_vars == {"new_output_dir": "/tmp"}
+        assert updated_instance.name == update_data["name"]
+        assert updated_instance.identifier == update_data["identifier"]
+        assert updated_instance.description == update_data["description"]
+        assert updated_instance.template_vars == update_data["template_vars"]
 
     @pytest.mark.parametrize("has_identifier", (True, False))
     async def test_get__omit_null_identifiers(self, has_identifier, template_test_data, synth_services):

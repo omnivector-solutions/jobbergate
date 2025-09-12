@@ -871,7 +871,7 @@ class TestFileService:
         """
         Test that the ``upsert()`` method can create a file from a file url.
         """
-        respx_mock.get("http://dummy-domain.com/dummy-file.txt").mock(
+        respx_mock.get("https://dummy-domain.com/dummy-file.txt").mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
                 content=file_content,
@@ -880,7 +880,7 @@ class TestFileService:
         upserted_instance = await dummy_file_service.upsert(
             13,
             "file-one.txt",
-            AnyUrl("http://dummy-domain.com/dummy-file.txt"),
+            AnyUrl("https://dummy-domain.com/dummy-file.txt"),
         )
 
         assert upserted_instance.parent_id == 13

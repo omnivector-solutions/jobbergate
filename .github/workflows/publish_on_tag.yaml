@@ -36,13 +36,13 @@ jobs:
       agent-pypi-version: ${{ steps.extract-metadata.outputs.version }}
       agent-pypi-package-name: ${{ steps.extract-metadata.outputs.name }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
         with:
           python-version: "3.11"
 
-      - uses: Gr1N/setup-poetry@v8
+      - uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
         with:
           poetry-version: 1.5.1
 
@@ -62,9 +62,10 @@ jobs:
 
       - name: Build and publish on PyPI
         working-directory: ${{ matrix.sub_project }}
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.OMNIVECTOR_PYPI_TOKEN }}
         run: |
           poetry self add poetry-stickywheel-plugin
-          poetry config pypi-token.pypi ${{ secrets.OMNIVECTOR_PYPI_TOKEN }}
           poetry build
           poetry publish
 
@@ -89,13 +90,13 @@ jobs:
           echo "Got ref_type=${{ github.ref_type }} instead"
           exit 1
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
         with:
           python-version: "3.11"
 
-      - uses: Gr1N/setup-poetry@v8
+      - uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
         with:
           poetry-version: 1.5.1
 
@@ -115,7 +116,7 @@ jobs:
           exit 1
 
       - name: Setup AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_ID }}
@@ -123,7 +124,7 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@2fc7aceee09e9e4a7105c0d060c656fad0b4f63d # v1.7.0
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
@@ -144,10 +145,10 @@ jobs:
     steps:
 
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
 
       - name: Install Snapcraft
-        uses: samuelmeuli/action-snapcraft@v2
+        uses: samuelmeuli/action-snapcraft@d33c176a9b784876d966f80fb1b461808edc0641 # v2.1.1
 
       - name: Install Jq
         run: sudo snap install jq --channel latest/stable
@@ -174,7 +175,7 @@ jobs:
         run: sudo snap install core24 --channel latest/stable
 
       - name: Set up LXD
-        uses: canonical/setup-lxd@v0.1.1
+        uses: canonical/setup-lxd@4e959f8e0d9c5feb27d44c5e4d9a330a782edee0 # v0.1.1
         with:
           channel: 5.21/stable
 
@@ -193,7 +194,7 @@ jobs:
 
       - name: Archive snap logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: upload-snap-log
           path: /home/runner/.local/state/snapcraft/log/**

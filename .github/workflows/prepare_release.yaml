@@ -32,13 +32,13 @@ jobs:
   bump-version:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
         with:
           python-version: "3.11"
 
-      - uses: Gr1N/setup-poetry@v8
+      - uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
         with:
           poetry-version: 2.1.1
 
@@ -96,7 +96,7 @@ jobs:
           pipx install towncrier==24.8.0
           make changelog-build
 
-      - uses: peter-evans/create-pull-request@v4
+      - uses: peter-evans/create-pull-request@38e0b6e68b4c852a5500a94740f0e535e0d7ba54 # v4.2.4
         name: Create Pull Request
         id: cpr
         with:

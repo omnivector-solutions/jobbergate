@@ -18,11 +18,11 @@ jobs:
     if: (github.event.pull_request.merged && startsWith(github.head_ref, 'prepare-release/'))
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           token: ${{ secrets.TOKEN }}
 
-      - uses: bluwy/substitute-string-action@v1
+      - uses: bluwy/substitute-string-action@5555829ee1ce323d60e0d11a93eecffad3ecf713 # v1.0.1
         name: Get Tag
         id: get-tag
         with:
@@ -32,7 +32,7 @@ jobs:
       - name: Show tag name
         run: echo ${{ steps.get-tag.outputs.result }}
 
-      - uses: rickstaa/action-create-tag@v1
+      - uses: rickstaa/action-create-tag@a1c7777fcb2fee4f19b0f283ba888afa11678b72 # v1.7.2
         name: Create and Push Tag
         with:
           tag: ${{ steps.get-tag.outputs.result }}

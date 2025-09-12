@@ -14,7 +14,7 @@ def test_settings__check_influx_integration_flag():
 @pytest.mark.parametrize(
     "influx_dsn, valid_scheme",
     [
-        ("http://localhost:8086", False),
+        ("https://localhost:8086", False),
         ("http+influxdb://localhost:8086", False),
         ("ftp://localhost:8086", False),
         ("smtp://localhost:8086", False),

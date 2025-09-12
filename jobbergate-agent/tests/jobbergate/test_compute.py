@@ -1,7 +1,8 @@
 """Define tests for the functions in jobbergate_agent/utils/compute.py."""
 
 import pytest
-import random
+from faker import Faker
+
 from collections.abc import Callable
 from datetime import datetime
 from typing import cast, get_args
@@ -20,15 +21,15 @@ from jobbergate_agent.utils.compute import (
 
 
 @pytest.fixture()
-def generate_and_aggregate_job_metrics_data() -> (
-    Callable[
-        [int, int, int, int, int],
-        tuple[
-            list[InfluxDBPointDict],
-            JobMetricData,
-        ],
-    ]
-):
+def generate_and_aggregate_job_metrics_data(
+    faker: Faker,
+) -> Callable[
+    [int, int, int, int, int],
+    tuple[
+        list[InfluxDBPointDict],
+        JobMetricData,
+    ],
+]:
     """
     Generates sample InfluxDB data and its aggregated counterpart.
 
@@ -61,7 +62,7 @@ def generate_and_aggregate_job_metrics_data() -> (
                                 aggregated_data[key] = default_measurements.copy()
 
                             for measurement in measurement_names:
-                                value = random.random() * 100
+                                value = faker.pyfloat(min_value=0, max_value=100)
                                 measure = InfluxDBPointDict(
                                     **{
                                         "time": current_time,

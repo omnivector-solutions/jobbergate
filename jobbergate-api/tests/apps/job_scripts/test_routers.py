@@ -989,7 +989,7 @@ class TestJobScriptFiles:
         respx_mock,
     ):
         dummy_content = "print('Hello World!')".encode()
-        file_url = f"http://dummy-domain.com{url_path}"
+        file_url = f"https://dummy-domain.com{url_path}"
         respx_mock.get(file_url).mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
