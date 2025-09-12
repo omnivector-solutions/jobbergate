@@ -4,7 +4,7 @@ WORKDIR /app
 
 
 # Install dependencies
-RUN apt update && apt --no-install-recommends install -y curl libpq-dev gcc build-essential
+RUN apt update && apt --no-install-recommends install -y build-essential curl gcc libpq-dev
 
 RUN pip install poetry==1.5.1
 
@@ -19,7 +19,9 @@ FROM python:3.11-slim-bookworm AS runner
 
 WORKDIR /app
 
-RUN apt update && apt --no-install-recommends install -y libpq-dev gcc build-essential \
+RUN apt update \
+    && apt --no-install-recommends install -y build-essential gcc libpq-dev \
+    && apt-get clean \
     && groupadd --system appuser \
     && useradd --system --create-home --gid appuser appuser
 

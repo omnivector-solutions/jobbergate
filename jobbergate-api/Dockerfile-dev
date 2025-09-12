@@ -1,6 +1,6 @@
 FROM python:3.11-slim-bookworm
 
-RUN apt update && apt --no-install-recommends install -y curl libpq-dev gcc build-essential
+RUN apt update && apt --no-install-recommends install -y curl build-essential gcc libpq-dev
 
 RUN curl -sS --proto "=https" https://install.python-poetry.org | \
     POETRY_HOME=/opt/poetry POETRY_VERSION=1.5.1 python && \
