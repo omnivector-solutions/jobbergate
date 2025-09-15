@@ -190,7 +190,7 @@ async def update_job_data(
         response.raise_for_status()
 
 
-async def fetch_influx_data(
+def fetch_influx_data(
     job: int,
     measurement: INFLUXDB_MEASUREMENT,
     *,
@@ -279,7 +279,8 @@ async def update_job_metrics(active_job_submittion: ActiveJobSubmission) -> None
 
         if not job_max_times.max_times:
             tasks = (
-                fetch_influx_data(
+                asyncio.to_thread(
+                    fetch_influx_data,
                     active_job_submittion.slurm_job_id,
                     measurement["name"],
                 )
@@ -287,7 +288,8 @@ async def update_job_metrics(active_job_submittion: ActiveJobSubmission) -> None
             )
         else:
             tasks = (
-                fetch_influx_data(
+                asyncio.to_thread(
+                    fetch_influx_data,
                     active_job_submittion.slurm_job_id,
                     measurement["name"],
                     time=int(job_max_time.max_time * 1e9),  # convert to ns since the agent sends in seconds
