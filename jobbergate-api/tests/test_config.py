@@ -22,7 +22,7 @@ class TestCheckNoneOrAllKeysExist:
         """
         Build a dummy dict to be used as reference in the tests.
         """
-        return {k: None for k in self.keys}
+        return dict.fromkeys(self.keys, None)
 
     @pytest.mark.parametrize("target_keys", combinations(keys, 3))
     def test_all_keys_exist(self, dummy_dict, target_keys):
@@ -61,7 +61,7 @@ class TestSendgridSettings:
         """
         Test scenario where all of the sendgrid params are defined.
         """
-        params = {k: "foo" for k in self.SENDGRID_PARAMS}
+        params = dict.fromkeys(self.SENDGRID_PARAMS, "foo")
         settings = Settings(**params)
         assert all(getattr(settings, k) == "foo" for k in self.SENDGRID_PARAMS)
 
@@ -71,7 +71,7 @@ class TestSendgridSettings:
 
         Note: Empty strings can be used here because Settings filters them out.
         """
-        params = {k: "" for k in self.SENDGRID_PARAMS}
+        params = dict.fromkeys(self.SENDGRID_PARAMS, "")
         settings = Settings(**params)
         assert all(getattr(settings, k) is None for k in self.SENDGRID_PARAMS)
 
