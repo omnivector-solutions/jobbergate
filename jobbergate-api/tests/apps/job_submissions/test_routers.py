@@ -1224,7 +1224,7 @@ async def test_delete_job_submission(
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    await synth_services.crud.job_submission.count() == 0
+    assert await synth_services.crud.job_submission.count() == 0
 
 
 async def test_delete_job_submission_not_found(client, inject_security_header, synth_session):
