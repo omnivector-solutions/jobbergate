@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 import httpx
 import plummet
@@ -81,7 +81,7 @@ def test_load_clusters_from_cache__success(tmp_path, tweak_settings):
     with tweak_settings(JOBBERGATE_CACHE_DIR=tmp_path, JOBBERGATE_CLUSTER_CACHE_LIFETIME=5):
         with plummet.frozen_time("2022-05-13 16:56:00"):
             cache_data = ClusterCacheData(
-                updated_at=datetime.utcnow(),
+                updated_at=datetime.now(timezone.utc),
                 client_ids=["cluster1", "cluster2", "cluster3"],
             )
             settings.JOBBERGATE_CLUSTER_LIST_PATH.write_text(cache_data.model_dump_json())
@@ -93,7 +93,7 @@ def test_load_clusters_from_cache__returns_None_if_cache_is_expired(tmp_path, tw
     with tweak_settings(JOBBERGATE_CACHE_DIR=tmp_path, JOBBERGATE_CLUSTER_CACHE_LIFETIME=5):
         with plummet.frozen_time("2022-05-13 16:56:00"):
             cache_data = ClusterCacheData(
-                updated_at=datetime.utcnow(),
+                updated_at=datetime.now(timezone.utc),
                 client_ids=["cluster1", "cluster2", "cluster3"],
             )
             settings.JOBBERGATE_CLUSTER_LIST_PATH.write_text(cache_data.model_dump_json())

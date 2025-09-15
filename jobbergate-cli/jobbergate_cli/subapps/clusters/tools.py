@@ -3,7 +3,7 @@ Provide tool functions for working with Cluster data
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, cast
 
 from loguru import logger
@@ -48,7 +48,7 @@ def pull_client_ids_from_api(ctx: ContextProtocol) -> List[str]:
 
 def save_clusters_to_cache(client_ids: List[str]):
     cache_data = ClusterCacheData(
-        updated_at=datetime.utcnow(),
+        updated_at=datetime.now(timezone.utc),
         client_ids=client_ids,
     )
 
@@ -63,7 +63,10 @@ def load_clusters_from_cache() -> Optional[List[str]]:
         logger.warning(f"Couldn't load cluster data from cache: {err}")
         return None
 
-    if datetime.utcnow().timestamp() - cache_data.updated_at.timestamp() > settings.JOBBERGATE_CLUSTER_CACHE_LIFETIME:
+    if (
+        datetime.now(timezone.utc).timestamp() - cache_data.updated_at.timestamp()
+        > settings.JOBBERGATE_CLUSTER_CACHE_LIFETIME
+    ):
         logger.warning("Cached cluster data is expired")
         return None
 
