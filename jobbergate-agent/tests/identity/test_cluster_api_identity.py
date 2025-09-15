@@ -54,7 +54,6 @@ def test_acquire_token__gets_a_token_if_one_is_not_in_the_cache(
 def test_acquire_token__fails_when_content_is_invalid(
     mock_cluster_api_cache_dir,
     tweak_settings,
-    token_content,
 ):
     """
     Verifies that a token is pulled from OIDC if it is not found in the cache.
