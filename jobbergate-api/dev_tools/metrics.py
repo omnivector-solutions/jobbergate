@@ -81,7 +81,7 @@ def _aggregate_influxdb_data(
     data_points: Iterator[InfluxDBMeasure],
 ) -> list[tuple[int, str, str, str, float, float, float, float, float, float, float, float, float, float]]:
     measurement_names = get_args(INFLUXDB_MEASUREMENT)
-    default_measurements: dict[str, float] = {measurement: 0.0 for measurement in measurement_names}
+    default_measurements: dict[str, float] = dict.fromkeys(measurement_names, 0.0)
 
     aggregated_data: dict[tuple[int, str, str, str], dict[str, float]] = {}
 

@@ -45,7 +45,7 @@ def generate_and_aggregate_job_metrics_data(
         # Initialize data structures
         current_time = int(datetime.now().timestamp())
         measurement_names = get_args(INFLUXDB_MEASUREMENT)
-        default_measurements: dict[str, float] = {measurement: 0.0 for measurement in measurement_names}
+        default_measurements: dict[str, float] = dict.fromkeys(measurement_names, 0.0)
 
         measures = []
         aggregated_data: dict[tuple[int, str, str, str], dict[str, float]] = {}
