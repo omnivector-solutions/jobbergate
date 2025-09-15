@@ -152,7 +152,7 @@ async def test_sort_clause__auto_sort_enum_column(synth_session, insert_dummy_ro
     ]
 
 
-async def test_handle_fk_error():
+def test_handle_fk_error():
     """
     Provide a test for the ``handle_fk_error()`` fastapi error handler.
     """
