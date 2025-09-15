@@ -138,7 +138,7 @@ async def test_fetch_job_data__raises_error_if_job_state_is_invalid_list():
 
 
 @pytest.mark.usefixtures("mock_access_token")
-def test_fetch_job_data__reports_status_as_UNKOWN_if_slurm_job_id_is_not_found():
+def test_fetch_job_data__reports_status_as_unknown_if_slurm_job_id_is_not_found():
     """
     Test that the ``fetch_job_data()`` reports the job state as UNKNOWN if the job matching job id is not found.
     """
@@ -449,7 +449,7 @@ async def test_fetch_influx_data__success_with_all_None(
     ],
 )
 @mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
-def test_fetch_influx_data__raises_JobbergateAgentError_if_bad_arguments_are_passed(
+def test_fetch_influx_data__raises_jobbergate_agent_error_if_bad_arguments_are_passed(
     mocked_influxdb_client: mock.MagicMock,
     time: int | None,
     host: int | None,
@@ -476,7 +476,7 @@ def test_fetch_influx_data__raises_JobbergateAgentError_if_bad_arguments_are_pas
 
 
 @mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
-def test_fetch_influx_data__raises_JobbergateAgentError_if_query_fails(
+def test_fetch_influx_data__raises_jobbergate_agent_error_if_query_fails(
     mocked_influxdb_client: mock.MagicMock, influx_data: InfluxData
 ):
     """
@@ -495,7 +495,7 @@ def test_fetch_influx_data__raises_JobbergateAgentError_if_query_fails(
     mocked_influxdb_client.query.assert_called_once_with(query, bind_params=influx_data.bind_params(), epoch="s")
 
 
-def test_fetch_influx_data__raises_JobbergateAgentError_if_influxdb_client_is_None(influx_data: InfluxData):
+def test_fetch_influx_data__raises_jobbergate_agent_error_if_influxdb_client_is_none(influx_data: InfluxData):
     """
     Test that the ``fetch_influx_data()`` function will raise a JobbergateAgentError
     if the influxdb_client is None.
