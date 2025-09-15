@@ -100,7 +100,7 @@ def test_acquire_access(procedure, dummy_jobbergate_auth, valid_token):
         dummy_jobbergate_auth.acquire_access()
 
     actual_call_counter = {key: mocked.call_count for key, mocked in mocked_jobbergate_auth.items()}
-    expected_call_counter = {e: 0 for e in expected_order_of_procedures}
+    expected_call_counter = dict.fromkeys(expected_order_of_procedures, 0)
     if procedure is not None:
         actual_call_counter[procedure] = 1
         for e in expected_order_of_procedures:
