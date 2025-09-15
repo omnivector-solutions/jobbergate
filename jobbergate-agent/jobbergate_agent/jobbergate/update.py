@@ -118,7 +118,7 @@ class JobDataUpdateStrategy(JobProcessStrategyABC):
 
         scontrol_handler = InfoHandler(scontrol_path=SETTINGS.SCONTROL_PATH)
         try:
-            slurm_job_data: SlurmJobData = await fetch_job_data(self.data.slurm_job_id, scontrol_handler)
+            slurm_job_data: SlurmJobData = fetch_job_data(self.data.slurm_job_id, scontrol_handler)
         except Exception as e:
             logger.error(f"Failed to update job data for job submission {self.data.id}: {e}")
             return
@@ -129,7 +129,7 @@ class JobDataUpdateStrategy(JobProcessStrategyABC):
             logger.error(f"API update failed: {e}")
 
 
-async def fetch_job_data(slurm_job_id: int, info_handler: InfoHandler) -> SlurmJobData:
+def fetch_job_data(slurm_job_id: int, info_handler: InfoHandler) -> SlurmJobData:
     logger.debug(f"Fetching slurm job status for slurm job {slurm_job_id}")
 
     try:

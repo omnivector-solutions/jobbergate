@@ -61,9 +61,8 @@ def job_max_times_response() -> Callable[[int, int, int, int], dict[str, int | l
     return _job_max_times_response
 
 
-@pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
-async def test_fetch_job_data__success():
+def test_fetch_job_data__success():
     """
     Test that the ``fetch_job_data()`` function can successfully retrieve
     job data from Slurm as a ``SlurmJobData``.
@@ -76,7 +75,7 @@ async def test_fetch_job_data__success():
         foo="bar",
     )
 
-    result: SlurmJobData = await fetch_job_data(123, mocked_sbatch)
+    result: SlurmJobData = fetch_job_data(123, mocked_sbatch)
 
     assert result.job_id == 123
     assert result.job_state == "FAILED"
@@ -90,9 +89,8 @@ async def test_fetch_job_data__success():
     )
 
 
-@pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
-async def test_fetch_job_data__handles_list_in_job_state():
+def test_fetch_job_data__handles_list_in_job_state():
     """
     Test that the ``fetch_job_data()`` function can successfully retrieve
     job data from Slurm as a ``SlurmJobData`` when the job_state from slurm
@@ -106,7 +104,7 @@ async def test_fetch_job_data__handles_list_in_job_state():
         foo="bar",
     )
 
-    result: SlurmJobData = await fetch_job_data(123, mocked_sbatch)
+    result: SlurmJobData = fetch_job_data(123, mocked_sbatch)
 
     assert result.job_id == 123
     assert result.job_state == "FAILED"
@@ -139,16 +137,15 @@ async def test_fetch_job_data__raises_error_if_job_state_is_invalid_list():
         await fetch_job_data(123, mocked_sbatch)
 
 
-@pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
-async def test_fetch_job_data__reports_status_as_UNKOWN_if_slurm_job_id_is_not_found():
+def test_fetch_job_data__reports_status_as_UNKOWN_if_slurm_job_id_is_not_found():
     """
     Test that the ``fetch_job_data()`` reports the job state as UNKNOWN if the job matching job id is not found.
     """
     mocked_sbatch = mock.MagicMock()
     mocked_sbatch.get_job_info.side_effect = RuntimeError("Job not found")
 
-    result: SlurmJobData = await fetch_job_data(123, mocked_sbatch)
+    result: SlurmJobData = fetch_job_data(123, mocked_sbatch)
 
     assert result.job_id == 123
     assert result.job_info == "{}"
