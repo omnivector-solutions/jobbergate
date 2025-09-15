@@ -39,7 +39,7 @@ async def retrieve_submission_file(file: JobScriptFile) -> str:
     return response.content.decode("utf-8")
 
 
-async def write_submission_file(file_content: str, filename: str, submit_dir: Path) -> Path:
+def write_submission_file(file_content: str, filename: str, submit_dir: Path) -> Path:
     """
     Write a decoded file content to the submit_dir.
     """
@@ -78,7 +78,7 @@ async def process_supporting_files(pending_job_submission: PendingJobSubmission,
 
     # Write the files to the submit dir
     files_to_write = [
-        write_submission_file(file_content, file.filename, submit_dir)
+        asyncio.to_thread(write_submission_file, file_content, file.filename, submit_dir)
         for file_content, file in zip(files_content, supporting_files)
     ]
     return await asyncio.gather(*files_to_write)
@@ -108,7 +108,7 @@ async def get_job_script_file(pending_job_submission: PendingJobSubmission, subm
             job_script, pending_job_submission.sbatch_arguments, "Sbatch params injected at submission time"
         )
 
-    return await write_submission_file(job_script, job_script_file.filename, submit_dir)
+    return write_submission_file(job_script, job_script_file.filename, submit_dir)
 
 
 async def fetch_pending_submissions() -> list[PendingJobSubmission]:
