@@ -90,13 +90,11 @@ services:
       - ../examples/sleepy-job-script.sh:/sleepy-job-script.sh
       - ./etc/run-motorbike.py:/app/run-motorbike
       - ./slurm-fake-nfs:/nfs
-      - jobbergate-cli-cache:/cache/
     environment:
       - ARMADA_API_BASE=http://jobbergate-api:80
       - OIDC_DOMAIN=keycloak.local:8080/realms/jobbergate-local
       - OIDC_CLIENT_ID=cli
       - OIDC_USE_HTTPS=false
-      - JOBBERGATE_CACHE_DIR=/cache
       - DEFAULT_CLUSTER_NAME=local-slurm
 
   db:
