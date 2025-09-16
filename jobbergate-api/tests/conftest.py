@@ -209,9 +209,11 @@ def time_frame():
         """
         Context manager for defining the time-frame for the time_frame fixture.
         """
-        window = TimeFrame(now=datetime.datetime.utcnow() - datetime.timedelta(seconds=1), later=None)
+        window = TimeFrame(
+            now=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=1), later=None
+        )
         yield window
-        window.later = datetime.datetime.utcnow() + datetime.timedelta(seconds=1)
+        window.later = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=1)
 
     return _helper
 

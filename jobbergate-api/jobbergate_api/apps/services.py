@@ -524,8 +524,9 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
         ):
-            response = httpx.get(file_url_string)
-            response.raise_for_status()
+            async with httpx.AsyncClient() as client:
+                response = await client.get(file_url_string)
+                response.raise_for_status()
 
         file_obj.write(response.content)
         file_obj.seek(0)

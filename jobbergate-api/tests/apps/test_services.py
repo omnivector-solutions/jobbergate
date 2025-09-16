@@ -1012,7 +1012,7 @@ class TestFileService:
         Test that the ``_get_file_data_from_url()`` method raises exeptions on unsupported protocols.
         """
         with pytest.raises(ServiceError, match="Unsupported protocol"):
-            await dummy_file_service._get_file_data_from_url(AnyUrl("ftp://ultra-hpc.io/target-file.txt"))
+            await dummy_file_service._get_file_data_from_url(AnyUrl("ftps://ultra-hpc.io/target-file.txt"))
 
     async def test_delete__success(self, make_upload_file, dummy_file_service):
         """

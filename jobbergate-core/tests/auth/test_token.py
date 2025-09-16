@@ -191,7 +191,7 @@ class TestToken:
             label=TokenType.ACCESS.value,
         )
 
-        assert token.is_expired() == is_expired
+        assert token.is_expired() is is_expired
 
     @pytest.mark.parametrize(
         "content, is_expired, is_valid",

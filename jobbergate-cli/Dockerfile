@@ -16,4 +16,4 @@ WORKDIR /app
 VOLUME /app/jobbergate_cli
 VOLUME /jobbergate-core
 
-ENTRYPOINT /app/entrypoint.sh
+ENTRYPOINT ["/app/entrypoint.sh"]

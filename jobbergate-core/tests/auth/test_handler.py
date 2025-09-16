@@ -100,7 +100,7 @@ def test_acquire_access(procedure, dummy_jobbergate_auth, valid_token):
         dummy_jobbergate_auth.acquire_access()
 
     actual_call_counter = {key: mocked.call_count for key, mocked in mocked_jobbergate_auth.items()}
-    expected_call_counter = {e: 0 for e in expected_order_of_procedures}
+    expected_call_counter = dict.fromkeys(expected_order_of_procedures, 0)
     if procedure is not None:
         actual_call_counter[procedure] = 1
         for e in expected_order_of_procedures:
@@ -419,7 +419,7 @@ class TestJobbergateAuthHandlerGetIdentityData:
             azp="dummy-client",
             email="good@email.com",
             organization=org_field,
-            exp=pendulum.tomorrow().int_timestamp,
+            expiration_time=pendulum.tomorrow(),
         )
         dummy_jobbergate_auth._access_token = dummy_jobbergate_auth._access_token.replace(content=access_token)
 
@@ -436,7 +436,7 @@ class TestJobbergateAuthHandlerGetIdentityData:
 
         access_token = jwt_token(
             azp="dummy-client",
-            exp=pendulum.tomorrow().int_timestamp,
+            expiration_time=pendulum.tomorrow(),
         )
         dummy_jobbergate_auth._access_token = dummy_jobbergate_auth._access_token.replace(content=access_token)
 
@@ -450,14 +450,14 @@ class TestJobbergateAuthHandlerGetIdentityData:
 
         access_token = jwt_token(
             email="good@email.com",
-            exp=pendulum.tomorrow().int_timestamp,
+            expiration_time=pendulum.tomorrow(),
         )
         dummy_jobbergate_auth._access_token = dummy_jobbergate_auth._access_token.replace(content=access_token)
 
         with pytest.raises(AuthenticationError, match="Could not retrieve client_id from token"):
             dummy_jobbergate_auth.get_identity_data()
 
-    def test_get_identify_data__fails_more_than_one_organization(self, dummy_jobbergate_auth, jwt_token):
+    def test_get_identity_data__fails_more_than_one_organization(self, dummy_jobbergate_auth, jwt_token):
         """
         Test that the function raises an exception if there is more than one organization.
         """
@@ -466,7 +466,7 @@ class TestJobbergateAuthHandlerGetIdentityData:
             azp="dummy-client",
             email="good@email.com",
             organization={"some-id": "some-name", "other-id": "other-name"},
-            exp=pendulum.tomorrow().int_timestamp,
+            expiration_time=pendulum.tomorrow(),
         )
         dummy_jobbergate_auth._access_token = dummy_jobbergate_auth._access_token.replace(content=access_token)
 

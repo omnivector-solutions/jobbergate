@@ -1,4 +1,6 @@
+import math
 import pytest
+import functools
 
 from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionCreateRequest,
@@ -30,6 +32,9 @@ def test_empty_string_to_none(schema):
 
 
 class TestJobSubmissionMetricSchema:
+    # Partial for floating point comparison with a good default tolerance
+    isclose = functools.partial(math.isclose, rel_tol=1e-9, abs_tol=1e-9)
+
     def test_job_submission_metric_schema_validate_time(self):
         """
         Test that the validate_time method correctly converts datetime to int.
@@ -75,11 +80,11 @@ class TestJobSubmissionMetricSchema:
         schema = JobSubmissionMetricSchema.from_iterable(iterable)
         assert schema.time == 1638316800
         assert schema.node_host == "node1"
-        assert schema.cpu_frequency == 2.5
-        assert schema.cpu_time == 100.0
-        assert schema.cpu_utilization == 50.0
+        assert self.isclose(schema.cpu_frequency, 2.5)
+        assert self.isclose(schema.cpu_time, 100.0)
+        assert self.isclose(schema.cpu_utilization, 50.0)
         assert schema.gpu_memory == 1024
-        assert schema.gpu_utilization == 75.0
+        assert self.isclose(schema.gpu_utilization, 75.0)
         assert schema.page_faults == 10
         assert schema.memory_rss == 2048
         assert schema.memory_virtual == 4096
@@ -130,11 +135,11 @@ class TestJobSubmissionMetricSchema:
         assert schema.step is None
         assert schema.task is None
         assert schema.node_host == "node1"
-        assert schema.cpu_frequency == 2.5
-        assert schema.cpu_time == 100.0
-        assert schema.cpu_utilization == 50.0
+        assert self.isclose(schema.cpu_frequency, 2.5)
+        assert self.isclose(schema.cpu_time, 100.0)
+        assert self.isclose(schema.cpu_utilization, 50.0)
         assert schema.gpu_memory == 1024
-        assert schema.gpu_utilization == 75.0
+        assert self.isclose(schema.gpu_utilization, 75.0)
         assert schema.page_faults == 10
         assert schema.memory_rss == 2048
         assert schema.memory_virtual == 4096

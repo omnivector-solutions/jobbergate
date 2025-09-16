@@ -1224,7 +1224,7 @@ async def test_delete_job_submission(
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    await synth_services.crud.job_submission.count() == 0
+    assert await synth_services.crud.job_submission.count() == 0
 
 
 async def test_delete_job_submission_not_found(client, inject_security_header, synth_session):
@@ -1362,7 +1362,7 @@ async def test_job_submissions_agent_pending__success(
     )
 
     for item in submission_list:
-        item["sbatch_arguments"] = f"--comment={item['name']}"
+        item["sbatch_arguments"] = [f"--comment={item['name']}"]
         await synth_services.crud.job_submission.create(**item)
 
     inject_security_header("who@cares.com", permission, client_id="dummy-client")
@@ -1377,7 +1377,7 @@ async def test_job_submissions_agent_pending__success(
         "email4@dummy.com",
     ]
     assert [i["job_script"]["id"] for i in data["items"]] == [inserted_job_script_id] * 2
-    assert [i["sbatch_arguments"] for i in data["items"]] == [i["sbatch_arguments"] for i in data["items"]]
+    assert [i["sbatch_arguments"] for i in data["items"]] == [["--comment=sub1"], ["--comment=sub4"]]
 
     assert all(len(i["job_script"]["files"]) >= 1 for i in data["items"])
 

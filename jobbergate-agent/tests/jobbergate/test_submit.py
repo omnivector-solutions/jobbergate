@@ -122,8 +122,7 @@ async def test_retrieve_submission_file__raises_exception():
             await retrieve_submission_file(job_script_file)
 
 
-@pytest.mark.asyncio
-async def test_write_submission_file__success(tmp_path):
+def test_write_submission_file__success(tmp_path):
     """
     Test that the ``write_submission_file()`` function can write a submission file to disk.
     """
@@ -131,7 +130,7 @@ async def test_write_submission_file__success(tmp_path):
     submit_dir = tmp_path / "submit"
     submit_dir.mkdir()
 
-    await write_submission_file(job_script_content, "application.sh", submit_dir)
+    write_submission_file(job_script_content, "application.sh", submit_dir)
 
     assert (submit_dir / "application.sh").read_text() == "I am a job script"
 
