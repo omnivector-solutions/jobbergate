@@ -166,7 +166,7 @@ class Token:
         )
         token_expiration = self.data["exp"]
 
-        current_time_UTC = pendulum.now().int_timestamp
+        current_time_UTC = pendulum.now(tz="UTC").int_timestamp
         is_expired = token_expiration <= current_time_UTC
         logger.debug(f"{self.label.capitalize()} token is {'' if is_expired else 'NOT'} expired")
 
