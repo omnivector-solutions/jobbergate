@@ -21,7 +21,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.11"
-aioboto3 = "^11.2"
+aioboto3 = "^15.1"
 alembic = "^1.10.0"
 armasec = "^2.0.1"
 asyncpg = "^0.27.0"
