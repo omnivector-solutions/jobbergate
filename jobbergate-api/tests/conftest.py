@@ -116,7 +116,9 @@ async def synth_bucket(synth_s3_bucket_session):
     try:
         yield synth_s3_bucket_session
     finally:
-        await synth_s3_bucket_session.objects.all().delete()
+        # Delete objects one by one to avoid MissingContentMD5 error
+        async for obj in synth_s3_bucket_session.objects.all():
+            await obj.delete()
 
 
 @pytest.fixture(scope="function")
