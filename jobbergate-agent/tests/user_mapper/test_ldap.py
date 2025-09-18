@@ -1,9 +1,11 @@
 """Tests for the LDAP user mapper module."""
 
 from pathlib import Path
+from typing import Iterator
 from unittest.mock import MagicMock, patch
 
 import pytest
+from faker import Faker
 from ldap3 import NTLM, RESTARTABLE
 
 from jobbergate_agent.user_mapper.ldap import (
@@ -67,14 +69,15 @@ def test_len(user_db):
     assert len(user_db) == 2
 
 
-# Test fixtures and mock data
 @pytest.fixture
-def mock_ldap_settings():
+def mock_ldap_settings(faker: Faker, tmp_path: Path) -> Iterator[LDAPSettings]:
     """Mock LDAP settings for testing."""
     with patch("jobbergate_agent.user_mapper.ldap.SETTINGS") as mock_settings:
-        mock_settings.CACHE_DIR = Path("/tmp/test_cache")
-        settings = LDAPSettings(LDAP_DOMAIN="test.domain.com", LDAP_USERNAME="testuser", LDAP_PASSWORD="testpass")
-        return settings
+        mock_settings.CACHE_DIR = tmp_path
+        settings = LDAPSettings(
+            LDAP_DOMAIN="test.domain.com", LDAP_USERNAME=faker.user_name(), LDAP_PASSWORD=faker.password()
+        )
+        yield settings
 
 
 @pytest.fixture
@@ -97,22 +100,21 @@ def mock_ldap_connection():
         yield mock_conn
 
 
-# Tests for LDAPSettings
-def test_ldap_settings_initialization():
+def test_ldap_settings_initialization(faker: Faker):
     """Test LDAPSettings initialization with environment variables."""
-    with patch.dict(
-        "os.environ",
-        {
-            "JOBBERGATE_AGENT_LDAP_DOMAIN": "test.domain.com",
-            "JOBBERGATE_AGENT_LDAP_USERNAME": "testuser",
-            "JOBBERGATE_AGENT_LDAP_PASSWORD": "testpass",
-        },
-    ):
+
+    env_vars = {
+        "JOBBERGATE_AGENT_LDAP_DOMAIN": faker.domain_name(),
+        "JOBBERGATE_AGENT_LDAP_USERNAME": faker.user_name(),
+        "JOBBERGATE_AGENT_LDAP_PASSWORD": faker.password(),
+    }
+
+    with patch.dict("os.environ", env_vars):
         settings = LDAPSettings()
 
-    assert settings.LDAP_DOMAIN == "test.domain.com"
-    assert settings.LDAP_USERNAME == "testuser"
-    assert settings.LDAP_PASSWORD == "testpass"
+    assert settings.LDAP_DOMAIN == env_vars["JOBBERGATE_AGENT_LDAP_DOMAIN"]
+    assert settings.LDAP_USERNAME == env_vars["JOBBERGATE_AGENT_LDAP_USERNAME"]
+    assert settings.LDAP_PASSWORD == env_vars["JOBBERGATE_AGENT_LDAP_PASSWORD"]
 
 
 def test_ldap_settings_db_path_property(mock_ldap_settings):
@@ -123,7 +125,6 @@ def test_ldap_settings_db_path_property(mock_ldap_settings):
     assert str(mock_ldap_settings.db_path).endswith("user_mapper.sqlite3")
 
 
-# Tests for UserDetails
 def test_user_details_creation():
     """Test UserDetails model creation."""
     user_details = UserDetails(uid="TestUser", email="test@example.com")
@@ -143,7 +144,6 @@ def test_user_details_invalid_email():
         UserDetails(uid="testuser", email="invalid-email")
 
 
-# Tests for ldap_connection context manager
 def test_ldap_connection_success(mock_ldap_settings, mock_ldap_connection):
     """Test successful LDAP connection context manager."""
     with ldap_connection(mock_ldap_settings) as conn:
@@ -163,6 +163,7 @@ def test_ldap_connection_tls_failure(mock_ldap_settings):
 
         with pytest.raises(Exception, match="TLS failed"):
             with ldap_connection(mock_ldap_settings):
+                # no operation needed, just testing context manager
                 pass
 
         # Ensure unbind is called even on failure
@@ -179,8 +180,10 @@ def test_ldap_connection_bind_failure(mock_ldap_settings):
 
         with pytest.raises(RuntimeError, match="Couldn't open a connection to MSAD"):
             with ldap_connection(mock_ldap_settings):
+                # no operation needed, just testing context manager
                 pass
 
+        # Ensure unbind is called even on failure
         mock_conn.unbind.assert_called_once()
 
 
@@ -317,9 +320,11 @@ def test_user_mapper_factory_with_ldap_integration(mock_ldap_settings_class, tmp
 
 
 # Additional integration tests
-def test_ldap_connection_with_real_connection_parameters():
+def test_ldap_connection_with_real_connection_parameters(faker: Faker):
     """Test LDAP connection context manager with realistic parameters."""
-    settings = LDAPSettings(LDAP_DOMAIN="test.domain.com", LDAP_USERNAME="testuser", LDAP_PASSWORD="testpass")
+    settings = LDAPSettings(
+        LDAP_DOMAIN=faker.domain_name(), LDAP_USERNAME=faker.user_name(), LDAP_PASSWORD=faker.password()
+    )
 
     with patch("jobbergate_agent.user_mapper.ldap.Connection") as mock_conn_class:
         mock_conn = MagicMock()
@@ -332,17 +337,18 @@ def test_ldap_connection_with_real_connection_parameters():
             mock_conn_class.assert_called_once()
             args, kwargs = mock_conn_class.call_args
 
-            assert kwargs["server"] == "test.domain.com"
-            assert kwargs["user"] == "test.domain.com\\testuser"
-            assert kwargs["password"] == "testpass"
-            assert kwargs["authentication"] == NTLM
-            assert kwargs["auto_bind"] == "NONE"
-            assert kwargs["client_strategy"] == RESTARTABLE
+    assert args == ()
+    assert kwargs["server"] == settings.LDAP_DOMAIN
+    assert kwargs["user"] == f"{settings.LDAP_DOMAIN}\\{settings.LDAP_USERNAME}"
+    assert kwargs["password"] == settings.LDAP_PASSWORD
+    assert kwargs["authentication"] == NTLM
+    assert kwargs["auto_bind"] == "NONE"
+    assert kwargs["client_strategy"] == RESTARTABLE
 
 
-def test_search_base_construction():
+def test_search_base_construction(faker: Faker):
     """Test that search base is correctly constructed from domain."""
-    settings = LDAPSettings(LDAP_DOMAIN="test.sub.domain.com", LDAP_USERNAME="testuser", LDAP_PASSWORD="testpass")
+    settings = LDAPSettings(LDAP_DOMAIN="test.sub.domain.com", LDAP_USERNAME="testuser", LDAP_PASSWORD=faker.password())
 
     with patch("jobbergate_agent.user_mapper.ldap.ldap_connection") as mock_context:
         mock_conn = MagicMock()
@@ -358,4 +364,6 @@ def test_search_base_construction():
         # Verify search was called with correct search_base
         mock_conn.search.assert_called_once()
         args, kwargs = mock_conn.search.call_args
-        assert kwargs["search_base"] == "DC=test,DC=sub,DC=domain,DC=com"
+
+    assert args == ()
+    assert kwargs["search_base"] == "DC=test,DC=sub,DC=domain,DC=com"
