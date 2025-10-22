@@ -20,7 +20,11 @@ depends_on = None
 def upgrade():
     # Add CANCELLED to the JobSubmissionStatus enum
     # PostgreSQL requires special handling for enum changes
-    op.execute("ALTER TYPE jobsubmissionstatus ADD VALUE 'CANCELLED'")
+    # Check if 'CANCELLED' already exists in the enum
+    # Only add if it doesn't exist to prevent errors on re-run
+    bind = op.get_bind()
+    if not bind.execute(sa.text("SELECT 1 FROM pg_enum WHERE enumlabel = 'CANCELLED' AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'jobsubmissionstatus')")).scalar():
+        op.execute("ALTER TYPE jobsubmissionstatus ADD VALUE 'CANCELLED'")
 
 
 def downgrade():
