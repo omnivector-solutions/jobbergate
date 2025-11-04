@@ -12,6 +12,10 @@ on:
     branches:
       - "main"
 
+permissions:
+  contents: write
+  pages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -38,5 +42,5 @@ jobs:
       - name: Deploy documentation
         uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847 # v3.9.3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.TOKEN }}
           publish_dir: jobbergate-docs/docs/site

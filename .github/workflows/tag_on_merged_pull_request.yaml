@@ -13,6 +13,9 @@ on:
       - release/**
     types: [closed]
 
+permissions:
+  contents: write
+
 jobs:
   create-tag:
     if: (github.event.pull_request.merged && startsWith(github.head_ref, 'prepare-release/'))

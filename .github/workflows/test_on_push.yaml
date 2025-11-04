@@ -7,6 +7,9 @@ on:
       - release/**
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   core-tests:
     name: "jobbergate-core tests"

@@ -100,7 +100,7 @@ jobs:
         name: Create Pull Request
         id: cpr
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.TOKEN }}
           commit-message: "Prepared release ${{ steps.api-package.outputs.version }}"
           branch: "prepare-release/${{ steps.api-package.outputs.version }}"
           title: "Release ${{ steps.api-package.outputs.version }}"
