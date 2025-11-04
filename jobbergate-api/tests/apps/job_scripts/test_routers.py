@@ -27,6 +27,7 @@ async def test_create_stand_alone_job_script__success(
     assert response_data["name"] == payload["name"]
     assert response_data["description"] == payload["description"]
     assert response_data["owner_email"] == tester_email
+    assert "identifier" in response_data
     assert "files" not in response_data
     assert response_data["parent_template_id"] is None
 
@@ -57,9 +58,7 @@ async def test_create_stand_alone_job_script__success(
 async def test_clone_job_script__success(
     client, permission, fill_job_script_data, inject_security_header, tester_email, synth_services
 ):
-    original_instance = await synth_services.crud.job_script.create(
-        **fill_job_script_data(owner_email=tester_email)
-    )
+    original_instance = await synth_services.crud.job_script.create(**fill_job_script_data(owner_email=tester_email))
     parent_id = original_instance.id
     await synth_services.file.job_script.upsert(
         parent_id=parent_id,
@@ -89,6 +88,7 @@ async def test_clone_job_script__success(
     assert response_data["description"] == original_instance.description
     assert response_data["owner_email"] == new_owner_email
     assert response_data["cloned_from_id"] == original_instance.id
+    assert response_data["identifier"] is None
 
     assert {f["filename"] for f in response_data["files"]} == {"entrypoint.py", "support.sh"}
 
@@ -96,9 +96,7 @@ async def test_clone_job_script__success(
 async def test_clone_job_script__replace_base_values(
     client, fill_job_script_data, inject_security_header, tester_email, synth_services
 ):
-    original_instance = await synth_services.crud.job_script.create(
-        **fill_job_script_data(owner_email=tester_email)
-    )
+    original_instance = await synth_services.crud.job_script.create(**fill_job_script_data(owner_email=tester_email))
 
     new_owner_email = "new_" + tester_email
 
@@ -117,6 +115,7 @@ async def test_clone_job_script__replace_base_values(
     assert response_data["description"] == payload["description"]
     assert response_data["owner_email"] == new_owner_email
     assert response_data["cloned_from_id"] == original_instance.id
+    assert response_data["identifier"] is None
 
 
 async def test_clone_job_script__fail_unauthorized(client, fill_job_script_data, synth_services):

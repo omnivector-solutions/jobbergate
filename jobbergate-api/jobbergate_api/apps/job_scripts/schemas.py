@@ -6,7 +6,7 @@ from datetime import datetime
 from textwrap import dedent
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, NonNegativeInt
+from pydantic import BaseModel, ConfigDict, NonNegativeInt, field_validator
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.job_script_templates.schemas import JobTemplateListView
@@ -33,6 +33,10 @@ job_script_meta_mapper = MetaMapper(
     name=MetaField(
         description="The unique name of the instance",
         example="test-job-script-88",
+    ),
+    identifier=MetaField(
+        description="A human-friendly label used for lookup on frequently accessed job scripts",
+        example="JobScript88",
     ),
     description=MetaField(
         description="A text field providing a human-friendly description of the job_script",
@@ -88,7 +92,15 @@ class JobScriptCreateRequest(BaseModel):
     """
 
     name: LengthLimitedStr
+    identifier: LengthLimitedStr | None = None
     description: LengthLimitedStr | None = None
+
+    @field_validator("identifier")
+    @classmethod
+    def empty_str_to_none(cls, value):
+        if value == "":
+            return None
+        return value
 
     model_config = ConfigDict(json_schema_extra=job_script_meta_mapper)
 
@@ -99,7 +111,15 @@ class JobScriptCloneRequest(BaseModel):
     """
 
     name: LengthLimitedStr | None = None
+    identifier: LengthLimitedStr | None = None
     description: LengthLimitedStr | None = None
+
+    @field_validator("identifier")
+    @classmethod
+    def empty_str_to_none(cls, value):
+        if value == "":
+            return None
+        return value
 
     model_config = ConfigDict(json_schema_extra=job_script_meta_mapper)
 
@@ -120,8 +140,16 @@ class JobScriptUpdateRequest(BaseModel):
     """
 
     name: LengthLimitedStr | None = None
+    identifier: LengthLimitedStr | None = None
     description: LengthLimitedStr | None = None
     is_archived: bool | None = None
+
+    @field_validator("identifier")
+    @classmethod
+    def empty_str_to_none(cls, value):
+        if value == "":
+            return None
+        return value
 
     model_config = ConfigDict(json_schema_extra=job_script_meta_mapper)
 
@@ -145,6 +173,7 @@ class JobScriptBaseView(TableResource):
     Omits parent relationship.
     """
 
+    identifier: str | None = None
     parent_template_id: int | None = None
     cloned_from_id: int | None = None
 
