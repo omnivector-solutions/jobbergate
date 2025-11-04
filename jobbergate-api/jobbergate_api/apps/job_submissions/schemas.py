@@ -106,6 +106,10 @@ job_submission_meta_mapper = MetaMapper(
         description="The arguments used to submit the job to the slurm queue",
         example=["--exclusive", "--job-name=example-job"],
     ),
+    script_arguments=MetaField(
+        description="The arguments passed to the script at runtime",
+        example=["--input", "data.txt"],
+    ),
     cloned_from_id=MetaField(
         description="Indicates the id this entry has been cloned from, if any.",
         example=101,
@@ -125,6 +129,7 @@ class JobSubmissionCreateRequest(BaseModel):
     execution_directory: LengthLimitedStr | None = None
     client_id: LengthLimitedStr | None = None
     sbatch_arguments: list[LengthLimitedStr] | None = Field(None, max_length=50)
+    script_arguments: list[LengthLimitedStr] | None = Field(None, max_length=50)
 
     @field_validator("execution_directory", mode="before")
     @classmethod
@@ -188,6 +193,7 @@ class JobSubmissionDetailedView(JobSubmissionBaseView):
     report_message: str | None
     slurm_job_info: str | None
     sbatch_arguments: list[str] | None
+    script_arguments: list[str] | None
 
 
 class PendingJobSubmission(BaseModel):
@@ -204,10 +210,9 @@ class PendingJobSubmission(BaseModel):
     execution_parameters: dict = Field(default_factory=dict)
     job_script: JobScriptDetailedView
     sbatch_arguments: list[str] | None = None
+    script_arguments: list[str] | None = None
 
-    model_config = ConfigDict(
-        from_attributes=True, extra="ignore", json_schema_extra=job_submission_meta_mapper
-    )
+    model_config = ConfigDict(from_attributes=True, extra="ignore", json_schema_extra=job_submission_meta_mapper)
 
 
 class ActiveJobSubmission(BaseModel):

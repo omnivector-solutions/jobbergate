@@ -102,6 +102,7 @@ def job_submission_data(base_data):
         "client_id": "dummy-client-id",
         "status": JobSubmissionStatus.CREATED,
         "sbatch_arguments": ["--name foo", "--comment=bar"],
+        "script_arguments": ["--input", "data.txt"],
     }
 
 

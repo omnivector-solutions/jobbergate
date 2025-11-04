@@ -47,6 +47,7 @@ class JobSubmission(CrudMixin, Base):
         status: The status of the job submission.
         report_message: The message returned by the job.
         sbatch_arguments: The arguments used to submit the job to the slurm queue.
+        script_arguments: The arguments passed to the script at runtime.
 
     See Mixin class definitions for other columns
     """
@@ -73,6 +74,7 @@ class JobSubmission(CrudMixin, Base):
     )
     report_message: Mapped[str] = mapped_column(String, nullable=True)
     sbatch_arguments: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=True)
+    script_arguments: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=True)
 
     job_script: Mapped[JobScript] = relationship(
         "JobScript",
