@@ -1,7 +1,7 @@
 """Add script_arguments column to job_submissions
 
-Revision ID: add_script_arguments_job_submissions
-Revises: add_identifier_job_scripts
+Revision ID: d77c3e85c7d7
+Revises: d0285508f97f
 Create Date: 2025-11-04 12:00:00
 
 """
@@ -10,8 +10,8 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = "add_script_arguments_job_submissions"
-down_revision = "add_identifier_job_scripts"
+revision = "d77c3e85c7d7"
+down_revision = "d0285508f97f"
 branch_labels = None
 depends_on = None
 
