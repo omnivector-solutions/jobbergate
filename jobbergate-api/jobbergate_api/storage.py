@@ -283,7 +283,7 @@ def handle_integrity_error(
     """
     Unpack metadata from a IntegrityError and return a 409 response.
     """
-    FK_DETAIL_RX = r"DETAIL:  Key \(identifier\)=\((?P<identifier>.+)\) already exists."
+    FK_DETAIL_RX = r"DETAIL:\s+Key \(identifier\)=\((?P<identifier>.+)\) already exists."
     matches = re.search(FK_DETAIL_RX, str(err), re.MULTILINE)
     identifier = None
     if matches:
@@ -293,9 +293,7 @@ def handle_integrity_error(
 
     return fastapi.responses.JSONResponse(
         status_code=fastapi.status.HTTP_409_CONFLICT,
-        content=dict(
-            detail=dict(message="Identifier already exists, must be unique"),
-        ),
+        content={"detail": {"message": "Identifier already exists, must be unique"}},
     )
 
 
