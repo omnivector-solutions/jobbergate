@@ -53,15 +53,26 @@ class TestSubmissionHandler:
 
         job_script_path = tmp_path / "file.sh"
 
-        assert sbatch_handler.submit_job(job_script_path) == 123
+        assert (
+            sbatch_handler.submit_job(
+                job_script_path,
+                sbatch_arguments=["--job-name=test"],
+                script_arguments=["--foo", "bar"],
+            )
+            == 123
+        )
         mocked_run.assert_called_once_with(
-            (
+            [
                 sbatch_path.as_posix(),
                 "--parsable",
+                "--job-name=test",
                 job_script_path.as_posix(),
-            ),
+                "--foo",
+                "bar",
+            ],
             check=True,
             shell=False,
+            timeout=sbatch_handler.subprocess_handler.timeout,
             cwd=tmp_path,
             capture_output=True,
             text=True,
@@ -132,6 +143,7 @@ class TestInfoHandler:
             ),
             check=True,
             shell=False,
+            timeout=sbatch_handler.subprocess_handler.timeout,
             capture_output=True,
             text=True,
         )
@@ -156,6 +168,7 @@ class TestInfoHandler:
             ),
             check=True,
             shell=False,
+            timeout=sbatch_handler.subprocess_handler.timeout,
             capture_output=True,
             text=True,
         )
@@ -178,6 +191,7 @@ class TestInfoHandler:
             ),
             check=True,
             shell=False,
+            timeout=sbatch_handler.subprocess_handler.timeout,
             capture_output=True,
             text=True,
         )
@@ -292,6 +306,7 @@ class TestScancelHandler:
             check=True,
             shell=False,
             capture_output=True,
+            timeout=sbatch_handler.subprocess_handler.timeout,
             text=True,
         )
 
