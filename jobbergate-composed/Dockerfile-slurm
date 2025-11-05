@@ -6,7 +6,7 @@ ARG GOSU_VERSION=1.16
 
 RUN set -ex \
     && apt update \
-    && apt install wget gpg -y \
+    && apt install -y wget gpg python3-dev python3-pip \
     && wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-amd64" \
     && wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-amd64.asc" \
     && export GNUPGHOME="$(mktemp -d)" \
