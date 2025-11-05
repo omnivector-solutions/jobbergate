@@ -12,7 +12,7 @@ from sqlalchemy import delete, func, select, update
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 from jobbergate_api.apps.job_submissions.models import JobSubmission
-from jobbergate_api.apps.protocols import CrudModel
+from jobbergate_api.apps.job_scripts.models import JobScript
 from jobbergate_api.apps.services import AutoCleanResponse, CrudService, FileModel, FileService, ServiceError
 from sqlalchemy.sql.expression import Select
 from jobbergate_api.config import settings
@@ -51,12 +51,12 @@ class JobScriptCrudService(CrudService):
             query = query.where(self.model_type.identifier.is_not(None))
         return query
 
-    async def create(self, **incoming_data) -> CrudModel:
+    async def create(self, **incoming_data) -> JobScript:
         """Validate identifier before creating."""
         self.validate_identifier(incoming_data.get("identifier"))
         return await super().create(**incoming_data)
 
-    async def update(self, locator: Any, **incoming_data) -> CrudModel:
+    async def update(self, locator: Any, **incoming_data) -> JobScript:
         """Validate identifier before updating."""
         self.validate_identifier(incoming_data.get("identifier"))
         return await super().update(locator, **incoming_data)
@@ -79,7 +79,7 @@ class JobScriptCrudService(CrudService):
                     self.name, identifier
                 ),
                 raise_exc_class=ServiceError,
-                raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
+                raise_kwargs={"status_code": status.HTTP_422_UNPROCESSABLE_ENTITY},
             )
 
     async def delete(self, locator: Any) -> None:
