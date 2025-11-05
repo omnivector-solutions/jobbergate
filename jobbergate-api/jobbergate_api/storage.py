@@ -16,6 +16,7 @@ from fastapi.exceptions import HTTPException
 from loguru import logger
 from sqlalchemy import Column, Enum, or_
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped
 from sqlalchemy.sql.expression import Case, ColumnElement, UnaryExpression
 from starlette import status
@@ -273,6 +274,29 @@ def sort_clause(
     elif not sort_ascending:
         sort_column = sort_column.desc()
     return sort_column
+
+
+def handle_integrity_error(
+    _: fastapi.Request,
+    err: IntegrityError,
+):
+    """
+    Unpack metadata from a IntegrityError and return a 409 response.
+    """
+    FK_DETAIL_RX = r"DETAIL:  Key \(identifier\)=\((?P<identifier>.+)\) already exists."
+    matches = re.search(FK_DETAIL_RX, str(err), re.MULTILINE)
+    identifier = None
+    if matches:
+        identifier = matches.group("identifier")
+
+    logger.error(f"Operation failed due to unique constraint: {identifier=}")
+
+    return fastapi.responses.JSONResponse(
+        status_code=fastapi.status.HTTP_409_CONFLICT,
+        content=dict(
+            detail=dict(message="Identifier already exists, must be unique"),
+        ),
+    )
 
 
 def handle_fk_error(

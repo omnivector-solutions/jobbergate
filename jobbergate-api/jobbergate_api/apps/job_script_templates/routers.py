@@ -17,7 +17,6 @@ from fastapi import Response as FastAPIResponse
 from fastapi_pagination import Page
 from loguru import logger
 from pydantic import AnyUrl
-from sqlalchemy.exc import IntegrityError
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.dependencies import SecureService, secure_services
@@ -56,15 +55,10 @@ async def job_script_template_create(
     """Create a new job script template."""
     logger.info(f"Creating a new job script template with {create_request=}")
 
-    try:
-        return await secure_services.crud.template.create(
-            owner_email=secure_services.identity_payload.email,
-            **create_request.model_dump(exclude_unset=True),
-        )
-    except IntegrityError:
-        message = f"Job script template with the identifier={create_request.identifier} already exists"
-        logger.error(message)
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=message)
+    return await secure_services.crud.template.create(
+        owner_email=secure_services.identity_payload.email,
+        **create_request.model_dump(exclude_unset=True),
+    )
 
 
 @router.get(
@@ -108,18 +102,12 @@ async def job_script_template_clone(
 
     # Identifier is specifically set to None to avoid conflicts with the original instance
     new_data = {"identifier": None, **clone_request.model_dump(exclude_unset=True)}
-    try:
-        cloned_instance = await secure_services.crud.template.clone_instance(
-            original_instance,
-            owner_email=secure_services.identity_payload.email,
-            **new_data,
-        )
-    except IntegrityError:
-        message = "Job script template with the identifier={} already exists".format(
-            clone_request.identifier or original_instance.identifier
-        )
-        logger.error(message)
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=message)
+
+    cloned_instance = await secure_services.crud.template.clone_instance(
+        original_instance,
+        owner_email=secure_services.identity_payload.email,
+        **new_data,
+    )
 
     for file in original_instance.template_files:
         await secure_services.file.template.clone_instance(file, cloned_instance.id)

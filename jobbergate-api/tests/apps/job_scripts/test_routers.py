@@ -58,7 +58,9 @@ async def test_create_stand_alone_job_script__success(
 async def test_clone_job_script__success(
     client, permission, fill_job_script_data, inject_security_header, tester_email, synth_services
 ):
-    original_instance = await synth_services.crud.job_script.create(**fill_job_script_data(owner_email=tester_email))
+    original_instance = await synth_services.crud.job_script.create(
+        **fill_job_script_data(owner_email=tester_email)
+    )
     parent_id = original_instance.id
     await synth_services.file.job_script.upsert(
         parent_id=parent_id,
@@ -96,7 +98,9 @@ async def test_clone_job_script__success(
 async def test_clone_job_script__replace_base_values(
     client, fill_job_script_data, inject_security_header, tester_email, synth_services
 ):
-    original_instance = await synth_services.crud.job_script.create(**fill_job_script_data(owner_email=tester_email))
+    original_instance = await synth_services.crud.job_script.create(
+        **fill_job_script_data(owner_email=tester_email)
+    )
 
     new_owner_email = "new_" + tester_email
 

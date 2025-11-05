@@ -41,7 +41,9 @@ router = APIRouter(prefix="/job-scripts", tags=["Job Scripts"])
 )
 async def job_script_create(
     create_request: JobScriptCreateRequest,
-    secure_services: SecureService = Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE)),
+    secure_services: SecureService = Depends(
+        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE)
+    ),
 ):
     """Create a stand alone job script."""
     logger.info(f"Creating a new job script with {create_request=}")
@@ -238,7 +240,9 @@ async def job_script_update(
     logger.info(f"Updating job script {typed_id_or_identifier=} with {update_params=}")
     instance = await secure_services.crud.job_script.get(typed_id_or_identifier, include_parent=True)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
-        secure_services.crud.job_script.ensure_attribute(instance, owner_email=secure_services.identity_payload.email)
+        secure_services.crud.job_script.ensure_attribute(
+            instance, owner_email=secure_services.identity_payload.email
+        )
     return await secure_services.crud.job_script.update(
         typed_id_or_identifier, **update_params.model_dump(exclude_unset=True)
     )
@@ -260,7 +264,9 @@ async def job_script_delete(
     logger.info(f"Deleting job script {typed_id_or_identifier=}")
     instance = await secure_services.crud.job_script.get(typed_id_or_identifier)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
-        secure_services.crud.job_script.ensure_attribute(instance, owner_email=secure_services.identity_payload.email)
+        secure_services.crud.job_script.ensure_attribute(
+            instance, owner_email=secure_services.identity_payload.email
+        )
     await secure_services.crud.job_script.delete(instance.id)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -342,7 +348,9 @@ async def job_script_upload_file_by_url(
 
     job_script = await secure_services.crud.job_script.get(id)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
-        secure_services.crud.job_script.ensure_attribute(job_script, owner_email=secure_services.identity_payload.email)
+        secure_services.crud.job_script.ensure_attribute(
+            job_script, owner_email=secure_services.identity_payload.email
+        )
 
     return await secure_services.file.job_script.upsert(
         parent_id=job_script.id,
@@ -389,7 +397,9 @@ async def job_script_upload_file(
 
     job_script = await secure_services.crud.job_script.get(id)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
-        secure_services.crud.job_script.ensure_attribute(job_script, owner_email=secure_services.identity_payload.email)
+        secure_services.crud.job_script.ensure_attribute(
+            job_script, owner_email=secure_services.identity_payload.email
+        )
 
     return await secure_services.file.job_script.upsert(
         parent_id=job_script.id,
@@ -415,6 +425,8 @@ async def job_script_delete_file(
     """Delete a file from a job script template by id or identifier."""
     job_script = await secure_services.crud.job_script.get(id)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
-        secure_services.crud.job_script.ensure_attribute(job_script, owner_email=secure_services.identity_payload.email)
+        secure_services.crud.job_script.ensure_attribute(
+            job_script, owner_email=secure_services.identity_payload.email
+        )
     job_script_file = await secure_services.file.job_script.get(job_script.id, file_name)
     await secure_services.file.job_script.delete(job_script_file)
