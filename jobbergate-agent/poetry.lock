@@ -294,6 +294,27 @@ tomli = {version = "*", optional = true, markers = "python_full_version <= \"3.1
 toml = ["tomli ; python_full_version <= \"3.11.0a6\""]
 
 [[package]]
+name = "dnspython"
+version = "2.7.0"
+description = "DNS toolkit"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "dnspython-2.7.0-py3-none-any.whl", hash = "sha256:b4c34b7d10b51bcc3a5071e7b8dee77939f1e878477eeecc965e9835f63c6c86"},
+    {file = "dnspython-2.7.0.tar.gz", hash = "sha256:ce9c432eda0dc91cf618a5cedf1a4e142651196bbcd2c80e89ed5a907e5cfaf1"},
+]
+
+[package.extras]
+dev = ["black (>=23.1.0)", "coverage (>=7.0)", "flake8 (>=7)", "hypercorn (>=0.16.0)", "mypy (>=1.8)", "pylint (>=3)", "pytest (>=7.4)", "pytest-cov (>=4.1.0)", "quart-trio (>=0.11.0)", "sphinx (>=7.2.0)", "sphinx-rtd-theme (>=2.0.0)", "twine (>=4.0.0)", "wheel (>=0.42.0)"]
+dnssec = ["cryptography (>=43)"]
+doh = ["h2 (>=4.1.0)", "httpcore (>=1.0.0)", "httpx (>=0.26.0)"]
+doq = ["aioquic (>=1.0.0)"]
+idna = ["idna (>=3.7)"]
+trio = ["trio (>=0.23)"]
+wmi = ["wmi (>=1.5.1)"]
+
+[[package]]
 name = "ecdsa"
 version = "0.19.0"
 description = "ECDSA cryptographic signature library (pure python)"
@@ -311,6 +332,22 @@ six = ">=1.9.0"
 [package.extras]
 gmpy = ["gmpy"]
 gmpy2 = ["gmpy2"]
+
+[[package]]
+name = "email-validator"
+version = "2.2.0"
+description = "A robust email address syntax and deliverability validation library."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "email_validator-2.2.0-py3-none-any.whl", hash = "sha256:561977c2d73ce3611850a06fa56b414621e0c8faa9d66f2611407d87465da631"},
+    {file = "email_validator-2.2.0.tar.gz", hash = "sha256:cb690f344c617a714f22e66ae771445a1ceb46821152df8e165c5f9a364582b7"},
+]
+
+[package.dependencies]
+dnspython = ">=2.0.0"
+idna = ">=2.0.0"
 
 [[package]]
 name = "exceptiongroup"
@@ -468,7 +505,7 @@ files = [
 
 [[package]]
 name = "jobbergate-core"
-version = "5.8.0"
+version = "5.8.1a0"
 description = "Jobbergate Core"
 optional = false
 python-versions = "^3.10"
@@ -487,6 +524,21 @@ python-jose = "^3.3.0"
 [package.source]
 type = "directory"
 url = "../jobbergate-core"
+
+[[package]]
+name = "ldap3"
+version = "2.9.1"
+description = "A strictly RFC 4510 conforming LDAP V3 pure Python client library"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "ldap3-2.9.1-py2.py3-none-any.whl", hash = "sha256:5869596fc4948797020d3f03b7939da938778a0f9e2009f7a072ccf92b8e8d70"},
+    {file = "ldap3-2.9.1.tar.gz", hash = "sha256:f3e7fc4718e3f09dda568b57100095e0ce58633bcabbed8667ce3f8fbaa4229f"},
+]
+
+[package.dependencies]
+pyasn1 = ">=0.4.6"
 
 [[package]]
 name = "llvmlite"
@@ -966,6 +1018,7 @@ files = [
 
 [package.dependencies]
 annotated-types = ">=0.6.0"
+email-validator = {version = ">=2.0.0", optional = true, markers = "extra == \"email\""}
 pydantic-core = "2.27.2"
 typing-extensions = ">=4.12.2"
 
@@ -1590,6 +1643,33 @@ files = [
 ]
 
 [[package]]
+name = "types-ldap3"
+version = "2.9.13.20250622"
+description = "Typing stubs for ldap3"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "types_ldap3-2.9.13.20250622-py3-none-any.whl", hash = "sha256:c18d0320327fa0017eb3d95acdf38921542d80939255e4ba130ca2d13ca3375f"},
+    {file = "types_ldap3-2.9.13.20250622.tar.gz", hash = "sha256:4770a8701daddf1ee936d46414205a329211b6f6e655c2764f6b70c89b023c47"},
+]
+
+[package.dependencies]
+types-pyasn1 = "*"
+
+[[package]]
+name = "types-pyasn1"
+version = "0.6.0.20250516"
+description = "Typing stubs for pyasn1"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "types_pyasn1-0.6.0.20250516-py3-none-any.whl", hash = "sha256:b9925e4e22e09eed758b93b6f2a7881b89d842c2373dd11c09b173567d170142"},
+    {file = "types_pyasn1-0.6.0.20250516.tar.gz", hash = "sha256:1a9b35a4f033cd70c384a5043a3407b2cc07afc95900732b66e0d38426c7541d"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.12.2"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -1668,4 +1748,4 @@ dev = ["black (>=19.3b0) ; python_version >= \"3.6\"", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "eeca24c56068dd647518036a5caef8a84c6e409b3fccd0e066bdc8a8827fa28e"
+content-hash = "96f113a0841c0895cbf458f3242fc7f124a6c520da81f1e8fcf93bb038d02471"
