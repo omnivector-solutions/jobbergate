@@ -4,7 +4,7 @@ Database model for the JobScript resource.
 
 from __future__ import annotations
 
-from sqlalchemy import Enum, ForeignKey, Integer
+from sqlalchemy import Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
 from sqlalchemy.sql.expression import Select
 
@@ -28,6 +28,7 @@ class JobScript(CrudMixin, Base):
     See Mixin class definitions for other columns.
     """
 
+    identifier: Mapped[str | None] = mapped_column(String, unique=True, index=True)
     parent_template_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("job_script_templates.id", ondelete="SET NULL"),
@@ -57,9 +58,16 @@ class JobScript(CrudMixin, Base):
     @classmethod
     def sortable_fields(cls):
         """
-        Add parent_template_id as a sortable field.
+        Add identifier and parent_template_id as sortable fields.
         """
-        return {cls.parent_template_id, *super().sortable_fields()}
+        return {cls.identifier, cls.parent_template_id, *super().sortable_fields()}
+
+    @classmethod
+    def searchable_fields(cls):
+        """
+        Add identifier as a searchable field in addition to defaults.
+        """
+        return {cls.identifier, *super().searchable_fields()}
 
     @classmethod
     def include_files(cls, query: Select) -> Select:

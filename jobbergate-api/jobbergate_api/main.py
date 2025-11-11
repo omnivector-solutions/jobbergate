@@ -20,7 +20,7 @@ from jobbergate_api.apps.job_scripts.routers import router as job_scripts_router
 from jobbergate_api.apps.job_submissions.routers import router as job_submissions_router
 from jobbergate_api.config import settings
 from jobbergate_api.logging import init_logging
-from jobbergate_api.storage import engine_factory, handle_fk_error
+from jobbergate_api.storage import engine_factory, IntegrityError, handle_integrity_error, handle_fk_error
 
 subapp = FastAPI(
     title=settings.METADATA_API_TITLE,
@@ -63,6 +63,7 @@ subapp.include_router(job_scripts_router)
 subapp.include_router(job_submissions_router)
 subapp.include_router(cluster_status_router)
 subapp.exception_handler(asyncpg.exceptions.ForeignKeyViolationError)(handle_fk_error)
+subapp.exception_handler(IntegrityError)(handle_integrity_error)
 
 add_pagination(subapp)
 
