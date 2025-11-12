@@ -51,12 +51,14 @@ def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: list[str
     return new_job_script_data_as_string
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SubprocessHandler:
+    timeout: int = 15
+
     def run(self, cmd: Sequence[str], **kwargs) -> subprocess.CompletedProcess:
         logger.debug("Running command '{}' with kwargs: {}", " ".join(cmd), kwargs)
         try:
-            result = subprocess.run(cmd, check=True, shell=False, **kwargs)
+            result = subprocess.run(cmd, check=True, shell=False, timeout=self.timeout, **kwargs)
             logger.trace("Command returned code {} with result: {}", result.returncode, result.stdout)
             return result
         except subprocess.CalledProcessError as e:
@@ -118,13 +120,23 @@ class SubmissionHandler:
             check(self.sbatch_path.exists(), "sbatch_path does not exist")
             check(self.submission_directory.is_absolute(), "submission_directory is not an absolute path")
 
-    def submit_job(self, job_script_path: Path) -> int:
+    def submit_job(
+        self,
+        job_script_path: Path,
+        *,
+        sbatch_arguments: Sequence[str] | None = None,
+        script_arguments: Sequence[str] | None = None,
+    ) -> int:
         """Runs sbatch as the user to submit a job script and returns the slurm id assigned to it."""
-        command = (
-            self.sbatch_path.as_posix(),
-            "--parsable",
-            job_script_path.as_posix(),
-        )
+        command = [self.sbatch_path.as_posix(), "--parsable"]
+
+        if sbatch_arguments:
+            command.extend(map(shlex.quote, sbatch_arguments))
+
+        command.append(job_script_path.resolve().as_posix())
+
+        if script_arguments:
+            command.extend(map(shlex.quote, script_arguments))
 
         completed_process = self.subprocess_handler.run(
             command, cwd=self.submission_directory, capture_output=True, text=True

@@ -14,7 +14,6 @@ from jobbergate_core.tools.sbatch import (
     InfoHandler,
     SubmissionHandler,
     SubprocessHandler,
-    inject_sbatch_params,
 )
 from loguru import logger
 
@@ -100,14 +99,7 @@ async def get_job_script_file(pending_job_submission: PendingJobSubmission, subm
 
     # Make static type checkers happy
     assert job_script_file is not None
-
     job_script = await retrieve_submission_file(job_script_file)
-
-    if pending_job_submission.sbatch_arguments:
-        job_script = inject_sbatch_params(
-            job_script, pending_job_submission.sbatch_arguments, "Sbatch params injected at submission time"
-        )
-
     return write_submission_file(job_script, job_script_file.filename, submit_dir)
 
 
@@ -293,7 +285,11 @@ async def submit_job_script(
         do_except=_reject_handler,
     ):
         logger.debug(f"Submitting job script for job submission {pending_job_submission.id}")
-        slurm_job_id = sbatch_handler.submit_job(job_script)
+        slurm_job_id = sbatch_handler.submit_job(
+            job_script,
+            sbatch_arguments=pending_job_submission.sbatch_arguments,
+            script_arguments=pending_job_submission.script_arguments,
+        )
 
     return slurm_job_id
 

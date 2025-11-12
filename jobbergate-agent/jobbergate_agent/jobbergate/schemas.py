@@ -36,6 +36,7 @@ class PendingJobSubmission(pydantic.BaseModel, extra="ignore"):
     owner_email: str
     execution_directory: Optional[Path] = None
     sbatch_arguments: List[str] = pydantic.Field(default_factory=list)
+    script_arguments: list[str] = pydantic.Field(default_factory=list)
     job_script: JobScript
 
 
