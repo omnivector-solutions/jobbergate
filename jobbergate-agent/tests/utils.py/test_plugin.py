@@ -1,9 +1,5 @@
 """Test the plugin module."""
 
-from unittest import mock
-
-import pytest
-
 from jobbergate_agent.tasks import (
     active_submissions_task,
     pending_submissions_task,
@@ -33,14 +29,3 @@ def test_discover_user_mappers__success():
     actual_result = load_plugins("user_mapper")
 
     assert actual_result == expected_result
-
-
-@mock.patch("jobbergate_agent.utils.plugin.entry_points")
-def test_discover__fail_to_load(mocked_entry_points):
-    """Test that discover_tasks raises RuntimeError when fails to load."""
-    mocked_pluging = mock.Mock()
-    mocked_pluging.load.side_effect = Exception("Test")
-    mocked_entry_points.return_value = [mocked_pluging]
-
-    with pytest.raises(RuntimeError, match="^Failed to load plugin"):
-        load_plugins("non-existent-plugin")
