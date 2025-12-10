@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import pwd
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property, partial
 from pathlib import Path
 from subprocess import CompletedProcess
@@ -28,7 +28,7 @@ from jobbergate_agent.jobbergate.update import fetch_job_data
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError
 from jobbergate_agent.utils.logging import log_error
-from jobbergate_agent.utils.user_mapper import SlurmUserMapper, manufacture
+from jobbergate_agent.utils.user_mapper import manufacture
 from jobbergate_agent.utils.plugin import get_plugin_manager, hookimpl, hookspec
 
 
@@ -223,10 +223,20 @@ def validate_submit_dir(submit_dir: Path, subprocess_handler: SubprocessAsUserHa
         raise ValueError("Execution directory does not exist or is not writable by the user") from e
 
 
-async def submit_job_script(
-    pending_job_submission: PendingJobSubmission,
-    user_mapper: SlurmUserMapper,
-) -> int:
+def reject_handler(id: int) -> Callable[[DoExceptParams], Coroutine[Any, Any, None]]:
+    async def helper(params: DoExceptParams) -> None:
+        """
+        Use for the ``do_except`` parameter of a ``handle_errors``.
+
+        Logs the error and then invokes job rejection on the Jobbergate API.
+        """
+        log_error(params)
+        await mark_as_rejected(id, params.final_message)
+
+    return helper
+
+
+async def submit_job_script(context: PendingJobSubmissionContext) -> int:
     """
     Submit a Job Script to slurm via the sbatch command.
 
@@ -236,67 +246,38 @@ async def submit_job_script(
     Returns:
         The ``slurm_job_id`` for the submitted job
     """
-    logger.debug(f"Submitting {pending_job_submission}")
-
-    async def _reject_handler(params: DoExceptParams) -> None:
-        """
-        Use for the ``do_except`` parameter of a ``handle_errors``.
-
-        Logs the error and then invokes job rejection on the Jobbergate API.
-        """
-        log_error(params)
-        await mark_as_rejected(pending_job_submission.id, params.final_message)
+    logger.debug(f"Submitting {context.data.id} job script to slurm...")
+    do_except = reject_handler(context.data.id)
 
     async with handle_errors_async(
-        "Username could not be resolved",
-        raise_exc_class=JobSubmissionError,
-        do_except=_reject_handler,
+        "Execution directory is invalid", raise_exc_class=JobSubmissionError, do_except=do_except
     ):
-        email = pending_job_submission.owner_email
-        mapper_class_name = user_mapper.__class__.__name__
-        logger.debug(f"Fetching username for email '{email}' with mapper {mapper_class_name}")
-        username = user_mapper[email]
-        logger.debug(f"Using local slurm user '{username}' for job submission")
-        subprocess_handler = SubprocessAsUserHandler(username)
-
-    submit_dir = pending_job_submission.execution_directory or Path(
-        SETTINGS.DEFAULT_SLURM_WORK_DIR.format(username=username)
-    )
-    async with handle_errors_async(
-        "Execution directory is invalid", raise_exc_class=JobSubmissionError, do_except=_reject_handler
-    ):
-        validate_submit_dir(submit_dir, subprocess_handler)
-
-    sbatch_handler = SubmissionHandler(
-        sbatch_path=SETTINGS.SBATCH_PATH,
-        submission_directory=submit_dir,
-        subprocess_handler=subprocess_handler,
-    )
+        validate_submit_dir(context.submission_dir, context.subprocess_handler)
 
     async with handle_errors_async(
-        "Error processing job-script files", raise_exc_class=JobSubmissionError, do_except=_reject_handler
+        "Error processing job-script files", raise_exc_class=JobSubmissionError, do_except=do_except
     ):
-        logger.debug(f"Processing submission files for job submission {pending_job_submission.id}")
-        with TemporaryDirectory(prefix=f"jobbergate-submission-{pending_job_submission.id}-") as tmp_dir:
+        logger.debug(f"Processing submission files for job submission {context.data.id}")
+        with TemporaryDirectory(prefix=f"jobbergate-submission-{context.data.id}-") as tmp_dir:
             tmp_dir_path = Path(tmp_dir)
 
-            supporting_files = await process_supporting_files(pending_job_submission, tmp_dir_path)
+            supporting_files = await process_supporting_files(context.data, tmp_dir_path)
 
-            logger.debug(f"Fetching job script for job submission {pending_job_submission.id}")
-            job_script = await get_job_script_file(pending_job_submission, tmp_dir_path)
+            logger.debug(f"Fetching job script for job submission {context.data.id}")
+            job_script = await get_job_script_file(context.data, tmp_dir_path)
 
             if SETTINGS.WRITE_SUBMISSION_FILES:
-                job_script = sbatch_handler.copy_file_to_submission_directory(job_script)
+                job_script = context.submission_handler.copy_file_to_submission_directory(job_script)
                 for file in supporting_files:
-                    sbatch_handler.copy_file_to_submission_directory(file)
+                    context.submission_handler.copy_file_to_submission_directory(file)
 
     async with handle_errors_async(
         "Failed to submit job to slurm",
         raise_exc_class=JobSubmissionError,
-        do_except=_reject_handler,
+        do_except=do_except,
     ):
-        logger.debug(f"Submitting job script for job submission {pending_job_submission.id}")
-        slurm_job_id = sbatch_handler.submit_job(job_script)
+        logger.debug(f"Submitting job script for job submission {context.data.id}")
+        slurm_job_id = context.submission_handler.submit_job(job_script)
 
     return slurm_job_id
 
@@ -310,41 +291,93 @@ async def empty_strategy() -> None:
     return None
 
 
+@dataclass
+class PendingJobSubmissionContext:
+    """Context for pending job submission processing."""
+
+    data: PendingJobSubmission
+    username: str
+
+    _slurm_job_id: int | None = field(default=None, init=False, repr=False, compare=False)
+
+    @property
+    def submission_dir(self) -> Path:
+        """The submission directory for the job submission."""
+        return self.data.execution_directory or Path(SETTINGS.DEFAULT_SLURM_WORK_DIR.format(username=self.username))
+
+    @property
+    def is_submitted(self) -> bool:
+        """Whether the job submission has been submitted to Slurm."""
+        return self._slurm_job_id is not None
+
+    @property
+    def slurm_job_id(self) -> int:
+        """The Slurm job ID for the job submission."""
+        if self._slurm_job_id is None:
+            raise ValueError("Slurm job ID has not been set yet")
+        return self._slurm_job_id
+
+    def set_slurm_job_id(self, slurm_job_id: int) -> None:
+        """Set the Slurm job ID for the job submission."""
+        self._slurm_job_id = slurm_job_id
+
+    @cached_property
+    def subprocess_handler(self) -> SubprocessAsUserHandler:
+        """Subprocess handler for running commands as the submitter user."""
+        return SubprocessAsUserHandler(self.username)
+
+    @cached_property
+    def info_handler(self) -> InfoHandler:
+        """InfoHandler for fetching job info from Slurm."""
+        return InfoHandler(scontrol_path=SETTINGS.SCONTROL_PATH)
+
+    @cached_property
+    def submission_handler(self) -> SubmissionHandler:
+        """SubmissionHandler for submitting jobs to Slurm."""
+        return SubmissionHandler(
+            sbatch_path=SETTINGS.SBATCH_PATH,
+            submission_directory=self.submission_dir,
+            subprocess_handler=self.subprocess_handler,
+        )
+
+    @cached_property
+    def slurm_job_data(self) -> SlurmJobData:
+        """Fetch the Slurm job data for the job submission."""
+        return fetch_job_data(self.slurm_job_id, self.info_handler)
+
+
 class PendingSubmissionPluginSpecs:
     """Hook specifications for pending job processing plugins."""
 
     @hookspec
-    def pending_submission(self, data: PendingJobSubmission) -> JobProcessStrategy:
+    def pending_submission(self, context: PendingJobSubmissionContext) -> JobProcessStrategy:
         return empty_strategy
 
 
 @hookimpl(specname="pending_submission", trylast=True)
-def pending_job_submission_strategy(data: PendingJobSubmission) -> JobProcessStrategy:
+def pending_job_submission_strategy(context: PendingJobSubmissionContext) -> JobProcessStrategy:
     """Get the job processing strategy for a pending job submission."""
-
-    info_handler = InfoHandler(scontrol_path=SETTINGS.SCONTROL_PATH)
-    user_mapper = manufacture()
 
     async def helper() -> None:
         """Helper function to process the pending job submission."""
-        logger.debug(f"Submitting pending job_submission {data.id}")
+        logger.debug(f"Submitting pending job_submission {context.data.id}")
         with JobSubmissionError.handle_errors(
-            f"Failed to submit pending job_submission {data.id}...skipping to next pending job",
+            f"Failed to submit pending job_submission {context.data.id}...skipping to next pending job",
             do_except=log_error,
-            do_else=lambda: logger.debug(f"Finished submitting pending job_submission {data.id}"),
+            do_else=lambda: logger.debug(f"Finished submitting pending job_submission {context.data.id}"),
             re_raise=False,
         ):
-            cache_file = SETTINGS.CACHE_DIR / f"{data.id}.slurm_job_id"
+            cache_file = SETTINGS.CACHE_DIR / f"{context.data.id}.slurm_job_id"
             if cache_file.exists():
-                logger.debug(f"Found cache file for job submission {data.id}")
+                logger.debug(f"Found cache file for job submission {context.data.id}")
                 slurm_job_id = int(cache_file.read_text())
             else:
-                slurm_job_id = await submit_job_script(data, user_mapper)
+                slurm_job_id = await submit_job_script(context)
                 cache_file.write_text(str(slurm_job_id))
 
-            slurm_job_data: SlurmJobData = fetch_job_data(slurm_job_id, info_handler)
+            context.set_slurm_job_id(slurm_job_id)
 
-            await mark_as_submitted(data.id, slurm_job_id, slurm_job_data)
+            await mark_as_submitted(context.data.id, slurm_job_id, context.slurm_job_data)
             cache_file.unlink(missing_ok=True)
 
     return helper
@@ -360,11 +393,19 @@ async def submit_pending_jobs() -> None:
     Submit all pending jobs and update them with ``SUBMITTED`` status and slurm_job_id.
     """
     logger.debug("Started submitting pending jobs...")
-
+    user_mapper = manufacture()
     plugin_manager = pending_submission_plugin_manager()
     pending_job_submissions = await fetch_pending_submissions()
     for pending_job in pending_job_submissions:
-        for strategy in plugin_manager.hook.pending_submission(data=pending_job):
+        async with handle_errors_async(
+            f"Username could not be resolved for {pending_job.id}",
+            raise_exc_class=JobSubmissionError,
+            do_except=reject_handler(pending_job.id),
+        ):
+            username = user_mapper[pending_job.owner_email]
+        for strategy in plugin_manager.hook.pending_submission(
+            context=PendingJobSubmissionContext(pending_job, username)
+        ):
             await strategy()
 
     logger.debug("...Finished submitting pending jobs")

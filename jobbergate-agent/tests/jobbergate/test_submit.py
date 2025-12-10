@@ -14,6 +14,7 @@ import respx
 
 from jobbergate_agent.jobbergate.schemas import JobScriptFile, PendingJobSubmission, SlurmJobData
 from jobbergate_agent.jobbergate.submit import (
+    PendingJobSubmissionContext,
     fetch_pending_submissions,
     get_job_script_file,
     mark_as_rejected,
@@ -30,7 +31,7 @@ from jobbergate_agent.jobbergate.submit import (
 )
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError
-from jobbergate_agent.utils.user_mapper import SingleUserMapper, SlurmUserMapper, manufacture
+from jobbergate_agent.utils.user_mapper import SingleUserMapper, manufacture
 
 
 class RegexArgMatcher:
@@ -536,6 +537,7 @@ async def test_submit_job_script__success_with_files(
     """
     pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
     pending_job_submission.name = job_submissions_name
+    context = PendingJobSubmissionContext(pending_job_submission, user_mapper[pending_job_submission.owner_email])
 
     mocked_sbatch = mock.MagicMock()
     mocked_sbatch.submit_job = lambda *args, **kwargs: 13
@@ -550,7 +552,7 @@ async def test_submit_job_script__success_with_files(
             ),
         )
         with tweak_settings(WRITE_SUBMISSION_FILES=True):
-            slurm_job_id = await submit_job_script(pending_job_submission, user_mapper)
+            slurm_job_id = await submit_job_script(context)
 
     assert slurm_job_id == 13
     assert download_route.call_count == 1
@@ -570,6 +572,7 @@ async def test_submit_job_script__success_without_files(
     and that a ``slurm_job_id`` is returned.
     """
     pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
+    context = PendingJobSubmissionContext(pending_job_submission, user_mapper[pending_job_submission.owner_email])
 
     mocked_sbatch = mock.MagicMock()
     mocked_sbatch.submit_job = lambda *args, **kwargs: 13
@@ -584,7 +587,7 @@ async def test_submit_job_script__success_without_files(
             ),
         )
         with tweak_settings(WRITE_SUBMISSION_FILES=False):
-            slurm_job_id = await submit_job_script(pending_job_submission, user_mapper)
+            slurm_job_id = await submit_job_script(context)
 
     assert slurm_job_id == 13
     assert download_route.call_count == 1
@@ -614,6 +617,7 @@ async def test_submit_job_script__with_non_default_execution_directory(
         **dummy_pending_job_submission_data,
         execution_directory=exe_path,
     )
+    context = PendingJobSubmissionContext(pending_job_submission, user_mapper[pending_job_submission.owner_email])
 
     mocked_sbatch = mock.MagicMock()
     mocked_sbatch.submit_job = lambda *args, **kwargs: 13
@@ -628,7 +632,7 @@ async def test_submit_job_script__with_non_default_execution_directory(
             ),
         )
 
-        slurm_job_id = await submit_job_script(pending_job_submission, user_mapper)
+        slurm_job_id = await submit_job_script(context)
 
         assert slurm_job_id == 13
         assert download_route.call_count == 1
@@ -645,6 +649,7 @@ async def test_submit_job_script__raises_exception_if_no_executable_script_was_f
     """
     pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
     pending_job_submission.job_script.files = []
+    context = PendingJobSubmissionContext(pending_job_submission, user_mapper[pending_job_submission.owner_email])
 
     mock_mark_as_rejected = mocker.patch("jobbergate_agent.jobbergate.submit.mark_as_rejected")
 
@@ -652,7 +657,7 @@ async def test_submit_job_script__raises_exception_if_no_executable_script_was_f
     mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
 
     with pytest.raises(JobSubmissionError, match="Could not find an executable"):
-        await submit_job_script(pending_job_submission, user_mapper)
+        await submit_job_script(context)
 
     mock_mark_as_rejected.assert_called_once_with(
         dummy_pending_job_submission_data["id"],
@@ -666,6 +671,7 @@ async def test_submit_job_script__raises_exception_if_execution_dir_does_not_exi
 ):
     pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
     pending_job_submission.execution_directory = Path("/non/existing/path")
+    context = PendingJobSubmissionContext(pending_job_submission, user_mapper[pending_job_submission.owner_email])
 
     mock_mark_as_rejected = mocker.patch("jobbergate_agent.jobbergate.submit.mark_as_rejected")
 
@@ -673,7 +679,7 @@ async def test_submit_job_script__raises_exception_if_execution_dir_does_not_exi
     mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
 
     with pytest.raises(JobSubmissionError, match="Execution directory does not exist or is not writable by the user"):
-        await submit_job_script(pending_job_submission, user_mapper)
+        await submit_job_script(context)
 
     mock_mark_as_rejected.assert_called_once_with(
         dummy_pending_job_submission_data["id"],
@@ -687,6 +693,7 @@ async def test_submit_job_script__raises_exception_if_execution_dir_is_relative(
 ):
     pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
     pending_job_submission.execution_directory = Path("./existing/")
+    context = PendingJobSubmissionContext(pending_job_submission, user_mapper[pending_job_submission.owner_email])
 
     submit_dir = tmp_path / pending_job_submission.execution_directory
     submit_dir.mkdir()
@@ -697,7 +704,7 @@ async def test_submit_job_script__raises_exception_if_execution_dir_is_relative(
     mocker.patch("jobbergate_agent.jobbergate.submit.SubmissionHandler", return_value=mocked_sbatch)
 
     with pytest.raises(JobSubmissionError, match="Execution directory must be an absolute path"):
-        await submit_job_script(pending_job_submission, user_mapper)
+        await submit_job_script(context)
 
     mock_mark_as_rejected.assert_called_once_with(
         dummy_pending_job_submission_data["id"],
@@ -716,6 +723,7 @@ async def test_submit_job_script__raises_exception_if_sbatch_fails(
     exception and that the ``mark_as_rejected`` method is called for the job submission.
     """
     pending_job_submission = PendingJobSubmission(**dummy_pending_job_submission_data)
+    context = PendingJobSubmissionContext(pending_job_submission, user_mapper[pending_job_submission.owner_email])
 
     mock_mark_as_rejected = mocker.patch("jobbergate_agent.jobbergate.submit.mark_as_rejected")
 
@@ -743,7 +751,7 @@ async def test_submit_job_script__raises_exception_if_sbatch_fails(
             JobSubmissionError,
             match="Failed to submit job to slurm",
         ):
-            await submit_job_script(pending_job_submission, user_mapper)
+            await submit_job_script(context)
 
     assert download_route.call_count == 1
 
@@ -807,10 +815,10 @@ async def test_submit_pending_jobs(
         return_value=pending_submissions,
     )
 
-    def _mocked_submit_job_script(pending_job_submission: PendingJobSubmission, user_mapper: SlurmUserMapper):
-        if pending_job_submission.id == 3:
+    def _mocked_submit_job_script(context: PendingJobSubmissionContext) -> int:
+        if context.data.id == 3:
             raise Exception("BOOM!")
-        return pending_job_submission.id * 11
+        return context.data.id * 11
 
     def _mocked_mark_as_submitted(job_submission_id: int, slurm_job_id: int, slurm_job_data: SlurmJobData):
         if job_submission_id == 2:
@@ -842,9 +850,15 @@ async def test_submit_pending_jobs(
 
     mock_submit.assert_has_calls(
         [
-            mocker.call(pending_submissions[0], test_mapper),
-            mocker.call(pending_submissions[1], test_mapper),
-            mocker.call(pending_submissions[2], test_mapper),
+            mocker.call(
+                PendingJobSubmissionContext(pending_submissions[0], test_mapper[pending_submissions[0].owner_email])
+            ),
+            mocker.call(
+                PendingJobSubmissionContext(pending_submissions[1], test_mapper[pending_submissions[1].owner_email])
+            ),
+            mocker.call(
+                PendingJobSubmissionContext(pending_submissions[2], test_mapper[pending_submissions[2].owner_email])
+            ),
         ]
     )
     assert mock_submit.call_count == 3
