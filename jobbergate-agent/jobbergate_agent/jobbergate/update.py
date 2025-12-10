@@ -1,13 +1,18 @@
 import asyncio
-from functools import partial
+from dataclasses import dataclass
+from functools import cached_property, partial
 import json
 from itertools import chain
+import os
+from pathlib import Path
+import pwd
+from subprocess import CompletedProcess
 import sys
 from textwrap import dedent
 from typing import Any, Callable, Coroutine, List, get_args
 
 import msgpack
-from jobbergate_core.tools.sbatch import InfoHandler, ScancelHandler
+from jobbergate_core.tools.sbatch import InfoHandler, ScancelHandler, SubprocessHandler
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
@@ -28,6 +33,93 @@ from jobbergate_agent.utils.exception import JobbergateAgentError, JobbergateApi
 from jobbergate_agent.utils.logging import log_error
 from jobbergate_agent.utils.plugin import get_plugin_manager, hookimpl, hookspec
 
+
+@dataclass
+class SubprocessAsUserHandler(SubprocessHandler):
+    """Subprocess handler that runs as a given user."""
+
+    username: str
+
+    def __post_init__(self):
+        pwan = pwd.getpwnam(self.username)
+        self.uid = pwan.pw_uid
+        self.gid = pwan.pw_gid
+
+    def run(self, *args, **kwargs) -> CompletedProcess:
+        kwargs.update(user=self.uid, group=self.gid, extra_groups=self.extra_groups, env={})
+        # Tests indicate that the change on the working directory precedes the change of user on the subprocess.
+        # With that, the user running the agent can face permission denied errors on cwd,
+        # depending on the setting on the filesystem and permissions on the directory.
+        # To avoid this, we change the working directory after changing to the submitter user using preexec_fn.
+        if cwd := kwargs.pop("cwd", None):
+            kwargs["preexec_fn"] = lambda: os.chdir(cwd)
+        return super().run(*args, **kwargs)
+
+    @cached_property
+    def extra_groups(self) -> set[int] | None:
+        if not SETTINGS.GET_EXTRA_GROUPS:
+            return None
+        try:
+            result = super().run(cmd=("id", "-G", self.username), capture_output=True, text=True)
+        except RuntimeError as e:
+            message = f"Failed to get supplementary groups for user {self.username}: {e}"
+            logger.error(message)
+            raise RuntimeError(message) from e
+        return {g for g in map(int, result.stdout.split()) if g != self.gid}
+
+
+@dataclass
+class ActiveSubmissionContext:
+    """Context for active job submission processing."""
+
+    data: ActiveJobSubmission
+
+    @property
+    def slurm_job_id(self) -> int:
+        """The Slurm job ID for the job submission."""
+        if self.data.slurm_job_id is None:
+            raise ValueError("Slurm job ID has not been set yet")
+        return self.data.slurm_job_id
+
+    @cached_property
+    def subprocess_handler(self) -> SubprocessAsUserHandler:
+        """Subprocess handler for running commands as the submitter user."""
+        return SubprocessAsUserHandler(self.username)
+
+    @cached_property
+    def info_handler(self) -> InfoHandler:
+        """InfoHandler for fetching job info from Slurm."""
+        return InfoHandler(scontrol_path=SETTINGS.SCONTROL_PATH)
+
+    @cached_property
+    def username(self) -> str:
+        """Username of the job submitter."""
+        result = self.slurm_raw_info.get("user_name")
+        if result is None:
+            raise ValueError("Username could not be fetched for the given Slurm job ID")
+        return result
+
+    @property
+    def submission_dir(self) -> Path:
+        """The submission directory for the job submission."""
+        result = self.slurm_raw_info.get("current_working_directory")
+        if result is None:
+            raise ValueError("Submission directory could not be fetched for the given Slurm job ID")
+        return Path(result)
+
+    @cached_property
+    def slurm_job_data(self) -> SlurmJobData:
+        """Fetch the Slurm job data for the job submission."""
+        return fetch_job_data(self.slurm_job_id, self.info_handler)
+
+    @cached_property
+    def slurm_raw_info(self) -> dict[str, Any]:
+        """Fetch the raw Slurm job info for the job submission."""
+        if self.slurm_job_data.job_info is None:
+            return {}
+        return json.loads(self.slurm_job_data.job_info)
+
+
 JobProcessStrategy = Callable[[], Coroutine[Any, Any, None]]
 """Type alias for job process strategy functions."""
 
@@ -41,26 +133,26 @@ class ActiveSubmissionPluginSpecs:
     """Hook specifications for active job processing plugins."""
 
     @hookspec
-    def active_submission(self, data: ActiveJobSubmission) -> JobProcessStrategy:
+    def active_submission(self, context: ActiveSubmissionContext) -> JobProcessStrategy:
         return empty_strategy
 
 
 @hookimpl(specname="active_submission")
-def pending_job_cancellation_strategy(data: ActiveJobSubmission) -> JobProcessStrategy:
+def pending_job_cancellation_strategy(context: ActiveSubmissionContext) -> JobProcessStrategy:
     """
     Process the cancellation of a pending job submission.
 
     I.e., a job submissions that has been marked as cancelled but has no associated slurm job id.
     """
 
-    if data.status != JobSubmissionStatus.CANCELLED or data.slurm_job_id is not None:
+    if context.data.status != JobSubmissionStatus.CANCELLED or context.data.slurm_job_id is not None:
         return empty_strategy
 
     async def helper() -> None:
-        logger.debug(f"Updating job submission {data.id} to cancelled state")
+        logger.debug(f"Updating job submission {context.data.id} to cancelled state")
         try:
             await update_job_data(
-                data.id,
+                context.data.id,
                 SlurmJobData(
                     job_state="CANCELLED",
                     state_reason="Job was cancelled by the user before a slurm job was created",
@@ -73,44 +165,44 @@ def pending_job_cancellation_strategy(data: ActiveJobSubmission) -> JobProcessSt
 
 
 @hookimpl(specname="active_submission")
-def active_job_cancellation_strategy(data: ActiveJobSubmission) -> JobProcessStrategy:
+def active_job_cancellation_strategy(context: ActiveSubmissionContext) -> JobProcessStrategy:
     """
     Process the cancellation of an active job submission.
 
     I.e., a job submission that has been marked as cancelled and has an associated slurm job id.
     """
 
-    if data.status != JobSubmissionStatus.CANCELLED or data.slurm_job_id is None:
+    if context.data.status != JobSubmissionStatus.CANCELLED or context.data.slurm_job_id is None:
         return empty_strategy
 
     async def helper() -> None:
-        if data.slurm_job_id is None:
-            logger.error(f"Cannot cancel job for job submission {data.id}: slurm_job_id is None")
+        if context.data.slurm_job_id is None:
+            logger.error(f"Cannot cancel job for job submission {context.data.id}: slurm_job_id is None")
             return
 
-        logger.debug(f"Cancelling job for job submission {data.id}")
+        logger.debug(f"Cancelling job for job submission {context.data.id}")
         scancel_handler = ScancelHandler(scancel_path=SETTINGS.SCANCEL_PATH)
         try:
-            scancel_handler.cancel_job(data.slurm_job_id)
+            scancel_handler.cancel_job(context.data.slurm_job_id)
         except RuntimeError as e:
-            logger.error(f"Failed to cancel slurm job {data.slurm_job_id}: {e}")
+            logger.error(f"Failed to cancel slurm job {context.data.slurm_job_id}: {e}")
 
     return helper
 
 
 @hookimpl(specname="active_submission")
-def job_metrics_strategy(data: ActiveJobSubmission) -> JobProcessStrategy:
+def job_metrics_strategy(context: ActiveSubmissionContext) -> JobProcessStrategy:
     """
     Strategy for updating job metrics.
     """
 
-    if not SETTINGS.influx_integration_enabled or data.slurm_job_id is None:
+    if not SETTINGS.influx_integration_enabled or context.data.slurm_job_id is None:
         return empty_strategy
 
     async def helper() -> None:
-        logger.debug(f"Updating job metrics for job submission {data.id}")
+        logger.debug(f"Updating job metrics for job submission {context.data.id}")
         try:
-            await update_job_metrics(data)
+            await update_job_metrics(context.data)
         except Exception:
             logger.error("Update job metrics failed... skipping for job data update")
 
@@ -118,28 +210,27 @@ def job_metrics_strategy(data: ActiveJobSubmission) -> JobProcessStrategy:
 
 
 @hookimpl(specname="active_submission", trylast=True)
-def job_data_update_strategy(data: ActiveJobSubmission) -> JobProcessStrategy:
+def job_data_update_strategy(context: ActiveSubmissionContext) -> JobProcessStrategy:
     """
     Strategy for updating job data.
     """
 
-    if data.slurm_job_id is None:
+    if context.data.slurm_job_id is None:
         return empty_strategy
 
     async def helper() -> None:
-        if data.slurm_job_id is None:
-            logger.error(f"Cannot update job data for job submission {data.id}: slurm_job_id is None")
+        if context.data.slurm_job_id is None:
+            logger.error(f"Cannot update job data for job submission {context.data.id}: slurm_job_id is None")
             return
 
-        scontrol_handler = InfoHandler(scontrol_path=SETTINGS.SCONTROL_PATH)
         try:
-            slurm_job_data: SlurmJobData = fetch_job_data(data.slurm_job_id, scontrol_handler)
+            slurm_job_data = fetch_job_data(context.data.slurm_job_id, context.info_handler)
         except Exception as e:
-            logger.error(f"Failed to update job data for job submission {data.id}: {e}")
+            logger.error(f"Failed to update job data for job submission {context.data.id}: {e}")
             return
 
         try:
-            await update_job_data(data.id, slurm_job_data)
+            await update_job_data(context.data.id, slurm_job_data)
         except Exception as e:
             logger.error(f"API update failed: {e}")
 

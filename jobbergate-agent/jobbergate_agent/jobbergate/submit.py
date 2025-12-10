@@ -1,12 +1,9 @@
 from __future__ import annotations
 
 import asyncio
-import os
-import pwd
 from dataclasses import dataclass, field
 from functools import cached_property, partial
 from pathlib import Path
-from subprocess import CompletedProcess
 import sys
 from tempfile import TemporaryDirectory
 from typing import Any, Callable, Coroutine
@@ -15,7 +12,6 @@ from buzz import DoExceptParams, handle_errors_async
 from jobbergate_core.tools.sbatch import (
     InfoHandler,
     SubmissionHandler,
-    SubprocessHandler,
     inject_sbatch_params,
 )
 from loguru import logger
@@ -24,7 +20,7 @@ from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_ap
 from jobbergate_agent.jobbergate.constants import FileType
 from jobbergate_agent.jobbergate.pagination import fetch_paginated_result
 from jobbergate_agent.jobbergate.schemas import JobScriptFile, PendingJobSubmission, SlurmJobData
-from jobbergate_agent.jobbergate.update import fetch_job_data
+from jobbergate_agent.jobbergate.update import fetch_job_data, SubprocessAsUserHandler
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError
 from jobbergate_agent.utils.logging import log_error
@@ -169,40 +165,6 @@ async def mark_as_rejected(job_submission_id: int, report_message: str):
             ),
         )
         response.raise_for_status()
-
-
-@dataclass
-class SubprocessAsUserHandler(SubprocessHandler):
-    """Subprocess handler that runs as a given user."""
-
-    username: str
-
-    def __post_init__(self):
-        pwan = pwd.getpwnam(self.username)
-        self.uid = pwan.pw_uid
-        self.gid = pwan.pw_gid
-
-    def run(self, *args, **kwargs) -> CompletedProcess:
-        kwargs.update(user=self.uid, group=self.gid, extra_groups=self.extra_groups, env={})
-        # Tests indicate that the change on the working directory precedes the change of user on the subprocess.
-        # With that, the user running the agent can face permission denied errors on cwd,
-        # depending on the setting on the filesystem and permissions on the directory.
-        # To avoid this, we change the working directory after changing to the submitter user using preexec_fn.
-        if cwd := kwargs.pop("cwd", None):
-            kwargs["preexec_fn"] = lambda: os.chdir(cwd)
-        return super().run(*args, **kwargs)
-
-    @cached_property
-    def extra_groups(self) -> set[int] | None:
-        if not SETTINGS.GET_EXTRA_GROUPS:
-            return None
-        try:
-            result = super().run(cmd=("id", "-G", self.username), capture_output=True, text=True)
-        except RuntimeError as e:
-            message = f"Failed to get supplementary groups for user {self.username}: {e}"
-            logger.error(message)
-            raise RuntimeError(message) from e
-        return {g for g in map(int, result.stdout.split()) if g != self.gid}
 
 
 def validate_submit_dir(submit_dir: Path, subprocess_handler: SubprocessAsUserHandler) -> None:
