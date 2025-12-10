@@ -1,9 +1,10 @@
 import asyncio
+from functools import partial
 import json
-from abc import ABC, abstractmethod
-from itertools import chain, product
+from itertools import chain
+import sys
 from textwrap import dedent
-from typing import List, get_args
+from typing import Any, Callable, Coroutine, List, get_args
 
 import msgpack
 from jobbergate_core.tools.sbatch import InfoHandler, ScancelHandler
@@ -25,38 +26,41 @@ from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.compute import aggregate_influx_measures
 from jobbergate_agent.utils.exception import JobbergateAgentError, JobbergateApiError, SbatchError
 from jobbergate_agent.utils.logging import log_error
+from jobbergate_agent.utils.plugin import get_plugin_manager, hookimpl, hookspec
+
+JobProcessStrategy = Callable[[], Coroutine[Any, Any, None]]
+"""Type alias for job process strategy functions."""
 
 
-class JobProcessStrategyABC(ABC):
+async def empty_strategy() -> None:
+    """An empty strategy that does nothing."""
+    return None
+
+
+class ActiveSubmissionPluginSpecs:
+    """Hook specifications for active job processing plugins."""
+
+    @hookspec
+    def active_submission(self, data: ActiveJobSubmission) -> JobProcessStrategy:
+        return empty_strategy
+
+
+@hookimpl(specname="active_submission")
+def pending_job_cancellation_strategy(data: ActiveJobSubmission) -> JobProcessStrategy:
     """
-    Base class for job process strategies.
+    Process the cancellation of a pending job submission.
+
+    I.e., a job submissions that has been marked as cancelled but has no associated slurm job id.
     """
 
-    def __init__(self, data: ActiveJobSubmission):
-        self.data = data
+    if data.status != JobSubmissionStatus.CANCELLED or data.slurm_job_id is not None:
+        return empty_strategy
 
-    @abstractmethod
-    def need_to_run(self) -> bool:
-        raise NotImplementedError("Subclasses must implement the need_to_run method.")
-
-    @abstractmethod
-    async def run(self) -> None:
-        raise NotImplementedError("Subclasses must implement the run method.")
-
-
-class PendingJobCancellationStrategy(JobProcessStrategyABC):
-    """
-    Strategy for handling pending job cancellations.
-    """
-
-    def need_to_run(self) -> bool:
-        return self.data.status == JobSubmissionStatus.CANCELLED and self.data.slurm_job_id is None
-
-    async def run(self) -> None:
-        logger.debug(f"Updating job submission {self.data.id} to cancelled state")
+    async def helper() -> None:
+        logger.debug(f"Updating job submission {data.id} to cancelled state")
         try:
             await update_job_data(
-                self.data.id,
+                data.id,
                 SlurmJobData(
                     job_state="CANCELLED",
                     state_reason="Job was cancelled by the user before a slurm job was created",
@@ -65,68 +69,81 @@ class PendingJobCancellationStrategy(JobProcessStrategyABC):
         except Exception as e:
             logger.error(f"API update failed: {e}")
 
+    return helper
 
-class ActiveJobCancellationStrategy(JobProcessStrategyABC):
+
+@hookimpl(specname="active_submission")
+def active_job_cancellation_strategy(data: ActiveJobSubmission) -> JobProcessStrategy:
     """
-    Strategy for canceling jobs.
+    Process the cancellation of an active job submission.
+
+    I.e., a job submission that has been marked as cancelled and has an associated slurm job id.
     """
 
-    def need_to_run(self) -> bool:
-        return self.data.status == JobSubmissionStatus.CANCELLED and self.data.slurm_job_id is not None
+    if data.status != JobSubmissionStatus.CANCELLED or data.slurm_job_id is None:
+        return empty_strategy
 
-    async def run(self) -> None:
-        if self.data.slurm_job_id is None:
-            logger.error(f"Cannot cancel job for job submission {self.data.id}: slurm_job_id is None")
+    async def helper() -> None:
+        if data.slurm_job_id is None:
+            logger.error(f"Cannot cancel job for job submission {data.id}: slurm_job_id is None")
             return
 
-        logger.debug(f"Cancelling job for job submission {self.data.id}")
+        logger.debug(f"Cancelling job for job submission {data.id}")
         scancel_handler = ScancelHandler(scancel_path=SETTINGS.SCANCEL_PATH)
         try:
-            scancel_handler.cancel_job(self.data.slurm_job_id)
+            scancel_handler.cancel_job(data.slurm_job_id)
         except RuntimeError as e:
-            logger.error(f"Failed to cancel slurm job {self.data.slurm_job_id}: {e}")
+            logger.error(f"Failed to cancel slurm job {data.slurm_job_id}: {e}")
+
+    return helper
 
 
-class JobMetricsStrategy(JobProcessStrategyABC):
+@hookimpl(specname="active_submission")
+def job_metrics_strategy(data: ActiveJobSubmission) -> JobProcessStrategy:
     """
     Strategy for updating job metrics.
     """
 
-    def need_to_run(self) -> bool:
-        return SETTINGS.influx_integration_enabled and self.data.slurm_job_id is not None
+    if not SETTINGS.influx_integration_enabled or data.slurm_job_id is None:
+        return empty_strategy
 
-    async def run(self) -> None:
-        logger.debug(f"Updating job metrics for job submission {self.data.id}")
+    async def helper() -> None:
+        logger.debug(f"Updating job metrics for job submission {data.id}")
         try:
-            await update_job_metrics(self.data)
+            await update_job_metrics(data)
         except Exception:
             logger.error("Update job metrics failed... skipping for job data update")
 
+    return helper
 
-class JobDataUpdateStrategy(JobProcessStrategyABC):
+
+@hookimpl(specname="active_submission", trylast=True)
+def job_data_update_strategy(data: ActiveJobSubmission) -> JobProcessStrategy:
     """
     Strategy for updating job data.
     """
 
-    def need_to_run(self) -> bool:
-        return self.data.slurm_job_id is not None
+    if data.slurm_job_id is None:
+        return empty_strategy
 
-    async def run(self) -> None:
-        if self.data.slurm_job_id is None:
-            logger.error(f"Cannot update job data for job submission {self.data.id}: slurm_job_id is None")
+    async def helper() -> None:
+        if data.slurm_job_id is None:
+            logger.error(f"Cannot update job data for job submission {data.id}: slurm_job_id is None")
             return
 
         scontrol_handler = InfoHandler(scontrol_path=SETTINGS.SCONTROL_PATH)
         try:
-            slurm_job_data: SlurmJobData = fetch_job_data(self.data.slurm_job_id, scontrol_handler)
+            slurm_job_data: SlurmJobData = fetch_job_data(data.slurm_job_id, scontrol_handler)
         except Exception as e:
-            logger.error(f"Failed to update job data for job submission {self.data.id}: {e}")
+            logger.error(f"Failed to update job data for job submission {data.id}: {e}")
             return
 
         try:
-            await update_job_data(self.data.id, slurm_job_data)
+            await update_job_data(data.id, slurm_job_data)
         except Exception as e:
             logger.error(f"API update failed: {e}")
+
+    return helper
 
 
 def fetch_job_data(slurm_job_id: int, info_handler: InfoHandler) -> SlurmJobData:
@@ -316,24 +333,21 @@ async def update_job_metrics(active_job_submittion: ActiveJobSubmission) -> None
         response.raise_for_status()
 
 
+active_submission_plugin_manager = partial(
+    get_plugin_manager, "active_submission", hookspec=ActiveSubmissionPluginSpecs, register=[sys.modules[__name__]]
+)
+
+
 async def update_active_jobs() -> None:
     """
     Update slurm job state for active jobs.
     """
     logger.debug("Started updating slurm job data for active jobs...")
 
+    plugin_manager = active_submission_plugin_manager()
     active_job_submissions = await fetch_active_submissions()
-
-    process_strategies: tuple[type[JobProcessStrategyABC], ...] = (
-        PendingJobCancellationStrategy,
-        ActiveJobCancellationStrategy,
-        JobMetricsStrategy,
-        JobDataUpdateStrategy,
-    )
-
-    for active_job, StrategyClass in product(active_job_submissions, process_strategies):
-        strategy = StrategyClass(data=active_job)
-        if strategy.need_to_run():
-            await strategy.run()
+    for active_job in active_job_submissions:
+        for strategy in plugin_manager.hook.active_submission(data=active_job):
+            await strategy()
 
     logger.debug("...Finished updating slurm job data for active jobs")
