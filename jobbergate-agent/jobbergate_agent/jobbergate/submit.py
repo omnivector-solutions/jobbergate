@@ -4,10 +4,12 @@ import asyncio
 import os
 import pwd
 from dataclasses import dataclass
-from functools import cached_property
+from functools import cached_property, partial
 from pathlib import Path
 from subprocess import CompletedProcess
+import sys
 from tempfile import TemporaryDirectory
+from typing import Any, Callable, Coroutine
 
 from buzz import DoExceptParams, handle_errors_async
 from jobbergate_core.tools.sbatch import (
@@ -27,6 +29,7 @@ from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError
 from jobbergate_agent.utils.logging import log_error
 from jobbergate_agent.utils.user_mapper import SlurmUserMapper, manufacture
+from jobbergate_agent.utils.plugin import get_plugin_manager, hookimpl, hookspec
 
 
 async def retrieve_submission_file(file: JobScriptFile) -> str:
@@ -298,39 +301,70 @@ async def submit_job_script(
     return slurm_job_id
 
 
+JobProcessStrategy = Callable[[], Coroutine[Any, Any, None]]
+"""Type alias for job process strategy functions."""
+
+
+async def empty_strategy() -> None:
+    """An empty strategy that does nothing."""
+    return None
+
+
+class PendingSubmissionPluginSpecs:
+    """Hook specifications for pending job processing plugins."""
+
+    @hookspec
+    def pending_submission(self, data: PendingJobSubmission) -> JobProcessStrategy:
+        return empty_strategy
+
+
+@hookimpl(specname="pending_submission", trylast=True)
+def pending_job_submission_strategy(data: PendingJobSubmission) -> JobProcessStrategy:
+    """Get the job processing strategy for a pending job submission."""
+
+    info_handler = InfoHandler(scontrol_path=SETTINGS.SCONTROL_PATH)
+    user_mapper = manufacture()
+
+    async def helper() -> None:
+        """Helper function to process the pending job submission."""
+        logger.debug(f"Submitting pending job_submission {data.id}")
+        with JobSubmissionError.handle_errors(
+            f"Failed to submit pending job_submission {data.id}...skipping to next pending job",
+            do_except=log_error,
+            do_else=lambda: logger.debug(f"Finished submitting pending job_submission {data.id}"),
+            re_raise=False,
+        ):
+            cache_file = SETTINGS.CACHE_DIR / f"{data.id}.slurm_job_id"
+            if cache_file.exists():
+                logger.debug(f"Found cache file for job submission {data.id}")
+                slurm_job_id = int(cache_file.read_text())
+            else:
+                slurm_job_id = await submit_job_script(data, user_mapper)
+                cache_file.write_text(str(slurm_job_id))
+
+            slurm_job_data: SlurmJobData = fetch_job_data(slurm_job_id, info_handler)
+
+            await mark_as_submitted(data.id, slurm_job_id, slurm_job_data)
+            cache_file.unlink(missing_ok=True)
+
+    return helper
+
+
+pending_submission_plugin_manager = partial(
+    get_plugin_manager, "pending_submission", hookspec=PendingSubmissionPluginSpecs, register=[sys.modules[__name__]]
+)
+
+
 async def submit_pending_jobs() -> None:
     """
     Submit all pending jobs and update them with ``SUBMITTED`` status and slurm_job_id.
     """
     logger.debug("Started submitting pending jobs...")
 
-    info_handler = InfoHandler(scontrol_path=SETTINGS.SCONTROL_PATH)
-
-    logger.debug("Building user-mapper")
-    user_mapper = manufacture()
-
-    logger.debug("Fetching pending jobs...")
+    plugin_manager = pending_submission_plugin_manager()
     pending_job_submissions = await fetch_pending_submissions()
-
-    for pending_job_submission in pending_job_submissions:
-        logger.debug(f"Submitting pending job_submission {pending_job_submission.id}")
-        with JobSubmissionError.handle_errors(
-            f"Failed to submit pending job_submission {pending_job_submission.id}...skipping to next pending job",
-            do_except=log_error,
-            do_else=lambda: logger.debug(f"Finished submitting pending job_submission {pending_job_submission.id}"),
-            re_raise=False,
-        ):
-            cache_file = SETTINGS.CACHE_DIR / f"{pending_job_submission.id}.slurm_job_id"
-            if cache_file.exists():
-                logger.debug(f"Found cache file for job submission {pending_job_submission.id}")
-                slurm_job_id = int(cache_file.read_text())
-            else:
-                slurm_job_id = await submit_job_script(pending_job_submission, user_mapper)
-                cache_file.write_text(str(slurm_job_id))
-
-            slurm_job_data: SlurmJobData = fetch_job_data(slurm_job_id, info_handler)
-
-            await mark_as_submitted(pending_job_submission.id, slurm_job_id, slurm_job_data)
-            cache_file.unlink(missing_ok=True)
+    for pending_job in pending_job_submissions:
+        for strategy in plugin_manager.hook.pending_submission(data=pending_job):
+            await strategy()
 
     logger.debug("...Finished submitting pending jobs")

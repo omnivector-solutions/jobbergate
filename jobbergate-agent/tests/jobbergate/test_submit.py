@@ -14,15 +14,17 @@ import respx
 
 from jobbergate_agent.jobbergate.schemas import JobScriptFile, PendingJobSubmission, SlurmJobData
 from jobbergate_agent.jobbergate.submit import (
-    SubprocessAsUserHandler,
     fetch_pending_submissions,
     get_job_script_file,
     mark_as_rejected,
     mark_as_submitted,
+    pending_job_submission_strategy,
+    pending_submission_plugin_manager,
     process_supporting_files,
     retrieve_submission_file,
     submit_job_script,
     submit_pending_jobs,
+    SubprocessAsUserHandler,
     validate_submit_dir,
     write_submission_file,
 )
@@ -751,13 +753,20 @@ async def test_submit_job_script__raises_exception_if_sbatch_fails(
     )
 
 
+def test_submit_gets_all_strategies():
+    """Test that submit_pending_jobs retrieves all defined strategies."""
+    plugin_manager = pending_submission_plugin_manager()
+    strategies = plugin_manager.hook.pending_submission.get_hookimpls()
+
+    assert {p.function for p in strategies} == {pending_job_submission_strategy}
+
+
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
 async def test_submit_pending_jobs(
     tweak_settings,
     tmp_path,
     dummy_job_script_files,
-    dummy_template_source,
     mocker,
 ):
     """
