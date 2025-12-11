@@ -476,6 +476,18 @@ class TestSubprocessAsUserHandler:
             groups = handler.extra_groups
             assert groups == {456, 789, 123} - {handler.gid}
 
+    def test_extra_groups_handles_exception(self, tweak_settings, handler):
+        with (
+            tweak_settings(GET_EXTRA_GROUPS=True),
+            mock.patch.object(
+                handler.__class__.__bases__[0],
+                "run",
+                side_effect=RuntimeError("Command failed"),
+            ),
+            pytest.raises(RuntimeError, match="Failed to get supplementary groups"),
+        ):
+            handler.extra_groups
+
 
 class TestValidateSubmitDir:
     """

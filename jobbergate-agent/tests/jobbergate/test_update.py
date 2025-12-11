@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 import uuid
 from collections.abc import Callable
 from datetime import datetime
@@ -26,6 +27,7 @@ from jobbergate_agent.jobbergate.update import (
     job_data_update_strategy,
     job_metrics_strategy,
     pending_job_cancellation_strategy,
+    update_active_jobs,
     update_job_data,
     update_job_metrics,
 )
@@ -284,6 +286,75 @@ async def test_update_job_data__raises_JobbergateApiError_if_the_response_is_not
                 ),
             )
         assert update_route.called
+
+
+@pytest.mark.asyncio
+async def test_update_active_jobs():
+    """
+    Test that the ``update_active_jobs()`` function can fetch active job submissions
+    and execute the appropriate strategies based on job state and conditions.
+    """
+    # Setup mock data
+    mock_submissions = [
+        ActiveJobSubmission(id=1, slurm_job_id=100, status="ACTIVE"),
+        ActiveJobSubmission(id=2, slurm_job_id=101, status="ACTIVE"),
+    ]
+
+    # Mock strategies
+    mock_strategy_1 = mock.AsyncMock()
+    mock_strategy_2 = mock.AsyncMock()
+
+    # Mock plugin manager
+    mock_pm = mock.Mock()
+    mock_pm.hook.active_submission.return_value = [mock_strategy_1, mock_strategy_2]
+
+    with (
+        mock.patch("jobbergate_agent.jobbergate.update.active_submission_plugin_manager", return_value=mock_pm),
+        mock.patch("jobbergate_agent.jobbergate.update.fetch_active_submissions", return_value=mock_submissions),
+    ):
+        await update_active_jobs()
+
+        # Verify fetch was called
+        assert mock_pm.hook.active_submission.call_count == 2
+
+        # Verify strategies were executed for each job
+        assert mock_strategy_1.call_count == 2
+        assert mock_strategy_2.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_update_active_jobs_handles_exceptions():
+    """Test that exceptions in strategy execution are caught and logged."""
+    mock_submissions = [ActiveJobSubmission(id=1, slurm_job_id=100, status="ACTIVE")]
+
+    # Create a strategy that raises an exception
+    async def failing_strategy():
+        raise ValueError("Test error")
+
+    mock_pm = mock.Mock()
+    mock_pm.hook.active_submission.return_value = [failing_strategy]
+
+    with (
+        mock.patch("jobbergate_agent.jobbergate.update.active_submission_plugin_manager", return_value=mock_pm),
+        mock.patch("jobbergate_agent.jobbergate.update.fetch_active_submissions", return_value=mock_submissions),
+    ):
+        # Should not raise - exceptions are caught
+        await update_active_jobs()
+
+
+@pytest.mark.asyncio
+async def test_update_active_jobs_empty_list():
+    """Test handling of empty submission list."""
+    mock_pm = mock.Mock()
+
+    with (
+        mock.patch("jobbergate_agent.jobbergate.update.active_submission_plugin_manager", return_value=mock_pm),
+        mock.patch("jobbergate_agent.jobbergate.update.fetch_active_submissions", return_value=[]),
+    ):
+        await update_active_jobs()
+
+        # Hook should not be called for empty list
+        mock_pm.hook.active_submission.assert_not_called()
 
 
 class InfluxData(NamedTuple):
@@ -1211,3 +1282,69 @@ class TestUpdateActiveJobsStrategies:
             job_metrics_strategy,
             job_data_update_strategy,
         }
+
+
+class TestActiveSubmissionContext:
+    @pytest.fixture(autouse=True, scope="class")
+    def mock_info_handler(self):
+        with mock.patch("jobbergate_agent.jobbergate.update.InfoHandler", return_value=mock.Mock()) as mock_info_class:
+            yield mock_info_class
+
+    @pytest.fixture
+    def mock_active_job(self):
+        """Fixture providing a mocked ActiveJobSubmission."""
+        job = mock.Mock(spec=ActiveJobSubmission)
+        job.slurm_job_id = 12345
+        job.id = 1
+        return job
+
+    def test_slurm_job_id_success(self, mock_active_job):
+        """Test slurm_job_id returns the correct ID."""
+        context = ActiveSubmissionContext(data=mock_active_job)
+        assert context.slurm_job_id == 12345
+
+    def test_slurm_job_id_raises_when_none(self):
+        """Test slurm_job_id raises ValueError when ID is None."""
+        job = mock.Mock(spec=ActiveJobSubmission)
+        job.slurm_job_id = None
+        context = ActiveSubmissionContext(data=job)
+
+        with pytest.raises(ValueError, match="Slurm job ID has not been set yet"):
+            _ = context.slurm_job_id
+
+    @mock.patch("jobbergate_agent.jobbergate.update.fetch_job_data")
+    def test_username(self, mock_fetch, mock_active_job):
+        """Test username extraction from slurm_raw_info."""
+        mock_fetch.return_value = mock.Mock(job_info='{"user_name": "testuser"}')
+        context = ActiveSubmissionContext(data=mock_active_job)
+
+        assert context.username == "testuser"
+
+    def test_username_raises_when_missing(self, mock_active_job):
+        """Test username raises ValueError when not in slurm_raw_info."""
+        with mock.patch.object(
+            ActiveSubmissionContext, "slurm_raw_info", new_callable=mock.PropertyMock, return_value={}
+        ):
+            context = ActiveSubmissionContext(data=mock_active_job)
+            with pytest.raises(ValueError, match="Username could not be fetched"):
+                _ = context.username
+
+    @mock.patch("jobbergate_agent.jobbergate.update.fetch_job_data")
+    def test_submission_dir(self, mock_fetch, mock_active_job):
+        """Test submission_dir extraction from slurm_raw_info."""
+        mock_fetch.return_value = mock.Mock(job_info='{"current_working_directory": "/home/testuser/jobs"}')
+        context = ActiveSubmissionContext(data=mock_active_job)
+
+        assert context.submission_dir == Path("/home/testuser/jobs")
+
+    @mock.patch("jobbergate_agent.jobbergate.update.InfoHandler")
+    def test_info_handler_cached(self, mock_info_class, mock_active_job):
+        """Test that info_handler is cached properly."""
+        context = ActiveSubmissionContext(data=mock_active_job)
+
+        handler1 = context.info_handler
+        handler2 = context.info_handler
+
+        # Should only instantiate once due to cached_property
+        assert handler1 is handler2
+        assert mock_info_class.call_count == 1
