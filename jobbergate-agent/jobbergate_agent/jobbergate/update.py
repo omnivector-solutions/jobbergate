@@ -440,7 +440,11 @@ async def update_active_jobs() -> None:
     plugin_manager = active_submission_plugin_manager()
     active_job_submissions = await fetch_active_submissions()
     for active_job in active_job_submissions:
-        for strategy in plugin_manager.hook.active_submission(context=ActiveSubmissionContext(data=active_job)):
-            await strategy()
+        try:
+            for strategy in plugin_manager.hook.active_submission(context=ActiveSubmissionContext(data=active_job)):
+                await strategy()
+            logger.debug("Finished handling active job_submission {}", active_job.id)
+        except Exception as e:
+            logger.error("Error processing active job submission {}: {}", active_job.id, e)
 
     logger.debug("...Finished updating slurm job data for active jobs")

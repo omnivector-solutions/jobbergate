@@ -323,24 +323,19 @@ def pending_job_submission_strategy(context: PendingJobSubmissionContext) -> Job
     async def helper() -> None:
         """Helper function to process the pending job submission."""
         logger.debug(f"Submitting pending job_submission {context.data.id}")
-        with JobSubmissionError.handle_errors(
-            f"Failed to submit pending job_submission {context.data.id}...skipping to next pending job",
-            do_except=log_error,
-            do_else=lambda: logger.debug(f"Finished submitting pending job_submission {context.data.id}"),
-            re_raise=False,
-        ):
-            cache_file = SETTINGS.CACHE_DIR / f"{context.data.id}.slurm_job_id"
-            if cache_file.exists():
-                logger.debug(f"Found cache file for job submission {context.data.id}")
-                slurm_job_id = int(cache_file.read_text())
-            else:
-                slurm_job_id = await submit_job_script(context)
-                cache_file.write_text(str(slurm_job_id))
 
-            context.set_slurm_job_id(slurm_job_id)
+        cache_file = SETTINGS.CACHE_DIR / f"{context.data.id}.slurm_job_id"
+        if cache_file.exists():
+            logger.debug(f"Found cache file for job submission {context.data.id}")
+            slurm_job_id = int(cache_file.read_text())
+        else:
+            slurm_job_id = await submit_job_script(context)
+            cache_file.write_text(str(slurm_job_id))
 
-            await mark_as_submitted(context.data.id, slurm_job_id, context.slurm_job_data)
-            cache_file.unlink(missing_ok=True)
+        context.set_slurm_job_id(slurm_job_id)
+
+        await mark_as_submitted(context.data.id, slurm_job_id, context.slurm_job_data)
+        cache_file.unlink(missing_ok=True)
 
     return helper
 
@@ -362,15 +357,21 @@ async def submit_pending_jobs() -> None:
     plugin_manager = pending_submission_plugin_manager()
     pending_job_submissions = await fetch_pending_submissions()
     for pending_job in pending_job_submissions:
-        async with handle_errors_async(
-            f"Username could not be resolved for {pending_job.id}",
-            raise_exc_class=JobSubmissionError,
-            do_except=reject_handler(pending_job.id),
-        ):
+        try:
             username = user_mapper[pending_job.owner_email]
-        for strategy in plugin_manager.hook.pending_submission(
-            context=PendingJobSubmissionContext(pending_job, username)
-        ):
-            await strategy()
+        except KeyError:
+            message = "Username could not be resolved from owner email"
+            logger.error(f"{message} for job submission {pending_job.id}")
+            await mark_as_rejected(pending_job.id, message)
+            continue
+
+        try:
+            for strategy in plugin_manager.hook.pending_submission(
+                context=PendingJobSubmissionContext(pending_job, username)
+            ):
+                await strategy()
+            logger.debug("Finished handling pending job_submission {}", pending_job.id)
+        except Exception as e:
+            logger.error("Error processing pending job submission {}: {}", pending_job.id, e)
 
     logger.debug("...Finished submitting pending jobs")
