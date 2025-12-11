@@ -172,20 +172,22 @@ def active_job_cancellation_strategy(context: ActiveSubmissionContext) -> JobPro
     I.e., a job submission that has been marked as cancelled and has an associated slurm job id.
     """
 
-    if context.data.status != JobSubmissionStatus.CANCELLED or context.data.slurm_job_id is None:
+    if context.data.status != JobSubmissionStatus.CANCELLED or not isinstance(context.data.slurm_job_id, int):
         return empty_strategy
 
+    actual_job_id = context.data.slurm_job_id  # make type checker happy
+
     async def helper() -> None:
-        if context.data.slurm_job_id is None:
+        if actual_job_id is None:
             logger.error(f"Cannot cancel job for job submission {context.data.id}: slurm_job_id is None")
             return
 
         logger.debug(f"Cancelling job for job submission {context.data.id}")
         scancel_handler = ScancelHandler(scancel_path=SETTINGS.SCANCEL_PATH)
         try:
-            scancel_handler.cancel_job(context.data.slurm_job_id)
+            scancel_handler.cancel_job(actual_job_id)
         except RuntimeError as e:
-            logger.error(f"Failed to cancel slurm job {context.data.slurm_job_id}: {e}")
+            logger.error(f"Failed to cancel slurm job {actual_job_id}: {e}")
 
     return helper
 
@@ -215,16 +217,13 @@ def job_data_update_strategy(context: ActiveSubmissionContext) -> JobProcessStra
     Strategy for updating job data.
     """
 
-    if context.data.slurm_job_id is None:
+    if not isinstance(context.data.slurm_job_id, int):
         return empty_strategy
+    actual_job_id = context.data.slurm_job_id  # make type checker happy
 
     async def helper() -> None:
-        if context.data.slurm_job_id is None:
-            logger.error(f"Cannot update job data for job submission {context.data.id}: slurm_job_id is None")
-            return
-
         try:
-            slurm_job_data = fetch_job_data(context.data.slurm_job_id, context.info_handler)
+            slurm_job_data = fetch_job_data(actual_job_id, context.info_handler)
         except Exception as e:
             logger.error(f"Failed to update job data for job submission {context.data.id}: {e}")
             return
@@ -425,7 +424,10 @@ async def update_job_metrics(active_job_submittion: ActiveJobSubmission) -> None
 
 
 active_submission_plugin_manager = partial(
-    get_plugin_manager, "active_submission", hookspec=ActiveSubmissionPluginSpecs, register=[sys.modules[__name__]]
+    get_plugin_manager,
+    "active_submission",
+    hookspec_class=ActiveSubmissionPluginSpecs,
+    register=[sys.modules[__name__]],
 )
 
 
@@ -438,7 +440,7 @@ async def update_active_jobs() -> None:
     plugin_manager = active_submission_plugin_manager()
     active_job_submissions = await fetch_active_submissions()
     for active_job in active_job_submissions:
-        for strategy in plugin_manager.hook.active_submission(data=active_job):
+        for strategy in plugin_manager.hook.active_submission(context=ActiveSubmissionContext(data=active_job)):
             await strategy()
 
     logger.debug("...Finished updating slurm job data for active jobs")

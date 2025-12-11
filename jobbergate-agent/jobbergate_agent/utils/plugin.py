@@ -17,15 +17,15 @@ hookimpl = HookimplMarker(PROJECT_NAME)
 
 
 def get_plugin_manager(
-    plugin_name: str, hookspec: None | Any = None, register: None | Sequence[Any] = None
+    plugin_name: str, hookspec_class: None | Any = None, register: None | Sequence[Any] = None
 ) -> PluginManager:
     """
     Get a PluginManager instance for the agent.
     """
     plugin_group = f"{PROJECT_NAME}.{plugin_name}"
     plugin_manager = PluginManager(project_name="jobbergate_agent")
-    if hookspec is not None:
-        plugin_manager.add_hookspecs(hookspec)
+    if hookspec_class is not None:
+        plugin_manager.add_hookspecs(hookspec_class)
 
     plugin_sequence = register or []
     for i in plugin_sequence:
@@ -48,7 +48,7 @@ def load_plugins(plugin_name: str) -> Dict[str, Any]:
     plugin_manager = get_plugin_manager(plugin_name)
 
     with handle_errors(f"Failed to load plugins from {plugin_name}", raise_exc_class=RuntimeError):
-        result = {name: plugin for name, plugin in plugin_manager.list_name_plugin()}
+        result = dict(plugin_manager.list_name_plugin())
 
     logger.info("Discovered the following plugins for {}: {}", plugin_name, ", ".join(result.keys()))
     return result

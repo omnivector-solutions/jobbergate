@@ -346,7 +346,10 @@ def pending_job_submission_strategy(context: PendingJobSubmissionContext) -> Job
 
 
 pending_submission_plugin_manager = partial(
-    get_plugin_manager, "pending_submission", hookspec=PendingSubmissionPluginSpecs, register=[sys.modules[__name__]]
+    get_plugin_manager,
+    "pending_submission",
+    hookspec_class=PendingSubmissionPluginSpecs,
+    register=[sys.modules[__name__]],
 )
 
 
