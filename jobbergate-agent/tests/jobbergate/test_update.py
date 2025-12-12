@@ -1,5 +1,5 @@
-import contextlib
 import json
+from pathlib import Path
 import uuid
 from collections.abc import Callable
 from datetime import datetime
@@ -16,14 +16,17 @@ from faker import Faker
 from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT, JobSubmissionStatus
 from jobbergate_agent.jobbergate.schemas import ActiveJobSubmission, SlurmJobData
 from jobbergate_agent.jobbergate.update import (
-    ActiveJobCancellationStrategy,
-    JobDataUpdateStrategy,
-    JobMetricsStrategy,
-    PendingJobCancellationStrategy,
+    ActiveSubmissionContext,
+    active_job_cancellation_strategy,
+    active_submission_plugin_manager,
+    empty_strategy,
     fetch_active_submissions,
     fetch_influx_data,
     fetch_influx_measurements,
     fetch_job_data,
+    job_data_update_strategy,
+    job_metrics_strategy,
+    pending_job_cancellation_strategy,
     update_active_jobs,
     update_job_data,
     update_job_metrics,
@@ -286,49 +289,72 @@ async def test_update_job_data__raises_JobbergateApiError_if_the_response_is_not
 
 
 @pytest.mark.asyncio
-@pytest.mark.usefixtures("mock_access_token")
-async def test_update_active_jobs(
-    mocker,
-    tweak_settings: Callable[..., contextlib._GeneratorContextManager],
-):
+async def test_update_active_jobs():
     """
     Test that the ``update_active_jobs()`` function can fetch active job submissions
     and execute the appropriate strategies based on job state and conditions.
     """
-
-    active_job_submissions = [
-        ActiveJobSubmission(id=1, status="RUNNING", slurm_job_id=11),  # Will run metrics and data update
-        ActiveJobSubmission(
-            id=2, status=JobSubmissionStatus.CANCELLED, slurm_job_id=22
-        ),  # Will run active cancellation, metrics and data update
-        ActiveJobSubmission(
-            id=3, status=JobSubmissionStatus.CANCELLED, slurm_job_id=None
-        ),  # Will run pending cancellation
+    # Setup mock data
+    mock_submissions = [
+        ActiveJobSubmission(id=1, slurm_job_id=100, status="ACTIVE"),
+        ActiveJobSubmission(id=2, slurm_job_id=101, status="ACTIVE"),
     ]
 
-    mocker.patch(
-        "jobbergate_agent.jobbergate.update.fetch_active_submissions",
-        return_value=active_job_submissions,
-    )
+    # Mock strategies
+    mock_strategy_1 = mock.AsyncMock()
+    mock_strategy_2 = mock.AsyncMock()
 
-    # Mock the strategy methods to track their execution
-    mock_pending_cancellation_run = mocker.patch.object(PendingJobCancellationStrategy, "run")
-    mock_active_cancellation_run = mocker.patch.object(ActiveJobCancellationStrategy, "run")
-    mock_metrics_run = mocker.patch.object(JobMetricsStrategy, "run")
-    mock_data_update_run = mocker.patch.object(JobDataUpdateStrategy, "run")
+    # Mock plugin manager
+    mock_pm = mock.Mock()
+    mock_pm.hook.active_submission.return_value = [mock_strategy_1, mock_strategy_2]
 
-    with tweak_settings(INFLUX_DSN="https://influxdb:8086"):
+    with (
+        mock.patch("jobbergate_agent.jobbergate.update.active_submission_plugin_manager", return_value=mock_pm),
+        mock.patch("jobbergate_agent.jobbergate.update.fetch_active_submissions", return_value=mock_submissions),
+    ):
         await update_active_jobs()
 
-    # Verify strategy execution based on job conditions:
-    # Job 1 (RUNNING, slurm_job_id=11): metrics + data update
-    # Job 2 (CANCELLED, slurm_job_id=22): active cancellation + metrics + data update
-    # Job 3 (CANCELLED, slurm_job_id=None): pending cancellation
+        # Verify fetch was called
+        assert mock_pm.hook.active_submission.call_count == 2
 
-    assert mock_pending_cancellation_run.call_count == 1  # Only job 3
-    assert mock_active_cancellation_run.call_count == 1  # Only job 2
-    assert mock_metrics_run.call_count == 2  # Jobs 1 and 2 (have slurm_job_id and influx enabled)
-    assert mock_data_update_run.call_count == 2  # Jobs 1 and 2 (have slurm_job_id)
+        # Verify strategies were executed for each job
+        assert mock_strategy_1.call_count == 2
+        assert mock_strategy_2.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_update_active_jobs_handles_exceptions():
+    """Test that exceptions in strategy execution are caught and logged."""
+    mock_submissions = [ActiveJobSubmission(id=1, slurm_job_id=100, status="ACTIVE")]
+
+    # Create a strategy that raises an exception
+    async def failing_strategy():
+        raise ValueError("Test error")
+
+    mock_pm = mock.Mock()
+    mock_pm.hook.active_submission.return_value = [failing_strategy]
+
+    with (
+        mock.patch("jobbergate_agent.jobbergate.update.active_submission_plugin_manager", return_value=mock_pm),
+        mock.patch("jobbergate_agent.jobbergate.update.fetch_active_submissions", return_value=mock_submissions),
+    ):
+        # Should not raise - exceptions are caught
+        await update_active_jobs()
+
+
+@pytest.mark.asyncio
+async def test_update_active_jobs_empty_list():
+    """Test handling of empty submission list."""
+    mock_pm = mock.Mock()
+
+    with (
+        mock.patch("jobbergate_agent.jobbergate.update.active_submission_plugin_manager", return_value=mock_pm),
+        mock.patch("jobbergate_agent.jobbergate.update.fetch_active_submissions", return_value=[]),
+    ):
+        await update_active_jobs()
+
+        # Hook should not be called for empty list
+        mock_pm.hook.active_submission.assert_not_called()
 
 
 class InfluxData(NamedTuple):
@@ -913,8 +939,8 @@ class TestPendingJobCancellationStrategy:
             status=JobSubmissionStatus.CANCELLED,
             slurm_job_id=None,
         )
-        strategy = PendingJobCancellationStrategy(job_submission)
-        assert strategy.need_to_run() is True
+        strategy = pending_job_cancellation_strategy(ActiveSubmissionContext(data=job_submission))
+        assert strategy is not empty_strategy
 
     def test_need_to_run__returns_false_when_job_has_slurm_job_id(self):
         """Test that need_to_run returns False for cancelled jobs with a slurm_job_id."""
@@ -923,8 +949,8 @@ class TestPendingJobCancellationStrategy:
             status=JobSubmissionStatus.CANCELLED,
             slurm_job_id=123,
         )
-        strategy = PendingJobCancellationStrategy(job_submission)
-        assert strategy.need_to_run() is False
+        strategy = pending_job_cancellation_strategy(ActiveSubmissionContext(data=job_submission))
+        assert strategy is empty_strategy
 
     def test_need_to_run__returns_false_when_job_is_not_cancelled(self):
         """Test that need_to_run returns False for non-cancelled jobs."""
@@ -933,8 +959,8 @@ class TestPendingJobCancellationStrategy:
             status="CREATED",  # Using string instead of enum
             slurm_job_id=None,
         )
-        strategy = PendingJobCancellationStrategy(job_submission)
-        assert strategy.need_to_run() is False
+        strategy = pending_job_cancellation_strategy(ActiveSubmissionContext(data=job_submission))
+        assert strategy is empty_strategy
 
     @pytest.mark.asyncio
     async def test_run__updates_job_data_with_cancelled_state(self, mocker):
@@ -944,11 +970,11 @@ class TestPendingJobCancellationStrategy:
             status=JobSubmissionStatus.CANCELLED,
             slurm_job_id=None,
         )
-        strategy = PendingJobCancellationStrategy(job_submission)
+        strategy = pending_job_cancellation_strategy(ActiveSubmissionContext(data=job_submission))
 
         mock_update_job_data = mocker.patch("jobbergate_agent.jobbergate.update.update_job_data")
 
-        await strategy.run()
+        await strategy()
 
         mock_update_job_data.assert_called_once_with(
             1,
@@ -969,8 +995,8 @@ class TestActiveJobCancellationStrategy:
             status=JobSubmissionStatus.CANCELLED,
             slurm_job_id=123,
         )
-        strategy = ActiveJobCancellationStrategy(job_submission)
-        assert strategy.need_to_run() is True
+        strategy = active_job_cancellation_strategy(ActiveSubmissionContext(data=job_submission))
+        assert strategy is not empty_strategy
 
     def test_need_to_run__returns_false_when_job_has_no_slurm_job_id(self):
         """Test that need_to_run returns False for cancelled jobs without a slurm_job_id."""
@@ -979,8 +1005,8 @@ class TestActiveJobCancellationStrategy:
             status=JobSubmissionStatus.CANCELLED,
             slurm_job_id=None,
         )
-        strategy = ActiveJobCancellationStrategy(job_submission)
-        assert strategy.need_to_run() is False
+        strategy = active_job_cancellation_strategy(ActiveSubmissionContext(data=job_submission))
+        assert strategy is empty_strategy
 
     def test_need_to_run__returns_false_when_job_is_not_cancelled(self):
         """Test that need_to_run returns False for non-cancelled jobs."""
@@ -989,8 +1015,8 @@ class TestActiveJobCancellationStrategy:
             status="CREATED",  # Using string instead of enum
             slurm_job_id=123,
         )
-        strategy = ActiveJobCancellationStrategy(job_submission)
-        assert strategy.need_to_run() is False
+        strategy = active_job_cancellation_strategy(ActiveSubmissionContext(data=job_submission))
+        assert strategy is empty_strategy
 
     @pytest.mark.asyncio
     async def test_run__cancels_slurm_job_successfully(self, mocker):
@@ -1000,14 +1026,14 @@ class TestActiveJobCancellationStrategy:
             status=JobSubmissionStatus.CANCELLED,
             slurm_job_id=123,
         )
-        strategy = ActiveJobCancellationStrategy(job_submission)
+        strategy = active_job_cancellation_strategy(ActiveSubmissionContext(data=job_submission))
 
         mock_scancel_handler = mocker.Mock()
         mock_scancel_class = mocker.patch(
             "jobbergate_agent.jobbergate.update.ScancelHandler", return_value=mock_scancel_handler
         )
 
-        await strategy.run()
+        await strategy()
 
         mock_scancel_class.assert_called_once_with(scancel_path=SETTINGS.SCANCEL_PATH)
         mock_scancel_handler.cancel_job.assert_called_once_with(123)
@@ -1020,14 +1046,14 @@ class TestActiveJobCancellationStrategy:
             status=JobSubmissionStatus.CANCELLED,
             slurm_job_id=123,
         )
-        strategy = ActiveJobCancellationStrategy(job_submission)
+        strategy = active_job_cancellation_strategy(ActiveSubmissionContext(data=job_submission))
 
         mock_scancel_handler = mocker.Mock()
         mock_scancel_handler.cancel_job.side_effect = RuntimeError("Slurm error")
         mocker.patch("jobbergate_agent.jobbergate.update.ScancelHandler", return_value=mock_scancel_handler)
 
         # Should not raise an exception
-        await strategy.run()
+        await strategy()
 
         mock_scancel_handler.cancel_job.assert_called_once_with(123)
 
@@ -1039,11 +1065,11 @@ class TestActiveJobCancellationStrategy:
             status=JobSubmissionStatus.CANCELLED,
             slurm_job_id=None,
         )
-        strategy = ActiveJobCancellationStrategy(job_submission)
+        strategy = active_job_cancellation_strategy(ActiveSubmissionContext(data=job_submission))
 
         mock_scancel_class = mocker.patch("jobbergate_agent.jobbergate.update.ScancelHandler")
 
-        await strategy.run()
+        await strategy()
 
         mock_scancel_class.assert_not_called()
 
@@ -1060,8 +1086,8 @@ class TestJobMetricsStrategy:
         )
 
         with tweak_settings(INFLUX_DSN="http://localhost:8086"):
-            strategy = JobMetricsStrategy(job_submission)
-            assert strategy.need_to_run() is True
+            strategy = job_metrics_strategy(ActiveSubmissionContext(data=job_submission))
+        assert strategy is not empty_strategy
 
     def test_need_to_run__returns_false_when_influx_disabled(self, tweak_settings):
         """Test that need_to_run returns False when influx integration is disabled."""
@@ -1072,8 +1098,8 @@ class TestJobMetricsStrategy:
         )
 
         with tweak_settings(INFLUX_DSN=None):
-            strategy = JobMetricsStrategy(job_submission)
-            assert strategy.need_to_run() is False
+            strategy = job_metrics_strategy(ActiveSubmissionContext(data=job_submission))
+        assert strategy is empty_strategy
 
     def test_need_to_run__returns_false_when_no_slurm_job_id(self, tweak_settings):
         """Test that need_to_run returns False when job has no slurm_job_id."""
@@ -1084,8 +1110,8 @@ class TestJobMetricsStrategy:
         )
 
         with tweak_settings(INFLUX_DSN="http://localhost:8086"):
-            strategy = JobMetricsStrategy(job_submission)
-            assert strategy.need_to_run() is False
+            strategy = job_metrics_strategy(ActiveSubmissionContext(data=job_submission))
+        assert strategy is empty_strategy
 
     @pytest.mark.asyncio
     async def test_run__calls_update_job_metrics(self, mocker, tweak_settings):
@@ -1095,11 +1121,13 @@ class TestJobMetricsStrategy:
             status="CREATED",
             slurm_job_id=123,
         )
-        strategy = JobMetricsStrategy(job_submission)
+
+        with tweak_settings(INFLUX_DSN="http://localhost:8086"):
+            strategy = job_metrics_strategy(ActiveSubmissionContext(data=job_submission))
 
         mock_update_job_metrics = mocker.patch("jobbergate_agent.jobbergate.update.update_job_metrics")
 
-        await strategy.run()
+        await strategy()
 
         mock_update_job_metrics.assert_called_once_with(job_submission)
 
@@ -1111,14 +1139,16 @@ class TestJobMetricsStrategy:
             status="CREATED",
             slurm_job_id=123,
         )
-        strategy = JobMetricsStrategy(job_submission)
+
+        with tweak_settings(INFLUX_DSN="http://localhost:8086"):
+            strategy = job_metrics_strategy(ActiveSubmissionContext(data=job_submission))
 
         mock_update_job_metrics = mocker.patch(
             "jobbergate_agent.jobbergate.update.update_job_metrics", side_effect=Exception("Metrics update failed")
         )
 
         # Should not raise an exception
-        await strategy.run()
+        await strategy()
 
         mock_update_job_metrics.assert_called_once_with(job_submission)
 
@@ -1133,8 +1163,8 @@ class TestJobDataUpdateStrategy:
             status="CREATED",
             slurm_job_id=123,
         )
-        strategy = JobDataUpdateStrategy(job_submission)
-        assert strategy.need_to_run() is True
+        strategy = job_data_update_strategy(ActiveSubmissionContext(data=job_submission))
+        assert strategy is not empty_strategy
 
     def test_need_to_run__returns_false_when_no_slurm_job_id(self):
         """Test that need_to_run returns False when job has no slurm_job_id."""
@@ -1143,8 +1173,8 @@ class TestJobDataUpdateStrategy:
             status="CREATED",
             slurm_job_id=None,
         )
-        strategy = JobDataUpdateStrategy(job_submission)
-        assert strategy.need_to_run() is False
+        strategy = job_data_update_strategy(ActiveSubmissionContext(data=job_submission))
+        assert strategy is empty_strategy
 
     @pytest.mark.asyncio
     async def test_run__fetches_and_updates_job_data_successfully(self, mocker):
@@ -1154,7 +1184,7 @@ class TestJobDataUpdateStrategy:
             status="CREATED",
             slurm_job_id=123,
         )
-        strategy = JobDataUpdateStrategy(job_submission)
+        strategy = job_data_update_strategy(ActiveSubmissionContext(data=job_submission))
 
         mock_info_handler = mocker.Mock()
         mock_info_class = mocker.patch("jobbergate_agent.jobbergate.update.InfoHandler", return_value=mock_info_handler)
@@ -1170,7 +1200,7 @@ class TestJobDataUpdateStrategy:
         )
         mock_update_job_data = mocker.patch("jobbergate_agent.jobbergate.update.update_job_data")
 
-        await strategy.run()
+        await strategy()
 
         mock_info_class.assert_called_once_with(scontrol_path=SETTINGS.SCONTROL_PATH)
         mock_fetch_job_data.assert_called_once_with(123, mock_info_handler)
@@ -1184,14 +1214,14 @@ class TestJobDataUpdateStrategy:
             status="CREATED",
             slurm_job_id=123,
         )
-        strategy = JobDataUpdateStrategy(job_submission)
+        strategy = job_data_update_strategy(ActiveSubmissionContext(data=job_submission))
 
         mock_info_handler = mocker.Mock()
         mocker.patch("jobbergate_agent.jobbergate.update.InfoHandler", return_value=mock_info_handler)
         mocker.patch("jobbergate_agent.jobbergate.update.fetch_job_data", side_effect=Exception("Fetch failed"))
         mock_update_job_data = mocker.patch("jobbergate_agent.jobbergate.update.update_job_data")
 
-        await strategy.run()
+        await strategy()
 
         # Should not call update_job_data when fetch_job_data fails
         mock_update_job_data.assert_not_called()
@@ -1204,7 +1234,7 @@ class TestJobDataUpdateStrategy:
             status="CREATED",
             slurm_job_id=123,
         )
-        strategy = JobDataUpdateStrategy(job_submission)
+        strategy = job_data_update_strategy(ActiveSubmissionContext(data=job_submission))
 
         mock_info_handler = mocker.Mock()
         mocker.patch("jobbergate_agent.jobbergate.update.InfoHandler", return_value=mock_info_handler)
@@ -1219,7 +1249,7 @@ class TestJobDataUpdateStrategy:
         mocker.patch("jobbergate_agent.jobbergate.update.update_job_data", side_effect=Exception("Update failed"))
 
         # Should not raise an exception
-        await strategy.run()
+        await strategy()
 
     @pytest.mark.asyncio
     async def test_run__returns_early_when_slurm_job_id_is_none(self, mocker):
@@ -1229,11 +1259,11 @@ class TestJobDataUpdateStrategy:
             status="CREATED",
             slurm_job_id=None,
         )
-        strategy = JobDataUpdateStrategy(job_submission)
+        strategy = job_data_update_strategy(ActiveSubmissionContext(data=job_submission))
 
         mock_info_class = mocker.patch("jobbergate_agent.jobbergate.update.InfoHandler")
 
-        await strategy.run()
+        await strategy()
 
         mock_info_class.assert_not_called()
 
@@ -1241,51 +1271,80 @@ class TestJobDataUpdateStrategy:
 class TestUpdateActiveJobsStrategies:
     """Test how update_active_jobs works with the strategy pattern."""
 
-    @pytest.mark.asyncio
-    async def test_update_active_jobs__executes_strategies_based_on_conditions(self, mocker, tweak_settings):
-        """Test that update_active_jobs executes strategies based on their need_to_run conditions."""
-        # Create test job submissions with different states
-        active_jobs = [
-            ActiveJobSubmission(id=1, status=JobSubmissionStatus.CANCELLED, slurm_job_id=None),  # Pending cancellation
-            ActiveJobSubmission(id=2, status=JobSubmissionStatus.CANCELLED, slurm_job_id=123),  # Active cancellation
-            ActiveJobSubmission(id=3, status="CREATED", slurm_job_id=456),  # Metrics + Data update
-            ActiveJobSubmission(id=4, status="CREATED", slurm_job_id=None),  # No strategies run
-        ]
+    def test_update_gets_all_strategies(self):
+        """Test that update_active_jobs retrieves all defined strategies."""
+        plugin_manager = active_submission_plugin_manager()
+        strategies = plugin_manager.hook.active_submission.get_hookimpls()
 
-        mocker.patch("jobbergate_agent.jobbergate.update.fetch_active_submissions", return_value=active_jobs)
+        assert {p.function for p in strategies} == {
+            pending_job_cancellation_strategy,
+            active_job_cancellation_strategy,
+            job_metrics_strategy,
+            job_data_update_strategy,
+        }
 
-        # Mock all strategy run methods
-        mock_pending_run = mocker.patch.object(PendingJobCancellationStrategy, "run")
-        mock_active_run = mocker.patch.object(ActiveJobCancellationStrategy, "run")
-        mock_metrics_run = mocker.patch.object(JobMetricsStrategy, "run")
-        mock_data_run = mocker.patch.object(JobDataUpdateStrategy, "run")
 
-        with tweak_settings(INFLUX_DSN="https://influxdb:8086"):
-            await update_active_jobs()
+class TestActiveSubmissionContext:
+    @pytest.fixture(autouse=True, scope="class")
+    def mock_info_handler(self):
+        with mock.patch("jobbergate_agent.jobbergate.update.InfoHandler", return_value=mock.Mock()) as mock_info_class:
+            yield mock_info_class
 
-        # Verify which strategies were executed
-        assert mock_pending_run.call_count == 1  # Only for job 1
-        assert mock_active_run.call_count == 1  # Only for job 2
-        assert mock_metrics_run.call_count == 2  # For jobs 2 and 3 (have slurm_job_id and influx enabled)
-        assert mock_data_run.call_count == 2  # For jobs 2 and 3 (have slurm_job_id)
+    @pytest.fixture
+    def mock_active_job(self):
+        """Fixture providing a mocked ActiveJobSubmission."""
+        job = mock.Mock(spec=ActiveJobSubmission)
+        job.slurm_job_id = 12345
+        job.id = 1
+        return job
 
-    @pytest.mark.asyncio
-    async def test_update_active_jobs__strategy_exceptions_propagate(self, mocker):
-        """Test that update_active_jobs propagates strategy exceptions (current behavior)."""
-        active_jobs = [
-            ActiveJobSubmission(id=1, status=JobSubmissionStatus.CANCELLED, slurm_job_id=None),
-            ActiveJobSubmission(id=2, status="CREATED", slurm_job_id=123),
-        ]
+    def test_slurm_job_id_success(self, mock_active_job):
+        """Test slurm_job_id returns the correct ID."""
+        context = ActiveSubmissionContext(data=mock_active_job)
+        assert context.slurm_job_id == 12345
 
-        mocker.patch("jobbergate_agent.jobbergate.update.fetch_active_submissions", return_value=active_jobs)
+    def test_slurm_job_id_raises_when_none(self):
+        """Test slurm_job_id raises ValueError when ID is None."""
+        job = mock.Mock(spec=ActiveJobSubmission)
+        job.slurm_job_id = None
+        context = ActiveSubmissionContext(data=job)
 
-        # Make the first strategy raise an exception
-        mocker.patch.object(PendingJobCancellationStrategy, "run", side_effect=Exception("Strategy failed"))
-        mock_data_run = mocker.patch.object(JobDataUpdateStrategy, "run")
+        with pytest.raises(ValueError, match="Slurm job ID has not been set yet"):
+            _ = context.slurm_job_id
 
-        # Should raise the exception (current behavior)
-        with pytest.raises(Exception, match="Strategy failed"):
-            await update_active_jobs()
+    @mock.patch("jobbergate_agent.jobbergate.update.fetch_job_data")
+    def test_username(self, mock_fetch, mock_active_job):
+        """Test username extraction from slurm_raw_info."""
+        mock_fetch.return_value = mock.Mock(job_info='{"user_name": "testuser"}')
+        context = ActiveSubmissionContext(data=mock_active_job)
 
-        # The data update strategy for job 2 should not have been called due to the exception
-        mock_data_run.assert_not_called()
+        assert context.username == "testuser"
+
+    def test_username_raises_when_missing(self, mock_active_job):
+        """Test username raises ValueError when not in slurm_raw_info."""
+        with mock.patch.object(
+            ActiveSubmissionContext, "slurm_raw_info", new_callable=mock.PropertyMock, return_value={}
+        ):
+            context = ActiveSubmissionContext(data=mock_active_job)
+            with pytest.raises(ValueError, match="Username could not be fetched"):
+                _ = context.username
+
+    @mock.patch("jobbergate_agent.jobbergate.update.fetch_job_data")
+    def test_submission_dir(self, mock_fetch, mock_active_job):
+        """Test submission_dir extraction from slurm_raw_info."""
+        mock_fetch.return_value = mock.Mock(job_info='{"current_working_directory": "/home/testuser/jobs"}')
+        context = ActiveSubmissionContext(data=mock_active_job)
+
+        assert context.submission_dir == Path("/home/testuser/jobs")
+
+    @mock.patch("jobbergate_agent.jobbergate.update.InfoHandler")
+    def test_info_handler_cached(self, mock_info_class, mock_active_job):
+        """Test that info_handler is cached properly."""
+        context = ActiveSubmissionContext(data=mock_active_job)
+
+        handler1 = context.info_handler
+        handler2 = context.info_handler
+
+        # Should only instantiate once due to cached_property
+        assert handler1 is handler2
+        assert mock_info_class.call_count == 1
