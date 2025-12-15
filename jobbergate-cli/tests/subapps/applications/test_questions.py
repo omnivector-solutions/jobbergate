@@ -120,11 +120,11 @@ def test_File__success(tmp_path, dummy_render_class, mocker):
 
     dummy_file = tmp_path / "dummy"
     dummy_file.write_text("just some dome stuff")
-    dummy_render_class.prepared_input = dict(foo=dummy_file)
+    dummy_render_class.prepared_input = dict(foo=dummy_file.as_posix())
 
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
     answers = prompt(prompts)
-    assert answers["foo"] == dummy_file
+    assert answers["foo"] == dummy_file.as_posix()
 
 
 def test_File__fails_if_file_does_not_exist(dummy_render_class, mocker):

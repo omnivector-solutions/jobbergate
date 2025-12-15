@@ -30,7 +30,7 @@ def test_list_all__renders_paginated_results(
     test_app = make_test_app("list-all", list_all)
     mocked_pagination = mocker.patch("jobbergate_cli.subapps.applications.app.handle_pagination")
     result = cli_runner.invoke(test_app, ["list-all"])
-    assert result.exit_code == 0, f"list-all failed: {result.stdout}"
+    assert result.exit_code == 0, f"list-all failed: {result.output}"
     mocked_pagination.assert_called_once_with(
         jg_ctx=dummy_context,
         url_path="/jobbergate/job-script-templates",
@@ -87,7 +87,7 @@ def test_get_one__success(
     test_app = make_test_app("get-one", get_one)
     mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
     result = cli_runner.invoke(test_app, shlex.split(f"get-one {cli_selector}"))
-    assert result.exit_code == 0, f"get-one failed: {result.stdout}"
+    assert result.exit_code == 0, f"get-one failed: {result.output}"
     mocked_render.assert_called_once_with(
         dummy_context,
         ApplicationResponse(**dummy_application_data[0]),
@@ -100,7 +100,7 @@ def test_get_one__fails_with_neither_id_or_identifier(make_test_app, cli_runner)
     test_app = make_test_app("get-one", get_one)
     result = cli_runner.invoke(test_app, shlex.split("get-one"))
     assert result.exit_code != 0
-    assert "You must supply one and only one selection value" in result.stdout
+    assert "You must supply one and only one selection value" in result.output
 
 
 @pytest.mark.parametrize(
@@ -111,7 +111,7 @@ def test_get_one__fails_with_both_id_and_identifier(make_test_app, cli_runner, c
     test_app = make_test_app("get-one", get_one)
     result = cli_runner.invoke(test_app, shlex.split(f"get-one {cli_selector}"))
     assert result.exit_code != 0
-    assert "You must supply one and only one selection value" in result.stdout
+    assert "You must supply one and only one selection value" in result.output
 
 
 @pytest.mark.parametrize(
@@ -157,7 +157,7 @@ def test_create__success(
             )
         ),
     )
-    assert result.exit_code == 0, f"create failed: {result.stdout}"
+    assert result.exit_code == 0, f"create failed: {result.output}"
     assert create_route.called
     assert mocked_upload.called
 
@@ -209,10 +209,10 @@ def test_create__warns_but_does_not_abort_if_upload_fails(
             )
         ),
     )
-    assert result.exit_code == 1, f"create failed: {result.stdout}"
+    assert result.exit_code == 1, f"create failed: {result.output}"
     assert create_route.called
     assert upload_route.called
-    assert "application files could not be uploaded" in result.stdout
+    assert "application files could not be uploaded" in result.output
 
     mocked_render.assert_called_once_with(
         dummy_context,
@@ -285,7 +285,7 @@ def test_update__success_by_id(
             )
         ),
     )
-    assert result.exit_code == 0, f"update failed: {result.stdout}"
+    assert result.exit_code == 0, f"update failed: {result.output}"
     assert update_route.called
     assert get_route.called
     assert mocked_upload.called
@@ -341,7 +341,7 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(
             )
         ),
     )
-    assert result.exit_code == 0, f"update failed: {result.stdout}"
+    assert result.exit_code == 0, f"update failed: {result.output}"
     assert update_route.called
     assert mocked_upload.call_count == 0
 
@@ -400,10 +400,10 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
             )
         ),
     )
-    assert result.exit_code == 1, f"update failed: {result.stdout}"
+    assert result.exit_code == 1, f"update failed: {result.output}"
     assert update_route.called
     assert mocked_upload.called
-    assert "application files could not be uploaded" in result.stdout
+    assert "application files could not be uploaded" in result.output
 
     mocked_render.assert_called_once_with(
         dummy_context,
@@ -437,9 +437,9 @@ def test_delete__success(respx_mock, make_test_app, dummy_domain, cli_runner, se
 
     test_app = make_test_app("delete", delete)
     result = cli_runner.invoke(test_app, shlex.split(f"delete {cli_selector}"))
-    assert result.exit_code == 0, f"delete failed: {result.stdout}"
+    assert result.exit_code == 0, f"delete failed: {result.output}"
     assert delete_route.called
-    assert "Application delete succeeded" in result.stdout
+    assert "Application delete succeeded" in result.output
 
 
 class TestDownloadApplicationFiles:
@@ -511,7 +511,7 @@ class TestDownloadApplicationFiles:
             destination_path=tmp_path,
         )
 
-        assert result.exit_code == 0, f"download failed: {result.stdout}"
+        assert result.exit_code == 0, f"download failed: {result.output}"
         mocked_render.assert_called_once_with(
             f"A total of {len(list_of_files)} application files were successfully downloaded.",
             subject="Application download succeeded",
@@ -523,7 +523,7 @@ class TestDownloadApplicationFiles:
         """
         result = cli_runner.invoke(test_app, shlex.split("download"))
         assert result.exit_code != 0
-        assert "You must supply one and only one selection value" in result.stdout
+        assert "You must supply one and only one selection value" in result.output
 
     def test_download__fails_with_both_id_and_identifier(self, test_app, cli_runner):
         """
@@ -531,7 +531,7 @@ class TestDownloadApplicationFiles:
         """
         result = cli_runner.invoke(test_app, shlex.split("download --id=1 --identifier=dummy"))
         assert result.exit_code != 0
-        assert "You must supply one and only one selection value" in result.stdout
+        assert "You must supply one and only one selection value" in result.output
 
 
 @pytest.mark.parametrize(
@@ -590,7 +590,7 @@ def test_clone__success(
 
     assert clone_route.called
 
-    assert result.exit_code == 0, f"clone failed: {result.stdout}"
+    assert result.exit_code == 0, f"clone failed: {result.output}"
     mocked_render.assert_called_once_with(
         dummy_context,
         ApplicationResponse(**application_data),
