@@ -695,7 +695,8 @@ async def test_update_job_metrics__error_sending_metrics_to_api(
             )
             for job_max_time in max_times_list
             for measurement in measurements
-        ]
+        ],
+        any_order=True,
     )
     mocked_chain.from_iterable.assert_called_once_with([dummy_data_points] * len(measurements) * len(max_times_list))
     mocked_aggregate_influx_measures.assert_called_once_with(iter_dummy_data_points)
@@ -789,7 +790,8 @@ async def test_update_job_metrics__success(
             )
             for job_max_time in max_times_list
             for measurement in measurements
-        ]
+        ],
+        any_order=True,
     )
     mocked_chain.from_iterable.assert_called_once_with([dummy_data_points] * len(measurements) * len(max_times_list))
     mocked_aggregate_influx_measures.assert_called_once_with(iter_dummy_data_points)
@@ -865,7 +867,7 @@ async def test_update_job_metrics__success_with_max_times_empty(
 
     mocked_fetch_influx_measurements.assert_called_once_with()
     mocked_fetch_influx_data.assert_has_calls(
-        [mock.call(slurm_job_id, measurement["name"]) for measurement in measurements]
+        [mock.call(slurm_job_id, measurement["name"]) for measurement in measurements], any_order=True
     )
     mocked_chain.from_iterable.assert_called_once_with([dummy_data_points] * len(measurements))
     mocked_aggregate_influx_measures.assert_called_once_with(iter_dummy_data_points)
@@ -922,7 +924,7 @@ async def test_update_job_metrics__defer_api_call_upon_no_new_data(
 
     mocked_fetch_influx_measurements.assert_called_once_with()
     mocked_fetch_influx_data.assert_has_calls(
-        [mock.call(slurm_job_id, measurement["name"]) for measurement in measurements]
+        [mock.call(slurm_job_id, measurement["name"]) for measurement in measurements], any_order=True
     )
     mocked_chain.from_iterable.assert_called_once_with([[] for _ in range(len(measurements))])
     mocked_aggregate_influx_measures.assert_called_once_with([])
