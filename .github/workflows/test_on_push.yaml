@@ -14,6 +14,10 @@ jobs:
   core-tests:
     name: "jobbergate-core tests"
     runs-on: "ubuntu-24.04"
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
@@ -21,7 +25,7 @@ jobs:
           poetry-version: 1.5.1
       - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
           architecture: "x64"
           cache: "poetry"
           cache-dependency-path: |
@@ -31,7 +35,7 @@ jobs:
       - name: "run quality control checks"
         working-directory: jobbergate-core
         run: |
-          poetry env use "3.10"
+          poetry env use "${{ matrix.python-version }}"
           make qa
 
       - name: Upload coverage reports to Codecov
@@ -71,6 +75,10 @@ jobs:
   cli-tests:
     name: "jobbergate-cli tests"
     runs-on: "ubuntu-24.04"
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
@@ -78,7 +86,7 @@ jobs:
           poetry-version: 1.5.1
       - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
           architecture: "x64"
           cache: "poetry"
           cache-dependency-path: |
@@ -88,7 +96,7 @@ jobs:
       - name: "run quality control checks"
         working-directory: jobbergate-cli
         run: |
-          poetry env use "3.10"
+          poetry env use "${{ matrix.python-version }}"
           make qa
 
       - name: Upload coverage reports to Codecov
@@ -105,6 +113,11 @@ jobs:
   agent-tests:
     name: "jobbergate-agent tests"
     runs-on: "ubuntu-24.04"
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
@@ -112,7 +125,7 @@ jobs:
           poetry-version: 1.5.1
       - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
           architecture: "x64"
           cache: "poetry"
           cache-dependency-path: |
@@ -122,7 +135,7 @@ jobs:
       - name: "run quality control checks"
         working-directory: jobbergate-agent
         run: |
-          poetry env use "3.10"
+          poetry env use "${{ matrix.python-version }}"
           make qa
 
       - name: Upload coverage reports to Codecov
