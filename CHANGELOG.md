@@ -11,6 +11,62 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.9.0a1](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.9.0a1) - 2025-12-16
+
+## Core
+
+### Added
+
+- Support for Python 3.14 ([PR #867](https://github.com/omnivector-solutions/jobbergate/pull/867))
+
+### Miscellaneous
+
+- [PR #867](https://github.com/omnivector-solutions/jobbergate/pull/867)
+
+
+## Agent
+
+### Added
+
+- Support for Python 3.14 ([PR #867](https://github.com/omnivector-solutions/jobbergate/pull/867))
+
+### Miscellaneous
+
+- [PR #867](https://github.com/omnivector-solutions/jobbergate/pull/867)
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+### Added
+
+- Support for Python 3.14 ([PR #867](https://github.com/omnivector-solutions/jobbergate/pull/867))
+
+### Miscellaneous
+
+- [PR #867](https://github.com/omnivector-solutions/jobbergate/pull/867)
+
+
+## CLI
+
+### Added
+
+- Support for Python 3.14 ([PR #867](https://github.com/omnivector-solutions/jobbergate/pull/867))
+
+### Miscellaneous
+
+- [PR #867](https://github.com/omnivector-solutions/jobbergate/pull/867)
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.9.0a0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.9.0a0) - 2025-12-12
 
 ## Core
