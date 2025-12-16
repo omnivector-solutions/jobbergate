@@ -8,17 +8,17 @@ repository = "https://github.com/omnivector-solutions/jobbergate"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.11"
-mkdocs-material = "^9.4.2"
-mkdocstrings = { extras = ["python"], version = "^0.23.0" }
-pygments = "^2.16.1"
+python = "^3.12"
+mkdocs-material = "^9.5.17"
+mkdocstrings-python = "^1.8.0"
+pygments = "^2.19.2"
 jobbergate-core = { path = "../jobbergate-core", develop = true }
 jobbergate-api = { path = "../jobbergate-api", develop = true }
 jobbergate-cli = { path = "../jobbergate-cli", develop = true }
 jobbergate-agent = { path = "../jobbergate-agent", develop = true }
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.4.9"
+ruff = "^0.14.9"
 
 [tool.ruff]
 line-length = 120

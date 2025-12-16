@@ -771,15 +771,18 @@ sqlalchemy = ["sqlalchemy (>=1.4.29)"]
 
 [[package]]
 name = "py-buzz"
-version = "5.0.2"
+version = "7.3.0"
 description = "\"That's not flying, it's falling with style\": Exceptions with extras"
 optional = false
-python-versions = "<4.0,>=3.9"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "py_buzz-5.0.2-py3-none-any.whl", hash = "sha256:09961b02f182189105ee84f3a67ddb927c03c8af840b6f0c89e1a8458a5f33b0"},
-    {file = "py_buzz-5.0.2.tar.gz", hash = "sha256:1f6e0c4a19f02f6f3a20d1667319170a0ccc53c099538e31681563cca855db93"},
+    {file = "py_buzz-7.3.0-py3-none-any.whl", hash = "sha256:e2f77f45ba7362c34d888747e81bfb4a69a1450a1f9f3d981bd4987ca2228ae4"},
+    {file = "py_buzz-7.3.0.tar.gz", hash = "sha256:c20def3b3fb0aab42d20732dc8f27ff6c098082d61b3bd7476d87db5fba5bdcf"},
 ]
+
+[package.extras]
+demo = ["auto-name-enum (>=2.0.0)", "rich (>=13.9.4)", "snick (>=1.4.1)", "typer (>=0.15.2)"]
 
 [[package]]
 name = "pyasn1"
@@ -1472,4 +1475,4 @@ dev = ["black (>=19.3b0) ; python_version >= \"3.6\"", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "ae3ebca7b3fe17c560871ece941dc6fb6b662272158fb5a57850f66865b268fa"
+content-hash = "a033313e883fd876b5f2b45c24d9dc18733622817343188992b1edca4d35bd0d"
