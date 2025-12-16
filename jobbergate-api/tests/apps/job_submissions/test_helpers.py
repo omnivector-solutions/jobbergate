@@ -48,7 +48,7 @@ class TestValidateJobMetricUploadInput:
         data = [[1, "test", 3.5], [2, "example", 4.5]]
         expected_types = (int, str, float)
         result = validate_job_metric_upload_input(data, expected_types)
-        assert result == [(1, "test", 3.5), (2, "example", 4.5)]
+        assert list(result) == [(1, "test", 3.5), (2, "example", 4.5)]
 
     def test_validate_job_metric_upload_input_invalid_data_type(self):
         """
@@ -119,7 +119,7 @@ class TestValidateJobMetricUploadInput:
         with pytest.raises(
             ValueError,
             match=(
-                "The maximum number of elements has been exceeded. " "Maximum is {}, received {}".format(
+                "The maximum number of elements has been exceeded. Maximum is {}, received {}".format(
                     ceil((2**15 - 1) / num_of_elements), len(data)
                 )
             ),
@@ -135,8 +135,9 @@ class TestValidateJobMetricUploadInput:
         """
         data = [[1, "test", "not a float"]]
         expected_types = (int, str, float)
-        with pytest.raises(ValueError, match="Failed to cast data to expected types."):
-            validate_job_metric_upload_input(data, expected_types)
+        result = validate_job_metric_upload_input(data, expected_types)
+        with pytest.raises(ValueError, match="Failed to cast data to expected types"):
+            list(result)
 
     def test_validate_job_metric_upload_input_cast_success(self):
         """
@@ -148,7 +149,7 @@ class TestValidateJobMetricUploadInput:
         data = [[1, "test", "3.5"]]
         expected_types = (int, str, float)
         result = validate_job_metric_upload_input(data, expected_types)
-        assert result == [(1, "test", 3.5)]
+        assert list(result) == [(1, "test", 3.5)]
 
 
 class TestBuildJobMetricAggregationQuery:

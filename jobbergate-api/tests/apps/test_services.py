@@ -826,7 +826,6 @@ class TestFileService:
         """
         Test that the ``upsert()`` method correctly creates a database entry and file in the s3 store.
         """
-        dummy_upload_file = make_upload_file()
         with make_upload_file(content="dummy upload content") as dummy_upload_file:
             upserted_instance = await dummy_file_service.upsert(
                 13,
@@ -911,7 +910,6 @@ class TestFileService:
         """
         Test that the ``upsert()`` method raises a 413 error if the file is too large.
         """
-        dummy_upload_file = make_upload_file()
         with make_upload_file(content="dummy upload content") as dummy_upload_file:
             dummy_upload_file.size = None
             with pytest.raises(HTTPException, match="UploadFile has no size attribute") as exc_info:
@@ -922,7 +920,6 @@ class TestFileService:
         """
         Test that the ``upsert()`` method raises a 413 error if the file is too large.
         """
-        dummy_upload_file = make_upload_file()
         with make_upload_file(content="dummy upload content") as dummy_upload_file:
             with tweak_settings(MAX_UPLOAD_FILE_SIZE=1):
                 with pytest.raises(HTTPException, match="Uploaded files cannot exceed 1 bytes") as exc_info:
@@ -1018,7 +1015,6 @@ class TestFileService:
         """
         Test that the ``delete()`` method removes the file from the storage and its row from the database.
         """
-        dummy_upload_file = make_upload_file()
         with make_upload_file(content="dummy upload content") as dummy_upload_file:
             upserted_instance = await dummy_file_service.upsert(13, "file-one.txt", dummy_upload_file)
 
@@ -1033,7 +1029,6 @@ class TestFileService:
         """
         Test that the ``render()`` method can render a template loaded from the file store.
         """
-        dummy_upload_file = make_upload_file()
         with make_upload_file(content="dummy {{ foo }} content") as dummy_upload_file:
             upserted_instance = await dummy_file_service.upsert(
                 13,
@@ -1050,7 +1045,6 @@ class TestFileService:
         """
         Test that the ``render()`` method raises a 422 error if the template is invalid.
         """
-        dummy_upload_file = make_upload_file()
         with make_upload_file(content="dummy {{ foo } content") as dummy_upload_file:
             upserted_instance = await dummy_file_service.upsert(
                 13,
@@ -1068,7 +1062,6 @@ class TestFileService:
         """
         Test that the ``render()`` method raises a 422 error if the template is unsecure.
         """
-        dummy_upload_file = make_upload_file()
         with make_upload_file(content="dummy {{ foo.__str__() }} content") as dummy_upload_file:
             upserted_instance = await dummy_file_service.upsert(
                 13,
@@ -1085,7 +1078,6 @@ class TestFileService:
         """
         Test that the ``render()`` works in different contexts.
         """
-        dummy_upload_file = make_upload_file()
         with make_upload_file(content="dummy {{ foo }} content") as dummy_upload_file:
             upserted_instance_1 = await dummy_file_service.upsert(
                 13,

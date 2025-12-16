@@ -15,7 +15,7 @@ from jobbergate_api.apps.job_submissions.constants import (
 
 def validate_job_metric_upload_input(
     data: Any, expected_types: tuple[Type[Any], ...]
-) -> Iterable[tuple[Any]]:
+) -> Iterable[tuple[Any, ...]]:
     """Validate if the input data of job metric upload is correct once decoded.
 
     It will brute force apply the expected types to the data and raise an error in case it fails.
@@ -27,11 +27,15 @@ def validate_job_metric_upload_input(
             should match.
 
     Returns:
-        Iterable[list[Any] | tuple[Any]]: The validated data.
+        Iterable[tuple[Any, ...]]: The validated data, where each tuple has the same length as expected_types.
     """
 
     def _force_cast(object: Any, expected_type: Type[Any]) -> Any:
-        return expected_type(object)
+        try:
+            return expected_type(object)
+        except Exception as e:
+            logger.error(f"Failed to cast data to expected types: {e}")
+            raise ValueError("Failed to cast data to expected types") from e
 
     if not isinstance(data, list):
         raise ValueError("Decoded data must be a list.")
@@ -43,20 +47,15 @@ def validate_job_metric_upload_input(
     # https://www.postgresql.org/docs/17/protocol-message-formats.html
     if len(expected_types) * len(data) > 2**15 - 1:
         raise ValueError(
-            "The maximum number of elements has been exceeded. " "Maximum is {}, received {}".format(
+            "The maximum number of elements has been exceeded. Maximum is {}, received {}".format(
                 ceil((2**15 - 1) / len(expected_types)), len(data)
             )
         )
-    for idx, aggregated_data in enumerate(data):
-        # for each element in the inner list or tuple, force apply the expected type
-        try:
-            data[idx] = tuple(
-                _force_cast(data, expected_types[idx]) for idx, data in enumerate(aggregated_data)
-            )
-        except Exception as e:
-            logger.error(f"Failed to cast data to expected types: {e}")
-            raise ValueError("Failed to cast data to expected types.")
-    return data
+
+    return (
+        tuple(_force_cast(data, expected_types[idx]) for idx, data in enumerate(aggregated_data))
+        for aggregated_data in data
+    )
 
 
 def build_job_metric_aggregation_query(node: str | None, sample_rate: JobSubmissionMetricSampleRate) -> str:

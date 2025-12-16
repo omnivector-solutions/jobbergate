@@ -22,18 +22,17 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.10"
 jobbergate-core = { path = "../jobbergate-core", develop = true }
-click = "^8.1.0"
-importlib-metadata = "^4.2"
-inquirer = "^3.1.0"
-Jinja2 = "^3.1.2"
-pyperclip = "^1.8.2"
-python-dotenv = "^1.0.0"
-PyYAML = "6.*"
-rich = "^11.2.0"
-sentry-sdk = "^2.29.1"
-typer = "^0.16.0"
-pydantic = "^2.7"
-pydantic-settings = "^2.3.3"
+click = "^8.3.1"
+importlib-metadata = "^8.7.0"
+inquirer = "^3.4.1"
+Jinja2 = "^3.1.6"
+pyperclip = "^1.11.0"
+python-dotenv = "^1.2.1"
+PyYAML = "^6.0.3"
+rich = "^14.2.0"
+sentry-sdk = "^2.47.0"
+typer = "^0.20.0"
+pydantic-settings = "^2.12.0"
 
 [tool.poetry.scripts]
 jobbergate = "jobbergate_cli.main:safe_entrypoint"
@@ -47,17 +46,17 @@ jobbergate = "jobbergate_cli.main:safe_entrypoint"
 strategy = "exact"
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^1.10"
-plummet = { extras = ["time-machine"], version = "^1.1.0" }
-pytest-cov = "^4.0.0"
+mypy = "^1.19.1"
+plummet = { extras = ["time-machine"], version = "^1.2.1" }
+pytest-cov = "^4.1.0"
 pytest-env = "^0.6.2"
-pytest-freezegun = "^0.4.2"
-pytest-mock = "^3.6.0"
-pytest-random-order = "^1.0.4"
-pytest-responsemock = "^1.0.1"
+setuptools = "^69.5.1"
+pytest-mock = "^3.15.1"
+pytest-random-order = "^1.2.0"
+pytest-responsemock = "^1.1.1"
 respx = "^0.22.0"
-types-PyYAML = "^6.0.4"
-ruff = "^0.4.9"
+types-PyYAML = "^6.0.12"
+ruff = "^0.14.9"
 
 [tool.ruff]
 line-length = 120

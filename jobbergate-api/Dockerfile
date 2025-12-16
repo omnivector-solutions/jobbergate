@@ -1,4 +1,4 @@
-FROM python:3.11-slim-bookworm AS builder
+FROM python:3.14-slim-bookworm AS builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ RUN poetry config virtualenvs.in-project true \
     && rm -rf "$POETRY_CACHE_DIR"
 
 
-FROM python:3.11-slim-bookworm AS runner
+FROM python:3.14-slim-bookworm AS runner
 
 WORKDIR /app
 

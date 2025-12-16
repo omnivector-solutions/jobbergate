@@ -566,7 +566,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         )
 
         require_condition(
-            check_uploaded_file_syntax(file_obj, instance.filename),
+            check_uploaded_file_syntax(file_obj, str(instance.filename)),
             f"File {instance.filename} did not pass the syntax check for its extension",
             raise_exc_class=ServiceError,
             raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),

@@ -135,11 +135,11 @@ def lockdown_with_identity(
         identity_payload = IdentityPayload(**token_payload.model_dump())
 
         with check_expressions(
-            main_message="Access token does not contain",
+            base_message="Access token does not contain",
             raise_exc_class=HTTPException,
-            exc_builder=lambda exc_class, msg: exc_class(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=msg,
+            exc_builder=lambda params: params.raise_exc_class(
+                status_code=status.HTTP_400_BAD_REQUEST,  # type: ignore
+                detail=params.message,  # type: ignore
             ),
         ) as check:
             for ensure, name in zip(

@@ -1,4 +1,5 @@
 import math
+from typing import Callable
 import pytest
 import functools
 
@@ -32,8 +33,12 @@ def test_empty_string_to_none(schema):
 
 
 class TestJobSubmissionMetricSchema:
-    # Partial for floating point comparison with a good default tolerance
-    isclose = functools.partial(math.isclose, rel_tol=1e-9, abs_tol=1e-9)
+    @property
+    def isclose(self) -> Callable[[float | int, float | int], bool]:
+        """
+        Return a function to compare numbers with a tolerance.
+        """
+        return functools.partial(math.isclose, rel_tol=1e-9, abs_tol=1e-9)
 
     def test_job_submission_metric_schema_validate_time(self):
         """
