@@ -2,6 +2,7 @@
 Provide Pydantic models for various data items.
 """
 
+import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Generic, List, Optional, Protocol, TypeVar
@@ -238,7 +239,7 @@ class JobSubmissionResponse(pydantic.BaseModel, extra="ignore"):
     name: str
     slurm_job_id: Optional[int] = None
     slurm_job_state: Optional[str] = None
-    slurm_job_info: Optional[str] = None
+    slurm_job_info: Optional[dict[str, Any]] = None
     job_script_id: Optional[int] = None
     cluster_name: Optional[str] = pydantic.Field(default=None, alias="client_id")
     description: Optional[str] = None
@@ -251,6 +252,19 @@ class JobSubmissionResponse(pydantic.BaseModel, extra="ignore"):
     report_message: Optional[str] = None
     sbatch_arguments: Optional[list[str]] = None
     cloned_from_id: Optional[int] = None
+
+    @pydantic.field_validator("slurm_job_info", mode="before")
+    @classmethod
+    def _slurm_job_info_json_loader(cls, value):
+        """
+        Ensure that slurm_job_info is always a dictionary.
+        """
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except json.JSONDecodeError as e:
+                raise ValueError("slurm_job_info string could not be decoded as JSON") from e
+        return value
 
 
 class JobScriptCreateRequest(pydantic.BaseModel):
