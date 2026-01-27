@@ -37,7 +37,7 @@ pendulum = { extras = ["test"], version = "^3.1.0" }
 py-buzz = "^7.3.0"
 pydantic = {extras = ["email"], version = "^2.12.5"}
 python-dotenv = "^1.2.1"
-python-multipart = "^0.0.20"
+python-multipart = ">=0.0.20,<0.0.23"
 pyyaml = "^6.0.3"
 sendgrid = "^6.12.5"
 sentry-sdk = "^2.47.0"
