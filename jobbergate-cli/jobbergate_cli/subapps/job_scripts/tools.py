@@ -243,6 +243,7 @@ def render_job_script_locally(
     sbatch_params: Optional[List[str]] = None,
     param_file: Optional[pathlib.Path] = None,
     fast: bool = False,
+    prompt_strategy: Optional[Any] = None,
 ):
     """
     Render a new job script from an application in a local directory.
@@ -255,6 +256,7 @@ def render_job_script_locally(
         sbatch_params: List of sbatch parameters.
         param_file: Path to a parameters file.
         fast: Whether to use default answers (when available) instead of asking the user.
+        prompt_strategy: Optional prompt strategy to use for gathering answers.
     """
     app_data = fetch_application_data_locally(application_path)
 
@@ -273,6 +275,7 @@ def render_job_script_locally(
         fast_mode=fast,
         sdk=jg_ctx.sdk,
         supplied_params=validate_parameter_file(param_file) if param_file else dict(),
+        prompt_strategy=prompt_strategy,
     )
     application_runtime.execute_application()
     param_dict_flat = application_runtime.as_flatten_param_dict()
@@ -312,6 +315,7 @@ def render_job_script(
     sbatch_params: Optional[List[str]] = None,
     param_file: Optional[pathlib.Path] = None,
     fast: bool = False,
+    prompt_strategy: Optional[Any] = None,
 ) -> JobScriptResponse:
     """
     Render a new job script from an application.
@@ -325,6 +329,7 @@ def render_job_script(
         sbatch_params: List of sbatch parameters.
         param_file: Path to a parameters file.
         fast: Whether to use default answers (when available) instead of asking the user.
+        prompt_strategy: Optional prompt strategy to use for gathering answers.
 
     Returns:
         The new job script.
@@ -357,6 +362,7 @@ def render_job_script(
         fast_mode=fast,
         sdk=jg_ctx.sdk,
         supplied_params=validate_parameter_file(param_file) if param_file else dict(),
+        prompt_strategy=prompt_strategy,
     )
     application_runtime.execute_application()
     param_dict_flat = application_runtime.as_flatten_param_dict()
