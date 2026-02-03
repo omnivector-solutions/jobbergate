@@ -431,6 +431,13 @@ class ApplicationRuntime:
         while next_method is not None:
             method_to_call = getattr(self.app_module, next_method)
             logger.debug(f"Calling method {next_method}")
+            
+            # Set the current workflow name for TextualPrompt to display
+            if hasattr(self.prompt_strategy, 'current_workflow'):
+                # Format workflow name nicely: mainflow -> Main Flow, advanced_flow -> Advanced Flow
+                workflow_display_name = next_method.replace('_', ' ').title()
+                self.prompt_strategy.current_workflow = workflow_display_name
+            
             try:
                 workflow_questions = method_to_call(data=config)
             except NotImplementedError:

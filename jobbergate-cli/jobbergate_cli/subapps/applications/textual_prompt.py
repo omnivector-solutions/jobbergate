@@ -11,6 +11,8 @@ import pathlib
 import re
 from typing import Any
 
+import importlib_metadata
+
 from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical
@@ -212,12 +214,36 @@ class QuestionScreen(Screen[dict[str, Any]]):
         width: auto;
         height: auto;
     }
+    
+    #footer-container {
+        dock: bottom;
+        height: auto;
+        width: 100%;
+        background: $panel;
+        border-top: solid $primary;
+        padding: 0 2;
+    }
+    
+    .footer-line {
+        height: 1;
+        width: 100%;
+        color: $text-muted;
+        content-align: center middle;
+    }
     """
 
-    def __init__(self, questions: list[QuestionBase], workflow_name: str = "Questions") -> None:
+    def __init__(
+        self,
+        questions: list[QuestionBase],
+        workflow_name: str = "Questions",
+        app_identifier: str | None = None,
+        app_path: str | None = None,
+    ) -> None:
         super().__init__()
         self.questions = questions
         self.workflow_name = workflow_name
+        self.app_identifier = app_identifier
+        self.app_path = app_path
         self.answers: dict[str, Any] = {}
         self.widgets_map: dict[str, Any] = {}
 
@@ -241,6 +267,22 @@ class QuestionScreen(Screen[dict[str, Any]]):
             with Horizontal(id="button-container"):
                 yield Button("Continue", variant="success", id="continue-button")
                 yield Button("Cancel", variant="error", id="cancel-button")
+        
+        # Footer with metadata
+        with Vertical(id="footer-container"):
+            try:
+                version = importlib_metadata.version("jobbergate-cli")
+            except Exception:
+                version = "unknown"
+            
+            yield Label(f"Jobbergate CLI v{version}", classes="footer-line")
+            
+            if self.app_identifier:
+                yield Label(f"Application: {self.app_identifier}", classes="footer-line")
+            elif self.app_path:
+                yield Label(f"Application Path: {self.app_path}", classes="footer-line")
+            
+            yield Label(f"Workflow: {self.workflow_name}", classes="footer-line")
     
     def on_mount(self) -> None:
         """Validate all inputs on mount to show initial validation state."""
@@ -424,17 +466,33 @@ class TextualPromptApp(App[dict[str, Any]]):
     }
     """
 
-    def __init__(self, questions: list[QuestionBase], workflow_name: str = "Questions") -> None:
+    def __init__(
+        self,
+        questions: list[QuestionBase],
+        workflow_name: str = "Questions",
+        app_identifier: str | None = None,
+        app_path: str | None = None,
+    ) -> None:
         super().__init__()
         self.questions = questions
         self.workflow_name = workflow_name
+        self.app_identifier = app_identifier
+        self.app_path = app_path
         self.result: dict[str, Any] = {}
         self.cancelled = False
         self.error: Exception | None = None
 
     def on_mount(self) -> None:
         """Show the question screen on mount."""
-        self.push_screen(QuestionScreen(self.questions, self.workflow_name), self._handle_result)
+        self.push_screen(
+            QuestionScreen(
+                self.questions,
+                self.workflow_name,
+                self.app_identifier,
+                self.app_path,
+            ),
+            self._handle_result,
+        )
 
     def _handle_result(self, answers: dict[str, Any]) -> None:
         """Handle the result from the question screen."""
@@ -444,6 +502,17 @@ class TextualPromptApp(App[dict[str, Any]]):
 
 class TextualPrompt(PromptABC):
     """Textual-based prompt implementation."""
+    
+    def __init__(self, app_identifier: str | None = None, app_path: str | None = None) -> None:
+        """Initialize the TextualPrompt with optional application metadata.
+        
+        Args:
+            app_identifier: The application identifier (name or ID) to display in the footer.
+            app_path: The path to the application to display in the footer.
+        """
+        self.app_identifier = app_identifier
+        self.app_path = app_path
+        self.current_workflow: str | None = None
     
     def needs_raw_questions(self) -> bool:
         """TextualPrompt needs raw QuestionBase objects, not inquirer prompts."""
@@ -467,7 +536,15 @@ class TextualPrompt(PromptABC):
         if not questions:
             return {}
 
-        app = TextualPromptApp(questions, workflow_name="Application Questions")
+        # Use the workflow name if we have one stored, otherwise use default
+        workflow_name = self.current_workflow or "Application Questions"
+        
+        app = TextualPromptApp(
+            questions,
+            workflow_name=workflow_name,
+            app_identifier=self.app_identifier,
+            app_path=self.app_path,
+        )
         result = app.run()
         
         # Check if user cancelled
