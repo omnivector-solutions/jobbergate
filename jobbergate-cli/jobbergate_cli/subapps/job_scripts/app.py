@@ -207,6 +207,11 @@ def create_locally(
         "-f",
         help="Use default answers (when available) instead of asking the user.",
     ),
+    tui: bool = typer.Option(
+        False,
+        "--tui",
+        help="Use the Textual TUI interface for prompting questions.",
+    ),
 ):
     """
     Create a job-script from local application files (ideal for development and troubleshooting).
@@ -214,6 +219,12 @@ def create_locally(
     The templates will be overwritten with the rendered files.
     """
     jg_ctx: ContextProtocol = ctx.obj
+
+    # Import TextualPrompt only if needed to avoid import overhead
+    prompt_strategy = None
+    if tui:
+        from jobbergate_cli.subapps.applications.textual_prompt import TextualPrompt
+        prompt_strategy = TextualPrompt()
 
     render_job_script_locally(
         jg_ctx,
@@ -223,6 +234,7 @@ def create_locally(
         sbatch_params,
         param_file,
         fast,
+        prompt_strategy,
     )
 
     terminal_message(
@@ -282,6 +294,11 @@ def create(
         "-f",
         help="Use default answers (when available) instead of asking the user.",
     ),
+    tui: bool = typer.Option(
+        False,
+        "--tui",
+        help="Use the Textual TUI interface for prompting questions.",
+    ),
     download: Optional[bool] = typer.Option(
         None,
         help="Download the job script files to the current working directory",
@@ -312,6 +329,12 @@ def create(
     jg_ctx: ContextProtocol = ctx.obj
     selector = resolve_application_selection(id_or_identifier, application_id, application_identifier)
 
+    # Import TextualPrompt only if needed to avoid import overhead
+    prompt_strategy = None
+    if tui:
+        from jobbergate_cli.subapps.applications.textual_prompt import TextualPrompt
+        prompt_strategy = TextualPrompt()
+
     job_script_result = render_job_script(
         jg_ctx,
         selector,
@@ -320,6 +343,7 @@ def create(
         sbatch_params,
         param_file,
         fast,
+        prompt_strategy,
     )
 
     render_single_result(

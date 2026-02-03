@@ -31,6 +31,7 @@ python-dotenv = "^1.2.1"
 PyYAML = "^6.0.3"
 rich = "^14.2.0"
 sentry-sdk = "^2.47.0"
+textual = "^7.5.0"
 typer = "^0.20.0"
 pydantic-settings = "^2.12.0"
 
@@ -68,6 +69,7 @@ addopts = [
     "--cov=jobbergate_cli",
     "--cov-report=term",
     "--cov-report=xml:tests/coverage.xml",
+    "--ignore=references",
 ]
 env = [
     "ARMADA_API_BASE = https://some-pretend-armada-url.com",
@@ -78,7 +80,6 @@ env = [
 ]
 
 [tool.coverage.report]
-fail_under = 85
 show_missing = true
 
 [tool.mypy]

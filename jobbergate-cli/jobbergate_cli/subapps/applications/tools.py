@@ -8,9 +8,10 @@ import io
 import pathlib
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import Any, Dict, List, Union, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
 import yaml
+from jobbergate_cli.subapps.applications.prompts import InquirerPrompt, PromptABC
 from jobbergate_core.sdk import Apps
 from loguru import logger
 
@@ -34,7 +35,6 @@ from jobbergate_cli.schemas import (
     LocalWorkflowFile,
 )
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
-from jobbergate_cli.subapps.applications.questions import inquirer
 
 
 def load_default_config() -> Dict[str, Any]:
@@ -344,9 +344,12 @@ class ApplicationRuntime:
     sdk: Apps
     supplied_params: Dict[str, Any] = field(default_factory=dict)
     fast_mode: bool = False
+    prompt_strategy: Optional[PromptABC] = None
 
     def __post_init__(self) -> None:
         self.answers: Dict[str, Any] = dict()
+        if self.prompt_strategy is None:
+            self.prompt_strategy = InquirerPrompt()
 
     @cached_property
     def app_config(self) -> JobbergateApplicationConfig:
@@ -441,6 +444,7 @@ class ApplicationRuntime:
                 )
 
             prompts = []
+            raw_questions = []  # For strategies that need QuestionBase objects
             auto_answers = {}
 
             if workflow_questions is None:
@@ -455,9 +459,14 @@ class ApplicationRuntime:
                 elif self.fast_mode and question.default is not None:
                     auto_answers[question.variablename] = question.default
                 else:
-                    prompts.extend(question.make_prompts())
+                    if self.prompt_strategy.needs_raw_questions():
+                        raw_questions.append(question)
+                    else:
+                        prompts.extend(question.make_prompts())
 
-            workflow_answers = cast(Dict[str, Any], inquirer.prompt(prompts, raise_keyboard_interrupt=True))
+            # Use raw questions if the strategy needs them, otherwise use inquirer prompts
+            questions_to_pass = raw_questions if self.prompt_strategy.needs_raw_questions() else prompts
+            workflow_answers = self.prompt_strategy.run(questions_to_pass)
             workflow_answers.update(auto_answers)
 
             logger.debug(f"Answers gathered from {next_method}: {workflow_answers}")
