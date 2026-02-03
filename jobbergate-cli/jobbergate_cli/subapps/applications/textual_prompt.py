@@ -230,13 +230,17 @@ class QuestionScreen(Screen[dict[str, Any]]):
     def on_mount(self) -> None:
         """Validate all inputs on mount to show initial validation state."""
         for variablename, widget in self.widgets_map.items():
-            if isinstance(widget, Input) and widget.value:
-                # Trigger validation for inputs with default values
-                validation_result = widget.validate(widget.value)
-                if validation_result and validation_result.is_valid:
+            if isinstance(widget, Input):
+                if widget.validators and widget.value:
+                    # Validate inputs with validators and default values
+                    validation_result = widget.validate(widget.value)
+                    if validation_result and validation_result.is_valid:
+                        widget.add_class("-valid")
+                    elif validation_result and not validation_result.is_valid:
+                        widget.add_class("-invalid")
+                elif not widget.validators and widget.value:
+                    # Text inputs without validators are valid if they have a value
                     widget.add_class("-valid")
-                elif validation_result and not validation_result.is_valid:
-                    widget.add_class("-invalid")
 
     def _create_widget_for_question(self, question: QuestionBase) -> Any:
         """Create the appropriate widget for a question type."""
@@ -325,12 +329,22 @@ class QuestionScreen(Screen[dict[str, Any]]):
     @on(Input.Changed)
     def validate_input(self, event: Input.Changed) -> None:
         """Validate input fields in real-time and update styling."""
-        if event.validation_result and event.validation_result.is_valid:
-            event.input.remove_class("-invalid")
-            event.input.add_class("-valid")
+        # For inputs with validators, use the validation result
+        if event.input.validators:
+            if event.validation_result and event.validation_result.is_valid:
+                event.input.remove_class("-invalid")
+                event.input.add_class("-valid")
+            else:
+                event.input.remove_class("-valid")
+                event.input.add_class("-invalid")
         else:
-            event.input.remove_class("-valid")
-            event.input.add_class("-invalid")
+            # For inputs without validators (e.g., Text), mark as valid if they have a value
+            if event.input.value:
+                event.input.remove_class("-invalid")
+                event.input.add_class("-valid")
+            else:
+                event.input.remove_class("-valid")
+                event.input.remove_class("-invalid")
 
     @on(Button.Pressed, "#continue-button")
     def handle_continue(self) -> None:
