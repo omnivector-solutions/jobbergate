@@ -8,6 +8,7 @@ with real-time validation and visual feedback.
 from __future__ import annotations
 
 import pathlib
+import re
 from typing import Any
 
 from textual import on
@@ -30,6 +31,20 @@ from jobbergate_cli.subapps.applications.questions import (
     QuestionBase,
     Text,
 )
+
+
+def _sanitize_id(value: str) -> str:
+    """Sanitize a string to be a valid Textual widget ID.
+    
+    Widget IDs must contain only letters, numbers, underscores, or hyphens,
+    and must not begin with a number.
+    """
+    # Replace invalid characters with underscores
+    sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', value)
+    # Ensure it doesn't start with a number
+    if sanitized and sanitized[0].isdigit():
+        sanitized = '_' + sanitized
+    return sanitized
 
 
 class IntegerValidator(Validator):
@@ -308,7 +323,7 @@ class QuestionScreen(Screen[dict[str, Any]]):
                 checkbox = Checkbox(
                     str(choice),
                     value=question.default and choice in question.default if question.default else False,
-                    id=f"checkbox-{question.variablename}-{choice}",
+                    id=f"checkbox-{question.variablename}-{_sanitize_id(str(choice))}",
                 )
                 self.widgets_map[question.variablename].append((choice, checkbox))
                 container.compose_add_child(checkbox)
