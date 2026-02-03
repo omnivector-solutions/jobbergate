@@ -146,7 +146,12 @@ class TestTextualPrompt:
         result = prompt.run(questions)
 
         # Verify app was created with questions
-        mock_app_class.assert_called_once_with(questions, workflow_name="Application Questions")
+        mock_app_class.assert_called_once_with(
+            questions,
+            workflow_name="Application Questions",
+            app_identifier=None,
+            app_path=None,
+        )
 
         # Verify app.run was called
         mock_app.run.assert_called_once()

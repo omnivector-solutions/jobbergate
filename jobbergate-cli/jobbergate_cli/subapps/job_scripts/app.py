@@ -224,7 +224,7 @@ def create_locally(
     prompt_strategy = None
     if tui:
         from jobbergate_cli.subapps.applications.textual_prompt import TextualPrompt
-        prompt_strategy = TextualPrompt()
+        prompt_strategy = TextualPrompt(app_path=str(application_path.resolve()))
 
     render_job_script_locally(
         jg_ctx,
@@ -333,7 +333,13 @@ def create(
     prompt_strategy = None
     if tui:
         from jobbergate_cli.subapps.applications.textual_prompt import TextualPrompt
-        prompt_strategy = TextualPrompt()
+        # Determine app identifier from selector
+        app_identifier = None
+        if selector.id:
+            app_identifier = f"ID: {selector.id}"
+        elif selector.identifier:
+            app_identifier = selector.identifier
+        prompt_strategy = TextualPrompt(app_identifier=app_identifier)
 
     job_script_result = render_job_script(
         jg_ctx,
