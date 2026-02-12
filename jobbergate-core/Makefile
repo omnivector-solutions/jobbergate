@@ -5,23 +5,23 @@ PACKAGE_NAME:=jobbergate_core
 
 .PHONY: install
 install: ## Install the Python dependencies
-	poetry install
+	uv sync
 
 .PHONY: test
 test: install ## Run the suite of unit tests
-	poetry run pytest
+	uv run pytest
 
 .PHONY: lint
 lint: install
-	poetry run ruff check tests ${PACKAGE_NAME}
+	uv run ruff check tests ${PACKAGE_NAME}
 
 .PHONY: mypy
 mypy: install ## Run static typer checks
-	poetry run mypy ${PACKAGE_NAME} --pretty
+	uv run mypy ${PACKAGE_NAME} --pretty
 
 .PHONY: format
 format: install
-	poetry run ruff format tests ${PACKAGE_NAME}
+	uv run ruff format tests ${PACKAGE_NAME}
 
 .PHONY: qa
 qa: test mypy lint format

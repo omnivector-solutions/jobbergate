@@ -6,7 +6,7 @@ Jobbergate resources.
 
 Jobbergate API is a Python project implemented with
 [FastAPI](https://fastapi.tiangolo.com/). Its dependencies and environment are
-managed by [Poetry](https://python-poetry.org/).
+managed by [uv](https://docs.astral.sh/uv/).
 
 It integrates with an OIDC server to provide identity and auth for its endpoints.
 

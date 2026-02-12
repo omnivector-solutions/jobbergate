@@ -5,23 +5,23 @@ PACKAGE_NAME:=jobbergate_cli
 
 .PHONY: install
 install:
-	poetry install
+	uv sync
 
 .PHONY: test
 test: install
-	poetry run pytest
+	uv run pytest
 
 .PHONY: lint
 lint: install
-	poetry run ruff check tests ${PACKAGE_NAME}
+	uv run ruff check tests ${PACKAGE_NAME}
 
 .PHONY: mypy
 mypy: install
-	poetry run mypy ${PACKAGE_NAME} --pretty
+	uv run mypy ${PACKAGE_NAME} --pretty
 
 .PHONY: format
 format: install
-	poetry run ruff format tests ${PACKAGE_NAME}
+	uv run ruff format tests ${PACKAGE_NAME}
 
 .PHONY: qa
 qa: test lint mypy format

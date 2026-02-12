@@ -1,6 +1,6 @@
 name: jobbergate-agent
 base: core24
-version: '0.0.0'
+version: "0.0.0"
 summary: The Jobbergate Agent snap
 adopt-info: jobbergate-agent
 license: MIT
@@ -64,19 +64,19 @@ parts:
     source: .
     plugin: python
     python-packages:
-    - jobbergate-agent==5.9.0
+      - jobbergate-agent==0.0.0
     build-packages:
-    - python3
-    - gcc
-    - g++
-    - dpkg-dev
+      - python3
+      - gcc
+      - g++
+      - dpkg-dev
     stage-packages:
-    - python3.12-minimal
-    - python3.12-venv
-    - libpython3.12-minimal
-    - libpython3.12-stdlib
+      - python3.12-minimal
+      - python3.12-venv
+      - libpython3.12-minimal
+      - libpython3.12-stdlib
     build-attributes:
-    - enable-patchelf
+      - enable-patchelf
     override-stage: |
       craftctl default
       craftctl set version="$($SNAPCRAFT_PART_INSTALL/bin/python3 -m pip show jobbergate-agent | grep Version | awk '{print $2}')"

@@ -1,11 +1,12 @@
-[tool.poetry]
+[project]
 name = "jobbergate-core"
-version = "5.9.0"
 description = "Jobbergate Core"
-authors = ["Omnivector Solutions <info@omnivector.solutions>"]
-license = "MIT"
+authors = [
+    { name = "Omnivector Solutions", email = "info@omnivector.solutions" },
+]
+license = { text = "MIT" }
 readme = "README.md"
-repository = "https://github.com/omnivector-solutions/jobbergate"
+requires-python = ">=3.10"
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
@@ -13,39 +14,28 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Topic :: Scientific/Engineering",
 ]
+dependencies = [
+    "httpx>=0.28.1",
+    "loguru>=0.7.3",
+    "pendulum[test]>=3.1.0",
+    "py-buzz>=7.3.0",
+    "python-jose>=3.5.0",
+    "pydantic>=2.12.5",
+]
+dynamic = ["version"]
 
-[tool.poetry.urls]
+[project.urls]
+Repository = "https://github.com/omnivector-solutions/jobbergate"
 "Bug Tracker" = "https://github.com/omnivector-solutions/jobbergate/issues"
-"Changelog" = "https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-core/CHANGELOG.rst"
+Changelog = "https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-core/CHANGELOG.rst"
 
-[tool.poetry.dependencies]
-python = "^3.10"
-httpx = "^0.28.1"
-loguru = "^0.7.3"
-pendulum = { extras = ["test"], version = "^3.1.0" }
-py-buzz = "^7.3.0"
-python-jose = "^3.5.0"
-pydantic = "^2.12.5"
-
-[tool.poetry.dev-dependencies]
-mypy = "^1.19.1"
-polyfactory = "^2.22.5"
-pytest-cov = "^3.0.0"
-pytest-env = "^0.6.2"
-pytest-freezegun = "^0.4.2"
-pytest-mock = "^3.15.1"
-pytest-random-order = "^1.2.0"
-requests-mock = "^1.12.1"
-respx = "^0.22.0"
-setuptools = "^78.1.1"
-toml = "^0.10.2"
-ruff = "^0.4.10"
+[dependency-groups]
+dev = []
 
 [tool.ruff]
 line-length = 120
 
 [tool.pytest.ini_options]
-minversion = "6.0"
 addopts = [
     "--random-order",
     "--cov=jobbergate_core",
@@ -65,5 +55,16 @@ module = ["click", "dataclasses", "toml", "requests", "jose.*"]
 ignore_missing_imports = true
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = [
+    "hatchling>=1.28.0", # Build the package
+    "hatch-vcs",         # Recover the version from current git tag
+]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+fallback-version = "0.0.0"
+raw-options = { search_parent_directories = true, version_scheme = "no-guess-dev" }
+
+[tool.hatch.build.hooks.vcs]
+version-file = "jobbergate_core/_version.py"

@@ -1,11 +1,12 @@
-[tool.poetry]
+[project]
 name = "jobbergate-agent"
-version = "5.9.0"
 description = "Jobbergate Agent"
-authors = ["Omnivector Solutions <info@omnivector.solutions>"]
-license = "MIT"
+authors = [
+    { name = "Omnivector Solutions", email = "info@omnivector.solutions" },
+]
+license = { text = "MIT" }
 readme = "README.md"
-repository = "https://github.com/omnivector-solutions/jobbergate"
+requires-python = ">=3.10"
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
@@ -13,65 +14,48 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Topic :: Scientific/Engineering",
 ]
-packages = [{ include = "jobbergate_agent" }]
+dependencies = [
+    "jobbergate-core",
+    "apscheduler==3.10.3",
+    "python-dotenv>=1.2.1",
+    "sentry-sdk>=2.47.0",
+    "auto-name-enum>=3.0.0",
+    "pydantic-settings>=2.12.0",
+    "msgpack>=1.1.2",
+    "influxdb>=5.3.2",
+    "numba>=0.63.1",
+    "pluggy>=1.6.0",
+]
+dynamic = ["dependency-coversioning", "version"]
 
-[tool.poetry.urls]
-"Bug Tracker" = "https://github.com/omnivector-solutions/jobbergate/issues"
-"Changelog" = "https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-agent/CHANGELOG.rst"
-
-[tool.poetry.dependencies]
-python = "^3.10"
-jobbergate-core = { path = "../jobbergate-core", develop = true }
-apscheduler = "3.10.3"
-python-dotenv = "^1.2.1"
-sentry-sdk = "^2.47.0"
-auto-name-enum = "^3.0.0"
-pydantic-settings = "^2.12.0"
-msgpack = "^1.1.2"
-influxdb = "^5.3.2"
-numba = "^0.63.1"
-pluggy = "^1.6.0"
-
-[tool.stickywheel]
-# This will resolve the relative path to the jobbergate-core package at build time
-# and pin its version based on the version in the jobbergate-agent pyproject.toml file.
-# Since it is at build time, there is no need to install the pluging on dev machines,
-# the deployment workflow will take care of it.
-# Reference: https://github.com/python-poetry/poetry/issues/6850#issuecomment-1445477319
-strategy = "exact"
-
-[tool.poetry.scripts]
+[project.scripts]
 jg-run = "jobbergate_agent.main:main"
 
-[tool.poetry.plugins.'jobbergate_agent.tasks']
-active-jobs = 'jobbergate_agent.tasks:active_submissions_task'
-pending-jobs = 'jobbergate_agent.tasks:pending_submissions_task'
-report-status = 'jobbergate_agent.tasks:status_report_task'
-self-update = 'jobbergate_agent.tasks:self_update_task'
+[project.entry-points."jobbergate_agent.tasks"]
+active-jobs = "jobbergate_agent.tasks:active_submissions_task"
+pending-jobs = "jobbergate_agent.tasks:pending_submissions_task"
+report-status = "jobbergate_agent.tasks:status_report_task"
+self-update = "jobbergate_agent.tasks:self_update_task"
 
-[tool.poetry.plugins.'jobbergate_agent.user_mapper']
+[project.entry-points."jobbergate_agent.user_mapper"]
 single-user-mapper = "jobbergate_agent.utils.user_mapper:SingleUserMapper"
 
-[tool.poetry.dev-dependencies]
-asynctest = "^0.13.0"
-faker = "^25.9.2"
-freezegun = "^1.5.5"
-mypy = "^1.19.1"
-polyfactory = "^2.22.5"
-pytest-asyncio = "^0.18.3"
-pytest-cov = "^4.1.0"
-pytest-env = "^0.6.2"
-pytest-mock = "^3.15.1"
-pytest-random-order = "^1.2.0"
-requests-mock = "^1.12.1"
-respx = "^0.22.0"
-ruff = "^0.14.9"
+[project.urls]
+Repository = "https://github.com/omnivector-solutions/jobbergate"
+"Bug Tracker" = "https://github.com/omnivector-solutions/jobbergate/issues"
+Changelog = "https://github.com/omnivector-solutions/jobbergate/blob/main/jobbergate-agent/CHANGELOG.rst"
+
+[dependency-groups]
+dev = []
+
+[tool.uv.sources]
+jobbergate-core = { workspace = true }
+
 
 [tool.ruff]
 line-length = 120
 
 [tool.pytest.ini_options]
-minversion = "7.0"
 asyncio_mode = "auto"
 addopts = [
     "--random-order",
@@ -106,5 +90,20 @@ module = [
 ignore_missing_imports = true
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = [
+    "hatchling>=1.28.0",          # Build the package
+    "hatch-dependency-coversion", # pin jobbergate-core to the same version as the agent at build time
+    "hatch-vcs",                  # Recover the version from current git tag
+]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata.hooks.dependency-coversion]
+override-versions-of = ["jobbergate-core"]
+
+[tool.hatch.version]
+source = "vcs"
+fallback-version = "0.0.0"
+raw-options = { search_parent_directories = true, version_scheme = "no-guess-dev" }
+
+[tool.hatch.build.hooks.vcs]
+version-file = "jobbergate_agent/_version.py"

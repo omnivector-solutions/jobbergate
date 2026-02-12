@@ -1,6 +1,5 @@
-from pathlib import Path
-
-from pydantic import BaseSettings, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -8,8 +7,7 @@ class Settings(BaseSettings):
     FAKE_SBATCH_MAX_JOB_ID: int = 1_000_000
     FAKE_SBATCH_MIN_JOB_ID: int = 1
 
-    class Config:
-        env_file = Path(".env")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
 settings = Settings()

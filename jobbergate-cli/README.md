@@ -6,7 +6,7 @@ the Slurm cluster to which Jobbergate is connected.
 
 Jobbergate CLI is a Python project implemented with the
 [Typer](https://typer.tiangolo.com/) CLI builder library. Its dependencies and
-environment are managed by [Poetry](https://python-poetry.org/).
+environment are managed by [uv](https://docs.astral.sh/uv/).
 
 The CLI has a rich help system that can be accessed by passing the `--help` flag to
 the main command:

@@ -1,6 +1,6 @@
 #!/bin/bash
 
 set -e
-cd /app
-poetry run dev-tools db upgrade
-poetry run dev-tools dev-server --port=80
+cd /app/jobbergate-api
+uv run --package jobbergate-api dev-tools db upgrade
+uv run --package jobbergate-api dev-tools dev-server --port=80

@@ -67,8 +67,7 @@ then
 
     echo "---> Starting Jobbergate-agent ..."
     cd /app
-    poetry install
-    poetry run jg-run
+    uv run --python 3.12 --no-dev --package jobbergate-agent jg-run
 fi
 
 exec "$@"

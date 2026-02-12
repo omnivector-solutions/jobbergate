@@ -1,28 +1,60 @@
-[tool.poetry]
+[project]
 name = "jobbergate-documentation"
-version = "5.9.0"
 description = "Jobbergate Official Documentation"
-authors = ["Omnivector Solutions <info@omnivector.solutions>"]
-license = "MIT"
-repository = "https://github.com/omnivector-solutions/jobbergate"
-package-mode = false
+authors = [
+    { name = "Omnivector Solutions", email = "info@omnivector.solutions" },
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mkdocs-material>=9.4.2",
+    "mkdocstrings[python]>=0.23.0",
+    "pygments>=2.16.1",
+    "jobbergate-core",
+    "jobbergate-api",
+    "jobbergate-cli",
+    "jobbergate-agent",
+]
+dynamic = ["version"]
 
-[tool.poetry.dependencies]
-python = "^3.14"
-mkdocs-material = "^9.4.2"
-mkdocstrings = { extras = ["python"], version = "^0.23.0" }
-pygments = "^2.16.1"
-jobbergate-core = { path = "../jobbergate-core", develop = true }
-jobbergate-api = { path = "../jobbergate-api", develop = true }
-jobbergate-cli = { path = "../jobbergate-cli", develop = true }
-jobbergate-agent = { path = "../jobbergate-agent", develop = true }
+[project.urls]
+Repository = "https://github.com/omnivector-solutions/jobbergate"
 
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.14.9"
+[dependency-groups]
+dev = []
+
+[tool.uv.sources]
+jobbergate-core = { workspace = true }
+jobbergate-api = { workspace = true }
+jobbergate-cli = { workspace = true }
+jobbergate-agent = { workspace = true }
+
 
 [tool.ruff]
 line-length = 120
 
+
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = [
+    "hatchling>=1.28.0",          # Build the package
+    "hatch-dependency-coversion", # pin jobbergate-core to the same version as the cli at build time
+    "hatch-vcs",                  # Recover the version from current git tag
+]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata.hooks.dependency-coversion]
+override-versions-of = [
+    "jobbergate-agent",
+    "jobbergate-api",
+    "jobbergate-cli",
+    "jobbergate-core",
+]
+
+[tool.hatch.version]
+source = "vcs"
+fallback-version = "0.0.0"
+raw-options = { search_parent_directories = true, version_scheme = "no-guess-dev" }
+
+[tool.hatch.build.hooks.vcs]
+version-file = "docs/_version.py"

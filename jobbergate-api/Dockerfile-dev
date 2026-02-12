@@ -1,20 +1,15 @@
 FROM python:3.14-slim-bookworm
 
-RUN apt update && apt --no-install-recommends install -y curl build-essential gcc libpq-dev
+RUN apt update && apt --no-install-recommends install -y build-essential git gcc libpq-dev
 
-RUN curl -sS --proto "=https" https://install.python-poetry.org | \
-    POETRY_HOME=/opt/poetry POETRY_VERSION=1.5.1 python && \
-    cd /usr/local/bin && \
-    ln -s /opt/poetry/bin/poetry && \
-    poetry config virtualenvs.create false
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-COPY ./pyproject.toml ./poetry.lock* ./README* ./LICENSE* ./Makefile /app/
+COPY . /app
+
 WORKDIR /app
-RUN poetry install --no-root
 
-VOLUME /app/jobbergate_api
-VOLUME /app/dev_tools
-VOLUME /app/alembic
+# Install only jobbergate-api and its dependencies (including dev)
+RUN uv sync --package jobbergate-api
 
-ENTRYPOINT /app/dev_tools/entrypoint.sh
+ENTRYPOINT /app/jobbergate-api/dev_tools/entrypoint.sh
 #CMD ["uvicorn", "jobbergate_api.main:app", "--host", "0.0.0.0", "--port", "80"]

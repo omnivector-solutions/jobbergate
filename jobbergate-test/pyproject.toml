@@ -1,24 +1,42 @@
-[tool.poetry]
+[project]
 name = "jobbergate-test"
-version = "0.1.0"
 description = "Jobbergate CLI Client"
-authors = ["Omnivector Solutions <info@omnivector.solutions>"]
-license = "MIT"
-readme = "README.rst"
-repository = "https://github.com/omnivector-solutions/jobbergate"
-packages = [{ include = "jobbergate_test" }]
+authors = [
+    { name = "Omnivector Solutions", email = "info@omnivector.solutions" },
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["jobbergate-cli"]
+dynamic = ["version"]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-jobbergate-cli = { path = "../jobbergate-cli" }
-
-[tool.poetry.dev-dependencies]
-mypy = "^1.10"
-ruff = "^0.4.9"
-
-[tool.poetry.scripts]
+[project.scripts]
 test-jobbergate = "jobbergate_test.main:main"
 
+[project.urls]
+Repository = "https://github.com/omnivector-solutions/jobbergate"
+
+[dependency-groups]
+dev = []
+
+[tool.uv.sources]
+jobbergate-cli = { workspace = true }
+
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = [
+    "hatchling>=1.28.0",          # Build the package
+    "hatch-dependency-coversion", # pin jobbergate-cli to the same version as the test at build time
+    "hatch-vcs",                  # Recover the version from current git tag
+]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata.hooks.dependency-coversion]
+override-versions-of = ["jobbergate-cli"]
+
+[tool.hatch.version]
+source = "vcs"
+fallback-version = "0.0.0"
+raw-options = { search_parent_directories = true, version_scheme = "no-guess-dev" }
+
+[tool.hatch.build.hooks.vcs]
+version-file = "jobbergate_test/_version.py"
