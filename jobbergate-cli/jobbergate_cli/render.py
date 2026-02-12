@@ -10,7 +10,6 @@ from rich import print_json
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from rich.markdown import Markdown
 
 from jobbergate_cli.schemas import ContextProtocol, ListResponseEnvelope
 from jobbergate_cli.text_tools import dedent
@@ -263,34 +262,51 @@ def render_paginated_list_results(
     console.print(table)
 
 
-def render_demo(pre_amble: str | None = None):
+QUICK_START_GUIDE = dedent(
     """
-    Show the demo for the jobbergate-cli.
+
+    ## About
+
+    Jobbergate is a job templating and submission system that integrates with Slurm to enable the re-use and
+    on-site/remote submission of job scripts to a Slurm cluster. The main entities in Jobbergate are:
+
+    - **applications** - Adaptable blueprints with Jinja2 templates and custom Q&A
+        workflows that guide users to generate proper job scripts
+    - **job-scripts** - Job script files ready for cluster submission
+    - **job-submissions** - Track and manage jobs submitted to SLURM, monitoring their
+        status and execution
+
+    ## Useful Commands
+    
+    - **Login** to your Jobbergate account:
+
+       `jobbergate login`
+
+       Note: This is usually triggered automatically when your session expires or
+       is required by a command. The process involves opening a login URL in
+       your web browser (or copying it to your clipboard if no browser is found).
+
+    - **Find an application** template to use:
+
+       `jobbergate applications list --search <term>`
+
+    - **Create a job script** by answering application prompts:
+
+       `jobbergate job-scripts create <application_id or identifier>`
+
+    - **Monitor** your jobs on the cluster:
+
+       `jobbergate job-submissions list`
+    
+    - **View job details**:
+
+        `jobbergate job-submissions view <job_submission_id>`
+    
+    - **Cancel a job** that is running or pending:
+
+        `jobbergate job-submissions cancel <job_submission_id>`
+
+
+    For more information on any command, run it with the `--help` option.
     """
-    message = dedent(
-        """       
-        * To create a job-script and run it on the cluster, use the command:
-
-          ```jobbergate job-scripts create --application-identifier <value>```
-
-        * If you need to find your application identifier, run the command:
-
-           ```jobbergate applications list```
-
-           Or search for an application by name:
-
-           ```jobbergate applications list --search <search-term>```
-
-        * For more information on any command run it with the `--help` option.
-
-        * To check all the available commands, refer to:
-
-          ```jobbergate --help```
-        """
-    )
-    console = Console()
-    if pre_amble:
-        console.print(pre_amble)
-    console.print()
-    console.print(Panel(Markdown(message), title="Quick Start Guide for Jobbergate-CLI"))
-    console.print()
+).strip()

@@ -12,14 +12,14 @@ from jobbergate_cli.config import settings
 from jobbergate_cli.context import JobbergateContext
 from jobbergate_cli.exceptions import Abort, handle_abort, handle_authentication_error
 from jobbergate_cli.logging import init_logs, init_sentry
-from jobbergate_cli.render import render_demo, render_json, terminal_message
+from jobbergate_cli.render import QUICK_START_GUIDE, render_json, terminal_message
 from jobbergate_cli.schemas import ContextProtocol
 from jobbergate_cli.subapps.applications.app import app as applications_app
 from jobbergate_cli.subapps.job_scripts.app import app as job_scripts_app
 from jobbergate_cli.subapps.job_submissions.app import app as job_submissions_app
 from jobbergate_cli.text_tools import copy_to_clipboard
 
-app = typer.Typer()
+app = typer.Typer(rich_markup_mode="markdown", no_args_is_help=True)
 
 
 # If "compatibility" mode is set through the environment, map the commands at their familiar placement on the main app.
@@ -33,7 +33,10 @@ app.add_typer(job_scripts_app, name="job-scripts")
 app.add_typer(job_submissions_app, name="job-submissions")
 
 
-@app.callback(invoke_without_command=True)
+@app.callback(
+    invoke_without_command=True,
+    help=QUICK_START_GUIDE,
+)
 def main(
     ctx: typer.Context,
     verbose: bool = typer.Option(False, help="Enable verbose logging to the terminal"),
@@ -50,17 +53,8 @@ def main(
         help="Ignore extra arguments passed to the command for backward compatibility with the legacy app.",
     ),
 ):
-    """
-    Welcome to the Jobbergate CLI!
-
-    More information can be shown for each command listed below by running it with the --help option.
-    """
     if version:
         typer.echo(importlib_metadata.version("jobbergate-cli"))
-        raise typer.Exit()
-
-    if ctx.invoked_subcommand is None:
-        render_demo(pre_amble="No command provided.")
         raise typer.Exit()
 
     init_logs(verbose=verbose)
@@ -75,12 +69,20 @@ def main(
 @app.command(rich_help_panel="Authentication")
 def login(ctx: typer.Context):
     """
-    Log in to the jobbergate-cli by storing the supplied token argument in the cache.
+    Log in to Jobbergate.
+
+    This command is usually triggered automatically when required by other commands
+    or when your session expires.
+
+    The process involves:
+      1. Opening a unique login URL in your default web browser.
+      2. If a browser cannot be opened, the URL is automatically copied to your
+         clipboard for manual entry.
+      3. Validating your credentials and storing an authentication token locally.
     """
     ctx.obj.authentication_handler.login()
     identity_data = ctx.obj.authentication_handler.get_identity_data()
     terminal_message(f"User was logged in with email '{identity_data.email}'", subject="Logged in!")
-    render_demo()
 
 
 @app.command(rich_help_panel="Authentication")

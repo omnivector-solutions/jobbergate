@@ -58,7 +58,30 @@ style_mapper = StyleMapper(
 )
 
 
-app = typer.Typer(help="Commands to interact with applications")
+app = typer.Typer(
+    rich_markup_mode="markdown",
+    no_args_is_help=True,
+    help=dedent(
+        """Manage application templates (Job Script Templates)
+
+        Applications serve as adaptable blueprints for creating job scripts. They combine:
+        - Jinja2 templates with placeholders for SLURM directives and runtime values
+        - Python workflow scripts with custom Question/Answer logic to guide users
+        - Business logic for determining hardware specs, modules, and configurations
+
+        Application experts create these templates to encode best practices, allowing end users
+        to generate customized job scripts by simply answering prompts.
+
+        Workflow: applications → job-scripts → job-submissions
+
+        Quick reference:
+        - Use 'identifier' for frequently-accessed applications with friendly names
+        - Search by name: `jobbergate applications list --search <term>`
+        - Create a Job Script from an application: `jobbergate job-scripts create <application id or identifier>`
+        - For full guide: `jobbergate --help`
+        """
+    ),
+)
 
 
 @app.command("list")
@@ -119,7 +142,7 @@ def get_one(
     ),
 ):
     """
-    Get a single application by id or identifier
+    Show the detailed view of a single application by id or identifier
     """
     jg_ctx: ContextProtocol = ctx.obj
     result = fetch_application_data(
