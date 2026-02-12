@@ -4,7 +4,7 @@ Database model for the JobScript resource.
 
 from __future__ import annotations
 
-from sqlalchemy import Enum, ForeignKey, Integer
+from sqlalchemy import Enum, ForeignKey, Index, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
 from sqlalchemy.sql.expression import Select
 
@@ -32,6 +32,11 @@ class JobScript(CrudMixin, Base):
         Integer,
         ForeignKey("job_script_templates.id", ondelete="SET NULL"),
         nullable=True,
+        index=True,
+    )
+
+    __table_args__ = (
+        Index("idx_job_scripts_is_archived_updated_at", "is_archived", "updated_at"),
     )
 
     files: Mapped[list[JobScriptFile]] = relationship(

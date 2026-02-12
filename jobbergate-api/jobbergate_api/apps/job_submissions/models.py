@@ -55,10 +55,11 @@ class JobSubmission(CrudMixin, Base):
         Integer,
         ForeignKey("job_scripts.id", ondelete="SET NULL"),
         nullable=True,
+        index=True,
     )
     execution_directory: Mapped[str] = mapped_column(String, default=None, nullable=True)
 
-    slurm_job_id: Mapped[int] = mapped_column(Integer, default=None, nullable=True)
+    slurm_job_id: Mapped[int] = mapped_column(Integer, default=None, nullable=True, index=True)
     slurm_job_state: Mapped[SlurmJobState] = mapped_column(
         Enum(SlurmJobState, native_enum=False),
         nullable=True,
@@ -73,6 +74,10 @@ class JobSubmission(CrudMixin, Base):
     )
     report_message: Mapped[str] = mapped_column(String, nullable=True)
     sbatch_arguments: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=True)
+
+    __table_args__ = (
+        Index("idx_job_submissions_is_archived_updated_at", "is_archived", "updated_at"),
+    )
 
     job_script: Mapped[JobScript] = relationship(
         "JobScript",
@@ -182,6 +187,7 @@ class JobSubmissionMetric(CommonMixin, Base):
         Integer,
         ForeignKey("job_submissions.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
     )
     slurm_job_id: Mapped[int] = mapped_column(Integer, nullable=False)
     node_host: Mapped[str] = mapped_column(String, nullable=False, index=True)
@@ -234,6 +240,7 @@ class JobProgress(CommonMixin, Base):
         Integer,
         ForeignKey("job_submissions.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
     )
     timestamp: Mapped[PendulumDateTime] = mapped_column(
         DateTimeColumn(timezone=True), nullable=False, default=PendulumDateTime.utcnow
