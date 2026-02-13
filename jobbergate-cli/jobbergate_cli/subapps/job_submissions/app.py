@@ -39,12 +39,12 @@ app = typer.Typer(
     rich_markup_mode="markdown",
     no_args_is_help=True,
     help=dedent(
-        """Submit and track job submissions on SLURM clusters.
+        """Submit and track job submissions on Slurm clusters.
 
         Job submissions monitor the execution status and metadata of job scripts dispatched
-        to SLURM clusters. They link job scripts to actual SLURM jobs, tracking:
+        to Slurm clusters. They link job scripts to actual Slurm jobs, tracking:
         - Job status and state transitions (queued, running, completed, failed)
-        - SLURM job IDs and job details
+        - Slurm job IDs and job details
 
         Submissions can be made remotely or on-site (directly on the cluster).
         You can monitor progress, cancel running jobs, or clone submissions for re-execution.

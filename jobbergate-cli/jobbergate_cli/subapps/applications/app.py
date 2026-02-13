@@ -65,7 +65,7 @@ app = typer.Typer(
         """Manage application templates (Job Script Templates)
 
         Applications serve as adaptable blueprints for creating job scripts. They combine:
-        - Jinja2 templates with placeholders for SLURM directives and runtime values
+        - Jinja2 templates with placeholders for Slurm directives and runtime values
         - Python workflow scripts with custom Question/Answer logic to guide users
         - Business logic for determining hardware specs, modules, and configurations
 

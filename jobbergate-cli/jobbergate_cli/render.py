@@ -273,7 +273,7 @@ QUICK_START_GUIDE = dedent(
     - **applications** - Adaptable blueprints with Jinja2 templates and custom Q&A
         workflows that guide users to generate proper job scripts
     - **job-scripts** - Job script files ready for cluster submission
-    - **job-submissions** - Track and manage jobs submitted to SLURM, monitoring their
+    - **job-submissions** - Track and manage jobs submitted to Slurm, monitoring their
         status and execution
 
     ## Useful Commands

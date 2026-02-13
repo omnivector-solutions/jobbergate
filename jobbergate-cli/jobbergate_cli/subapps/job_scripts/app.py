@@ -52,9 +52,9 @@ app = typer.Typer(
     help=dedent(
         """Create and manage job scripts.
 
-        Job scripts contain the instructions for jobs to execute on a SLURM cluster (Python
+        Job scripts contain the instructions for jobs to execute on a Slurm cluster (Python
         files or shell scripts). Once created, job scripts can be submitted to
-        affiliated SLURM clusters and monitored through job submissions.
+        affiliated Slurm clusters and monitored through job submissions.
 
         Workflow: applications → job-scripts → job-submissions
 

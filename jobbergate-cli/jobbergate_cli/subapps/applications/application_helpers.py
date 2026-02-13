@@ -12,7 +12,7 @@ from pathlib import Path
 
 def get_running_jobs(user_only=True):
     """
-    Return a list of the user's currently running jobs, as given by SLURM's squeue command.
+    Return a list of the user's currently running jobs, as given by Slurm's squeue command.
 
     The format returned is: [job ID, 8 chars] [job name]
     """
@@ -25,7 +25,7 @@ def get_running_jobs(user_only=True):
         output_lines = cmd_results.stdout.decode("utf-8").split("\n")[:-1]
         ID_alternatives = [ln.replace('"', "").strip() for ln in output_lines]
     except Exception:
-        print("Could not retrieve queue information from SLURM.")
+        print("Could not retrieve queue information from Slurm.")
         return []
     return ID_alternatives
 
