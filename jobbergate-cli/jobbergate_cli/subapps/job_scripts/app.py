@@ -46,7 +46,28 @@ style_mapper = StyleMapper(
 )
 
 
-app = typer.Typer(help="Commands to interact with job scripts")
+app = typer.Typer(
+    rich_markup_mode="markdown",
+    no_args_is_help=True,
+    help=dedent(
+        """Create and manage job scripts.
+
+        Job scripts contain the instructions for jobs to execute on a Slurm cluster (Python
+        files or shell scripts). Once created, job scripts can be submitted to
+        affiliated Slurm clusters and monitored through job submissions.
+
+        Workflow: applications → job-scripts → job-submissions
+
+        Quick reference:
+        - List your job scripts: `jobbergate job-scripts list`
+        - Create one from application: `jobbergate job-scripts create <application id or identifier>`
+
+            **Note:** you are questioned to submit the job immediately after creation. This behavior can also be controlled
+            by command line arguments
+        - For full guide: jobbergate --help
+        """
+    ),
+)
 
 
 @app.command("list")
@@ -96,7 +117,7 @@ def get_one(
     id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id."),
 ):
     """
-    Get a single job script by id.
+    Show a detailed view of a single job script by id.
     """
     jg_ctx: ContextProtocol = ctx.obj
     id = resolve_selection(id, id_option)

@@ -35,7 +35,29 @@ HIDDEN_FIELDS = [
 style_mapper = StyleMapper(job_submission_id="green", name="cyan", slurm_job_id="dark_orange")
 
 
-app = typer.Typer(help="Commands to interact with job submissions")
+app = typer.Typer(
+    rich_markup_mode="markdown",
+    no_args_is_help=True,
+    help=dedent(
+        """Submit and track job submissions on Slurm clusters.
+
+        Job submissions monitor the execution status and metadata of job scripts dispatched
+        to Slurm clusters. They link job scripts to actual Slurm jobs, tracking:
+        - Job status and state transitions (queued, running, completed, failed)
+        - Slurm job IDs and job details
+
+        Submissions can be made remotely or on-site (directly on the cluster).
+        You can monitor progress, cancel running jobs, or clone submissions for re-execution.
+
+        Workflow: applications → job-scripts → job-submissions
+
+        Quick reference:
+        - Create submission from application on submit mode: `jobbergate job-scripts create <application id or identifier> --submit`
+        - Create from existing job script: `jobbergate job-submissions create <job_script_id>`
+        - For full guide: `jobbergate --help`
+        """
+    ),
+)
 
 
 @app.command()
@@ -183,7 +205,7 @@ def get_one(
     id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id"),
 ):
     """
-    Get a single job submission by id
+    Show the detailed view of a single job submission by id
     """
     jg_ctx: ContextProtocol = ctx.obj
     id = resolve_selection(id, id_option)
