@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from sqlalchemy import Enum, ForeignKey, Integer, String, text
+from sqlalchemy import Enum, ForeignKey, Index, Integer, String, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
 from sqlalchemy.sql.expression import Select
@@ -36,6 +36,10 @@ class JobScriptTemplate(CrudMixin, Base):
         nullable=False,
         default=text("'{}'::jsonb"),
         server_default=text("'{}'::jsonb"),
+    )
+
+    __table_args__ = (
+        Index("idx_job_script_templates_is_archived_updated_at", "is_archived", "updated_at"),
     )
 
     template_files: Mapped[list["JobScriptTemplateFile"]] = relationship(
