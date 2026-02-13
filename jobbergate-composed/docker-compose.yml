@@ -63,10 +63,7 @@ services:
       - RABBITMQ_USERNAME=local-user
       - RABBITMQ_PASSWORD=local-pswd
     volumes:
-      - ../jobbergate-api/jobbergate_api/:/app/jobbergate-api/jobbergate_api/
-      - ../jobbergate-api/dev_tools/:/app/jobbergate-api/dev_tools/
-      - ../jobbergate-api/tests/:/app/jobbergate-api/tests/
-      - ../jobbergate-core/jobbergate_core/:/app/jobbergate-core/jobbergate_core/
+      - ../jobbergate-api/:/app/jobbergate-api/
     entrypoint: ""
     command: bash -c "cd /app/jobbergate-api && make qa"
     depends_on:
