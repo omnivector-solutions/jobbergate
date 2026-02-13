@@ -1235,13 +1235,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#jobbergate_cli.main.main" class="md-nav__link">
-    main()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#jobbergate_cli.main.safe_entrypoint" class="md-nav__link">
     safe_entrypoint()
   </a>
@@ -1292,13 +1285,6 @@
         
       </ul>
     </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_cli.render.render_demo" class="md-nav__link">
-    render_demo()
-  </a>
   
 </li>
         
@@ -2174,13 +2160,6 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#jobbergate_cli.main.main" class="md-nav__link">
-    main()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#jobbergate_cli.main.safe_entrypoint" class="md-nav__link">
     safe_entrypoint()
   </a>
@@ -2231,13 +2210,6 @@
         
       </ul>
     </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jobbergate_cli.render.render_demo" class="md-nav__link">
-    render_demo()
-  </a>
   
 </li>
         
@@ -3782,8 +3754,19 @@ Logs will be retained for 1 week.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Log in to the jobbergate-cli by storing the supplied token argument in the cache.</p>
+      <p>Log in to Jobbergate.</p>
+<p>This command is usually triggered automatically when required by other commands
+or when your session expires.</p>
 
+<details class="the-process-involves" open>
+  <summary>The process involves</summary>
+  <ol>
+<li>Opening a unique login URL in your default web browser.</li>
+<li>If a browser cannot be opened, the URL is automatically copied to your
+   clipboard for manual entry.</li>
+<li>Validating your credentials and storing an authentication token locally.</li>
+</ol>
+</details>
   </div>
 
 </div>
@@ -3805,29 +3788,6 @@ Logs will be retained for 1 week.</p>
   <div class="doc doc-contents ">
   
       <p>Logs out of the jobbergate-cli. Clears the saved user credentials.</p>
-
-  </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h5 id="jobbergate_cli.main.main" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">main</span>
-
-
-</h5>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">main</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">typer</span><span class="o">.</span><span class="n">Context</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Enable verbose logging to the terminal&#39;</span><span class="p">),</span> <span class="n">full</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Print all fields from CRUD commands&#39;</span><span class="p">),</span> <span class="n">raw</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Print output from CRUD commands as raw json&#39;</span><span class="p">),</span> <span class="n">version</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Print the version of jobbergate-cli and exit&#39;</span><span class="p">),</span> <span class="n">ignore_extra_args</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">typer</span><span class="o">.</span><span class="n">Option</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;--username&#39;</span><span class="p">,</span> <span class="s1">&#39;-u&#39;</span><span class="p">,</span> <span class="s1">&#39;--password&#39;</span><span class="p">,</span> <span class="s1">&#39;-p&#39;</span><span class="p">,</span> <span class="n">hidden</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Ignore extra arguments passed to the command for backward compatibility with the legacy app.&#39;</span><span class="p">))</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Welcome to the Jobbergate CLI!</p>
-<p>More information can be shown for each command listed below by running it with the --help option.</p>
 
   </div>
 
@@ -4016,28 +3976,6 @@ to the columns of the table.</p>
 
 </div>
 
-
-
-<div class="doc doc-object doc-function">
-
-
-
-
-<h5 id="jobbergate_cli.render.render_demo" class="doc doc-heading">
-          <span class="doc doc-object-name doc-function-name">render_demo</span>
-
-
-</h5>
-<div class="doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">render_demo</span><span class="p">(</span><span class="n">pre_amble</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
-</span></code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Show the demo for the jobbergate-cli.</p>
-
-  </div>
-
-</div>
 
 
 <div class="doc doc-object doc-function">
@@ -5856,7 +5794,7 @@ This is a convenience to combine all of the identifying data and credentials for
 
   <div class="doc doc-contents ">
   
-      <p>Get a single application by id or identifier</p>
+      <p>Show the detailed view of a single application by id or identifier</p>
 
   </div>
 
@@ -6148,7 +6086,7 @@ This is a convenience to combine all of the identifying data and credentials for
 
   <div class="doc doc-contents ">
   
-      <p>Return a list of the user's currently running jobs, as given by SLURM's squeue command.</p>
+      <p>Return a list of the user's currently running jobs, as given by Slurm's squeue command.</p>
 <p>The format returned is: [job ID, 8 chars] [job name]</p>
 
   </div>
@@ -8640,7 +8578,7 @@ multi-part file uploads with the client.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Get a single job script by id.</p>
+      <p>Show a detailed view of a single job script by id.</p>
 
   </div>
 
@@ -9806,7 +9744,7 @@ Otherwise, the question will be prompted to the user.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Get a single job submission by id</p>
+      <p>Show the detailed view of a single job submission by id</p>
 
   </div>
 
