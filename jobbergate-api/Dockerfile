@@ -9,7 +9,8 @@ RUN apt update && apt --no-install-recommends install -y build-essential gcc git
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Copy workspace configuration from root
-COPY . .
+COPY .git uv.lock pyproject.toml ./
+COPY jobbergate-api ./jobbergate-api
 
 # Install only jobbergate-api and its dependencies
 RUN uv sync --frozen --no-editable --no-python-downloads --package jobbergate-api --group dev
