@@ -18,6 +18,7 @@ from jobbergate_cli.subapps.applications.app import app as applications_app
 from jobbergate_cli.subapps.job_scripts.app import app as job_scripts_app
 from jobbergate_cli.subapps.job_submissions.app import app as job_submissions_app
 from jobbergate_cli.text_tools import copy_to_clipboard
+from jobbergate_cli.tui import JobbergateTUI
 
 app = typer.Typer(rich_markup_mode="markdown", no_args_is_help=True)
 
@@ -157,6 +158,17 @@ def show_token(
             kwargs["footer"] = "The output was copied to your clipboard"
 
         terminal_message(token_text, **kwargs)
+
+
+@app.command()
+def tui(ctx: typer.Context):
+    """
+    Launch the Jobbergate Terminal User Interface (TUI).
+
+    Interactive interface for managing job templates, job scripts, and job submissions.
+    """
+    tui_app = JobbergateTUI(sdk=ctx.obj.sdk)
+    tui_app.run()
 
 
 def safe_entrypoint():
