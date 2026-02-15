@@ -7,6 +7,10 @@ PACKAGE_NAME:=jobbergate_agent
 install: ## Install the Python dependencies
 	uv sync
 
+.PHONY: build
+build: ## Build the Docker image
+	cd .. && docker build -f jobbergate-agent/Dockerfile -t jobbergate-agent .
+
 .PHONY: test
 test: install ## Run the suite of unit tests
 	uv run pytest
