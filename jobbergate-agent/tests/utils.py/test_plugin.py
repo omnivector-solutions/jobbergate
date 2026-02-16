@@ -6,6 +6,7 @@ from jobbergate_agent.tasks import (
     self_update_task,
     status_report_task,
 )
+from jobbergate_agent.user_mapper.ldap import user_mapper_factory
 from jobbergate_agent.utils.plugin import load_plugins
 from jobbergate_agent.user_mapper.single_user import SingleUserMapper
 
@@ -25,7 +26,7 @@ def test_discover_tasks__success():
 
 def test_discover_user_mappers__success():
     """Test that discover_user_mappers returns the expected result."""
-    expected_result = {"single-user-mapper": SingleUserMapper}
+    expected_result = {"single-user-mapper": SingleUserMapper, "ldap-user-mapper": user_mapper_factory}
     actual_result = load_plugins("user_mapper")
 
     assert actual_result == expected_result
