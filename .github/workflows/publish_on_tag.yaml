@@ -2,7 +2,6 @@ name: Publish on Tag
 
 # This action:
 #   - Is triggered when a new version is tagged;
-#   - Check if the version for each sub-project matches the tag;
 #   - Build and release the packages to PyPI.
 #   - Build the agent snap and upload to the snap store.
 #   - Build the Jobbergate API Docker image and push to ECR.
@@ -35,9 +34,6 @@ jobs:
             ],
         }
       fail-fast: false
-    outputs:
-      agent-pypi-version: ${{ steps.extract-metadata.outputs.version }}
-      agent-pypi-package-name: ${{ steps.extract-metadata.outputs.name }}
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
 
@@ -45,42 +41,15 @@ jobs:
         with:
           python-version: "3.14"
 
-      - uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
-        with:
-          poetry-version: 1.5.1
-
-      - id: poetry-package-version
-        name: Get project's version
-        working-directory: ${{ matrix.sub_project }}
-        run: |
-          echo "Poetry version is: $(poetry version --short)"
-          echo "::set-output name=version::$(poetry version --short)"
-
-      - name: Fail if package version doesn't match the tag
-        if: ${{ github.ref_name != steps.poetry-package-version.outputs.version }}
-        run: |
-          echo "Poetry package version doesn't match tag!"
-          echo "tag=${{ github.ref_name }}, version=${{ steps.poetry-package-version.outputs.version }}"
-          exit 1
+      - uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
 
       - name: Build and publish on PyPI
         working-directory: ${{ matrix.sub_project }}
         env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.OMNIVECTOR_PYPI_TOKEN }}
+          UV_PUBLISH_TOKEN: ${{ secrets.OMNIVECTOR_PYPI_TOKEN }}
         run: |
-          poetry self add poetry-stickywheel-plugin
-          poetry build
-          poetry publish
-
-      - name: Output metadata
-        working-directory: ${{ matrix.sub_project }}
-        if: matrix.sub_project == 'jobbergate-agent'
-        id: extract-metadata
-        run: |
-          VERSION=$(find ./dist -name '*.tar.gz' | sed 's/.\/dist\/jobbergate_agent-\(.*\)\.tar\.gz/\1/')
-          NAME=$(poetry --no-interaction version | awk '{print $1}')
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          uv build
+          uv publish
 
   publish-to-ecr:
     name: Publish API to ECR
@@ -94,29 +63,6 @@ jobs:
           exit 1
 
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
-
-      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
-        with:
-          python-version: "3.14"
-
-      - uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
-        with:
-          poetry-version: 1.5.1
-
-      - id: poetry-package-version
-        name: Get version of project from poetry
-        working-directory: jobbergate-api
-        run: |
-          VERSION=$(poetry version --short)
-          echo "Sub project version is: $VERSION"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Fail if poetry package version doesn't match tag
-        if: ${{ github.ref_name != steps.poetry-package-version.outputs.version }}
-        run: |
-          echo "Poetry package version doesn't match tag!"
-          echo "tag=${{ github.ref_name }}, version=${{ steps.poetry-package-version.outputs.version }}"
-          exit 1
 
       - name: Setup AWS credentials
         uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1.7.0
@@ -135,7 +81,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           IMAGE_TAG=${{ github.ref_name }}
-          docker build -t $ECR_REGISTRY/${{ vars.ECR_REPOSITORY }}:$IMAGE_TAG jobbergate-api
+          docker build -t $ECR_REGISTRY/${{ vars.ECR_REPOSITORY }}:$IMAGE_TAG -f jobbergate-api/Dockerfile .
           docker push $ECR_REGISTRY/${{ vars.ECR_REPOSITORY }}:$IMAGE_TAG
 
   snapstore:
@@ -149,6 +95,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
+
       - name: Install Snapcraft
         uses: samuelmeuli/action-snapcraft@d33c176a9b784876d966f80fb1b461808edc0641 # v2.1.1
 
@@ -157,18 +106,17 @@ jobs:
 
       - name: Wait latest version on PyPI
         env:
-          DESIRED_VERSION: ${{ needs.build-publish.outputs.agent-pypi-version }}
-          PACKAGE_NAME: ${{ needs.build-publish.outputs.agent-pypi-package-name }}
+          PACKAGE_NAME: "jobbergate-agent"
         timeout-minutes: 1
         run: |
           while true; do
-            echo "Checking for version $DESIRED_VERSION of $PACKAGE_NAME"
-            curl -s https://pypi.org/pypi/$PACKAGE_NAME/json | jq -r '.releases | keys[]' | grep -q $DESIRED_VERSION
+            echo "Checking for version $GITHUB_REF_NAME of $PACKAGE_NAME"
+            curl -s https://pypi.org/pypi/$PACKAGE_NAME/json | jq -r '.releases | keys[]' | grep -q $GITHUB_REF_NAME
             if [ $? -eq 0 ]; then
-              echo "Version $DESIRED_VERSION is available"
+              echo "Version $GITHUB_REF_NAME is available"
               break
             else
-              echo "Version $DESIRED_VERSION is not available yet"
+              echo "Version $GITHUB_REF_NAME is not available yet"
               sleep 2
             fi
           done

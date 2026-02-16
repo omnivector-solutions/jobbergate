@@ -31,7 +31,7 @@ are detailed below.
 ### Prepare for release
 
 The first action involved in publication is the
-[prepare_release.yaml](https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/prepare_release.yaml))
+[prepare_release.yaml](https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/prepare_release.yaml)
 action. It is triggered manually on github through a "workflow dispatch event" whenever
 new features or fixes need to be published.
 
@@ -41,19 +41,14 @@ The action takes two arguments that must be supplied by the user. They are:
    The branch from which the release will be created. The default is `main`, and it's
    highly recommended that releases are cut from this branch in order to keep a linear
    commit history between releases and pre-releases.
-- **Release Type:**
-   This will describe the release type that will be created. Because Jobbergate uses
-   semantic versioning, it's important to carefully select the correct type of release.
-   For mor information on release types, please see the
-   [Poetry documentation](https://python-poetry.org/docs/cli/#version) to learn more.
+- **Release Number:**
+   This specifies the type of release that will be created, for instance, `1.2.3`, or `1.2.3a1`, `1.2.3b1`, `1.2.3rc1`, etc.
+   Since Jobbergate uses semantic versioning, it's important to carefully select the
+   correct type of release.
 
 Once activated, this action:
 
-- Uses Poetry to bump the version number of all the Jobbergate sub-packages according to
-   the release type selected.
-- Checks if the new version number is synchronized between the sub-packages, and fails if they are not.
-- Creates a new dated entry for the new release on each of the sub-packages' changelog
-   files from the contents of the "Unreleased" section.
+- Creates a new dated entry on the changelog file using `towncrier`.
 - Creates a new branch named `prepare-release/<version>`.
 - Opens a draft pull request titled `Release <version>`.
 

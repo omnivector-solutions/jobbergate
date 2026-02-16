@@ -8,7 +8,7 @@ To install the package from Pypi simply run `pip install jobbergate-agent`.
 
 1. Setup dependencies
 
-    Dependencies and environment are managed in the project by [Poetry](https://python-poetry.org/). To initiate the development environment run:
+    Dependencies and environment are managed in the project by [uv](https://docs.astral.sh/uv/). To initiate the development environment run:
 
     ```bash
     make install

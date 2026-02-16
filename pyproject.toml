@@ -1,0 +1,27 @@
+[tool.uv.workspace]
+members = [
+    "jobbergate-core",
+    "jobbergate-cli",
+    "jobbergate-agent",
+    "jobbergate-api",
+    "jobbergate-docs",
+    "jobbergate-test",
+    "fake-sbatch",
+]
+
+[dependency-groups]
+dev = [
+    "faker>=25.9.2",
+    "mypy>=1.19.1",
+    "polyfactory>=2.22.5",
+    "pytest-asyncio>=0.21.2,<1",
+    "pytest-cov>=4.1.0",
+    "pytest-env>=1.1.3",
+    "pytest-mock>=3.15.1",
+    "pytest-random-order>=1.2.0",
+    "pytest>=8.4.1,<9",
+    "requests-mock>=1.12.1",
+    "respx>=0.22.0",
+    "ruff>=0.14.9",
+    "towncrier>=24.11.0",
+]

@@ -1,39 +1,41 @@
-[tool.poetry]
+[project]
 name = "fake-sbatch"
-version = "0.1.0"
 description = "An executable that pretends to be sbatch for testing purposes."
-authors = ["Omnivector Solutions <info@omnivector.solutions>"]
-license = "MIT"
+authors = [
+    { name = "Omnivector Solutions", email = "info@omnivector.solutions" },
+]
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic-settings>=2.12.0",
+    "python-dotenv>=1.2.1",
+    "typer>=0.20.0",
+]
+dynamic = ["version"]
 
-[tool.poetry.dependencies]
-python = "^3.8"
-pydantic = {extras = ["dotenv"], version = "^1.10.13"}
-typer = "^0.4.0"
-
-[tool.poetry.dev-dependencies]
-black = "^24.3.0"
-isort = "^5.10.1"
-pyproject-flake8 = "^0.0.1-alpha.2"
-pytest-mock = "^3.7.0"
-pytest = "^7.0.1"
-
-[tool.poetry.scripts]
+[project.scripts]
 fake-sbatch = "fake_sbatch.main:app"
 
-[tool.black]
+[dependency-groups]
+dev = ["pytest-mock>=3.7.0"]
+
+[tool.ruff]
 line-length = 120
 
-[tool.isort]
-line_length = 120
-lines_after_imports = "2"
-profile = "black"
-multi_line_output = 3
-include_trailing_comma = true
-
-[tool.flake8]
-max-line-length = 120
-max-complexity = 40
+[tool.mypy]
+plugins = "pydantic.mypy"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = [
+    "hatchling>=1.28.0", # Build the package
+    "hatch-vcs",         # Recover the version from current git tag
+]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+fallback-version = "0.0.0"
+raw-options = { search_parent_directories = true, version_scheme = "no-guess-dev" }
+
+[tool.hatch.build.hooks.vcs]
+version-file = "fake_sbatch/_version.py"

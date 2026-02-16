@@ -4,9 +4,9 @@ The Jobbergate API sub-project is equipped with a few tools designed to assist w
 some everyday development tasks. These can help streamline the process of setting up and
 interacting with the API.
 
-The dev-tools are shipped as a CLI program that can be invoked via Poetry within the
+The dev-tools are shipped as a CLI program that can be invoked via `uv` within the
 project. All of the commands will operate within the virtual environment set up by
-Poetry.
+`uv`.
 
 ## Invoking `dev-tools`
 
@@ -14,7 +14,7 @@ To invoke the dev tools, you must execute the commands from the home directory f
 `jobbergate-api`. To see some information about the `dev-tools`, execute:
 
 ```console
-poetry run dev-tools --help
+uv run dev-tools --help
 ```
 
 This will provide some help output that shows what options and sub-commands are
@@ -46,7 +46,7 @@ API's PostgreSQL database. These tools are found in the `db` subcommand. To see 
 info about this sub-command, run:
 
 ```shell
-poetry run dev-tools db --help
+uv run dev-tools db --help
 ```
 
 ### The `login` subcommand
@@ -59,7 +59,7 @@ seamless access to any database that the Jobbergate API is configured to connect
 To log in to the database, execute this command:
 
 ```shell
-poetry run dev-tools db login
+uv run dev-tools db login
 ```
 
 The command will show some debug output including the URL of the database to which it is
@@ -83,7 +83,7 @@ API source code.
 To invoke the migration script generation, execute:
 
 ```shell
-poetry run dev-tools db migrate --message="An example migration"
+uv run dev-tools db migrate --message="An example migration"
 ```
 
 Some logging info will be produced, including the location of the new migration script:
@@ -115,7 +115,7 @@ write an Alembic script by hand. Just pass the `--blank` parameter on the comman
 line:
 
 ```shell
-poetry run dev-tools db migrate --blank --message="A blank migration"
+uv run dev-tools db migrate --blank --message="A blank migration"
 ```
 
 ### The `upgrade` subcommand
@@ -129,7 +129,7 @@ database.
 To apply the migrations, execute the command:
 
 ```shell
-poetry run dev-tools db upgrade
+uv run dev-tools db upgrade
 ```
 
 It will produce some logging output that shows what migrations were applied:
@@ -150,7 +150,7 @@ This command will show how the Jobbergate API is configured through its environm
 settings. To see the environment, execute this command:
 
 ```shell
-poetry run dev-tools show-env
+uv run dev-tools show-env
 ```
 
 The output that the command produces will look something like:
@@ -188,7 +188,7 @@ Jobbergate settings:
 The command can also produce the output as JSON if needed by passing the `--json` flag:
 
 ```shell
-poetry run dev-tools show-env --json
+uv run dev-tools show-env --json
 ```
 
 The JSON output will look something like:
@@ -206,7 +206,7 @@ you want to run the API locally but connect to remote services such as a databas
 To start the server, run:
 
 ```shell
-poetry run dev-tools dev-server
+uv run dev-tools dev-server
 ```
 
 The command will produce some logging output that looks like this:
@@ -230,7 +230,7 @@ There are additional options that can control some of the details of the setting
 dev server. These can be examined with the `--help` flag:
 
 ```shell
-poetry run dev-tools dev-server --help
+uv run dev-tools dev-server --help
 ```
 
 The dev server options will be printed like:

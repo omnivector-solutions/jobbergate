@@ -5,30 +5,27 @@ PACKAGE_NAME:=fake_sbatch
 
 .PHONY: install
 install:
-	poetry install
+	uv sync
 
 .PHONY: test
 test: install
-	poetry run pytest
+	uv run pytest
 
 .PHONY: lint
 lint: install
-	poetry run black --check ${PACKAGE_NAME} tests
-	poetry run isort --check ${PACKAGE_NAME} tests
-	poetry run pflake8 ${PACKAGE_NAME} tests
+	uv run ruff check tests ${PACKAGE_NAME}
 
 .PHONY: mypy
 mypy: install
-	poetry run mypy ${PACKAGE_NAME} --pretty
-
-.PHONY: qa
-qa: test lint mypy
-	echo "All quality checks pass!"
+	uv run mypy ${PACKAGE_NAME} --pretty
 
 .PHONY: format
 format: install
-	poetry run black ${PACKAGE_NAME} tests
-	poetry run isort ${PACKAGE_NAME} tests
+	uv run ruff format tests ${PACKAGE_NAME}
+
+.PHONY: qa
+qa: test lint mypy format
+	echo "All quality checks pass!"
 
 .PHONY: clean
 clean:

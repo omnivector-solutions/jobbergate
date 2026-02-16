@@ -2,27 +2,16 @@ name: Prepare for release
 
 # This action:
 #   - Is triggered manually in a workflow dispatch;
-#   - Inquire the kind of release in a dropdown menu;
-#   - Use Poetry to bump up the versions;
 #   - Create a new header for the new version at the changelogs;
-#   - Check if all sub-projects share the same version number;
 #   - Create a new branch named prepare-release/<new_version>;
 #   - Open a draft PR to the main branch, so all the changes above can be reviewed by the team before merging.
 
 on:
   workflow_dispatch:
     inputs:
-      bump_rule:
-        type: choice
-        description: Release Type
-        options:
-          - patch
-          - minor
-          - major
-          - prepatch
-          - preminor
-          - premajor
-          - prerelease
+      release_number:
+        type: string
+        description: Release number
 
 permissions:
   contents: write
@@ -31,79 +20,30 @@ permissions:
 jobs:
   bump-version:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_NUMBER: ${{ github.event.inputs.release_number }}
     steps:
+      - name: Check if release number is provided
+        run: |
+          if [ -z "$RELEASE_NUMBER" ]; then
+            echo "Release number is required. Please provide it in the workflow dispatch inputs."
+            exit 1
+          fi
+
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
-
-      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
-        with:
-          python-version: "3.14"
-
-      - uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
-        with:
-          poetry-version: 2.1.1
-
-      - id: api-package
-        name: Bump version on the API
-        working-directory: jobbergate-api
-        run: |
-          poetry version ${{ github.event.inputs.bump_rule }}
-          echo "Poetry version is: $(poetry version --short)"
-          echo "::set-output name=version::$(poetry version --short)"
-
-      - id: cli-package
-        name: Bump version on the CLI
-        working-directory: jobbergate-cli
-        run: |
-          poetry version ${{ github.event.inputs.bump_rule }}
-          echo "Poetry version is: $(poetry version --short)"
-          echo "::set-output name=version::$(poetry version --short)"
-
-      - id: core-package
-        name: Bump version on the Core
-        working-directory: jobbergate-core
-        run: |
-          poetry version ${{ github.event.inputs.bump_rule }}
-          echo "Poetry version is: $(poetry version --short)"
-          echo "::set-output name=version::$(poetry version --short)"
-
-      - id: agent-package
-        name: Bump version on the Agent
-        working-directory: jobbergate-agent
-        run: |
-          poetry version ${{ github.event.inputs.bump_rule }}
-          echo "Poetry version is: $(poetry version --short)"
-          echo "::set-output name=version::$(poetry version --short)"
-
-      - id: agent-snap
-        name: Sync version on Agent Snap
-        working-directory: jobbergate-agent-snap
-        run: make sync-version
-
-      - id: docs
-        name: Bump version on the Documentation
-        working-directory: jobbergate-docs
-        run: |
-          poetry version ${{ github.event.inputs.bump_rule }}
-          echo "Poetry version is: $(poetry version --short)"
-          echo "::set-output name=version::$(poetry version --short)"
-
-      - name: Fail if poetry packages version don't match
-        if: ${{ steps.api-package.outputs.version != steps.agent-package.outputs.version != steps.core-package.outputs.version != steps.cli-package.outputs.version != steps.docs.outputs.version}}
-        run: echo "Poetry packages version don't match!"
+      - uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
 
       - name: Update Changelog
-        run: |
-          pipx install towncrier==24.8.0
-          make changelog-build
+        run: uv run towncrier build --yes --version $RELEASE_NUMBER
 
       - uses: peter-evans/create-pull-request@38e0b6e68b4c852a5500a94740f0e535e0d7ba54 # v4.2.4
         name: Create Pull Request
         id: cpr
         with:
           token: ${{ secrets.TOKEN }}
-          commit-message: "Prepared release ${{ steps.api-package.outputs.version }}"
-          branch: "prepare-release/${{ steps.api-package.outputs.version }}"
-          title: "Release ${{ steps.api-package.outputs.version }}"
+          commit-message: "Prepared release $RELEASE_NUMBER"
+          branch: "prepare-release/$RELEASE_NUMBER"
+          title: "Release $RELEASE_NUMBER"
           draft: true
           delete-branch: true
           body: "Automated changes by [prepare_release](https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/prepare_release.yaml) GitHub action."

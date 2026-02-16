@@ -4,36 +4,36 @@ SHELL:=/bin/bash
 PACKAGE_NAME:=jobbergate_api
 
 install:  ## Install the package locally for development.
-	poetry install
+	uv sync
 
 test: install  ## Run the unit tests.
-	poetry run pytest
+	uv run pytest
 
 mypy: install  ## Run static type checking on the code base.
-	poetry run mypy ${PACKAGE_NAME} --pretty
+	uv run mypy ${PACKAGE_NAME} --pretty
 
 lint: install  ## Run linters over the code base.
-	poetry run ruff check tests ${PACKAGE_NAME}
+	uv run ruff check tests ${PACKAGE_NAME}
 
 format: install  ## Autoformat the code base.
-	poetry run ruff format tests ${PACKAGE_NAME}
+	uv run ruff format tests ${PACKAGE_NAME}
 
 qa: test mypy lint format  ## Run all quality checks.
 	echo "All quality checks pass!"
 
 local: install  ## Run a local dev server.
-	poetry run dev-tools dev-server --port=8000
+	uv run dev-tools dev-server --port=8000
 
 # To include a message with the generated migration, set the MESSAGE variable in the make command:
 #   $ make db-migration MESSAGE="this migration applies foo to bar"
 db-migrate: install  ## Create a migration for the database based on the current models.
-	poetry run alembic --config=alembic/alembic.ini revision --autogenerate --message "$(MESSAGE)"
+	uv run alembic --config=alembic/alembic.ini revision --autogenerate --message "$(MESSAGE)"
 
 # To override the upgrade target from head, set the UPGRADE_TARGET variable in the make command:
 #   $ make db-upgrade UPGRADE_TARGET=bf1e9e
 UPGRADE_TARGET ?= head
 db-upgrade: install  ## Upgrade the database to a specified target. Defaults to latest.
-	poetry run alembic --config=alembic/alembic.ini upgrade $(UPGRADE_TARGET)
+	uv run alembic --config=alembic/alembic.ini upgrade $(UPGRADE_TARGET)
 
 .PHONY: changes
 changes:

@@ -16,7 +16,7 @@ format: ## Run the formatter
 	tox -e format
 
 .PHONY: build
-build: ## Build the snap
+build: sync-version ## Build the snap
 	@git rev-parse --short HEAD > sha/commit-sha.txt
 	@snapcraft $(ARGS)
 
@@ -26,7 +26,7 @@ changes:
 
 .PHONY: sync-version
 sync-version:
-	@new_version=$$(poetry version -s --directory ../jobbergate-agent) && \
+	@new_version=$$(cd ../jobbergate-agent && uv tool run hatch version) && \
 	perl -pi -e "s/(- jobbergate-agent)==.*/\1==$${new_version}/" snap/snapcraft.yaml && \
 	echo "Version updated to $${new_version} in snap/snapcraft.yaml"
 

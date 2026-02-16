@@ -4,15 +4,16 @@ WORKDIR /app
 
 
 # Install dependencies
-RUN apt update && apt --no-install-recommends install -y build-essential curl gcc libpq-dev
+RUN apt update && apt --no-install-recommends install -y build-essential gcc git libpq-dev
 
-RUN pip install poetry==1.5.1
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-COPY ./pyproject.toml ./poetry.lock /app/
+# Copy workspace configuration from root
+COPY .git uv.lock pyproject.toml ./
+COPY jobbergate-api ./jobbergate-api
 
-RUN poetry config virtualenvs.in-project true \
-    && poetry install --no-root \
-    && rm -rf "$POETRY_CACHE_DIR"
+# Install only jobbergate-api and its dependencies
+RUN uv sync --frozen --no-editable --no-python-downloads --package jobbergate-api --group dev
 
 
 FROM python:3.14-slim-bookworm AS runner
@@ -26,15 +27,10 @@ RUN apt update \
     && useradd --system --create-home --gid appuser appuser
 
 # Copy files before switching user
-COPY --from=builder /app /app
-
+COPY --from=builder /app/.venv .venv
+COPY --from=builder /app/jobbergate-api/alembic alembic
 
 ENV PATH="/app/.venv/bin:$PATH"
-
-
-COPY ./alembic /app/alembic
-COPY ./jobbergate_api /app/jobbergate_api
-
 
 # Change ownership of /app to the new user and switch to it
 RUN chown -R appuser:appuser /app

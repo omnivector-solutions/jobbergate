@@ -1,16 +1,17 @@
-version: '3.8'
+version: "3.8"
 
 services:
   jobbergate-api:
     build:
-      context: ../jobbergate-api
-      dockerfile: Dockerfile-dev
+      context: ..
+      dockerfile: jobbergate-api/Dockerfile-dev
     networks:
       - jobbergate-net
     volumes:
-      - ../jobbergate-api/jobbergate_api/:/app/jobbergate_api/
-      - ../jobbergate-api/dev_tools/:/app/dev_tools/
-      - ../jobbergate-api/alembic/:/app/alembic/
+      - ../jobbergate-api/jobbergate_api/:/app/jobbergate-api/jobbergate_api/
+      - ../jobbergate-api/dev_tools/:/app/jobbergate-api/dev_tools/
+      - ../jobbergate-api/alembic/:/app/jobbergate-api/alembic/
+      - ../jobbergate-core/jobbergate_core/:/app/jobbergate-core/jobbergate_core/
     environment:
       - DATABASE_HOST=db
       - DATABASE_USER=compose-db-user
@@ -48,8 +49,8 @@ services:
 
   jobbergate-api-qa:
     build:
-      context: ../jobbergate-api
-      dockerfile: Dockerfile-dev
+      context: ..
+      dockerfile: jobbergate-api/Dockerfile-dev
     profiles: ["dev"]
     networks:
       - jobbergate-net
@@ -62,11 +63,9 @@ services:
       - RABBITMQ_USERNAME=local-user
       - RABBITMQ_PASSWORD=local-pswd
     volumes:
-      - ../jobbergate-api/jobbergate_api/:/app/jobbergate_api/
-      - ../jobbergate-api/dev_tools/:/app/dev_tools/
-      - ../jobbergate-api/tests/:/app/tests/
+      - ../jobbergate-api/:/app/jobbergate-api/
     entrypoint: ""
-    command: make qa
+    command: bash -c "cd /app/jobbergate-api && make qa"
     depends_on:
       test-db:
         condition: service_healthy
@@ -77,13 +76,13 @@ services:
 
   jobbergate-cli:
     build:
-      context: ../jobbergate-cli
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: jobbergate-cli/Dockerfile
     networks:
       - jobbergate-net
     volumes:
-      - ../jobbergate-cli/jobbergate_cli/:/app/jobbergate_cli/
-      - ../jobbergate-core/:/jobbergate-core
+      - ../jobbergate-cli/:/app/jobbergate-cli/
+      - ../jobbergate-core/:/app/jobbergate-core/
       - ../examples/simple-application/:/simple-example/
       - ../examples/motorbike-application/:/motorbike-example/
       - ../examples/simple-job-script.sh:/simple-job-script.sh
@@ -130,7 +129,11 @@ services:
     ports:
       - 5433:5432
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U test-user -d test-db && pg_isready -U test-user -d alt-test-db"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U test-user -d test-db && pg_isready -U test-user -d alt-test-db",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -153,7 +156,7 @@ services:
       interval: 5s
       retries: 10
       timeout: 5s
-    command: ["server", "--compat", "--console-address", ':9001', "/data"]
+    command: ["server", "--compat", "--console-address", ":9001", "/data"]
 
   rabbitmq:
     image: rabbitmq:3.8-management-alpine
@@ -271,12 +274,7 @@ services:
       - var_log_slurm:/var/log/slurm
       - ./slurm-fake-nfs:/nfs
       - ./slurm-work-dir:/slurm-work-dir
-      - ../jobbergate-agent/jobbergate_agent/:/app/jobbergate_agent
-      - ../jobbergate-agent/pyproject.toml:/app/pyproject.toml
-      - ../jobbergate-agent/poetry.lock:/app/poetry.lock
-      - ../jobbergate-agent/README.md:/app/README.md
-      - ../jobbergate-agent/LICENSE:/app/LICENSE
-      - ../jobbergate-core/:/jobbergate-core
+      - ..:/app/
       - jobbergate-agent-cache:/cache/
     expose:
       - "6818"

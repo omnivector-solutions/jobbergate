@@ -113,3 +113,6 @@ site/
 *.env
 
 *.msgpack
+
+# dynamic version created by hatch-vcs at build time
+**/_version.py

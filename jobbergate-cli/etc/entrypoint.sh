@@ -3,8 +3,7 @@
 set -e
 cd /app
 
-poetry config virtualenvs.in-project true
-poetry install --without=dev
+uv sync --frozen --no-dev --no-cache --package jobbergate-cli
 
 # Start a bash shell
 exec /bin/bash

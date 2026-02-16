@@ -6,15 +6,15 @@ SHELL:=/bin/bash
 
 .PHONY: install
 install:
-	poetry install
+	uv sync
 
 .PHONY: lint
 lint: install
-	poetry run ruff check docs/source
+	uv run ruff check docs/source
 
 .PHONY: format
 format: install
-	poetry run ruff format docs/source
+	uv run ruff format docs/source
 
 .PHONY: qa
 qa: lint format
@@ -22,15 +22,15 @@ qa: lint format
 
 .PHONY: docs
 docs: install
-	poetry run mkdocs build --config-file=docs/mkdocs.yaml
+	uv run mkdocs build --config-file=docs/mkdocs.yaml
 
 .PHONY: docs-serve
 docs-serve: install
-	poetry run mkdocs serve --config-file=docs/mkdocs.yaml --dev-addr=localhost:10000
+	uv run mkdocs serve --config-file=docs/mkdocs.yaml --dev-addr=localhost:10000
 
 .PHONY: changes
 changes:
-	towncrier create --dir .. --section Documentation
+	uv run towncrier create --dir .. --section Documentation
 
 .PHONY: clean
 clean:

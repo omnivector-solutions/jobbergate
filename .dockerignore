@@ -6,6 +6,5 @@ htmlcov
 .pytest_cache
 templates
 sqlite.db
-.git
 .github
 .pre-commit-config.yaml

@@ -11,38 +11,30 @@ permissions:
   contents: read
 
 jobs:
-  core-tests:
-    name: "jobbergate-core tests"
+  component-tests:
+    name: "jobbergate tests"
     runs-on: "ubuntu-24.04"
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        component: [core, cli, agent]
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
-      - uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
-        with:
-          poetry-version: 1.5.1
       - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
         with:
           python-version: ${{ matrix.python-version }}
           architecture: "x64"
-          cache: "poetry"
-          cache-dependency-path: |
-            jobbergate-core/poetry.lock
-            jobbergate-core/pyproject.toml
-            .github/workflows/test_on_push.yaml
+      - uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
       - name: "run quality control checks"
-        working-directory: jobbergate-core
-        run: |
-          poetry env use "${{ matrix.python-version }}"
-          make qa
+        working-directory: jobbergate-${{ matrix.component }}
+        run: make qa
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
         with:
-          working-directory: jobbergate-core
-          flags: core
+          working-directory: jobbergate-${{ matrix.component }}
+          flags: ${{ matrix.component }}
           env_vars: OS,PYTHON
           token: ${{ secrets.CODECOV_TOKEN }}
           file: tests/coverage.xml
@@ -72,83 +64,6 @@ jobs:
           disable_search: true
           fail_ci_if_error: true
 
-  cli-tests:
-    name: "jobbergate-cli tests"
-    runs-on: "ubuntu-24.04"
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-    steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
-      - uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
-        with:
-          poetry-version: 1.5.1
-      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
-        with:
-          python-version: ${{ matrix.python-version }}
-          architecture: "x64"
-          cache: "poetry"
-          cache-dependency-path: |
-            jobbergate-cli/poetry.lock
-            jobbergate-cli/pyproject.toml
-            .github/workflows/test_on_push.yaml
-      - name: "run quality control checks"
-        working-directory: jobbergate-cli
-        run: |
-          poetry env use "${{ matrix.python-version }}"
-          make qa
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
-        with:
-          working-directory: jobbergate-cli
-          flags: cli
-          env_vars: OS,PYTHON
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: tests/coverage.xml
-          disable_search: true
-          fail_ci_if_error: true
-
-  agent-tests:
-    name: "jobbergate-agent tests"
-    runs-on: "ubuntu-24.04"
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
-      - uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
-        with:
-          poetry-version: 1.5.1
-      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
-        with:
-          python-version: ${{ matrix.python-version }}
-          architecture: "x64"
-          cache: "poetry"
-          cache-dependency-path: |
-            jobbergate-agent/poetry.lock
-            jobbergate-agent/pyproject.toml
-            .github/workflows/test_on_push.yaml
-      - name: "run quality control checks"
-        working-directory: jobbergate-agent
-        run: |
-          poetry env use "${{ matrix.python-version }}"
-          make qa
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
-        with:
-          working-directory: jobbergate-agent
-          flags: agent
-          env_vars: OS,PYTHON
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: tests/coverage.xml
-          disable_search: true
-          fail_ci_if_error: true
-
   agent-snap-tests:
     name: "jobbergate-agent-snap tests"
     runs-on: "ubuntu-22.04"
@@ -158,9 +73,6 @@ jobs:
         with:
           python-version: "3.12.3"
           architecture: "x64"
-          cache: "pip"
-          cache-dependency-path: |
-            .github/workflows/test_on_push.yaml
       - name: "run quality control checks"
         working-directory: jobbergate-agent-snap
         run: |

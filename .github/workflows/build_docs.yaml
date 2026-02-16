@@ -29,15 +29,12 @@ jobs:
         with:
           python-version: 3.14
 
-      - name: Set up Poetry
-        uses: Gr1N/setup-poetry@15821dc8a61bc630db542ae4baf6a7c19a994844 # v8
-        with:
-          poetry-version: 2.1.1
+      - name: Install uv
+        uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v7.3.0
 
       - name: Build Documentation
         working-directory: jobbergate-docs
-        run: |
-          make docs
+        run: make docs
 
       - name: Deploy documentation
         uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847 # v3.9.3
