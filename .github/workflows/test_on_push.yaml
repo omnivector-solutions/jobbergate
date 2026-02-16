@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   component-tests:
-    name: "jobbergate-core tests"
+    name: "jobbergate tests"
     runs-on: "ubuntu-24.04"
     strategy:
       fail-fast: false
