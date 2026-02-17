@@ -4,7 +4,7 @@ WORKDIR /app
 
 
 # Install dependencies
-RUN apt update && apt --no-install-recommends install -y build-essential gcc git libpq-dev
+RUN apt update && apt --no-install-recommends install -y git && apt-get clean
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
@@ -20,14 +20,13 @@ FROM python:3.14-slim-bookworm AS runner
 
 WORKDIR /app
 
-RUN apt update \
-    && apt --no-install-recommends install -y build-essential gcc libpq-dev \
-    && apt-get clean \
-    && groupadd --system appuser \
+RUN groupadd --system appuser \
     && useradd --system --create-home --gid appuser appuser
 
 # Copy files before switching user
 COPY --from=builder /app/.venv .venv
+COPY --from=builder /app/jobbergate-api/README.md README.md
+COPY --from=builder /app/jobbergate-api/LICENSE LICENSE
 COPY --from=builder /app/jobbergate-api/alembic alembic
 
 ENV PATH="/app/.venv/bin:$PATH"
