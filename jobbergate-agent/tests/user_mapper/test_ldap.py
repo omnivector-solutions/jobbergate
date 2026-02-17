@@ -367,3 +367,34 @@ def test_search_base_construction(faker: Faker):
 
     assert args == ()
     assert kwargs["search_base"] == "DC=test,DC=sub,DC=domain,DC=com"
+
+
+def test_userdatabase_close_and_del(tmp_path):
+    db_path = tmp_path / "test_userdb.sqlite3"
+    user_db = UserDatabase(str(db_path))
+    # Add a user to ensure DB is open and in use
+    user_db["test@example.com"] = "testuser"
+    assert user_db["test@example.com"] == "testuser"
+    # Test close method
+    user_db.close()
+    assert user_db.connection is None
+    # Test calling close again (should not raise)
+    user_db.close()
+    # Test __del__ (should not raise)
+    user_db.__del__()
+
+
+def test_userdatabase_close_handles_exception(monkeypatch, tmp_path):
+    db_path = tmp_path / "test_userdb2.sqlite3"
+    user_db = UserDatabase(str(db_path))
+
+    # Patch connection.close to raise
+    class DummyConn:
+        def close(self):
+            raise RuntimeError("close failed")
+
+    user_db.connection = DummyConn()
+    # Should not raise
+    user_db.close()
+    # Should not raise
+    user_db.__del__()
