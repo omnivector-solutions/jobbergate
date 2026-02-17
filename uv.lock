@@ -273,16 +273,14 @@ wheels = [
 
 [[package]]
 name = "apscheduler"
-version = "3.10.3"
+version = "3.11.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pytz" },
-    { name = "six" },
     { name = "tzlocal" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/92/f8/1da0e96cdb3ffab75b5e78aaebc2299dbeb4f214c8d8d4988f2a002480cf/APScheduler-3.10.3.tar.gz", hash = "sha256:3f17fd3915f14f4bfa597f552130a14a9d1cc74a002fa1d95dd671cb48dba70e", size = 100837, upload-time = "2023-08-14T08:17:41.906Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/07/12/3e4389e5920b4c1763390c6d371162f3784f86f85cd6d6c1bfe68eef14e2/apscheduler-3.11.2.tar.gz", hash = "sha256:2a9966b052ec805f020c8c4c3ae6e6a06e24b1bf19f2e11d91d8cca0473eef41", size = 108683, upload-time = "2025-12-22T00:39:34.884Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/36/2d/8c8c09317e3c95c05d7fc56f878c6c5b4d44e0ed26052798251d95f9cf8d/APScheduler-3.10.3-py3-none-any.whl", hash = "sha256:1611d207b095ff52d97884e90736c192bdd94dbd44ce27eb92c3f1da24a400d3", size = 59355, upload-time = "2023-08-14T08:17:39.895Z" },
+    { url = "https://files.pythonhosted.org/packages/9f/64/2e54428beba8d9992aa478bb8f6de9e4ecaa5f8f513bcfd567ed7fb0262d/apscheduler-3.11.2-py3-none-any.whl", hash = "sha256:ce005177f741409db4e4dd40a7431b76feb856b9dd69d57e0da49d6715bfd26d", size = 64439, upload-time = "2025-12-22T00:39:33.303Z" },
 ]
 
 [[package]]
@@ -1179,6 +1177,7 @@ dependencies = [
     { name = "msgpack" },
     { name = "numba" },
     { name = "pluggy" },
+    { name = "pydantic", extra = ["email"] },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
     { name = "sentry-sdk" },
@@ -1187,7 +1186,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "apscheduler", specifier = "==3.10.3" },
+    { name = "apscheduler", specifier = "==3.11.2" },
     { name = "auto-name-enum", specifier = ">=3.0.0" },
     { name = "influxdb", specifier = ">=5.3.2" },
     { name = "jobbergate-core", editable = "jobbergate-core" },
@@ -1195,6 +1194,7 @@ requires-dist = [
     { name = "msgpack", specifier = ">=1.1.2" },
     { name = "numba", specifier = ">=0.63.1" },
     { name = "pluggy", specifier = ">=1.6.0" },
+    { name = "pydantic", extras = ["email"], specifier = ">=2.12.5" },
     { name = "pydantic-settings", specifier = ">=2.12.0" },
     { name = "python-dotenv", specifier = ">=1.2.1" },
     { name = "sentry-sdk", specifier = ">=2.47.0" },

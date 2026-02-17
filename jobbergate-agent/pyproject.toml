@@ -15,19 +15,18 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 dependencies = [
-    "apscheduler==3.10.3",
+    "jobbergate-core",
+    "apscheduler==3.11.2",
     "auto-name-enum>=3.0.0",
     "influxdb>=5.3.2",
-    "jobbergate-core",
-    "ldap3>=2.9.1",
     "ldap3>=2.9.1",
     "msgpack>=1.1.2",
     "numba>=0.63.1",
     "pluggy>=1.6.0",
     "pydantic-settings>=2.12.0",
+    "pydantic[email]>=2.12.5",
     "python-dotenv>=1.2.1",
     "sentry-sdk>=2.47.0",
-    "types-ldap3>=2.9.13.14",
     "types-ldap3>=2.9.13.14",
 ]
 dynamic = ["dependency-coversioning", "version"]
@@ -41,7 +40,7 @@ pending-jobs = "jobbergate_agent.tasks:pending_submissions_task"
 report-status = "jobbergate_agent.tasks:status_report_task"
 self-update = "jobbergate_agent.tasks:self_update_task"
 
-[tool.poetry.plugins.'jobbergate_agent.user_mapper']
+[project.entry-points."jobbergate_agent.user_mapper"]
 single-user-mapper = "jobbergate_agent.user_mapper.single_user:SingleUserMapper"
 ldap-cached-mapper = "jobbergate_agent.user_mapper.ldap:user_mapper_factory"
 
