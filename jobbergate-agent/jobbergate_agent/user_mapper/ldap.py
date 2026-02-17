@@ -1,14 +1,15 @@
 """This module contains the UserDatabase class."""
 
-from functools import partial
 import sqlite3
 from collections.abc import MutableMapping
 from contextlib import contextmanager
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 from typing import Callable, Iterator
 
 from ldap3 import NTLM, RESTARTABLE, Connection
+from ldap3.utils.conv import escape_filter_chars
 from loguru import logger
 from pydantic import BaseModel, EmailStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -76,7 +77,7 @@ def ldap_connection(ldap_settings: LDAPSettings) -> Iterator[Connection]:
 def get_msad_user_details(email: str, ldap_settings: LDAPSettings) -> UserDetails:
     """Get user details given their uid or email."""
     search_base = ",".join([f"DC={dc}" for dc in ldap_settings.LDAP_DOMAIN.split(".")])
-    search_filter = f"(mail={email})"
+    search_filter = f"(mail={escape_filter_chars(email)})"
 
     with ldap_connection(ldap_settings) as ldap_conn:
         ldap_conn.search(
@@ -193,7 +194,7 @@ class UserDatabase(MutableMapping):
         """Inserts or updates a user in the database.
 
         Args:
-            email (str): The user object containing the username and email.
+            email (str): The email address of the user.
             username (str): The username of the user.
         """
         with self.connection:
@@ -236,10 +237,30 @@ class UserDatabase(MutableMapping):
         cursor.execute("SELECT COUNT(*) FROM user")
         return cursor.fetchone()[0]
 
+    def close(self) -> None:
+        """Close the underlying database connection, if it is open."""
+        connection = getattr(self, "connection", None)
+        if connection is None:
+            return
+        try:
+            connection.close()
+        except Exception as exc:  # pragma: no cover - defensive cleanup
+            logger.warning(f"Error while closing UserDatabase connection: {exc}")
+        finally:
+            self.connection = None  # type: ignore[assignment]
+
+    def __del__(self) -> None:
+        """Ensure the database connection is closed when the instance is garbage collected."""
+        try:
+            self.close()
+        except Exception:
+            # Avoid raising exceptions during object finalization
+            pass
+
 
 def user_mapper_factory() -> UserDatabase:
     """User mapper factory to be used by jobbergate-agent using the cache database."""
-    ldap_settings = LDAPSettings()  # type: ignore
+    ldap_settings = LDAPSettings()  # type: ignore[call-arg]
     ldap_settings.db_path.parent.mkdir(parents=True, exist_ok=True)
     user_mapper = UserDatabase(
         ldap_settings.db_path.as_posix(),

@@ -55,7 +55,6 @@ dev = []
 [tool.uv.sources]
 jobbergate-core = { workspace = true }
 
-
 [tool.ruff]
 line-length = 120
 
