@@ -117,6 +117,41 @@ def test_ldap_settings_initialization(faker: Faker):
     assert settings.LDAP_PASSWORD == env_vars["JOBBERGATE_AGENT_LDAP_PASSWORD"]
 
 
+def test_ldap_settings_invalid_domain_empty():
+    """Test that LDAPSettings rejects an empty LDAP_DOMAIN."""
+    with pytest.raises(ValueError, match="LDAP_DOMAIN cannot be empty"):
+        LDAPSettings(LDAP_DOMAIN="", LDAP_USERNAME="testuser", LDAP_PASSWORD="testpass")
+
+
+def test_ldap_settings_invalid_domain_no_dots():
+    """Test that LDAPSettings rejects an LDAP_DOMAIN without dots."""
+    with pytest.raises(ValueError, match="LDAP_DOMAIN must be a dot-separated domain name"):
+        LDAPSettings(LDAP_DOMAIN="nodots", LDAP_USERNAME="testuser", LDAP_PASSWORD="testpass")
+
+
+def test_ldap_settings_invalid_domain_single_part():
+    """Test that LDAPSettings rejects an LDAP_DOMAIN with only one part."""
+    with pytest.raises(ValueError, match="LDAP_DOMAIN must be a valid dot-separated domain name"):
+        LDAPSettings(LDAP_DOMAIN=".", LDAP_USERNAME="testuser", LDAP_PASSWORD="testpass")
+
+
+def test_ldap_settings_invalid_domain_empty_parts():
+    """Test that LDAPSettings rejects an LDAP_DOMAIN with empty parts."""
+    with pytest.raises(ValueError, match="LDAP_DOMAIN must be a valid dot-separated domain name"):
+        LDAPSettings(LDAP_DOMAIN="..com", LDAP_USERNAME="testuser", LDAP_PASSWORD="testpass")
+
+
+def test_ldap_settings_valid_domain():
+    """Test that LDAPSettings accepts valid LDAP_DOMAIN values."""
+    # Test simple domain
+    settings = LDAPSettings(LDAP_DOMAIN="example.com", LDAP_USERNAME="testuser", LDAP_PASSWORD="testpass")
+    assert settings.LDAP_DOMAIN == "example.com"
+    
+    # Test subdomain
+    settings = LDAPSettings(LDAP_DOMAIN="test.example.com", LDAP_USERNAME="testuser", LDAP_PASSWORD="testpass")
+    assert settings.LDAP_DOMAIN == "test.example.com"
+
+
 def test_ldap_settings_db_path_property(mock_ldap_settings):
     """Test that db_path property returns correct path."""
     # The path will be constructed based on the actual SETTINGS.CACHE_DIR
