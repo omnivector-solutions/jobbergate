@@ -29,29 +29,29 @@ class LDAPSettings(BaseSettings):
     @field_validator("LDAP_DOMAIN")
     def validate_ldap_domain(cls, value: str) -> str:  # noqa: N805
         """Validate that LDAP_DOMAIN is a valid dot-separated domain name.
-        
+
         Args:
             value: The LDAP_DOMAIN value to validate.
-            
+
         Returns:
             str: The validated LDAP_DOMAIN value.
-            
+
         Raises:
             ValueError: If LDAP_DOMAIN is empty or doesn't contain at least one dot.
         """
         if not value or not value.strip():
             raise ValueError("LDAP_DOMAIN cannot be empty")
-        
+
         if "." not in value:
             raise ValueError("LDAP_DOMAIN must be a dot-separated domain name (e.g., 'example.com')")
-        
+
         # Check that after splitting by dots, we have at least 2 non-empty parts
         parts = [part.strip() for part in value.split(".")]
         if len(parts) < 2 or any(not part for part in parts):
             raise ValueError(
                 "LDAP_DOMAIN must be a valid dot-separated domain name with at least two parts (e.g., 'example.com')"
             )
-        
+
         return value
 
     @property
