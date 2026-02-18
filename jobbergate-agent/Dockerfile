@@ -2,19 +2,15 @@ FROM python:3.14-slim-bookworm AS builder
 
 WORKDIR /app
 
-
-# Install dependencies
 RUN apt update && apt --no-install-recommends install -y git && apt-get clean
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Copy workspace configuration from root
 COPY .git uv.lock pyproject.toml ./
-COPY jobbergate-api ./jobbergate-api
+COPY jobbergate-core ./jobbergate-core
+COPY jobbergate-agent ./jobbergate-agent
 
-# Install only jobbergate-api and its dependencies
-RUN uv sync --frozen --no-editable --no-python-downloads --package jobbergate-api --group dev
-
+RUN uv sync --frozen --no-editable --no-python-downloads --package jobbergate-agent --no-dev
 
 FROM python:3.14-slim-bookworm AS runner
 
@@ -25,14 +21,11 @@ RUN groupadd --system appuser \
 
 # Copy files before switching user
 COPY --from=builder /app/.venv .venv
-COPY --from=builder /app/jobbergate-api/README.md README.md
-COPY --from=builder /app/jobbergate-api/LICENSE LICENSE
-COPY --from=builder /app/jobbergate-api/alembic alembic
-
-ENV PATH="/app/.venv/bin:$PATH"
+COPY --from=builder /app/jobbergate-agent/README.md README.md
+COPY --from=builder /app/jobbergate-agent/LICENSE LICENSE
 
 # Change ownership of /app to the new user and switch to it
 RUN chown -R appuser:appuser /app
 USER appuser
 
-CMD ["uvicorn", "jobbergate_api.main:app", "--host", "0.0.0.0", "--port", "80"]
+ENTRYPOINT ["/app/.venv/bin/jg-run"]

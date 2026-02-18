@@ -51,6 +51,47 @@ jobs:
           uv build
           uv publish
 
+  publish-to-ghcr:
+    name: Publish to GHCR
+    runs-on: ubuntu-latest
+    needs: [build-publish]
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        {
+          sub_project: ["jobbergate-api", "jobbergate-cli", "jobbergate-agent"],
+        }
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
+        with:
+          images: ghcr.io/${{ github.repository }}/${{ matrix.sub_project }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=sha
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
+        with:
+          context: .
+          file: ./${{ matrix.sub_project }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
   publish-to-ecr:
     name: Publish API to ECR
     runs-on: ubuntu-latest
