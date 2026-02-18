@@ -1,5 +1,6 @@
 """Define tests for the functions in jobbergate_agent/utils/compute.py."""
 
+from collections import defaultdict
 import pytest
 from faker import Faker
 
@@ -7,7 +8,7 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import cast, get_args
 from unittest import mock
-
+import itertools
 import numpy as np
 
 from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT
@@ -54,34 +55,35 @@ def _generate_measures_for_iteration(
 ) -> tuple[list[InfluxDBPointDict], dict, int]:
     """Generate measures for one iteration and return measures, aggregated data, and updated time."""
     measures = []
-    aggregated_data: dict[tuple[int, str, str, str], dict[str, float]] = {}
     default_measurements: dict[str, float] = dict.fromkeys(measurement_names, 0.0)
+    aggregated_data: dict[tuple[int, str, str, str], dict[str, float]] = defaultdict(
+        lambda: default_measurements.copy()
+    )
 
-    for host in range(1, num_hosts + 1):
-        for job in range(1, num_jobs + 1):
-            for step in range(1, num_steps + 1):
-                for task in range(1, num_tasks + 1):
-                    key = (current_time, f"host_{host}", str(step), str(task))
+    for host, job, step, task in itertools.product(
+        range(1, num_hosts + 1),
+        range(1, num_jobs + 1),
+        range(1, num_steps + 1),
+        range(1, num_tasks + 1),
+    ):
+        time_increment = current_time + (host + job + step - 1) * 10
+        key = (time_increment, f"host_{host}", str(step), str(task))
 
-                    if key not in aggregated_data:
-                        aggregated_data[key] = default_measurements.copy()
+        for measurement in measurement_names:
+            value = faker.pyfloat(min_value=0, max_value=100)
+            measure = _create_influx_point(
+                time=time_increment,
+                host=f"host_{host}",
+                job=str(job),
+                step=str(step),
+                task=str(task),
+                measurement=measurement,
+                value=value,
+            )
+            measures.append(measure)
+            aggregated_data[key][measurement] = value
 
-                    for measurement in measurement_names:
-                        value = faker.pyfloat(min_value=0, max_value=100)
-                        measure = _create_influx_point(
-                            time=current_time,
-                            host=f"host_{host}",
-                            job=str(job),
-                            step=str(step),
-                            task=str(task),
-                            measurement=measurement,
-                            value=value,
-                        )
-                        measures.append(measure)
-                        aggregated_data[key][measurement] = value
-            current_time += 10
-
-    return measures, aggregated_data, current_time
+    return measures, aggregated_data, time_increment
 
 
 @pytest.fixture()
