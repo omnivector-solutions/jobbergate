@@ -26,6 +26,10 @@ COPY --from=builder /app/jobbergate-cli/LICENSE LICENSE
 
 # Change ownership of /app to the new user and switch to it
 RUN chown -R appuser:appuser /app
+
+WORKDIR /workspace
+RUN chown -R appuser:appuser /workspace
+
 USER appuser
 
 ENTRYPOINT ["/app/.venv/bin/jobbergate"]
