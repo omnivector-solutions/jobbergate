@@ -41,9 +41,7 @@ class JobScriptTemplate(CrudMixin, Base):
         server_default=EMPTY_JSONB_DEFAULT,
     )
 
-    __table_args__ = (
-        Index("idx_job_script_templates_is_archived_updated_at", "is_archived", "updated_at"),
-    )
+    __table_args__ = (Index("idx_job_script_templates_is_archived_updated_at", "is_archived", "updated_at"),)
 
     template_files: Mapped[list["JobScriptTemplateFile"]] = relationship(
         "JobScriptTemplateFile",

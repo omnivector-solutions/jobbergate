@@ -35,9 +35,7 @@ class JobScript(CrudMixin, Base):
         index=True,
     )
 
-    __table_args__ = (
-        Index("idx_job_scripts_is_archived_updated_at", "is_archived", "updated_at"),
-    )
+    __table_args__ = (Index("idx_job_scripts_is_archived_updated_at", "is_archived", "updated_at"),)
 
     files: Mapped[list[JobScriptFile]] = relationship(
         "JobScriptFile",

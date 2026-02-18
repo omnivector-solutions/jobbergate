@@ -75,9 +75,7 @@ class JobSubmission(CrudMixin, Base):
     report_message: Mapped[str] = mapped_column(String, nullable=True)
     sbatch_arguments: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=True)
 
-    __table_args__ = (
-        Index("idx_job_submissions_is_archived_updated_at", "is_archived", "updated_at"),
-    )
+    __table_args__ = (Index("idx_job_submissions_is_archived_updated_at", "is_archived", "updated_at"),)
 
     job_script: Mapped[JobScript] = relationship(
         "JobScript",
