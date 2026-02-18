@@ -75,7 +75,10 @@ def mock_ldap_settings(faker: Faker, tmp_path: Path) -> Iterator[LDAPSettings]:
     with patch("jobbergate_agent.user_mapper.ldap.SETTINGS") as mock_settings:
         mock_settings.CACHE_DIR = tmp_path
         settings = LDAPSettings(
-            LDAP_DOMAIN="test.domain.com", LDAP_USERNAME=faker.user_name(), LDAP_PASSWORD=faker.password()
+            LDAP_URI="ldap://ldap.test.domain.com:389",
+            LDAP_DOMAIN="test.domain.com",
+            LDAP_USERNAME=faker.user_name(),
+            LDAP_PASSWORD=faker.password(),
         )
         yield settings
 
@@ -104,6 +107,7 @@ def test_ldap_settings_initialization(faker: Faker):
     """Test LDAPSettings initialization with environment variables."""
 
     env_vars = {
+        "JOBBERGATE_AGENT_LDAP_URI": f"ldap://{faker.domain_name()}:389",
         "JOBBERGATE_AGENT_LDAP_DOMAIN": faker.domain_name(),
         "JOBBERGATE_AGENT_LDAP_USERNAME": faker.user_name(),
         "JOBBERGATE_AGENT_LDAP_PASSWORD": faker.password(),
@@ -112,44 +116,114 @@ def test_ldap_settings_initialization(faker: Faker):
     with patch.dict("os.environ", env_vars):
         settings = LDAPSettings()
 
+    assert settings.LDAP_URI == env_vars["JOBBERGATE_AGENT_LDAP_URI"]
     assert settings.LDAP_DOMAIN == env_vars["JOBBERGATE_AGENT_LDAP_DOMAIN"]
     assert settings.LDAP_USERNAME == env_vars["JOBBERGATE_AGENT_LDAP_USERNAME"]
     assert settings.LDAP_PASSWORD == env_vars["JOBBERGATE_AGENT_LDAP_PASSWORD"]
 
 
+def test_ldap_settings_invalid_uri_empty(faker: Faker):
+    """Test that LDAPSettings rejects an empty LDAP_URI."""
+    with pytest.raises(ValueError, match="LDAP_URI cannot be empty"):
+        LDAPSettings(
+            LDAP_URI="",
+            LDAP_DOMAIN="example.com",
+            LDAP_USERNAME=faker.user_name(),
+            LDAP_PASSWORD=faker.password(),
+        )
+
+
+def test_ldap_settings_valid_uri(faker: Faker):
+    """Test that LDAPSettings accepts valid LDAP_URI values."""
+    # Test ldap:// URI
+    settings = LDAPSettings(
+        LDAP_URI="ldap://ldap.example.com:389",
+        LDAP_DOMAIN="example.com",
+        LDAP_USERNAME=faker.user_name(),
+        LDAP_PASSWORD=faker.password(),
+    )
+    assert settings.LDAP_URI == "ldap://ldap.example.com:389"
+
+    # Test ldaps:// URI
+    settings = LDAPSettings(
+        LDAP_URI="ldaps://ldap.example.com:636",
+        LDAP_DOMAIN="example.com",
+        LDAP_USERNAME=faker.user_name(),
+        LDAP_PASSWORD=faker.password(),
+    )
+    assert settings.LDAP_URI == "ldaps://ldap.example.com:636"
+
+    # Test hostname without protocol
+    settings = LDAPSettings(
+        LDAP_URI="ldap.example.com",
+        LDAP_DOMAIN="example.com",
+        LDAP_USERNAME=faker.user_name(),
+        LDAP_PASSWORD=faker.password(),
+    )
+    assert settings.LDAP_URI == "ldap.example.com"
+
+
 def test_ldap_settings_invalid_domain_empty(faker: Faker):
     """Test that LDAPSettings rejects an empty LDAP_DOMAIN."""
     with pytest.raises(ValueError, match="LDAP_DOMAIN cannot be empty"):
-        LDAPSettings(LDAP_DOMAIN="", LDAP_USERNAME=faker.user_name(), LDAP_PASSWORD=faker.password())
+        LDAPSettings(
+            LDAP_URI="ldap://ldap.example.com:389",
+            LDAP_DOMAIN="",
+            LDAP_USERNAME=faker.user_name(),
+            LDAP_PASSWORD=faker.password(),
+        )
 
 
 def test_ldap_settings_invalid_domain_no_dots(faker: Faker):
     """Test that LDAPSettings rejects an LDAP_DOMAIN without dots."""
     with pytest.raises(ValueError, match="LDAP_DOMAIN must be a dot-separated domain name"):
-        LDAPSettings(LDAP_DOMAIN="nodots", LDAP_USERNAME=faker.user_name(), LDAP_PASSWORD=faker.password())
+        LDAPSettings(
+            LDAP_URI="ldap://ldap.example.com:389",
+            LDAP_DOMAIN="nodots",
+            LDAP_USERNAME=faker.user_name(),
+            LDAP_PASSWORD=faker.password(),
+        )
 
 
 def test_ldap_settings_invalid_domain_single_part(faker: Faker):
     """Test that LDAPSettings rejects an LDAP_DOMAIN with only one part."""
     with pytest.raises(ValueError, match="LDAP_DOMAIN must be a valid dot-separated domain name"):
-        LDAPSettings(LDAP_DOMAIN=".", LDAP_USERNAME=faker.user_name(), LDAP_PASSWORD=faker.password())
+        LDAPSettings(
+            LDAP_URI="ldap://ldap.example.com:389",
+            LDAP_DOMAIN=".",
+            LDAP_USERNAME=faker.user_name(),
+            LDAP_PASSWORD=faker.password(),
+        )
 
 
 def test_ldap_settings_invalid_domain_empty_parts(faker: Faker):
     """Test that LDAPSettings rejects an LDAP_DOMAIN with empty parts."""
     with pytest.raises(ValueError, match="LDAP_DOMAIN must be a valid dot-separated domain name"):
-        LDAPSettings(LDAP_DOMAIN="..com", LDAP_USERNAME=faker.user_name(), LDAP_PASSWORD=faker.password())
+        LDAPSettings(
+            LDAP_URI="ldap://ldap.example.com:389",
+            LDAP_DOMAIN="..com",
+            LDAP_USERNAME=faker.user_name(),
+            LDAP_PASSWORD=faker.password(),
+        )
 
 
 def test_ldap_settings_valid_domain(faker: Faker):
     """Test that LDAPSettings accepts valid LDAP_DOMAIN values."""
     # Test simple domain
-    settings = LDAPSettings(LDAP_DOMAIN="example.com", LDAP_USERNAME=faker.user_name(), LDAP_PASSWORD=faker.password())
+    settings = LDAPSettings(
+        LDAP_URI="ldap://ldap.example.com:389",
+        LDAP_DOMAIN="example.com",
+        LDAP_USERNAME=faker.user_name(),
+        LDAP_PASSWORD=faker.password(),
+    )
     assert settings.LDAP_DOMAIN == "example.com"
 
     # Test subdomain
     settings = LDAPSettings(
-        LDAP_DOMAIN="test.example.com", LDAP_USERNAME=faker.user_name(), LDAP_PASSWORD=faker.password()
+        LDAP_URI="ldap://ldap.test.example.com:389",
+        LDAP_DOMAIN="test.example.com",
+        LDAP_USERNAME=faker.user_name(),
+        LDAP_PASSWORD=faker.password(),
     )
     assert settings.LDAP_DOMAIN == "test.example.com"
 
@@ -359,8 +433,12 @@ def test_user_mapper_factory_with_ldap_integration(mock_ldap_settings_class, tmp
 # Additional integration tests
 def test_ldap_connection_with_real_connection_parameters(faker: Faker):
     """Test LDAP connection context manager with realistic parameters."""
+    domain = faker.domain_name()
     settings = LDAPSettings(
-        LDAP_DOMAIN=faker.domain_name(), LDAP_USERNAME=faker.user_name(), LDAP_PASSWORD=faker.password()
+        LDAP_URI=f"ldap://ldap.{domain}:389",
+        LDAP_DOMAIN=domain,
+        LDAP_USERNAME=faker.user_name(),
+        LDAP_PASSWORD=faker.password(),
     )
 
     with patch("jobbergate_agent.user_mapper.ldap.Connection") as mock_conn_class:
@@ -375,7 +453,7 @@ def test_ldap_connection_with_real_connection_parameters(faker: Faker):
             args, kwargs = mock_conn_class.call_args
 
     assert args == ()
-    assert kwargs["server"] == settings.LDAP_DOMAIN
+    assert kwargs["server"] == settings.LDAP_URI
     assert kwargs["user"] == f"{settings.LDAP_DOMAIN}\\{settings.LDAP_USERNAME}"
     assert kwargs["password"] == settings.LDAP_PASSWORD
     assert kwargs["authentication"] == NTLM
@@ -385,7 +463,12 @@ def test_ldap_connection_with_real_connection_parameters(faker: Faker):
 
 def test_search_base_construction(faker: Faker):
     """Test that search base is correctly constructed from domain."""
-    settings = LDAPSettings(LDAP_DOMAIN="test.sub.domain.com", LDAP_USERNAME="testuser", LDAP_PASSWORD=faker.password())
+    settings = LDAPSettings(
+        LDAP_URI="ldap://ldap.test.sub.domain.com:389",
+        LDAP_DOMAIN="test.sub.domain.com",
+        LDAP_USERNAME="testuser",
+        LDAP_PASSWORD=faker.password(),
+    )
 
     with patch("jobbergate_agent.user_mapper.ldap.ldap_connection") as mock_context:
         mock_conn = MagicMock()

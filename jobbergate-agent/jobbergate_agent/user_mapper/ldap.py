@@ -20,11 +20,30 @@ from jobbergate_agent.settings import SETTINGS, _get_env_file
 class LDAPSettings(BaseSettings):
     """Settings for the LDAP plugin."""
 
+    LDAP_URI: str
     LDAP_DOMAIN: str
     LDAP_USERNAME: str
     LDAP_PASSWORD: str
 
     model_config = SettingsConfigDict(env_prefix="JOBBERGATE_AGENT_", env_file=_get_env_file(), extra="ignore")
+
+    @field_validator("LDAP_URI")
+    def validate_ldap_uri(cls, value: str) -> str:  # noqa: N805
+        """Validate that LDAP_URI is non-empty.
+
+        Args:
+            value: The LDAP_URI value to validate.
+
+        Returns:
+            str: The validated LDAP_URI value.
+
+        Raises:
+            ValueError: If LDAP_URI is empty.
+        """
+        if not value or not value.strip():
+            raise ValueError("LDAP_URI cannot be empty")
+
+        return value
 
     @field_validator("LDAP_DOMAIN")
     def validate_ldap_domain(cls, value: str) -> str:  # noqa: N805
@@ -78,7 +97,7 @@ def ldap_connection(ldap_settings: LDAPSettings) -> Iterator[Connection]:
     logger.debug("Starting connection with MSAD server")
 
     msad_ldap_conn = Connection(
-        server=ldap_settings.LDAP_DOMAIN,
+        server=ldap_settings.LDAP_URI,
         user=f"{ldap_settings.LDAP_DOMAIN}\\{ldap_settings.LDAP_USERNAME}",
         password=ldap_settings.LDAP_PASSWORD,
         authentication=NTLM,

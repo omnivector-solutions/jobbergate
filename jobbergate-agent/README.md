@@ -27,6 +27,22 @@ To install the package from Pypi simply run `pip install jobbergate-agent`.
 
     **Note**: `JOBBERGATE_AGENT_SENTRY_DSN` is optional. If you do not pass it the agent understands Sentry will not be used.
 
+3. LDAP User Mapper Configuration (Optional)
+
+    If using the LDAP user mapper plugin, configure the following environment variables:
+
+    ```bash
+    JOBBERGATE_AGENT_LDAP_URI="ldap://ldap.example.com:389"
+    JOBBERGATE_AGENT_LDAP_DOMAIN="example.com"
+    JOBBERGATE_AGENT_LDAP_USERNAME="<ldap-username>"
+    JOBBERGATE_AGENT_LDAP_PASSWORD="<ldap-password>"
+    ```
+
+    - `LDAP_URI`: The URI of the LDAP server (e.g., `ldap://ldap.example.com:389` or `ldaps://ldap.example.com:636`)
+    - `LDAP_DOMAIN`: The domain name used for NTLM authentication and search base construction (e.g., `example.com`)
+    - `LDAP_USERNAME`: The username for LDAP authentication
+    - `LDAP_PASSWORD`: The password for LDAP authentication
+
 ## Local usage example
 
 1. Run app
