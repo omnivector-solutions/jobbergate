@@ -338,14 +338,14 @@ trio = ["trio (>=0.31.0) ; python_version < \"3.10\"", "trio (>=0.32.0) ; python
 
 [[package]]
 name = "armasec"
-version = "3.0.2"
+version = "3.0.3"
 description = "Injectable FastAPI auth via OIDC"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
 files = [
-    {file = "armasec-3.0.2-py3-none-any.whl", hash = "sha256:da4cf534a1119c1e4a419757374e164cfb78ffc44205a14f3b90039823d32f5a"},
-    {file = "armasec-3.0.2.tar.gz", hash = "sha256:8db828bc5626de02b33eea259489ae35f309be345e4919b382a654c3ef5e61d1"},
+    {file = "armasec-3.0.3-py3-none-any.whl", hash = "sha256:76f5e09e43b04b83cd4fcbcfaa9ca81427b25134101edc3dde07796f7d5d2627"},
+    {file = "armasec-3.0.3.tar.gz", hash = "sha256:a8c0e5edc38a1581ed607494a17fb8bfb4573f716efe5b53a9546f9e61c037bd"},
 ]
 
 [package.dependencies]
@@ -4947,4 +4947,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "9928c3235cbede396c27d053b3affbcc58183e8a773dbd2bdaa5af6c20a6280b"
+content-hash = "288d6113a2cffa0614beb4b45d10c8a1f5df795d63624541dc57e8fe22a64dad"
