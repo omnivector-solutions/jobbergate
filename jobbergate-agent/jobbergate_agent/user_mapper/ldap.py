@@ -27,7 +27,7 @@ class LDAPSettings(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="JOBBERGATE_AGENT_", env_file=_get_env_file(), extra="ignore")
 
-    @field_validator("LDAP_URI")
+    @field_validator("LDAP_URI", mode="before")
     def validate_ldap_uri(cls, value: str) -> str:  # noqa: N805
         """Validate that LDAP_URI is non-empty.
 
@@ -45,7 +45,7 @@ class LDAPSettings(BaseSettings):
 
         return value
 
-    @field_validator("LDAP_DOMAIN")
+    @field_validator("LDAP_DOMAIN", mode="before")
     def validate_ldap_domain(cls, value: str) -> str:  # noqa: N805
         """Validate that LDAP_DOMAIN is a valid dot-separated domain name.
 
