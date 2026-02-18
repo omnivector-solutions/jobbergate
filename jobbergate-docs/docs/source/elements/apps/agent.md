@@ -41,8 +41,63 @@ Upon completion of the job by the Slurm cluster, the Agent updates the status ei
 This signifies the conclusion of tasks related to that particular Job Submission.
 
 
+# Configuration
+
+## User Mapping
+
+The Jobbergate Agent supports different strategies for mapping Jobbergate user email addresses to local Slurm usernames. This is controlled by the `JOBBERGATE_AGENT_SLURM_USER_MAPPER` setting.
+
+### Single User Mapper (Default)
+
+The single user mapper maps all Jobbergate users to a single Slurm user. This is useful for development environments or clusters where all jobs should run under a single service account.
+
+```bash
+JOBBERGATE_AGENT_SLURM_USER_MAPPER="single-user-mapper"
+```
+
+If `SLURM_USER_MAPPER` is not specified, this is the default behavior.
+
+### LDAP User Mapper
+
+The LDAP user mapper queries an LDAP/Active Directory server to map user email addresses to their corresponding Slurm usernames. This enables multi-user support where each user runs jobs under their own Slurm account.
+
+To enable LDAP user mapping, configure the following environment variables:
+
+```bash
+JOBBERGATE_AGENT_SLURM_USER_MAPPER="ldap-cached-mapper"
+JOBBERGATE_AGENT_LDAP_URI="ldap://ldap.example.com:389"
+JOBBERGATE_AGENT_LDAP_DOMAIN="example.com"
+JOBBERGATE_AGENT_LDAP_USERNAME="service-account"
+JOBBERGATE_AGENT_LDAP_PASSWORD="password"
+```
+
+**Configuration Parameters:**
+
+- `SLURM_USER_MAPPER`: Set to `ldap-cached-mapper` to enable LDAP user mapping
+- `LDAP_URI`: The URI of the LDAP server
+  - For standard LDAP: `ldap://ldap.example.com:389`
+  - For LDAPS (SSL): `ldaps://ldap.example.com:636`
+- `LDAP_DOMAIN`: The fully qualified domain name used for:
+  - NTLM authentication (e.g., `example.com`)
+  - Constructing the search base (e.g., `example.com` becomes `DC=example,DC=com`)
+- `LDAP_USERNAME`: Service account username with read access to user directory
+- `LDAP_PASSWORD`: Service account password
+
+**Caching:**
+
+The LDAP mapper caches user lookups in a local SQLite database to improve performance and reduce LDAP server load. The cache database is stored in the agent's cache directory (by default `~/.cache/jobbergate-agent/user_mapper.sqlite3`).
+
+**LDAP Search:**
+
+When looking up a user, the agent:
+1. Searches the LDAP directory for the user's email address
+2. Retrieves the user's `cn` (common name) attribute as their Slurm username
+3. Caches the mapping for future requests
+
 # Usage
 
 The Jobbergate Agent operates in the background; it's designed to be initiated and left uninterrupted.
 
 For insights into its ongoing operations, the Agent offers detailed logging which can be analyzed.
+
+A complete configuration example is available in the `.env.example` file in the jobbergate-agent directory.
