@@ -33,7 +33,7 @@ To install the package from Pypi simply run `pip install jobbergate-agent`.
     JOBBERGATE_AGENT_OIDC_CLIENT_SECRET="<OIDC-app-client-secret>"
     ```
 
-    **Note**: `JOBBERGATE_AGENT_SENTRY_DSN` is optional. If you do not pass it, the agent understands Sentry will not be used.
+    **Note**: `JOBBERGATE_AGENT_SENTRY_DSN` is optional. If you do not pass it, the agent will understand that Sentry will not be used.
 
 3. User Mapper Configuration
 
