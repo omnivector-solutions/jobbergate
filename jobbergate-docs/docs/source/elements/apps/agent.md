@@ -55,7 +55,7 @@ The single user mapper maps all Jobbergate users to a single Slurm user. This is
 JOBBERGATE_AGENT_SLURM_USER_MAPPER="single-user-mapper"
 ```
 
-If `SLURM_USER_MAPPER` is not specified, this is the default behavior.
+If `JOBBERGATE_AGENT_SLURM_USER_MAPPER` is not specified, this is the default behavior.
 
 ### LDAP User Mapper
 
@@ -73,15 +73,15 @@ JOBBERGATE_AGENT_LDAP_PASSWORD="password"
 
 **Configuration Parameters:**
 
-- `SLURM_USER_MAPPER`: Set to `ldap-cached-mapper` to enable LDAP user mapping
-- `LDAP_URI`: The URI of the LDAP server
+- `JOBBERGATE_AGENT_SLURM_USER_MAPPER`: Set to `ldap-cached-mapper` to enable LDAP user mapping
+- `JOBBERGATE_AGENT_LDAP_URI`: The URI of the LDAP server
   - For standard LDAP: `ldap://ldap.example.com:389`
   - For LDAPS (SSL): `ldaps://ldap.example.com:636`
-- `LDAP_DOMAIN`: The fully qualified domain name used for:
+- `JOBBERGATE_AGENT_LDAP_DOMAIN`: The fully qualified domain name used for:
   - NTLM authentication (e.g., `example.com`)
   - Constructing the search base (e.g., `example.com` becomes `DC=example,DC=com`)
-- `LDAP_USERNAME`: Service account username with read access to user directory
-- `LDAP_PASSWORD`: Service account password
+- `JOBBERGATE_AGENT_LDAP_USERNAME`: Service account username with read access to user directory
+- `JOBBERGATE_AGENT_LDAP_PASSWORD`: Service account password
 
 **Caching:**
 
