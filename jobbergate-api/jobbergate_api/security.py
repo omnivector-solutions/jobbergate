@@ -53,6 +53,7 @@ def get_domain_configs() -> list[DomainConfig]:
 guard = Armasec(
     domain_configs=get_domain_configs(),
     debug_logger=logger.debug if settings.ARMASEC_DEBUG else None,
+    ignore_audience=True,
 )
 
 
