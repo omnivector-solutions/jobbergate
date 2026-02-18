@@ -7,13 +7,12 @@ on:
       - release/**
   pull_request:
 
-permissions:
-  contents: read
-
 jobs:
   component-tests:
     name: "jobbergate tests"
     runs-on: "ubuntu-24.04"
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -45,6 +44,8 @@ jobs:
     name: "jobbergate-api tests"
     runs-on: "ubuntu-24.04"
     timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - name: Run QA
@@ -67,6 +68,8 @@ jobs:
   agent-snap-tests:
     name: "jobbergate-agent-snap tests"
     runs-on: "ubuntu-22.04"
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1

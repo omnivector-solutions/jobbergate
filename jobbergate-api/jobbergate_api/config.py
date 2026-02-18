@@ -121,6 +121,10 @@ class Settings(BaseSettings):
     METADATA_CONTACT_URL: str = "https://omnivector.solutions"
     METADATA_CONTACT_EMAIL: str = "info@omnivector.solutions"
 
+    # CORS configuration - comma-separated list of allowed origins
+    # Default: wildcard for backward compatibility. In production, set to specific origins.
+    ALLOWED_ORIGINS: str = "*"
+
     @model_validator(mode="before")
     @classmethod
     def remove_blank_env(cls, values):
@@ -130,7 +134,7 @@ class Settings(BaseSettings):
         This allows the defaults to be set if ``docker-compose`` defaults a missing
         environment variable to a blank string.
         """
-        clean_values = dict()
+        clean_values = {}
         for key, value in values.items():
             if isinstance(value, str):
                 if value.strip():

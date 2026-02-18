@@ -73,7 +73,7 @@ class EngineFactory:
         """
         Initialize the EngineFactory.
         """
-        self.engine_map = dict()
+        self.engine_map = {}
 
     async def cleanup(self):
         """
@@ -81,7 +81,7 @@ class EngineFactory:
         """
         for engine in self.engine_map.values():
             await engine.dispose()
-        self.engine_map = dict()
+        self.engine_map = {}
 
     def get_engine(self, override_db_name: str | None = None) -> AsyncEngine:
         """
@@ -198,8 +198,11 @@ def secure_session(
 def render_sql(session: AsyncSession, query) -> str:
     """
     Render a sqlalchemy query into a string for debugging.
+
+    Note: Parameters are kept as placeholders (not expanded with literal_binds)
+    to prevent sensitive values (passwords, tokens, etc.) from appearing in logs.
     """
-    return query.compile(dialect=session.bind.dialect, compile_kwargs={"literal_binds": True})
+    return str(query.compile(dialect=session.bind.dialect))
 
 
 def search_clause(
@@ -293,11 +296,11 @@ def handle_fk_error(
 
     return fastapi.responses.JSONResponse(
         status_code=fastapi.status.HTTP_409_CONFLICT,
-        content=dict(
-            detail=dict(
-                message="Delete failed due to foreign-key constraint",
-                table=table,
-                pk_id=pk_id,
-            ),
-        ),
+        content={
+            "detail": {
+                "message": "Delete failed due to foreign-key constraint",
+                "table": table,
+                "pk_id": pk_id,
+            },
+        },
     )
