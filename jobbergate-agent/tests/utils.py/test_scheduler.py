@@ -4,10 +4,8 @@ import pytest
 
 from jobbergate_agent.utils.scheduler import (
     AsyncIOScheduler,
-    init_scheduler,
     load_plugins,
     schedule_tasks,
-    shut_down_scheduler,
 )
 
 
@@ -42,22 +40,3 @@ def test_schedule_tasks__fails(mocked_plugins):
         schedule_tasks(scheduler)
 
     mocked_plugins.assert_called_once_with("tasks")
-
-
-def test_scheduler_end_to_end(tweak_settings):
-    """Test that scheduler can start, get the tasks and shutdown properly."""
-    with tweak_settings(TASK_SELF_UPDATE_INTERVAL_SECONDS=60):
-        scheduler = init_scheduler()
-
-    assert scheduler.running is True
-    assert {job.name for job in scheduler.get_jobs()} == {
-        "active-jobs",
-        "pending-jobs",
-        "report-status",
-        "self-update",
-    }
-
-    shut_down_scheduler(scheduler, wait=False)
-
-    # TODO: Find a way to wait for the scheduler to shut down.
-    # assert scheduler.running is False

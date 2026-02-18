@@ -46,8 +46,8 @@ class Settings(BaseSettings):
 
     # OIDC config for machine-to-machine security
     OIDC_DOMAIN: str = "auth.vantagehpc.io/realms/vantage"
-    OIDC_CLIENT_ID: str
-    OIDC_CLIENT_SECRET: str
+    OIDC_CLIENT_ID: str = "jobbergate-agent"
+    OIDC_CLIENT_SECRET: str = "CHANGE_ME"
     OIDC_USE_HTTPS: bool = True
 
     CACHE_DIR: Path = Path.home() / ".cache/jobbergate-agent"

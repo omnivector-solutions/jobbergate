@@ -1,46 +1,29 @@
-from unittest import mock
-
-from jobbergate_agent.main import main
-
-
-@mock.patch("jobbergate_agent.main.asyncio")
-@mock.patch("jobbergate_agent.main.init_sentry")
-@mock.patch("jobbergate_agent.main.init_scheduler")
-def test_main__checks_if_agent_asyncio_loop_is_run_forever(
-    mocked_init_scheduler: mock.MagicMock,
-    mocked_init_sentry: mock.MagicMock,
-    mock_asyncio: mock.MagicMock,
-):
-    """Checks whether the corountine that runs all functionality is called or not."""
-
-    mocked_loop = mock.MagicMock()
-    mock_asyncio.get_event_loop = mock.MagicMock(return_value=mocked_loop)
-
-    main()
-
-    mock_asyncio.get_event_loop.assert_called_once()
-    mocked_loop.run_forever.assert_called_once()
-    mocked_init_scheduler.assert_called_once_with()
-    mocked_init_sentry.assert_called_once_with()
+import logging
+import jobbergate_agent.main as main_mod
 
 
-@mock.patch("jobbergate_agent.main.asyncio.get_event_loop")
-@mock.patch("jobbergate_agent.main.init_sentry")
-@mock.patch("jobbergate_agent.main.init_scheduler")
-@mock.patch("jobbergate_agent.main.logger.info")
-def test_main__calls_expected_functions(*mocked):
-    """Checks whether the main function calls all expected functions."""
-    main()
-    assert all(m.call_count == 1 for m in mocked)
+def test_main_logs_and_handles_exceptions(monkeypatch, caplog):
+    caplog.set_level(logging.INFO)
+    # Patch dependencies
+    monkeypatch.setattr(main_mod, "init_sentry", lambda: None)
+    monkeypatch.setattr(main_mod, "shut_down_scheduler", lambda s, wait: None)
+    monkeypatch.setattr(main_mod, "scheduler", object())
+    # Patch helper to avoid infinite loop
+    monkeypatch.setattr(main_mod, "helper", lambda: "fake-coro")
 
+    # Patch asyncio.Runner
+    class DummyRunner:
+        def __enter__(self):
+            return self
 
-@mock.patch("jobbergate_agent.main.init_sentry")
-@mock.patch("jobbergate_agent.main.init_scheduler")
-@mock.patch("jobbergate_agent.main.shut_down_scheduler")
-@mock.patch("jobbergate_agent.main.logger.info")
-def test_main__calls_expected_on_shut_down(*mocked):
-    """Checks whether the main function calls all expected functions when shutting down."""
-    with mock.patch("jobbergate_agent.main.asyncio.get_event_loop") as mock_loop:
-        mock_loop.side_effect = KeyboardInterrupt()
-        main()
-    assert all(m.call_count == 1 for m in mocked)
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            return False
+
+        def run(self, coro):
+            raise KeyboardInterrupt()
+
+    monkeypatch.setattr(main_mod.asyncio, "Runner", lambda: DummyRunner())
+    main_mod.main()
+    assert "Starting Jobbergate-agent" in caplog.text
+    assert "Jobbergate-agent is shutting down" in caplog.text
+    assert "Jobbergate-agent has been stopped" in caplog.text

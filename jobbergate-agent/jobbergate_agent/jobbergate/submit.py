@@ -24,8 +24,8 @@ from jobbergate_agent.jobbergate.update import fetch_job_data, SubprocessAsUserH
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError
 from jobbergate_agent.utils.logging import log_error
-from jobbergate_agent.utils.user_mapper import manufacture
 from jobbergate_agent.utils.plugin import get_plugin_manager, hookimpl, hookspec
+from jobbergate_agent.user_mapper.base import manufacture
 
 
 async def retrieve_submission_file(file: JobScriptFile) -> str:
