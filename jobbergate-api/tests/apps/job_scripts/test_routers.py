@@ -102,10 +102,10 @@ async def test_clone_job_script__replace_base_values(
 
     new_owner_email = "new_" + tester_email
 
-    payload = dict(
-        name="new name",
-        description="new description",
-    )
+    payload = {
+        "name": "new name",
+        "description": "new description",
+    }
 
     inject_security_header(new_owner_email, Permissions.JOB_SCRIPTS_CREATE)
     response = await client.post(f"jobbergate/job-scripts/clone/{original_instance.id}", json=payload)
@@ -488,10 +488,10 @@ async def test_update_job_script__success(
 
     requester_email = tester_email if is_owner else "another_" + tester_email
 
-    payload = dict(
-        name="new-name",
-        description="new-description",
-    )
+    payload = {
+        "name": "new-name",
+        "description": "new-description",
+    }
 
     inject_security_header(requester_email, *permissions)
     response = await client.put(f"jobbergate/job-scripts/{instance.id}", json=payload)
@@ -508,10 +508,10 @@ async def test_update_job_script__fail_not_found(
     tester_email,
     synth_services,
 ):
-    payload = dict(
-        name="new-name",
-        description="new-description",
-    )
+    payload = {
+        "name": "new-name",
+        "description": "new-description",
+    }
     inject_security_header(tester_email, Permissions.JOB_SCRIPTS_UPDATE)
     response = await client.put("jobbergate/job-scripts/0", json=payload)
 
@@ -519,10 +519,10 @@ async def test_update_job_script__fail_not_found(
 
 
 async def test_update_job_script__fail_unauthorized(client):
-    payload = dict(
-        name="new-name",
-        description="new-description",
-    )
+    payload = {
+        "name": "new-name",
+        "description": "new-description",
+    }
     response = await client.put("jobbergate/job-scripts/0", json=payload)
 
     assert response.status_code == 401
@@ -540,10 +540,10 @@ async def test_update_job_script__fail_forbidden(
     owner_email = tester_email
     requester_email = "another_" + owner_email
 
-    payload = dict(
-        name="new-name",
-        description="new-description",
-    )
+    payload = {
+        "name": "new-name",
+        "description": "new-description",
+    }
 
     inject_security_header(requester_email, Permissions.JOB_SCRIPTS_UPDATE)
     response = await client.put(f"jobbergate/job-scripts/{instance.id}", json=payload)
@@ -762,21 +762,21 @@ class TestListJobScripts:
         synth_services,
     ):
         data = fill_all_job_script_data(
-            dict(
-                name="instance-one",
-                description="the first",
-                owner_email="user1@test.com",
-            ),
-            dict(
-                name="item-two",
-                description="second item",
-                owner_email="user2@test.com",
-            ),
-            dict(
-                name="instance-three",
-                description="a final instance",
-                owner_email="final@test.com",
-            ),
+            {
+                "name": "instance-one",
+                "description": "the first",
+                "owner_email": "user1@test.com",
+            },
+            {
+                "name": "item-two",
+                "description": "second item",
+                "owner_email": "user2@test.com",
+            },
+            {
+                "name": "instance-three",
+                "description": "a final instance",
+                "owner_email": "final@test.com",
+            },
         )
 
         for item in data:
@@ -894,7 +894,7 @@ class TestJobScriptFiles:
         inject_security_header(requester_email, *permissions)
         response = await client.put(
             f"jobbergate/job-scripts/{id}/upload-by-url/{file_type}",
-            params=dict(file_url=f"{protocol}://dummy-domain.com/dummy-file.py"),
+            params={"file_url": f"{protocol}://dummy-domain.com/dummy-file.py"},
         )
 
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
@@ -955,7 +955,7 @@ class TestJobScriptFiles:
         inject_security_header(requester_email, *permissions)
         response = await client.put(
             f"jobbergate/job-scripts/{id}/upload-by-url/{file_type}",
-            params=dict(file_url=s3_url),
+            params={"file_url": s3_url},
         )
 
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
@@ -1007,7 +1007,7 @@ class TestJobScriptFiles:
 
         response = await client.put(
             f"jobbergate/job-scripts/{id}/upload-by-url/{file_type}",
-            params=dict(file_url=file_url),
+            params={"file_url": file_url},
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST

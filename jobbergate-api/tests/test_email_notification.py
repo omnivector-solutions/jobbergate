@@ -41,11 +41,11 @@ class TestEmailManager:
         """
         Return a dictionary with the parameters used to send an email using the manager.
         """
-        return dict(
-            to_emails="you@pytesting.com",
-            subject="TEST",
-            plain_text_content="The content!",
-        )
+        return {
+            "to_emails": "you@pytesting.com",
+            "subject": "TEST",
+            "plain_text_content": "The content!",
+        }
 
     def test_build_message__success(self, email_manager, email_options):
         """

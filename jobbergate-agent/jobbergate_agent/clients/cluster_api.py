@@ -24,11 +24,11 @@ def acquire_token(token: Token) -> Token:
         logger.debug("Failed to load token from cache: {}", e)
 
     logger.debug("Attempting to acquire token from OIDC")
-    oidc_body = dict(
-        client_id=SETTINGS.OIDC_CLIENT_ID,
-        client_secret=SETTINGS.OIDC_CLIENT_SECRET,
-        grant_type="client_credentials",
-    )
+    oidc_body = {
+        "client_id": SETTINGS.OIDC_CLIENT_ID,
+        "client_secret": SETTINGS.OIDC_CLIENT_SECRET,
+        "grant_type": "client_credentials",
+    }
     protocol = "https" if SETTINGS.OIDC_USE_HTTPS else "http"
     oidc_url = f"{protocol}://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token"
     logger.debug(f"Posting OIDC request to {oidc_url}")
@@ -68,10 +68,10 @@ class AsyncBackendClient(httpx.AsyncClient):
         super().__init__(
             base_url=SETTINGS.BASE_API_URL,
             auth=self._inject_token,
-            event_hooks=dict(
-                request=[self._log_request],
-                response=[self._log_response],
-            ),
+            event_hooks={
+                "request": [self._log_request],
+                "response": [self._log_response],
+            },
             timeout=SETTINGS.REQUESTS_TIMEOUT,
         )
 

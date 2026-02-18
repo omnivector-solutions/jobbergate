@@ -133,7 +133,7 @@ class JobScriptFileService(FileService):
             upsert_kwargs.get("file_type", None),
             "File type must be defined when upserting a file.",
             raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
+            raise_kwargs={"status_code": status.HTTP_422_UNPROCESSABLE_ENTITY},
         )
         if file_type == FileType.ENTRYPOINT:
             await self.validate_entrypoint_file(parent_id, previous_filename or filename)
@@ -159,5 +159,5 @@ class JobScriptFileService(FileService):
                 "Found: {}".format(",".join(entry_point_names))
             ),
             raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
+            raise_kwargs={"status_code": status.HTTP_422_UNPROCESSABLE_ENTITY},
         )

@@ -101,9 +101,7 @@ async def publish_status_change(
             await _publish_message(exchange, message_payload, organization_id)
 
     def on_retry_error(exc: Exception, attempt: int) -> None:
-        logger.warning(
-            f"Failed to publish status change notification (attempt {attempt}): {exc}"
-        )
+        logger.warning(f"Failed to publish status change notification (attempt {attempt}): {exc}")
 
     result = await async_retry(
         _publish_with_connection,

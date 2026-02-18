@@ -118,7 +118,7 @@ async def job_script_create_from_template(
     required_map = render_request.template_output_name_mapping
 
     required_keys = set(required_map.keys())
-    provided_keys = set(f.filename for f in base_template.template_files)
+    provided_keys = {f.filename for f in base_template.template_files}
     missing_keys = required_keys - provided_keys
     if len(missing_keys) > 0:
         raise HTTPException(
@@ -157,7 +157,7 @@ async def job_script_create_from_template(
             with handle_errors(
                 "Failed to inject sbatch params into the entrypoint file",
                 raise_exc_class=ServiceError,
-                raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
+                raise_kwargs={"status_code": status.HTTP_422_UNPROCESSABLE_ENTITY},
             ):
                 file_content = inject_sbatch_params(file_content, render_request.sbatch_params)
 

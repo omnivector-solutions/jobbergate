@@ -15,11 +15,11 @@ from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus
 @pytest.fixture
 def script_test_data() -> dict[str, Any]:
     """Return a dictionary with dummy values."""
-    return dict(
-        name="test-name",
-        description="test-description",
-        owner_email="owner_email@test.com",
-    )
+    return {
+        "name": "test-name",
+        "description": "test-description",
+        "owner_email": "owner_email@test.com",
+    }
 
 
 class TestIntegration:
@@ -211,9 +211,9 @@ def filter_test_entries(
     """
     if not kwargs:
         return set()
-    return set(
+    return {
         value["id"] for key, value in entries.items() if all(getattr(key, k) in v for k, v in kwargs.items())
-    )
+    }
 
 
 class TestAutoCleanUnusedJobScripts:

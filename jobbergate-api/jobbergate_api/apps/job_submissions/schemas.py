@@ -317,7 +317,7 @@ class JobSubmissionMetricSchema(BaseModel):
         if len(fields) != len(list(iterable)):
             raise ValueError("The iterable must have the same length as the model fields.")
 
-        return cls(**{field: value for field, value in zip(fields, iterable)})
+        return cls(**dict(zip(fields, iterable)))
 
 
 class JobSubmissionMetricTimestamps(BaseModel):

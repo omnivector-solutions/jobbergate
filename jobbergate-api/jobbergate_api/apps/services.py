@@ -102,7 +102,7 @@ class DatabaseBoundService:
             self._session,
             f"Service {self.__class__.__name__} is not bound to a database session",
             raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_503_SERVICE_UNAVAILABLE),
+            raise_kwargs={"status_code": status.HTTP_503_SERVICE_UNAVAILABLE},
         )
 
 
@@ -164,7 +164,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
             result.unique().scalar_one_or_none(),  # type: ignore
             f"{self.name} entry was not found by {locator=}",
             raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
+            raise_kwargs={"status_code": status.HTTP_404_NOT_FOUND},
         )
         if ensure_attributes:
             self.ensure_attribute(instance, **ensure_attributes)
@@ -198,7 +198,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
             len(deleted) == 1,
             f"{self.name} entry was not found by {locator=}",
             raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
+            raise_kwargs={"status_code": status.HTTP_404_NOT_FOUND},
         )
 
     async def update(self, locator: Any, **incoming_data) -> CrudModel:
@@ -219,7 +219,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
             result.scalar_one_or_none(),
             f"{self.name} entry was not found by {locator=}",
             raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
+            raise_kwargs={"status_code": status.HTTP_404_NOT_FOUND},
         )
 
     def locate_where_clause(self, locator: Any) -> Any:
@@ -267,7 +267,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
                 hasattr(self.model_type, "searchable_fields"),
                 f"{self.name} does not support search",
                 raise_exc_class=ServiceError,
-                raise_kwargs=dict(status_code=status.HTTP_405_METHOD_NOT_ALLOWED),
+                raise_kwargs={"status_code": status.HTTP_405_METHOD_NOT_ALLOWED},
             )
             query = query.where(search_clause(search, self.model_type.searchable_fields()))
         if sort_field:
@@ -275,7 +275,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
                 hasattr(self.model_type, "sortable_fields"),
                 f"{self.name} does not support sort",
                 raise_exc_class=ServiceError,
-                raise_kwargs=dict(status_code=status.HTTP_405_METHOD_NOT_ALLOWED),
+                raise_kwargs={"status_code": status.HTTP_405_METHOD_NOT_ALLOWED},
             )
             query = query.order_by(sort_clause(sort_field, self.model_type.sortable_fields(), sort_ascending))
         if include_parent:
@@ -381,7 +381,7 @@ class BucketBoundService:
             self._bucket,
             f"Service {self.__class__.__name__} is not bound to file storage",
             raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_503_SERVICE_UNAVAILABLE),
+            raise_kwargs={"status_code": status.HTTP_503_SERVICE_UNAVAILABLE},
         )
 
 
@@ -416,7 +416,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             result.scalar_one_or_none(),
             f"{self.model_type.__tablename__} row not found by {parent_id=}, {filename=}",
             raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_404_NOT_FOUND),
+            raise_kwargs={"status_code": status.HTTP_404_NOT_FOUND},
         )
 
     async def find_children(self, parent_id: int) -> list[FileModel]:
@@ -438,7 +438,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             f"{self.model_type.__tablename__} file content not found for {instance=}",
             handle_exc_class=self.bucket.meta.client.exceptions.NoSuchKey,
             raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR),
+            raise_kwargs={"status_code": status.HTTP_500_INTERNAL_SERVER_ERROR},
         ):
             # Mypy doesn't like aioboto3 much
             s3_object = await self.bucket.Object(instance.file_key)  # type: ignore
@@ -505,13 +505,13 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
                     file_url.unicode_host(),
                     f"Couldn't extract bucket name from {file_url}",
                     raise_exc_class=ServiceError,
-                    raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
+                    raise_kwargs={"status_code": status.HTTP_400_BAD_REQUEST},
                 )
                 key = enforce_defined(
                     file_url.path,
                     f"Couldn't extract bucket key from {file_url}",
                     raise_exc_class=ServiceError,
-                    raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
+                    raise_kwargs={"status_code": status.HTTP_400_BAD_REQUEST},
                 )
                 file_url_string = f"https://{bucket_name}.s3.amazonaws.com{key}"
             case "http" | "https":
@@ -522,7 +522,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         with handle_errors(
             f"Failed to download file from {file_url}",
             raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
+            raise_kwargs={"status_code": status.HTTP_400_BAD_REQUEST},
         ):
             async with httpx.AsyncClient() as client:
                 response = await client.get(file_url_string)
@@ -553,7 +553,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
                 upload_content.size,  # double checking just because it can be None
                 "UploadFile has no size attribute",
                 raise_exc_class=ServiceError,
-                raise_kwargs=dict(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR),
+                raise_kwargs={"status_code": status.HTTP_500_INTERNAL_SERVER_ERROR},
             )
         else:
             raise TypeError(f"Unsupported file type {type(upload_content)}")
@@ -562,14 +562,14 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             size <= settings.MAX_UPLOAD_FILE_SIZE,
             f"Uploaded files cannot exceed {settings.MAX_UPLOAD_FILE_SIZE} bytes, got {size} bytes",
             raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE),
+            raise_kwargs={"status_code": status.HTTP_413_REQUEST_ENTITY_TOO_LARGE},
         )
 
         require_condition(
             check_uploaded_file_syntax(file_obj, str(instance.filename)),
             f"File {instance.filename} did not pass the syntax check for its extension",
             raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_400_BAD_REQUEST),
+            raise_kwargs={"status_code": status.HTTP_400_BAD_REQUEST},
         )
 
         try:
@@ -654,7 +654,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         with handle_errors(
             f"Unable to process jinja template filename={instance.filename}",
             raise_exc_class=ServiceError,
-            raise_kwargs=dict(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY),
+            raise_kwargs={"status_code": status.HTTP_422_UNPROCESSABLE_ENTITY},
         ):
             sandbox_env = SandboxedEnvironment()
             template = sandbox_env.from_string(file_content.decode("utf-8"))

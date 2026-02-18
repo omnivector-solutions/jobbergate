@@ -13,6 +13,9 @@ from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.models import Base, CrudMixin, FileMixin
 from jobbergate_api.safe_types import JobScript
 
+# PostgreSQL JSONB default value for empty JSON object
+EMPTY_JSONB_DEFAULT = text("'{}'::jsonb")
+
 
 class JobScriptTemplate(CrudMixin, Base):
     """
@@ -34,8 +37,8 @@ class JobScriptTemplate(CrudMixin, Base):
         "template_vars",
         JSONB,
         nullable=False,
-        default=text("'{}'::jsonb"),
-        server_default=text("'{}'::jsonb"),
+        default=EMPTY_JSONB_DEFAULT,
+        server_default=EMPTY_JSONB_DEFAULT,
     )
 
     __table_args__ = (
@@ -132,8 +135,8 @@ class WorkflowFile(FileMixin, Base):
     runtime_config: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         nullable=False,
-        default=text("'{}'::jsonb"),
-        server_default=text("'{}'::jsonb"),
+        default=EMPTY_JSONB_DEFAULT,
+        server_default=EMPTY_JSONB_DEFAULT,
     )
 
     parent: Mapped["JobScriptTemplate"] = relationship(

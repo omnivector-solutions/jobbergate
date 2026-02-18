@@ -16,13 +16,13 @@ from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAM
 @pytest.fixture
 def template_test_data(tmp_path: Path) -> dict[str, Any]:
     """Return a dictionary with dummy values."""
-    return dict(
-        name="test-name",
-        identifier="test-identifier",
-        description="test-description",
-        owner_email="owner_email@test.com",
-        template_vars={"output_dir": tmp_path.joinpath("tmp").as_posix()},
-    )
+    return {
+        "name": "test-name",
+        "identifier": "test-identifier",
+        "description": "test-description",
+        "owner_email": "owner_email@test.com",
+        "template_vars": {"output_dir": tmp_path.joinpath("tmp").as_posix()},
+    }
 
 
 class TestJobScriptTemplateCrudService:
@@ -78,12 +78,12 @@ class TestJobScriptTemplateCrudService:
         instance = await synth_services.crud.template.create(**template_test_data)
         locator = getattr(instance, locator_attribute)
 
-        update_data = dict(
-            name="new-name",
-            identifier="new-identifier",
-            description=None,
-            template_vars={"new_output_dir": tmp_path.joinpath("another").as_posix()},
-        )
+        update_data = {
+            "name": "new-name",
+            "identifier": "new-identifier",
+            "description": None,
+            "template_vars": {"new_output_dir": tmp_path.joinpath("another").as_posix()},
+        }
 
         assert instance.name != "new-name"
         assert instance.identifier != "new-identifier"
@@ -161,12 +161,12 @@ class TestWorkflowFilesService:
             template_instance.id,
             WORKFLOW_FILE_NAME,
             "print('hello world')",
-            runtime_config=dict(foo="bar"),
+            runtime_config={"foo": "bar"},
         )
 
         assert workflow_file.parent_id == template_instance.id
         assert workflow_file.filename == WORKFLOW_FILE_NAME
-        assert workflow_file.runtime_config == dict(foo="bar")
+        assert workflow_file.runtime_config == {"foo": "bar"}
         assert workflow_file.file_key.endswith(WORKFLOW_FILE_NAME)
 
         file_content = await synth_services.file.workflow.get_file_content(workflow_file)
@@ -187,7 +187,7 @@ class TestIntegration:
             template_instance.id,
             WORKFLOW_FILE_NAME,
             "print('hello world')",
-            runtime_config=dict(foo="bar"),
+            runtime_config={"foo": "bar"},
         )
 
         template_file = await synth_services.file.template.upsert(
@@ -211,7 +211,7 @@ class TestIntegration:
             template_instance.id,
             WORKFLOW_FILE_NAME,
             "print('hello world')",
-            runtime_config=dict(foo="bar"),
+            runtime_config={"foo": "bar"},
         )
 
         template_file = await synth_services.file.template.upsert(
@@ -236,7 +236,7 @@ class TestIntegration:
             template_instance.id,
             WORKFLOW_FILE_NAME,
             "print('hello world')",
-            runtime_config=dict(foo="bar"),
+            runtime_config={"foo": "bar"},
         )
 
         await synth_services.file.template.upsert(
@@ -260,7 +260,7 @@ class TestIntegration:
             template_instance.id,
             WORKFLOW_FILE_NAME,
             "print('hello world')",
-            runtime_config=dict(foo="bar"),
+            runtime_config={"foo": "bar"},
         )
 
         template_file = await synth_services.file.template.upsert(
@@ -305,9 +305,9 @@ def filter_test_entries(
     """
     if not kwargs:
         return set()
-    return set(
+    return {
         value["id"] for key, value in entries.items() if all(getattr(key, k) in v for k, v in kwargs.items())
-    )
+    }
 
 
 class TestAutoCleanUnusedJobScriptTemplates:

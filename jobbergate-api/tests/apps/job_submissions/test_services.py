@@ -117,9 +117,9 @@ def filter_test_entries(
     """
     if not kwargs:
         return set()
-    return set(
+    return {
         value["id"] for key, value in entries.items() if all(getattr(key, k) in v for k, v in kwargs.items())
-    )
+    }
 
 
 class TestAutoCleanUnusedJobSubmissions:

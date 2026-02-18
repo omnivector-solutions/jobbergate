@@ -63,6 +63,7 @@ class EmailManager:
                 self.email_client.send(message)
 
         if enable_retry:
+
             def on_retry_error(exc: Exception, attempt: int) -> None:
                 logger.warning(f"Failed to send email (attempt {attempt}): {exc}")
 

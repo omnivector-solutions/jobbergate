@@ -71,12 +71,12 @@ def test_fetch_job_data__success():
     job data from Slurm as a ``SlurmJobData``.
     """
     mocked_sbatch = mock.MagicMock()
-    mocked_sbatch.get_job_info.return_value = dict(
-        job_state="FAILED",
-        job_id=123,
-        state_reason="NonZeroExitCode",
-        foo="bar",
-    )
+    mocked_sbatch.get_job_info.return_value = {
+        "job_state": "FAILED",
+        "job_id": 123,
+        "state_reason": "NonZeroExitCode",
+        "foo": "bar",
+    }
 
     result: SlurmJobData = fetch_job_data(123, mocked_sbatch)
 
@@ -84,12 +84,12 @@ def test_fetch_job_data__success():
     assert result.job_state == "FAILED"
     assert result.state_reason == "NonZeroExitCode"
     assert result.job_info is not None
-    assert json.loads(result.job_info) == dict(
-        job_state="FAILED",
-        job_id=123,
-        state_reason="NonZeroExitCode",
-        foo="bar",
-    )
+    assert json.loads(result.job_info) == {
+        "job_state": "FAILED",
+        "job_id": 123,
+        "state_reason": "NonZeroExitCode",
+        "foo": "bar",
+    }
 
 
 @pytest.mark.usefixtures("mock_access_token")
@@ -100,12 +100,12 @@ def test_fetch_job_data__handles_list_in_job_state():
     is reported as a list.
     """
     mocked_sbatch = mock.MagicMock()
-    mocked_sbatch.get_job_info.return_value = dict(
-        job_state=["FAILED"],
-        job_id=123,
-        state_reason="NonZeroExitCode",
-        foo="bar",
-    )
+    mocked_sbatch.get_job_info.return_value = {
+        "job_state": ["FAILED"],
+        "job_id": 123,
+        "state_reason": "NonZeroExitCode",
+        "foo": "bar",
+    }
 
     result: SlurmJobData = fetch_job_data(123, mocked_sbatch)
 
@@ -113,12 +113,12 @@ def test_fetch_job_data__handles_list_in_job_state():
     assert result.job_state == "FAILED"
     assert result.state_reason == "NonZeroExitCode"
     assert result.job_info is not None
-    assert json.loads(result.job_info) == dict(
-        job_state=["FAILED"],
-        job_id=123,
-        state_reason="NonZeroExitCode",
-        foo="bar",
-    )
+    assert json.loads(result.job_info) == {
+        "job_state": ["FAILED"],
+        "job_id": 123,
+        "state_reason": "NonZeroExitCode",
+        "foo": "bar",
+    }
 
 
 @pytest.mark.asyncio
@@ -129,12 +129,12 @@ async def test_fetch_job_data__raises_error_if_job_state_is_invalid_list():
     if the list slurm_job_state does not have at least one value.
     """
     mocked_sbatch = mock.MagicMock()
-    mocked_sbatch.get_job_info.return_value = dict(
-        job_state=[],
-        job_id=123,
-        state_reason="NonZeroExitCode",
-        foo="bar",
-    )
+    mocked_sbatch.get_job_info.return_value = {
+        "job_state": [],
+        "job_id": 123,
+        "state_reason": "NonZeroExitCode",
+        "foo": "bar",
+    }
 
     with pytest.raises(SbatchError, match="does not have at least one value"):
         await fetch_job_data(123, mocked_sbatch)
@@ -165,18 +165,18 @@ async def test_fetch_active_submissions__success():
     """
     pending_job_submissions_data = {
         "items": [
-            dict(
-                id=1,
-                slurm_job_id=11,
-            ),
-            dict(
-                id=2,
-                slurm_job_id=22,
-            ),
-            dict(
-                id=3,
-                slurm_job_id=33,
-            ),
+            {
+                "id": 1,
+                "slurm_job_id": 11,
+            },
+            {
+                "id": 2,
+                "slurm_job_id": 22,
+            },
+            {
+                "id": 3,
+                "slurm_job_id": 33,
+            },
         ],
         "page": 1,
         "pages": 1,
@@ -222,7 +222,7 @@ async def test_fetch_active_submissions__raises_JobbergateApiError_if_response_c
     JobbergateApiError if it fails to convert the response to an ActiveJobSubmission.
     """
     active_job_submissions_data = [
-        dict(bad="data"),
+        {"bad": "data"},
     ]
     with respx.mock:
         respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/active").mock(
@@ -256,12 +256,12 @@ async def test_update_job_data__success():
             ),
         )
 
-        assert json.loads(update_route.calls.last.request.content) == dict(
-            slurm_job_id=13,
-            slurm_job_state="FAILED",
-            slurm_job_info="some job info",
-            slurm_job_state_reason="Something happened",
-        )
+        assert json.loads(update_route.calls.last.request.content) == {
+            "slurm_job_id": 13,
+            "slurm_job_state": "FAILED",
+            "slurm_job_info": "some job info",
+            "slurm_job_state_reason": "Something happened",
+        }
 
 
 @pytest.mark.asyncio

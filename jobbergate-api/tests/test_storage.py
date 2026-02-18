@@ -114,14 +114,14 @@ async def test_sort_clause__auto_sort_enum_column(synth_session, insert_dummy_ro
     """
 
     await insert_dummy_rows(
-        dict(id=44, status="COMPLETED"),
-        dict(id=45, status="FAILED"),
-        dict(id=46, status="REJECTED"),
-        dict(id=47, status="COMPLETED"),
-        dict(id=48, status="CREATED"),
-        dict(id=49, status="SUBMITTED"),
-        dict(id=50, status="REJECTED"),
-        dict(id=51, status="FAILED"),
+        {"id": 44, "status": "COMPLETED"},
+        {"id": 45, "status": "FAILED"},
+        {"id": 46, "status": "REJECTED"},
+        {"id": 47, "status": "COMPLETED"},
+        {"id": 48, "status": "CREATED"},
+        {"id": 49, "status": "SUBMITTED"},
+        {"id": 50, "status": "REJECTED"},
+        {"id": 51, "status": "FAILED"},
     )
     status_sort_clause = sort_clause("status", DummySortTable.sortable_fields(), True)
     query = select(DummySortTable).order_by(status_sort_clause, "id")

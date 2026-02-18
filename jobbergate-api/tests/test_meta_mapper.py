@@ -60,22 +60,22 @@ def test__call___remaps_fields_when_they_are_present_in_the_schema_being_mapped(
             description="new baz description",
         ),
     )
-    full_instance = dict(
-        properties=dict(
-            foo=dict(
-                description="foo description",
-                example="foo example",
-            ),
-            bar=dict(
-                description="bar description",
-                example="bar example",
-            ),
-            baz=dict(
-                description="baz description",
-                example="baz example",
-            ),
-        ),
-    )
+    full_instance = {
+        "properties": {
+            "foo": {
+                "description": "foo description",
+                "example": "foo example",
+            },
+            "bar": {
+                "description": "bar description",
+                "example": "bar example",
+            },
+            "baz": {
+                "description": "baz description",
+                "example": "baz example",
+            },
+        },
+    }
     mapper(full_instance)
     assert full_instance["properties"]["foo"]["description"] == "new foo description"
     assert full_instance["properties"]["foo"]["example"] == "new foo example"

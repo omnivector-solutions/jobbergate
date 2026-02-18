@@ -431,9 +431,11 @@ async def _upsert_workflow_file(
         secure_services.crud.template.ensure_attribute(
             job_script_template, owner_email=secure_services.identity_payload.email
         )
-    upsert_kwargs = dict(
-        parent_id=job_script_template.id, filename=WORKFLOW_FILE_NAME, upload_content=upload_content
-    )
+    upsert_kwargs = {
+        "parent_id": job_script_template.id,
+        "filename": WORKFLOW_FILE_NAME,
+        "upload_content": upload_content,
+    }
 
     try:
         await secure_services.file.workflow.get(job_script_template.id, WORKFLOW_FILE_NAME)

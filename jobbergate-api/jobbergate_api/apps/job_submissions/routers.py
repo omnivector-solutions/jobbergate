@@ -358,11 +358,11 @@ async def job_submission_agent_update(
             additional_info=update_params.slurm_job_state_reason,
         )
 
-    update_dict: dict[str, Any] = dict(
-        slurm_job_id=update_params.slurm_job_id,
-        slurm_job_state=update_params.slurm_job_state,
-        slurm_job_info=update_params.slurm_job_info,
-    )
+    update_dict: dict[str, Any] = {
+        "slurm_job_id": update_params.slurm_job_id,
+        "slurm_job_state": update_params.slurm_job_state,
+        "slurm_job_info": update_params.slurm_job_info,
+    }
 
     job_state_details = slurm_job_state_details[update_params.slurm_job_state]
     if job_state_details.is_abort_status:
@@ -411,13 +411,13 @@ async def job_submissions_agent_submitted(
 
     logger.info(f"Marking job_submissions {submitted_request.id} as SUBMITTED")
 
-    update_kwargs = dict(
-        slurm_job_id=submitted_request.slurm_job_id,
-        slurm_job_state=submitted_request.slurm_job_state,
-        slurm_job_info=submitted_request.slurm_job_info,
-        report_message=submitted_request.slurm_job_state_reason,
-        status=JobSubmissionStatus.SUBMITTED,
-    )
+    update_kwargs = {
+        "slurm_job_id": submitted_request.slurm_job_id,
+        "slurm_job_state": submitted_request.slurm_job_state,
+        "slurm_job_info": submitted_request.slurm_job_info,
+        "report_message": submitted_request.slurm_job_state_reason,
+        "status": JobSubmissionStatus.SUBMITTED,
+    }
 
     if job_submission.status == JobSubmissionStatus.CANCELLED:
         update_kwargs["status"] = JobSubmissionStatus.CANCELLED
