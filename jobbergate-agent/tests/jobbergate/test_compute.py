@@ -20,6 +20,70 @@ from jobbergate_agent.utils.compute import (
 )
 
 
+def _create_influx_point(
+    time: int,
+    host: str,
+    job: str,
+    step: str,
+    task: str,
+    measurement: str,
+    value: float,
+) -> InfluxDBPointDict:
+    """Create a single InfluxDB point dictionary."""
+    return InfluxDBPointDict(
+        **{
+            "time": time,
+            "host": host,
+            "job": job,
+            "step": step,
+            "task": task,
+            "value": value,
+            "measurement": measurement,
+        }
+    )
+
+
+def _generate_measures_for_iteration(
+    faker: Faker,
+    current_time: int,
+    num_hosts: int,
+    num_jobs: int,
+    num_steps: int,
+    num_tasks: int,
+    measurement_names: tuple,
+) -> tuple[list[InfluxDBPointDict], dict, int]:
+    """Generate measures for one iteration and return measures, aggregated data, and updated time."""
+    measures = []
+    aggregated_data: dict[tuple[int, str, str, str], dict[str, float]] = {}
+    default_measurements: dict[str, float] = dict.fromkeys(measurement_names, 0.0)
+
+    for host in range(1, num_hosts + 1):
+        for job in range(1, num_jobs + 1):
+            for step in range(1, num_steps + 1):
+                for task in range(1, num_tasks + 1):
+                    key = (current_time, f"host_{host}", str(step), str(task))
+
+                    if key not in aggregated_data:
+                        aggregated_data[key] = default_measurements.copy()
+
+                    for measurement in measurement_names:
+                        value = faker.pyfloat(min_value=0, max_value=100)
+                        measure = _create_influx_point(
+                            time=current_time,
+                            host=f"host_{host}",
+                            job=str(job),
+                            step=str(step),
+                            task=str(task),
+                            measurement=measurement,
+                            value=value,
+                        )
+                        measures.append(measure)
+                        aggregated_data[key][measurement] = value
+            current_time += 10
+
+    return measures, aggregated_data, current_time
+
+
 @pytest.fixture()
 def generate_and_aggregate_job_metrics_data(
     faker: Faker,
@@ -45,40 +109,17 @@ def generate_and_aggregate_job_metrics_data(
         # Initialize data structures
         current_time = int(datetime.now().timestamp())
         measurement_names = get_args(INFLUXDB_MEASUREMENT)
-        default_measurements: dict[str, float] = dict.fromkeys(measurement_names, 0.0)
 
-        measures = []
-        aggregated_data: dict[tuple[int, str, str, str], dict[str, float]] = {}
+        all_measures = []
+        all_aggregated_data: dict[tuple[int, str, str, str], dict[str, float]] = {}
 
-        # Generate measures
+        # Generate measures for each iteration
         for _ in range(num_points_per_measurement):
-            for host in range(1, num_hosts + 1):
-                for job in range(1, num_jobs + 1):
-                    for step in range(1, num_steps + 1):
-                        for task in range(1, num_tasks + 1):
-                            key = (current_time, f"host_{host}", str(step), str(task))
-
-                            if key not in aggregated_data:
-                                aggregated_data[key] = default_measurements.copy()
-
-                            for measurement in measurement_names:
-                                value = faker.pyfloat(min_value=0, max_value=100)
-                                measure = InfluxDBPointDict(
-                                    **{
-                                        "time": current_time,
-                                        "host": f"host_{host}",
-                                        "job": str(job),
-                                        "step": str(step),
-                                        "task": str(task),
-                                        "value": value,
-                                        "measurement": measurement,
-                                    }
-                                )
-                                measures.append(measure)
-
-                                # Aggregate value
-                                aggregated_data[key][measurement] = value
-                    current_time += 10
+            measures, aggregated_data, current_time = _generate_measures_for_iteration(
+                faker, current_time, num_hosts, num_jobs, num_steps, num_tasks, measurement_names
+            )
+            all_measures.extend(measures)
+            all_aggregated_data.update(aggregated_data)
 
         # Create aggregated list
         aggregated_list = cast(
@@ -89,13 +130,13 @@ def generate_and_aggregate_job_metrics_data(
                     host,
                     step,
                     task,
-                    *(aggregated_data[(time, host, step, task)][measurement] for measurement in measurement_names),
+                    *(all_aggregated_data[(time, host, step, task)][measurement] for measurement in measurement_names),
                 )
-                for (time, host, step, task) in aggregated_data
+                for (time, host, step, task) in all_aggregated_data
             ],
         )
 
-        return measures, aggregated_list
+        return all_measures, aggregated_list
 
     return _generate_and_aggregate
 
@@ -165,7 +206,7 @@ def test_measure_memory_usage_decorator(
 
     @measure_memory_usage
     def dummy_function():
-        return sum([i for i in range(10000)])
+        return sum(list(range(10000)))
 
     result = dummy_function()
 
@@ -210,7 +251,7 @@ def test_measure_memory_usage_decorator_logging(caplog):
 
     @measure_memory_usage
     def dummy_function():
-        return sum([i for i in range(10000)])
+        return sum(list(range(10000)))
 
     with caplog.at_level("DEBUG"):
         dummy_function()
