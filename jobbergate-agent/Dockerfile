@@ -18,9 +18,9 @@ FROM ubuntu:resolute AS runner
 
 WORKDIR /app
 
-RUN apt update && apt install -y tzdata && rm -rf /var/lib/apt/lists/*
-
-RUN groupadd --system appuser \
+RUN apt update && apt --no-install-recommends install -y tzdata \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system appuser \
     && useradd --system --create-home --gid appuser appuser
 
 # Copy virtual environment and uv-managed Python from builder
