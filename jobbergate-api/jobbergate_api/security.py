@@ -4,6 +4,8 @@ Instantiates armasec resources for auth on api endpoints using project settings.
 Also provides a factory function for TokenSecurity to reduce boilerplate.
 """
 
+from typing import Annotated
+
 from armasec import Armasec, TokenPayload
 from armasec.schemas import DomainConfig
 from armasec.token_security import PermissionMode
@@ -127,7 +129,9 @@ def lockdown_with_identity(
     """
 
     def dependency(
-        token_payload: TokenPayload = Depends(guard.lockdown(*scopes, permission_mode=permission_mode)),
+        token_payload: Annotated[
+            TokenPayload, Depends(guard.lockdown(*scopes, permission_mode=permission_mode))
+        ],
     ) -> IdentityPayload:
         """
         Provide an injectable function to lockdown a route and extract the identity payload.

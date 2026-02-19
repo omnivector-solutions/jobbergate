@@ -2,6 +2,7 @@
 Provide functions to interact with persistent data storage.
 """
 
+from typing import Annotated
 import re
 import typing
 from contextlib import asynccontextmanager
@@ -175,15 +176,18 @@ def secure_session(
     """
 
     async def dependency(
-        identity_payload: IdentityPayload = fastapi.Depends(
-            lockdown_with_identity(
-                *scopes,
-                permission_mode=permission_mode,
-                ensure_email=ensure_email,
-                ensure_organization=ensure_organization,
-                ensure_client_id=ensure_client_id,
-            )
-        ),
+        identity_payload: Annotated[
+            IdentityPayload,
+            fastapi.Depends(
+                lockdown_with_identity(
+                    *scopes,
+                    permission_mode=permission_mode,
+                    ensure_email=ensure_email,
+                    ensure_organization=ensure_organization,
+                    ensure_client_id=ensure_client_id,
+                )
+            ),
+        ],
     ) -> typing.AsyncIterator[SecureSession]:
         override_db_name = identity_payload.organization_id if settings.MULTI_TENANCY_ENABLED else None
         async with engine_factory.auto_session(override_db_name=override_db_name, commit=commit) as session:

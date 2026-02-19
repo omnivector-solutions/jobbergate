@@ -1,5 +1,7 @@
 """Router for the Job Script Template resource."""
 
+from typing import Annotated
+
 import snick
 from buzz import require_condition
 from fastapi import (
@@ -50,9 +52,10 @@ router = APIRouter(prefix="/job-script-templates", tags=["Job Script Templates"]
 )
 async def job_script_template_create(
     create_request: JobTemplateCreateRequest,
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
-    ),
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)),
+    ],
 ):
     """Create a new job script template."""
     logger.info(f"Creating a new job script template with {create_request=}")
@@ -74,10 +77,11 @@ async def job_script_template_create(
     response_model=JobTemplateDetailedView,
 )
 async def job_script_template_get(
-    id_or_identifier: str = Path(),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ, commit=False)
-    ),
+    id_or_identifier: Annotated[str, Path()],
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ, commit=False)),
+    ],
 ):
     """Get a job script template by id or identifier."""
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
@@ -92,11 +96,12 @@ async def job_script_template_get(
     description="Endpoint for cloning a job script template to a new entry owned by the user",
 )
 async def job_script_template_clone(
-    id_or_identifier: str = Path(),
+    id_or_identifier: Annotated[str, Path()],
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)),
+    ],
     clone_request: JobTemplateCloneRequest | None = None,
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
-    ),
 ):
     """Clone a job script template by id or identifier."""
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
@@ -137,11 +142,12 @@ async def job_script_template_clone(
     response_model=Page[JobTemplateListView],
 )
 async def job_script_template_get_list(
-    list_params: ListParams = Depends(),
+    list_params: Annotated[ListParams, Depends()],
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ, commit=False)),
+    ],
     include_null_identifier: bool = Query(False),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ, commit=False)
-    ),
 ):
     """Get a list of job script templates."""
     logger.debug("Preparing to list job script templates")
@@ -165,10 +171,11 @@ async def job_script_template_get_list(
 )
 async def job_script_template_update(
     update_request: JobTemplateUpdateRequest,
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_UPDATE, ensure_email=True)),
+    ],
     id_or_identifier: str = Path(),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_UPDATE, ensure_email=True)
-    ),
 ):
     """Update a job script template by id or identifier."""
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
@@ -189,10 +196,11 @@ async def job_script_template_update(
     description="Endpoint to delete a job script template by id or identifier",
 )
 async def job_script_template_delete(
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)),
+    ],
     id_or_identifier: str = Path(),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)
-    ),
 ):
     """Delete a job script template by id or identifier."""
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
@@ -211,11 +219,12 @@ async def job_script_template_delete(
     description="Endpoint to get a file from a job script template by id or identifier",
 )
 async def job_script_template_get_file(
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ, commit=False)),
+    ],
     id_or_identifier: str = Path(),
     file_name: str = Path(),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ, commit=False)
-    ),
 ):
     """
     Get a job script template file by id or identifier.
@@ -272,15 +281,16 @@ async def _upsert_template_file(
     response_model=TemplateFileDetailedView,
 )
 async def job_script_template_upload_file(
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)),
+    ],
     id_or_identifier: str = Path(),
     file_type: FileType = Path(),
     filename: str | None = Query(None, max_length=255),
     upload_file: UploadFile | None = File(None, description="File to upload"),
     previous_filename: str | None = Query(
         None, description="Previous name of the file in case a rename is needed", max_length=255
-    ),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
     ),
 ):
     """Upload a file to a job script template by id or identifier."""
@@ -316,15 +326,16 @@ async def job_script_template_upload_file(
     response_model=TemplateFileDetailedView,
 )
 async def job_script_template_upload_file_by_url(
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)),
+    ],
     id_or_identifier: str = Path(),
     file_type: FileType = Path(),
     filename: str | None = Query(None, max_length=255),
     file_url: AnyUrl = Query(..., description="URL of the file to upload"),
     previous_filename: str | None = Query(
         None, description="Previous name of the file in case a rename is needed", max_length=255
-    ),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
     ),
 ):
     """Upload a file to a job script template by id or identifier using file URL."""
@@ -370,11 +381,12 @@ async def job_script_template_upload_file_by_url(
     description="Endpoint to delete a file to a job script template by id or identifier",
 )
 async def job_script_template_delete_file(
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)),
+    ],
     id_or_identifier: str = Path(),
     file_name: str = Path(),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)
-    ),
 ):
     """Delete a file from a job script template by id or identifier."""
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
@@ -392,10 +404,11 @@ async def job_script_template_delete_file(
     description="Endpoint to get a workflow file from a job script template by id or identifier",
 )
 async def job_script_workflow_get_file(
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ, commit=False)),
+    ],
     id_or_identifier: str = Path(),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ, commit=False)
-    ),
 ):
     """
     Get a workflow file by id or identifier.
@@ -462,14 +475,15 @@ async def _upsert_workflow_file(
     response_model=WorkflowFileDetailedView,
 )
 async def job_script_workflow_upload_file(
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)),
+    ],
     id_or_identifier: str = Path(),
     runtime_config: RunTimeConfig | None = Form(
         None, description="Runtime configuration is optional when the workflow file already exists"
     ),
     upload_file: UploadFile = File(..., description="File to upload"),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
-    ),
 ):
     """Upload a file to a job script workflow by id or identifier."""
     return await _upsert_workflow_file(id_or_identifier, runtime_config, upload_file, secure_services)
@@ -482,14 +496,15 @@ async def job_script_workflow_upload_file(
     response_model=WorkflowFileDetailedView,
 )
 async def job_script_upload_file_by_url(
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)),
+    ],
     id_or_identifier: str = Path(),
     runtime_config: RunTimeConfig | None = Body(
         None, description="Runtime configuration is optional when the workflow file already exists"
     ),
     file_url: AnyUrl = Query(..., description="URL of the file to upload"),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)
-    ),
 ):
     """Upload a file to a job script workflow by id or identifier from a URL."""
     return await _upsert_workflow_file(id_or_identifier, runtime_config, file_url, secure_services)
@@ -501,10 +516,11 @@ async def job_script_upload_file_by_url(
     description="Endpoint to delete a workflow file from a job script template by id or identifier",
 )
 async def job_script_workflow_delete_file(
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)),
+    ],
     id_or_identifier: str = Path(),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)
-    ),
 ):
     """Delete a workflow file from a job script template by id or identifier."""
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)

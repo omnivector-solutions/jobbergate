@@ -1,5 +1,6 @@
 """Router for the Job Script Template resource."""
 
+from typing import Annotated
 from typing import cast
 
 from buzz import require_condition, handle_errors
@@ -41,9 +42,9 @@ router = APIRouter(prefix="/job-scripts", tags=["Job Scripts"])
 )
 async def job_script_create(
     create_request: JobScriptCreateRequest,
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE)
-    ),
+    secure_services: Annotated[
+        SecureService, Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE))
+    ],
 ):
     """Create a stand alone job script."""
     logger.info(f"Creating a new job script with {create_request=}")
@@ -67,11 +68,12 @@ async def job_script_create(
     description="Endpoint for cloning a job script to a new entry owned by the user",
 )
 async def job_script_clone(
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)),
+    ],
     id: int = Path(),
     clone_request: JobScriptCloneRequest | None = None,
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)
-    ),
 ):
     """Clone a job script by its id."""
     logger.info(f"Cloning a job script from {id=} with {clone_request=}")
@@ -102,10 +104,11 @@ async def job_script_clone(
 async def job_script_create_from_template(
     create_request: JobScriptCreateRequest,
     render_request: RenderFromTemplateRequest,
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)),
+    ],
     id_or_identifier: str = Path(...),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)
-    ),
 ):
     """Create a new job script from a job script template."""
     typed_id_or_identifier = coerce_id_or_identifier(id_or_identifier)
@@ -177,10 +180,10 @@ async def job_script_create_from_template(
     response_model=JobScriptDetailedView,
 )
 async def job_script_get(
+    secure_services: Annotated[
+        SecureService, Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ, commit=False))
+    ],
     id: int = Path(),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ, commit=False)
-    ),
 ):
     """Get a job script by id."""
     logger.info(f"Getting job script {id=}")
@@ -193,13 +196,13 @@ async def job_script_get(
     response_model=Page[JobScriptListView],
 )
 async def job_script_get_list(
-    list_params: ListParams = Depends(),
+    secure_services: Annotated[
+        SecureService, Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ, commit=False))
+    ],
+    list_params: Annotated[ListParams, Depends()],
     from_job_script_template_id: int | None = Query(
         None,
         description="Filter job-scripts by the job-script-template-id they were created from.",
-    ),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ, commit=False)
     ),
 ):
     """Get a list of job scripts."""
@@ -224,10 +227,11 @@ async def job_script_get_list(
 )
 async def job_script_update(
     update_params: JobScriptUpdateRequest,
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_UPDATE, ensure_email=True)),
+    ],
     id: int = Path(),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_UPDATE, ensure_email=True)
-    ),
 ):
     """Update a job script template by id or identifier."""
     logger.info(f"Updating job script {id=} with {update_params=}")
@@ -245,10 +249,11 @@ async def job_script_update(
     description="Endpoint to delete a job script by id",
 )
 async def job_script_delete(
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_DELETE, ensure_email=True)),
+    ],
     id: int = Path(...),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_DELETE, ensure_email=True)
-    ),
 ):
     """Delete a job script template by id or identifier."""
     logger.info(f"Deleting job script {id=}")
@@ -266,11 +271,11 @@ async def job_script_delete(
     description="Endpoint to get a file from a job script",
 )
 async def job_script_get_file(
+    secure_services: Annotated[
+        SecureService, Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ, commit=False))
+    ],
     id: int = Path(...),
     file_name: str = Path(...),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ, commit=False)
-    ),
 ):
     """
     Get a job script file.
@@ -299,6 +304,10 @@ async def job_script_get_file(
     response_model=JobScriptFileDetailedView,
 )
 async def job_script_upload_file_by_url(
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)),
+    ],
     id: int = Path(...),
     file_type: FileType = Path(...),
     filename: str | None = Query(None, max_length=255),
@@ -307,9 +316,6 @@ async def job_script_upload_file_by_url(
         None,
         description="Previous name of the file in case a rename is needed",
         max_length=255,
-    ),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)
     ),
 ):
     """Upload a file to a job script from a URL."""
@@ -365,15 +371,16 @@ async def job_script_upload_file_by_url(
     response_model=JobScriptFileDetailedView,
 )
 async def job_script_upload_file(
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)),
+    ],
     id: int = Path(...),
     file_type: FileType = Path(...),
     filename: str | None = Query(None, max_length=255),
     upload_file: UploadFile | None = File(None, description="File to upload"),
     previous_filename: str | None = Query(
         None, description="Previous name of the file in case a rename is needed", max_length=255
-    ),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)
     ),
 ):
     """Upload a file to a job script."""
@@ -409,11 +416,12 @@ async def job_script_upload_file(
     description="Endpoint to delete a file from a job script",
 )
 async def job_script_delete_file(
+    secure_services: Annotated[
+        SecureService,
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_DELETE, ensure_email=True)),
+    ],
     id: int = Path(...),
     file_name: str = Path(...),
-    secure_services: SecureService = Depends(
-        secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_DELETE, ensure_email=True)
-    ),
 ):
     """Delete a file from a job script template by id or identifier."""
     job_script = await secure_services.crud.job_script.get(id)

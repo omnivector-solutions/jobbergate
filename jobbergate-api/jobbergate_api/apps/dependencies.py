@@ -5,6 +5,7 @@ Note:
     The dependencies can be reused multiple times, since FastAPI caches the results.
 """
 
+from typing import Annotated
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from itertools import chain
@@ -131,16 +132,19 @@ def secure_services(
     """
 
     async def dependency(
-        secure_session: SecureSession = Depends(
-            secure_session(
-                *scopes,
-                permission_mode=permission_mode,
-                commit=commit,
-                ensure_email=ensure_email,
-                ensure_organization=settings.MULTI_TENANCY_ENABLED is True,
-                ensure_client_id=ensure_client_id,
-            )
-        ),
+        secure_session: Annotated[
+            SecureSession,
+            Depends(
+                secure_session(
+                    *scopes,
+                    permission_mode=permission_mode,
+                    commit=commit,
+                    ensure_email=ensure_email,
+                    ensure_organization=settings.MULTI_TENANCY_ENABLED is True,
+                    ensure_client_id=ensure_client_id,
+                )
+            ),
+        ],
     ) -> AsyncIterator[SecureService]:
         """
         Bind each service to the secure session and then return the session.
