@@ -12,7 +12,7 @@ COPY jobbergate-agent ./jobbergate-agent
 
 # Install with Python in a portable location
 ENV UV_PYTHON_INSTALL_DIR=/app/.python
-RUN uv sync --frozen --no-editable --package jobbergate-agent --no-dev
+RUN uv sync --frozen --no-editable --python 3.14 --managed-python --package jobbergate-agent --no-dev
 
 FROM ubuntu:resolute AS runner
 
