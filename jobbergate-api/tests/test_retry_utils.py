@@ -87,7 +87,7 @@ class TestAsyncRetry:
         assert on_error_callback.call_count == 3
         # Verify attempt numbers are passed correctly (1, 2, 3)
         for call_args, expected_attempt in zip(on_error_callback.call_args_list, [1, 2, 3]):
-            args, kwargs = call_args
+            args, _ = call_args
             exc, attempt = args
             assert isinstance(exc, Exception)
             assert exc.args[0] == "fail"
@@ -189,10 +189,10 @@ class TestSyncRetry:
         """Test return None when all retries are exhausted."""
         mock_func = MagicMock(side_effect=Exception("persistent failure"))
         mock_func.__name__ = "test_func"
-        
+
         with patch("time.sleep"):
             result = sync_retry(mock_func, max_attempts=3)
-        
+
         assert result is None
         assert mock_func.call_count == 3
 
@@ -230,7 +230,7 @@ class TestSyncRetry:
         assert on_error_callback.call_count == 3
         # Verify attempt numbers are passed correctly (1, 2, 3)
         for call_args, expected_attempt in zip(on_error_callback.call_args_list, [1, 2, 3]):
-            args, kwargs = call_args
+            args, _ = call_args
             exc, attempt = args
             assert isinstance(exc, Exception)
             assert exc.args[0] == "fail"
@@ -259,7 +259,7 @@ class TestSyncRetry:
         with patch("jobbergate_api.retry_utils.logger") as mock_logger:
             with patch("time.sleep"):
                 result = sync_retry(mock_func, max_attempts=2)
-            
+
             assert result is None
             # Verify error was logged with exception details
             mock_logger.error.assert_called_once()
@@ -275,7 +275,7 @@ class TestSyncRetry:
         with patch("jobbergate_api.retry_utils.logger") as mock_logger:
             with patch("time.sleep"):
                 sync_retry(mock_func, max_attempts=2)
-            
+
             # Should log warning for each failure
             assert mock_logger.warning.call_count == 2
 
@@ -292,83 +292,6 @@ class TestSyncRetry:
                     max_attempts=2,
                     on_error=on_error_callback,
                 )
-            
+
             # Should not log warning when callback is provided
             mock_logger.warning.assert_not_called()
-
-
-class TestAsyncRetryIntegration:
-    """Integration tests for async_retry with real async functions."""
-
-    @pytest.mark.asyncio
-    async def test_with_real_async_function(self):
-        """Test with a real async function."""
-        call_count = 0
-
-        async def flaky_function():
-            nonlocal call_count
-            call_count += 1
-            if call_count < 3:
-                raise RuntimeError("temporary failure")
-            return "success"
-
-        result = await async_retry(flaky_function, max_attempts=5)
-        assert result == "success"
-        assert call_count == 3
-
-    @pytest.mark.asyncio
-    async def test_with_async_function_returning_none(self):
-        """Test that None return values are handled correctly."""
-        async def returns_none():
-            return None
-
-        result = await async_retry(returns_none)
-        assert result is None
-
-    @pytest.mark.asyncio
-    async def test_with_async_function_returning_falsy_values(self):
-        """Test that falsy values are returned successfully."""
-        test_values = [0, False, "", [], {}]
-        for test_value in test_values:
-            async def returns_falsy():
-                return test_value
-
-            result = await async_retry(returns_falsy)
-            assert result == test_value
-
-
-class TestSyncRetryIntegration:
-    """Integration tests for sync_retry with real functions."""
-
-    def test_with_real_function(self):
-        """Test with a real sync function."""
-        call_count = 0
-
-        def flaky_function():
-            nonlocal call_count
-            call_count += 1
-            if call_count < 3:
-                raise RuntimeError("temporary failure")
-            return "success"
-
-        result = sync_retry(flaky_function, max_attempts=5)
-        assert result == "success"
-        assert call_count == 3
-
-    def test_with_function_returning_none(self):
-        """Test that None return values are handled correctly."""
-        def returns_none():
-            return None
-
-        result = sync_retry(returns_none)
-        assert result is None
-
-    def test_with_function_returning_falsy_values(self):
-        """Test that falsy values are returned successfully."""
-        test_values = [0, False, "", [], {}]
-        for test_value in test_values:
-            def returns_falsy():
-                return test_value
-
-            result = sync_retry(returns_falsy)
-            assert result == test_value

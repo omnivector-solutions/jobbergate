@@ -7,6 +7,7 @@ from fastapi import (
     Body,
     Depends,
     File,
+    Form,
     HTTPException,
     Path,
     Query,
@@ -462,7 +463,7 @@ async def _upsert_workflow_file(
 )
 async def job_script_workflow_upload_file(
     id_or_identifier: str = Path(),
-    runtime_config: RunTimeConfig | None = Body(
+    runtime_config: RunTimeConfig | None = Form(
         None, description="Runtime configuration is optional when the workflow file already exists"
     ),
     upload_file: UploadFile = File(..., description="File to upload"),

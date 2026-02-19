@@ -5,7 +5,7 @@ set -e
 echo "---> Starting the MUNGE Authentication service (munged) ..."
 service munge start
 
-if [ "$1" = "slurmdbd" ]
+if [[ "$1" = "slurmdbd" ]]
 then
     echo "---> Starting the Slurm Database Daemon (slurmdbd) ..."
     {
@@ -21,7 +21,7 @@ then
     exec gosu slurm /usr/sbin/slurmdbd -Dvvv
 fi
 
-if [ "$1" = "slurmctld" ]
+if [[ "$1" = "slurmctld" ]]
 then
     echo "---> Waiting for slurmdbd to become active before starting slurmctld ..."
 
@@ -36,7 +36,7 @@ then
     exec gosu slurm /usr/sbin/slurmctld -Dvvv
 fi
 
-if [ "$1" = "slurmd" ]
+if [[ "$1" = "slurmd" ]]
 then
     echo "---> Waiting for slurmctld to become active before starting slurmd..."
 
@@ -51,7 +51,7 @@ then
     exec /usr/sbin/slurmd -Dvvv
 fi
 
-if [ "$1" = "jobbergate-agent" ]
+if [[ "$1" = "jobbergate-agent" ]]
 then
     echo "---> Waiting for slurmctld to become active before starting jobbergate-agent..."
 

@@ -66,7 +66,7 @@ def _generate_measures_for_iteration(
         range(1, num_steps + 1),
         range(1, num_tasks + 1),
     ):
-        time_increment = current_time + (host + job + step - 1) * 10
+        time_increment = current_time + (host + job + step - 3) * 10
         key = (time_increment, f"host_{host}", str(step), str(task))
 
         for measurement in measurement_names:

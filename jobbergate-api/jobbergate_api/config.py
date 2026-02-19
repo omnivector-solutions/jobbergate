@@ -123,7 +123,7 @@ class Settings(BaseSettings):
 
     # CORS configuration - comma-separated list of allowed origins
     # Default: wildcard for backward compatibility. In production, set to specific origins.
-    ALLOWED_ORIGINS: str = "*"
+    ALLOWED_ORIGINS: str | None = None
 
     @model_validator(mode="before")
     @classmethod
