@@ -571,21 +571,21 @@ async def test_get_job_submissions__no_param(
     inserted_job_script_id = base_job_script.id
 
     all_create_data = fill_all_job_submission_data(
-        dict(
-            job_script_id=inserted_job_script_id,
-            name="sub1",
-            owner_email="owner1@org.com",
-        ),
-        dict(
-            job_script_id=inserted_job_script_id,
-            name="sub2",
-            owner_email="owner999@org.com",
-        ),
-        dict(
-            job_script_id=inserted_job_script_id,
-            name="sub3",
-            owner_email="owner1@org.com",
-        ),
+        {
+            "job_script_id": inserted_job_script_id,
+            "name": "sub1",
+            "owner_email": "owner1@org.com",
+        },
+        {
+            "job_script_id": inserted_job_script_id,
+            "name": "sub2",
+            "owner_email": "owner999@org.com",
+        },
+        {
+            "job_script_id": inserted_job_script_id,
+            "name": "sub3",
+            "owner_email": "owner1@org.com",
+        },
     )
 
     for create_data in all_create_data:
@@ -657,28 +657,28 @@ async def test_get_job_submissions__user_only(
     inserted_job_script_id = base_job_script.id
 
     all_create_data = fill_all_job_submission_data(
-        dict(
-            job_script_id=inserted_job_script_id,
-            name="sub1",
-            owner_email="owner1@org.com",
-        ),
-        dict(
-            job_script_id=inserted_job_script_id,
-            name="sub2",
-            owner_email="owner999@org.com",
-        ),
-        dict(
-            job_script_id=inserted_job_script_id,
-            name="sub3",
-            owner_email="owner1@org.com",
-        ),
+        {
+            "job_script_id": inserted_job_script_id,
+            "name": "sub1",
+            "owner_email": "owner1@org.com",
+        },
+        {
+            "job_script_id": inserted_job_script_id,
+            "name": "sub2",
+            "owner_email": "owner999@org.com",
+        },
+        {
+            "job_script_id": inserted_job_script_id,
+            "name": "sub3",
+            "owner_email": "owner1@org.com",
+        },
     )
 
     for create_data in all_create_data:
         await synth_services.crud.job_submission.create(**create_data)
 
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_READ)
-    response = await client.get("/jobbergate/job-submissions", params=dict(user_only=True))
+    response = await client.get("/jobbergate/job-submissions", params={"user_only": True})
     assert unpack_response(response, key="name", sort=True) == ["sub1", "sub3"]
 
 
@@ -755,7 +755,7 @@ async def test_get_job_submissions__with_status_param(
 
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_READ)
     response = await client.get(
-        "/jobbergate/job-submissions", params=dict(submit_status=JobSubmissionStatus.CREATED.value)
+        "/jobbergate/job-submissions", params={"submit_status": JobSubmissionStatus.CREATED.value}
     )
     assert unpack_response(response, key="name", sort=True) == ["sub1", "sub2"]
 
@@ -781,13 +781,13 @@ async def test_get_job_submissions__with_search_param(
     inserted_job_script_id = base_job_script.id
 
     submission_list = fill_all_job_submission_data(
-        dict(name="test name one", owner_email="one@org.com"),
-        dict(name="test name two", owner_email="two@org.com"),
-        dict(
-            name="test name twenty-two",
-            owner_email="twenty-two@org.com",
-            description="a long description of this job_script",
-        ),
+        {"name": "test name one", "owner_email": "one@org.com"},
+        {"name": "test name two", "owner_email": "two@org.com"},
+        {
+            "name": "test name twenty-two",
+            "owner_email": "twenty-two@org.com",
+            "description": "a long description of this job_script",
+        },
     )
 
     for item in submission_list:
@@ -835,9 +835,9 @@ async def test_get_job_submissions_with_sort_params(
     inserted_job_script_id = base_job_script.id
 
     submission_list = fill_all_job_submission_data(
-        dict(name="Z", owner_email="admin@org.com", status=JobSubmissionStatus.REJECTED),
-        dict(name="Y", owner_email="admin@org.com", status=JobSubmissionStatus.DONE),
-        dict(name="X", owner_email="admin@org.com", status=JobSubmissionStatus.ABORTED),
+        {"name": "Z", "owner_email": "admin@org.com", "status": JobSubmissionStatus.REJECTED},
+        {"name": "Y", "owner_email": "admin@org.com", "status": JobSubmissionStatus.DONE},
+        {"name": "X", "owner_email": "admin@org.com", "status": JobSubmissionStatus.ABORTED},
     )
 
     for item in submission_list:
@@ -882,11 +882,11 @@ async def test_list_job_submission_pagination(
 
     submission_list = fill_all_job_submission_data(
         *[
-            dict(
-                job_script_id=inserted_job_script_id,
-                name=f"sub{i}",
-                owner_email="owner1@org.com",
-            )
+            {
+                "job_script_id": inserted_job_script_id,
+                "name": f"sub{i}",
+                "owner_email": "owner1@org.com",
+            }
             for i in range(1, 6)
         ]
     )
@@ -951,21 +951,21 @@ async def test_get_job_submissions_with_slurm_job_ids_param(
     inserted_job_script_id = base_job_script.id
 
     submission_list = fill_all_job_submission_data(
-        dict(
-            name="sub1",
-            owner_email="owner1@org.com",
-            slurm_job_id=101,
-        ),
-        dict(
-            name="sub2",
-            owner_email="owner1@org.com",
-            slurm_job_id=102,
-        ),
-        dict(
-            name="sub3",
-            owner_email="owner1@org.com",
-            slurm_job_id=103,
-        ),
+        {
+            "name": "sub1",
+            "owner_email": "owner1@org.com",
+            "slurm_job_id": 101,
+        },
+        {
+            "name": "sub2",
+            "owner_email": "owner1@org.com",
+            "slurm_job_id": 102,
+        },
+        {
+            "name": "sub3",
+            "owner_email": "owner1@org.com",
+            "slurm_job_id": 103,
+        },
     )
 
     for item in submission_list:
@@ -994,18 +994,18 @@ async def test_get_job_submissions_applies_no_slurm_filter_if_slurm_job_ids_is_e
     inserted_job_script_id = base_job_script.id
 
     submission_list = fill_all_job_submission_data(
-        dict(
-            owner_email="owner1@org.com",
-            slurm_job_id=101,
-        ),
-        dict(
-            owner_email="owner1@org.com",
-            slurm_job_id=102,
-        ),
-        dict(
-            owner_email="owner1@org.com",
-            slurm_job_id=103,
-        ),
+        {
+            "owner_email": "owner1@org.com",
+            "slurm_job_id": 101,
+        },
+        {
+            "owner_email": "owner1@org.com",
+            "slurm_job_id": 102,
+        },
+        {
+            "owner_email": "owner1@org.com",
+            "slurm_job_id": 103,
+        },
     )
 
     for item in submission_list:
@@ -1076,7 +1076,7 @@ async def test_update_job_submission__basic(
     )
     inserted_job_submission_id = inserted_submission.id
 
-    payload = dict(name="new name", description="new description", execution_directory="/some/fake/path")
+    payload = {"name": "new name", "description": "new description", "execution_directory": "/some/fake/path"}
 
     owner_email = inserted_submission.owner_email
     requester_email = owner_email if is_owner else "another_" + owner_email
@@ -1107,7 +1107,7 @@ async def test_update_job_submission_not_found(client, inject_security_header, s
     asserting that the response status code of the request is 404.
     """
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_UPDATE)
-    response = await client.put("/jobbergate/job-submissions/9999", json=dict(job_submission_name="new name"))
+    response = await client.put("/jobbergate/job-submissions/9999", json={"job_submission_name": "new name"})
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -1139,7 +1139,7 @@ async def test_update_job_submission_bad_permission(
     inject_security_header(tester_email, "INVALID_PERMISSION")
     response = await client.put(
         f"/jobbergate/job-submissions/{inserted_job_submission_id}",
-        json=dict(name="new name"),
+        json={"name": "new name"},
     )
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -1174,7 +1174,7 @@ async def test_update_job_submission_forbidden(
     inject_security_header(requester_email, "INVALID_PERMISSION")
     response = await client.put(
         f"/jobbergate/job-submissions/{inserted_job_submission_id}",
-        json=dict(name="new name"),
+        json={"name": "new name"},
     )
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -1331,34 +1331,34 @@ async def test_job_submissions_agent_pending__success(
     )
 
     submission_list = fill_all_job_submission_data(
-        dict(
-            job_script_id=inserted_job_script_id,
-            name="sub1",
-            owner_email="email1@dummy.com",
-            status=JobSubmissionStatus.CREATED,
-            client_id="dummy-client",
-        ),
-        dict(
-            job_script_id=inserted_job_script_id,
-            name="sub2",
-            owner_email="email2@dummy.com",
-            status=JobSubmissionStatus.DONE,
-            client_id="dummy-client",
-        ),
-        dict(
-            job_script_id=inserted_job_script_id,
-            name="sub3",
-            owner_email="email3@dummy.com",
-            status=JobSubmissionStatus.CREATED,
-            client_id="silly-client",
-        ),
-        dict(
-            job_script_id=inserted_job_script_id,
-            name="sub4",
-            owner_email="email4@dummy.com",
-            status=JobSubmissionStatus.CREATED,
-            client_id="dummy-client",
-        ),
+        {
+            "job_script_id": inserted_job_script_id,
+            "name": "sub1",
+            "owner_email": "email1@dummy.com",
+            "status": JobSubmissionStatus.CREATED,
+            "client_id": "dummy-client",
+        },
+        {
+            "job_script_id": inserted_job_script_id,
+            "name": "sub2",
+            "owner_email": "email2@dummy.com",
+            "status": JobSubmissionStatus.DONE,
+            "client_id": "dummy-client",
+        },
+        {
+            "job_script_id": inserted_job_script_id,
+            "name": "sub3",
+            "owner_email": "email3@dummy.com",
+            "status": JobSubmissionStatus.CREATED,
+            "client_id": "silly-client",
+        },
+        {
+            "job_script_id": inserted_job_script_id,
+            "name": "sub4",
+            "owner_email": "email4@dummy.com",
+            "status": JobSubmissionStatus.CREATED,
+            "client_id": "dummy-client",
+        },
     )
 
     for item in submission_list:
@@ -1428,12 +1428,12 @@ async def test_job_submissions_agent_submitted__success(
     )
     inserted_job_submission_id = inserted_submission.id
 
-    payload = dict(
-        id=inserted_job_submission_id,
-        slurm_job_id=111,
-        slurm_job_state=SlurmJobState.RUNNING,
-        slurm_job_info="Fake slurm job info",
-    )
+    payload = {
+        "id": inserted_job_submission_id,
+        "slurm_job_id": 111,
+        "slurm_job_state": SlurmJobState.RUNNING,
+        "slurm_job_info": "Fake slurm job info",
+    }
 
     inject_security_header("who@cares.com", permission, client_id="dummy-client")
     response = await client.post("/jobbergate/job-submissions/agent/submitted", json=payload)
@@ -1481,12 +1481,12 @@ async def test_job_submissions_agent_submitted_cancelled_job__success(
     )
     inserted_job_submission_id = inserted_submission.id
 
-    payload = dict(
-        id=inserted_job_submission_id,
-        slurm_job_id=111,
-        slurm_job_state=SlurmJobState.RUNNING,
-        slurm_job_info="Fake slurm job info",
-    )
+    payload = {
+        "id": inserted_job_submission_id,
+        "slurm_job_id": 111,
+        "slurm_job_state": SlurmJobState.RUNNING,
+        "slurm_job_info": "Fake slurm job info",
+    }
 
     inject_security_header("who@cares.com", permission, client_id="dummy-client")
     response = await client.post("/jobbergate/job-submissions/agent/submitted", json=payload)
@@ -1534,12 +1534,12 @@ async def test_job_submissions_agent_submitted__fails_if_status_is_not_CREATED(
     )
     inserted_job_submission_id = inserted_submission.id
 
-    payload = dict(
-        id=inserted_job_submission_id,
-        slurm_job_id=111,
-        slurm_job_state=SlurmJobState.RUNNING,
-        slurm_job_info="Fake slurm job info",
-    )
+    payload = {
+        "id": inserted_job_submission_id,
+        "slurm_job_id": 111,
+        "slurm_job_state": SlurmJobState.RUNNING,
+        "slurm_job_info": "Fake slurm job info",
+    }
 
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
     response = await client.post("/jobbergate/job-submissions/agent/submitted", json=payload)
@@ -1560,12 +1560,12 @@ async def test_job_submissions_agent_submitted__fails_if_token_does_not_carry_cl
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE)
     response = await client.put(
         "/jobbergate/job-submissions/agent/1",
-        json=dict(
-            status=JobSubmissionStatus.SUBMITTED,
-            slurm_job_id=111,
-            slurm_job_state=SlurmJobState.RUNNING,
-            slurm_job_info="Fake slurm job info",
-        ),
+        json={
+            "status": JobSubmissionStatus.SUBMITTED,
+            "slurm_job_id": 111,
+            "slurm_job_state": SlurmJobState.RUNNING,
+            "slurm_job_info": "Fake slurm job info",
+        },
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "Checked expressions failed: Access token does not contain\\n  1: client_id" in response.text
@@ -1594,12 +1594,12 @@ async def test_job_submissions_agent_submitted__fails_if_client_id_does_not_matc
     )
     inserted_job_submission_id = inserted_submission.id
 
-    payload = dict(
-        id=inserted_job_submission_id,
-        slurm_job_id=111,
-        slurm_job_state=SlurmJobState.RUNNING,
-        slurm_job_info="Fake slurm job info",
-    )
+    payload = {
+        "id": inserted_job_submission_id,
+        "slurm_job_id": 111,
+        "slurm_job_state": SlurmJobState.RUNNING,
+        "slurm_job_info": "Fake slurm job info",
+    }
 
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="stupid-client")
     response = await client.post("/jobbergate/job-submissions/agent/submitted", json=payload)
@@ -1637,10 +1637,10 @@ async def test_job_submissions_agent_rejected__success(
     )
     inserted_job_submission_id = inserted_submission.id
 
-    payload = dict(
-        id=inserted_job_submission_id,
-        report_message="Something went wrong",
-    )
+    payload = {
+        "id": inserted_job_submission_id,
+        "report_message": "Something went wrong",
+    }
 
     inject_security_header("who@cares.com", permission, client_id="dummy-client", organization_id="dummy-org")
     response = await client.post("/jobbergate/job-submissions/agent/rejected", json=payload)
@@ -1689,10 +1689,10 @@ async def test_job_submissions_agent_rejected__publishes_status_change_to_rabbit
     )
     inserted_job_submission_id = inserted_submission.id
 
-    payload = dict(
-        id=inserted_job_submission_id,
-        report_message="Something went wrong",
-    )
+    payload = {
+        "id": inserted_job_submission_id,
+        "report_message": "Something went wrong",
+    }
 
     inject_security_header(
         "who@cares.com",
@@ -1707,16 +1707,16 @@ async def test_job_submissions_agent_rejected__publishes_status_change_to_rabbit
         message = await queue.get(timeout=1, no_ack=True)
 
     assert message
-    assert message.headers == dict(organization="dummy-org")
-    assert json.loads(message.body.decode()) == dict(
-        path=f"jobs.job_submissions.{inserted_submission.id}",
-        user_email=tester_email,
-        action="status",
-        additional_context=dict(
-            status=JobSubmissionStatus.REJECTED,
-            slurm_job_state=None,
-        ),
-    )
+    assert message.headers == {"organization": "dummy-org"}
+    assert json.loads(message.body.decode()) == {
+        "path": f"jobs.job_submissions.{inserted_submission.id}",
+        "user_email": tester_email,
+        "action": "status",
+        "additional_context": {
+            "status": JobSubmissionStatus.REJECTED,
+            "slurm_job_state": None,
+        },
+    }
 
 
 async def test_job_submissions_agent_rejected__fails_if_status_is_not_CREATED(
@@ -1745,10 +1745,10 @@ async def test_job_submissions_agent_rejected__fails_if_status_is_not_CREATED(
     )
     inserted_job_submission_id = inserted_submission.id
 
-    payload = dict(
-        id=inserted_job_submission_id,
-        report_message="Something went wrong",
-    )
+    payload = {
+        "id": inserted_job_submission_id,
+        "report_message": "Something went wrong",
+    }
 
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
     response = await client.post("/jobbergate/job-submissions/agent/rejected", json=payload)
@@ -1793,11 +1793,11 @@ async def test_job_submissions_agent_update__success(
     inject_security_header("who@cares.com", permission, client_id="dummy-client")
     response = await client.put(
         f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
-        json=dict(
-            slurm_job_state=SlurmJobState.RUNNING,
-            slurm_job_info="Dummy slurm job info",
-            slurm_job_id=111,
-        ),
+        json={
+            "slurm_job_state": SlurmJobState.RUNNING,
+            "slurm_job_info": "Dummy slurm job info",
+            "slurm_job_id": 111,
+        },
     )
     assert response.status_code == status.HTTP_202_ACCEPTED
 
@@ -1865,12 +1865,12 @@ async def test_job_submissions_agent_update__sets_aborted_status(
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
     response = await client.put(
         f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
-        json=dict(
-            slurm_job_state=slurm_job_state,
-            slurm_job_info="Dummy slurm job info",
-            slurm_job_id=111,
-            slurm_job_state_reason="User cancelled",
-        ),
+        json={
+            "slurm_job_state": slurm_job_state,
+            "slurm_job_info": "Dummy slurm job info",
+            "slurm_job_id": 111,
+            "slurm_job_state_reason": "User cancelled",
+        },
     )
     assert response.status_code == status.HTTP_202_ACCEPTED
 
@@ -1924,11 +1924,11 @@ async def test_job_submissions_agent_update__sets_done_status(
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
     response = await client.put(
         f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
-        json=dict(
-            slurm_job_state=SlurmJobState.COMPLETED,
-            slurm_job_info="Dummy slurm job info",
-            slurm_job_id=111,
-        ),
+        json={
+            "slurm_job_state": SlurmJobState.COMPLETED,
+            "slurm_job_info": "Dummy slurm job info",
+            "slurm_job_id": 111,
+        },
     )
     assert response.status_code == status.HTTP_202_ACCEPTED
 
@@ -1999,11 +1999,11 @@ async def test_job_submissions_agent_update__publishes_status_change_to_rabbitmq
 
     response = await client.put(
         f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
-        json=dict(
-            slurm_job_state=slurm_job_state,
-            slurm_job_info="Dummy slurm job info",
-            slurm_job_id=111,
-        ),
+        json={
+            "slurm_job_state": slurm_job_state,
+            "slurm_job_info": "Dummy slurm job info",
+            "slurm_job_id": 111,
+        },
     )
     assert response.status_code == status.HTTP_202_ACCEPTED
 
@@ -2011,16 +2011,16 @@ async def test_job_submissions_agent_update__publishes_status_change_to_rabbitmq
         message = await queue.get(timeout=1, no_ack=True)
 
     assert message
-    assert message.headers == dict(organization="dummy-org")
-    assert json.loads(message.body.decode()) == dict(
-        path=f"jobs.job_submissions.{inserted_submission.id}",
-        user_email=tester_email,
-        action="status",
-        additional_context=dict(
-            status=expected_status,
-            slurm_job_state=slurm_job_state,
-        ),
-    )
+    assert message.headers == {"organization": "dummy-org"}
+    assert json.loads(message.body.decode()) == {
+        "path": f"jobs.job_submissions.{inserted_submission.id}",
+        "user_email": tester_email,
+        "action": "status",
+        "additional_context": {
+            "status": expected_status,
+            "slurm_job_state": slurm_job_state,
+        },
+    }
 
 
 async def test_job_submissions_agent_update__returns_400_if_token_does_not_carry_client_id(
@@ -2036,7 +2036,7 @@ async def test_job_submissions_agent_update__returns_400_if_token_does_not_carry
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE)
     response = await client.put(
         "/jobbergate/job-submissions/agent/1",
-        json=dict(status=JobSubmissionStatus.SUBMITTED, slurm_job_id=111),
+        json={"status": JobSubmissionStatus.SUBMITTED, "slurm_job_id": 111},
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert "Checked expressions failed: Access token does not contain\\n  1: client_id" in response.text
@@ -2071,11 +2071,11 @@ async def test_job_submissions_agent_update__returns_403_if_client_id_differs(
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="stupid-client")
     response = await client.put(
         f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
-        json=dict(
-            slurm_job_state=SlurmJobState.RUNNING,
-            slurm_job_info="Dummy slurm job info",
-            slurm_job_id=111,
-        ),
+        json={
+            "slurm_job_state": SlurmJobState.RUNNING,
+            "slurm_job_info": "Dummy slurm job info",
+            "slurm_job_id": 111,
+        },
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
@@ -2109,11 +2109,11 @@ async def test_job_submissions_agent_update__returns_409_if_slurm_job_id_differs
     inject_security_header("who@cares.com", Permissions.JOB_SUBMISSIONS_UPDATE, client_id="dummy-client")
     response = await client.put(
         f"/jobbergate/job-submissions/agent/{inserted_job_submission_id}",
-        json=dict(
-            slurm_job_state=SlurmJobState.RUNNING,
-            slurm_job_info="Dummy slurm job info",
-            slurm_job_id=222,
-        ),
+        json={
+            "slurm_job_state": SlurmJobState.RUNNING,
+            "slurm_job_info": "Dummy slurm job info",
+            "slurm_job_id": 222,
+        },
     )
     assert response.status_code == status.HTTP_409_CONFLICT
 
@@ -2140,30 +2140,30 @@ async def test_job_submissions_agent_active__success(
     inserted_job_script_id = base_job_script.id
 
     submission_list = fill_all_job_submission_data(
-        dict(
-            name="sub1",
-            status=JobSubmissionStatus.CREATED,
-            client_id="dummy-client",
-            slurm_job_id=11,
-        ),
-        dict(
-            name="sub2",
-            status=JobSubmissionStatus.SUBMITTED,
-            client_id="dummy-client",
-            slurm_job_id=22,
-        ),
-        dict(
-            name="sub3",
-            status=JobSubmissionStatus.SUBMITTED,
-            client_id="silly-client",
-            slurm_job_id=33,
-        ),
-        dict(
-            name="sub4",
-            status=JobSubmissionStatus.CANCELLED,
-            client_id="dummy-client",
-            slurm_job_id=44,
-        ),
+        {
+            "name": "sub1",
+            "status": JobSubmissionStatus.CREATED,
+            "client_id": "dummy-client",
+            "slurm_job_id": 11,
+        },
+        {
+            "name": "sub2",
+            "status": JobSubmissionStatus.SUBMITTED,
+            "client_id": "dummy-client",
+            "slurm_job_id": 22,
+        },
+        {
+            "name": "sub3",
+            "status": JobSubmissionStatus.SUBMITTED,
+            "client_id": "silly-client",
+            "slurm_job_id": 33,
+        },
+        {
+            "name": "sub4",
+            "status": JobSubmissionStatus.CANCELLED,
+            "client_id": "dummy-client",
+            "slurm_job_id": 44,
+        },
     )
 
     for item in submission_list:
@@ -2516,7 +2516,7 @@ async def test_job_submissions_agent_metrics_upload__400_duplicated_data(
     list(
         itertools.product(
             (Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ),
-            map(lambda enum: enum.value, JobSubmissionMetricSampleRate),
+            (enum.value for enum in JobSubmissionMetricSampleRate),
             ("node_1", "dummy-node", None),
         )
     ),

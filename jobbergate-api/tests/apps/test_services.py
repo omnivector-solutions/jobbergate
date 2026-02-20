@@ -185,7 +185,7 @@ class TestCrudService:
         )
         with mock.patch.object(dummy_crud_service, "ensure_attribute") as ensure_attribute:
             fetched_instance = await dummy_crud_service.get(
-                created_instance.id, ensure_attributes=dict(owner_email=tester_email, name=test_name)
+                created_instance.id, ensure_attributes={"owner_email": tester_email, "name": test_name}
             )
         ensure_attribute.assert_called_once_with(created_instance, owner_email=tester_email, name=test_name)
 
@@ -1037,7 +1037,7 @@ class TestFileService:
             )
 
         assert (
-            await dummy_file_service.render(upserted_instance, parameters=dict(foo="bar"))
+            await dummy_file_service.render(upserted_instance, parameters={"foo": "bar"})
             == "dummy bar content"
         )
 
@@ -1053,7 +1053,7 @@ class TestFileService:
             )
 
         with pytest.raises(HTTPException) as exc_info:
-            await dummy_file_service.render(upserted_instance, parameters=dict(foo="bar"))
+            await dummy_file_service.render(upserted_instance, parameters={"foo": "bar"})
         assert exc_info.value.status_code == 422
         assert "TemplateSyntaxError" in exc_info.value.detail
         assert "Unable to process jinja template filename=file-one.txt" in exc_info.value.detail
@@ -1070,7 +1070,7 @@ class TestFileService:
             )
 
         with pytest.raises(HTTPException) as exc_info:
-            await dummy_file_service.render(upserted_instance, parameters=dict(foo="bar"))
+            await dummy_file_service.render(upserted_instance, parameters={"foo": "bar"})
         assert exc_info.value.status_code == 422
         assert "Jinja can not render filename=file-one.txt" in exc_info.value.detail
 
@@ -1085,7 +1085,7 @@ class TestFileService:
                 dummy_upload_file,
             )
             rendered_reference = await dummy_file_service.render(
-                upserted_instance_1, parameters=dict(foo="bar")
+                upserted_instance_1, parameters={"foo": "bar"}
             )
 
         with make_upload_file(content="dummy {{ data.foo }} content") as dummy_upload_file:
@@ -1095,7 +1095,7 @@ class TestFileService:
                 dummy_upload_file,
             )
             rendered_legacy = await dummy_file_service.render(
-                upserted_instance_3, parameters=dict(data=dict(foo="bar"))
+                upserted_instance_3, parameters={"data": {"foo": "bar"}}
             )
 
         assert rendered_reference == rendered_legacy
@@ -1107,7 +1107,7 @@ class TestFileService:
                 dummy_upload_file,
             )
             rendered_backward_compatible = await dummy_file_service.render(
-                upserted_instance_2, parameters=dict(foo="bar")
+                upserted_instance_2, parameters={"foo": "bar"}
             )
 
         assert rendered_reference == rendered_backward_compatible

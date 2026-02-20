@@ -2,6 +2,7 @@
 Provide functions to interact with persistent data storage.
 """
 
+from typing import Annotated
 import re
 import typing
 from contextlib import asynccontextmanager
@@ -73,7 +74,7 @@ class EngineFactory:
         """
         Initialize the EngineFactory.
         """
-        self.engine_map = dict()
+        self.engine_map = {}
 
     async def cleanup(self):
         """
@@ -81,7 +82,7 @@ class EngineFactory:
         """
         for engine in self.engine_map.values():
             await engine.dispose()
-        self.engine_map = dict()
+        self.engine_map = {}
 
     def get_engine(self, override_db_name: str | None = None) -> AsyncEngine:
         """
@@ -175,15 +176,18 @@ def secure_session(
     """
 
     async def dependency(
-        identity_payload: IdentityPayload = fastapi.Depends(
-            lockdown_with_identity(
-                *scopes,
-                permission_mode=permission_mode,
-                ensure_email=ensure_email,
-                ensure_organization=ensure_organization,
-                ensure_client_id=ensure_client_id,
-            )
-        ),
+        identity_payload: Annotated[
+            IdentityPayload,
+            fastapi.Depends(
+                lockdown_with_identity(
+                    *scopes,
+                    permission_mode=permission_mode,
+                    ensure_email=ensure_email,
+                    ensure_organization=ensure_organization,
+                    ensure_client_id=ensure_client_id,
+                )
+            ),
+        ],
     ) -> typing.AsyncIterator[SecureSession]:
         override_db_name = identity_payload.organization_id if settings.MULTI_TENANCY_ENABLED else None
         async with engine_factory.auto_session(override_db_name=override_db_name, commit=commit) as session:
@@ -198,8 +202,11 @@ def secure_session(
 def render_sql(session: AsyncSession, query) -> str:
     """
     Render a sqlalchemy query into a string for debugging.
+
+    Note: Parameters are kept as placeholders (not expanded with literal_binds)
+    to prevent sensitive values (passwords, tokens, etc.) from appearing in logs.
     """
-    return query.compile(dialect=session.bind.dialect, compile_kwargs={"literal_binds": True})
+    return str(query.compile(dialect=session.bind.dialect))
 
 
 def search_clause(
@@ -293,11 +300,11 @@ def handle_fk_error(
 
     return fastapi.responses.JSONResponse(
         status_code=fastapi.status.HTTP_409_CONFLICT,
-        content=dict(
-            detail=dict(
-                message="Delete failed due to foreign-key constraint",
-                table=table,
-                pk_id=pk_id,
-            ),
-        ),
+        content={
+            "detail": {
+                "message": "Delete failed due to foreign-key constraint",
+                "table": table,
+                "pk_id": pk_id,
+            },
+        },
     )

@@ -24,6 +24,9 @@ def main():
             runner.run(helper())
         except (KeyboardInterrupt, SystemExit):
             logger.info("Jobbergate-agent is shutting down...")
+        except Exception as err:
+            logger.critical(f"Unexpected error in main event loop: {err}", exc_info=True)
+            raise
         finally:
             shut_down_scheduler(scheduler, wait=False)
     logger.info("Jobbergate-agent has been stopped")

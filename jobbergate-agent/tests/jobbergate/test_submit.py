@@ -252,27 +252,27 @@ async def test_fetch_pending_submissions__success(dummy_job_script_files):
     """
     pending_job_submissions_data = {
         "items": [
-            dict(
-                id=1,
-                name="sub1",
-                owner_email="email1@dummy.com",
-                job_script={"files": dummy_job_script_files},
-                slurm_job_id=111,
-            ),
-            dict(
-                id=2,
-                name="sub2",
-                owner_email="email2@dummy.com",
-                job_script={"files": dummy_job_script_files},
-                slurm_job_id=222,
-            ),
-            dict(
-                id=3,
-                name="sub3",
-                owner_email="email3@dummy.com",
-                job_script={"files": dummy_job_script_files},
-                slurm_job_id=333,
-            ),
+            {
+                "id": 1,
+                "name": "sub1",
+                "owner_email": "email1@dummy.com",
+                "job_script": {"files": dummy_job_script_files},
+                "slurm_job_id": 111,
+            },
+            {
+                "id": 2,
+                "name": "sub2",
+                "owner_email": "email2@dummy.com",
+                "job_script": {"files": dummy_job_script_files},
+                "slurm_job_id": 222,
+            },
+            {
+                "id": 3,
+                "name": "sub3",
+                "owner_email": "email3@dummy.com",
+                "job_script": {"files": dummy_job_script_files},
+                "slurm_job_id": 333,
+            },
         ],
         "page": 1,
         "pages": 1,
@@ -317,7 +317,7 @@ async def test_fetch_pending_submissions__raises_JobbergateApiError_if_response_
     JobbergateApiError if it fails to convert the response to a PendingJobSubmission.
     """
     pending_job_submissions_data = [
-        dict(bad="data"),
+        {"bad": "data"},
     ]
     with respx.mock:
         respx.get(f"{SETTINGS.BASE_API_URL}/jobbergate/job-submissions/agent/pending").mock(
@@ -352,13 +352,13 @@ async def test_mark_as_submitted__success():
         )
         assert update_route.called
         last_request = update_route.calls.last.request
-        assert json.loads(last_request.content) == dict(
-            id=1,
-            slurm_job_id=111,
-            slurm_job_state="RUNNING",
-            slurm_job_info="{}",
-            slurm_job_state_reason=None,
-        )
+        assert json.loads(last_request.content) == {
+            "id": 1,
+            "slurm_job_id": 111,
+            "slurm_job_state": "RUNNING",
+            "slurm_job_info": "{}",
+            "slurm_job_state_reason": None,
+        }
 
 
 @pytest.mark.asyncio
@@ -401,7 +401,7 @@ async def test_mark_as_rejected__success():
         await mark_as_rejected(1, "something went wrong")
         assert update_route.called
         last_request = update_route.calls.last.request
-        assert json.loads(last_request.content) == dict(id=1, report_message="something went wrong")
+        assert json.loads(last_request.content) == {"id": 1, "report_message": "something went wrong"}
 
 
 @pytest.mark.asyncio
@@ -748,7 +748,7 @@ async def test_submit_job_script__raises_exception_if_sbatch_fails(
         respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/oauth/token").mock(
             return_value=httpx.Response(
                 status_code=200,
-                json=dict(access_token="dummy-token"),
+                json={"access_token": "dummy-token"},
             )
         )
 

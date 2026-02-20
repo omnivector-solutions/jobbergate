@@ -287,12 +287,12 @@ async def update_job_data(
     ):
         response = await jobbergate_api_client.put(
             f"jobbergate/job-submissions/agent/{job_submission_id}",
-            json=dict(
-                slurm_job_id=slurm_job_data.job_id,
-                slurm_job_state=slurm_job_data.job_state,
-                slurm_job_info=slurm_job_data.job_info,
-                slurm_job_state_reason=slurm_job_data.state_reason,
-            ),
+            json={
+                "slurm_job_id": slurm_job_data.job_id,
+                "slurm_job_state": slurm_job_data.job_state,
+                "slurm_job_info": slurm_job_data.job_info,
+                "slurm_job_state_reason": slurm_job_data.state_reason,
+            },
         )
         response.raise_for_status()
 

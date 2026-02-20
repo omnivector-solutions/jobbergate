@@ -87,7 +87,7 @@ class TestFetchPage:
         mock_response = single_paged_items_wrapper(items=mock_data)
 
         with respx.mock, tweak_settings(ITEMS_PER_PAGE=ITEMS_PER_PAGE):
-            route = respx.get("mock-url", params=dict(page=TARGET_PAGE, size=ITEMS_PER_PAGE)).mock(
+            route = respx.get("mock-url", params={"page": TARGET_PAGE, "size": ITEMS_PER_PAGE}).mock(
                 return_value=Response(200, content=mock_response.model_dump_json())
             )
             results = await fetch_page("mock-url", base_model, page=TARGET_PAGE)
@@ -106,7 +106,7 @@ class TestFetchPage:
         mock_response = single_paged_items_wrapper(items=mock_data)
 
         with respx.mock, tweak_settings(ITEMS_PER_PAGE=ITEMS_PER_PAGE):
-            route = respx.get("mock-url", params=dict(size=ITEMS_PER_PAGE)).mock(
+            route = respx.get("mock-url", params={"size": ITEMS_PER_PAGE}).mock(
                 return_value=Response(200, content=mock_response.model_dump_json())
             )
 
@@ -172,7 +172,7 @@ class TestFetchPaginatedResult:
         mock_response = single_paged_items_wrapper(items=mock_data)
 
         with respx.mock, tweak_settings(ITEMS_PER_PAGE=ITEMS_PER_PAGE):
-            route = respx.get("mock-url", params=dict(page=TARGET_PAGE, size=ITEMS_PER_PAGE)).mock(
+            route = respx.get("mock-url", params={"page": TARGET_PAGE, "size": ITEMS_PER_PAGE}).mock(
                 return_value=Response(200, content=mock_response.model_dump_json())
             )
 
@@ -230,7 +230,7 @@ class TestFetchPaginatedResult:
         mock_response = single_paged_items_wrapper(items=mock_data)
 
         with respx.mock, tweak_settings(ITEMS_PER_PAGE=ITEMS_PER_PAGE):
-            route = respx.get("mock-url", params=dict(size=ITEMS_PER_PAGE)).mock(
+            route = respx.get("mock-url", params={"size": ITEMS_PER_PAGE}).mock(
                 return_value=Response(200, content=mock_response.model_dump_json())
             )
 

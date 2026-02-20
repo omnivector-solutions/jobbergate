@@ -16,12 +16,11 @@ on:
       - "[0-9]+.[0-9]+.[0-9]+b[0-9]+"
       - "[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
 
-permissions:
-  contents: read
-
 jobs:
   build-publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     strategy:
       matrix:
         {
@@ -95,6 +94,8 @@ jobs:
   publish-to-ecr:
     name: Publish API to ECR
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Fail if ref is not a tag
         if: github.ref_type != 'tag'

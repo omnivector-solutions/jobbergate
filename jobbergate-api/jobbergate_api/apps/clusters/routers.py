@@ -1,5 +1,7 @@
 """Cluster status API endpoints."""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query
 from fastapi import Response as FastAPIResponse
 from fastapi import status
@@ -23,10 +25,10 @@ router = APIRouter(prefix="/clusters", tags=["Cluster Status"])
     description="Endpoints to accept a status check from the agent on the clusters.",
 )
 async def report_cluster_status(
-    interval: int = Query(description="The interval in seconds between pings.", gt=0),
-    secure_session: SecureSession = Depends(
-        secure_session(Permissions.CLUSTERS_UPDATE, ensure_client_id=True)
-    ),
+    interval: Annotated[int, Query(description="The interval in seconds between pings.", gt=0)],
+    secure_session: Annotated[
+        SecureSession, Depends(secure_session(Permissions.CLUSTERS_UPDATE, ensure_client_id=True))
+    ],
 ):
     """
     Report the status of the cluster.
@@ -52,9 +54,9 @@ async def report_cluster_status(
     response_model=Page[ClusterStatusView],
 )
 async def get_cluster_status(
-    secure_session: SecureSession = Depends(
-        secure_session(Permissions.ADMIN, Permissions.CLUSTERS_READ, commit=False)
-    ),
+    secure_session: Annotated[
+        SecureSession, Depends(secure_session(Permissions.ADMIN, Permissions.CLUSTERS_READ, commit=False))
+    ],
 ):
     """
     Get the status of the cluster.
@@ -71,9 +73,9 @@ async def get_cluster_status(
 )
 async def get_cluster_status_by_client_id(
     client_id: str,
-    secure_session: SecureSession = Depends(
-        secure_session(Permissions.ADMIN, Permissions.CLUSTERS_READ, commit=False)
-    ),
+    secure_session: Annotated[
+        SecureSession, Depends(secure_session(Permissions.ADMIN, Permissions.CLUSTERS_READ, commit=False))
+    ],
 ):
     """
     Get the status of a specific cluster.

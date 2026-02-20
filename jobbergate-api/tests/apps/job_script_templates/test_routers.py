@@ -31,7 +31,7 @@ async def test_create_job_template__success(
         identifier="create-template",
         name="Test Template",
         description="This is a test template",
-        template_vars=dict(foo="bar"),
+        template_vars={"foo": "bar"},
     )
 
     tester_email = payload.pop("owner_email")
@@ -56,7 +56,7 @@ async def test_create_job_template__success(
     assert instance.identifier == "create-template"
     assert instance.name == "Test Template"
     assert instance.description == "This is a test template"
-    assert instance.template_vars == dict(foo="bar")
+    assert instance.template_vars == {"foo": "bar"}
 
     # Make sure that the data can be retrieved with a GET request
     inject_security_header(tester_email, Permissions.JOB_TEMPLATES_READ)
@@ -66,7 +66,7 @@ async def test_create_job_template__success(
     assert response_data["identifier"] == "create-template"
     assert response_data["name"] == "Test Template"
     assert response_data["description"] == "This is a test template"
-    assert response_data["template_vars"] == dict(foo="bar")
+    assert response_data["template_vars"] == {"foo": "bar"}
 
 
 async def test_create_job_template__fails_if_name_is_empty(
@@ -79,7 +79,7 @@ async def test_create_job_template__fails_if_name_is_empty(
         identifier="create-template",
         name="",
         description="This is a test template",
-        template_vars=dict(foo="bar"),
+        template_vars={"foo": "bar"},
     )
 
     tester_email = payload.pop("owner_email")
@@ -101,7 +101,7 @@ async def test_create_job_template__coerces_empty_identifier_to_None(
         identifier="",
         name="Test Template",
         description="This is a test template",
-        template_vars=dict(foo="bar"),
+        template_vars={"foo": "bar"},
     )
 
     tester_email = payload.pop("owner_email")
@@ -185,12 +185,12 @@ async def test_update_job_template__success(
 
     requester_email = tester_email if is_owner else "another_" + tester_email
 
-    payload = dict(
-        name="new-name",
-        identifier="new-identifier",
-        description="new-description",
-        template_vars={"new": "value"},
-    )
+    payload = {
+        "name": "new-name",
+        "identifier": "new-identifier",
+        "description": "new-description",
+        "template_vars": {"new": "value"},
+    }
 
     inject_security_header(requester_email, *permissions)
     response = await client.put(
@@ -213,12 +213,12 @@ async def test_update_job_template__fail_not_found(
     synth_session,
 ):
     job_template_id = 0
-    payload = dict(
-        name="new-name",
-        identifier="new-identifier",
-        description="new-description",
-        template_vars={"new": "value"},
-    )
+    payload = {
+        "name": "new-name",
+        "identifier": "new-identifier",
+        "description": "new-description",
+        "template_vars": {"new": "value"},
+    }
     inject_security_header(tester_email, Permissions.JOB_TEMPLATES_UPDATE)
     response = await client.put(f"jobbergate/job-script-templates/{job_template_id}", json=payload)
     assert response.status_code == 404
@@ -226,12 +226,12 @@ async def test_update_job_template__fail_not_found(
 
 async def test_update_job_template__fail_unauthorized(client):
     job_template_id = 0
-    payload = dict(
-        name="new-name",
-        identifier="new-identifier",
-        description="new-description",
-        template_vars={"new": "value"},
-    )
+    payload = {
+        "name": "new-name",
+        "identifier": "new-identifier",
+        "description": "new-description",
+        "template_vars": {"new": "value"},
+    }
     response = await client.put(f"jobbergate/job-script-templates/{job_template_id}", json=payload)
     assert response.status_code == 401
 
@@ -248,12 +248,12 @@ async def test_update_job_template__forbidden(
     owner_email = tester_email
     requester_email = "another_" + owner_email
 
-    payload = dict(
-        name="new-name",
-        identifier="new-identifier",
-        description="new-description",
-        template_vars={"new": "value"},
-    )
+    payload = {
+        "name": "new-name",
+        "identifier": "new-identifier",
+        "description": "new-description",
+        "template_vars": {"new": "value"},
+    }
 
     inject_security_header(requester_email, Permissions.JOB_TEMPLATES_UPDATE)
     response = await client.put(
@@ -436,12 +436,12 @@ async def test_clone_job_template__replace_base_values(
 
     new_owner_email = "new_" + tester_email
 
-    payload = dict(
-        name="new_name",
-        description="new_description",
-        identifier="new_identifier",
-        template_vars={"new": "value"},
-    )
+    payload = {
+        "name": "new_name",
+        "description": "new_description",
+        "identifier": "new_identifier",
+        "template_vars": {"new": "value"},
+    }
 
     inject_security_header(new_owner_email, Permissions.JOB_TEMPLATES_CREATE)
     response = await client.post(
@@ -497,7 +497,7 @@ async def test_clone_job_template__fail_conflict(
 
     inject_security_header(tester_email, Permissions.JOB_TEMPLATES_CREATE)
     response = await client.post(
-        f"jobbergate/job-script-templates/clone/{original_instance.id}", json=dict(identifier=identifier)
+        f"jobbergate/job-script-templates/clone/{original_instance.id}", json={"identifier": identifier}
     )
 
     assert response.status_code == 409
@@ -555,7 +555,7 @@ class TestListJobTemplates:
         inject_security_header(tester_email, permission)
         response = await client.get(
             "jobbergate/job-script-templates",
-            params=dict(include_null_identifier=True, include_archived=True, sort_field="id"),
+            params={"include_null_identifier": True, "include_archived": True, "sort_field": "id"},
         )
         assert response.status_code == 200, f"List failed: {response.text}"
 
@@ -720,7 +720,7 @@ class TestJobTemplateFiles:
         inject_security_header(requester_email, *permissions)
         response = await client.put(
             f"jobbergate/job-script-templates/{parent_id}/upload-by-url/template/{file_type}",
-            params=dict(file_url=file_url),
+            params={"file_url": file_url},
         )
 
         # First, check the response from the upload endpoint
@@ -788,7 +788,7 @@ class TestJobTemplateFiles:
         inject_security_header(requester_email, *permissions)
         response = await client.put(
             f"jobbergate/job-script-templates/{parent_id}/upload-by-url/template/{file_type}",
-            params=dict(file_url=s3_url),
+            params={"file_url": s3_url},
         )
 
         # First, check the response from the upload endpoint
@@ -846,7 +846,7 @@ class TestJobTemplateFiles:
         inject_security_header(requester_email, Permissions.JOB_TEMPLATES_CREATE)
         response = await client.put(
             f"jobbergate/job-script-templates/{parent_id}/upload-by-url/template/{file_type}",
-            params=dict(file_url=file_url),
+            params={"file_url": file_url},
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -1256,7 +1256,7 @@ class TestJobTemplateWorkflowFile:
         inject_security_header(requester_email, *permissions)
         response = await client.put(
             f"jobbergate/job-script-templates/{parent_id}/upload-by-url/workflow",
-            params=dict(file_url=file_url),
+            params={"file_url": file_url},
             data=json.dumps(runtime_config),
         )
 
@@ -1325,7 +1325,7 @@ class TestJobTemplateWorkflowFile:
         inject_security_header(requester_email, *permissions)
         response = await client.put(
             f"jobbergate/job-script-templates/{parent_id}/upload-by-url/workflow",
-            params=dict(file_url=s3_url),
+            params={"file_url": s3_url},
             data=json.dumps(runtime_config),
         )
 
@@ -1526,7 +1526,7 @@ class TestJobTemplateWorkflowFile:
             parent_id=parent_id,
             filename=WORKFLOW_FILE_NAME,
             upload_content="import this",
-            runtime_config=dict(foo="bar"),
+            runtime_config={"foo": "bar"},
         )
 
         inject_security_header(tester_email, permission)
@@ -1549,7 +1549,7 @@ class TestJobTemplateWorkflowFile:
             parent_id=parent_id,
             filename=WORKFLOW_FILE_NAME,
             upload_content=large_string,
-            runtime_config=dict(foo="bar"),
+            runtime_config={"foo": "bar"},
         )
 
         inject_security_header(tester_email, Permissions.JOB_TEMPLATES_READ)
@@ -1582,7 +1582,7 @@ class TestJobTemplateWorkflowFile:
             parent_id=parent_id,
             filename=WORKFLOW_FILE_NAME,
             upload_content="import this",
-            runtime_config=dict(foo="bar"),
+            runtime_config={"foo": "bar"},
         )
 
         requester_email = tester_email if is_owner else "another_" + tester_email

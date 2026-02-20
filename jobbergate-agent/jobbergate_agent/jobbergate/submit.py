@@ -136,13 +136,13 @@ async def mark_as_submitted(job_submission_id: int, slurm_job_id: int, slurm_job
     ):
         response = await jobbergate_api_client.post(
             "jobbergate/job-submissions/agent/submitted",
-            json=dict(
-                id=job_submission_id,
-                slurm_job_id=slurm_job_id,
-                slurm_job_state=slurm_job_data.job_state,
-                slurm_job_info=slurm_job_data.job_info,
-                slurm_job_state_reason=slurm_job_data.state_reason,
-            ),
+            json={
+                "id": job_submission_id,
+                "slurm_job_id": slurm_job_id,
+                "slurm_job_state": slurm_job_data.job_state,
+                "slurm_job_info": slurm_job_data.job_info,
+                "slurm_job_state_reason": slurm_job_data.state_reason,
+            },
         )
         response.raise_for_status()
 
@@ -159,10 +159,10 @@ async def mark_as_rejected(job_submission_id: int, report_message: str):
     ):
         response = await jobbergate_api_client.post(
             "jobbergate/job-submissions/agent/rejected",
-            json=dict(
-                id=job_submission_id,
-                report_message=report_message,
-            ),
+            json={
+                "id": job_submission_id,
+                "report_message": report_message,
+            },
         )
         response.raise_for_status()
 

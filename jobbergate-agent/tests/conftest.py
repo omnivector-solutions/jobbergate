@@ -57,7 +57,7 @@ def tweak_settings() -> Callable[..., contextlib._GeneratorContextManager]:
 @pytest.fixture()
 def token_content() -> str:
     one_minute_from_now = int(datetime.now(tz=timezone.utc).timestamp()) + 60
-    return encode(dict(exp=one_minute_from_now), key="dummy-key", algorithm="HS256")
+    return encode({"exp": one_minute_from_now}, key="dummy-key", algorithm="HS256")
 
 
 @pytest.fixture()
@@ -69,7 +69,7 @@ async def mock_access_token(token_content):
         respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
             return_value=httpx.Response(
                 status_code=200,
-                json=dict(access_token=token_content),
+                json={"access_token": token_content},
             )
         )
         yield

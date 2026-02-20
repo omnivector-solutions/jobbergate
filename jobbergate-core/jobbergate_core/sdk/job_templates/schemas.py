@@ -43,7 +43,7 @@ class JobTemplateBaseDetailedView(JobTemplateListView):
     Notice the files are omitted.
     """
 
-    template_vars: dict[str, Any] | None
+    template_vars: dict[str, Any] | None = None
 
 
 class JobTemplateDetailedView(JobTemplateBaseDetailedView):
@@ -54,5 +54,5 @@ class JobTemplateDetailedView(JobTemplateBaseDetailedView):
     an empty list when they are requested, but no file is found.
     """
 
-    template_files: list[TemplateFileDetailedView] | None
-    workflow_files: list[WorkflowFileDetailedView] | None
+    template_files: list[TemplateFileDetailedView] | None = None
+    workflow_files: list[WorkflowFileDetailedView] | None = None

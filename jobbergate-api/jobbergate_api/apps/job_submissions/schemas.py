@@ -184,10 +184,10 @@ class JobSubmissionDetailedView(JobSubmissionBaseView):
     Complete model to match the database for the JobSubmission resource in a detailed view.
     """
 
-    execution_directory: str | None
-    report_message: str | None
-    slurm_job_info: str | None
-    sbatch_arguments: list[str] | None
+    execution_directory: str | None = None
+    report_message: str | None = None
+    slurm_job_info: str | None = None
+    sbatch_arguments: list[str] | None = None
 
 
 class PendingJobSubmission(BaseModel):
@@ -218,7 +218,7 @@ class ActiveJobSubmission(BaseModel):
     id: int
     name: str
     status: JobSubmissionStatus
-    slurm_job_id: int | None
+    slurm_job_id: int | None = None
     model_config = ConfigDict(from_attributes=True, extra="ignore")
 
 
@@ -317,7 +317,7 @@ class JobSubmissionMetricSchema(BaseModel):
         if len(fields) != len(list(iterable)):
             raise ValueError("The iterable must have the same length as the model fields.")
 
-        return cls(**{field: value for field, value in zip(fields, iterable)})
+        return cls(**dict(zip(fields, iterable)))
 
 
 class JobSubmissionMetricTimestamps(BaseModel):

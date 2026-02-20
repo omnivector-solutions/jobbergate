@@ -57,24 +57,41 @@ class InfluxDBMeasure(TypedDict):
 def _generate_influxdb_data(
     num_points_per_measurement: int, num_hosts: int, num_jobs: int, num_steps: int, num_tasks: int
 ) -> Generator[InfluxDBMeasure, None, None]:
+    """Generate InfluxDB data points with nested structure."""
     current_time = int(datetime.now().timestamp())
+    measurement_names = get_args(INFLUXDB_MEASUREMENT)
 
     for _ in range(num_points_per_measurement):
-        for host in range(1, num_hosts + 1):
-            for job in range(1, num_jobs + 1):
-                for step in range(1, num_steps + 1):
-                    for task in range(1, num_tasks + 1):
-                        for measurement in get_args(INFLUXDB_MEASUREMENT):
-                            yield {
-                                "time": current_time,
-                                "host": f"host_{host}",
-                                "job": str(job),
-                                "step": str(step),
-                                "task": str(task),
-                                "value": INFLUXDB_MEASUREMENT_TYPES[measurement](random.random() * 100),
-                                "measurement": measurement,
-                            }
+        for measure in _iter_measurements_for_time(
+            current_time, num_hosts, num_jobs, num_steps, num_tasks, measurement_names
+        ):
+            yield measure
         current_time += 10
+
+
+def _iter_measurements_for_time(
+    current_time: int,
+    num_hosts: int,
+    num_jobs: int,
+    num_steps: int,
+    num_tasks: int,
+    measurement_names: tuple,
+) -> Generator[InfluxDBMeasure, None, None]:
+    """Generate measurements for all hosts/jobs/steps/tasks at a given time."""
+    for host in range(1, num_hosts + 1):
+        for job in range(1, num_jobs + 1):
+            for step in range(1, num_steps + 1):
+                for task in range(1, num_tasks + 1):
+                    for measurement in measurement_names:
+                        yield {
+                            "time": current_time,
+                            "host": f"host_{host}",
+                            "job": str(job),
+                            "step": str(step),
+                            "task": str(task),
+                            "value": INFLUXDB_MEASUREMENT_TYPES[measurement](random.random() * 100),
+                            "measurement": measurement,
+                        }
 
 
 def _aggregate_influxdb_data(

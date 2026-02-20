@@ -112,6 +112,9 @@ site/
 # local dotenv files
 *.env
 
+# ruff
+.ruff_cache/
+
 *.msgpack
 
 # dynamic version created by hatch-vcs at build time

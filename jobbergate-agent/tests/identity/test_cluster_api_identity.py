@@ -40,7 +40,7 @@ def test_acquire_token__gets_a_token_if_one_is_not_in_the_cache(
 
     with respx.mock:
         respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(status_code=200, json=dict(access_token=token_content))
+            return_value=httpx.Response(status_code=200, json={"access_token": token_content})
         )
         with tweak_settings(OIDC_CLIENT_ID="dummy", OIDC_CLIENT_SECRET="dummy"):
             retrieved_token = acquire_token(token)
@@ -66,7 +66,7 @@ def test_acquire_token__fails_when_content_is_invalid(
 
     with respx.mock:
         respx.post(f"https://{SETTINGS.OIDC_DOMAIN}/protocol/openid-connect/token").mock(
-            return_value=httpx.Response(status_code=200, json=dict(access_token=token_content))
+            return_value=httpx.Response(status_code=200, json={"access_token": token_content})
         )
         with tweak_settings(OIDC_CLIENT_ID="dummy", OIDC_CLIENT_SECRET="dummy"):
             with pytest.raises(TokenError):

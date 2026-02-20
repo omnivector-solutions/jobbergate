@@ -80,12 +80,12 @@ def aggregate_influx_measures(
     data_points_list = list(data_points)
 
     # Extract columns and map strings to integers
-    times = np.fromiter(map(lambda d: d["time"], data_points_list), dtype=np.int64)
-    hosts = np.fromiter(map(lambda d: d["host"], data_points_list), dtype=np.object_)
-    steps = np.fromiter(map(lambda d: d["step"], data_points_list), dtype=np.object_)
-    tasks = np.fromiter(map(lambda d: d["task"], data_points_list), dtype=np.object_)
-    measurements = np.fromiter(map(lambda d: measurement_mapping[d["measurement"]], data_points_list), dtype=np.int8)
-    values = np.fromiter(map(lambda d: d["value"], data_points_list), dtype=np.float64)
+    times = np.fromiter((d["time"] for d in data_points_list), dtype=np.int64)
+    hosts = np.fromiter((d["host"] for d in data_points_list), dtype=np.object_)
+    steps = np.fromiter((d["step"] for d in data_points_list), dtype=np.object_)
+    tasks = np.fromiter((d["task"] for d in data_points_list), dtype=np.object_)
+    measurements = np.fromiter((measurement_mapping[d["measurement"]] for d in data_points_list), dtype=np.int8)
+    values = np.fromiter((d["value"] for d in data_points_list), dtype=np.float64)
 
     # Create mappings for string columns
     host_mapping = _create_mapping(hosts)

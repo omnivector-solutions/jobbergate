@@ -38,16 +38,16 @@ async def test_publish_status_change__success(synth_services, tester_email):
         await message.ack()
 
     assert message
-    assert message.headers == dict(organization="dummy-org")
-    assert json.loads(message.body.decode()) == dict(
-        path="jobs.job_submissions.13",
-        user_email=tester_email,
-        action="status",
-        additional_context=dict(
-            status=JobSubmissionStatus.DONE,
-            slurm_job_state=SlurmJobState.COMPLETED,
-        ),
-    )
+    assert message.headers == {"organization": "dummy-org"}
+    assert json.loads(message.body.decode()) == {
+        "path": "jobs.job_submissions.13",
+        "user_email": tester_email,
+        "action": "status",
+        "additional_context": {
+            "status": JobSubmissionStatus.DONE,
+            "slurm_job_state": SlurmJobState.COMPLETED,
+        },
+    }
 
 
 @pytest.mark.flaky(max_runs=3)
@@ -79,16 +79,16 @@ async def test_publish_status_change__default_exchange(synth_services, tester_em
         await message.ack()
 
     assert message
-    assert message.headers == dict(organization=None)
-    assert json.loads(message.body.decode()) == dict(
-        path="jobs.job_submissions.13",
-        user_email=tester_email,
-        action="status",
-        additional_context=dict(
-            status=JobSubmissionStatus.DONE,
-            slurm_job_state=SlurmJobState.COMPLETED,
-        ),
-    )
+    assert message.headers == {"organization": None}
+    assert json.loads(message.body.decode()) == {
+        "path": "jobs.job_submissions.13",
+        "user_email": tester_email,
+        "action": "status",
+        "additional_context": {
+            "status": JobSubmissionStatus.DONE,
+            "slurm_job_state": SlurmJobState.COMPLETED,
+        },
+    }
 
 
 async def test_publish_status_change__does_nothing_if_RABBITMQ_HOST_is_undefined(

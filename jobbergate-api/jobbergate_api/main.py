@@ -36,14 +36,6 @@ subapp = FastAPI(
     },
 )
 
-subapp.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 if settings.SENTRY_DSN and settings.DEPLOY_ENV.lower() != "test":
     logger.info("Initializing Sentry")
     sentry_sdk.init(
@@ -57,6 +49,14 @@ if settings.SENTRY_DSN and settings.DEPLOY_ENV.lower() != "test":
     subapp.add_middleware(SentryAsgiMiddleware)  # type: ignore[arg-type]
 else:
     logger.info("Skipping Sentry")
+
+subapp.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS.split(",") if settings.ALLOWED_ORIGINS else ["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 subapp.include_router(job_script_templates_router)
 subapp.include_router(job_scripts_router)

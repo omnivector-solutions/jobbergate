@@ -19,7 +19,7 @@ async def fetch_page(url: str, base_model: Type[T], page: int = 1) -> ListRespon
     Retrieve a page of job submissions.
     """
     response_model = ListResponseEnvelope[base_model]  # type: ignore
-    response = await jobbergate_api_client.get(url, params=dict(page=page, size=SETTINGS.ITEMS_PER_PAGE))
+    response = await jobbergate_api_client.get(url, params={"page": page, "size": SETTINGS.ITEMS_PER_PAGE})
     response.raise_for_status()
     result = response_model.model_validate(response.json())
     logger.debug("Retrieved page {} out of {} for {}", result.page, result.pages, url)

@@ -160,4 +160,4 @@ class JobScriptListView(JobScriptBaseView):
 class JobScriptDetailedView(JobScriptBaseView):
     """Model to match database for the JobScript resource."""
 
-    files: list[JobScriptFileDetailedView] | None
+    files: list[JobScriptFileDetailedView] | None = None
