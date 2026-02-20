@@ -8,6 +8,7 @@ WORKDIR /app
 
 COPY .git uv.lock pyproject.toml ./
 COPY jobbergate-api ./jobbergate-api
+COPY jobbergate-core ./jobbergate-core
 
 
 # Install only jobbergate-api and its dependencies (including dev)

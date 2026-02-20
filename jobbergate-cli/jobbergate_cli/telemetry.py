@@ -24,13 +24,13 @@ def init_telemetry() -> None:
     """
     global _tracer_provider, _tracer
 
-    if not settings.enable_otlp_export:
+    if not settings.ENABLE_OTLP_EXPORT:
         return
 
     try:
         otlp_exporter = OTLPSpanExporter(
-            endpoint=settings.otlp_exporter_endpoint,
-            timeout=settings.otlp_exporter_timeout,
+            endpoint=settings.OTLP_EXPORTER_ENDPOINT,
+            timeout=settings.OTLP_EXPORTER_TIMEOUT,
         )
 
         _tracer_provider = TracerProvider()
