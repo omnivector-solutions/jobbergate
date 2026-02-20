@@ -67,6 +67,13 @@ class Settings(BaseSettings):
     WRITE_SUBMISSION_FILES: bool = True
     GET_EXTRA_GROUPS: bool = False
 
+    # OpenTelemetry configuration for dual export with Sentry
+    ENABLE_OTLP_EXPORT: bool = Field(True)
+    OTLP_EXPORTER_ENDPOINT: str = Field("localhost:4317")
+    OTLP_EXPORTER_TIMEOUT: int = Field(10)
+    OTEL_SERVICE_NAME: str = Field("jobbergate-agent")
+    OTEL_SERVICE_VERSION: Optional[str] = None
+
     # InfluxDB settings for job metric collection
     INFLUX_DSN: Optional[AnyUrl] = Field(
         None, description="InfluxDB DSN. Only supports the schemes 'influxdb', 'https+influxdb' and 'udp+influxdb'"

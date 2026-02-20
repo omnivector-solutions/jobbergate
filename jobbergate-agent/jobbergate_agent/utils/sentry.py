@@ -6,6 +6,7 @@ from sentry_sdk.utils import BadDsn
 
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.logging import logger
+from jobbergate_agent.telemetry import init_telemetry as init_otel_telemetry
 
 
 def init_sentry():
@@ -25,3 +26,7 @@ def init_sentry():
         logger.debug("##### Enabled Sentry since a valid DSN key was provided.")
     except BadDsn as e:
         logger.debug("##### Sentry could not be enabled: {}".format(e))
+
+    # Initialize OpenTelemetry regardless of Sentry (for local-only deployments)
+    logger.debug("##### Initializing OpenTelemetry")
+    init_otel_telemetry(SETTINGS)

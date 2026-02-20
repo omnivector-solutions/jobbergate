@@ -69,6 +69,13 @@ class Settings(BaseSettings):
     OIDC_USE_HTTPS: bool = True
     OIDC_CLIENT_SECRET: Optional[str] = None
 
+    # OpenTelemetry configuration for dual export with Sentry
+    ENABLE_OTLP_EXPORT: bool = Field(True)
+    OTLP_EXPORTER_ENDPOINT: str = Field("localhost:4317")
+    OTLP_EXPORTER_TIMEOUT: int = Field(10)
+    OTEL_SERVICE_NAME: str = Field("jobbergate-cli")
+    OTEL_SERVICE_VERSION: Optional[str] = None
+
     @field_validator("JOBBERGATE_CACHE_DIR", mode="after")
     def _validate_cache_dir(cls, value: Path) -> Path:
         """

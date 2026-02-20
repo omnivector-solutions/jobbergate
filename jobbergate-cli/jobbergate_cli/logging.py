@@ -8,6 +8,7 @@ import sentry_sdk
 from loguru import logger
 
 from jobbergate_cli.config import settings
+from jobbergate_cli.telemetry import init_telemetry as init_otel_telemetry
 
 
 def init_logs(verbose=False):
@@ -33,6 +34,7 @@ def init_logs(verbose=False):
 def init_sentry():
     """
     Initialize Sentry if the ``SENTRY_DSN`` environment variable is present.
+    Also initialize OpenTelemetry for dual export.
     """
     if settings.SENTRY_DSN:
         logger.debug("Initializing sentry")
@@ -41,3 +43,7 @@ def init_sentry():
             traces_sample_rate=settings.SENTRY_TRACE_RATE,
             environment=settings.SENTRY_ENV,
         )
+
+    # Initialize OpenTelemetry regardless of Sentry (for local-only deployments)
+    logger.debug("Initializing OpenTelemetry")
+    init_otel_telemetry()

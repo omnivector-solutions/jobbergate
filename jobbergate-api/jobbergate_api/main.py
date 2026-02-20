@@ -21,6 +21,7 @@ from jobbergate_api.apps.job_submissions.routers import router as job_submission
 from jobbergate_api.config import settings
 from jobbergate_api.logging import init_logging
 from jobbergate_api.storage import engine_factory, handle_fk_error
+from jobbergate_api.telemetry import init_telemetry, instrument_fastapi, shutdown_telemetry
 
 subapp = FastAPI(
     title=settings.METADATA_API_TITLE,
@@ -57,6 +58,13 @@ if settings.SENTRY_DSN and settings.DEPLOY_ENV.lower() != "test":
     subapp.add_middleware(SentryAsgiMiddleware)  # type: ignore[arg-type]
 else:
     logger.info("Skipping Sentry")
+
+# Initialize OpenTelemetry for dual export
+if settings.DEPLOY_ENV.lower() != "test":
+    logger.info("Initializing OpenTelemetry")
+    init_telemetry()
+else:
+    logger.info("Skipping OpenTelemetry")
 
 subapp.include_router(job_script_templates_router)
 subapp.include_router(job_scripts_router)
@@ -96,10 +104,15 @@ async def lifespan(_: FastAPI):
     # Skip cleanup if in test mode so that model instances can be used after processing http requests.
     if settings.DEPLOY_ENV.lower() != "test":
         await engine_factory.cleanup()
+        shutdown_telemetry()
 
 
 app = FastAPI(lifespan=lifespan)
 app.mount("/jobbergate", subapp)
+
+# Instrument FastAPI after app creation
+instrument_fastapi(app)
+instrument_fastapi(subapp)
 
 
 @app.exception_handler(RequestValidationError)

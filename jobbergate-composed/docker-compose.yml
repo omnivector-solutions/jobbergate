@@ -30,6 +30,8 @@ services:
       - ARMASEC_USE_HTTPS=false
       - LOG_LEVEL=DEBUG
       - SQL_LOG_LEVEL=DEBUG
+      - ENABLE_OTLP_EXPORT=true
+      - OTLP_EXPORTER_ENDPOINT=otel-collector:4317
     ports:
       - 8000:80
     healthcheck:
@@ -95,6 +97,8 @@ services:
       - OIDC_CLIENT_ID=cli
       - OIDC_USE_HTTPS=false
       - DEFAULT_CLUSTER_NAME=local-slurm
+      - ENABLE_OTLP_EXPORT=true
+      - OTLP_EXPORTER_ENDPOINT=otel-collector:4317
 
   db:
     image: timescale/timescaledb:latest-pg17
@@ -269,6 +273,8 @@ services:
       - JOBBERGATE_AGENT_CACHE_DIR=/cache
       - JOBBERGATE_AGENT_TASK_JOBS_INTERVAL_SECONDS=15
       - JOBBERGATE_AGENT_SLURM_RESTD_VERSION=v0.0.37
+      - JOBBERGATE_AGENT_ENABLE_OTLP_EXPORT=true
+      - JOBBERGATE_AGENT_OTLP_EXPORTER_ENDPOINT=otel-collector:4317
     volumes:
       - etc_munge:/etc/munge
       - var_log_slurm:/var/log/slurm
@@ -349,6 +355,54 @@ services:
     depends_on:
       - slurmctld
 
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    container_name: otel-collector
+    networks:
+      - jobbergate-net
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP HTTP receiver
+      - "8889:8889" # Prometheus exporter metrics
+    depends_on:
+      - prometheus
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    networks:
+      - jobbergate-net
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+    volumes:
+      - ./prometheus-config.yaml:/etc/prometheus/prometheus.yml
+      - timeseries_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    networks:
+      - jobbergate-net
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_INSTALL_PLUGINS=
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
 volumes:
   postgres_data:
   minio_data:
@@ -360,6 +414,7 @@ volumes:
   jobbergate-agent-cache:
   jobbergate-cli-cache:
   timeseries_data:
+  grafana_data:
 
 networks:
   jobbergate-net:

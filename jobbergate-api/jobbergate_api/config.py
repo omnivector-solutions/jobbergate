@@ -121,6 +121,13 @@ class Settings(BaseSettings):
     METADATA_CONTACT_URL: str = "https://omnivector.solutions"
     METADATA_CONTACT_EMAIL: str = "info@omnivector.solutions"
 
+    # OpenTelemetry configuration for dual export with Sentry
+    ENABLE_OTLP_EXPORT: bool = Field(True)
+    OTLP_EXPORTER_ENDPOINT: str = Field("localhost:4317")
+    OTLP_EXPORTER_TIMEOUT: int = Field(10)
+    OTEL_SERVICE_NAME: str = Field("jobbergate-api")
+    OTEL_SERVICE_VERSION: Optional[str] = None
+
     @model_validator(mode="before")
     @classmethod
     def remove_blank_env(cls, values):

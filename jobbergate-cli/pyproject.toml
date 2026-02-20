@@ -27,6 +27,9 @@ dependencies = [
     "sentry-sdk>=2.47.0",
     "typer>=0.20.0",
     "pydantic-settings>=2.12.0",
+    "opentelemetry-api>=1.27.0",
+    "opentelemetry-sdk>=1.27.0",
+    "opentelemetry-exporter-otlp>=1.27.0",
 ]
 dynamic = ["dependency-coversioning", "version"]
 
