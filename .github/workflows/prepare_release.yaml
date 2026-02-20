@@ -41,9 +41,9 @@ jobs:
         id: cpr
         with:
           token: ${{ secrets.TOKEN }}
-          commit-message: "Prepared release $RELEASE_NUMBER"
-          branch: "prepare-release/$RELEASE_NUMBER"
-          title: "Release $RELEASE_NUMBER"
+          commit-message: "Prepared release ${{ env.RELEASE_NUMBER }}"
+          branch: "prepare-release/${{ env.RELEASE_NUMBER }}"
+          title: "Release ${{ env.RELEASE_NUMBER }}"
           draft: true
           delete-branch: true
           body: "Automated changes by [prepare_release](https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/prepare_release.yaml) GitHub action."
