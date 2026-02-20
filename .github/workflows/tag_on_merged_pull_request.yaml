@@ -35,9 +35,10 @@ jobs:
       - name: Validate tag format
         run: |
           TAG="${{ steps.get-tag.outputs.result }}"
-          # Validate tag matches semantic versioning pattern
-          if ! [[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[0-9]+)?)?$ ]]; then
+          # Validate tag matches the project's versioning pattern
+          if ! [[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+(a[0-9]+|b[0-9]+|rc[0-9]+)?$ ]]; then
             echo "Invalid tag format: $TAG"
+            echo "Expected format: X.Y.Z or X.Y.ZaN or X.Y.ZbN or X.Y.ZrcN"
             exit 1
           fi
           echo "Tag format is valid: $TAG"

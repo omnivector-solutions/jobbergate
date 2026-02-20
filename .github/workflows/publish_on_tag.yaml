@@ -10,8 +10,6 @@ on:
   push:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
       - "[0-9]+.[0-9]+.[0-9]+a[0-9]+"
       - "[0-9]+.[0-9]+.[0-9]+b[0-9]+"
       - "[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
@@ -153,7 +151,7 @@ jobs:
         run: |
           while true; do
             echo "Checking for version $GITHUB_REF_NAME of $PACKAGE_NAME"
-            curl -s https://pypi.org/pypi/$PACKAGE_NAME/json | jq -r '.releases | keys[]' | grep -q $GITHUB_REF_NAME
+            curl -s https://pypi.org/pypi/$PACKAGE_NAME/json | jq -r '.releases | keys[]' | grep -Fxq "$GITHUB_REF_NAME"
             if [ $? -eq 0 ]; then
               echo "Version $GITHUB_REF_NAME is available"
               break
