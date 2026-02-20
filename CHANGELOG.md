@@ -11,6 +11,69 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.10.0a0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a0) - 2026-02-20
+
+
+## Core
+
+### Miscellaneous
+
+- [PR #895](https://github.com/omnivector-solutions/jobbergate/pull/895)
+
+
+## Agent
+
+### Added
+
+- User mapper from LDAP server cached locally to SQLite database ([PR #821](https://github.com/omnivector-solutions/jobbergate/pull/821))
+
+### Fixed
+
+- Fixed task schedule issue when running on Python 3.14 ([PR #821](https://github.com/omnivector-solutions/jobbergate/pull/821))
+
+### Miscellaneous
+
+- [PR #895](https://github.com/omnivector-solutions/jobbergate/pull/895)
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+### Changed
+
+- Added extra database indexes for performance optimization ([PR #894](https://github.com/omnivector-solutions/jobbergate/pull/894))
+
+### Miscellaneous
+
+- [PR #895](https://github.com/omnivector-solutions/jobbergate/pull/895)
+
+
+## CLI
+
+### Changed
+
+- Enhanced help messages in general, specially to better differentiate the core subcommands: `applications`, `job-scripts`, and `job-submissions` ([PR #893](https://github.com/omnivector-solutions/jobbergate/pull/893))
+
+### Fixed
+
+- Load json string to dict in slurm_job_info field of JobSubmission schema ([PR #873](https://github.com/omnivector-solutions/jobbergate/pull/873))
+
+### Miscellaneous
+
+- [PR #895](https://github.com/omnivector-solutions/jobbergate/pull/895)
+
+
+## Documentation
+
+### Miscellaneous
+
+- [PR #895](https://github.com/omnivector-solutions/jobbergate/pull/895)
+
+
 # [5.9.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.9.0) - 2025-12-19
 
 ## Core
