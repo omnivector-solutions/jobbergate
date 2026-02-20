@@ -285,7 +285,7 @@ wheels = [
 
 [[package]]
 name = "armasec"
-version = "3.0.2"
+version = "3.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "auto-name-enum" },
@@ -300,9 +300,9 @@ dependencies = [
     { name = "snick" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3a/2f/c9063d10b5ce5b643d26e8d191db2bf056606c7116c7f2aa00a5ce8cf93c/armasec-3.0.2.tar.gz", hash = "sha256:8db828bc5626de02b33eea259489ae35f309be345e4919b382a654c3ef5e61d1", size = 2998180, upload-time = "2025-09-17T21:28:30.686Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/41/79/cdc45753b386878547872b8b787ded012fe5a701558294c5aa8d60bc27cb/armasec-3.0.3.tar.gz", hash = "sha256:a8c0e5edc38a1581ed607494a17fb8bfb4573f716efe5b53a9546f9e61c037bd", size = 3011915, upload-time = "2026-02-17T17:23:55.512Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ed/e6/56eb7e2876d0f64f46e2f00468f8489ccf465ef3cb4955418fb930bf8ef2/armasec-3.0.2-py3-none-any.whl", hash = "sha256:da4cf534a1119c1e4a419757374e164cfb78ffc44205a14f3b90039823d32f5a", size = 35503, upload-time = "2025-09-17T21:28:29.458Z" },
+    { url = "https://files.pythonhosted.org/packages/92/50/6818db4ddb1e77164d0b696b6f24021e851fe9dea95e39564ce7b7202a85/armasec-3.0.3-py3-none-any.whl", hash = "sha256:76f5e09e43b04b83cd4fcbcfaa9ca81427b25134101edc3dde07796f7d5d2627", size = 35804, upload-time = "2026-02-17T17:23:56.797Z" },
 ]
 
 [[package]]
@@ -1257,7 +1257,7 @@ requires-dist = [
     { name = "aio-pika", specifier = ">=9.5.8" },
     { name = "aioboto3", specifier = ">=15.5.0" },
     { name = "alembic", specifier = ">=1.17.2" },
-    { name = "armasec", specifier = ">=3.0.2" },
+    { name = "armasec", specifier = ">=3.0.3" },
     { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "auto-name-enum", specifier = ">=3.0.0" },
     { name = "fastapi", specifier = ">=0.124.4" },
