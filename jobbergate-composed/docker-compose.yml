@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   jobbergate-api:
     build:
@@ -384,8 +382,6 @@ services:
       - timeseries_data:/prometheus
     ports:
       - "9090:9090"
-    depends_on:
-      - otel-collector
 
   grafana:
     image: grafana/grafana:latest
