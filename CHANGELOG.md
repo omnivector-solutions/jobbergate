@@ -11,6 +11,40 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.9.1a1](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.9.1a1) - 2026-02-25
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+### Fixed
+
+- properly address `ignore_audience=True` from armasec 3.0.3 ([PR #915](https://github.com/omnivector-solutions/jobbergate/pull/915))
+
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.9.1a0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.9.1a0) - 2026-02-18
 
 ## Core
