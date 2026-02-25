@@ -26,6 +26,7 @@ def get_domain_configs() -> list[DomainConfig]:
         DomainConfig(
             domain=settings.ARMASEC_DOMAIN,
             use_https=settings.ARMASEC_USE_HTTPS,
+            ignore_audience=True,
         )
     ]
     if all(
@@ -45,6 +46,7 @@ def get_domain_configs() -> list[DomainConfig]:
                 domain=settings.ARMASEC_ADMIN_DOMAIN,
                 use_https=settings.ARMASEC_USE_HTTPS,
                 match_keys={settings.ARMASEC_ADMIN_MATCH_KEY: settings.ARMASEC_ADMIN_MATCH_VALUE},
+                ignore_audience=True,
             )
         )
     return domain_configs
@@ -53,7 +55,6 @@ def get_domain_configs() -> list[DomainConfig]:
 guard = Armasec(
     domain_configs=get_domain_configs(),
     debug_logger=logger.debug if settings.ARMASEC_DEBUG else None,
-    ignore_audience=True,
 )
 
 
