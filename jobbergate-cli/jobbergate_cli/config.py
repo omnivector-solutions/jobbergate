@@ -7,7 +7,7 @@ from pathlib import Path
 from sys import exit
 from typing import Optional
 
-from pydantic import Field, ValidationError, computed_field, field_validator
+from pydantic import Field, ValidationError, computed_field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from jobbergate_cli import constants
@@ -35,7 +35,8 @@ class Settings(BaseSettings):
 
     JOBBERGATE_CACHE_DIR: Path = Field(Path.home() / ".local/share/jobbergate3")
 
-    ARMADA_API_BASE: str = Field("https://apis.vantagecompute.ai")
+    BASE_API_URL: str = Field("https://apis.vantagecompute.ai")
+    ARMADA_API_BASE: Optional[str] = None
 
     SBATCH_PATH: Optional[Path] = None
 
@@ -68,6 +69,15 @@ class Settings(BaseSettings):
     OIDC_CLIENT_ID: str = "default"
     OIDC_USE_HTTPS: bool = True
     OIDC_CLIENT_SECRET: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _handle_api_base_url_compatibility(self) -> "Settings":
+        """
+        For backward compatibility, ARMADA_API_BASE takes priority over BASE_API_URL if provided.
+        """
+        if self.ARMADA_API_BASE:
+            self.BASE_API_URL = self.ARMADA_API_BASE
+        return self
 
     @field_validator("JOBBERGATE_CACHE_DIR", mode="after")
     def _validate_cache_dir(cls, value: Path) -> Path:

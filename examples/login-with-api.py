@@ -18,7 +18,7 @@ To run this example::
 
 Note: Before running this demo, you will need to have the following config settings::
 
-- ARMADA_API_BASE
+- BASE_API_URL
 - OIDC_DOMAIN
 - OIDC_CLIENT_ID
 
@@ -31,7 +31,7 @@ environment using `docker-compose`. You will also need the following config sett
 
 - OIDC_DOMAIN=http://keycloak.local:8080/realms/jobbergate-local
 - OIDC_CLIENT_ID=cli
-- ARMADA_API_BASE=http://localhost:8000
+- BASE_API_URL=http://localhost:8000
 
 Note: After logging in the first time, running this demo again will use the token saved
 in the same directory as "demo.token" until that token expires.
@@ -50,7 +50,7 @@ load_dotenv()
 
 domain = os.getenv("OIDC_DOMAIN")
 client_id = os.getenv("OIDC_CLIENT_ID")
-base_api_url = os.getenv("ARMADA_API_BASE")
+base_api_url = os.getenv("BASE_API_URL")
 
 access_token_file = pathlib.Path("./access.token")
 refresh_token_file = pathlib.Path("./refresh.token")
@@ -165,7 +165,8 @@ def acquire_token():
         access_token_file.chmod(0o600)
     return access_token
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     token = acquire_token()
 
     response = httpx.get(

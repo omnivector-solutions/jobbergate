@@ -26,3 +26,13 @@ def test_cache_dir__expands_user_and_resolves():
 def test_is_onsite_mode__is_true_when_sbatch_path_is_set(sbatch_path, is_onsite_mode):
     settings = Settings(SBATCH_PATH=sbatch_path)
     assert settings.is_onsite_mode == is_onsite_mode
+
+
+def test_armada_api_base__overrides_base_api_url_when_both_are_set():
+    settings = Settings(BASE_API_URL="https://new-url.example.com", ARMADA_API_BASE="https://legacy-url.example.com")
+    assert settings.BASE_API_URL == "https://legacy-url.example.com"
+
+
+def test_armada_api_base__sets_base_api_url_when_only_armada_api_base_is_set():
+    settings = Settings(ARMADA_API_BASE="https://legacy-url.example.com")
+    assert settings.BASE_API_URL == "https://legacy-url.example.com"

@@ -15,7 +15,7 @@ def test_client_is_lazy_on_context(mocked_client, tweak_settings):
 
     mocked_client.assert_not_called()
 
-    local_settings = dict(ARMADA_API_BASE="test.example.com/", JOBBERGATE_REQUESTS_TIMEOUT=42)
+    local_settings = dict(BASE_API_URL="test.example.com/", JOBBERGATE_REQUESTS_TIMEOUT=42)
 
     with tweak_settings(**local_settings):
         client = ctx.client
@@ -23,7 +23,7 @@ def test_client_is_lazy_on_context(mocked_client, tweak_settings):
     assert client == mocked_client.return_value
 
     mocked_client.assert_called_once_with(
-        base_url=local_settings["ARMADA_API_BASE"],
+        base_url=local_settings["BASE_API_URL"],
         auth=ctx.authentication_handler,
         timeout=local_settings["JOBBERGATE_REQUESTS_TIMEOUT"],
     )
