@@ -31,7 +31,7 @@ class JobbergateContext(ContextProtocol):
         Client for making requests to the Jobbergate API.
         """
         return Client(
-            base_url=settings.ARMADA_API_BASE,
+            base_url=settings.BASE_API_URL,
             auth=self.authentication_handler,
             timeout=settings.JOBBERGATE_REQUESTS_TIMEOUT,
         )

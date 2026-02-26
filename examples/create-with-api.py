@@ -18,7 +18,7 @@ To run this example::
 
 Note: Before running this demo, you will need:
 
-- An ARMADA_API_BASE config set as an environment variable or in a `.env` file
+- An BASE_API_URL config set as an environment variable or in a `.env` file
 - An Auth token in the same directory named "access.token".
   You may use the ``login-with-api.py`` for this.
 
@@ -27,7 +27,7 @@ Note:  If you want to use a local dev environment, you will need to follow the
 instructions in the README of the `jobbergate-composed` directory to set up a local
 environment using `docker-compose`. You will also need the following config settings::
 
-- ARMADA_API_BASE=http://localhost:8000
+- BASE_API_URL=http://localhost:8000
 """
 
 import json
@@ -39,7 +39,7 @@ import httpx
 
 
 load_dotenv()
-base_api_url = os.getenv("ARMADA_API_BASE")
+base_api_url = os.getenv("BASE_API_URL")
 
 access_token_file = pathlib.Path("./access.token")
 token = access_token_file.read_text().rstrip()
@@ -66,10 +66,9 @@ def create_application(
     source_path = application_path / "jobbergate.py"
     template_path = application_path / "templates" / "dummy-script.py.j2"
 
-    with config_path.open('rb') as config_file:
-        with source_path.open('rb') as source_file:
-            with template_path.open('rb') as template_file:
-
+    with config_path.open("rb") as config_file:
+        with source_path.open("rb") as source_file:
+            with template_path.open("rb") as template_file:
                 response = httpx.post(
                     f"{base_api_url}/jobbergate/applications/{application_id}/upload",
                     headers=dict(Authorization=f"Bearer {token}"),
@@ -159,7 +158,6 @@ def watch_job_submission(
     status = None
     print(f"Watching job-submission {job_submission_id} for changes")
     while status not in ("REJECTED", "COMPLETED", "FAILED"):
-
         response = httpx.get(
             f"{base_api_url}/jobbergate/job-submissions/{job_submission_id}",
             headers=dict(Authorization=f"Bearer {token}"),
@@ -177,7 +175,7 @@ def watch_job_submission(
         time.sleep(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     application_id = create_application()
     job_script_id = create_job_script(application_id)
     job_submission_id = create_job_submission(job_script_id)

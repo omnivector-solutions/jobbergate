@@ -55,7 +55,7 @@ addopts = [
     "--cov-report=xml:tests/coverage.xml",
 ]
 env = [
-    "ARMADA_API_BASE = https://some-pretend-armada-url.com",
+    "BASE_API_URL = https://some-pretend-armada-url.com",
     "JOBBERGATE_DEBUG = false",
     "JOBBERGATE_CACHE_DIR = /tmp/jobbergate-cache",
     "OIDC_DOMAIN = dummy_auth_domain.com",

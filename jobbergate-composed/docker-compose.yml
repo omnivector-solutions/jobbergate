@@ -90,7 +90,7 @@ services:
       - ./etc/run-motorbike.py:/app/run-motorbike
       - ./slurm-fake-nfs:/nfs
     environment:
-      - ARMADA_API_BASE=http://jobbergate-api:80
+      - BASE_API_URL=http://jobbergate-api:80
       - OIDC_DOMAIN=keycloak.local:8080/realms/jobbergate-local
       - OIDC_CLIENT_ID=cli
       - OIDC_USE_HTTPS=false
