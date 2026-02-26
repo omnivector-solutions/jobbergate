@@ -4,6 +4,7 @@ Test the utilities for handling auth in Jobbergate.
 
 from dataclasses import replace
 from unittest import mock
+from urllib.parse import parse_qsl
 
 import httpx
 import pendulum
@@ -299,8 +300,8 @@ class TestJobbergateAuthHandlerLogin:
         assert dummy_jobbergate_auth._access_token.content == ""
         assert dummy_jobbergate_auth._refresh_token.content == ""
 
-        endpoint = f"{dummy_jobbergate_auth.login_domain}/protocol/openid-connect/auth/device"
-        respx_mock.post(endpoint).mock(
+        device_endpoint = f"{dummy_jobbergate_auth.login_domain}/protocol/openid-connect/auth/device"
+        device_mock = respx_mock.post(device_endpoint).mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
                 json=dict(
@@ -312,8 +313,8 @@ class TestJobbergateAuthHandlerLogin:
             ),
         )
 
-        endpoint = f"{dummy_jobbergate_auth.login_domain}/protocol/openid-connect/token"
-        respx_mock.post(endpoint).mock(
+        token_endpoint = f"{dummy_jobbergate_auth.login_domain}/protocol/openid-connect/token"
+        token_mock = respx_mock.post(token_endpoint).mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
                 json=dict(
@@ -328,12 +329,19 @@ class TestJobbergateAuthHandlerLogin:
         assert dummy_jobbergate_auth._access_token.content == valid_token.content
         assert dummy_jobbergate_auth._refresh_token.content == valid_token.content
 
+        device_request_body = dict(parse_qsl(device_mock.calls[0].request.content.decode()))
+        assert "code_challenge" in device_request_body
+        assert device_request_body["code_challenge_method"] == "S256"
+
+        token_request_body = dict(parse_qsl(token_mock.calls[0].request.content.decode()))
+        assert "code_verifier" in token_request_body
+
     def test_login__raises_timeout(self, respx_mock, dummy_jobbergate_auth):
         """
         Test that the function raises an exception if the process times out.
         """
-        endpoint = f"{dummy_jobbergate_auth.login_domain}/protocol/openid-connect/auth/device"
-        respx_mock.post(endpoint).mock(
+        device_endpoint = f"{dummy_jobbergate_auth.login_domain}/protocol/openid-connect/auth/device"
+        device_mock = respx_mock.post(device_endpoint).mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
                 json=dict(
@@ -354,6 +362,10 @@ class TestJobbergateAuthHandlerLogin:
 
         with pytest.raises(AuthenticationError, match="Login process was not completed in time"):
             dummy_jobbergate_auth.login()
+
+        device_request_body = dict(parse_qsl(device_mock.calls[0].request.content.decode()))
+        assert "code_challenge" in device_request_body
+        assert device_request_body["code_challenge_method"] == "S256"
 
 
 class TestJobbergateAuthHandlerFromSecret:
