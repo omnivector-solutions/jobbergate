@@ -2,6 +2,9 @@
 Utilities for handling authentication in the Jobbergate system.
 """
 
+import base64
+import hashlib
+import secrets
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -64,6 +67,14 @@ class TimedIterator:
 
     def __len__(self):
         return self.total // self.step + 1
+
+
+def _generate_pkce_pair() -> tuple[str, str]:
+    """Generate a PKCE code_verifier and code_challenge (S256) pair."""
+    code_verifier = secrets.token_urlsafe(96)[:128]
+    digest = hashlib.sha256(code_verifier.encode("ascii")).digest()
+    code_challenge = base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+    return code_verifier, code_challenge
 
 
 def print_login_url(device_code_data: DeviceCodeData):
@@ -267,12 +278,15 @@ class JobbergateAuthHandler:
         """
         logger.debug("Preparing to login to Jobbergate")
         with AuthenticationError.handle_errors("Failed to login to Jobbergate"):
-            login_info = self._get_device_code()
-            token_info = self._wait_for_login_confirmation(login_info)
+            code_verifier, code_challenge = _generate_pkce_pair()
+            login_info = self._get_device_code(code_challenge)
+            token_info = self._wait_for_login_confirmation(login_info, code_verifier)
             self._update_tokens_from_info(token_info)
         logger.success("Login completed")
 
-    def _wait_for_login_confirmation(self, device_code_data: DeviceCodeData) -> TokenInformation:
+    def _wait_for_login_confirmation(
+        self, device_code_data: DeviceCodeData, code_verifier: str
+    ) -> TokenInformation:
         self.login_url_handler(device_code_data)
         for counter in self.login_sequence_handler(
             TimedIterator(int(device_code_data.expires_in), device_code_data.interval)
@@ -286,9 +300,10 @@ class JobbergateAuthHandler:
                         "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
                         "device_code": device_code_data.device_code,
                         "client_id": self.login_client_id,
+                        "code_verifier": code_verifier,
                     }
                 },
-                sensitive_keys={"access_token", "cookie", "device_code", "refresh_token"},
+                sensitive_keys={"access_token", "cookie", "device_code", "refresh_token", "code_verifier"},
             ).check_status_code(200, 400)
 
             if request_handler.response.is_success:
@@ -302,7 +317,7 @@ class JobbergateAuthHandler:
 
         raise AuthenticationError("Login process was not completed in time. Please try again.")
 
-    def _get_device_code(self) -> DeviceCodeData:
+    def _get_device_code(self, code_challenge: str) -> DeviceCodeData:
         return (
             RequestHandler(
                 client=self._client,
@@ -312,6 +327,8 @@ class JobbergateAuthHandler:
                     "data": {
                         "client_id": self.login_client_id,
                         "grant_type": "client_credentials",
+                        "code_challenge": code_challenge,
+                        "code_challenge_method": "S256",
                     }
                 },
                 sensitive_keys={"device_code"},
