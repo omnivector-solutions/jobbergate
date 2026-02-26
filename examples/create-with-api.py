@@ -31,12 +31,12 @@ environment using `docker-compose`. You will also need the following config sett
 """
 
 import json
+import os
 import pathlib
 import time
 
-from dotenv import load_dotenv
 import httpx
-
+from dotenv import load_dotenv
 
 load_dotenv()
 base_api_url = os.getenv("BASE_API_URL")
