@@ -62,9 +62,10 @@ app = typer.Typer(
         - List your job scripts: `jobbergate job-scripts list`
         - Create one from application: `jobbergate job-scripts create <application id or identifier>`
 
-            **Note:** you are questioned to submit the job immediately after creation. This behavior can also be controlled
-            by command line arguments
-        - For full guide: jobbergate --help
+           **Note:** You are also prompted to *create a job-submission from it right away*.
+           This behavior can be controlled by command line arguments.
+
+        - For full guide: `jobbergate --help`
         """
     ),
 )

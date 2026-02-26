@@ -75,9 +75,12 @@ app = typer.Typer(
         Workflow: applications → job-scripts → job-submissions
 
         Quick reference:
-        - Use 'identifier' for frequently-accessed applications with friendly names
+        - Use `identifier` for frequently-accessed applications with friendly names
         - Search by name: `jobbergate applications list --search <term>`
-        - Create a Job Script from an application: `jobbergate job-scripts create <application id or identifier>`
+        - Create a job script by answering application prompts: `jobbergate job-scripts create <application_id or identifier>`
+           - Use the **identifier** from the applications available on the previous list command.
+           - You are also prompted to *create a job-submission from it right away*.
+             This behavior can be controlled by command line arguments.
         - For full guide: `jobbergate --help`
         """
     ),

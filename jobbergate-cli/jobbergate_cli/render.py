@@ -276,14 +276,15 @@ QUICK_START_GUIDE = dedent(
     - **job-submissions** - Track and manage jobs submitted to Slurm, monitoring their
         status and execution
 
-    ## Useful Commands
+    ## Typical workflow
     
     - **Login** to your Jobbergate account:
 
        `jobbergate login`
 
-       Note: This is usually triggered automatically when your session expires or
-       is required by a command. The process involves opening a login URL in
+       **Note**: This is *triggered automatically* when your session expires or
+       is required by a command, there is usually no need to run it manually.
+       The process involves opening a login URL in
        your web browser (or copying it to your clipboard if no browser is found).
 
     - **Find an application** template to use:
@@ -294,15 +295,19 @@ QUICK_START_GUIDE = dedent(
 
        `jobbergate job-scripts create <application_id or identifier>`
 
-    - **Monitor** your jobs on the cluster:
+       - Use the **identifier** from the applications available on the previous list command.
+       - You are also prompted to *create a job-submission from it right away*.
+         This behavior can be controlled by command line arguments.
+
+    - **Show submissions** on the cluster:
 
        `jobbergate job-submissions list`
     
-    - **View job details**:
+    - **Job details**:
 
         `jobbergate job-submissions view <job_submission_id>`
     
-    - **Cancel a job** that is running or pending:
+    - **Cancel command** for a running or pending job:
 
         `jobbergate job-submissions cancel <job_submission_id>`
 
