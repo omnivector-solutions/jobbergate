@@ -284,9 +284,7 @@ class JobbergateAuthHandler:
             self._update_tokens_from_info(token_info)
         logger.success("Login completed")
 
-    def _wait_for_login_confirmation(
-        self, device_code_data: DeviceCodeData, code_verifier: str
-    ) -> TokenInformation:
+    def _wait_for_login_confirmation(self, device_code_data: DeviceCodeData, code_verifier: str) -> TokenInformation:
         self.login_url_handler(device_code_data)
         for counter in self.login_sequence_handler(
             TimedIterator(int(device_code_data.expires_in), device_code_data.interval)
@@ -331,7 +329,7 @@ class JobbergateAuthHandler:
                         "code_challenge_method": "S256",
                     }
                 },
-                sensitive_keys={"device_code"},
+                sensitive_keys={"device_code", "code_challenge"},
             )
             .raise_for_status()
             .check_status_code(200)
