@@ -11,6 +11,43 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.10.0a2](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a2) - 2026-02-26
+
+
+## Core
+
+### Added
+
+- Enabled pkce challenge method for authorization code flow ([PR #918](https://github.com/omnivector-solutions/jobbergate/pull/918))
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+No significant changes.
+
+
+## CLI
+
+### Changed
+
+- Renamed configuration field `ARMADA_API_BASE` to `BASE_API_URL` for consistency across the codebase. The previous field name was kept for backward compatibility, but it is recommended to update to the new field name in future configurations. ([PR #920](https://github.com/omnivector-solutions/jobbergate/pull/920))
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.10.0a1](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a1) - 2026-02-20
 
 
