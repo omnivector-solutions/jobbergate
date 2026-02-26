@@ -18,7 +18,7 @@ To run this example::
 
 Note: Before running this demo, you will need:
 
-- An BASE_API_URL config set as an environment variable or in a `.env` file
+- A BASE_API_URL config set as an environment variable or in a `.env` file
 - An Auth token in the same directory named "access.token".
   You may use the ``login-with-api.py`` for this.
 
