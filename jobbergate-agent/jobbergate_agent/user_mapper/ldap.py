@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Callable, Iterator
 
 from ldap3 import RESTARTABLE, Connection, Server, Tls
+from ldap3.core.exceptions import LDAPExceptionError
 from ldap3.utils.conv import escape_filter_chars
 from loguru import logger
 from pydantic import BaseModel, EmailStr, field_validator
@@ -22,51 +23,12 @@ class LDAPSettings(BaseSettings):
     """Settings for the LDAP plugin."""
 
     LDAP_DOMAIN: str
-    LDAP_USERNAME: str
     LDAP_PASSWORD: str
-    LDAP_BIND_DN: str | None = None
+    LDAP_BIND_DN: str
+    LDAP_SEARCH_BASE: str
+    LDAP_UID_ATTRIBUTE: str = "uid"
 
     model_config = SettingsConfigDict(env_prefix="JOBBERGATE_AGENT_", env_file=_get_env_file(), extra="ignore")
-
-    @field_validator("LDAP_DOMAIN")
-    def validate_ldap_domain(cls, value: str) -> str:  # noqa: N805
-        """Validate that LDAP_DOMAIN is a valid dot-separated domain name.
-
-        Args:
-            value: The LDAP_DOMAIN value to validate.
-
-        Returns:
-            str: The validated LDAP_DOMAIN value.
-
-        Raises:
-            ValueError: If LDAP_DOMAIN is empty or doesn't contain at least one dot.
-        """
-        if not value or not value.strip():
-            raise ValueError("LDAP_DOMAIN cannot be empty")
-
-        if "." not in value:
-            raise ValueError("LDAP_DOMAIN must be a dot-separated domain name (e.g., 'example.com')")
-
-        # Check that after splitting by dots, we have at least 2 non-empty parts
-        parts = [part.strip() for part in value.split(".")]
-        if len(parts) < 2 or any(not part for part in parts):
-            raise ValueError(
-                "LDAP_DOMAIN must be a valid dot-separated domain name with at least two parts (e.g., 'example.com')"
-            )
-
-        return value
-
-    @property
-    def search_base(self) -> str:
-        """Compute the LDAP search base from the domain."""
-        return ",".join(f"DC={dc}" for dc in self.LDAP_DOMAIN.split("."))
-
-    @property
-    def bind_dn(self) -> str:
-        """Compute the bind DN, using LDAP_BIND_DN if set, otherwise constructing from domain and username."""
-        if self.LDAP_BIND_DN:
-            return self.LDAP_BIND_DN
-        return f"cn={self.LDAP_USERNAME},{self.search_base}"
 
     @property
     def db_path(self) -> Path:
@@ -102,7 +64,7 @@ def ldap_connection(ldap_settings: LDAPSettings) -> Iterator[Connection]:
 
     ldap_conn = Connection(
         server,
-        user=ldap_settings.bind_dn,
+        user=ldap_settings.LDAP_BIND_DN,
         password=ldap_settings.LDAP_PASSWORD,
         authentication="SIMPLE",
         client_strategy=RESTARTABLE,
@@ -127,31 +89,34 @@ def ldap_connection(ldap_settings: LDAPSettings) -> Iterator[Connection]:
 
 def get_msad_user_details(email: str, ldap_settings: LDAPSettings) -> UserDetails:
     """Get user details given their uid or email."""
-    search_base = ldap_settings.search_base
+    search_base = ldap_settings.LDAP_SEARCH_BASE
+    uid_attribute = ldap_settings.LDAP_UID_ATTRIBUTE
     search_filter = f"(mail={escape_filter_chars(email)})"
+
+    logger.debug("Searching LDAP: base={}, filter={}, uid_attr={}", search_base, search_filter, uid_attribute)
 
     with ldap_connection(ldap_settings) as ldap_conn:
         ldap_conn.search(
             search_base=search_base,
             search_filter=search_filter,
-            attributes=["cn", "mail"],
+            attributes=[uid_attribute, "mail"],
             size_limit=0,
         )
 
-    entries = ldap_conn.entries
-    if len(entries) != 1:
-        raise ValueError(
-            f"Did not find exactly one match for {email=}. Found {len(entries)}",
-        )
+        entries = ldap_conn.entries
+        if len(entries) != 1:
+            raise ValueError(
+                f"Did not find exactly one match for {email=}. Found {len(entries)}",
+            )
 
-    match = entries.pop()
-    try:
-        uid = str(match["cn"])
-        email = str(match["mail"])
-        return UserDetails(uid=uid, email=email)
-    except Exception as e:
-        logger.debug(f"Received {match=}")
-        raise ValueError(f"Failed to extract data from LDAP entry: {e}") from e
+        match = entries.pop()
+        try:
+            uid = str(match[uid_attribute])
+            email = str(match["mail"])
+            return UserDetails(uid=uid, email=email)
+        except Exception as e:
+            logger.debug(f"Received {match=}")
+            raise ValueError(f"Failed to extract data from LDAP entry: {e}") from e
 
 
 @dataclass
@@ -230,6 +195,10 @@ class UserDatabase(MutableMapping):
 
         Returns:
             str: The username of the user, derived from the email.
+
+        Raises:
+            KeyError: If the user is not found in LDAP.
+            LDAPExceptionError: If the LDAP server is unreachable (transient error).
         """
         if self.search_missing is not None:
             try:
@@ -237,6 +206,12 @@ class UserDatabase(MutableMapping):
             except ValueError as e:
                 logger.error(f"User not found in LDAP for email {email}: {e}")
                 raise KeyError(email) from e
+            except LDAPExceptionError:
+                logger.warning(f"LDAP connection error while looking up {email}, will retry later")
+                raise
+            except Exception as e:
+                logger.warning(f"Unexpected error during LDAP lookup for {email}: {e}, will retry later")
+                raise
             self[email] = user_details.uid
             return user_details.uid
         raise KeyError(email)
