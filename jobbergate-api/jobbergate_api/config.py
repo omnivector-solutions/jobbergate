@@ -80,12 +80,6 @@ class Settings(BaseSettings):
     ARMASEC_DOMAIN: str
     ARMASEC_USE_HTTPS: bool = Field(True)
     ARMASEC_DEBUG: bool = Field(False)
-    ARMASEC_ADMIN_DOMAIN: Optional[str] = None
-    ARMASEC_ADMIN_MATCH_KEY: Optional[str] = None
-    ARMASEC_ADMIN_MATCH_VALUE: Optional[str] = None
-
-    # Key to custom claims packaged with Auth0 tokens
-    IDENTITY_CLAIMS_KEY: str = "https://omnivector.solutions"
 
     # Sentry configuration
     SENTRY_DSN: Optional[HttpUrl] = None

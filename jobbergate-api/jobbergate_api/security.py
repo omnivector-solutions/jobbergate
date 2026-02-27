@@ -7,7 +7,6 @@ Also provides a factory function for TokenSecurity to reduce boilerplate.
 from typing import Annotated
 
 from armasec import Armasec, TokenPayload
-from armasec.schemas import DomainConfig
 from armasec.token_security import PermissionMode
 from buzz import check_expressions
 from fastapi import Depends, HTTPException, status
@@ -17,44 +16,10 @@ from pydantic import EmailStr, model_validator
 from jobbergate_api.config import settings
 
 
-def get_domain_configs() -> list[DomainConfig]:
-    """
-    Return a list of DomainConfig objects based on the input variables for the Settings class.
-    """
-    # make type checkers happy
-    assert settings.ARMASEC_DOMAIN is not None
-
-    domain_configs = [
-        DomainConfig(
-            domain=settings.ARMASEC_DOMAIN,
-            use_https=settings.ARMASEC_USE_HTTPS,
-        )
-    ]
-    if all(
-        [
-            settings.ARMASEC_ADMIN_DOMAIN,
-            settings.ARMASEC_ADMIN_MATCH_KEY,
-            settings.ARMASEC_ADMIN_MATCH_VALUE,
-        ]
-    ):
-        # make type checkers happy
-        assert settings.ARMASEC_ADMIN_DOMAIN is not None
-        assert settings.ARMASEC_ADMIN_MATCH_KEY is not None
-        assert settings.ARMASEC_ADMIN_MATCH_VALUE is not None
-
-        domain_configs.append(
-            DomainConfig(
-                domain=settings.ARMASEC_ADMIN_DOMAIN,
-                use_https=settings.ARMASEC_USE_HTTPS,
-                match_keys={settings.ARMASEC_ADMIN_MATCH_KEY: settings.ARMASEC_ADMIN_MATCH_VALUE},
-            )
-        )
-    return domain_configs
-
-
 guard = Armasec(
-    domain_configs=get_domain_configs(),
+    domain=settings.ARMASEC_DOMAIN,
     debug_logger=logger.debug if settings.ARMASEC_DEBUG else None,
+    use_https=settings.ARMASEC_USE_HTTPS,
 )
 
 
