@@ -1,6 +1,7 @@
 """This module contains the UserDatabase class."""
 
 import sqlite3
+import ssl
 from collections.abc import MutableMapping
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -8,7 +9,7 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, Iterator
 
-from ldap3 import NTLM, RESTARTABLE, Connection
+from ldap3 import RESTARTABLE, Connection, Server, Tls
 from ldap3.utils.conv import escape_filter_chars
 from loguru import logger
 from pydantic import BaseModel, EmailStr, field_validator
@@ -23,6 +24,7 @@ class LDAPSettings(BaseSettings):
     LDAP_DOMAIN: str
     LDAP_USERNAME: str
     LDAP_PASSWORD: str
+    LDAP_BIND_DN: str | None = None
 
     model_config = SettingsConfigDict(env_prefix="JOBBERGATE_AGENT_", env_file=_get_env_file(), extra="ignore")
 
@@ -55,6 +57,18 @@ class LDAPSettings(BaseSettings):
         return value
 
     @property
+    def search_base(self) -> str:
+        """Compute the LDAP search base from the domain."""
+        return ",".join(f"DC={dc}" for dc in self.LDAP_DOMAIN.split("."))
+
+    @property
+    def bind_dn(self) -> str:
+        """Compute the bind DN, using LDAP_BIND_DN if set, otherwise constructing from domain and username."""
+        if self.LDAP_BIND_DN:
+            return self.LDAP_BIND_DN
+        return f"cn={self.LDAP_USERNAME},{self.search_base}"
+
+    @property
     def db_path(self) -> Path:
         """Property to compute the path for the local cache db based on the cache dir from jobbergate-agent."""
         return SETTINGS.CACHE_DIR / "user_mapper.sqlite3"
@@ -74,37 +88,46 @@ class UserDetails(BaseModel):
 
 @contextmanager
 def ldap_connection(ldap_settings: LDAPSettings) -> Iterator[Connection]:
-    """Context manager that yields a LDAP connection, closing appropriately."""
-    logger.debug("Starting connection with MSAD server")
+    """Context manager that yields an LDAPS connection, closing appropriately."""
+    logger.debug("Starting LDAPS connection to {}", ldap_settings.LDAP_DOMAIN)
 
-    msad_ldap_conn = Connection(
-        server=ldap_settings.LDAP_DOMAIN,
-        user=f"{ldap_settings.LDAP_DOMAIN}\\{ldap_settings.LDAP_USERNAME}",
+    tls_config = Tls(validate=ssl.CERT_REQUIRED)
+
+    server = Server(
+        ldap_settings.LDAP_DOMAIN,
+        port=636,
+        use_ssl=True,
+        tls=tls_config,
+    )
+
+    ldap_conn = Connection(
+        server,
+        user=ldap_settings.bind_dn,
         password=ldap_settings.LDAP_PASSWORD,
-        authentication=NTLM,
-        auto_bind="NONE",
+        authentication="SIMPLE",
         client_strategy=RESTARTABLE,
     )
 
     try:
-        msad_ldap_conn.start_tls()
-        if not msad_ldap_conn.bind():
-            raise RuntimeError("Couldn't open a connection to MSAD")
+        if not ldap_conn.bind():
+            raise RuntimeError(
+                f"Couldn't bind to LDAP server: {ldap_conn.result}"
+            )
 
-        logger.debug("Connected to MSAD server")
-        yield msad_ldap_conn
+        logger.debug("Connected to LDAP server")
+        yield ldap_conn
 
     finally:
         try:
-            msad_ldap_conn.unbind()
-            logger.debug("Closed connection to MSAD server")
+            ldap_conn.unbind()
+            logger.debug("Closed connection to LDAP server")
         except Exception as e:
             logger.warning(f"Error during connection cleanup: {e}")
 
 
 def get_msad_user_details(email: str, ldap_settings: LDAPSettings) -> UserDetails:
     """Get user details given their uid or email."""
-    search_base = ",".join([f"DC={dc}" for dc in ldap_settings.LDAP_DOMAIN.split(".")])
+    search_base = ldap_settings.search_base
     search_filter = f"(mail={escape_filter_chars(email)})"
 
     with ldap_connection(ldap_settings) as ldap_conn:
@@ -295,3 +318,4 @@ def user_mapper_factory() -> UserDatabase:
         search_missing=partial(get_msad_user_details, ldap_settings=ldap_settings),
     )
     return user_mapper
+
