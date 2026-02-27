@@ -1263,7 +1263,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.124.4" },
     { name = "fastapi-pagination", specifier = ">=0.15.3" },
     { name = "greenlet", specifier = ">=3.3.0" },
-    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "httpx", specifier = ">=0.28.1,<1" },
     { name = "inflection", specifier = ">=0.5.1" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "loguru", specifier = ">=0.7.3" },
@@ -1358,7 +1358,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "httpx", specifier = ">=0.28.1,<1" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "pendulum", extras = ["test"], specifier = ">=3.1.0" },
     { name = "py-buzz", specifier = ">=7.3.0" },
