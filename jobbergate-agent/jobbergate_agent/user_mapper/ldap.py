@@ -9,6 +9,7 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, Iterator
 
+import certifi
 from ldap3 import RESTARTABLE, Connection, Server, Tls
 from ldap3.core.exceptions import LDAPExceptionError
 from ldap3.utils.conv import escape_filter_chars
@@ -53,7 +54,7 @@ def ldap_connection(ldap_settings: LDAPSettings) -> Iterator[Connection]:
     """Context manager that yields an LDAPS connection, closing appropriately."""
     logger.debug("Starting LDAPS connection to {}", ldap_settings.LDAP_DOMAIN)
 
-    tls_config = Tls(validate=ssl.CERT_REQUIRED)
+    tls_config = Tls(validate=ssl.CERT_REQUIRED, ca_certs_file=certifi.where())
 
     server = Server(
         ldap_settings.LDAP_DOMAIN,

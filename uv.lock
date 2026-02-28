@@ -1171,6 +1171,7 @@ source = { editable = "jobbergate-agent" }
 dependencies = [
     { name = "apscheduler" },
     { name = "auto-name-enum" },
+    { name = "certifi" },
     { name = "influxdb" },
     { name = "jobbergate-core" },
     { name = "ldap3" },
@@ -1188,6 +1189,7 @@ dependencies = [
 requires-dist = [
     { name = "apscheduler", specifier = "==3.11.2" },
     { name = "auto-name-enum", specifier = ">=3.0.0" },
+    { name = "certifi", specifier = ">=2024.0.0" },
     { name = "influxdb", specifier = ">=5.3.2" },
     { name = "jobbergate-core", editable = "jobbergate-core" },
     { name = "ldap3", specifier = ">=2.9.1" },
