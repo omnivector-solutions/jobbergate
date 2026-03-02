@@ -26,7 +26,7 @@ changes:
 
 .PHONY: sync-version
 sync-version:
-	@new_version=$$(cd ../jobbergate-agent && uv tool run hatch version) && \
+	@new_version=$$(git describe --tags --exact-match HEAD) && \
 	perl -pi -e "s/(- jobbergate-agent)==.*/\1==$${new_version}/" snap/snapcraft.yaml && \
 	echo "Version updated to $${new_version} in snap/snapcraft.yaml"
 
