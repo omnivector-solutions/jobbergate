@@ -84,10 +84,10 @@ def upgrade():
         unique=False,
     )
 
-    # 8. Add index on job_progress.job_submission_id (foreign key for cascade queries)
+    # 8. Add index on job_progresses.job_submission_id (foreign key for cascade queries)
     op.create_index(
         "idx_job_progress_job_submission_id",
-        "job_progress",
+        "job_progresses",
         ["job_submission_id"],
         unique=False,
     )
@@ -98,7 +98,7 @@ def downgrade():
     Remove all indexes added in upgrade.
     """
     # Drop indexes in reverse order
-    op.drop_index("idx_job_progress_job_submission_id", table_name="job_progress")
+    op.drop_index("idx_job_progress_job_submission_id", table_name="job_progresses")
     op.drop_index(
         "idx_job_submission_metrics_job_submission_id",
         table_name="job_submission_metrics",

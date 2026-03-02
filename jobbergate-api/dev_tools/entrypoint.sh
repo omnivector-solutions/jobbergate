@@ -2,5 +2,5 @@
 
 set -e
 cd /app/jobbergate-api
-uv run --package jobbergate-api dev-tools db upgrade
-uv run --package jobbergate-api dev-tools dev-server --port=80
+/app/.venv/bin/dev-tools db upgrade
+/app/.venv/bin/dev-tools dev-server --port=80

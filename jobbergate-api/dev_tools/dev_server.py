@@ -56,7 +56,7 @@ def dev_server(
 
     uvicorn.run(
         "jobbergate_api.main:app",
-        host="127.0.0.1",
+        host="0.0.0.0",
         port=port,
         reload=True,
         log_level=log_level.lower(),
