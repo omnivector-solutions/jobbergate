@@ -11,6 +11,45 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.10.0a4](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a4) - 2026-03-03
+
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+### Changed
+
+- Remove DomainConfig from Armasec client to pass the attributes directly ([PR #927](https://github.com/omnivector-solutions/jobbergate/pull/927))
+
+### Miscellaneous
+
+- [PR #905](https://github.com/omnivector-solutions/jobbergate/pull/905)
+
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.10.0a3](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a3) - 2026-02-26
 
 
