@@ -55,11 +55,6 @@ class Settings(BaseSettings):
     # How long it will use cached cluster lists before fetching them again
     JOBBERGATE_CLUSTER_CACHE_LIFETIME: int = 60 * 5
 
-    # Settings for log uploads
-    JOBBERGATE_AWS_ACCESS_KEY_ID: Optional[str] = None
-    JOBBERGATE_AWS_SECRET_ACCESS_KEY: Optional[str] = None
-    JOBBERGATE_S3_LOG_BUCKET: str = Field("jobbergate-cli-logs")
-
     # Compatibility mode: If True, add commands as they appear in the legacy app
     JOBBERGATE_COMPATIBILITY_MODE: Optional[bool] = False
     JOBBERGATE_LEGACY_NAME_CONVENTION: Optional[bool] = False

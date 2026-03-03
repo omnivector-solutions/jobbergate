@@ -2,57 +2,14 @@
 Test the security module.
 """
 
-from unittest.mock import patch
-
 import pytest
 
 from jobbergate_api.security import (
     HTTPException,
     IdentityPayload,
     TokenPayload,
-    get_domain_configs,
     lockdown_with_identity,
-    settings,
 )
-
-
-def test_get_domain_configs__loads_only_base_settings():
-    """Check if the correct domain configuration is loaded when only one domain is provided."""
-    with (
-        patch.object(settings, "ARMASEC_DOMAIN", new="foo.io"),
-    ):
-        domain_configs = get_domain_configs()
-
-    assert len(domain_configs) == 1
-    first_config = domain_configs.pop()
-    assert first_config.domain == "foo.io"
-
-
-def test_get_domain_configs__loads_admin_settings_if_all_are_present():
-    """Check if the correct domain configuration is loaded when two domains are provided."""
-    with (
-        patch.object(settings, "ARMASEC_DOMAIN", new="foo.io"),
-        patch.object(settings, "ARMASEC_ADMIN_DOMAIN", new="admin.io"),
-    ):
-        domain_configs = get_domain_configs()
-
-    assert len(domain_configs) == 1
-    first_config = domain_configs.pop()
-    assert first_config.domain == "foo.io"
-
-    with (
-        patch.object(settings, "ARMASEC_DOMAIN", new="foo.io"),
-        patch.object(settings, "ARMASEC_ADMIN_DOMAIN", new="admin.io"),
-        patch.object(settings, "ARMASEC_ADMIN_MATCH_KEY", new="foo"),
-        patch.object(settings, "ARMASEC_ADMIN_MATCH_VALUE", new="bar"),
-    ):
-        domain_configs = get_domain_configs()
-
-    assert len(domain_configs) == 2
-    (first_config, second_config) = domain_configs
-    assert first_config.domain == "foo.io"
-    assert second_config.domain == "admin.io"
-    assert second_config.match_keys == {"foo": "bar"}
 
 
 def test_lockdown_with_identity__success():
