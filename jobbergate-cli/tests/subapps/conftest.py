@@ -46,15 +46,19 @@ def dummy_context(mocker, tmp_path, dummy_domain) -> Generator[ContextProtocol, 
         request.headers["Authorization"] = "Bearer XXXXXXXX"
         return request
 
-    authentication_handler = JobbergateAuthHandler(cache_directory=Path(tmp_path), login_domain="test-domain")
+    authentication_handler = mocker.patch.object(
+        JobbergateAuthHandler(cache_directory=Path(tmp_path), login_domain="test-domain"),
+        attribute="acquire_access",
+        return_value=dummy_auth,
+    )
 
     context = JobbergateContext()
 
-    with mocker.patch.object(authentication_handler, attribute="acquire_access", return_value=dummy_auth):
-        # This is all it takes to replace both cached properties
-        context.client = httpx.Client(base_url=dummy_domain)
-        context.authentication_handler = authentication_handler
-        yield context
+    # This is all it takes to replace both cached properties
+    context.client = httpx.Client(base_url=dummy_domain)
+    context.authentication_handler = authentication_handler
+
+    yield context
 
 
 @pytest.fixture
