@@ -403,6 +403,8 @@ def create(
             sbatch_arguments=None,
         )
         job_submission_result = submissions_handler.run()
+    except Abort:
+        raise
     except Exception as err:
         raise Abort(
             "Failed to immediately submit the job after job script creation.",

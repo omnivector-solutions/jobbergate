@@ -8,6 +8,7 @@ import httpx
 import pytest
 
 from jobbergate_cli.config import settings
+from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ApplicationResponse, JobScriptFile, JobScriptResponse, JobSubmissionResponse
 from jobbergate_cli.subapps.job_scripts.app import (
     HIDDEN_FIELDS,
@@ -432,6 +433,45 @@ def test_create__with_fast_mode_and_no_job_submission(
         title="Created Job Script",
         hidden_fields=HIDDEN_FIELDS,
     )
+
+
+def test_create__preserves_abort_message_from_auto_submit_handler(
+    make_test_app,
+    dummy_context,
+    dummy_job_script_data,
+    cli_runner,
+    mocker,
+):
+    job_script_result = JobScriptResponse(**dummy_job_script_data[0])
+
+    test_app = make_test_app("create", create)
+    mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_job_script", return_value=job_script_result)
+
+    submissions_handler = mock.MagicMock()
+    submissions_handler.run.side_effect = Abort(
+        "Slurm rejected the job submission.\nReason: Invalid qos specification",
+        subject="Slurm Submission Error",
+        support=True,
+    )
+    mocker.patch("jobbergate_cli.subapps.job_scripts.app.job_submissions_factory", return_value=submissions_handler)
+
+    result = cli_runner.invoke(
+        test_app,
+        [
+            "create",
+            "--application-id",
+            "1",
+            "--name",
+            "dummy-name",
+            "--submit",
+            "--no-download",
+            "--fast",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "Slurm rejected the job submission." in result.stdout
+    assert "Failed to immediately submit the job after job script creation." not in result.stdout
 
 
 def test_create__submit_is_none_and_cluster_name_is_defined(

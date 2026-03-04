@@ -4,6 +4,7 @@ from unittest import mock
 import httpx
 import pytest
 
+from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import JobSubmissionResponse
 from jobbergate_cli.subapps.job_submissions.app import (
     HIDDEN_FIELDS,
@@ -81,6 +82,24 @@ def test_create(
         title="Created Job Submission",
         hidden_fields=HIDDEN_FIELDS,
     )
+
+
+def test_create__preserves_abort_message_from_submission_handler(make_test_app, cli_runner, mocker):
+    test_app = make_test_app("create", create)
+    submissions_handler = mock.MagicMock()
+    submissions_handler.run.side_effect = Abort(
+        "Slurm rejected the job submission.\nReason: Invalid partition name specified",
+        subject="Slurm Submission Error",
+        support=True,
+    )
+
+    mocker.patch("jobbergate_cli.subapps.job_submissions.app.job_submissions_factory", return_value=submissions_handler)
+
+    result = cli_runner.invoke(test_app, ["create", "--name", "test-submission", "--job-script-id", "1"])
+
+    assert result.exit_code == 1
+    assert "Slurm rejected the job submission." in result.stdout
+    assert "Failed to create the job submission" not in result.stdout
 
 
 def test_list_all__renders_paginated_results(

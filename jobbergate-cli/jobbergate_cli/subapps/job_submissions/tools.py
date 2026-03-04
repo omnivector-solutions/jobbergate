@@ -19,6 +19,61 @@ from jobbergate_cli.schemas import ContextProtocol, JobSubmissionCreateRequestDa
 from jobbergate_cli.subapps.job_scripts.tools import download_job_script_files
 
 
+def _normalize_error_output(output: object) -> str:
+    """Normalize different error payload types to display-friendly text."""
+    if output is None:
+        return ""
+    if isinstance(output, bytes):
+        return output.decode(errors="replace").strip()
+    return str(output).strip()
+
+
+def _extract_sbatch_failure_reason(err: Exception) -> str:
+    """Extract an informative reason from known exception attributes."""
+    parts: list[str] = []
+    for attr in ("stderr", "stdout", "output"):
+        value = _normalize_error_output(getattr(err, attr, None))
+        if value:
+            parts.append(value)
+
+    fallback = _normalize_error_output(err)
+    if fallback:
+        parts.append(fallback)
+
+    deduplicated: list[str] = []
+    for part in parts:
+        if part and part not in deduplicated:
+            deduplicated.append(part)
+
+    if not deduplicated:
+        return "Unknown sbatch error"
+
+    return " | ".join(" ".join(part.split()) for part in deduplicated)
+
+
+def _suggest_resolution_from_reason(reason: str) -> str:
+    """Provide a short actionable suggestion based on common Slurm failure patterns."""
+    normalized_reason = reason.lower()
+    if "memory" in normalized_reason or "mem=" in normalized_reason:
+        return "Suggestion: Lower requested memory or choose a queue/node type with higher memory limits."
+    if "cpu" in normalized_reason or "cpus" in normalized_reason:
+        return "Suggestion: Lower requested CPU count or choose resources that match your CPU request."
+    if "qos" in normalized_reason:
+        return "Suggestion: Verify the requested QoS is available for your account and cluster."
+    if "partition" in normalized_reason:
+        return "Suggestion: Verify the requested partition name exists on the target cluster."
+    if "constraint" in normalized_reason or "feature" in normalized_reason or "node" in normalized_reason:
+        return "Suggestion: Adjust node/feature constraints to match available cluster resources."
+    return "Suggestion: Verify requested Slurm resources and cluster parameters before retrying."
+
+
+def _format_sbatch_submission_error(err: Exception) -> str:
+    """Build a concise and actionable end-user message for sbatch submission failures."""
+    reason = _extract_sbatch_failure_reason(err)
+    suggestion = _suggest_resolution_from_reason(reason)
+    return f"Slurm rejected the job submission.\nReason: {reason}\n{suggestion}"
+
+
 def _map_cluster_name(
     jg_ctx: ContextProtocol,
     base_cluster_name: str,
@@ -157,12 +212,10 @@ class OnsiteJobSubmission(JobSubmissionABC):
             slurm_id = sbatch_handler.submit_job(job_script_path)
         except Exception as e:
             raise Abort(
-                "Failed to submit job to Slurm",
-                raise_kwargs=dict(
-                    subject="Slurm Submission Error",
-                    support=True,
-                    log_message=f"On-site submission failed: {e:s}",
-                ),
+                _format_sbatch_submission_error(e),
+                subject="Slurm Submission Error",
+                support=True,
+                log_message=f"On-site submission failed: {e}",
             ) from e
         self.slurm_job_id = slurm_id
 

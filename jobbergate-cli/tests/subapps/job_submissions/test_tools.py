@@ -339,6 +339,67 @@ class TestJobSubmissionsProcessSubmissions:
         assert mocked_inject_sbatch_params.call_count == 0
         assert job_script_path.read_text() == "original content"
 
+    @pytest.mark.parametrize(
+        "sbatch_error,expected_suggestion",
+        [
+            (
+                "sbatch: error: Batch job submission failed: Invalid partition name specified",
+                "Suggestion: Verify the requested partition name exists on the target cluster.",
+            ),
+            (
+                "sbatch: error: Batch job submission failed: Requested memory exceeds partition limit",
+                "Suggestion: Lower requested memory or choose a queue/node type with higher memory limits.",
+            ),
+            (
+                "sbatch: error: Batch job submission failed: Invalid qos specification",
+                "Suggestion: Verify the requested QoS is available for your account and cluster.",
+            ),
+            (
+                "sbatch: error: Batch job submission failed: Requested node configuration is not available",
+                "Suggestion: Adjust node/feature constraints to match available cluster resources.",
+            ),
+        ],
+    )
+    def test_process_submission__on_site_reports_actionable_sbatch_error(
+        self,
+        sbatch_error,
+        expected_suggestion,
+        dummy_context,
+        attach_persona,
+        tweak_settings,
+        mocker,
+        tmp_path,
+        dummy_job_script_data,
+    ):
+        attach_persona("dummy@dummy.com")
+        job_script_data = JobScriptResponse.model_validate(dummy_job_script_data[0])
+
+        submission_handler = OnsiteJobSubmission(
+            jg_ctx=dummy_context,
+            job_script_id=1,
+            name="test",
+            cluster_name="test-cluster",
+            execution_directory=tmp_path,
+        )
+
+        mocker.patch(
+            "jobbergate_cli.subapps.job_submissions.tools.download_job_script_files",
+            return_value=job_script_data.files,
+        )
+        mocker.patch.object(submission_handler, "inject_sbatch_params")
+
+        mocked_sbatch = mock.MagicMock()
+        mocked_sbatch.submit_job.side_effect = RuntimeError(sbatch_error)
+        mocker.patch("jobbergate_cli.subapps.job_submissions.tools.SubmissionHandler", return_value=mocked_sbatch)
+
+        with tweak_settings(SBATCH_PATH=tmp_path), pytest.raises(Abort) as exc_info:
+            submission_handler.process_submission()
+
+        message = exc_info.value.message
+        assert "Slurm rejected the job submission." in message
+        assert sbatch_error in message
+        assert expected_suggestion in message
+
 
 @pytest.mark.parametrize("submission_cls", [OnsiteJobSubmission, RemoteJobSubmission])
 class TestJobSubmissionsRun:
