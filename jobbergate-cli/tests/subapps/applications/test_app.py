@@ -46,7 +46,30 @@ def test_list_all__renders_paginated_results(
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,
         nested_response_model_cls=ApplicationResponse,
+        page=None,
+        size=50,
     )
+
+
+def test_list_all__forwards_page_and_size(
+    make_test_app,
+    dummy_context,
+    cli_runner,
+    mocker,
+):
+    test_app = make_test_app("list-all", list_all)
+    mocked_pagination = mocker.patch("jobbergate_cli.subapps.applications.app.handle_pagination")
+    result = cli_runner.invoke(test_app, ["list-all", "--page", "2", "--size", "25"])
+    assert result.exit_code == 0, f"list-all failed: {result.output}"
+    mocked_pagination.assert_called_once()
+    assert mocked_pagination.call_args.kwargs["page"] == 2
+    assert mocked_pagination.call_args.kwargs["size"] == 25
+
+
+def test_list_all__rejects_invalid_page(make_test_app, cli_runner):
+    test_app = make_test_app("list-all", list_all)
+    result = cli_runner.invoke(test_app, ["list-all", "--page", "0"])
+    assert result.exit_code != 0
 
 
 @pytest.mark.parametrize(

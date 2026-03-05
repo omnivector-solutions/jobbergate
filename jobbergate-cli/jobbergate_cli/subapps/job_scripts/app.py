@@ -24,7 +24,7 @@ from jobbergate_cli.subapps.job_scripts.tools import (
 )
 from jobbergate_cli.subapps.job_submissions.app import HIDDEN_FIELDS as JOB_SUBMISSION_HIDDEN_FIELDS
 from jobbergate_cli.subapps.job_submissions.tools import job_submissions_factory
-from jobbergate_cli.subapps.pagination import handle_pagination
+from jobbergate_cli.subapps.pagination import DEFAULT_PAGE_SIZE, handle_pagination
 from jobbergate_cli.subapps.tools import resolve_application_selection, resolve_selection
 from jobbergate_cli.text_tools import dedent
 
@@ -83,6 +83,8 @@ def list_all(
         help="Filter job-scripts by the application-id they were created from.",
     ),
     include_archived: bool = typer.Option(False, "--include-archived", help="Include archived entries in the results"),
+    page: Optional[int] = typer.Option(None, "--page", "-p", min=1, help="The page number to retrieve"),
+    size: int = typer.Option(DEFAULT_PAGE_SIZE, "--size", "-s", min=1, help="The number of items per page to retrieve"),
 ):
     """
     Show available job scripts
@@ -108,6 +110,8 @@ def list_all(
         style_mapper=style_mapper,
         hidden_fields=HIDDEN_FIELDS,
         nested_response_model_cls=JobScriptResponse,
+        page=page,
+        size=size,
     )
 
 

@@ -243,6 +243,10 @@ def render_paginated_list_results(
             for key, mapper in value_mappers.items():
                 row[key] = mapper(row[key])
 
+    if len(mapped_results) == 0:
+        terminal_message(f"There are no results to display on page {current_page}", subject="Nothing here...")
+        return
+
     first_row = mapped_results[0]
 
     table = Table(

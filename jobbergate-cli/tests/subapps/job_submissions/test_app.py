@@ -124,7 +124,33 @@ def test_list_all__renders_paginated_results(
         hidden_fields=HIDDEN_FIELDS,
         nested_response_model_cls=JobSubmissionResponse,
         value_mappers=None,
+        page=None,
+        size=50,
     )
+
+
+def test_list_all__forwards_page_and_size(
+    make_test_app,
+    dummy_context,
+    cli_runner,
+    mocker,
+    attach_persona,
+):
+    test_app = make_test_app("list-all", list_all)
+    mocked_pagination = mocker.patch("jobbergate_cli.subapps.job_submissions.app.handle_pagination")
+    attach_persona("dummy@dummy.com")
+    result = cli_runner.invoke(test_app, ["list-all", "--page", "3", "--size", "15"])
+    assert result.exit_code == 0, f"list-all failed: {result.stdout}"
+    mocked_pagination.assert_called_once()
+    assert mocked_pagination.call_args.kwargs["page"] == 3
+    assert mocked_pagination.call_args.kwargs["size"] == 15
+
+
+def test_list_all__rejects_invalid_page(make_test_app, cli_runner, attach_persona):
+    test_app = make_test_app("list-all", list_all)
+    attach_persona("dummy@dummy.com")
+    result = cli_runner.invoke(test_app, ["list-all", "--page", "-1"])
+    assert result.exit_code != 0
 
 
 @pytest.mark.parametrize(
