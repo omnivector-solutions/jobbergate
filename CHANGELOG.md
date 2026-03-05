@@ -11,6 +11,41 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.10.0a5](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a5) - 2026-03-05
+
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+No significant changes.
+
+
+## CLI
+
+### Added
+
+- Enhanced error message when on-site job submission fails ([PR #932](https://github.com/omnivector-solutions/jobbergate/pull/932))
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.10.0a4](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a4) - 2026-03-03
 
 
