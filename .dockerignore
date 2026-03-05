@@ -4,7 +4,5 @@ __pycache__
 htmlcov
 .tox
 .pytest_cache
-templates
 sqlite.db
-.github
-.pre-commit-config.yaml
+_version.py
