@@ -131,6 +131,8 @@ def create(
             download=download,
         )
         result = submissions_handler.run()
+    except Abort:
+        raise
     except Exception as err:
         raise Abort(
             "Failed to create the job submission",
