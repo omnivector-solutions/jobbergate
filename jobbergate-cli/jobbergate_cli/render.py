@@ -93,6 +93,14 @@ def terminal_message(
     console.print()
 
 
+def _render_no_results_message(page: int | None = None):
+    if page is None:
+        message = "There are no results to display"
+    else:
+        message = f"There are no results to display on page {page}"
+    terminal_message(message, subject="Nothing here...")
+
+
 def render_json(data: Any):
     """
     Print nicely formatted representation of a JSON serializable python primitive.
@@ -124,7 +132,7 @@ def render_list_results(
         render_json(envelope.model_dump(mode="json")["items"])
     else:
         if envelope.total == 0:
-            terminal_message("There are no results to display", subject="Nothing here...")
+            _render_no_results_message()
             return
         if ctx.full_output or hidden_fields is None:
             filtered_results = envelope.items
@@ -221,7 +229,7 @@ def render_paginated_list_results(
     deserialized = envelope.model_dump(mode="json")
 
     if envelope.total == 0:
-        terminal_message("There are no results to display", subject="Nothing here...")
+        _render_no_results_message()
         return
 
     if ctx.raw_output:
@@ -242,6 +250,10 @@ def render_paginated_list_results(
         for row in filtered_results:
             for key, mapper in value_mappers.items():
                 row[key] = mapper(row[key])
+
+    if len(mapped_results) == 0:
+        _render_no_results_message(page=current_page)
+        return
 
     first_row = mapped_results[0]
 

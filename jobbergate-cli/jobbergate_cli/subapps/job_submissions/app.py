@@ -14,7 +14,7 @@ from jobbergate_cli.render import StyleMapper, render_single_result, terminal_me
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ContextProtocol, JobSubmissionResponse
 from jobbergate_cli.subapps.job_submissions.tools import fetch_job_submission_data, job_submissions_factory
-from jobbergate_cli.subapps.pagination import handle_pagination
+from jobbergate_cli.subapps.pagination import DEFAULT_PAGE_SIZE, handle_pagination
 from jobbergate_cli.subapps.tools import resolve_selection
 
 
@@ -166,6 +166,8 @@ def list_all(
         help="Filter job-submissions by the job-script-id they were created from.",
     ),
     include_archived: bool = typer.Option(False, "--include-archived", help="Include archived entries in the results"),
+    page: Optional[int] = typer.Option(None, "--page", "-p", min=1, help="The page number to retrieve"),
+    size: int = typer.Option(DEFAULT_PAGE_SIZE, "--size", "-s", min=1, help="The number of items per page to retrieve"),
 ):
     """
     Show available job submissions.
@@ -197,6 +199,8 @@ def list_all(
         hidden_fields=HIDDEN_FIELDS,
         nested_response_model_cls=JobSubmissionResponse,
         value_mappers=value_mappers,
+        page=page,
+        size=size,
     )
 
 

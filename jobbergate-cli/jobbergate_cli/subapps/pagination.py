@@ -5,10 +5,14 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
 import inquirer
 import pydantic
 
+from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.constants import PaginationChoices
 from jobbergate_cli.render import StyleMapper, render_paginated_list_results
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ContextProtocol, ListResponseEnvelope
+
+
+DEFAULT_PAGE_SIZE = 50
 
 
 def handle_pagination(
@@ -21,13 +25,17 @@ def handle_pagination(
     hidden_fields: List[str] | None = None,
     nested_response_model_cls: Type[pydantic.BaseModel] | None = None,
     value_mappers: Optional[Dict[str, Callable[[Any], Any]]] = None,
+    page: int | None = None,
+    size: int = DEFAULT_PAGE_SIZE,
 ):
-    current_page = 1
+    current_page = page or 1
+    interactive_mode = page is None
 
     while True:
         if params is None:
             params = {}
         params["page"] = current_page
+        params["size"] = size
 
         envelope = cast(
             Union[ListResponseEnvelope[Dict[str, Any]], ListResponseEnvelope[pydantic.BaseModel]],
@@ -49,6 +57,12 @@ def handle_pagination(
             ),
         )
 
+        if page is not None and page > envelope.pages and envelope.pages > 0:
+            raise Abort(
+                f"Page {page} is out of range. Available pages: 1-{envelope.pages}",
+                support=False,
+            )
+
         render_paginated_list_results(
             jg_ctx,
             envelope,
@@ -57,6 +71,9 @@ def handle_pagination(
             hidden_fields=hidden_fields,
             value_mappers=value_mappers,
         )
+
+        if not interactive_mode:
+            return
 
         if envelope.pages <= 1:
             return
