@@ -6,10 +6,8 @@ RUN apt update && apt --no-install-recommends install -y git && apt-get clean
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-COPY uv.lock pyproject.toml ./
-COPY .git ./.git
-COPY jobbergate-core ./jobbergate-core
-COPY jobbergate-cli ./jobbergate-cli
+# Keep full repository in builder so hatch-vcs sees a clean tracked worktree.
+COPY . .
 
 RUN uv sync --frozen --no-editable --no-python-downloads --package jobbergate-cli --no-dev
 
