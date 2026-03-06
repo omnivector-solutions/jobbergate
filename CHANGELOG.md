@@ -11,6 +11,41 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.10.0a6](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a6) - 2026-03-06
+
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+No significant changes.
+
+
+## CLI
+
+### Added
+
+- Added command-line arguments for controlling pagination (page number and items per page) on list commands ([PR #935](https://github.com/omnivector-solutions/jobbergate/pull/935))
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.10.0a5](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a5) - 2026-03-05
 
 
