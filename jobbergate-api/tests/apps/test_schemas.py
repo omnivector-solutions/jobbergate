@@ -40,7 +40,7 @@ class TestPydanticDateTime:
     class DateTimeSchema(BaseModel):
         timestamp: PydanticDateTime
 
-    def test_valid__with_pendulum_DateTime(self):
+    def test_valid__with_pendulum_datetime(self):
         expected_timestamp = pendulum.parse("2024-05-31 10:21:00")
         instance = self.DateTimeSchema(timestamp=pendulum.parse("2024-05-31 10:21:00"))
         assert isinstance(instance.timestamp, pendulum.DateTime)

@@ -185,7 +185,7 @@ def validate_submit_dir(submit_dir: Path, subprocess_handler: SubprocessAsUserHa
         raise ValueError("Execution directory does not exist or is not writable by the user") from e
 
 
-def reject_handler(id: int) -> Callable[[DoExceptParams], Coroutine[Any, Any, None]]:
+def reject_handler(job_submission_id: int) -> Callable[[DoExceptParams], Coroutine[Any, Any, None]]:
     async def helper(params: DoExceptParams) -> None:
         """
         Use for the ``do_except`` parameter of a ``handle_errors``.
@@ -193,7 +193,7 @@ def reject_handler(id: int) -> Callable[[DoExceptParams], Coroutine[Any, Any, No
         Logs the error and then invokes job rejection on the Jobbergate API.
         """
         log_error(params)
-        await mark_as_rejected(id, params.final_message)
+        await mark_as_rejected(job_submission_id, params.final_message)
 
     return helper
 

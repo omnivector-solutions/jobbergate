@@ -6,7 +6,6 @@ Create Date: 2024-11-28 16:20:20.533111
 
 """
 
-import time
 from datetime import datetime, timezone
 from textwrap import dedent
 
@@ -20,6 +19,13 @@ revision = "99c3877d0f10"
 down_revision = "815022877cfe"
 branch_labels = None
 depends_on = None
+
+TEN_SECONDS = "10 seconds"
+ZERO_SECONDS = "0 seconds"
+ONE_MINUTE = "1 minute"
+TEN_MINUTES = "10 minutes"
+ONE_HOUR = "1 hour"
+ONE_WEEK = "1 week"
 
 
 create_materialized_view_template = dedent(
@@ -137,7 +143,7 @@ def upgrade():
         sa.text(
             create_materialized_view_template.format(
                 view_name="metrics_nodes_mv_10_seconds_by_node",
-                time_bucket="10 seconds",
+                time_bucket=TEN_SECONDS,
             )
         )
     )
@@ -146,8 +152,8 @@ def upgrade():
             add_continuous_aggregate_policy_template.format(
                 mat_view_name="metrics_nodes_mv_10_seconds_by_node",
                 start_offset="20 seconds",
-                end_offset="0 seconds",
-                schedule_interval="10 seconds",
+                end_offset=ZERO_SECONDS,
+                schedule_interval=TEN_SECONDS,
                 initial_start=datetime.now(timezone.utc).isoformat(),
             )
         )
@@ -156,7 +162,7 @@ def upgrade():
         sa.text(
             create_materialized_view_template.format(
                 view_name="metrics_nodes_mv_10_seconds_all_nodes",
-                time_bucket="10 seconds",
+                time_bucket=TEN_SECONDS,
             )
         )
     )
@@ -165,8 +171,8 @@ def upgrade():
             add_continuous_aggregate_policy_template.format(
                 mat_view_name="metrics_nodes_mv_10_seconds_all_nodes",
                 start_offset="20 seconds",
-                end_offset="0 seconds",
-                schedule_interval="10 seconds",
+                end_offset=ZERO_SECONDS,
+                schedule_interval=TEN_SECONDS,
                 initial_start=datetime.now(timezone.utc).isoformat(),
             )
         )
@@ -175,7 +181,7 @@ def upgrade():
         sa.text(
             create_materialized_view_template.format(
                 view_name="metrics_nodes_mv_1_minute_by_node",
-                time_bucket="1 minute",
+                time_bucket=ONE_MINUTE,
             )
         )
     )
@@ -184,8 +190,8 @@ def upgrade():
             add_continuous_aggregate_policy_template.format(
                 mat_view_name="metrics_nodes_mv_1_minute_by_node",
                 start_offset="2 minutes",
-                end_offset="0 seconds",
-                schedule_interval="1 minute",
+                end_offset=ZERO_SECONDS,
+                schedule_interval=ONE_MINUTE,
                 initial_start=datetime.now(timezone.utc).isoformat(),
             )
         )
@@ -194,7 +200,7 @@ def upgrade():
         sa.text(
             create_materialized_view_template.format(
                 view_name="metrics_nodes_mv_1_minute_all_nodes",
-                time_bucket="1 minute",
+                time_bucket=ONE_MINUTE,
             )
         )
     )
@@ -203,8 +209,8 @@ def upgrade():
             add_continuous_aggregate_policy_template.format(
                 mat_view_name="metrics_nodes_mv_1_minute_all_nodes",
                 start_offset="2 minutes",
-                end_offset="0 seconds",
-                schedule_interval="1 minute",
+                end_offset=ZERO_SECONDS,
+                schedule_interval=ONE_MINUTE,
                 initial_start=datetime.now(timezone.utc).isoformat(),
             )
         )
@@ -213,7 +219,7 @@ def upgrade():
         sa.text(
             create_materialized_view_template.format(
                 view_name="metrics_nodes_mv_10_minutes_by_node",
-                time_bucket="10 minutes",
+                time_bucket=TEN_MINUTES,
             )
         )
     )
@@ -222,8 +228,8 @@ def upgrade():
             add_continuous_aggregate_policy_template.format(
                 mat_view_name="metrics_nodes_mv_10_minutes_by_node",
                 start_offset="20 minutes",
-                end_offset="0 seconds",
-                schedule_interval="10 minutes",
+                end_offset=ZERO_SECONDS,
+                schedule_interval=TEN_MINUTES,
                 initial_start=datetime.now(timezone.utc).isoformat(),
             )
         )
@@ -232,7 +238,7 @@ def upgrade():
         sa.text(
             create_materialized_view_template.format(
                 view_name="metrics_nodes_mv_10_minutes_all_nodes",
-                time_bucket="10 minutes",
+                time_bucket=TEN_MINUTES,
             )
         )
     )
@@ -241,8 +247,8 @@ def upgrade():
             add_continuous_aggregate_policy_template.format(
                 mat_view_name="metrics_nodes_mv_10_minutes_all_nodes",
                 start_offset="20 minutes",
-                end_offset="0 seconds",
-                schedule_interval="10 minutes",
+                end_offset=ZERO_SECONDS,
+                schedule_interval=TEN_MINUTES,
                 initial_start=datetime.now(timezone.utc).isoformat(),
             )
         )
@@ -251,7 +257,7 @@ def upgrade():
         sa.text(
             create_materialized_view_template.format(
                 view_name="metrics_nodes_mv_1_hour_by_node",
-                time_bucket="1 hour",
+                time_bucket=ONE_HOUR,
             )
         )
     )
@@ -260,8 +266,8 @@ def upgrade():
             add_continuous_aggregate_policy_template.format(
                 mat_view_name="metrics_nodes_mv_1_hour_by_node",
                 start_offset="2 hours",
-                end_offset="0 seconds",
-                schedule_interval="1 hour",
+                end_offset=ZERO_SECONDS,
+                schedule_interval=ONE_HOUR,
                 initial_start=datetime.now(timezone.utc).isoformat(),
             )
         )
@@ -270,7 +276,7 @@ def upgrade():
         sa.text(
             create_materialized_view_template.format(
                 view_name="metrics_nodes_mv_1_hour_all_nodes",
-                time_bucket="1 hour",
+                time_bucket=ONE_HOUR,
             )
         )
     )
@@ -279,8 +285,8 @@ def upgrade():
             add_continuous_aggregate_policy_template.format(
                 mat_view_name="metrics_nodes_mv_1_hour_all_nodes",
                 start_offset="2 hours",
-                end_offset="0 seconds",
-                schedule_interval="1 hour",
+                end_offset=ZERO_SECONDS,
+                schedule_interval=ONE_HOUR,
                 initial_start=datetime.now(timezone.utc).isoformat(),
             )
         )
@@ -289,7 +295,7 @@ def upgrade():
         sa.text(
             create_materialized_view_template.format(
                 view_name="metrics_nodes_mv_1_week_by_node",
-                time_bucket="1 week",
+                time_bucket=ONE_WEEK,
             )
         )
     )
@@ -298,8 +304,8 @@ def upgrade():
             add_continuous_aggregate_policy_template.format(
                 mat_view_name="metrics_nodes_mv_1_week_by_node",
                 start_offset="2 weeks",
-                end_offset="0 seconds",
-                schedule_interval="1 week",
+                end_offset=ZERO_SECONDS,
+                schedule_interval=ONE_WEEK,
                 initial_start=datetime.now(timezone.utc).isoformat(),
             )
         )
@@ -308,7 +314,7 @@ def upgrade():
         sa.text(
             create_materialized_view_template.format(
                 view_name="metrics_nodes_mv_1_week_all_nodes",
-                time_bucket="1 week",
+                time_bucket=ONE_WEEK,
             )
         )
     )
@@ -317,8 +323,8 @@ def upgrade():
             add_continuous_aggregate_policy_template.format(
                 mat_view_name="metrics_nodes_mv_1_week_all_nodes",
                 start_offset="2 weeks",
-                end_offset="0 seconds",
-                schedule_interval="1 week",
+                end_offset=ZERO_SECONDS,
+                schedule_interval=ONE_WEEK,
                 initial_start=datetime.now(timezone.utc).isoformat(),
             )
         )

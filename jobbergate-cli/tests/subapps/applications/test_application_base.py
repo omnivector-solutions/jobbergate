@@ -45,10 +45,10 @@ def test_get_template_files(temp_cd, tmp_path):
 
     with temp_cd(tmp_path):
         dummy = DummyApplication(
-            dict(
-                jobbergate_config=dict(),
-                application_config=dict(),
-            )
+            {
+                "jobbergate_config": {},
+                "application_config": {},
+            }
         )
         template_file_paths = dummy.get_template_files()
         assert pathlib.Path("templates/template1.j2") in template_file_paths

@@ -15,7 +15,7 @@ def test_client_is_lazy_on_context(mocked_client, tweak_settings):
 
     mocked_client.assert_not_called()
 
-    local_settings = dict(BASE_API_URL="test.example.com/", JOBBERGATE_REQUESTS_TIMEOUT=42)
+    local_settings = {"BASE_API_URL": "test.example.com/", "JOBBERGATE_REQUESTS_TIMEOUT": 42}
 
     with tweak_settings(**local_settings):
         client = ctx.client
@@ -35,12 +35,12 @@ def test_authentication_handler_is_lazy_on_context(mocked_auth_handler, tweak_se
 
     mocked_auth_handler.assert_not_called()
 
-    local_settings = dict(
-        OIDC_USE_HTTPS=True,
-        OIDC_DOMAIN="example.com",
-        OIDC_CLIENT_ID="client-id",
-        OIDC_CLIENT_SECRET="client-secret",
-    )
+    local_settings = {
+        "OIDC_USE_HTTPS": True,
+        "OIDC_DOMAIN": "example.com",
+        "OIDC_CLIENT_ID": "client-id",
+        "OIDC_CLIENT_SECRET": "client-secret",
+    }
 
     with tweak_settings(**local_settings):
         auth_handler = ctx.authentication_handler
@@ -62,11 +62,11 @@ def test_authentication_handler_is_lazy_on_context(mocked_auth_handler, tweak_se
 def test_authentication_handler__fails_on_missing_setting(mocked_auth_handler, missing_setting, tweak_settings):
     ctx = JobbergateContext()
 
-    local_settings = dict(
-        OIDC_DOMAIN="example.com",
-        OIDC_CLIENT_ID="client-id",
-        OIDC_CLIENT_SECRET="client-secret",
-    )
+    local_settings = {
+        "OIDC_DOMAIN": "example.com",
+        "OIDC_CLIENT_ID": "client-id",
+        "OIDC_CLIENT_SECRET": "client-secret",
+    }
 
     local_settings[missing_setting] = None
 

@@ -47,7 +47,7 @@ class JobbergateContext(ContextProtocol):
         with check_expressions(
             "The following settings are required to enable authenticated requests:",
             raise_exc_class=Abort,
-            raise_kwargs=dict(support=True, subject="Configuration error"),
+            raise_kwargs={"support": True, "subject": "Configuration error"},
         ) as check:
             check(settings.OIDC_DOMAIN, "OIDC_DOMAIN")
             check(settings.OIDC_CLIENT_ID, "OIDC_CLIENT_ID")

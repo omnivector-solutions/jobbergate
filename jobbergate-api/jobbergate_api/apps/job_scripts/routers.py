@@ -72,16 +72,16 @@ async def job_script_clone(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)),
     ],
-    id: int = Path(),
+    job_script_id: Annotated[int, Path(alias="id")],
     clone_request: JobScriptCloneRequest | None = None,
 ):
     """Clone a job script by its id."""
-    logger.info(f"Cloning a job script from {id=} with {clone_request=}")
+    logger.info(f"Cloning a job script from {job_script_id=} with {clone_request=}")
 
     if clone_request is None:
         clone_request = JobScriptCloneRequest()
 
-    original_instance = await secure_services.crud.job_script.get(id, include_files=True)
+    original_instance = await secure_services.crud.job_script.get(job_script_id, include_files=True)
     cloned_instance = await secure_services.crud.job_script.clone_instance(
         original_instance,
         owner_email=secure_services.identity_payload.email,
@@ -108,7 +108,7 @@ async def job_script_create_from_template(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)),
     ],
-    id_or_identifier: str = Path(...),
+    id_or_identifier: Annotated[str, Path()],
 ):
     """Create a new job script from a job script template."""
     typed_id_or_identifier = coerce_id_or_identifier(id_or_identifier)
@@ -183,11 +183,11 @@ async def job_script_get(
     secure_services: Annotated[
         SecureService, Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ, commit=False))
     ],
-    id: int = Path(),
+    job_script_id: Annotated[int, Path(alias="id")],
 ):
     """Get a job script by id."""
-    logger.info(f"Getting job script {id=}")
-    return await secure_services.crud.job_script.get(id, include_files=True)
+    logger.info(f"Getting job script {job_script_id=}")
+    return await secure_services.crud.job_script.get(job_script_id, include_files=True)
 
 
 @router.get(
@@ -200,10 +200,9 @@ async def job_script_get_list(
         SecureService, Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ, commit=False))
     ],
     list_params: Annotated[ListParams, Depends()],
-    from_job_script_template_id: int | None = Query(
-        None,
-        description="Filter job-scripts by the job-script-template-id they were created from.",
-    ),
+    from_job_script_template_id: Annotated[
+        int | None, Query(description="Filter job-scripts by the job-script-template-id they were created from.")
+    ] = None,
 ):
     """Get a list of job scripts."""
     logger.debug("Preparing to list job scripts")
@@ -231,16 +230,14 @@ async def job_script_update(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_UPDATE, ensure_email=True)),
     ],
-    id: int = Path(),
+    job_script_id: Annotated[int, Path(alias="id")],
 ):
     """Update a job script template by id or identifier."""
-    logger.info(f"Updating job script {id=} with {update_params=}")
-    instance = await secure_services.crud.job_script.get(id, include_parent=True)
+    logger.info(f"Updating job script {job_script_id=} with {update_params=}")
+    instance = await secure_services.crud.job_script.get(job_script_id, include_parent=True)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
-        secure_services.crud.job_script.ensure_attribute(
-            instance, owner_email=secure_services.identity_payload.email
-        )
-    return await secure_services.crud.job_script.update(id, **update_params.model_dump(exclude_unset=True))
+        secure_services.crud.job_script.ensure_attribute(instance, owner_email=secure_services.identity_payload.email)
+    return await secure_services.crud.job_script.update(job_script_id, **update_params.model_dump(exclude_unset=True))
 
 
 @router.delete(
@@ -253,16 +250,14 @@ async def job_script_delete(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_DELETE, ensure_email=True)),
     ],
-    id: int = Path(...),
+    job_script_id: Annotated[int, Path(alias="id")],
 ):
     """Delete a job script template by id or identifier."""
-    logger.info(f"Deleting job script {id=}")
-    instance = await secure_services.crud.job_script.get(id)
+    logger.info(f"Deleting job script {job_script_id=}")
+    instance = await secure_services.crud.job_script.get(job_script_id)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
-        secure_services.crud.job_script.ensure_attribute(
-            instance, owner_email=secure_services.identity_payload.email
-        )
-    await secure_services.crud.job_script.delete(id)
+        secure_services.crud.job_script.ensure_attribute(instance, owner_email=secure_services.identity_payload.email)
+    await secure_services.crud.job_script.delete(job_script_id)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -274,8 +269,8 @@ async def job_script_get_file(
     secure_services: Annotated[
         SecureService, Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ, commit=False))
     ],
-    id: int = Path(...),
-    file_name: str = Path(...),
+    job_script_id: Annotated[int, Path(alias="id")],
+    file_name: Annotated[str, Path()],
 ):
     """
     Get a job script file.
@@ -283,7 +278,7 @@ async def job_script_get_file(
     Note:
         See https://fastapi.tiangolo.com/advanced/custom-response/#streamingresponse
     """
-    job_script_file = await secure_services.file.job_script.get(id, file_name)
+    job_script_file = await secure_services.file.job_script.get(job_script_id, file_name)
     return FastAPIResponse(
         content=await secure_services.file.job_script.get_file_content(job_script_file),
         media_type="text/plain",
@@ -308,15 +303,13 @@ async def job_script_upload_file_by_url(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)),
     ],
-    id: int = Path(...),
-    file_type: FileType = Path(...),
-    filename: str | None = Query(None, max_length=255),
-    file_url: AnyUrl = Query(..., description="URL of the file to upload"),
-    previous_filename: str | None = Query(
-        None,
-        description="Previous name of the file in case a rename is needed",
-        max_length=255,
-    ),
+    job_script_id: Annotated[int, Path(alias="id")],
+    file_type: Annotated[FileType, Path()],
+    filename: Annotated[str | None, Query(max_length=255)] = None,
+    file_url: Annotated[AnyUrl, Query(description="URL of the file to upload")] = ...,
+    previous_filename: Annotated[
+        str | None, Query(description="Previous name of the file in case a rename is needed", max_length=255)
+    ] = None,
 ):
     """Upload a file to a job script from a URL."""
     if filename is None:
@@ -339,17 +332,15 @@ async def job_script_upload_file_by_url(
         snick.unwrap(
             f"""
             Uploading file {filename=} from {file_url}
-            to job script {id=}
+            to job script {job_script_id=}
             with {file_type=} and {previous_filename=}
             """
         )
     )
 
-    job_script = await secure_services.crud.job_script.get(id)
+    job_script = await secure_services.crud.job_script.get(job_script_id)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
-        secure_services.crud.job_script.ensure_attribute(
-            job_script, owner_email=secure_services.identity_payload.email
-        )
+        secure_services.crud.job_script.ensure_attribute(job_script, owner_email=secure_services.identity_payload.email)
 
     return await secure_services.file.job_script.upsert(
         parent_id=job_script.id,
@@ -375,13 +366,13 @@ async def job_script_upload_file(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)),
     ],
-    id: int = Path(...),
-    file_type: FileType = Path(...),
-    filename: str | None = Query(None, max_length=255),
-    upload_file: UploadFile | None = File(None, description="File to upload"),
-    previous_filename: str | None = Query(
-        None, description="Previous name of the file in case a rename is needed", max_length=255
-    ),
+    job_script_id: Annotated[int, Path(alias="id")],
+    file_type: Annotated[FileType, Path()],
+    filename: Annotated[str | None, Query(max_length=255)] = None,
+    upload_file: Annotated[UploadFile | None, File(description="File to upload")] = None,
+    previous_filename: Annotated[
+        str | None, Query(description="Previous name of the file in case a rename is needed", max_length=255)
+    ] = None,
 ):
     """Upload a file to a job script."""
     # This is included for backwards compatibility with the previous implementation
@@ -393,13 +384,13 @@ async def job_script_upload_file(
             detail="Filename must be provided either as a query parameter or as part of the file upload",
         )
 
-    logger.debug(f"Uploading file {filename=} to job script {id=} with {file_type=} and {previous_filename=}")
+    logger.debug(
+        f"Uploading file {filename=} to job script {job_script_id=} with {file_type=} and {previous_filename=}"
+    )
 
-    job_script = await secure_services.crud.job_script.get(id)
+    job_script = await secure_services.crud.job_script.get(job_script_id)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
-        secure_services.crud.job_script.ensure_attribute(
-            job_script, owner_email=secure_services.identity_payload.email
-        )
+        secure_services.crud.job_script.ensure_attribute(job_script, owner_email=secure_services.identity_payload.email)
 
     return await secure_services.file.job_script.upsert(
         parent_id=job_script.id,
@@ -420,14 +411,12 @@ async def job_script_delete_file(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_DELETE, ensure_email=True)),
     ],
-    id: int = Path(...),
-    file_name: str = Path(...),
+    job_script_id: Annotated[int, Path(alias="id")],
+    file_name: Annotated[str, Path()],
 ):
     """Delete a file from a job script template by id or identifier."""
-    job_script = await secure_services.crud.job_script.get(id)
+    job_script = await secure_services.crud.job_script.get(job_script_id)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
-        secure_services.crud.job_script.ensure_attribute(
-            job_script, owner_email=secure_services.identity_payload.email
-        )
+        secure_services.crud.job_script.ensure_attribute(job_script, owner_email=secure_services.identity_payload.email)
     job_script_file = await secure_services.file.job_script.get(job_script.id, file_name)
     await secure_services.file.job_script.delete(job_script_file)

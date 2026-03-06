@@ -37,13 +37,13 @@ class ClusterStatus:
         Returns:
             A list of cluster statuses.
         """
-        params = filter_null_out(dict(size=size, page=page))
+        params = filter_null_out({"size": size, "page": page})
         return (
             self.request_handler_cls(
                 client=self.client,
                 url_path=self.base_path,
                 method="GET",
-                request_kwargs=dict(params=params),
+                request_kwargs={"params": params},
             )
             .raise_for_status()
             .check_status_code(codes.OK)

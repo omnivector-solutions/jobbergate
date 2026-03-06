@@ -85,11 +85,11 @@ def test_get_one__success(
     selector_template,
 ):
     job_script_data = dummy_job_script_data[0]
-    id = job_script_data["id"]
+    job_script_id = job_script_data["id"]
 
-    cli_selector = selector_template.format(id=id)
+    cli_selector = selector_template.format(id=job_script_id)
 
-    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/{id}").mock(
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/{job_script_id}").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=dummy_job_script_data[0],
@@ -131,15 +131,15 @@ def test_create_stand_alone__success(
     create_route.mock(
         return_value=httpx.Response(
             httpx.codes.CREATED,
-            json=dict(
-                id=1,
-                created_at="2023-10-03 08:25:00",
-                updated_at="2023-10-03 08:25:00",
-                name="dummy-name",
-                description=None,
-                owner_email="dummy@dummy.com",
-                application_id=None,
-            ),
+            json={
+                "id": 1,
+                "created_at": "2023-10-03 08:25:00",
+                "updated_at": "2023-10-03 08:25:00",
+                "name": "dummy-name",
+                "description": None,
+                "owner_email": "dummy@dummy.com",
+                "application_id": None,
+            },
         )
     )
 
@@ -192,15 +192,15 @@ def test_create_stand_alone__success(
     mocked_render.assert_called_once_with(
         dummy_context,
         JobScriptResponse.model_validate(
-            dict(
-                id=1,
-                created_at="2023-10-03 08:25:00",
-                updated_at="2023-10-03 08:25:00",
-                name="dummy-name",
-                description=None,
-                owner_email="dummy@dummy.com",
-                application_id=None,
-            ),
+            {
+                "id": 1,
+                "created_at": "2023-10-03 08:25:00",
+                "updated_at": "2023-10-03 08:25:00",
+                "name": "dummy-name",
+                "description": None,
+                "owner_email": "dummy@dummy.com",
+                "application_id": None,
+            },
         ),
         title="Created Job Script",
         hidden_fields=HIDDEN_FIELDS,
@@ -228,11 +228,11 @@ def test_create__non_fast_mode_and_job_submission(
     selector_template,
 ):
     application_response = ApplicationResponse(**dummy_application_data[0])
-    id = application_response.application_id
+    application_id = application_response.application_id
     identifier = application_response.identifier
 
-    url_selector = identifier if "identifier" in selector_template else id
-    cli_selector = selector_template.format(id=id, identifier=identifier)
+    url_selector = identifier if "identifier" in selector_template else application_id
+    cli_selector = selector_template.format(id=application_id, identifier=identifier)
 
     job_script_data = dummy_job_script_data[0]
 
@@ -249,13 +249,13 @@ def test_create__non_fast_mode_and_job_submission(
     sbatch_params = " ".join(f"--sbatch-params={i}" for i in (1, 2, 3))
 
     param_file_path = tmp_path / "param_file.json"
-    param_file_path.write_text(json.dumps(dict(foo="oof")))
+    param_file_path.write_text(json.dumps({"foo": "oof"}))
 
-    dummy_render_class.prepared_input = dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
+    dummy_render_class.prepared_input = {
+        "foo": "FOO",
+        "bar": "BAR",
+        "baz": "BAZ",
+    }
 
     attach_persona("dummy@dummy.com")
 
@@ -387,11 +387,11 @@ def test_create__with_fast_mode_and_no_job_submission(
     param_file_path = tmp_path / "param_file.json"
     param_file_path.write_text(
         json.dumps(
-            dict(
-                foo="oof",
-                bar="rab",
-                baz="zab",
-            )
+            {
+                "foo": "oof",
+                "bar": "rab",
+                "baz": "zab",
+            }
         )
     )
 
@@ -525,11 +525,11 @@ def test_create__submit_is_none_and_cluster_name_is_defined(
     param_file_path = tmp_path / "param_file.json"
     param_file_path.write_text(
         json.dumps(
-            dict(
-                foo="oof",
-                bar="rab",
-                baz="zab",
-            )
+            {
+                "foo": "oof",
+                "bar": "rab",
+                "baz": "zab",
+            }
         )
     )
 
@@ -573,11 +573,11 @@ def test_create_job_script_locally__success(
 ):
     test_app = make_test_app("create-locally", create_locally)
 
-    dummy_render_class.prepared_input = dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
+    dummy_render_class.prepared_input = {
+        "foo": "FOO",
+        "bar": "BAR",
+        "baz": "BAZ",
+    }
     mocker.patch.object(
         importlib.import_module("inquirer.prompt"),
         "ConsoleRender",
@@ -683,11 +683,11 @@ def test_show_files__success(
     Verify that the ``show-files`` subcommand works as expected.
     """
     job_script_data = dummy_job_script_data[0]
-    id = job_script_data["id"]
+    job_script_id = job_script_data["id"]
 
-    cli_selector = selector_template.format(id=id)
+    cli_selector = selector_template.format(id=job_script_id)
 
-    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/{id}").mock(
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/{job_script_id}").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
             json=job_script_data,
@@ -746,11 +746,11 @@ class TestDownloadJobScriptFiles:
         Test that the ``download`` subcommand works as expected.
         """
         job_script_data = dummy_job_script_data[0]
-        id = job_script_data["id"]
+        job_script_id = job_script_data["id"]
 
-        cli_selector = selector_template.format(id=id)
+        cli_selector = selector_template.format(id=job_script_id)
 
-        respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/{id}").mock(
+        respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/{job_script_id}").mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
                 json=job_script_data,
@@ -792,11 +792,11 @@ class TestCloneJobScript:
         """
 
         job_script_data = dummy_job_script_data[0]
-        id = job_script_data["id"]
+        job_script_id = job_script_data["id"]
 
-        cli_selector = selector_template.format(id=id)
+        cli_selector = selector_template.format(id=job_script_id)
 
-        clone_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-scripts/clone/{id}").mock(
+        clone_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-scripts/clone/{job_script_id}").mock(
             return_value=httpx.Response(
                 httpx.codes.CREATED,
                 json=job_script_data,

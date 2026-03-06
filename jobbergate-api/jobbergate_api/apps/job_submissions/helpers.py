@@ -13,9 +13,7 @@ from jobbergate_api.apps.job_submissions.constants import (
 )
 
 
-def validate_job_metric_upload_input(
-    data: Any, expected_types: tuple[Type[Any], ...]
-) -> Iterable[tuple[Any, ...]]:
+def validate_job_metric_upload_input(data: Any, expected_types: tuple[Type[Any], ...]) -> Iterable[tuple[Any, ...]]:
     """Validate if the input data of job metric upload is correct once decoded.
 
     It will brute force apply the expected types to the data and raise an error in case it fails.
@@ -30,9 +28,9 @@ def validate_job_metric_upload_input(
         Iterable[tuple[Any, ...]]: The validated data, where each tuple has the same length as expected_types.
     """
 
-    def _force_cast(object: Any, expected_type: Type[Any]) -> Any:
+    def _force_cast(value: Any, expected_type: Type[Any]) -> Any:
         try:
-            return expected_type(object)
+            return expected_type(value)
         except Exception as e:
             logger.error(f"Failed to cast data to expected types: {e}")
             raise ValueError("Failed to cast data to expected types") from e

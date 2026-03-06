@@ -205,9 +205,9 @@ class TestWorkflowFiles:
         file_path.write_bytes(file_content)
 
         with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
-            route_kwargs: dict[str, Any] = dict(
-                files={"upload_file": (file_path.name, file_content, "text/plain")},
-            )
+            route_kwargs: dict[str, Any] = {
+                "files": {"upload_file": (file_path.name, file_content, "text/plain")},
+            }
             if runtime_config is not None:
                 route_kwargs["data"] = {"runtime_config": json.dumps(runtime_config)}
             route = respx_mock.put(
@@ -230,9 +230,9 @@ class TestWorkflowFiles:
         file_path.write_bytes(file_content)
 
         with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
-            route_kwargs: dict[str, Any] = dict(
-                files={"upload_file": (file_path.name, file_content, "text/plain")},
-            )
+            route_kwargs: dict[str, Any] = {
+                "files": {"upload_file": (file_path.name, file_content, "text/plain")},
+            }
             if runtime_config is not None:
                 route_kwargs["data"] = {"runtime_config": json.dumps(runtime_config)}
             route = respx_mock.put(
@@ -255,9 +255,9 @@ class TestWorkflowFiles:
         file_path.write_bytes(file_content)
 
         with respx.mock(base_url=BASE_URL, assert_all_called=False, assert_all_mocked=True) as respx_mock:
-            route_kwargs: dict[str, Any] = dict(
-                files={"upload_file": (file_path.name, file_content, "text/plain")},
-            )
+            route_kwargs: dict[str, Any] = {
+                "files": {"upload_file": (file_path.name, file_content, "text/plain")},
+            }
             if runtime_config is not None:
                 route_kwargs["data"] = {"runtime_config": json.dumps(runtime_config)}
             route = respx_mock.put(

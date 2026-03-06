@@ -50,22 +50,22 @@ class JobSubmissions:
             The detailed view of the created job submission.
         """
         data = filter_null_out(
-            dict(
-                job_script_id=job_script_id,
-                name=name,
-                description=description,
-                slurm_job_id=slurm_job_id,
-                execution_directory=execution_directory,
-                client_id=client_id,
-                sbatch_arguments=sbatch_arguments,
-            )
+            {
+                "job_script_id": job_script_id,
+                "name": name,
+                "description": description,
+                "slurm_job_id": slurm_job_id,
+                "execution_directory": execution_directory,
+                "client_id": client_id,
+                "sbatch_arguments": sbatch_arguments,
+            }
         )
         return (
             self.request_handler_cls(
                 client=self.client,
                 url_path=self.base_path,
                 method="POST",
-                request_kwargs=dict(data=data),
+                request_kwargs={"data": data},
             )
             .raise_for_status()
             .check_status_code(codes.CREATED)
@@ -73,12 +73,12 @@ class JobSubmissions:
         )
 
     @validate_call
-    def clone(self, id: NonNegativeInt) -> JobSubmissionDetailedView:
+    def clone(self, job_submission_id: NonNegativeInt) -> JobSubmissionDetailedView:
         """
         Clone a job submission under the CREATED status for a new run on the cluster.
 
         Args:
-            id: The ID of the job submission to clone.
+            job_submission_id: The ID of the job submission to clone.
 
         Returns:
             The detailed view of the cloned job submission.
@@ -86,7 +86,7 @@ class JobSubmissions:
         return (
             self.request_handler_cls(
                 client=self.client,
-                url_path=f"{self.base_path}/clone/{id}",
+                url_path=f"{self.base_path}/clone/{job_submission_id}",
                 method="POST",
             )
             .raise_for_status()
@@ -95,12 +95,12 @@ class JobSubmissions:
         )
 
     @validate_call
-    def get_one(self, id: NonNegativeInt) -> JobSubmissionDetailedView:
+    def get_one(self, job_submission_id: NonNegativeInt) -> JobSubmissionDetailedView:
         """
         Get a single job submission.
 
         Args:
-            id: The ID of the job submission.
+            job_submission_id: The ID of the job submission.
 
         Returns:
             The detailed view of the job submission.
@@ -108,7 +108,7 @@ class JobSubmissions:
         return (
             self.request_handler_cls(
                 client=self.client,
-                url_path=f"{self.base_path}/{id}",
+                url_path=f"{self.base_path}/{job_submission_id}",
                 method="GET",
             )
             .raise_for_status()
@@ -118,13 +118,16 @@ class JobSubmissions:
 
     @validate_call
     def get_one_ensure_slurm_id(
-        self, id: NonNegativeInt, max_retries: PositiveInt = 8, waiting_interval: PositiveInt = 15
+        self,
+        job_submission_id: NonNegativeInt,
+        max_retries: PositiveInt = 8,
+        waiting_interval: PositiveInt = 15,
     ) -> JobSubmissionDetailedView:
         """
         Get a single job submission and ensure that the SLURM job ID is set.
 
         Args:
-            id: The ID of the job submission.
+            job_submission_id: The ID of the job submission.
             max_retries: The maximum number of retry attempts.
             waiting_interval: The interval in seconds to wait between checks.
 
@@ -135,11 +138,13 @@ class JobSubmissions:
             if attempt > 0:
                 time.sleep(waiting_interval)
 
-            submission = self.get_one(id)
+            submission = self.get_one(job_submission_id)
             if submission.slurm_job_id is not None:
                 return submission
             elif submission.status == JobSubmissionStatus.REJECTED:
-                raise ValueError(f"The job submission with ID {id} was rejected and does not have a SLURM job ID.")
+                raise ValueError(
+                    f"The job submission with ID {job_submission_id} was rejected and does not have a SLURM job ID."
+                )
 
         raise TimeoutError(f"The SLURM job ID was not set within {max_retries} retry attempts.")
 
@@ -178,18 +183,18 @@ class JobSubmissions:
             The list response envelope containing job submission list views.
         """
         params = filter_null_out(
-            dict(
-                sort_ascending=sort_ascending,
-                user_only=user_only,
-                search=search,
-                sort_field=sort_field,
-                include_archived=include_archived,
-                include_parent=include_parent,
-                slurm_status=slurm_status,
-                from_job_script_id=from_job_script_id,
-                size=size,
-                page=page,
-            )
+            {
+                "sort_ascending": sort_ascending,
+                "user_only": user_only,
+                "search": search,
+                "sort_field": sort_field,
+                "include_archived": include_archived,
+                "include_parent": include_parent,
+                "slurm_status": slurm_status,
+                "from_job_script_id": from_job_script_id,
+                "size": size,
+                "page": page,
+            }
         )
         if slurm_job_ids:
             params["slurm_job_ids"] = ",".join(map(str, slurm_job_ids))
@@ -199,7 +204,7 @@ class JobSubmissions:
                 client=self.client,
                 url_path=self.base_path,
                 method="GET",
-                request_kwargs=dict(params=params),
+                request_kwargs={"params": params},
             )
             .raise_for_status()
             .check_status_code(codes.OK)
@@ -210,7 +215,7 @@ class JobSubmissions:
     @validate_call
     def update(
         self,
-        id: NonNegativeInt,
+        job_submission_id: NonNegativeInt,
         *,
         name: str | None = None,
         description: str | None = None,
@@ -221,7 +226,7 @@ class JobSubmissions:
         Update a job submission.
 
         Args:
-            id: The ID of the job submission.
+            job_submission_id: The ID of the job submission.
             name: The name of the job submission.
             description: The description of the job submission.
             execution_directory: The execution directory.
@@ -230,19 +235,19 @@ class JobSubmissions:
             The base view of the updated job submission.
         """
         data = filter_null_out(
-            dict(
-                name=name,
-                description=description,
-                execution_directory=execution_directory,
-                status=status,
-            )
+            {
+                "name": name,
+                "description": description,
+                "execution_directory": execution_directory,
+                "status": status,
+            }
         )
         return (
             self.request_handler_cls(
                 client=self.client,
-                url_path=f"{self.base_path}/{id}",
+                url_path=f"{self.base_path}/{job_submission_id}",
                 method="PUT",
-                request_kwargs=dict(data=data),
+                request_kwargs={"data": data},
             )
             .raise_for_status()
             .check_status_code(codes.OK)
@@ -250,17 +255,17 @@ class JobSubmissions:
         )
 
     @validate_call
-    def delete(self, id: NonNegativeInt) -> None:
+    def delete(self, job_submission_id: NonNegativeInt) -> None:
         """
         Delete a job submission.
 
         Args:
-            id: The ID of the job submission.
+            job_submission_id: The ID of the job submission.
         """
         (
             self.request_handler_cls(
                 client=self.client,
-                url_path=f"{self.base_path}/{id}",
+                url_path=f"{self.base_path}/{job_submission_id}",
                 method="DELETE",
             )
             .raise_for_status()
@@ -268,12 +273,12 @@ class JobSubmissions:
         )
 
     @validate_call
-    def cancel(self, id: NonNegativeInt) -> JobSubmissionDetailedView:
+    def cancel(self, job_submission_id: NonNegativeInt) -> JobSubmissionDetailedView:
         """
         Cancel a job submission.
 
         Args:
-            id: The ID of the job submission.
+            job_submission_id: The ID of the job submission.
 
         Returns:
             The detailed view of the canceled job submission.
@@ -281,7 +286,7 @@ class JobSubmissions:
         return (
             self.request_handler_cls(
                 client=self.client,
-                url_path=f"{self.base_path}/cancel/{id}",
+                url_path=f"{self.base_path}/cancel/{job_submission_id}",
                 method="PUT",
             )
             .raise_for_status()
