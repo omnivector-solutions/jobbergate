@@ -60,10 +60,10 @@ class StyleMapper:
         Map a column name from the table to display to the style that should be used to render it.
         """
         color = self.colors.get(column, "white")
-        return dict(
-            style=color,
-            header_style=f"bold {color}",
-        )
+        return {
+            "style": color,
+            "header_style": f"bold {color}",
+        }
 
 
 def terminal_message(
@@ -79,7 +79,7 @@ def terminal_message(
         footer: An optional message to display in the footer of the ``Panel``.
         indent: Adds padding to the left of the message. Defaults to True.
     """
-    panel_kwargs: dict[str, Any] = dict(padding=1)
+    panel_kwargs: dict[str, Any] = {"padding": 1}
     if subject is not None:
         panel_kwargs["title"] = f"[{color}]{subject}"
     if footer is not None:

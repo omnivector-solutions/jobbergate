@@ -50,10 +50,10 @@ def validate_parameter_file(parameter_path: pathlib.Path) -> Dict[str, Any]:
     data = None
     with Abort.check_expressions(
         f"The parameter file at {parameter_path} was invalid",
-        raise_kwargs=dict(
-            subject="Invalid parameter file",
-            log_message=f"Parameter file located at {parameter_path} failed validation",
-        ),
+        raise_kwargs={
+            "subject": "Invalid parameter file",
+            "log_message": f"Parameter file located at {parameter_path} failed validation",
+        },
     ) as checker:
         checker(
             parameter_path.exists(),
@@ -201,10 +201,10 @@ def render_template(
 
     with Abort.handle_errors(
         f"Unable to process jinja template filename={template_path}",
-        raise_kwargs=dict(
-            subject="Unable to process jinja template",
-            log_message=f"Unable to process jinja template filename={template_path}",
-        ),
+        raise_kwargs={
+            "subject": "Unable to process jinja template",
+            "log_message": f"Unable to process jinja template filename={template_path}",
+        },
     ):
         sandbox_env = SandboxedEnvironment()
         template = sandbox_env.from_string(file_content)
@@ -272,7 +272,7 @@ def render_job_script_locally(
         application_source_code,
         fast_mode=fast,
         sdk=jg_ctx.sdk,
-        supplied_params=validate_parameter_file(param_file) if param_file else dict(),
+        supplied_params=validate_parameter_file(param_file) if param_file else {},
     )
     application_runtime.execute_application()
     param_dict_flat = application_runtime.as_flatten_param_dict()
@@ -356,7 +356,7 @@ def render_job_script(
         application_source_code,
         fast_mode=fast,
         sdk=jg_ctx.sdk,
-        supplied_params=validate_parameter_file(param_file) if param_file else dict(),
+        supplied_params=validate_parameter_file(param_file) if param_file else {},
     )
     application_runtime.execute_application()
     param_dict_flat = application_runtime.as_flatten_param_dict()

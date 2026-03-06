@@ -102,11 +102,11 @@ def list_all(
     """
     jg_ctx: ContextProtocol = ctx.obj
 
-    params: Dict[str, Any] = dict(
-        include_null_identifier=show_all,
-        user_only=user_only,
-        include_archived=include_archived,
-    )
+    params: Dict[str, Any] = {
+        "include_null_identifier": show_all,
+        "user_only": user_only,
+        "include_archived": include_archived,
+    }
     if search is not None:
         params["search"] = search
     if sort_order is not SortOrder.UNSORTED:
@@ -186,7 +186,7 @@ def create(
     """
     Create a new application.
     """
-    req_data = dict()
+    req_data = {}
     req_data["name"] = name
     if identifier:
         req_data["identifier"] = identifier
@@ -282,7 +282,7 @@ def update(
     """
     identification = resolve_application_selection(id_or_identifier, id, identifier)
 
-    req_data: dict[str, Any] = dict()
+    req_data: dict[str, Any] = {}
 
     if update_identifier:
         req_data["identifier"] = update_identifier
@@ -455,7 +455,7 @@ def clone(
     """
     identification = resolve_application_selection(id_or_identifier, id, identifier)
 
-    req_data = dict()
+    req_data = {}
 
     if application_identifier:
         req_data["identifier"] = application_identifier

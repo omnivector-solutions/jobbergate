@@ -26,7 +26,7 @@ def dummy_client():
         Create the dummy httpx client.
         """
         if headers is None:
-            headers = dict()
+            headers = {}
 
         return httpx.Client(base_url=base_url, headers=headers)
 
@@ -56,9 +56,9 @@ def test__deserialize_request_model__success():
     the ``content`` part of the ``request_kwargs``. Also, validate that the ``content-type`` part of the request is set
     to ``application/json``.
     """
-    request_kwargs = dict()
+    request_kwargs = {}
     deserialize_request_model(DummyResponseModel(foo=1, bar="one"), request_kwargs)
-    assert json.loads(request_kwargs["content"]) == dict(foo=1, bar="one")
+    assert json.loads(request_kwargs["content"]) == {"foo": 1, "bar": "one"}
     assert request_kwargs["headers"] == {"Content-Type": "application/json"}
 
 
@@ -68,13 +68,13 @@ def test__deserialize_request_model__raises_Abort_if_request_kwargs_already_has_
     (``data``, ``json``, or ``content``).
     """
     with pytest.raises(RequestModelError, match="Request was incorrectly structured"):
-        deserialize_request_model(DummyResponseModel(foo=1, bar="one"), dict(data=dict(foo=11)))
+        deserialize_request_model(DummyResponseModel(foo=1, bar="one"), {"data": {"foo": 11}})
 
     with pytest.raises(RequestModelError, match="Request was incorrectly structured"):
-        deserialize_request_model(DummyResponseModel(foo=1, bar="one"), dict(json=dict(foo=11)))
+        deserialize_request_model(DummyResponseModel(foo=1, bar="one"), {"json": {"foo": 11}})
 
     with pytest.raises(RequestModelError, match="Request was incorrectly structured"):
-        deserialize_request_model(DummyResponseModel(foo=1, bar="one"), dict(content=json.dumps(dict(foo=11))))
+        deserialize_request_model(DummyResponseModel(foo=1, bar="one"), {"content": json.dumps({"foo": 11})})
 
 
 class TestRequestHandler:
@@ -87,10 +87,10 @@ class TestRequestHandler:
         req_path = "/fake-path"
 
         reponse_status = httpx.codes.OK
-        response_json = dict(
-            foo=1,
-            bar="one",
-        )
+        response_json = {
+            "foo": 1,
+            "bar": "one",
+        }
         mocked_get = respx_mock.get(f"{DEFAULT_DOMAIN}{req_path}").mock(
             return_value=httpx.Response(reponse_status, json=response_json),
         )
@@ -243,7 +243,7 @@ class TestRequestHandler:
         client = dummy_client(headers={"content-type": "application/json"})
         req_path = "/fake-path"
 
-        response_json = dict(foo=1, bar="one")
+        response_json = {"foo": 1, "bar": "one"}
         mocked_get = respx_mock.get(f"{DEFAULT_DOMAIN}{req_path}").mock(
             return_value=httpx.Response(httpx.codes.OK, json=response_json),
         )
@@ -281,7 +281,7 @@ class TestRequestHandler:
         client = dummy_client(headers={"content-type": "application/json"})
         req_path = "/fake-path"
 
-        response_json = dict(foo=1, bar="one")
+        response_json = {"foo": 1, "bar": "one"}
         mocked_get = respx_mock.get(f"{DEFAULT_DOMAIN}{req_path}").mock(
             return_value=httpx.Response(httpx.codes.OK, json=response_json),
         )

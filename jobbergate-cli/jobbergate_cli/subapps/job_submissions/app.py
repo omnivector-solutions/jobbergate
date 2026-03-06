@@ -172,7 +172,7 @@ def list_all(
     """
     jg_ctx: ContextProtocol = ctx.obj
 
-    params: Dict[str, Any] = dict(user_only=not show_all, include_archived=include_archived)
+    params: Dict[str, Any] = {"user_only": not show_all, "include_archived": include_archived}
     if search is not None:
         params["search"] = search
     if sort_order is not SortOrder.UNSORTED:
@@ -185,7 +185,7 @@ def list_all(
     value_mappers = None
     organization_id = jg_ctx.authentication_handler.get_identity_data().organization_id
     if organization_id is not None:
-        value_mappers = dict(cluster_name=lambda cn: cn.removesuffix(f"-{organization_id}"))
+        value_mappers = {"cluster_name": lambda cn: cn.removesuffix(f"-{organization_id}")}
 
     handle_pagination(
         jg_ctx=jg_ctx,
@@ -215,7 +215,7 @@ def get_one(
     value_mappers = None
     organization_id = jg_ctx.authentication_handler.get_identity_data().organization_id
     if organization_id is not None:
-        value_mappers = dict(cluster_name=lambda cn: cn.removesuffix(f"-{organization_id}"))
+        value_mappers = {"cluster_name": lambda cn: cn.removesuffix(f"-{organization_id}")}
 
     result = fetch_job_submission_data(jg_ctx, id)
     render_single_result(

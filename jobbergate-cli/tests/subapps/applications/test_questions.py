@@ -22,7 +22,7 @@ def test_Text__success(dummy_render_class, mocker):
     question = Text(variablename, "gimme the foo!")
     prompts = question.make_prompts()
 
-    dummy_render_class.prepared_input = dict(foo="bar")
+    dummy_render_class.prepared_input = {"foo": "bar"}
 
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
     answers = prompt(prompts)
@@ -34,7 +34,7 @@ def test_Integer__success(dummy_render_class, mocker):
     question = Integer(variablename, "gimme the foo!")
     prompts = question.make_prompts()
 
-    dummy_render_class.prepared_input = dict(foo=13)
+    dummy_render_class.prepared_input = {"foo": 13}
 
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
     answers = prompt(prompts)
@@ -64,13 +64,13 @@ def test_Integer__fails_with_outside_of_range(dummy_render_class, mocker):
     question = Integer(variablename, "gimme the foo!", minval=14, maxval=16)
     prompts = question.make_prompts()
 
-    dummy_render_class.prepared_input = dict(foo=13)
+    dummy_render_class.prepared_input = {"foo": 13}
 
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
     with pytest.raises(ValidationError):
         prompt(prompts)
 
-    dummy_render_class.prepared_input = dict(foo=17)
+    dummy_render_class.prepared_input = {"foo": 17}
 
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
     with pytest.raises(ValidationError):
@@ -82,7 +82,7 @@ def test_List__success(dummy_render_class, mocker):
     question = List(variablename, "gimme the foo!", ["a", "b", "c"])
     prompts = question.make_prompts()
 
-    dummy_render_class.prepared_input = dict(foo="b")
+    dummy_render_class.prepared_input = {"foo": "b"}
 
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
     answers = prompt(prompts)
@@ -94,7 +94,7 @@ def test_Directory__success(tmp_path, dummy_render_class, mocker):
     question = Directory(variablename, "gimme the foo!", exists=True)
     prompts = question.make_prompts()
 
-    dummy_render_class.prepared_input = dict(foo=tmp_path)
+    dummy_render_class.prepared_input = {"foo": tmp_path}
 
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
     answers = prompt(prompts)
@@ -106,7 +106,7 @@ def test_Directory__fails_if_directory_does_not_exist(dummy_render_class, mocker
     question = Directory(variablename, "gimme the foo!", exists=True)
     prompts = question.make_prompts()
 
-    dummy_render_class.prepared_input = dict(foo="not/a/real/path")
+    dummy_render_class.prepared_input = {"foo": "not/a/real/path"}
 
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
     with pytest.raises(ValidationError):
@@ -120,7 +120,7 @@ def test_File__success(tmp_path, dummy_render_class, mocker):
 
     dummy_file = tmp_path / "dummy"
     dummy_file.write_text("just some dome stuff")
-    dummy_render_class.prepared_input = dict(foo=dummy_file.as_posix())
+    dummy_render_class.prepared_input = {"foo": dummy_file.as_posix()}
 
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
     answers = prompt(prompts)
@@ -132,7 +132,7 @@ def test_File__fails_if_file_does_not_exist(dummy_render_class, mocker):
     question = File(variablename, "gimme the foo!", exists=True)
     prompts = question.make_prompts()
 
-    dummy_render_class.prepared_input = dict(foo="not/a/real/path")
+    dummy_render_class.prepared_input = {"foo": "not/a/real/path"}
 
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
     with pytest.raises(ValidationError):
@@ -144,7 +144,7 @@ def test_Checkbox__success(dummy_render_class, mocker):
     question = Checkbox(variablename, "gimme the foo!", ["a", "b", "c"])
     prompts = question.make_prompts()
 
-    dummy_render_class.prepared_input = dict(foo=["a", "b"])
+    dummy_render_class.prepared_input = {"foo": ["a", "b"]}
 
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
     answers = prompt(prompts)
@@ -156,7 +156,7 @@ def test_Confirm__success(dummy_render_class, mocker):
     question = Confirm(variablename, "gimme the foo?")
     prompts = question.make_prompts()
 
-    dummy_render_class.prepared_input = dict(foo=True)
+    dummy_render_class.prepared_input = {"foo": True}
 
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
     answers = prompt(prompts)
@@ -168,7 +168,7 @@ def test_Const__success(dummy_render_class, mocker):
     question = Const(variablename, default="bar")
     prompts = question.make_prompts()
 
-    dummy_render_class.prepared_input = dict()
+    dummy_render_class.prepared_input = {}
 
     answers = prompt(prompts, render=dummy_render_class())
     assert answers["foo"] == "bar"
@@ -202,28 +202,28 @@ def test_BooleanList__success(dummy_render_class, mocker):
     prompts = question.make_prompts()
 
     # We'll answer True to any questions asked to make sure we are ignoring the correct ones
-    dummy_render_class.prepared_input = dict(
-        fooTT1=True,
-        fooT1=True,
-        fooT2=True,
-        fooFF1=True,
-        fooF1=True,
-        foo=True,
-    )
+    dummy_render_class.prepared_input = {
+        "fooTT1": True,
+        "fooT1": True,
+        "fooT2": True,
+        "fooFF1": True,
+        "fooF1": True,
+        "foo": True,
+    }
 
     mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
-    answers = dict()
+    answers = {}
     answers = prompt(prompts, answers=answers, render=dummy_render_class())
 
     # Only ignored questions should be false
-    assert answers == dict(
-        fooTT1=True,
-        fooT1=True,
-        fooT2=True,
-        fooFF1=False,
-        fooF1=False,
-        foo=True,
-    )
+    assert answers == {
+        "fooTT1": True,
+        "fooT1": True,
+        "fooT2": True,
+        "fooFF1": False,
+        "fooF1": False,
+        "foo": True,
+    }
 
 
 @pytest.mark.parametrize("parent_answer", [True, False])

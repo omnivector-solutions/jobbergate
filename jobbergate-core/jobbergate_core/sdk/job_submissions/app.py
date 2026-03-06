@@ -50,22 +50,22 @@ class JobSubmissions:
             The detailed view of the created job submission.
         """
         data = filter_null_out(
-            dict(
-                job_script_id=job_script_id,
-                name=name,
-                description=description,
-                slurm_job_id=slurm_job_id,
-                execution_directory=execution_directory,
-                client_id=client_id,
-                sbatch_arguments=sbatch_arguments,
-            )
+            {
+                "job_script_id": job_script_id,
+                "name": name,
+                "description": description,
+                "slurm_job_id": slurm_job_id,
+                "execution_directory": execution_directory,
+                "client_id": client_id,
+                "sbatch_arguments": sbatch_arguments,
+            }
         )
         return (
             self.request_handler_cls(
                 client=self.client,
                 url_path=self.base_path,
                 method="POST",
-                request_kwargs=dict(data=data),
+                request_kwargs={"data": data},
             )
             .raise_for_status()
             .check_status_code(codes.CREATED)
@@ -178,18 +178,18 @@ class JobSubmissions:
             The list response envelope containing job submission list views.
         """
         params = filter_null_out(
-            dict(
-                sort_ascending=sort_ascending,
-                user_only=user_only,
-                search=search,
-                sort_field=sort_field,
-                include_archived=include_archived,
-                include_parent=include_parent,
-                slurm_status=slurm_status,
-                from_job_script_id=from_job_script_id,
-                size=size,
-                page=page,
-            )
+            {
+                "sort_ascending": sort_ascending,
+                "user_only": user_only,
+                "search": search,
+                "sort_field": sort_field,
+                "include_archived": include_archived,
+                "include_parent": include_parent,
+                "slurm_status": slurm_status,
+                "from_job_script_id": from_job_script_id,
+                "size": size,
+                "page": page,
+            }
         )
         if slurm_job_ids:
             params["slurm_job_ids"] = ",".join(map(str, slurm_job_ids))
@@ -199,7 +199,7 @@ class JobSubmissions:
                 client=self.client,
                 url_path=self.base_path,
                 method="GET",
-                request_kwargs=dict(params=params),
+                request_kwargs={"params": params},
             )
             .raise_for_status()
             .check_status_code(codes.OK)
@@ -230,19 +230,19 @@ class JobSubmissions:
             The base view of the updated job submission.
         """
         data = filter_null_out(
-            dict(
-                name=name,
-                description=description,
-                execution_directory=execution_directory,
-                status=status,
-            )
+            {
+                "name": name,
+                "description": description,
+                "execution_directory": execution_directory,
+                "status": status,
+            }
         )
         return (
             self.request_handler_cls(
                 client=self.client,
                 url_path=f"{self.base_path}/{id}",
                 method="PUT",
-                request_kwargs=dict(data=data),
+                request_kwargs={"data": data},
             )
             .raise_for_status()
             .check_status_code(codes.OK)
