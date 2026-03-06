@@ -33,6 +33,8 @@ from jobbergate_cli.subapps.applications.tools import (
     fetch_application_data_locally,
 )
 
+NO_WORKFLOW_FILE_MESSAGE = "Application does not have a workflow file"
+
 
 def validate_parameter_file(parameter_path: pathlib.Path) -> Dict[str, Any]:
     """
@@ -260,9 +262,9 @@ def render_job_script_locally(
 
     if not app_data.workflow_files:
         raise Abort(
-            "Application does not have a workflow file",
+            NO_WORKFLOW_FILE_MESSAGE,
             subject="Workflow file not found",
-            log_message="Application does not have a workflow file",
+            log_message=NO_WORKFLOW_FILE_MESSAGE,
         )
 
     application_source_code = app_data.workflow_files[0].path.read_text()
@@ -335,7 +337,7 @@ def render_job_script(
         raise Abort(
             f"Application {app_data.application_id} does not have a workflow file",
             subject="Workflow file not found",
-            log_message="Application does not have a workflow file",
+            log_message=NO_WORKFLOW_FILE_MESSAGE,
         )
 
     with tempfile.NamedTemporaryFile() as fp:

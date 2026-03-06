@@ -39,6 +39,8 @@ HIDDEN_FIELDS = [
     "updated_at",
 ]
 
+ID_OPTION_HELP = "Alternative way to specify id."
+
 
 style_mapper = StyleMapper(
     job_script_id="green",
@@ -126,7 +128,7 @@ def list_all(
 def get_one(
     ctx: typer.Context,
     job_script_id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be selected."),
-    job_script_id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id."),
+    job_script_id_option: Optional[int] = typer.Option(None, "--id", "-i", help=ID_OPTION_HELP),
 ):
     """
     Show a detailed view of a single job script by id.
@@ -529,7 +531,7 @@ def delete(
 def show_files(
     ctx: typer.Context,
     job_script_id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be cloned."),
-    job_script_id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id."),
+    job_script_id_option: Optional[int] = typer.Option(None, "--id", "-i", help=ID_OPTION_HELP),
     plain: bool = typer.Option(False, help="Show the files in plain text."),
 ):
     """
@@ -563,7 +565,7 @@ def show_files(
 def download_files(
     ctx: typer.Context,
     job_script_id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be downloaded."),
-    job_script_id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id."),
+    job_script_id_option: Optional[int] = typer.Option(None, "--id", "-i", help=ID_OPTION_HELP),
 ):
     """
     Download the files from a job script to the current working directory.
@@ -590,7 +592,7 @@ def clone(
         None,
         "--id",
         "-i",
-        help="Alternative way to specify id.",
+        help=ID_OPTION_HELP,
     ),
     name: Optional[str] = typer.Option(
         None,

@@ -14,6 +14,9 @@ from jobbergate_cli.exceptions import handle_abort, handle_authentication_error
 from jobbergate_cli.schemas import IdentityData, JobbergateApplicationConfig, ContextProtocol
 from jobbergate_cli.text_tools import dedent
 
+OWNER_EMAIL_PRIMARY = "tucker.beck@omnivector.solutions"
+OWNER_EMAIL_SECONDARY = "tucker@omnivector.solutions"
+
 
 @pytest.fixture
 def dummy_domain():
@@ -90,7 +93,7 @@ def dummy_application_data():
             "name": "test-app-1",
             "identifier": "test-app-1",
             "description": "Test Application Number 1",
-            "owner_email": "tucker.beck@omnivector.solutions",
+            "owner_email": OWNER_EMAIL_PRIMARY,
             "created_at": "2022-03-01 17:31:00",
             "updated_at": "2022-03-01 17:31:00",
             "template_vars": {"foo": "bar"},
@@ -118,7 +121,7 @@ def dummy_application_data():
             "name": "test-app-2",
             "identifier": "test-app-2",
             "description": "Test Application Number 2",
-            "owner_email": "tucker.beck@omnivector.solutions",
+            "owner_email": OWNER_EMAIL_PRIMARY,
             "created_at": "2022-03-01 17:31:00",
             "updated_at": "2022-03-01 17:31:00",
         },
@@ -127,7 +130,7 @@ def dummy_application_data():
             "name": "test-app-3",
             "identifier": "test-app-3",
             "description": "Test Application Number 3",
-            "owner_email": "tucker.beck@omnivector.solutions",
+            "owner_email": OWNER_EMAIL_PRIMARY,
             "created_at": "2022-03-01 17:31:00",
             "updated_at": "2022-03-01 17:31:00",
         },
@@ -153,7 +156,7 @@ def dummy_job_script_data(dummy_application_data, dummy_job_script_file):
             "updated_at": "2022-03-02 22:08:00",
             "name": "script1",
             "description": "Job Script 1",
-            "owner_email": "tucker@omnivector.solutions",
+            "owner_email": OWNER_EMAIL_SECONDARY,
             "application_id": dummy_application_data[0]["id"],
             "files": [dict(parent_id=1, **dummy_job_script_file)],
         },
@@ -163,7 +166,7 @@ def dummy_job_script_data(dummy_application_data, dummy_job_script_file):
             "updated_at": "2022-03-02 22:08:00",
             "name": "script2",
             "description": "Job Script 2",
-            "owner_email": "tucker@omnivector.solutions",
+            "owner_email": OWNER_EMAIL_SECONDARY,
             "application_id": 1,
             "files": [dict(parent_id=2, **dummy_job_script_file)],
         },
@@ -189,7 +192,7 @@ def dummy_job_submission_data(dummy_job_script_data):
             "updated_at": "2022-03-02 22:08:00",
             "name": "sub1",
             "description": "Job Submission 1",
-            "owner_email": "tucker@omnivector.solutions",
+            "owner_email": OWNER_EMAIL_SECONDARY,
             "job_script_id": dummy_job_script_data[0]["id"],
             "slurm_job_id": 13,
             "status": "CREATED",
@@ -200,7 +203,7 @@ def dummy_job_submission_data(dummy_job_script_data):
             "updated_at": "2022-03-02 22:08:00",
             "name": "sub1",
             "description": "Job Submission 1",
-            "owner_email": "tucker@omnivector.solutions",
+            "owner_email": OWNER_EMAIL_SECONDARY,
             "job_script_id": 88,
             "slurm_job_id": 8888,
             "status": "CREATED",
@@ -211,7 +214,7 @@ def dummy_job_submission_data(dummy_job_script_data):
             "updated_at": "2022-03-02 22:08:00",
             "name": "sub3",
             "description": "Job Submission 3",
-            "owner_email": "tucker@omnivector.solutions",
+            "owner_email": OWNER_EMAIL_SECONDARY,
             "job_script_id": 99,
             "slurm_job_id": 9999,
             "status": "CREATED",

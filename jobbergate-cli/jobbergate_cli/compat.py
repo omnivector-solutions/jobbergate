@@ -26,6 +26,8 @@ from jobbergate_cli.subapps.job_submissions.app import delete as delete_job_subm
 from jobbergate_cli.subapps.job_submissions.app import get_one as get_job_submission
 from jobbergate_cli.subapps.job_submissions.app import list_all as list_job_submissions
 
+BACKWARD_COMPATIBILITY_PANEL = "Backward compatibility"
+
 
 def add_legacy_compatible_commands(app: typer.Typer):
     """
@@ -38,7 +40,7 @@ def add_legacy_compatible_commands(app: typer.Typer):
         name="list-applications",
         help="LIST the available applications, replaced by: applications list",
         deprecated=True,
-        rich_help_panel="Backward compatibility",
+        rich_help_panel=BACKWARD_COMPATIBILITY_PANEL,
     )(list_applications)
     app.command(
         name="get-application",
@@ -82,7 +84,7 @@ def add_legacy_compatible_commands(app: typer.Typer):
         name="list-job-scripts",
         help="LIST job scripts, replaced by: job-scripts list",
         deprecated=True,
-        rich_help_panel="Backward compatibility",
+        rich_help_panel=BACKWARD_COMPATIBILITY_PANEL,
     )(list_job_scripts)
     app.command(
         name="get-job-script",
@@ -94,7 +96,7 @@ def add_legacy_compatible_commands(app: typer.Typer):
         name="create-job-script",
         help="CREATE a job script, replaced by: job-scripts create",
         deprecated=True,
-        rich_help_panel="Backward compatibility",
+        rich_help_panel=BACKWARD_COMPATIBILITY_PANEL,
     )(create_job_script)
     app.command(
         name="update-job-script",
@@ -138,7 +140,7 @@ def add_legacy_compatible_commands(app: typer.Typer):
         name="list-job-submissions",
         help="LIST job submissions, replaced by: job-submissions list",
         deprecated=True,
-        rich_help_panel="Backward compatibility",
+        rich_help_panel=BACKWARD_COMPATIBILITY_PANEL,
     )(list_job_submissions)
     app.command(
         name="get-job-submission",
@@ -150,7 +152,7 @@ def add_legacy_compatible_commands(app: typer.Typer):
         name="create-job-submission",
         help="CREATE a job submission, replaced by: job-submissions create",
         deprecated=True,
-        rich_help_panel="Backward compatibility",
+        rich_help_panel=BACKWARD_COMPATIBILITY_PANEL,
     )(create_job_submission)
     app.command(
         name="delete-job-submission",
