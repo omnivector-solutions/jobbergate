@@ -28,7 +28,7 @@ def log_error(params: DoExceptParams):
     )
 
 
-def logger_wraps(*, entry: bool = True, exit: bool = True, level: str = "DEBUG"):
+def logger_wraps(*, entry: bool = True, exit_log: bool = True, level: str = "DEBUG"):
     """
     Decorator to wrap a function with logging statements.
 
@@ -45,7 +45,7 @@ def logger_wraps(*, entry: bool = True, exit: bool = True, level: str = "DEBUG")
             if entry:
                 logger_.log(level, "Entering '{}' (args={}, kwargs={})", name, args, kwargs)
             result = func(*args, **kwargs)
-            if exit:
+            if exit_log:
                 logger_.log(level, "Exiting '{}' (result={})", name, result)
             return result
 

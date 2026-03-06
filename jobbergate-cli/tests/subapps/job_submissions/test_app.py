@@ -237,11 +237,11 @@ class TestCloneJobSubmission:
         """
 
         job_submission_data = dummy_job_submission_data[0]
-        id = job_submission_data["id"]
+        job_submission_id = job_submission_data["id"]
 
-        cli_selector = selector_template.format(id=id)
+        cli_selector = selector_template.format(id=job_submission_id)
 
-        clone_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions/clone/{id}").mock(
+        clone_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions/clone/{job_submission_id}").mock(
             return_value=httpx.Response(
                 httpx.codes.CREATED,
                 json=job_submission_data,
@@ -281,11 +281,11 @@ class TestCancelJobSubmission:
         """
 
         job_submission_data = dummy_job_submission_data[0]
-        id = job_submission_data["id"]
+        job_submission_id = job_submission_data["id"]
 
-        cli_selector = selector_template.format(id=id)
+        cli_selector = selector_template.format(id=job_submission_id)
 
-        cancel_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-submissions/cancel/{id}").mock(
+        cancel_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-submissions/cancel/{job_submission_id}").mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
                 json=job_submission_data,

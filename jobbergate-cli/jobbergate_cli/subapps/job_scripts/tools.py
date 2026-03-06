@@ -74,7 +74,7 @@ def validate_parameter_file(parameter_path: pathlib.Path) -> Dict[str, Any]:
 
 def fetch_job_script_data(
     jg_ctx: ContextProtocol,
-    id: int,
+    job_script_id: int,
 ) -> JobScriptResponse:
     """
     Retrieve a job_script from the API by ``id``
@@ -83,10 +83,10 @@ def fetch_job_script_data(
         JobScriptResponse,
         make_request(
             jg_ctx.client,
-            f"/jobbergate/job-scripts/{id}",
+            f"/jobbergate/job-scripts/{job_script_id}",
             "GET",
             expected_status=200,
-            abort_message=f"Couldn't retrieve job script ({id}) from API",
+            abort_message=f"Couldn't retrieve job script ({job_script_id}) from API",
             support=True,
             response_model_cls=JobScriptResponse,
         ),
@@ -484,12 +484,16 @@ def save_job_script_file(
     return file_path
 
 
-def download_job_script_files(id: int, jg_ctx: ContextProtocol, destination_path: pathlib.Path) -> List[JobScriptFile]:
+def download_job_script_files(
+    job_script_id: int,
+    jg_ctx: ContextProtocol,
+    destination_path: pathlib.Path,
+) -> List[JobScriptFile]:
     """
     Download all job script files from the API and save them to the destination path.
     """
 
-    result = fetch_job_script_data(jg_ctx, id)
+    result = fetch_job_script_data(jg_ctx, job_script_id)
 
     with futures.ThreadPoolExecutor() as executor:
         executor.map(partial(save_job_script_file, jg_ctx, destination_path), result.files)

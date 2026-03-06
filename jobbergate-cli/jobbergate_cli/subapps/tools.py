@@ -8,7 +8,10 @@ from click import UsageError
 
 
 def resolve_application_selection(
-    id_or_identifier: int | str | None = None, id: int | None = None, identifier: str | None = None, prefix: str = ""
+    id_or_identifier: int | str | None = None,
+    selected_id: int | None = None,
+    identifier: str | None = None,
+    prefix: str = "",
 ) -> int | str:
     """
     Resolve the application selection parameters.
@@ -16,7 +19,7 @@ def resolve_application_selection(
     if isinstance(id_or_identifier, str) and id_or_identifier.isdigit():
         id_or_identifier = int(id_or_identifier)
 
-    valid_args = [i for i in (id_or_identifier, id, identifier) if i is not None]
+    valid_args = [i for i in (id_or_identifier, selected_id, identifier) if i is not None]
     counter = len(valid_args)
 
     if counter != 1:

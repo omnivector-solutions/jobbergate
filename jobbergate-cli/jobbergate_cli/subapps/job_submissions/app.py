@@ -214,21 +214,23 @@ def list_all(
 @app.command()
 def get_one(
     ctx: typer.Context,
-    id: Optional[int] = typer.Argument(None, help="The specific id of the job submission to be selected."),
-    id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id"),
+    job_submission_id: Optional[int] = typer.Argument(
+        None, help="The specific id of the job submission to be selected."
+    ),
+    job_submission_id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id"),
 ):
     """
     Show the detailed view of a single job submission by id
     """
     jg_ctx: ContextProtocol = ctx.obj
-    id = resolve_selection(id, id_option)
+    job_submission_id = resolve_selection(job_submission_id, job_submission_id_option)
 
     value_mappers = None
     organization_id = jg_ctx.authentication_handler.get_identity_data().organization_id
     if organization_id is not None:
         value_mappers = {"cluster_name": lambda cn: cn.removesuffix(f"-{organization_id}")}
 
-    result = fetch_job_submission_data(jg_ctx, id)
+    result = fetch_job_submission_data(jg_ctx, job_submission_id)
     render_single_result(
         jg_ctx,
         result,
@@ -244,11 +246,11 @@ def get_one(
 @app.command()
 def delete(
     ctx: typer.Context,
-    id: Optional[int] = typer.Argument(
+    job_submission_id: Optional[int] = typer.Argument(
         None,
         help="The id of the job submission to delete",
     ),
-    id_option: Optional[int] = typer.Option(
+    job_submission_id_option: Optional[int] = typer.Option(
         ...,
         "--id",
         "-i",
@@ -259,11 +261,11 @@ def delete(
     Delete an existing job submission.
     """
     jg_ctx: ContextProtocol = ctx.obj
-    id = resolve_selection(id, id_option)
+    job_submission_id = resolve_selection(job_submission_id, job_submission_id_option)
 
     make_request(
         jg_ctx.client,
-        f"/jobbergate/job-submissions/{id}",
+        f"/jobbergate/job-submissions/{job_submission_id}",
         "DELETE",
         expected_status=204,
         abort_message="Request to delete job submission was not accepted by the API",
@@ -278,8 +280,10 @@ def delete(
 @app.command()
 def clone(
     ctx: typer.Context,
-    id: Optional[int] = typer.Argument(None, help="The specific id of the job submission to be updated."),
-    id_option: Optional[int] = typer.Option(
+    job_submission_id: Optional[int] = typer.Argument(
+        None, help="The specific id of the job submission to be updated."
+    ),
+    job_submission_id_option: Optional[int] = typer.Option(
         None,
         "--id",
         "-i",
@@ -290,13 +294,13 @@ def clone(
     Clone an existing job submission under the CREATED status, so it is re-submitted to the cluster.
     """
     jg_ctx: ContextProtocol = ctx.obj
-    id = resolve_selection(id, id_option)
+    job_submission_id = resolve_selection(job_submission_id, job_submission_id_option)
 
     job_submission_result = cast(
         JobSubmissionResponse,
         make_request(
             jg_ctx.client,
-            f"/jobbergate/job-submissions/clone/{id}",
+            f"/jobbergate/job-submissions/clone/{job_submission_id}",
             "POST",
             expected_status=201,
             abort_message="Couldn't clone job submission",
@@ -316,20 +320,22 @@ def clone(
 @app.command()
 def cancel(
     ctx: typer.Context,
-    id: Optional[int] = typer.Argument(None, help="The specific id of the job submission to be cancelled."),
-    id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id"),
+    job_submission_id: Optional[int] = typer.Argument(
+        None, help="The specific id of the job submission to be cancelled."
+    ),
+    job_submission_id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id"),
 ):
     """
     Cancel an existing job submission.
     """
     jg_ctx: ContextProtocol = ctx.obj
-    id = resolve_selection(id, id_option)
+    job_submission_id = resolve_selection(job_submission_id, job_submission_id_option)
 
     job_submission_result = cast(
         JobSubmissionResponse,
         make_request(
             jg_ctx.client,
-            f"/jobbergate/job-submissions/cancel/{id}",
+            f"/jobbergate/job-submissions/cancel/{job_submission_id}",
             "PUT",
             expected_status=200,
             abort_message="Couldn't cancel job submission",
