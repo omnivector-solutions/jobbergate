@@ -147,7 +147,7 @@ async def job_script_template_get_list(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ, commit=False)),
     ],
-    include_null_identifier: bool = Query(False),
+    include_null_identifier: Annotated[bool, Query()] = False,
 ):
     """Get a list of job script templates."""
     logger.debug("Preparing to list job script templates")
@@ -175,16 +175,14 @@ async def job_script_template_update(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_UPDATE, ensure_email=True)),
     ],
-    id_or_identifier: str = Path(),
+    id_or_identifier: Annotated[str, Path()],
 ):
     """Update a job script template by id or identifier."""
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
     logger.info(f"Updating job script template {typed_id_or_identifier=} with {update_request=}")
     instance = await secure_services.crud.template.get(typed_id_or_identifier)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
-        secure_services.crud.template.ensure_attribute(
-            instance, owner_email=secure_services.identity_payload.email
-        )
+        secure_services.crud.template.ensure_attribute(instance, owner_email=secure_services.identity_payload.email)
     return await secure_services.crud.template.update(
         typed_id_or_identifier, **update_request.model_dump(exclude_unset=True)
     )
@@ -200,16 +198,14 @@ async def job_script_template_delete(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)),
     ],
-    id_or_identifier: str = Path(),
+    id_or_identifier: Annotated[str, Path()],
 ):
     """Delete a job script template by id or identifier."""
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
     logger.info(f"Deleting job script template with {typed_id_or_identifier=}")
     isinstance = await secure_services.crud.template.get(typed_id_or_identifier)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
-        secure_services.crud.template.ensure_attribute(
-            isinstance, owner_email=secure_services.identity_payload.email
-        )
+        secure_services.crud.template.ensure_attribute(isinstance, owner_email=secure_services.identity_payload.email)
     await secure_services.crud.template.delete(typed_id_or_identifier)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -223,8 +219,8 @@ async def job_script_template_get_file(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ, commit=False)),
     ],
-    id_or_identifier: str = Path(),
-    file_name: str = Path(),
+    id_or_identifier: Annotated[str, Path()],
+    file_name: Annotated[str, Path()],
 ):
     """
     Get a job script template file by id or identifier.
@@ -285,13 +281,13 @@ async def job_script_template_upload_file(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)),
     ],
-    id_or_identifier: str = Path(),
-    file_type: FileType = Path(),
-    filename: str | None = Query(None, max_length=255),
-    upload_file: UploadFile | None = File(None, description="File to upload"),
-    previous_filename: str | None = Query(
-        None, description="Previous name of the file in case a rename is needed", max_length=255
-    ),
+    id_or_identifier: Annotated[str, Path()],
+    file_type: Annotated[FileType, Path()],
+    filename: Annotated[str | None, Query(max_length=255)] = None,
+    upload_file: Annotated[UploadFile | None, File(description="File to upload")] = None,
+    previous_filename: Annotated[
+        str | None, Query(description="Previous name of the file in case a rename is needed", max_length=255)
+    ] = None,
 ):
     """Upload a file to a job script template by id or identifier."""
     # This is included for backwards compatibility with the previous implementation
@@ -303,9 +299,7 @@ async def job_script_template_upload_file(
             detail="Filename must be provided either as a query parameter or as part of the file upload",
         )
 
-    logger.debug(
-        f"Uploading {filename=} to job template {id_or_identifier=}; {file_type=}; {previous_filename=}"
-    )
+    logger.debug(f"Uploading {filename=} to job template {id_or_identifier=}; {file_type=}; {previous_filename=}")
     return await _upsert_template_file(
         id_or_identifier,
         file_type,
@@ -330,13 +324,13 @@ async def job_script_template_upload_file_by_url(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)),
     ],
-    id_or_identifier: str = Path(),
-    file_type: FileType = Path(),
-    filename: str | None = Query(None, max_length=255),
-    file_url: AnyUrl = Query(..., description="URL of the file to upload"),
-    previous_filename: str | None = Query(
-        None, description="Previous name of the file in case a rename is needed", max_length=255
-    ),
+    id_or_identifier: Annotated[str, Path()],
+    file_type: Annotated[FileType, Path()],
+    filename: Annotated[str | None, Query(max_length=255)] = None,
+    file_url: Annotated[AnyUrl, Query(description="URL of the file to upload")] = ...,
+    previous_filename: Annotated[
+        str | None, Query(description="Previous name of the file in case a rename is needed", max_length=255)
+    ] = None,
 ):
     """Upload a file to a job script template by id or identifier using file URL."""
 
@@ -385,8 +379,8 @@ async def job_script_template_delete_file(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)),
     ],
-    id_or_identifier: str = Path(),
-    file_name: str = Path(),
+    id_or_identifier: Annotated[str, Path()],
+    file_name: Annotated[str, Path()],
 ):
     """Delete a file from a job script template by id or identifier."""
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
@@ -408,7 +402,7 @@ async def job_script_workflow_get_file(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_READ, commit=False)),
     ],
-    id_or_identifier: str = Path(),
+    id_or_identifier: Annotated[str, Path()],
 ):
     """
     Get a workflow file by id or identifier.
@@ -437,9 +431,7 @@ async def _upsert_workflow_file(
     Provide an auxillary function to be used for uploading from file object or URL.
     """
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
-    logger.debug(
-        f"Uploading workflow file to job script template {typed_id_or_identifier=}: {runtime_config}"
-    )
+    logger.debug(f"Uploading workflow file to job script template {typed_id_or_identifier=}: {runtime_config}")
     job_script_template = await secure_services.crud.template.get(typed_id_or_identifier)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.template.ensure_attribute(
@@ -479,11 +471,12 @@ async def job_script_workflow_upload_file(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)),
     ],
-    id_or_identifier: str = Path(),
-    runtime_config: RunTimeConfig | None = Form(
-        None, description="Runtime configuration is optional when the workflow file already exists"
-    ),
-    upload_file: UploadFile = File(..., description="File to upload"),
+    id_or_identifier: Annotated[str, Path()],
+    runtime_config: Annotated[
+        RunTimeConfig | None,
+        Form(description="Runtime configuration is optional when the workflow file already exists"),
+    ] = None,
+    upload_file: Annotated[UploadFile, File(description="File to upload")] = ...,
 ):
     """Upload a file to a job script workflow by id or identifier."""
     return await _upsert_workflow_file(id_or_identifier, runtime_config, upload_file, secure_services)
@@ -500,11 +493,12 @@ async def job_script_upload_file_by_url(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)),
     ],
-    id_or_identifier: str = Path(),
-    runtime_config: RunTimeConfig | None = Body(
-        None, description="Runtime configuration is optional when the workflow file already exists"
-    ),
-    file_url: AnyUrl = Query(..., description="URL of the file to upload"),
+    id_or_identifier: Annotated[str, Path()],
+    runtime_config: Annotated[
+        RunTimeConfig | None,
+        Body(description="Runtime configuration is optional when the workflow file already exists"),
+    ] = None,
+    file_url: Annotated[AnyUrl, Query(description="URL of the file to upload")] = ...,
 ):
     """Upload a file to a job script workflow by id or identifier from a URL."""
     return await _upsert_workflow_file(id_or_identifier, runtime_config, file_url, secure_services)
@@ -520,7 +514,7 @@ async def job_script_workflow_delete_file(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_DELETE, ensure_email=True)),
     ],
-    id_or_identifier: str = Path(),
+    id_or_identifier: Annotated[str, Path()],
 ):
     """Delete a workflow file from a job script template by id or identifier."""
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
