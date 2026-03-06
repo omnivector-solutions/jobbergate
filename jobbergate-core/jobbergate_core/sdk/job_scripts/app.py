@@ -32,12 +32,17 @@ class JobScriptFiles:
     request_handler_cls: Type[RequestHandler] = RequestHandler
 
     @validate_call
-    def upsert(self, id: NonNegativeInt, file_type: FileType, file_path: Path) -> JobScriptFileDetailedView:
+    def upsert(
+        self,
+        job_script_id: NonNegativeInt,
+        file_type: FileType,
+        file_path: Path,
+    ) -> JobScriptFileDetailedView:
         """
         Upload or update a job script file.
 
         Args:
-            id: The ID of the job script.
+            job_script_id: The ID of the job script.
             file_type: The type of the file.
             file_path: The path to the file to be uploaded.
 
@@ -47,7 +52,7 @@ class JobScriptFiles:
         with file_path.open("rb") as file:
             response = self.request_handler_cls(
                 client=self.client,
-                url_path=f"/jobbergate/job-scripts/{id}/upload/{file_type.value}",
+                url_path=f"/jobbergate/job-scripts/{job_script_id}/upload/{file_type.value}",
                 method="PUT",
                 request_kwargs={
                     "files": {"upload_file": (file_path.name, file, "text/plain")},
@@ -56,18 +61,18 @@ class JobScriptFiles:
         return response.raise_for_status().check_status_code(codes.OK).to_model(JobScriptFileDetailedView)
 
     @validate_call
-    def delete(self, id: NonNegativeInt, filename: str) -> None:
+    def delete(self, job_script_id: NonNegativeInt, filename: str) -> None:
         """
         Delete a job script file.
 
         Args:
-            id: The ID of the job script.
+            job_script_id: The ID of the job script.
             filename: The name of the file to be deleted.
         """
         (
             self.request_handler_cls(
                 client=self.client,
-                url_path=f"/jobbergate/job-scripts/{id}/upload/{filename}",
+                url_path=f"/jobbergate/job-scripts/{job_script_id}/upload/{filename}",
                 method="DELETE",
             )
             .raise_for_status()
@@ -75,12 +80,12 @@ class JobScriptFiles:
         )
 
     @validate_call
-    def download(self, id: NonNegativeInt, filename: str, directory: Path = Path.cwd()) -> Path:
+    def download(self, job_script_id: NonNegativeInt, filename: str, directory: Path = Path.cwd()) -> Path:
         """
         Download a job script file.
 
         Args:
-            id: The ID of the job script.
+            job_script_id: The ID of the job script.
             filename: The name of the file to be downloaded.
             directory: The directory where the file will be saved.
 
@@ -91,7 +96,7 @@ class JobScriptFiles:
         (
             self.request_handler_cls(
                 client=self.client,
-                url_path=f"/jobbergate/job-scripts/{id}/upload/{filename}",
+                url_path=f"/jobbergate/job-scripts/{job_script_id}/upload/{filename}",
                 method="GET",
             )
             .raise_for_status()
@@ -176,17 +181,17 @@ class JobScripts:
         )
 
     @validate_call
-    def delete(self, id: NonNegativeInt) -> None:
+    def delete(self, job_script_id: NonNegativeInt) -> None:
         """
         Delete a job script.
 
         Args:
-            id: The ID of the job script.
+            job_script_id: The ID of the job script.
         """
         (
             self.request_handler_cls(
                 client=self.client,
-                url_path=f"{self.base_path}/{id}",
+                url_path=f"{self.base_path}/{job_script_id}",
                 method="DELETE",
             )
             .raise_for_status()
@@ -248,12 +253,12 @@ class JobScripts:
         )
 
     @validate_call
-    def get_one(self, id: NonNegativeInt) -> JobScriptDetailedView:
+    def get_one(self, job_script_id: NonNegativeInt) -> JobScriptDetailedView:
         """
         Get a single job script.
 
         Args:
-            id: The ID of the job script.
+            job_script_id: The ID of the job script.
 
         Returns:
             The detailed view of the job script.
@@ -261,7 +266,7 @@ class JobScripts:
         return (
             self.request_handler_cls(
                 client=self.client,
-                url_path=f"{self.base_path}/{id}",
+                url_path=f"{self.base_path}/{job_script_id}",
                 method="GET",
             )
             .raise_for_status()
@@ -272,7 +277,7 @@ class JobScripts:
     @validate_call
     def update(
         self,
-        id: NonNegativeInt,
+        job_script_id: NonNegativeInt,
         *,
         name: str | None = None,
         description: str | None = None,
@@ -282,7 +287,7 @@ class JobScripts:
         Update a job script.
 
         Args:
-            id: The ID of the job script.
+            job_script_id: The ID of the job script.
             name: The name of the job script.
             identifier: The identifier of the job script.
             description: The description of the job script.
@@ -302,7 +307,7 @@ class JobScripts:
         return (
             self.request_handler_cls(
                 client=self.client,
-                url_path=f"{self.base_path}/{id}",
+                url_path=f"{self.base_path}/{job_script_id}",
                 method="PUT",
                 request_kwargs={"data": data},
             )

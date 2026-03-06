@@ -203,9 +203,11 @@ async def job_script_template_delete(
     """Delete a job script template by id or identifier."""
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
     logger.info(f"Deleting job script template with {typed_id_or_identifier=}")
-    isinstance = await secure_services.crud.template.get(typed_id_or_identifier)
+    template_instance = await secure_services.crud.template.get(typed_id_or_identifier)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
-        secure_services.crud.template.ensure_attribute(isinstance, owner_email=secure_services.identity_payload.email)
+        secure_services.crud.template.ensure_attribute(
+            template_instance, owner_email=secure_services.identity_payload.email
+        )
     await secure_services.crud.template.delete(typed_id_or_identifier)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 

@@ -72,11 +72,11 @@ def test_get_one__success(
     selector_template,
 ):
     application_data = dummy_application_data[0]
-    id = application_data["id"]
+    application_id = application_data["id"]
     identifier = application_data["identifier"]
 
-    url_selector = identifier if "identifier" in selector_template else id
-    cli_selector = selector_template.format(id=id, identifier=identifier)
+    url_selector = identifier if "identifier" in selector_template else application_id
+    cli_selector = selector_template.format(id=application_id, identifier=identifier)
 
     respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{url_selector}").mock(
         return_value=httpx.Response(
@@ -246,11 +246,11 @@ def test_update__success_by_id(
     selector_template,
 ):
     application_data = dummy_application_data[0]
-    id = application_data["id"]
+    application_id = application_data["id"]
     identifier = application_data["identifier"]
 
-    url_selector = identifier if "identifier" in selector_template else id
-    cli_selector = selector_template.format(id=id, identifier=identifier)
+    url_selector = identifier if "identifier" in selector_template else application_id
+    cli_selector = selector_template.format(id=application_id, identifier=identifier)
 
     update_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-script-templates/{url_selector}")
     update_route.mock(
@@ -426,11 +426,11 @@ def test_update__warns_but_does_not_abort_if_upload_fails(
     ],
 )
 def test_delete__success(respx_mock, make_test_app, dummy_domain, cli_runner, selector_template):
-    id = 1
+    application_id = 1
     identifier = "some-identifier"
 
-    url_selector = identifier if "identifier" in selector_template else id
-    cli_selector = selector_template.format(id=id, identifier=identifier)
+    url_selector = identifier if "identifier" in selector_template else application_id
+    cli_selector = selector_template.format(id=application_id, identifier=identifier)
 
     delete_route = respx_mock.delete(f"{dummy_domain}/jobbergate/job-script-templates/{url_selector}")
     delete_route.mock(return_value=httpx.Response(httpx.codes.NO_CONTENT))
@@ -482,11 +482,11 @@ class TestDownloadApplicationFiles:
         Test that the download application files subcommand works as expected.
         """
         application_data = dummy_application_data[0]
-        id = application_data["id"]
+        application_id = application_data["id"]
         identifier = application_data["identifier"]
 
-        url_selector = identifier if "identifier" in selector_template else id
-        cli_selector = selector_template.format(id=id, identifier=identifier)
+        url_selector = identifier if "identifier" in selector_template else application_id
+        cli_selector = selector_template.format(id=application_id, identifier=identifier)
 
         respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{url_selector}").mock(
             return_value=httpx.Response(
@@ -561,11 +561,11 @@ def test_clone__success(
     """
 
     application_data = dummy_application_data[0]
-    id = application_data["id"]
+    application_id = application_data["id"]
     identifier = application_data["identifier"]
 
-    url_selector = identifier if "identifier" in selector_template else id
-    cli_selector = selector_template.format(id=id, identifier=identifier)
+    url_selector = identifier if "identifier" in selector_template else application_id
+    cli_selector = selector_template.format(id=application_id, identifier=identifier)
 
     clone_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-script-templates/clone/{url_selector}").mock(
         return_value=httpx.Response(

@@ -114,16 +114,16 @@ def list_all(
 @app.command()
 def get_one(
     ctx: typer.Context,
-    id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be selected."),
-    id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id."),
+    job_script_id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be selected."),
+    job_script_id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id."),
 ):
     """
     Show a detailed view of a single job script by id.
     """
     jg_ctx: ContextProtocol = ctx.obj
-    id = resolve_selection(id, id_option)
+    job_script_id = resolve_selection(job_script_id, job_script_id_option)
 
-    result = fetch_job_script_data(jg_ctx, id)
+    result = fetch_job_script_data(jg_ctx, job_script_id)
     render_single_result(
         jg_ctx,
         result,
@@ -427,8 +427,8 @@ def create(
 @app.command()
 def update(
     ctx: typer.Context,
-    id: Optional[int] = typer.Argument(None, help="The id of the job script to update"),
-    id_option: Optional[int] = typer.Option(
+    job_script_id: Optional[int] = typer.Argument(None, help="The id of the job script to update"),
+    job_script_id_option: Optional[int] = typer.Option(
         None,
         "--id",
         "-i",
@@ -452,7 +452,7 @@ def update(
     Update an existing job script.
     """
     jg_ctx: ContextProtocol = ctx.obj
-    id = resolve_selection(id, id_option)
+    job_script_id = resolve_selection(job_script_id, job_script_id_option)
 
     update_params: dict[str, Any] = {}
     if name is not None:
@@ -466,7 +466,7 @@ def update(
         JobScriptResponse,
         make_request(
             jg_ctx.client,
-            f"/jobbergate/job-scripts/{id}",
+            f"/jobbergate/job-scripts/{job_script_id}",
             "PUT",
             expected_status=200,
             abort_message="Couldn't update job script",
@@ -486,8 +486,8 @@ def update(
 @app.command()
 def delete(
     ctx: typer.Context,
-    id: Optional[int] = typer.Argument(None, help="The id of the job script to delete"),
-    id_option: Optional[int] = typer.Option(
+    job_script_id: Optional[int] = typer.Argument(None, help="The id of the job script to delete"),
+    job_script_id_option: Optional[int] = typer.Option(
         None,
         "--id",
         "-i",
@@ -498,11 +498,11 @@ def delete(
     Delete an existing job script.
     """
     jg_ctx: ContextProtocol = ctx.obj
-    id = resolve_selection(id, id_option)
+    job_script_id = resolve_selection(job_script_id, job_script_id_option)
 
     make_request(
         jg_ctx.client,
-        f"/jobbergate/job-scripts/{id}",
+        f"/jobbergate/job-scripts/{job_script_id}",
         "DELETE",
         expected_status=204,
         abort_message="Request to delete job script was not accepted by the API",
@@ -517,20 +517,20 @@ def delete(
 @app.command()
 def show_files(
     ctx: typer.Context,
-    id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be cloned."),
-    id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id."),
+    job_script_id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be cloned."),
+    job_script_id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id."),
     plain: bool = typer.Option(False, help="Show the files in plain text."),
 ):
     """
     Show the files for a single job script by id.
     """
     jg_ctx: ContextProtocol = ctx.obj
-    id = resolve_selection(id, id_option)
+    job_script_id = resolve_selection(job_script_id, job_script_id_option)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = pathlib.Path(tmp_dir)
 
-        files = download_job_script_files(id, jg_ctx, tmp_path)
+        files = download_job_script_files(job_script_id, jg_ctx, tmp_path)
 
         for metadata in files:
             filename = metadata.filename
@@ -551,15 +551,15 @@ def show_files(
 @app.command()
 def download_files(
     ctx: typer.Context,
-    id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be downloaded."),
-    id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id."),
+    job_script_id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be downloaded."),
+    job_script_id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id."),
 ):
     """
     Download the files from a job script to the current working directory.
     """
     jg_ctx: ContextProtocol = ctx.obj
-    id = resolve_selection(id, id_option)
-    downloaded_files = download_job_script_files(id, jg_ctx, pathlib.Path.cwd())
+    job_script_id = resolve_selection(job_script_id, job_script_id_option)
+    downloaded_files = download_job_script_files(job_script_id, jg_ctx, pathlib.Path.cwd())
 
     terminal_message(
         dedent(
@@ -574,8 +574,8 @@ def download_files(
 @app.command()
 def clone(
     ctx: typer.Context,
-    id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be updated."),
-    id_option: Optional[int] = typer.Option(
+    job_script_id: Optional[int] = typer.Argument(None, help="The specific id of the job script to be updated."),
+    job_script_id_option: Optional[int] = typer.Option(
         None,
         "--id",
         "-i",
@@ -594,7 +594,7 @@ def clone(
     Clone an existing job script, so the user can own and modify a copy of it.
     """
     jg_ctx: ContextProtocol = ctx.obj
-    id = resolve_selection(id, id_option)
+    job_script_id = resolve_selection(job_script_id, job_script_id_option)
 
     update_params: Dict[str, Any] = {}
     if name is not None:
@@ -606,7 +606,7 @@ def clone(
         JobScriptResponse,
         make_request(
             jg_ctx.client,
-            f"/jobbergate/job-scripts/clone/{id}",
+            f"/jobbergate/job-scripts/clone/{job_script_id}",
             "POST",
             expected_status=201,
             abort_message="Couldn't clone job script",

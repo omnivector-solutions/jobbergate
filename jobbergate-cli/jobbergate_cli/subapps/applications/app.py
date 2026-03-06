@@ -133,7 +133,7 @@ def get_one(
         None,
         help="The specific id number or identifier of the application to be selected.",
     ),
-    id: Optional[int] = typer.Option(
+    application_id: Optional[int] = typer.Option(
         None,
         "--id",
         "-i",
@@ -149,7 +149,8 @@ def get_one(
     """
     jg_ctx: ContextProtocol = ctx.obj
     result = fetch_application_data(
-        jg_ctx, id_or_identifier=resolve_application_selection(id_or_identifier, id, identifier)
+        jg_ctx,
+        id_or_identifier=resolve_application_selection(id_or_identifier, application_id, identifier),
     )
     render_single_result(
         jg_ctx,
@@ -243,7 +244,7 @@ def update(
         None,
         help="The specific id or identifier of the application to be selected.",
     ),
-    id: Optional[int] = typer.Option(
+    application_id: Optional[int] = typer.Option(
         None,
         "--id",
         "-i",
@@ -280,7 +281,7 @@ def update(
     """
     Update an existing application.
     """
-    identification = resolve_application_selection(id_or_identifier, id, identifier)
+    identification = resolve_application_selection(id_or_identifier, application_id, identifier)
 
     req_data: dict[str, Any] = {}
 
@@ -321,7 +322,7 @@ def update(
         )
         raise e
     finally:
-        if not id and update_identifier:
+        if not application_id and update_identifier:
             # We need to fetch from new identifier if it was updated
             identifier = update_identifier
         result = fetch_application_data(jg_ctx, identification)
@@ -341,7 +342,7 @@ def delete(
         None,
         help="The specific id or identifier of the application to be selected.",
     ),
-    id: Optional[int] = typer.Option(
+    application_id: Optional[int] = typer.Option(
         None,
         "--id",
         "-i",
@@ -357,7 +358,7 @@ def delete(
     """
     jg_ctx: ContextProtocol = ctx.obj
 
-    identification = resolve_application_selection(id_or_identifier, id, identifier)
+    identification = resolve_application_selection(id_or_identifier, application_id, identifier)
 
     # Delete the upload. The API will also remove the application data files
     make_request(
@@ -384,7 +385,7 @@ def download_files(
         None,
         help="The specific id or identifier of the application to be selected.",
     ),
-    id: Optional[int] = typer.Option(
+    application_id: Optional[int] = typer.Option(
         None,
         "--id",
         "-i",
@@ -400,7 +401,10 @@ def download_files(
     """
     jg_ctx: ContextProtocol = ctx.obj
 
-    result = fetch_application_data(jg_ctx, resolve_application_selection(id_or_identifier, id, identifier))
+    result = fetch_application_data(
+        jg_ctx,
+        resolve_application_selection(id_or_identifier, application_id, identifier),
+    )
     saved_files = save_application_files(
         jg_ctx,
         application_data=result,
@@ -423,7 +427,7 @@ def clone(
         None,
         help="The specific id or identifier of the application to be selected.",
     ),
-    id: Optional[int] = typer.Option(
+    application_id: Optional[int] = typer.Option(
         None,
         "--id",
         "-i",
@@ -453,7 +457,7 @@ def clone(
     """
     Clone an application, so the user can own and modify a copy of it.
     """
-    identification = resolve_application_selection(id_or_identifier, id, identifier)
+    identification = resolve_application_selection(id_or_identifier, application_id, identifier)
 
     req_data = {}
 
