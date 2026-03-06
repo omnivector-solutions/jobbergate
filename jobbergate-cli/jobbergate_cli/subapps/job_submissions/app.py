@@ -31,6 +31,8 @@ HIDDEN_FIELDS = [
     "updated_at",
 ]
 
+ID_OPTION_HELP = "Alternative way to specify id"
+
 
 style_mapper = StyleMapper(job_submission_id="green", name="cyan", slurm_job_id="dark_orange")
 
@@ -206,7 +208,7 @@ def get_one(
     job_submission_id: Optional[int] = typer.Argument(
         None, help="The specific id of the job submission to be selected."
     ),
-    job_submission_id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id"),
+    job_submission_id_option: Optional[int] = typer.Option(None, "--id", "-i", help=ID_OPTION_HELP),
 ):
     """
     Show the detailed view of a single job submission by id
@@ -243,7 +245,7 @@ def delete(
         ...,
         "--id",
         "-i",
-        help="Alternative way to specify id",
+        help=ID_OPTION_HELP,
     ),
 ):
     """
@@ -276,7 +278,7 @@ def clone(
         None,
         "--id",
         "-i",
-        help="Alternative way to specify id.",
+        help=f"{ID_OPTION_HELP}.",
     ),
 ):
     """
@@ -312,7 +314,7 @@ def cancel(
     job_submission_id: Optional[int] = typer.Argument(
         None, help="The specific id of the job submission to be cancelled."
     ),
-    job_submission_id_option: Optional[int] = typer.Option(None, "--id", "-i", help="Alternative way to specify id"),
+    job_submission_id_option: Optional[int] = typer.Option(None, "--id", "-i", help=ID_OPTION_HELP),
 ):
     """
     Cancel an existing job submission.

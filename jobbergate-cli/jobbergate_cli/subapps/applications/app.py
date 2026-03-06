@@ -50,6 +50,8 @@ IDENTIFIER_NOTE = """
     An identifier may be added, removed, or changed on an existing application.
 """
 
+SELECT_APPLICATION_HELP = "The specific id or identifier of the application to be selected."
+
 
 style_mapper = StyleMapper(
     application_id="green",
@@ -242,7 +244,7 @@ def update(
     ctx: typer.Context,
     id_or_identifier: Optional[str] = typer.Argument(
         None,
-        help="The specific id or identifier of the application to be selected.",
+        help=SELECT_APPLICATION_HELP,
     ),
     application_id: Optional[int] = typer.Option(
         None,
@@ -340,7 +342,7 @@ def delete(
     ctx: typer.Context,
     id_or_identifier: Optional[str] = typer.Argument(
         None,
-        help="The specific id or identifier of the application to be selected.",
+        help=SELECT_APPLICATION_HELP,
     ),
     application_id: Optional[int] = typer.Option(
         None,
@@ -383,7 +385,7 @@ def download_files(
     ctx: typer.Context,
     id_or_identifier: Optional[str] = typer.Argument(
         None,
-        help="The specific id or identifier of the application to be selected.",
+        help=SELECT_APPLICATION_HELP,
     ),
     application_id: Optional[int] = typer.Option(
         None,
@@ -425,7 +427,7 @@ def clone(
     ctx: typer.Context,
     id_or_identifier: Optional[str] = typer.Argument(
         None,
-        help="The specific id or identifier of the application to be selected.",
+        help=SELECT_APPLICATION_HELP,
     ),
     application_id: Optional[int] = typer.Option(
         None,

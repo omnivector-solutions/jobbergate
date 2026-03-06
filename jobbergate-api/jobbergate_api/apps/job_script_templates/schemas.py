@@ -12,6 +12,8 @@ from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.schemas import LengthLimitedStr, TableResource
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
+EMPTY_STRING_ERROR = "Cannot be an empty string"
+
 job_template_meta_mapper = MetaMapper(
     id=MetaField(
         description="The unique database identifier for the instance",
@@ -115,7 +117,7 @@ class JobTemplateCreateRequest(BaseModel):
         Do not allow a string value to be empty.
         """
         if value == "":
-            raise ValueError("Cannot be an empty string")
+            raise ValueError(EMPTY_STRING_ERROR)
         return value
 
     @field_validator("identifier")
@@ -146,7 +148,7 @@ class JobTemplateCloneRequest(BaseModel):
         Do not allow a string value to be empty.
         """
         if value == "":
-            raise ValueError("Cannot be an empty string")
+            raise ValueError(EMPTY_STRING_ERROR)
         return value
 
     @field_validator("identifier")
@@ -178,7 +180,7 @@ class JobTemplateUpdateRequest(BaseModel):
         Do not allow a string value to be empty.
         """
         if value == "":
-            raise ValueError("Cannot be an empty string")
+            raise ValueError(EMPTY_STRING_ERROR)
         return value
 
     @field_validator("identifier")

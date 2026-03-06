@@ -18,6 +18,8 @@ from jobbergate_core.auth.exceptions import AuthenticationError
 from jobbergate_core.auth.token import Token, TokenType
 from jobbergate_core.tools.requests import Client, RequestHandler
 
+OIDC_TOKEN_ENDPOINT = "/protocol/openid-connect/token"
+
 
 class DeviceCodeData(BaseModel):
     """
@@ -216,7 +218,7 @@ class JobbergateAuthHandler:
             data = (
                 RequestHandler(
                     client=self._client,
-                    url_path="/protocol/openid-connect/token",
+                    url_path=OIDC_TOKEN_ENDPOINT,
                     method="POST",
                     request_kwargs={
                         "data": {
@@ -291,7 +293,7 @@ class JobbergateAuthHandler:
         ):
             request_handler = RequestHandler(
                 client=self._client,
-                url_path="/protocol/openid-connect/token",
+                url_path=OIDC_TOKEN_ENDPOINT,
                 method="POST",
                 request_kwargs={
                     "data": {
@@ -362,7 +364,7 @@ class JobbergateAuthHandler:
         return (
             RequestHandler(
                 client=self._client,
-                url_path="/protocol/openid-connect/token",
+                url_path=OIDC_TOKEN_ENDPOINT,
                 method="POST",
                 request_kwargs={
                     "data": {

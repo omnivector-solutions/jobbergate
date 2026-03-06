@@ -11,6 +11,8 @@ from typing import Any, ClassVar, Sequence
 from buzz import check_expressions
 from loguru import logger
 
+CHECK_PATHS_MESSAGE = "Check paths"
+
 
 def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: list[str], header: str | None = None) -> str:
     """
@@ -73,7 +75,7 @@ class InfoHandler:
     subprocess_handler: SubprocessHandler = field(default_factory=SubprocessHandler)
 
     def __post_init__(self):
-        with check_expressions("Check paths", raise_exc_class=ValueError) as check:
+        with check_expressions(CHECK_PATHS_MESSAGE, raise_exc_class=ValueError) as check:
             check(self.scontrol_path.is_absolute(), "scontrol_path is not an absolute path")
             check(self.scontrol_path.exists(), "scontrol_path does not exist")
 
@@ -113,7 +115,7 @@ class SubmissionHandler:
     sbatch_output_parser: ClassVar[re.Pattern] = re.compile(r"^(?P<id>\d+)(,(?P<cluster_name>.+))?$")
 
     def __post_init__(self):
-        with check_expressions("Check paths", raise_exc_class=ValueError) as check:
+        with check_expressions(CHECK_PATHS_MESSAGE, raise_exc_class=ValueError) as check:
             check(self.sbatch_path.is_absolute(), "sbatch_path is not an absolute path")
             check(self.sbatch_path.exists(), "sbatch_path does not exist")
             check(self.submission_directory.is_absolute(), "submission_directory is not an absolute path")

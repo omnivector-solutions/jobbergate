@@ -17,6 +17,9 @@ down_revision = None
 branch_labels = None
 depends_on = None
 
+EMPTY_JSONB = "'{}'::jsonb"
+JOB_SCRIPT_TEMPLATES_ID = "job_script_templates.id"
+
 
 def upgrade():
     op.create_table(
@@ -25,7 +28,7 @@ def upgrade():
         sa.Column(
             "template_vars",
             postgresql.JSONB(astext_type=sa.Text()),
-            server_default=sa.text("'{}'::jsonb"),
+            server_default=sa.text(EMPTY_JSONB),
             nullable=False,
         ),
         sa.Column("id", sa.Integer(), nullable=False),
@@ -53,7 +56,7 @@ def upgrade():
         sa.Column("filename", sa.String(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
-        sa.ForeignKeyConstraint(["parent_id"], ["job_script_templates.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["parent_id"], [JOB_SCRIPT_TEMPLATES_ID], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("parent_id", "filename"),
     )
     op.create_table(
@@ -66,7 +69,7 @@ def upgrade():
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=True),
         sa.Column("is_archived", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.ForeignKeyConstraint(["parent_template_id"], ["job_script_templates.id"], ondelete="SET NULL"),
+        sa.ForeignKeyConstraint(["parent_template_id"], [JOB_SCRIPT_TEMPLATES_ID], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_job_scripts_name"), "job_scripts", ["name"], unique=False)
@@ -77,13 +80,13 @@ def upgrade():
         sa.Column(
             "runtime_config",
             postgresql.JSONB(astext_type=sa.Text()),
-            server_default=sa.text("'{}'::jsonb"),
+            server_default=sa.text(EMPTY_JSONB),
             nullable=False,
         ),
         sa.Column("filename", sa.String(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
-        sa.ForeignKeyConstraint(["parent_id"], ["job_script_templates.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["parent_id"], [JOB_SCRIPT_TEMPLATES_ID], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("parent_id", "filename"),
     )
     op.create_table(
@@ -122,7 +125,7 @@ def upgrade():
         sa.Column(
             "template_vars",
             postgresql.JSONB(astext_type=sa.Text()),
-            server_default=sa.text("'{}'::jsonb"),
+            server_default=sa.text(EMPTY_JSONB),
             nullable=False,
         ),
         sa.Column("id", sa.Integer(), nullable=False),
