@@ -587,7 +587,7 @@ class TestApplicationRuntime:
         application_runtime._gather_answers()
         assert application_runtime.answers == {"foo": "FOO", "bar": "rab", "baz": "BAZ"}
 
-    def test_gather_config_values__raises_Abort_if_method_not_implemented(
+    def test_gather_config_values__raises_abort_if_method_not_implemented(
         self, application_runtime, dummy_render_class, mocker
     ):
         variablename1 = "foo"

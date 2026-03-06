@@ -10,7 +10,7 @@ from jobbergate_agent.clients.influx import initialize_influx_client
 
 
 @mock.patch("jobbergate_agent.clients.influx.InfluxDBClient")
-def test_client_is_None_if_integration_is_disabled(
+def test_client_is_none_if_integration_is_disabled(
     mocked_InfluxDBClient: mock.MagicMock, tweak_settings: Callable[..., contextlib._GeneratorContextManager]
 ):
     """Test that the client is None if the Influx integration is disabled."""

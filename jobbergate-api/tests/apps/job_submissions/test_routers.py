@@ -333,9 +333,7 @@ async def test_create_job_submission_without_job_script(
     the job_submission still does not exists in the database, the correct status code (404) is returned.
     """
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_CREATE)
-    response = await client.post(
-        "/jobbergate/job-submissions", json=fill_job_submission_data(job_script_id=9999)
-    )
+    response = await client.post("/jobbergate/job-submissions", json=fill_job_submission_data(job_script_id=9999))
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -1508,7 +1506,7 @@ async def test_job_submissions_agent_submitted_cancelled_job__success(
     assert result[0].additional_info is None
 
 
-async def test_job_submissions_agent_submitted__fails_if_status_is_not_CREATED(
+async def test_job_submissions_agent_submitted__fails_if_status_is_not_created(
     fill_job_script_data,
     fill_job_submission_data,
     client,
@@ -1719,7 +1717,7 @@ async def test_job_submissions_agent_rejected__publishes_status_change_to_rabbit
     }
 
 
-async def test_job_submissions_agent_rejected__fails_if_status_is_not_CREATED(
+async def test_job_submissions_agent_rejected__fails_if_status_is_not_created(
     fill_job_script_data,
     fill_job_submission_data,
     client,
@@ -2408,9 +2406,7 @@ async def test_job_submissions_agent_metrics_upload__successful_request(
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    query = select(JobSubmissionMetric).where(
-        JobSubmissionMetric.job_submission_id == inserted_job_submission_id
-    )
+    query = select(JobSubmissionMetric).where(JobSubmissionMetric.job_submission_id == inserted_job_submission_id)
     result = await synth_session.execute(query)
     scalars = result.scalars()
     assert all(
@@ -2759,9 +2755,7 @@ async def test_job_submissions_metrics_timestamps__successful_request(
     await synth_session.execute(query)
 
     inject_security_header("who@cares.com", permission)
-    response = await client.get(
-        f"/jobbergate/job-submissions/{inserted_job_submission_id}/metrics/timestamps"
-    )
+    response = await client.get(f"/jobbergate/job-submissions/{inserted_job_submission_id}/metrics/timestamps")
     assert response.status_code == status.HTTP_200_OK
 
     response_data = response.json()
@@ -2834,9 +2828,7 @@ async def test_job_submissions_metrics_timestamps__job_submission_has_no_metric(
     inserted_job_submission_id = inserted_submission.id
 
     inject_security_header("who@cares.com", permission, client_id="dummy-client")
-    response = await client.get(
-        f"/jobbergate/job-submissions/{inserted_job_submission_id}/metrics/timestamps"
-    )
+    response = await client.get(f"/jobbergate/job-submissions/{inserted_job_submission_id}/metrics/timestamps")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
     response_data = response.json()

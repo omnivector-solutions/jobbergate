@@ -81,7 +81,7 @@ def test_build_db_url__creates_database_url_from_parts(tweak_settings):
         )
 
 
-def test_build_db_url__uses_TEST_prefixed_database_settings_if_passed_the_force_test_flag(tweak_settings):
+def test_build_db_url__uses_test_prefixed_database_settings_if_passed_the_force_test_flag(tweak_settings):
     """
     Provide a test ase for the ``build_db_url()`` function.
 
