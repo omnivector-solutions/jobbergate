@@ -119,7 +119,7 @@ async def job_submission_clone(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_CREATE, ensure_email=True)),
     ],
-    id: int = Path(...),
+    id: Annotated[int, Path()],
 ):
     """Clone a job_submission given its id."""
     logger.info(f"Cloning job submission {id=}")
@@ -155,7 +155,7 @@ async def job_submission_get(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)),
     ],
-    id: int = Path(...),
+    id: Annotated[int, Path()],
 ):
     """Return the job_submission given its id."""
     logger.debug(f"Getting job submission {id=}")
@@ -173,18 +173,9 @@ async def job_submission_get_list(
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)),
     ],
     list_params: Annotated[ListParams, Depends()],
-    slurm_job_ids: str | None = Query(
-        None,
-        description="Comma-separated list of slurm-job-ids to match active job_submissions",
-    ),
-    submit_status: JobSubmissionStatus | None = Query(
-        None,
-        description="Limit results to those with matching status",
-    ),
-    from_job_script_id: int | None = Query(
-        None,
-        description="Filter job-submissions by the job-script-id they were created from.",
-    ),
+    slurm_job_ids: Annotated[str | None, Query(description="Comma-separated list of slurm-job-ids to match active job_submissions")] = None,
+    submit_status: Annotated[JobSubmissionStatus | None, Query(description="Limit results to those with matching status")] = None,
+    from_job_script_id: Annotated[int | None, Query(description="Filter job-submissions by the job-script-id they were created from.")] = None,
 ):
     """List job_submissions for the authenticated user."""
     logger.debug("Fetching job submissions")
@@ -220,7 +211,7 @@ async def job_submission_delete(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_DELETE, ensure_email=True)),
     ],
-    id: int = Path(..., description="id of the job submission to delete"),
+    id: Annotated[int, Path(description="id of the job submission to delete")],
 ):
     """Delete job_submission given its id."""
     logger.info(f"Deleting job submission {id=}")
@@ -245,7 +236,7 @@ async def job_submission_update(
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_email=True)),
     ],
     update_params: JobSubmissionUpdateRequest,
-    id: int = Path(),
+    id: Annotated[int, Path()],
 ):
     """Update a job_submission given its id."""
     logger.debug(f"Updating {id=} with {update_params=}")
@@ -270,7 +261,7 @@ async def job_submission_cancel(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_email=True)),
     ],
-    id: int = Path(),
+    id: Annotated[int, Path()],
 ):
     """Cancel a job_submission given its id."""
     logger.debug(f"Cancelling job submission {id=}")
@@ -329,7 +320,7 @@ async def job_submission_agent_update(
         ),
     ],
     update_params: JobSubmissionAgentUpdateRequest,
-    id: int = Path(),
+    id: Annotated[int, Path()],
 ):
     """
     Update a job_submission with slurm_job_state and slurm_job_info.
@@ -628,7 +619,7 @@ async def job_submissions_agent_metrics_upload(
             )
         ),
     ],
-    body: bytes = Body(..., description="The binary data to upload"),
+    body: Annotated[bytes, Body(description="The binary data to upload")],
 ):
     """Upload metrics for a job submission."""
     logger.debug(f"Agent is uploading metrics for job submission {job_submission_id}")
@@ -704,20 +695,10 @@ async def job_submissions_metrics(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)),
     ],
-    node: str | None = Query(
-        None, description="Filter by node_host. If omitted, metrics will be gathered over all nodes."
-    ),
-    start_time: datetime = Query(
-        datetime.now(tz=timezone.utc) - timedelta(hours=1),
-        description="Start time for the metrics query. Defaults to one hour ago.",
-    ),
-    sample_rate: JobSubmissionMetricSampleRate = Query(
-        JobSubmissionMetricSampleRate.ten_minutes, description="Sample rate in seconds for the metrics query."
-    ),
-    end_time: datetime | None = Query(
-        None,
-        description="End time for the metrics query. If omitted, assume the window to be up to the present.",
-    ),
+    node: Annotated[str | None, Query(description="Filter by node_host. If omitted, metrics will be gathered over all nodes.")] = None,
+    start_time: Annotated[datetime, Query(description="Start time for the metrics query. Defaults to one hour ago.")] = datetime.now(tz=timezone.utc) - timedelta(hours=1),
+    sample_rate: Annotated[JobSubmissionMetricSampleRate, Query(description="Sample rate in seconds for the metrics query.")] = JobSubmissionMetricSampleRate.ten_minutes,
+    end_time: Annotated[datetime | None, Query(description="End time for the metrics query. If omitted, assume the window to be up to the present.")] = None,
 ):
     """Get the metrics for a job submission."""
     logger.debug(f"Getting metrics for job submission {job_submission_id}")
@@ -793,14 +774,8 @@ async def job_submission_progress(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)),
     ],
-    sort_ascending: bool = Query(
-        True,
-        description="Sort the progress entries in ascending order",
-    ),
-    sort_field: str = Query(
-        "timestamp",
-        description="Sort the progress entries by a specific field",
-    ),
+    sort_ascending: Annotated[bool, Query(description="Sort the progress entries in ascending order")] = True,
+    sort_field: Annotated[str, Query(description="Sort the progress entries by a specific field")] = "timestamp",
 ):
     """Get progress entries for a job submission."""
     logger.debug(f"Fetching progress entries for job submission {job_submission_id}")
