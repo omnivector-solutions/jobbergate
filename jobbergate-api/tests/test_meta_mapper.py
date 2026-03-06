@@ -28,7 +28,7 @@ def test___init___successfully_populates_field_dict():
     assert instance.field_dict["baz"].example is None
 
 
-def test___init___fails_if_keyword_argument_is_not_a_MetaField():
+def test___init___fails_if_keyword_argument_is_not_a_meta_field():
     """
     Provide a test case for the ``MetaMapper`` class instantiator.
 

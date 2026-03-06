@@ -295,7 +295,7 @@ async def test_fetch_pending_submissions__success(dummy_job_script_files):
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
-async def test_fetch_pending_submissions__raises_JobbergateApiError_if_response_is_not_200():  # noqa
+async def test_fetch_pending_submissions__raises_jobbergate_api_error_if_response_is_not_200():  # noqa
     """
     Test that the ``fetch_pending_submissions()`` function will raise a
     JobbergateApiError if the response from the API is not OK (200).
@@ -311,7 +311,7 @@ async def test_fetch_pending_submissions__raises_JobbergateApiError_if_response_
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
-async def test_fetch_pending_submissions__raises_JobbergateApiError_if_response_cannot_be_deserialized():  # noqa
+async def test_fetch_pending_submissions__raises_jobbergate_api_error_if_response_cannot_be_deserialized():  # noqa
     """
     Test that the ``fetch_pending_submissions()`` function will raise a
     JobbergateApiError if it fails to convert the response to a PendingJobSubmission.
@@ -363,7 +363,7 @@ async def test_mark_as_submitted__success():
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
-async def test_mark_as_submitted__raises_JobbergateApiError_if_the_response_is_not_200():
+async def test_mark_as_submitted__raises_jobbergate_api_error_if_the_response_is_not_200():
     """
     Test that the ``mark_as_submitted()`` function will raise a JobbergateApiError if
     the response from the API is not OK (200).
@@ -406,7 +406,7 @@ async def test_mark_as_rejected__success():
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
-async def test_mark_as_rejected__raises_JobbergateApiError_if_the_response_is_not_200():
+async def test_mark_as_rejected__raises_jobbergate_api_error_if_the_response_is_not_200():
     """
     Test that the ``mark_as_rejected()`` function will raise a JobbergateApiError if
     the response from the API is not OK (200).

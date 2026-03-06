@@ -65,7 +65,7 @@ def test__deserialize_request_model__success():
     assert request_kwargs["headers"] == {"Content-Type": "application/json"}
 
 
-def test__deserialize_request_model__raises_Abort_if_request_kwargs_already_has_other_body_parts():
+def test__deserialize_request_model__raises_abort_if_request_kwargs_already_has_other_body_parts():
     """
     Validate that the ``_deserialize_request_model`` raises an Abort if the ``request_kwargs`` already has a "body" part
     (``data``, ``json``, or ``content``).
@@ -126,7 +126,7 @@ def test_make_request__success(respx_mock, dummy_client):
     assert dummy_response_instance.bar == "one"
 
 
-def test_make_request__raises_Abort_if_client_request_raises_exception(respx_mock, dummy_client):
+def test_make_request__raises_abort_if_client_request_raises_exception(respx_mock, dummy_client):
     """
     Validate that the ``make_request()`` function will raise an Abort if the call to ``client.send`` raises an
     exception.
@@ -147,7 +147,7 @@ def test_make_request__raises_Abort_if_client_request_raises_exception(respx_moc
     assert err_info.value.original_error == original_error
 
 
-def test_make_request__raises_Abort_with_ownership_message_for_403_for_non_owners(respx_mock, dummy_client):
+def test_make_request__raises_abort_with_ownership_message_for_403_for_non_owners(respx_mock, dummy_client):
     """
     Validate that the ``make_request()`` function will raise an Abort if the ``expected_status`` arg is set and it
     does not match the status code of the response. Further verify that message is attached telling the user that
@@ -183,7 +183,7 @@ def test_make_request__raises_Abort_with_ownership_message_for_403_for_non_owner
     assert err_info.value.original_error is None
 
 
-def test_make_request__raises_Abort_when_expected_status_is_not_None_and_response_status_does_not_match_it(
+def test_make_request__raises_abort_when_expected_status_is_not_none_and_response_status_does_not_match_it(
     respx_mock, dummy_client
 ):
     """
@@ -221,7 +221,7 @@ def test_make_request__raises_Abort_when_expected_status_is_not_None_and_respons
     assert err_info.value.original_error is None
 
 
-def test_make_request__does_not_raise_Abort_when_expected_status_is_None_and_response_status_is_a_fail_code(
+def test_make_request__does_not_raise_abort_when_expected_status_is_none_and_response_status_is_a_fail_code(
     respx_mock, dummy_client
 ):
     """
@@ -247,7 +247,7 @@ def test_make_request__does_not_raise_Abort_when_expected_status_is_None_and_res
     assert err.error == "It blowed up"
 
 
-def test_make_request__returns_the_response_status_code_if_the_method_is_DELETE(respx_mock, dummy_client):
+def test_make_request__returns_the_response_status_code_if_the_method_is_delete(respx_mock, dummy_client):
     """
     Validate that the ``make_request()`` function will return None if the ``method`` arg is DELETE and the request
     was successfull.
@@ -265,7 +265,7 @@ def test_make_request__returns_the_response_status_code_if_the_method_is_DELETE(
     assert make_request(client, req_path, "DELETE") == httpx.codes.OK
 
 
-def test_make_request__returns_the_response_status_code_if_expect_response_is_False(respx_mock, dummy_client):
+def test_make_request__returns_the_response_status_code_if_expect_response_is_false(respx_mock, dummy_client):
     """
     Validate that the ``make_request()`` function will return None if the ``expect_response`` arg is False and the
     request was successfull.
@@ -280,7 +280,7 @@ def test_make_request__returns_the_response_status_code_if_expect_response_is_Fa
     assert make_request(client, req_path, "POST", expect_response=False) == httpx.codes.BAD_REQUEST
 
 
-def test_make_request__raises_an_Abort_if_the_response_cannot_be_deserialized_with_JSON(respx_mock, dummy_client):
+def test_make_request__raises_an_abort_if_the_response_cannot_be_deserialized_with_json(respx_mock, dummy_client):
     """
     Validate that the ``make_request()`` function will raise an Abort if the response is not JSON de-serializable.
     """
@@ -304,7 +304,7 @@ def test_make_request__raises_an_Abort_if_the_response_cannot_be_deserialized_wi
     assert isinstance(err_info.value.original_error, json.decoder.JSONDecodeError)
 
 
-def test_make_request__returns_a_plain_dict_if_response_model_cls_is_None(respx_mock, dummy_client):
+def test_make_request__returns_a_plain_dict_if_response_model_cls_is_none(respx_mock, dummy_client):
     """
     Validate that the ``make_request()`` function will return a plain dictionary containing the response data if the
     ``response_model_cls`` argument is not supplied.
@@ -322,7 +322,7 @@ def test_make_request__returns_a_plain_dict_if_response_model_cls_is_None(respx_
     assert make_request(client, req_path, "GET") == {"a": 1, "b": 2, "c": 3}
 
 
-def test_make_request__raises_an_Abort_if_the_response_data_cannot_be_serialized_into_the_response_model_cls(
+def test_make_request__raises_an_abort_if_the_response_data_cannot_be_serialized_into_the_response_model_cls(
     respx_mock, dummy_client
 ):
     """
@@ -390,7 +390,7 @@ def test_make_request__uses_request_model_instance_for_request_body_if_passed(re
     assert dummy_route.calls.last.request.headers["Content-Type"] == "application/json"
 
 
-def test_make_request__can_use_unpack_response_into_ListResponseEnvelope(respx_mock, dummy_client):
+def test_make_request__can_use_unpack_response_into_list_response_envelope(respx_mock, dummy_client):
     """
     Validate that the ``make_request()`` function will use a pydantic model instance to build the body of the request if
     the ``request_model`` argument is passed.

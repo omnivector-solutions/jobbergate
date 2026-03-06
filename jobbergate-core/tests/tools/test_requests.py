@@ -62,7 +62,7 @@ def test__deserialize_request_model__success():
     assert request_kwargs["headers"] == {"Content-Type": "application/json"}
 
 
-def test__deserialize_request_model__raises_Abort_if_request_kwargs_already_has_other_body_parts():
+def test__deserialize_request_model__raises_abort_if_request_kwargs_already_has_other_body_parts():
     """
     Validate that the ``_deserialize_request_model`` raises an Abort if the ``request_kwargs`` already has a "body" part
     (``data``, ``json``, or ``content``).

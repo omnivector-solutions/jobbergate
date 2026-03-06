@@ -91,7 +91,7 @@ async def test_publish_status_change__default_exchange(synth_services, tester_em
     }
 
 
-async def test_publish_status_change__does_nothing_if_RABBITMQ_HOST_is_undefined(
+async def test_publish_status_change__does_nothing_if_rabbitmq_host_is_undefined(
     synth_services,
     tester_email,
     tweak_settings,
