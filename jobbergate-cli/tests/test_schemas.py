@@ -9,20 +9,20 @@ EnvelopeT = TypeVar("EnvelopeT")
 
 
 def test_list_response_envelope_with_plain_dict():
-    data = dict(
-        items=[
-            dict(name="item-1"),
-            dict(name="item-2"),
+    data = {
+        "items": [
+            {"name": "item-1"},
+            {"name": "item-2"},
         ],
-        total=2,
-        page=0,
-        size=5,
-        pages=1,
-    )
+        "total": 2,
+        "page": 0,
+        "size": 5,
+        "pages": 1,
+    }
     envelope: ListResponseEnvelope[Dict[str, Any]] = ListResponseEnvelope[Dict[str, Any]](**data)
     assert envelope.items == [
-        dict(name="item-1"),
-        dict(name="item-2"),
+        {"name": "item-1"},
+        {"name": "item-2"},
     ]
     assert envelope.total == 2
     assert envelope.page == 0
@@ -31,16 +31,16 @@ def test_list_response_envelope_with_plain_dict():
 
 
 def test_list_envelope_with_nested_model():
-    data = dict(
-        items=[
-            dict(name="item-1"),
-            dict(name="item-2"),
+    data = {
+        "items": [
+            {"name": "item-1"},
+            {"name": "item-2"},
         ],
-        total=2,
-        page=0,
-        size=5,
-        pages=1,
-    )
+        "total": 2,
+        "page": 0,
+        "size": 5,
+        "pages": 1,
+    }
 
     class DummyModel(BaseModel):
         name: str

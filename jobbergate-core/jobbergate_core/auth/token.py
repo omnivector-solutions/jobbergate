@@ -90,17 +90,17 @@ class Token:
             data = decode(
                 token=self.content,
                 key="secret-will-be-ignored",
-                options=dict(
-                    verify_signature=False,
-                    verify_aud=False,
-                    verify_iat=False,
-                    verify_exp=False,
-                    verify_nbf=False,
-                    verify_iss=False,
-                    verify_sub=False,
-                    verify_jti=False,
-                    verify_at_hash=False,
-                ),
+                options={
+                    "verify_signature": False,
+                    "verify_aud": False,
+                    "verify_iat": False,
+                    "verify_exp": False,
+                    "verify_nbf": False,
+                    "verify_iss": False,
+                    "verify_sub": False,
+                    "verify_jti": False,
+                    "verify_at_hash": False,
+                },
             )
 
         return TokenData(**data)

@@ -20,7 +20,7 @@ def dummy_handled_function(dummy_exception):
         original_error: Exception = dummy_exception,
         add_sentry_context: bool = True,
     ):
-        sentry_kwarg = dict(sentry_context=dict(blast=True)) if add_sentry_context else dict()
+        sentry_kwarg = {"sentry_context": {"blast": True}} if add_sentry_context else {}
         raise Abort(
             message,
             subject=subject,

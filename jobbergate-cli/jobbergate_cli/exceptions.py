@@ -86,7 +86,7 @@ def handle_abort(func):
                         sentry_sdk.capture_exception(err.original_error if err.original_error is not None else err)
                         sentry_sdk.flush()
 
-            panel_kwargs = dict()
+            panel_kwargs = {}
             if err.subject is not None:
                 panel_kwargs["title"] = f"[red]{err.subject}"
             message = dedent(err.message)

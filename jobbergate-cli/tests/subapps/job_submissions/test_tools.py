@@ -109,14 +109,14 @@ class TestJobSubmissionsGetRequestData:
     def test_handle_request_data__on_site(self, dummy_context, attach_persona):
         attach_persona("dummy@dummy.com")
 
-        dummy_data = dict(
-            job_script_id=1,
-            name="test",
-            execution_directory=pathlib.Path("/some/fake/path"),
-            sbatch_arguments=["--partition=debug", "--time=1:00:00"],
-            description="test description",
-            cluster_name="test-cluster",
-        )
+        dummy_data = {
+            "job_script_id": 1,
+            "name": "test",
+            "execution_directory": pathlib.Path("/some/fake/path"),
+            "sbatch_arguments": ["--partition=debug", "--time=1:00:00"],
+            "description": "test description",
+            "cluster_name": "test-cluster",
+        }
 
         submission_handler = OnsiteJobSubmission(jg_ctx=dummy_context, download=True, **dummy_data)
 
@@ -132,14 +132,14 @@ class TestJobSubmissionsGetRequestData:
     def test_handle_request_data__remote(self, dummy_context, attach_persona, dummy_domain, respx_mock):
         attach_persona("dummy@dummy.com")
 
-        dummy_data = dict(
-            job_script_id=1,
-            name="test",
-            execution_directory=pathlib.Path("/some/fake/path"),
-            sbatch_arguments=["--partition=debug", "--time=1:00:00"],
-            description="test description",
-            cluster_name="test-cluster",
-        )
+        dummy_data = {
+            "job_script_id": 1,
+            "name": "test",
+            "execution_directory": pathlib.Path("/some/fake/path"),
+            "sbatch_arguments": ["--partition=debug", "--time=1:00:00"],
+            "description": "test description",
+            "cluster_name": "test-cluster",
+        }
 
         submission_handler = RemoteJobSubmission(jg_ctx=dummy_context, download=True, **dummy_data)
 

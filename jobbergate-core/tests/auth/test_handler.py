@@ -211,10 +211,10 @@ class TestJobbergateAuthHandlerRefreshTokens:
         respx_mock.post(endpoint).mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
-                json=dict(
-                    access_token=refreshed_access_token_content,
-                    refresh_token=refreshed_refresh_token_content,
-                ),
+                json={
+                    "access_token": refreshed_access_token_content,
+                    "refresh_token": refreshed_refresh_token_content,
+                },
             ),
         )
 
@@ -304,12 +304,12 @@ class TestJobbergateAuthHandlerLogin:
         device_mock = respx_mock.post(device_endpoint).mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
-                json=dict(
-                    device_code="dummy-code",
-                    verification_uri_complete="https://dummy-uri.com",
-                    interval=1,
-                    expires_in=0.5,
-                ),
+                json={
+                    "device_code": "dummy-code",
+                    "verification_uri_complete": "https://dummy-uri.com",
+                    "interval": 1,
+                    "expires_in": 0.5,
+                },
             ),
         )
 
@@ -317,10 +317,10 @@ class TestJobbergateAuthHandlerLogin:
         token_mock = respx_mock.post(token_endpoint).mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
-                json=dict(
-                    access_token=valid_token.content,
-                    refresh_token=valid_token.content,
-                ),
+                json={
+                    "access_token": valid_token.content,
+                    "refresh_token": valid_token.content,
+                },
             ),
         )
 
@@ -344,12 +344,12 @@ class TestJobbergateAuthHandlerLogin:
         device_mock = respx_mock.post(device_endpoint).mock(
             return_value=httpx.Response(
                 httpx.codes.OK,
-                json=dict(
-                    device_code="dummy-code",
-                    verification_uri_complete="https://dummy-uri.com",
-                    interval=1,
-                    expires_in=1e-8,  # very small value to force timeout
-                ),
+                json={
+                    "device_code": "dummy-code",
+                    "verification_uri_complete": "https://dummy-uri.com",
+                    "interval": 1,
+                    "expires_in": 1e-8,  # very small value to force timeout
+                },
             ),
         )
 
@@ -383,7 +383,7 @@ class TestJobbergateAuthHandlerFromSecret:
 
         endpoint = f"{secret_jobbergate_auth.login_domain}/protocol/openid-connect/token"
         mocked = respx_mock.post(endpoint).mock(
-            return_value=httpx.Response(httpx.codes.OK, json=dict(access_token=valid_token.content)),
+            return_value=httpx.Response(httpx.codes.OK, json={"access_token": valid_token.content}),
         )
 
         secret_jobbergate_auth.get_access_from_secret()

@@ -322,7 +322,7 @@ def load_application_from_source(app_source: str) -> type[JobbergateApplicationB
     Args:
         app_source: The JobbergateApplication source code to load
     """
-    app_locals: Dict[str, Any] = dict()
+    app_locals: Dict[str, Any] = {}
     exec(app_source, app_locals, app_locals)
     return app_locals["JobbergateApplication"]
 
@@ -346,7 +346,7 @@ class ApplicationRuntime:
     fast_mode: bool = False
 
     def __post_init__(self) -> None:
-        self.answers: Dict[str, Any] = dict()
+        self.answers: Dict[str, Any] = {}
 
     @cached_property
     def app_config(self) -> JobbergateApplicationConfig:

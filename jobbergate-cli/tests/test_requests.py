@@ -24,7 +24,7 @@ def dummy_client():
         Create the dummy httpx client.
         """
         if headers is None:
-            headers = dict()
+            headers = {}
 
         return httpx.Client(base_url=base_url, headers=headers)
 
@@ -54,14 +54,14 @@ def test__deserialize_request_model__success():
     the ``content`` part of the ``request_kwargs``. Also, validate that the ``content-type`` part of the request is set
     to ``application/json``.
     """
-    request_kwargs = dict()
+    request_kwargs = {}
     _deserialize_request_model(
         DummyResponseModel(foo=1, bar="one"),
         request_kwargs,
         "Abort message does not matter here",
         "Whatever Subject",
     )
-    assert json.loads(request_kwargs["content"]) == dict(foo=1, bar="one")
+    assert json.loads(request_kwargs["content"]) == {"foo": 1, "bar": "one"}
     assert request_kwargs["headers"] == {"Content-Type": "application/json"}
 
 
@@ -73,7 +73,7 @@ def test__deserialize_request_model__raises_Abort_if_request_kwargs_already_has_
     with pytest.raises(Abort, match="Request was incorrectly structured"):
         _deserialize_request_model(
             DummyResponseModel(foo=1, bar="one"),
-            dict(data=dict(foo=11)),
+            {"data": {"foo": 11}},
             "Abort message does not matter here",
             "Whatever Subject",
         )
@@ -81,7 +81,7 @@ def test__deserialize_request_model__raises_Abort_if_request_kwargs_already_has_
     with pytest.raises(Abort, match="Request was incorrectly structured"):
         _deserialize_request_model(
             DummyResponseModel(foo=1, bar="one"),
-            dict(json=dict(foo=11)),
+            {"json": {"foo": 11}},
             "Abort message does not matter here",
             "Whatever Subject",
         )
@@ -89,7 +89,7 @@ def test__deserialize_request_model__raises_Abort_if_request_kwargs_already_has_
     with pytest.raises(Abort, match="Request was incorrectly structured"):
         _deserialize_request_model(
             DummyResponseModel(foo=1, bar="one"),
-            dict(content=json.dumps(dict(foo=11))),
+            {"content": json.dumps({"foo": 11})},
             "Abort message does not matter here",
             "Whatever Subject",
         )
@@ -108,10 +108,10 @@ def test_make_request__success(respx_mock, dummy_client):
     respx_mock.get(f"{DEFAULT_DOMAIN}{req_path}").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
-            json=dict(
-                foo=1,
-                bar="one",
-            ),
+            json={
+                "foo": 1,
+                "bar": "one",
+            },
         ),
     )
     dummy_response_instance = make_request(
@@ -159,7 +159,7 @@ def test_make_request__raises_Abort_with_ownership_message_for_403_for_non_owner
     respx_mock.delete(f"{DEFAULT_DOMAIN}{req_path}").mock(
         return_value=httpx.Response(
             httpx.codes.FORBIDDEN,
-            json=dict(detail="This jabroni does not own this whingding"),
+            json={"detail": "This jabroni does not own this whingding"},
         ),
     )
 
@@ -234,7 +234,7 @@ def test_make_request__does_not_raise_Abort_when_expected_status_is_None_and_res
     respx_mock.get(f"{DEFAULT_DOMAIN}{req_path}").mock(
         return_value=httpx.Response(
             httpx.codes.BAD_REQUEST,
-            json=dict(error="It blowed up"),
+            json={"error": "It blowed up"},
         ),
     )
 
@@ -258,7 +258,7 @@ def test_make_request__returns_the_response_status_code_if_the_method_is_DELETE(
     respx_mock.delete(f"{DEFAULT_DOMAIN}{req_path}").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
-            json=dict(error="It blowed up"),
+            json={"error": "It blowed up"},
         ),
     )
 
@@ -315,11 +315,11 @@ def test_make_request__returns_a_plain_dict_if_response_model_cls_is_None(respx_
     respx_mock.get(f"{DEFAULT_DOMAIN}{req_path}").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
-            json=dict(a=1, b=2, c=3),
+            json={"a": 1, "b": 2, "c": 3},
         ),
     )
 
-    assert make_request(client, req_path, "GET") == dict(a=1, b=2, c=3)
+    assert make_request(client, req_path, "GET") == {"a": 1, "b": 2, "c": 3}
 
 
 def test_make_request__raises_an_Abort_if_the_response_data_cannot_be_serialized_into_the_response_model_cls(
@@ -335,7 +335,7 @@ def test_make_request__raises_an_Abort_if_the_response_data_cannot_be_serialized
     respx_mock.get(f"{DEFAULT_DOMAIN}{req_path}").mock(
         return_value=httpx.Response(
             httpx.codes.OK,
-            json=dict(a=1, b=2, c=3),
+            json={"a": 1, "b": 2, "c": 3},
         ),
     )
 
@@ -351,7 +351,7 @@ def test_make_request__raises_an_Abort_if_the_response_data_cannot_be_serialized
         )
     assert err_info.value.subject == "BIG PROBLEM"
     assert err_info.value.support is True
-    assert err_info.value.log_message == f"Unexpected format in response data: {dict(a=1, b=2, c=3)}"
+    assert err_info.value.log_message == f"Unexpected format in response data: { {'a': 1, 'b': 2, 'c': 3} }"
     assert isinstance(err_info.value.original_error, pydantic.ValidationError)
 
 
@@ -368,10 +368,10 @@ def test_make_request__uses_request_model_instance_for_request_body_if_passed(re
     dummy_route.mock(
         return_value=httpx.Response(
             httpx.codes.CREATED,
-            json=dict(
-                foo=1,
-                bar="one",
-            ),
+            json={
+                "foo": 1,
+                "bar": "one",
+            },
         ),
     )
     dummy_response_instance = make_request(
@@ -386,7 +386,7 @@ def test_make_request__uses_request_model_instance_for_request_body_if_passed(re
     assert dummy_response_instance.foo == 1
     assert dummy_response_instance.bar == "one"
 
-    assert json.loads(dummy_route.calls.last.request.content.decode()) == dict(foo=1, bar="one")
+    assert json.loads(dummy_route.calls.last.request.content.decode()) == {"foo": 1, "bar": "one"}
     assert dummy_route.calls.last.request.headers["Content-Type"] == "application/json"
 
 
@@ -403,17 +403,17 @@ def test_make_request__can_use_unpack_response_into_ListResponseEnvelope(respx_m
     dummy_route.mock(
         return_value=httpx.Response(
             httpx.codes.CREATED,
-            json=dict(
-                items=[
-                    dict(foo=1, bar="one"),
-                    dict(foo=2, bar="two"),
-                    dict(foo=3, bar="three"),
+            json={
+                "items": [
+                    {"foo": 1, "bar": "one"},
+                    {"foo": 2, "bar": "two"},
+                    {"foo": 3, "bar": "three"},
                 ],
-                total=3,
-                page=0,
-                size=5,
-                pages=1,
-            ),
+                "total": 3,
+                "page": 0,
+                "size": 5,
+                "pages": 1,
+            },
         ),
     )
     dummy_response_instance = make_request(
@@ -435,5 +435,5 @@ def test_make_request__can_use_unpack_response_into_ListResponseEnvelope(respx_m
     assert dummy_response_instance.size == 5
     assert dummy_response_instance.pages == 1
 
-    assert json.loads(dummy_route.calls.last.request.content.decode()) == dict(foo=1, bar="one")
+    assert json.loads(dummy_route.calls.last.request.content.decode()) == {"foo": 1, "bar": "one"}
     assert dummy_route.calls.last.request.headers["Content-Type"] == "application/json"

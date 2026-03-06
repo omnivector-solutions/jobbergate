@@ -98,7 +98,7 @@ def list_all(
     """
     jg_ctx: ContextProtocol = ctx.obj
 
-    params: Dict[str, Any] = dict(user_only=not show_all, include_archived=include_archived)
+    params: Dict[str, Any] = {"user_only": not show_all, "include_archived": include_archived}
     if search is not None:
         params["search"] = search
     if sort_order is not SortOrder.UNSORTED:
@@ -465,7 +465,7 @@ def update(
     jg_ctx: ContextProtocol = ctx.obj
     id = resolve_selection(id, id_option)
 
-    update_params: dict[str, Any] = dict()
+    update_params: dict[str, Any] = {}
     if name is not None:
         update_params.update(name=name)
     if description is not None:
@@ -607,7 +607,7 @@ def clone(
     jg_ctx: ContextProtocol = ctx.obj
     id = resolve_selection(id, id_option)
 
-    update_params: Dict[str, Any] = dict()
+    update_params: Dict[str, Any] = {}
     if name is not None:
         update_params.update(name=name)
     if description is not None:

@@ -373,19 +373,19 @@ class TestApplicationRuntime:
         dummy_render_class,
         mocker,
     ):
-        dummy_render_class.prepared_input = dict(
-            foo="FOO",
-            bar="BAR",
-            baz="BAZ",
-        )
+        dummy_render_class.prepared_input = {
+            "foo": "FOO",
+            "bar": "BAR",
+            "baz": "BAZ",
+        }
         mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
 
         application_runtime.execute_application()
-        assert application_runtime.answers == dict(
-            foo="FOO",
-            bar="BAR",
-            baz="BAZ",
-        )
+        assert application_runtime.answers == {
+            "foo": "FOO",
+            "bar": "BAR",
+            "baz": "BAZ",
+        }
 
     def test_execute_application__with_supplied_params(
         self,
@@ -393,20 +393,20 @@ class TestApplicationRuntime:
         dummy_render_class,
         mocker,
     ):
-        dummy_render_class.prepared_input = dict(
-            foo="FOO",
-            bar="BAR",
-            baz="BAZ",
-        )
+        dummy_render_class.prepared_input = {
+            "foo": "FOO",
+            "bar": "BAR",
+            "baz": "BAZ",
+        }
         mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
 
-        application_runtime.supplied_params = dict(foo="oof")
+        application_runtime.supplied_params = {"foo": "oof"}
         application_runtime.execute_application()
-        assert application_runtime.answers == dict(
-            foo="oof",
-            bar="BAR",
-            baz="BAZ",
-        )
+        assert application_runtime.answers == {
+            "foo": "oof",
+            "bar": "BAR",
+            "baz": "BAZ",
+        }
 
     def test_execute_application__with_fast_mode(
         self,
@@ -414,21 +414,21 @@ class TestApplicationRuntime:
         dummy_render_class,
         mocker,
     ):
-        dummy_render_class.prepared_input = dict(
-            foo="FOO",
-            bar="BAR",
-            baz="BAZ",
-        )
+        dummy_render_class.prepared_input = {
+            "foo": "FOO",
+            "bar": "BAR",
+            "baz": "BAZ",
+        }
         mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
 
         application_runtime.fast_mode = True
 
         application_runtime.execute_application()
-        assert application_runtime.answers == dict(
-            foo="FOO",
-            bar="BAR",
-            baz="zab",  # Only 'baz' has a default value, so it should be used
-        )
+        assert application_runtime.answers == {
+            "foo": "FOO",
+            "bar": "BAR",
+            "baz": "zab",  # Only 'baz' has a default value, so it should be used
+        }
 
     def test_set_name_dynamically(self, application_runtime):
         class DummyApplication(JobbergateApplicationBase):
@@ -489,19 +489,19 @@ class TestApplicationRuntime:
                 return [question3]
 
         application_runtime.app_module = DummyApplication(application_runtime.app_config.model_dump())
-        dummy_render_class.prepared_input = dict(
-            foo="FOO",
-            bar="BAR",
-            baz="BAZ",
-        )
+        dummy_render_class.prepared_input = {
+            "foo": "FOO",
+            "bar": "BAR",
+            "baz": "BAZ",
+        }
 
         mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
         application_runtime._gather_answers()
-        assert application_runtime.answers == dict(
-            foo="FOO",
-            bar="BAR",
-            baz="BAZ",
-        )
+        assert application_runtime.answers == {
+            "foo": "FOO",
+            "bar": "BAR",
+            "baz": "BAZ",
+        }
 
     def test_gather_config_values__returning_none(self, application_runtime, dummy_render_class, mocker):
         """
@@ -525,11 +525,11 @@ class TestApplicationRuntime:
                 return None
 
         application_runtime.app_module = DummyApplication(application_runtime.app_config.model_dump())
-        dummy_render_class.prepared_input = dict(foo="FOO", bar="BAR", baz="BAZ")
+        dummy_render_class.prepared_input = {"foo": "FOO", "bar": "BAR", "baz": "BAZ"}
 
         mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
         application_runtime._gather_answers()
-        assert application_runtime.answers == dict(foo="FOO", bar="BAR")
+        assert application_runtime.answers == {"foo": "FOO", "bar": "BAR"}
 
     def test_gather_config_values__fast_mode(self, application_runtime, dummy_render_class, mocker):
         variablename1 = "foo"
@@ -551,11 +551,11 @@ class TestApplicationRuntime:
 
         application_runtime.app_module = DummyApplication(application_runtime.app_config.model_dump())
         application_runtime.fast_mode = True
-        dummy_render_class.prepared_input = dict(foo="FOO", bar="BAR", baz="BAZ")
+        dummy_render_class.prepared_input = {"foo": "FOO", "bar": "BAR", "baz": "BAZ"}
 
         mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
         application_runtime._gather_answers()
-        assert application_runtime.answers == dict(foo="oof", bar="BAR", baz="BAZ")
+        assert application_runtime.answers == {"foo": "oof", "bar": "BAR", "baz": "BAZ"}
 
     def test_gather_config_values__skips_supplied_params(self, application_runtime, dummy_render_class, mocker):
         variablename1 = "foo"
@@ -576,16 +576,16 @@ class TestApplicationRuntime:
                 return [question3]
 
         application_runtime.app_module = DummyApplication(application_runtime.app_config.model_dump())
-        application_runtime.supplied_params = dict(bar="rab")
-        dummy_render_class.prepared_input = dict(
-            foo="FOO",
-            bar="BAR",
-            baz="BAZ",
-        )
+        application_runtime.supplied_params = {"bar": "rab"}
+        dummy_render_class.prepared_input = {
+            "foo": "FOO",
+            "bar": "BAR",
+            "baz": "BAZ",
+        }
 
         mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
         application_runtime._gather_answers()
-        assert application_runtime.answers == dict(foo="FOO", bar="rab", baz="BAZ")
+        assert application_runtime.answers == {"foo": "FOO", "bar": "rab", "baz": "BAZ"}
 
     def test_gather_config_values__raises_Abort_if_method_not_implemented(
         self, application_runtime, dummy_render_class, mocker
@@ -602,9 +602,9 @@ class TestApplicationRuntime:
                 raise NotImplementedError("BOOM!")
 
         application_runtime.app_module = DummyApplication(application_runtime.app_config.model_dump())
-        dummy_render_class.prepared_input = dict(
-            foo="FOO",
-        )
+        dummy_render_class.prepared_input = {
+            "foo": "FOO",
+        }
 
         mocker.patch.object(importlib.import_module("inquirer.prompt"), "ConsoleRender", new=dummy_render_class)
         with pytest.raises(Abort, match="not implemented"):
