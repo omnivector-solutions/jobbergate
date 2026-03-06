@@ -364,6 +364,15 @@ async def submit_pending_jobs() -> None:
             logger.error(f"{message} for job submission {pending_job.id}")
             await mark_as_rejected(pending_job.id, message)
             continue
+        except Exception as e:
+            logger.error(
+                "Transient error resolving username for job submission {} (owner_email={}): {}. "
+                "Will retry on next cycle.",
+                pending_job.id,
+                pending_job.owner_email,
+                e,
+            )
+            continue
 
         try:
             for strategy in plugin_manager.hook.pending_submission(

@@ -1,6 +1,7 @@
 """This module contains the UserDatabase class."""
 
 import sqlite3
+import ssl
 from collections.abc import MutableMapping
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -8,7 +9,9 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, Iterator
 
-from ldap3 import NTLM, RESTARTABLE, Connection
+import certifi
+from ldap3 import RESTARTABLE, Connection, Server, Tls
+from ldap3.core.exceptions import LDAPExceptionError
 from ldap3.utils.conv import escape_filter_chars
 from loguru import logger
 from pydantic import BaseModel, EmailStr, field_validator
@@ -21,38 +24,12 @@ class LDAPSettings(BaseSettings):
     """Settings for the LDAP plugin."""
 
     LDAP_DOMAIN: str
-    LDAP_USERNAME: str
     LDAP_PASSWORD: str
+    LDAP_BIND_DN: str
+    LDAP_SEARCH_BASE: str
+    LDAP_UID_ATTRIBUTE: str = "uid"
 
     model_config = SettingsConfigDict(env_prefix="JOBBERGATE_AGENT_", env_file=_get_env_file(), extra="ignore")
-
-    @field_validator("LDAP_DOMAIN")
-    def validate_ldap_domain(cls, value: str) -> str:  # noqa: N805
-        """Validate that LDAP_DOMAIN is a valid dot-separated domain name.
-
-        Args:
-            value: The LDAP_DOMAIN value to validate.
-
-        Returns:
-            str: The validated LDAP_DOMAIN value.
-
-        Raises:
-            ValueError: If LDAP_DOMAIN is empty or doesn't contain at least one dot.
-        """
-        if not value or not value.strip():
-            raise ValueError("LDAP_DOMAIN cannot be empty")
-
-        if "." not in value:
-            raise ValueError("LDAP_DOMAIN must be a dot-separated domain name (e.g., 'example.com')")
-
-        # Check that after splitting by dots, we have at least 2 non-empty parts
-        parts = [part.strip() for part in value.split(".")]
-        if len(parts) < 2 or any(not part for part in parts):
-            raise ValueError(
-                "LDAP_DOMAIN must be a valid dot-separated domain name with at least two parts (e.g., 'example.com')"
-            )
-
-        return value
 
     @property
     def db_path(self) -> Path:
@@ -74,61 +51,73 @@ class UserDetails(BaseModel):
 
 @contextmanager
 def ldap_connection(ldap_settings: LDAPSettings) -> Iterator[Connection]:
-    """Context manager that yields a LDAP connection, closing appropriately."""
-    logger.debug("Starting connection with MSAD server")
+    """Context manager that yields an LDAPS connection, closing appropriately."""
+    logger.debug("Starting LDAPS connection to {}", ldap_settings.LDAP_DOMAIN)
 
-    msad_ldap_conn = Connection(
-        server=ldap_settings.LDAP_DOMAIN,
-        user=f"{ldap_settings.LDAP_DOMAIN}\\{ldap_settings.LDAP_USERNAME}",
+    tls_config = Tls(validate=ssl.CERT_REQUIRED, ca_certs_file=certifi.where())
+
+    server = Server(
+        ldap_settings.LDAP_DOMAIN,
+        port=636,
+        use_ssl=True,
+        tls=tls_config,
+    )
+
+    ldap_conn = Connection(
+        server,
+        user=ldap_settings.LDAP_BIND_DN,
         password=ldap_settings.LDAP_PASSWORD,
-        authentication=NTLM,
-        auto_bind="NONE",
+        authentication="SIMPLE",
         client_strategy=RESTARTABLE,
     )
 
     try:
-        msad_ldap_conn.start_tls()
-        if not msad_ldap_conn.bind():
-            raise RuntimeError("Couldn't open a connection to MSAD")
+        if not ldap_conn.bind():
+            raise RuntimeError(
+                f"Couldn't bind to LDAP server: {ldap_conn.result}"
+            )
 
-        logger.debug("Connected to MSAD server")
-        yield msad_ldap_conn
+        logger.debug("Connected to LDAP server")
+        yield ldap_conn
 
     finally:
         try:
-            msad_ldap_conn.unbind()
-            logger.debug("Closed connection to MSAD server")
+            ldap_conn.unbind()
+            logger.debug("Closed connection to LDAP server")
         except Exception as e:
             logger.warning(f"Error during connection cleanup: {e}")
 
 
 def get_msad_user_details(email: str, ldap_settings: LDAPSettings) -> UserDetails:
     """Get user details given their uid or email."""
-    search_base = ",".join([f"DC={dc}" for dc in ldap_settings.LDAP_DOMAIN.split(".")])
+    search_base = ldap_settings.LDAP_SEARCH_BASE
+    uid_attribute = ldap_settings.LDAP_UID_ATTRIBUTE
     search_filter = f"(mail={escape_filter_chars(email)})"
+
+    logger.debug("Searching LDAP: base={}, filter={}, uid_attr={}", search_base, search_filter, uid_attribute)
 
     with ldap_connection(ldap_settings) as ldap_conn:
         ldap_conn.search(
             search_base=search_base,
             search_filter=search_filter,
-            attributes=["cn", "mail"],
+            attributes=[uid_attribute, "mail"],
             size_limit=0,
         )
 
-    entries = ldap_conn.entries
-    if len(entries) != 1:
-        raise ValueError(
-            f"Did not find exactly one match for {email=}. Found {len(entries)}",
-        )
+        entries = ldap_conn.entries
+        if len(entries) != 1:
+            raise ValueError(
+                f"Did not find exactly one match for {email=}. Found {len(entries)}",
+            )
 
-    match = entries.pop()
-    try:
-        uid = str(match["cn"])
-        email = str(match["mail"])
-        return UserDetails(uid=uid, email=email)
-    except Exception as e:
-        logger.debug(f"Received {match=}")
-        raise ValueError(f"Failed to extract data from LDAP entry: {e}") from e
+        match = entries.pop()
+        try:
+            uid = str(match[uid_attribute])
+            email = str(match["mail"])
+            return UserDetails(uid=uid, email=email)
+        except Exception as e:
+            logger.debug(f"Received {match=}")
+            raise ValueError(f"Failed to extract data from LDAP entry: {e}") from e
 
 
 @dataclass
@@ -207,6 +196,10 @@ class UserDatabase(MutableMapping):
 
         Returns:
             str: The username of the user, derived from the email.
+
+        Raises:
+            KeyError: If the user is not found in LDAP.
+            LDAPExceptionError: If the LDAP server is unreachable (transient error).
         """
         if self.search_missing is not None:
             try:
@@ -214,6 +207,12 @@ class UserDatabase(MutableMapping):
             except ValueError as e:
                 logger.error(f"User not found in LDAP for email {email}: {e}")
                 raise KeyError(email) from e
+            except LDAPExceptionError:
+                logger.warning(f"LDAP connection error while looking up {email}, will retry later")
+                raise
+            except Exception as e:
+                logger.warning(f"Unexpected error during LDAP lookup for {email}: {e}, will retry later")
+                raise
             self[email] = user_details.uid
             return user_details.uid
         raise KeyError(email)
@@ -295,3 +294,4 @@ def user_mapper_factory() -> UserDatabase:
         search_missing=partial(get_msad_user_details, ldap_settings=ldap_settings),
     )
     return user_mapper
+
