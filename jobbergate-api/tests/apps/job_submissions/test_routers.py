@@ -2629,19 +2629,7 @@ async def test_job_submissions_metrics__aggregation_by_all_nodes(
             (
                 data_point[0],
                 data_point[1],
-                # skip both task and step because the API aggregates in the node level
-                # data_point[2],
-                # data_point[3],
-                data_point[4],
-                data_point[5],
-                data_point[6],
-                data_point[7],
-                data_point[8],
-                data_point[9],
-                data_point[10],
-                data_point[11],
-                data_point[12],
-                data_point[13],
+                *data_point[4:14],
             ),
             skip_optional=True,
         ).model_dump()

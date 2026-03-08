@@ -23,11 +23,11 @@ def get_running_jobs(user_only=True):
         cmd_results = subprocess.run(cmd_args, capture_output=True, check=True)
         # Skip last line (empty), strip quotation marks
         output_lines = cmd_results.stdout.decode("utf-8").split("\n")[:-1]
-        ID_alternatives = [ln.replace('"', "").strip() for ln in output_lines]
+        id_alternatives = [ln.replace('"', "").strip() for ln in output_lines]
     except Exception:
         print("Could not retrieve queue information from Slurm.")
         return []
-    return ID_alternatives
+    return id_alternatives
 
 
 def get_file_list(path=None, search_term="*.*"):

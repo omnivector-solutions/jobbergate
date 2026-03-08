@@ -175,27 +175,27 @@ def test_const__success(dummy_render_class, mocker):
 
 
 def test_boolean_list__success(dummy_render_class, mocker):
-    variablenameTT1 = "fooTT1"
-    questionTT1 = Confirm(variablenameTT1, message="gimme the fooTT1!", default=False)
+    variablename_tt1 = "fooTT1"
+    question_tt1 = Confirm(variablename_tt1, message="gimme the fooTT1!", default=False)
 
-    variablenameT1 = "fooT1"
-    questionT1 = BooleanList(variablenameT1, message="gimme the fooT1!", whentrue=[questionTT1], default=False)
+    variablename_t1 = "fooT1"
+    question_t1 = BooleanList(variablename_t1, message="gimme the fooT1!", whentrue=[question_tt1], default=False)
 
-    variablenameT2 = "fooT2"
-    questionT2 = Confirm(variablenameT2, message="gimme the fooT2!", default=False)
+    variablename_t2 = "fooT2"
+    question_t2 = Confirm(variablename_t2, message="gimme the fooT2!", default=False)
 
-    variablenameFF1 = "fooFF1"
-    questionFF1 = Confirm(variablenameFF1, message="gimme the fooFF1!", default=False)
+    variablename_ff1 = "fooFF1"
+    question_ff1 = Confirm(variablename_ff1, message="gimme the fooFF1!", default=False)
 
-    variablenameF1 = "fooF1"
-    questionF1 = BooleanList(variablenameF1, message="gimme the fooF1!", whentrue=[questionFF1], default=False)
+    variablename_f1 = "fooF1"
+    question_f1 = BooleanList(variablename_f1, message="gimme the fooF1!", whentrue=[question_ff1], default=False)
 
     variablename = "foo"
     question = BooleanList(
         variablename,
         message="gimme the foo1!",
-        whentrue=[questionT1, questionT2],
-        whenfalse=[questionF1],
+        whentrue=[question_t1, question_t2],
+        whenfalse=[question_f1],
         default=False,
     )
 
