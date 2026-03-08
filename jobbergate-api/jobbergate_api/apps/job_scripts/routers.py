@@ -62,7 +62,7 @@ async def job_script_create(
 
 
 @router.post(
-    "/clone/{id}",
+    "/clone/{job_script_id}",
     status_code=status.HTTP_201_CREATED,
     response_model=JobScriptDetailedView,
     description="Endpoint for cloning a job script to a new entry owned by the user",
@@ -72,7 +72,7 @@ async def job_script_clone(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)),
     ],
-    job_script_id: Annotated[int, Path(alias="id")],
+    job_script_id: Annotated[int, Path()],
     clone_request: JobScriptCloneRequest | None = None,
 ):
     """Clone a job script by its id."""
@@ -175,7 +175,7 @@ async def job_script_create_from_template(
 
 
 @router.get(
-    "/{id}",
+    "/{job_script_id}",
     description="Endpoint to return a job script by its id",
     response_model=JobScriptDetailedView,
 )
@@ -183,7 +183,7 @@ async def job_script_get(
     secure_services: Annotated[
         SecureService, Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ, commit=False))
     ],
-    job_script_id: Annotated[int, Path(alias="id")],
+    job_script_id: Annotated[int, Path()],
 ):
     """Get a job script by id."""
     logger.info(f"Getting job script {job_script_id=}")
@@ -219,7 +219,7 @@ async def job_script_get_list(
 
 
 @router.put(
-    "/{id}",
+    "/{job_script_id}",
     status_code=status.HTTP_200_OK,
     description="Endpoint to update a job script by id",
     response_model=JobScriptListView,
@@ -230,7 +230,7 @@ async def job_script_update(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_UPDATE, ensure_email=True)),
     ],
-    job_script_id: Annotated[int, Path(alias="id")],
+    job_script_id: Annotated[int, Path()],
 ):
     """Update a job script template by id or identifier."""
     logger.info(f"Updating job script {job_script_id=} with {update_params=}")
@@ -241,7 +241,7 @@ async def job_script_update(
 
 
 @router.delete(
-    "/{id}",
+    "/{job_script_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete a job script by id",
 )
@@ -250,7 +250,7 @@ async def job_script_delete(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_DELETE, ensure_email=True)),
     ],
-    job_script_id: Annotated[int, Path(alias="id")],
+    job_script_id: Annotated[int, Path()],
 ):
     """Delete a job script template by id or identifier."""
     logger.info(f"Deleting job script {job_script_id=}")
@@ -262,14 +262,14 @@ async def job_script_delete(
 
 
 @router.get(
-    "/{id}/upload/{file_name:path}",
+    "/{job_script_id}/upload/{file_name:path}",
     description="Endpoint to get a file from a job script",
 )
 async def job_script_get_file(
     secure_services: Annotated[
         SecureService, Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_READ, commit=False))
     ],
-    job_script_id: Annotated[int, Path(alias="id")],
+    job_script_id: Annotated[int, Path()],
     file_name: Annotated[str, Path()],
 ):
     """
@@ -287,7 +287,7 @@ async def job_script_get_file(
 
 
 @router.put(
-    "/{id}/upload-by-url/{file_type}",
+    "/{job_script_id}/upload-by-url/{file_type}",
     status_code=status.HTTP_200_OK,
     description=snick.unwrap(
         """
@@ -303,7 +303,7 @@ async def job_script_upload_file_by_url(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)),
     ],
-    job_script_id: Annotated[int, Path(alias="id")],
+    job_script_id: Annotated[int, Path()],
     file_type: Annotated[FileType, Path()],
     filename: Annotated[str | None, Query(max_length=255)] = None,
     file_url: Annotated[AnyUrl, Query(description="URL of the file to upload")] = ...,
@@ -352,7 +352,7 @@ async def job_script_upload_file_by_url(
 
 
 @router.put(
-    "/{id}/upload/{file_type}",
+    "/{job_script_id}/upload/{file_type}",
     status_code=status.HTTP_200_OK,
     description=(
         "Endpoint to upload a file to a job script. "
@@ -366,7 +366,7 @@ async def job_script_upload_file(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_CREATE, ensure_email=True)),
     ],
-    job_script_id: Annotated[int, Path(alias="id")],
+    job_script_id: Annotated[int, Path()],
     file_type: Annotated[FileType, Path()],
     filename: Annotated[str | None, Query(max_length=255)] = None,
     upload_file: Annotated[UploadFile | None, File(description="File to upload")] = None,
@@ -402,7 +402,7 @@ async def job_script_upload_file(
 
 
 @router.delete(
-    "/{id}/upload/{file_name}",
+    "/{job_script_id}/upload/{file_name}",
     status_code=status.HTTP_200_OK,
     description="Endpoint to delete a file from a job script",
 )
@@ -411,7 +411,7 @@ async def job_script_delete_file(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SCRIPTS_DELETE, ensure_email=True)),
     ],
-    job_script_id: Annotated[int, Path(alias="id")],
+    job_script_id: Annotated[int, Path()],
     file_name: Annotated[str, Path()],
 ):
     """Delete a file from a job script template by id or identifier."""

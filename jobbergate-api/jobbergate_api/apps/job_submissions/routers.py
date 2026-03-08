@@ -107,7 +107,7 @@ async def job_submission_create(
 
 
 @router.post(
-    "/clone/{id}",
+    "/clone/{job_submission_id}",
     status_code=status.HTTP_201_CREATED,
     response_model=JobSubmissionDetailedView,
     description="Endpoint for cloning a job submission under the CREATED status for a new run on the cluster",
@@ -117,7 +117,7 @@ async def job_submission_clone(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_CREATE, ensure_email=True)),
     ],
-    job_submission_id: Annotated[int, Path(alias="id")],
+    job_submission_id: Annotated[int, Path()],
 ):
     """Clone a job_submission given its id."""
     logger.info(f"Cloning job submission {job_submission_id=}")
@@ -144,7 +144,7 @@ async def job_submission_clone(
 
 
 @router.get(
-    "/{id}",
+    "/{job_submission_id}",
     description="Endpoint to get a job_submission",
     response_model=JobSubmissionDetailedView,
 )
@@ -153,7 +153,7 @@ async def job_submission_get(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)),
     ],
-    job_submission_id: Annotated[int, Path(alias="id")],
+    job_submission_id: Annotated[int, Path()],
 ):
     """Return the job_submission given its id."""
     logger.debug(f"Getting job submission {job_submission_id=}")
@@ -206,7 +206,7 @@ async def job_submission_get_list(
 
 
 @router.delete(
-    "/{id}",
+    "/{job_submission_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete job submission",
 )
@@ -215,7 +215,7 @@ async def job_submission_delete(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_DELETE, ensure_email=True)),
     ],
-    job_submission_id: Annotated[int, Path(alias="id", description="id of the job submission to delete")],
+    job_submission_id: Annotated[int, Path(description="id of the job submission to delete")],
 ):
     """Delete job_submission given its id."""
     logger.info(f"Deleting job submission {job_submission_id=}")
@@ -229,7 +229,7 @@ async def job_submission_delete(
 
 
 @router.put(
-    "/{id}",
+    "/{job_submission_id}",
     status_code=status.HTTP_200_OK,
     description="Endpoint to update a job_submission given the id",
     response_model=JobSubmissionDetailedView,
@@ -240,7 +240,7 @@ async def job_submission_update(
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_email=True)),
     ],
     update_params: JobSubmissionUpdateRequest,
-    job_submission_id: Annotated[int, Path(alias="id")],
+    job_submission_id: Annotated[int, Path()],
 ):
     """Update a job_submission given its id."""
     logger.debug(f"Updating {job_submission_id=} with {update_params=}")
@@ -255,7 +255,7 @@ async def job_submission_update(
 
 
 @router.put(
-    "/cancel/{id}",
+    "/cancel/{job_submission_id}",
     status_code=status.HTTP_200_OK,
     description="Endpoint to cancel a job_submission",
     response_model=JobSubmissionDetailedView,
@@ -265,7 +265,7 @@ async def job_submission_cancel(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_email=True)),
     ],
-    job_submission_id: Annotated[int, Path(alias="id")],
+    job_submission_id: Annotated[int, Path()],
 ):
     """Cancel a job_submission given its id."""
     logger.debug(f"Cancelling job submission {job_submission_id=}")
@@ -311,7 +311,7 @@ async def job_submission_cancel(
 
 # The "agent" routes are used for agents to fetch pending job submissions and update their statuses
 @router.put(
-    "/agent/{id}",
+    "/agent/{job_submission_id}",
     status_code=status.HTTP_202_ACCEPTED,
     description="Endpoint for an agent to update the status of a job_submission",
     tags=["Agent"],
@@ -322,7 +322,7 @@ async def job_submission_agent_update(
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)),
     ],
     update_params: JobSubmissionAgentUpdateRequest,
-    job_submission_id: Annotated[int, Path(alias="id")],
+    job_submission_id: Annotated[int, Path()],
 ):
     """
     Update a job_submission with slurm_job_state and slurm_job_info.
