@@ -110,8 +110,8 @@ def test_ldap_settings_initialization(faker: Faker):
     env_vars = {
         "JOBBERGATE_AGENT_LDAP_DOMAIN": faker.domain_name(),
         "JOBBERGATE_AGENT_LDAP_PASSWORD": faker.password(),
-        "JOBBERGATE_AGENT_LDAP_BIND_DN": f"cn=admin,dc=example,dc=com",
-        "JOBBERGATE_AGENT_LDAP_SEARCH_BASE": f"ou=People,dc=example,dc=com",
+        "JOBBERGATE_AGENT_LDAP_BIND_DN": "cn=admin,dc=example,dc=com",
+        "JOBBERGATE_AGENT_LDAP_SEARCH_BASE": "ou=People,dc=example,dc=com",
     }
 
     with patch.dict("os.environ", env_vars):
@@ -191,6 +191,7 @@ def test_ldap_connection_bind_failure(mock_ldap_settings):
 
         with pytest.raises(RuntimeError, match="Couldn't bind to LDAP server"):
             with ldap_connection(mock_ldap_settings):
+                # Testing error handling, so we don't need to do anything here
                 pass
 
         # Ensure unbind is called even on failure
