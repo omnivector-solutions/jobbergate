@@ -27,6 +27,7 @@ class LDAPSettings(BaseSettings):
     LDAP_PASSWORD: str
     LDAP_BIND_DN: str
     LDAP_SEARCH_BASE: str
+    LDAP_PORT: int | None = None
     LDAP_UID_ATTRIBUTE: str = "uid"
 
     model_config = SettingsConfigDict(env_prefix="JOBBERGATE_AGENT_", env_file=_get_env_file(), extra="ignore")
@@ -58,7 +59,7 @@ def ldap_connection(ldap_settings: LDAPSettings) -> Iterator[Connection]:
 
     server = Server(
         ldap_settings.LDAP_DOMAIN,
-        port=636,
+        port=ldap_settings.LDAP_PORT,
         use_ssl=True,
         tls=tls_config,
     )
@@ -73,9 +74,7 @@ def ldap_connection(ldap_settings: LDAPSettings) -> Iterator[Connection]:
 
     try:
         if not ldap_conn.bind():
-            raise RuntimeError(
-                f"Couldn't bind to LDAP server: {ldap_conn.result}"
-            )
+            raise RuntimeError(f"Couldn't bind to LDAP server: {ldap_conn.result}")
 
         logger.debug("Connected to LDAP server")
         yield ldap_conn
@@ -294,4 +293,3 @@ def user_mapper_factory() -> UserDatabase:
         search_missing=partial(get_msad_user_details, ldap_settings=ldap_settings),
     )
     return user_mapper
-
