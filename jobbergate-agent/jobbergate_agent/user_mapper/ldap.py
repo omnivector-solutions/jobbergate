@@ -27,7 +27,7 @@ class LDAPSettings(BaseSettings):
     LDAP_PASSWORD: str
     LDAP_BIND_DN: str
     LDAP_SEARCH_BASE: str
-    LDAP_PORT: int | None = None
+    LDAP_PORT: int = 636
     LDAP_UID_ATTRIBUTE: str = "uid"
 
     model_config = SettingsConfigDict(env_prefix="JOBBERGATE_AGENT_", env_file=_get_env_file(), extra="ignore")
