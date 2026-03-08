@@ -61,9 +61,8 @@ def test_client_is_initialized(
         influx_dsn,
         pool_size=pool_size,
         ssl=ssl,
-        verify_ssl=verify_ssl,
+        verify_ssl=cert if cert and verify_ssl else verify_ssl,
         timeout=timeout,
         udp_port=udp_port,
-        cert=cert,
     )
     mocked_InfluxDBClient.assert_not_called()
