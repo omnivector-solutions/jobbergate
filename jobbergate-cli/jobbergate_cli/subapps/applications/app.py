@@ -18,7 +18,7 @@ from jobbergate_cli.subapps.applications.tools import (
     save_application_files,
     upload_application,
 )
-from jobbergate_cli.subapps.pagination import DEFAULT_PAGE_SIZE, handle_pagination
+from jobbergate_cli.subapps.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, handle_pagination
 from jobbergate_cli.subapps.tools import resolve_application_selection
 
 # TODO: move hidden field logic to the API
@@ -97,7 +97,14 @@ def list_all(
     sort_field: Optional[str] = typer.Option("id", help="The field by which results should be sorted"),
     include_archived: bool = typer.Option(False, "--include-archived", help="Include archived entries in the results"),
     page: Optional[int] = typer.Option(None, "--page", "-p", min=1, help="The page number to retrieve"),
-    size: int = typer.Option(DEFAULT_PAGE_SIZE, "--size", "-s", min=1, help="The number of items per page to retrieve"),
+    size: int = typer.Option(
+        DEFAULT_PAGE_SIZE,
+        "--size",
+        "-s",
+        min=1,
+        max=MAX_PAGE_SIZE,
+        help="The number of items per page to retrieve",
+    ),
 ):
     """
     Show available applications

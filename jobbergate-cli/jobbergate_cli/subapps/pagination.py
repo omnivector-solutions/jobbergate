@@ -13,6 +13,7 @@ from jobbergate_cli.schemas import ContextProtocol, ListResponseEnvelope
 
 
 DEFAULT_PAGE_SIZE = 50
+MAX_PAGE_SIZE = 100
 
 
 def handle_pagination(
@@ -30,6 +31,9 @@ def handle_pagination(
 ):
     current_page = page or 1
     interactive_mode = page is None
+
+    if not isinstance(size, int) or not (1 <= size <= MAX_PAGE_SIZE):
+        raise Abort(f"Page size must be between 1 and {MAX_PAGE_SIZE}. Provided: {size}")
 
     while True:
         if params is None:
