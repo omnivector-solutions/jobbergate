@@ -11,6 +11,41 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.10.0a7](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a7) - 2026-03-09
+
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+No significant changes.
+
+
+## CLI
+
+### Fixed
+
+- Enforce maximum page size limit in list commands ([PR #939](https://github.com/omnivector-solutions/jobbergate/pull/939))
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.10.0a6](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a6) - 2026-03-06
 
 
