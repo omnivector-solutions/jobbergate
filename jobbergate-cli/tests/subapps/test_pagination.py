@@ -4,7 +4,7 @@ import pytest
 from jobbergate_cli.constants import PaginationChoices
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ListResponseEnvelope
-from jobbergate_cli.subapps.pagination import handle_pagination
+from jobbergate_cli.subapps.pagination import MAX_PAGE_SIZE, handle_pagination
 
 
 def test_handle_pagination__one_page(respx_mock, dummy_domain, dummy_context, dummy_one_page_results, mocker):
@@ -205,4 +205,21 @@ def test_handle_pagination__fails_on_out_of_range_page(
             page=99,
         )
 
+    mock_render_paginated.assert_not_called()
+
+
+@pytest.mark.parametrize("size", [0, MAX_PAGE_SIZE + 1, -5, None])
+def test_handle_pagination__fails_on_out_of_range_size(dummy_context, size, mocker):
+    mock_make_request = mocker.patch("jobbergate_cli.subapps.pagination.make_request")
+    mock_render_paginated = mocker.patch("jobbergate_cli.subapps.pagination.render_paginated_list_results")
+
+    with pytest.raises(Abort, match="Page size must be between 1 and 100"):
+        handle_pagination(
+            jg_ctx=dummy_context,
+            url_path="/jobbergate/job-script-templates",
+            params={},
+            size=size,
+        )
+
+    mock_make_request.assert_not_called()
     mock_render_paginated.assert_not_called()
