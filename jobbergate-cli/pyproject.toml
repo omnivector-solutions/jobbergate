@@ -45,7 +45,7 @@ dev = ["plummet[time-machine]>=1.2.1", "types-pyyaml>=6.0.12"]
 jobbergate-core = { workspace = true }
 
 [tool.ruff]
-line-length = 120
+extend = "../ruff.toml"
 
 [tool.pytest.ini_options]
 addopts = [

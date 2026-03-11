@@ -1,0 +1,20 @@
+line-length = 120
+
+[lint]
+extend-select = []
+
+[lint.isort]
+known-first-party = [
+    "jobbergate-core",
+    "jobbergate-cli",
+    "jobbergate-agent",
+    "jobbergate-api",
+    "jobbergate-docs",
+    "jobbergate-test",
+    "fake-sbatch",
+]
+
+[lint.per-file-ignores]
+
+[format]
+quote-style = "double"

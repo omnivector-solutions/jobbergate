@@ -30,10 +30,8 @@ jobbergate-api = { workspace = true }
 jobbergate-cli = { workspace = true }
 jobbergate-agent = { workspace = true }
 
-
 [tool.ruff]
-line-length = 120
-
+extend = "../ruff.toml"
 
 [build-system]
 requires = [

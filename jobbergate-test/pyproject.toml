@@ -22,6 +22,9 @@ dev = []
 [tool.uv.sources]
 jobbergate-cli = { workspace = true }
 
+[tool.ruff]
+extend = "../ruff.toml"
+
 [build-system]
 requires = [
     "hatchling>=1.28.0",          # Build the package
