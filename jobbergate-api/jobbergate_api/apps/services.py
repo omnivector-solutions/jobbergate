@@ -532,9 +532,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         file_obj.seek(0)
         return file_obj
 
-    async def upload_file_content(
-        self, instance: FileModel, upload_content: str | bytes | AnyUrl | UploadFile
-    ) -> None:
+    async def upload_file_content(self, instance: FileModel, upload_content: str | bytes | AnyUrl | UploadFile) -> None:
         """
         Upload the content of a file to s3.
         """

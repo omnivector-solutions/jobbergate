@@ -58,9 +58,7 @@ class TestPutClusterStatus:
         assert instance.last_reported == now
 
     @pytest.mark.parametrize("interval", [0, -1, None])
-    async def test_report__invalid_interval_raises_error(
-        self, interval, client, inject_security_header, synth_session
-    ):
+    async def test_report__invalid_interval_raises_error(self, interval, client, inject_security_header, synth_session):
         client_id = "dummy-client"
         inject_security_header(
             "who@cares.com",
@@ -113,9 +111,9 @@ class TestListClusterStatus:
             synth_session.add_all(statuses)
             response = await client.get("/jobbergate/clusters/status")
 
-        assert unpack_response(
-            response, check_total=3, check_page=1, check_pages=1, key="client_id", sort=True
-        ) == [s.client_id for s in statuses]
+        assert unpack_response(response, check_total=3, check_page=1, check_pages=1, key="client_id", sort=True) == [
+            s.client_id for s in statuses
+        ]
 
         assert unpack_response(response, key="is_healthy") == [True, True, False]
 
@@ -147,9 +145,7 @@ class TestGetClusterStatus:
 
         inject_security_header("who@cares.com", permission)
 
-        cluster_status = ClusterStatus(
-            client_id=client_id, interval=10, last_reported=pendulum.datetime(2023, 1, 1)
-        )
+        cluster_status = ClusterStatus(client_id=client_id, interval=10, last_reported=pendulum.datetime(2023, 1, 1))
         with pendulum.travel_to(pendulum.datetime(2023, 1, 1), freeze=True):
             synth_session.add(cluster_status)
             response = await client.get(f"/jobbergate/clusters/status/{client_id}")

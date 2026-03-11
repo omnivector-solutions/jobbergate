@@ -24,9 +24,7 @@ class PydanticDateTime(pendulum.DateTime):
     __slots__: List[str] = []
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: Type[Any], handler: GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: Type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         """
         Return a Pydantic CoreSchema with the Datetime validation.
 

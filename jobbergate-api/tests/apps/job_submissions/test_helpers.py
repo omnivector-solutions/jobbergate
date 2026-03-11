@@ -90,9 +90,7 @@ class TestValidateJobMetricUploadInput:
         """
         data = [[1, "test"], [2, "example", 4.5]]
         expected_types = (int, str, float)
-        with pytest.raises(
-            ValueError, match="Every iterable in `data` must match the length of `expected_types`."
-        ):
+        with pytest.raises(ValueError, match="Every iterable in `data` must match the length of `expected_types`."):
             validate_job_metric_upload_input(data, expected_types)
 
     @pytest.mark.parametrize("num_of_elements", [3, 8, 83])

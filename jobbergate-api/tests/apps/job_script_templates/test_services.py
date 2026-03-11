@@ -71,9 +71,7 @@ class TestJobScriptTemplateCrudService:
         assert exc_info.value.status_code == 404
 
     @pytest.mark.parametrize("locator_attribute", ("id", "identifier"))
-    async def test_update__success(
-        self, locator_attribute, template_test_data, synth_services, tmp_path: Path
-    ):
+    async def test_update__success(self, locator_attribute, template_test_data, synth_services, tmp_path: Path):
         """Test that the template is updated successfully."""
         instance = await synth_services.crud.template.create(**template_test_data)
         locator = getattr(instance, locator_attribute)
@@ -305,9 +303,7 @@ def filter_test_entries(
     """
     if not kwargs:
         return set()
-    return {
-        value["id"] for key, value in entries.items() if all(getattr(key, k) in v for k, v in kwargs.items())
-    }
+    return {value["id"] for key, value in entries.items() if all(getattr(key, k) in v for k, v in kwargs.items())}
 
 
 class TestAutoCleanUnusedJobScriptTemplates:

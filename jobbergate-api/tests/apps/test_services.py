@@ -384,9 +384,7 @@ class TestCrudService:
         assert ["instance-one", "instance-three", "item-two"] == [i.name for i in all_fetched_instances]
 
         all_fetched_instances = await dummy_crud_service.list(sort_field="owner_email", sort_ascending=False)
-        assert ["user2@test.com", "user1@test.com", "final@test.com"] == [
-            i.owner_email for i in all_fetched_instances
-        ]
+        assert ["user2@test.com", "user1@test.com", "final@test.com"] == [i.owner_email for i in all_fetched_instances]
 
     async def test_list__limited_by_owner(
         self,
@@ -933,9 +931,7 @@ class TestFileService:
             ["http", "https"],
         ),
     )
-    async def test__get_file_data_from_url__http_https(
-        self, file_content, protocol, dummy_file_service, respx_mock
-    ):
+    async def test__get_file_data_from_url__http_https(self, file_content, protocol, dummy_file_service, respx_mock):
         """
         Test that the ``_get_file_data_from_url()`` method can download file data from http/https urls.
         """
@@ -970,9 +966,7 @@ class TestFileService:
         file_obj = await dummy_file_service._get_file_data_from_url(AnyUrl(s3_url))
         assert file_obj.read() == file_content
 
-    async def test__get_file_data_from_url__raises_400_if_download_fails(
-        self, dummy_file_service, respx_mock
-    ):
+    async def test__get_file_data_from_url__raises_400_if_download_fails(self, dummy_file_service, respx_mock):
         """
         Test that the ``_get_file_data_from_url()`` method raises a 400 error if the download fails.
         """
@@ -995,9 +989,7 @@ class TestFileService:
             [b"s3://ultra-hpc.io", "Couldn't extract bucket key"],
         ],
     )
-    async def test__get_file_data_from_url__s3_fails_on_invalid_url(
-        self, file_url, error_stub, dummy_file_service
-    ):
+    async def test__get_file_data_from_url__s3_fails_on_invalid_url(self, file_url, error_stub, dummy_file_service):
         """
         Test that the ``_get_file_data_from_url()`` method raises exeptions on invalid s3 urls.
         """
@@ -1036,10 +1028,7 @@ class TestFileService:
                 dummy_upload_file,
             )
 
-        assert (
-            await dummy_file_service.render(upserted_instance, parameters={"foo": "bar"})
-            == "dummy bar content"
-        )
+        assert await dummy_file_service.render(upserted_instance, parameters={"foo": "bar"}) == "dummy bar content"
 
     async def test_render__raises_422_on_bad_template(self, make_upload_file, dummy_file_service):
         """
@@ -1084,9 +1073,7 @@ class TestFileService:
                 "file-one.txt",
                 dummy_upload_file,
             )
-            rendered_reference = await dummy_file_service.render(
-                upserted_instance_1, parameters={"foo": "bar"}
-            )
+            rendered_reference = await dummy_file_service.render(upserted_instance_1, parameters={"foo": "bar"})
 
         with make_upload_file(content="dummy {{ data.foo }} content") as dummy_upload_file:
             upserted_instance_3 = await dummy_file_service.upsert(
@@ -1094,9 +1081,7 @@ class TestFileService:
                 "file-one.txt",
                 dummy_upload_file,
             )
-            rendered_legacy = await dummy_file_service.render(
-                upserted_instance_3, parameters={"data": {"foo": "bar"}}
-            )
+            rendered_legacy = await dummy_file_service.render(upserted_instance_3, parameters={"data": {"foo": "bar"}})
 
         assert rendered_reference == rendered_legacy
 

@@ -182,9 +182,7 @@ async def job_script_template_update(
     logger.info(f"Updating job script template {typed_id_or_identifier=} with {update_request=}")
     instance = await secure_services.crud.template.get(typed_id_or_identifier)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
-        secure_services.crud.template.ensure_attribute(
-            instance, owner_email=secure_services.identity_payload.email
-        )
+        secure_services.crud.template.ensure_attribute(instance, owner_email=secure_services.identity_payload.email)
     return await secure_services.crud.template.update(
         typed_id_or_identifier, **update_request.model_dump(exclude_unset=True)
     )
@@ -303,9 +301,7 @@ async def job_script_template_upload_file(
             detail="Filename must be provided either as a query parameter or as part of the file upload",
         )
 
-    logger.debug(
-        f"Uploading {filename=} to job template {id_or_identifier=}; {file_type=}; {previous_filename=}"
-    )
+    logger.debug(f"Uploading {filename=} to job template {id_or_identifier=}; {file_type=}; {previous_filename=}")
     return await _upsert_template_file(
         id_or_identifier,
         file_type,
@@ -437,9 +433,7 @@ async def _upsert_workflow_file(
     Provide an auxillary function to be used for uploading from file object or URL.
     """
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
-    logger.debug(
-        f"Uploading workflow file to job script template {typed_id_or_identifier=}: {runtime_config}"
-    )
+    logger.debug(f"Uploading workflow file to job script template {typed_id_or_identifier=}: {runtime_config}")
     job_script_template = await secure_services.crud.template.get(typed_id_or_identifier)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.template.ensure_attribute(

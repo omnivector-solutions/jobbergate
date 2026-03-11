@@ -7,9 +7,7 @@ from jobbergate_api.apps.garbage_collector import GarbageCollector
 
 @pytest.fixture
 async def file_service(synth_services):
-    await synth_services.crud.template.create(
-        id=1, name="test_name", owner_email="test_email", is_archived=False
-    )
+    await synth_services.crud.template.create(id=1, name="test_name", owner_email="test_email", is_archived=False)
     yield synth_services.file.template
 
 

@@ -50,9 +50,7 @@ class GarbageCollector:
         """Get a set of files from the bucket."""
         prefix = self.model_type.__tablename__
         result = {obj.key async for obj in self.bucket.objects.filter(Prefix=prefix)}
-        logger.debug(
-            f"Total of files found in the bucket {self.bucket.name} with prefix {prefix}: {len(result)}"
-        )
+        logger.debug(f"Total of files found in the bucket {self.bucket.name} with prefix {prefix}: {len(result)}")
         return result
 
     async def _get_files_to_delete(self) -> set[str]:

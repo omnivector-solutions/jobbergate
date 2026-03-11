@@ -205,9 +205,7 @@ class PendingJobSubmission(BaseModel):
     job_script: JobScriptDetailedView
     sbatch_arguments: list[str] | None = None
 
-    model_config = ConfigDict(
-        from_attributes=True, extra="ignore", json_schema_extra=job_submission_meta_mapper
-    )
+    model_config = ConfigDict(from_attributes=True, extra="ignore", json_schema_extra=job_submission_meta_mapper)
 
 
 class ActiveJobSubmission(BaseModel):

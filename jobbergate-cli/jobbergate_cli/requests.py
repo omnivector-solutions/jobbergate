@@ -211,7 +211,10 @@ def make_request(
                 ),
                 support=True,
                 sentry_context={
-                    "url": request.url, "method": method, "request_kwargs": request_kwargs, "response": response.text
+                    "url": request.url,
+                    "method": method,
+                    "request_kwargs": request_kwargs,
+                    "response": response.text,
                 },
             )
         elif expected_status != response.status_code:

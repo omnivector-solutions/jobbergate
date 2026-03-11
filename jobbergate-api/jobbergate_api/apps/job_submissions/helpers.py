@@ -13,9 +13,7 @@ from jobbergate_api.apps.job_submissions.constants import (
 )
 
 
-def validate_job_metric_upload_input(
-    data: Any, expected_types: tuple[Type[Any], ...]
-) -> Iterable[tuple[Any, ...]]:
+def validate_job_metric_upload_input(data: Any, expected_types: tuple[Type[Any], ...]) -> Iterable[tuple[Any, ...]]:
     """Validate if the input data of job metric upload is correct once decoded.
 
     It will brute force apply the expected types to the data and raise an error in case it fails.
