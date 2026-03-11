@@ -82,7 +82,9 @@ async def job_submission_create(
         )
     create_request.client_id = client_id
 
-    base_job_script = await secure_services.crud.job_script.get(create_request.job_script_id, include_files=True)
+    base_job_script = await secure_services.crud.job_script.get(
+        create_request.job_script_id, include_files=True
+    )
 
     job_script_files = [f for f in base_job_script.files if f.file_type == FileType.ENTRYPOINT]
 
@@ -319,7 +321,9 @@ async def job_submission_cancel(
 async def job_submission_agent_update(
     secure_services: Annotated[
         SecureService,
-        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)),
+        Depends(
+            secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)
+        ),
     ],
     update_params: JobSubmissionAgentUpdateRequest,
     job_submission_id: Annotated[int, Path()],
@@ -399,7 +403,9 @@ async def job_submissions_agent_submitted(
     submitted_request: JobSubmissionAgentSubmittedRequest,
     secure_services: Annotated[
         SecureService,
-        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)),
+        Depends(
+            secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)
+        ),
     ],
 ):
     """Update a job_submission to indicate that it was submitted to Slurm."""
@@ -449,7 +455,9 @@ async def job_submissions_agent_rejected(
     rejected_request: JobSubmissionAgentRejectedRequest,
     secure_services: Annotated[
         SecureService,
-        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)),
+        Depends(
+            secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)
+        ),
     ],
 ):
     """Update a job_submission to indicate that it was rejected by Slurm."""
@@ -504,7 +512,9 @@ async def job_submissions_agent_pending(
     secure_services: Annotated[
         SecureService,
         Depends(
-            secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True)
+            secure_services(
+                Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True
+            )
         ),
     ],
 ):
@@ -533,7 +543,9 @@ async def job_submissions_agent_active(
     secure_services: Annotated[
         SecureService,
         Depends(
-            secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True)
+            secure_services(
+                Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True
+            )
         ),
     ],
 ):
@@ -562,7 +574,9 @@ async def job_submissions_agent_metrics(
     secure_services: Annotated[
         SecureService,
         Depends(
-            secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True)
+            secure_services(
+                Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True
+            )
         ),
     ],
 ):
@@ -606,7 +620,9 @@ async def job_submissions_agent_metrics_upload(
     secure_services: Annotated[
         SecureService,
         Depends(
-            secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True, commit=True)
+            secure_services(
+                Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True, commit=True
+            )
         ),
     ],
     body: Annotated[bytes, Body(description="The binary data to upload")],
@@ -686,7 +702,8 @@ async def job_submissions_metrics(
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)),
     ],
     node: Annotated[
-        str | None, Query(description="Filter by node_host. If omitted, metrics will be gathered over all nodes.")
+        str | None,
+        Query(description="Filter by node_host. If omitted, metrics will be gathered over all nodes."),
     ] = None,
     start_time: Annotated[
         datetime, Query(description="Start time for the metrics query. Defaults to one hour ago.")
@@ -696,7 +713,9 @@ async def job_submissions_metrics(
     ] = JobSubmissionMetricSampleRate.ten_minutes,
     end_time: Annotated[
         datetime | None,
-        Query(description="End time for the metrics query. If omitted, assume the window to be up to the present."),
+        Query(
+            description="End time for the metrics query. If omitted, assume the window to be up to the present."
+        ),
     ] = None,
 ):
     """Get the metrics for a job submission."""
@@ -774,7 +793,9 @@ async def job_submission_progress(
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)),
     ],
     sort_ascending: Annotated[bool, Query(description="Sort the progress entries in ascending order")] = True,
-    sort_field: Annotated[str, Query(description="Sort the progress entries by a specific field")] = "timestamp",
+    sort_field: Annotated[
+        str, Query(description="Sort the progress entries by a specific field")
+    ] = "timestamp",
 ):
     """Get progress entries for a job submission."""
     logger.debug(f"Fetching progress entries for job submission {job_submission_id}")

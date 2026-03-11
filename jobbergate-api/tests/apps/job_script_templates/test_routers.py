@@ -444,7 +444,9 @@ async def test_clone_job_template__replace_base_values(
     }
 
     inject_security_header(new_owner_email, Permissions.JOB_TEMPLATES_CREATE)
-    response = await client.post(f"jobbergate/job-script-templates/clone/{original_instance.id}", json=payload)
+    response = await client.post(
+        f"jobbergate/job-script-templates/clone/{original_instance.id}", json=payload
+    )
 
     assert response.status_code == 201, f"Clone failed: {response.text}"
     response_data = response.json()
@@ -894,7 +896,9 @@ class TestJobTemplateFiles:
 
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
 
-        template_file = await synth_services.file.template.get(parent_id=parent_id, filename=job_template_filename)
+        template_file = await synth_services.file.template.get(
+            parent_id=parent_id, filename=job_template_filename
+        )
 
         assert template_file is not None
         assert template_file.parent_id == parent_id
@@ -1478,7 +1482,10 @@ class TestJobTemplateWorkflowFile:
             )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.json()["detail"] == "Runtime configuration is required when the workflow file does not exist"
+        assert (
+            response.json()["detail"]
+            == "Runtime configuration is required when the workflow file does not exist"
+        )
 
         with pytest.raises(ServiceError, match="workflow_files row not found"):
             await synth_services.file.workflow.get(parent_id=parent_id, filename=WORKFLOW_FILE_NAME)

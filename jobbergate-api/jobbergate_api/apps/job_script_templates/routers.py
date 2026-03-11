@@ -182,7 +182,9 @@ async def job_script_template_update(
     logger.info(f"Updating job script template {typed_id_or_identifier=} with {update_request=}")
     instance = await secure_services.crud.template.get(typed_id_or_identifier)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
-        secure_services.crud.template.ensure_attribute(instance, owner_email=secure_services.identity_payload.email)
+        secure_services.crud.template.ensure_attribute(
+            instance, owner_email=secure_services.identity_payload.email
+        )
     return await secure_services.crud.template.update(
         typed_id_or_identifier, **update_request.model_dump(exclude_unset=True)
     )
@@ -301,7 +303,9 @@ async def job_script_template_upload_file(
             detail="Filename must be provided either as a query parameter or as part of the file upload",
         )
 
-    logger.debug(f"Uploading {filename=} to job template {id_or_identifier=}; {file_type=}; {previous_filename=}")
+    logger.debug(
+        f"Uploading {filename=} to job template {id_or_identifier=}; {file_type=}; {previous_filename=}"
+    )
     return await _upsert_template_file(
         id_or_identifier,
         file_type,
@@ -328,8 +332,8 @@ async def job_script_template_upload_file_by_url(
     ],
     id_or_identifier: Annotated[str, Path()],
     file_type: Annotated[FileType, Path()],
+    file_url: Annotated[AnyUrl, Query(description="URL of the file to upload")],
     filename: Annotated[str | None, Query(max_length=255)] = None,
-    file_url: Annotated[AnyUrl, Query(description="URL of the file to upload")] = ...,
     previous_filename: Annotated[
         str | None, Query(description="Previous name of the file in case a rename is needed", max_length=255)
     ] = None,
@@ -433,7 +437,9 @@ async def _upsert_workflow_file(
     Provide an auxillary function to be used for uploading from file object or URL.
     """
     typed_id_or_identifier: int | str = coerce_id_or_identifier(id_or_identifier)
-    logger.debug(f"Uploading workflow file to job script template {typed_id_or_identifier=}: {runtime_config}")
+    logger.debug(
+        f"Uploading workflow file to job script template {typed_id_or_identifier=}: {runtime_config}"
+    )
     job_script_template = await secure_services.crud.template.get(typed_id_or_identifier)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.template.ensure_attribute(
@@ -474,11 +480,11 @@ async def job_script_workflow_upload_file(
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)),
     ],
     id_or_identifier: Annotated[str, Path()],
+    upload_file: Annotated[UploadFile, File(description="File to upload")],
     runtime_config: Annotated[
         RunTimeConfig | None,
         Form(description="Runtime configuration is optional when the workflow file already exists"),
     ] = None,
-    upload_file: Annotated[UploadFile, File(description="File to upload")] = ...,
 ):
     """Upload a file to a job script workflow by id or identifier."""
     return await _upsert_workflow_file(id_or_identifier, runtime_config, upload_file, secure_services)
@@ -496,11 +502,11 @@ async def job_script_upload_file_by_url(
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_TEMPLATES_CREATE, ensure_email=True)),
     ],
     id_or_identifier: Annotated[str, Path()],
+    file_url: Annotated[AnyUrl, Query(description="URL of the file to upload")],
     runtime_config: Annotated[
         RunTimeConfig | None,
         Body(description="Runtime configuration is optional when the workflow file already exists"),
     ] = None,
-    file_url: Annotated[AnyUrl, Query(description="URL of the file to upload")] = ...,
 ):
     """Upload a file to a job script workflow by id or identifier from a URL."""
     return await _upsert_workflow_file(id_or_identifier, runtime_config, file_url, secure_services)
