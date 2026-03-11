@@ -4,7 +4,7 @@ Provide a ``typer`` app that can interact with Application data in a cruddy mann
 
 import pathlib
 from textwrap import dedent
-from typing import Any, Dict, Optional, cast
+from typing import Annotated, Any, Dict, cast
 
 import typer
 
@@ -92,21 +92,20 @@ app = typer.Typer(
 @app.command("list")
 def list_all(
     ctx: typer.Context,
-    show_all: bool = typer.Option(False, "--all", help="Show all applications, even the ones without identifier"),
-    user_only: bool = typer.Option(False, "--user", help="Show only applications owned by the current user"),
-    search: Optional[str] = typer.Option(None, help="Apply a search term to results"),
-    sort_order: SortOrder = typer.Option(SortOrder.DESCENDING, help="Specify sort order"),
-    sort_field: Optional[str] = typer.Option("id", help="The field by which results should be sorted"),
-    include_archived: bool = typer.Option(False, "--include-archived", help="Include archived entries in the results"),
-    page: Optional[int] = typer.Option(None, "--page", "-p", min=1, help="The page number to retrieve"),
-    size: int = typer.Option(
-        DEFAULT_PAGE_SIZE,
-        "--size",
-        "-s",
-        min=1,
-        max=MAX_PAGE_SIZE,
-        help="The number of items per page to retrieve",
-    ),
+    show_all: Annotated[
+        bool, typer.Option("--all", help="Show all applications, even the ones without identifier")
+    ] = False,
+    user_only: Annotated[bool, typer.Option("--user", help="Show only applications owned by the current user")] = False,
+    search: Annotated[str | None, typer.Option(help="Apply a search term to results")] = None,
+    sort_order: Annotated[SortOrder, typer.Option(help="Specify sort order")] = SortOrder.DESCENDING,
+    sort_field: Annotated[str | None, typer.Option(help="The field by which results should be sorted")] = "id",
+    include_archived: Annotated[
+        bool, typer.Option("--include-archived", help="Include archived entries in the results")
+    ] = False,
+    page: Annotated[int | None, typer.Option("--page", "-p", min=1, help="The page number to retrieve")] = None,
+    size: Annotated[
+        int, typer.Option("--size", "-s", min=1, max=MAX_PAGE_SIZE, help="The number of items per page to retrieve")
+    ] = DEFAULT_PAGE_SIZE,
 ):
     """
     Show available applications
@@ -142,20 +141,26 @@ def list_all(
 @app.command()
 def get_one(
     ctx: typer.Context,
-    id_or_identifier: Optional[str] = typer.Argument(
-        None,
-        help="The specific id number or identifier of the application to be selected.",
-    ),
-    application_id: Optional[int] = typer.Option(
-        None,
-        "--id",
-        "-i",
-        help=f"Alternative way to specify id. {ID_NOTE}",
-    ),
-    identifier: Optional[str] = typer.Option(
-        None,
-        help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}",
-    ),
+    id_or_identifier: Annotated[
+        str | None,
+        typer.Argument(
+            help="The specific id number or identifier of the application to be selected.",
+        ),
+    ] = None,
+    application_id: Annotated[
+        int | None,
+        typer.Option(
+            "--id",
+            "-i",
+            help=f"Alternative way to specify id. {ID_NOTE}",
+        ),
+    ] = None,
+    identifier: Annotated[
+        str | None,
+        typer.Option(
+            help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}",
+        ),
+    ] = None,
 ):
     """
     Show the detailed view of a single application by id or identifier
@@ -176,26 +181,34 @@ def get_one(
 @app.command()
 def create(
     ctx: typer.Context,
-    name: str = typer.Option(
-        ...,
-        "--name",
-        "-n",
-        help="The name of the application to create",
-    ),
-    identifier: Optional[str] = typer.Option(
-        None,
-        help=f"The human-friendly identifier of the application. {IDENTIFIER_NOTE}",
-    ),
-    application_path: pathlib.Path = typer.Option(
-        ...,
-        "--application-path",
-        "-a",
-        help="The path to the directory where the application files are located",
-    ),
-    application_desc: Optional[str] = typer.Option(
-        None,
-        help="A helpful description of the application",
-    ),
+    name: Annotated[
+        str,
+        typer.Option(
+            "--name",
+            "-n",
+            help="The name of the application to create",
+        ),
+    ],
+    application_path: Annotated[
+        pathlib.Path,
+        typer.Option(
+            "--application-path",
+            "-a",
+            help="The path to the directory where the application files are located",
+        ),
+    ],
+    identifier: Annotated[
+        str | None,
+        typer.Option(
+            help=f"The human-friendly identifier of the application. {IDENTIFIER_NOTE}",
+        ),
+    ] = None,
+    application_desc: Annotated[
+        str | None,
+        typer.Option(
+            help="A helpful description of the application",
+        ),
+    ] = None,
 ):
     """
     Create a new application.
@@ -253,43 +266,37 @@ def create(
 @app.command()
 def update(
     ctx: typer.Context,
-    id_or_identifier: Optional[str] = typer.Argument(
-        None,
-        help=SELECT_APPLICATION_HELP,
-    ),
-    application_id: Optional[int] = typer.Option(
-        None,
-        "--id",
-        "-i",
-        help=f"Alternative way to specify id. {ID_NOTE}",
-    ),
-    identifier: Optional[str] = typer.Option(
-        None,
-        help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}",
-    ),
-    application_path: Optional[pathlib.Path] = typer.Option(
-        None,
-        "--application-path",
-        "-a",
-        help="The path to the directory where the application files are located",
-    ),
-    update_identifier: Optional[str] = typer.Option(
-        None,
-        help="Optional new application identifier to be set",
-    ),
-    application_desc: Optional[str] = typer.Option(
-        None,
-        help="Optional new application description to be set",
-    ),
-    application_name: Optional[str] = typer.Option(
-        None,
-        help="Optional new application name to be set",
-    ),
-    is_archived: Optional[bool] = typer.Option(
-        None,
-        "--is-archived",
-        help="Optional value to update is_archived field on this entry",
-    ),
+    id_or_identifier: Annotated[str | None, typer.Argument(help=SELECT_APPLICATION_HELP)] = None,
+    application_id: Annotated[
+        int | None,
+        typer.Option(
+            "--id",
+            "-i",
+            help=f"Alternative way to specify id. {ID_NOTE}",
+        ),
+    ] = None,
+    identifier: Annotated[
+        str | None,
+        typer.Option(help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}"),
+    ] = None,
+    application_path: Annotated[
+        pathlib.Path | None,
+        typer.Option(
+            "--application-path",
+            "-a",
+            help="The path to the directory where the application files are located",
+        ),
+    ] = None,
+    update_identifier: Annotated[str | None, typer.Option(help="Optional new application identifier to be set")] = None,
+    application_desc: Annotated[str | None, typer.Option(help="Optional new application description to be set")] = None,
+    application_name: Annotated[str | None, typer.Option(help="Optional new application name to be set")] = None,
+    is_archived: Annotated[
+        bool | None,
+        typer.Option(
+            "--is-archived",
+            help="Optional value to update is_archived field on this entry",
+        ),
+    ] = None,
 ):
     """
     Update an existing application.
@@ -351,20 +358,19 @@ def update(
 @app.command()
 def delete(
     ctx: typer.Context,
-    id_or_identifier: Optional[str] = typer.Argument(
-        None,
-        help=SELECT_APPLICATION_HELP,
-    ),
-    application_id: Optional[int] = typer.Option(
-        None,
-        "--id",
-        "-i",
-        help=f"Alternative way to specify id. {ID_NOTE}",
-    ),
-    identifier: Optional[str] = typer.Option(
-        None,
-        help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}",
-    ),
+    id_or_identifier: Annotated[str | None, typer.Argument(help=SELECT_APPLICATION_HELP)] = None,
+    application_id: Annotated[
+        int | None,
+        typer.Option(
+            "--id",
+            "-i",
+            help=f"Alternative way to specify id. {ID_NOTE}",
+        ),
+    ] = None,
+    identifier: Annotated[
+        str | None,
+        typer.Option(help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}"),
+    ] = None,
 ):
     """
     Delete an existing application.
@@ -394,20 +400,19 @@ def delete(
 @app.command()
 def download_files(
     ctx: typer.Context,
-    id_or_identifier: Optional[str] = typer.Argument(
-        None,
-        help=SELECT_APPLICATION_HELP,
-    ),
-    application_id: Optional[int] = typer.Option(
-        None,
-        "--id",
-        "-i",
-        help=f"Alternative way to specify id. {ID_NOTE}",
-    ),
-    identifier: Optional[str] = typer.Option(
-        None,
-        help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}",
-    ),
+    id_or_identifier: Annotated[str | None, typer.Argument(help=SELECT_APPLICATION_HELP)] = None,
+    application_id: Annotated[
+        int | None,
+        typer.Option(
+            "--id",
+            "-i",
+            help=f"Alternative way to specify id. {ID_NOTE}",
+        ),
+    ] = None,
+    identifier: Annotated[
+        str | None,
+        typer.Option(help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}"),
+    ] = None,
 ):
     """
     Download the files from an application to the current working directory.
@@ -436,36 +441,37 @@ def download_files(
 @app.command()
 def clone(
     ctx: typer.Context,
-    id_or_identifier: Optional[str] = typer.Argument(
-        None,
-        help=SELECT_APPLICATION_HELP,
-    ),
-    application_id: Optional[int] = typer.Option(
-        None,
-        "--id",
-        "-i",
-        help=f"Alternative way to specify id. {ID_NOTE}",
-    ),
-    identifier: Optional[str] = typer.Option(
-        None,
-        help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}",
-    ),
-    application_identifier: Optional[str] = typer.Option(
-        None,
-        help="""
+    id_or_identifier: Annotated[str | None, typer.Argument(help=SELECT_APPLICATION_HELP)] = None,
+    application_id: Annotated[
+        int | None,
+        typer.Option(
+            "--id",
+            "-i",
+            help=f"Alternative way to specify id. {ID_NOTE}",
+        ),
+    ] = None,
+    identifier: Annotated[
+        str | None,
+        typer.Option(help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}"),
+    ] = None,
+    application_identifier: Annotated[
+        str | None,
+        typer.Option(
+            help="""
         Optional new application identifier to override the original.
 
         Notice this can not match an existing identifier, including the one this entry is going to be cloned from.
         """,
-    ),
-    application_desc: Optional[str] = typer.Option(
-        None,
-        help="Optional new application description to override the original",
-    ),
-    application_name: Optional[str] = typer.Option(
-        None,
-        help="Optional new application name to override the original",
-    ),
+        ),
+    ] = None,
+    application_desc: Annotated[
+        str | None,
+        typer.Option(help="Optional new application description to override the original"),
+    ] = None,
+    application_name: Annotated[
+        str | None,
+        typer.Option(help="Optional new application name to override the original"),
+    ] = None,
 ):
     """
     Clone an application, so the user can own and modify a copy of it.

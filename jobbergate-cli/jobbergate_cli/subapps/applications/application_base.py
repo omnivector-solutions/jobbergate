@@ -27,7 +27,6 @@ class JobbergateApplicationBase:
 
     def mainflow(self, data: Dict[str, Any]):
         """Implements the main question asking workflow."""
-        data  # Makes linters happy
         raise NotImplementedError("Inheriting class must override this method.")
 
     @staticmethod

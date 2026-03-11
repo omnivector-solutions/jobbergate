@@ -4,7 +4,7 @@ Provide a ``typer`` app that can interact with Job Submission data in a cruddy m
 
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Dict, Optional, cast
+from typing import Annotated, Any, Dict, cast
 
 import typer
 
@@ -64,55 +64,60 @@ app = typer.Typer(
 @app.command()
 def create(
     ctx: typer.Context,
-    job_script_id: Optional[int] = typer.Argument(
-        None, help="The id of the job_script from which to create the job submission"
-    ),
-    name: str = typer.Option(
-        ...,
-        "--name",
-        "-n",
-        help="The name of the job submission to create",
-    ),
-    description: Optional[str] = typer.Option(
-        None,
-        help="A helpful description of the job submission",
-    ),
-    job_script_id_option: Optional[int] = typer.Option(
-        None,
-        "--job-script-id",
-        "-i",
-        help="Alternative way to specify the job script id",
-    ),
-    cluster_name: str = typer.Option(
-        None,
-        help="The name of the cluster where the job should be submitted (i.g. 'nash-staging')",
-    ),
-    execution_directory: Optional[Path] = typer.Option(
-        None,
-        help=dedent(
-            """
-            The path on the cluster where the job script should be executed.
-            If provided as a relative path, it will be converted as an absolute path from your current
-            working directory. If you use "~" to denote your home directory, the path will be expanded to an
-            absolute path for your home directory on *this* machine.
-            """
-        ).strip(),
-    ),
-    sbatch_arguments: Optional[list[str]] = typer.Option(
-        None,
-        "--sbatch-arguments",
-        "-s",
-        help=dedent(
-            """
-            Additional arguments to pass as sbatch directives. These should be provided as a list of strings.
-            See more details at: https://slurm.schedmd.com/sbatch.html
-            """
-        ).strip(),
-    ),
-    download: bool = typer.Option(
-        False,
-        help="Download the job script files to the current working directory",
-    ),
+    name: Annotated[
+        str,
+        typer.Option(
+            "--name",
+            "-n",
+            help="The name of the job submission to create",
+        ),
+    ],
+    job_script_id: Annotated[
+        int | None,
+        typer.Argument(help="The id of the job_script from which to create the job submission"),
+    ] = None,
+    description: Annotated[str | None, typer.Option(help="A helpful description of the job submission")] = None,
+    job_script_id_option: Annotated[
+        int | None,
+        typer.Option(
+            "--job-script-id",
+            "-i",
+            help="Alternative way to specify the job script id",
+        ),
+    ] = None,
+    cluster_name: Annotated[
+        str | None,
+        typer.Option(help="The name of the cluster where the job should be submitted (i.g. 'nash-staging')"),
+    ] = None,
+    execution_directory: Annotated[
+        Path | None,
+        typer.Option(
+            help=dedent(
+                """
+                The path on the cluster where the job script should be executed.
+                If provided as a relative path, it will be converted as an absolute path from your current
+                working directory. If you use "~" to denote your home directory, the path will be expanded to an
+                absolute path for your home directory on *this* machine.
+                """
+            ).strip(),
+        ),
+    ] = None,
+    sbatch_arguments: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--sbatch-arguments",
+            "-s",
+            help=dedent(
+                """
+                Additional arguments to pass as sbatch directives. These should be provided as a list of strings.
+                See more details at: https://slurm.schedmd.com/sbatch.html
+                """
+            ).strip(),
+        ),
+    ] = None,
+    download: Annotated[
+        bool, typer.Option(help="Download the job script files to the current working directory")
+    ] = False,
 ):
     """
     Create a new job submission.
@@ -141,7 +146,7 @@ def create(
             support=True,
             log_message=f"There was an issue submitting the job from job_script_id={job_script_id}",
             original_error=err,
-        )
+        ) from err
 
     render_single_result(
         jg_ctx,
@@ -154,28 +159,27 @@ def create(
 @app.command("list")
 def list_all(
     ctx: typer.Context,
-    show_all: bool = typer.Option(
-        False,
-        "--all",
-        help="Show all job submissions, even the ones owned by others",
-    ),
-    search: Optional[str] = typer.Option(None, help="Apply a search term to results"),
-    sort_order: SortOrder = typer.Option(SortOrder.DESCENDING, help="Specify sort order"),
-    sort_field: Optional[str] = typer.Option("id", help="The field by which results should be sorted"),
-    from_job_script_id: Optional[int] = typer.Option(
-        None,
-        help="Filter job-submissions by the job-script-id they were created from.",
-    ),
-    include_archived: bool = typer.Option(False, "--include-archived", help="Include archived entries in the results"),
-    page: Optional[int] = typer.Option(None, "--page", "-p", min=1, help="The page number to retrieve"),
-    size: int = typer.Option(
-        DEFAULT_PAGE_SIZE,
-        "--size",
-        "-s",
-        min=1,
-        max=MAX_PAGE_SIZE,
-        help="The number of items per page to retrieve",
-    ),
+    show_all: Annotated[
+        bool,
+        typer.Option(
+            "--all",
+            help="Show all job submissions, even the ones owned by others",
+        ),
+    ] = False,
+    search: Annotated[str | None, typer.Option(help="Apply a search term to results")] = None,
+    sort_order: Annotated[SortOrder, typer.Option(help="Specify sort order")] = SortOrder.DESCENDING,
+    sort_field: Annotated[str | None, typer.Option(help="The field by which results should be sorted")] = "id",
+    from_job_script_id: Annotated[
+        int | None,
+        typer.Option(help="Filter job-submissions by the job-script-id they were created from."),
+    ] = None,
+    include_archived: Annotated[
+        bool, typer.Option("--include-archived", help="Include archived entries in the results")
+    ] = False,
+    page: Annotated[int | None, typer.Option("--page", "-p", min=1, help="The page number to retrieve")] = None,
+    size: Annotated[
+        int, typer.Option("--size", "-s", min=1, max=MAX_PAGE_SIZE, help="The number of items per page to retrieve")
+    ] = DEFAULT_PAGE_SIZE,
 ):
     """
     Show available job submissions.
@@ -215,10 +219,11 @@ def list_all(
 @app.command()
 def get_one(
     ctx: typer.Context,
-    job_submission_id: Optional[int] = typer.Argument(
-        None, help="The specific id of the job submission to be selected."
-    ),
-    job_submission_id_option: Optional[int] = typer.Option(None, "--id", "-i", help=ID_OPTION_HELP),
+    job_submission_id: Annotated[
+        int | None,
+        typer.Argument(help="The specific id of the job submission to be selected."),
+    ] = None,
+    job_submission_id_option: Annotated[int | None, typer.Option("--id", "-i", help=ID_OPTION_HELP)] = None,
 ):
     """
     Show the detailed view of a single job submission by id
@@ -247,16 +252,20 @@ def get_one(
 @app.command()
 def delete(
     ctx: typer.Context,
-    job_submission_id: Optional[int] = typer.Argument(
-        None,
-        help="The id of the job submission to delete",
-    ),
-    job_submission_id_option: Optional[int] = typer.Option(
-        ...,
-        "--id",
-        "-i",
-        help=ID_OPTION_HELP,
-    ),
+    job_submission_id: Annotated[
+        int | None,
+        typer.Argument(
+            help="The id of the job submission to delete",
+        ),
+    ] = None,
+    job_submission_id_option: Annotated[
+        int | None,
+        typer.Option(
+            "--id",
+            "-i",
+            help=ID_OPTION_HELP,
+        ),
+    ] = None,
 ):
     """
     Delete an existing job submission.
@@ -281,15 +290,14 @@ def delete(
 @app.command()
 def clone(
     ctx: typer.Context,
-    job_submission_id: Optional[int] = typer.Argument(
-        None, help="The specific id of the job submission to be updated."
-    ),
-    job_submission_id_option: Optional[int] = typer.Option(
-        None,
-        "--id",
-        "-i",
-        help=f"{ID_OPTION_HELP}.",
-    ),
+    job_submission_id: Annotated[
+        int | None,
+        typer.Argument(help="The specific id of the job submission to be updated."),
+    ] = None,
+    job_submission_id_option: Annotated[
+        int | None,
+        typer.Option("--id", "-i", help=f"{ID_OPTION_HELP}."),
+    ] = None,
 ):
     """
     Clone an existing job submission under the CREATED status, so it is re-submitted to the cluster.
@@ -321,10 +329,11 @@ def clone(
 @app.command()
 def cancel(
     ctx: typer.Context,
-    job_submission_id: Optional[int] = typer.Argument(
-        None, help="The specific id of the job submission to be cancelled."
-    ),
-    job_submission_id_option: Optional[int] = typer.Option(None, "--id", "-i", help=ID_OPTION_HELP),
+    job_submission_id: Annotated[
+        int | None,
+        typer.Argument(help="The specific id of the job submission to be cancelled."),
+    ] = None,
+    job_submission_id_option: Annotated[int | None, typer.Option("--id", "-i", help=ID_OPTION_HELP)] = None,
 ):
     """
     Cancel an existing job submission.
