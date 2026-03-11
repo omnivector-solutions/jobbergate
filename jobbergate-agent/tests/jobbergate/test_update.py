@@ -200,7 +200,7 @@ async def test_fetch_active_submissions__success():
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
-async def test_fetch_active_submissions__raises_jobbergate_api_error_if_response_is_not_200():  # noqa
+async def test_fetch_active_submissions__raises_jobbergate_api_error_if_response_is_not_200():
     """
     Test that the ``fetch_active_submissions()`` function will raise a
     JobbergateApiError if the response from the API is not OK (200).
@@ -216,7 +216,7 @@ async def test_fetch_active_submissions__raises_jobbergate_api_error_if_response
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
-async def test_fetch_active_submissions__raises_jobbergate_api_error_if_response_cannot_be_deserialized():  # noqa
+async def test_fetch_active_submissions__raises_jobbergate_api_error_if_response_cannot_be_deserialized():
     """
     Test that the ``fetch_active_submissions()`` function will raise a
     JobbergateApiError if it fails to convert the response to an ActiveJobSubmission.
