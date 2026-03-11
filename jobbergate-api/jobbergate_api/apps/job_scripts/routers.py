@@ -1,16 +1,14 @@
 """Router for the Job Script Template resource."""
 
-from typing import Annotated
-from typing import cast
+from typing import Annotated, cast
 
-from buzz import require_condition, handle_errors
-from fastapi import APIRouter, Depends, File, HTTPException, Path, Query
+import snick
+from buzz import handle_errors, require_condition
+from fastapi import APIRouter, Depends, File, HTTPException, Path, Query, UploadFile, status
 from fastapi import Response as FastAPIResponse
-from fastapi import UploadFile, status
 from fastapi_pagination import Page
 from loguru import logger
 from pydantic import AnyUrl
-import snick
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.dependencies import SecureService, secure_services

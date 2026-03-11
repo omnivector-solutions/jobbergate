@@ -1,8 +1,8 @@
 """Tests for the smart template service module."""
 
 from itertools import product
-from typing import Any, NamedTuple
 from pathlib import Path
+from typing import Any, NamedTuple
 
 import pendulum
 import pytest

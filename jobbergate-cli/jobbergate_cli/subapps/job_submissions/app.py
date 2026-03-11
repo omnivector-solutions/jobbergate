@@ -17,7 +17,6 @@ from jobbergate_cli.subapps.job_submissions.tools import fetch_job_submission_da
 from jobbergate_cli.subapps.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, handle_pagination
 from jobbergate_cli.subapps.tools import resolve_selection
 
-
 # move hidden field logic to the API
 HIDDEN_FIELDS = [
     "cloned_from_id",

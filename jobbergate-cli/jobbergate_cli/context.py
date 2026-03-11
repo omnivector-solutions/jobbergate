@@ -11,8 +11,8 @@ from jobbergate_core.auth.handler import JobbergateAuthHandler
 from jobbergate_core.sdk import Apps
 
 from jobbergate_cli.auth import show_login_message, track_login_progress
-from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.config import settings
+from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ContextProtocol
 
 

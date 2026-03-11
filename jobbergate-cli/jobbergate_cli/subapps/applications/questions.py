@@ -20,7 +20,6 @@ import inquirer.questions
 
 from jobbergate_cli.exceptions import Abort
 
-
 TInquirerType = TypeVar("TInquirerType", bound=inquirer.questions.Question)
 
 

@@ -3,8 +3,7 @@ from pathlib import Path
 from typing import Annotated, Optional
 
 import buzz
-from pydantic import AnyHttpUrl, confloat, Field, ValidationError, model_validator
-from pydantic import AnyUrl
+from pydantic import AnyHttpUrl, AnyUrl, Field, ValidationError, confloat, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Self
 

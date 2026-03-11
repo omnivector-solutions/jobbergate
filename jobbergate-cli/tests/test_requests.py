@@ -9,7 +9,6 @@ from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import _deserialize_request_model, make_request
 from jobbergate_cli.schemas import ListResponseEnvelope
 
-
 DEFAULT_DOMAIN = "https://dummy-domain.com"
 
 

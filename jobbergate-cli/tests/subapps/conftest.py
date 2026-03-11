@@ -2,16 +2,16 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Generator, Optional
 
 import httpx
-from jobbergate_core import JobbergateAuthHandler
 import pytest
 import yaml
+from jobbergate_core import JobbergateAuthHandler
 from typer import Context, Typer
 from typer.testing import CliRunner
 
 from jobbergate_cli.constants import JOBBERGATE_APPLICATION_CONFIG_FILE_NAME, JOBBERGATE_APPLICATION_MODULE_FILE_NAME
 from jobbergate_cli.context import JobbergateContext
 from jobbergate_cli.exceptions import handle_abort, handle_authentication_error
-from jobbergate_cli.schemas import IdentityData, JobbergateApplicationConfig, ContextProtocol
+from jobbergate_cli.schemas import ContextProtocol, IdentityData, JobbergateApplicationConfig
 from jobbergate_cli.text_tools import dedent
 
 OWNER_EMAIL_PRIMARY = "tucker.beck@omnivector.solutions"

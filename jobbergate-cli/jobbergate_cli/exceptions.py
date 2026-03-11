@@ -7,17 +7,15 @@ from functools import wraps
 import buzz
 import sentry_sdk
 import typer
+from jobbergate_core.auth import AuthenticationError
 from loguru import logger
 from rich import traceback
 from rich.console import Console
 from rich.panel import Panel
 
-from jobbergate_core.auth import AuthenticationError
-
 from jobbergate_cli.config import settings
 from jobbergate_cli.constants import OV_CONTACT
 from jobbergate_cli.text_tools import dedent, unwrap
-
 
 # Enables prettified traceback printing via rich
 traceback.install()

@@ -10,8 +10,8 @@ from concurrent import futures
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from jinja2.sandbox import SandboxedEnvironment
 from jinja2.exceptions import SecurityError, UndefinedError
+from jinja2.sandbox import SandboxedEnvironment
 from loguru import logger
 
 from jobbergate_cli.config import settings
@@ -19,8 +19,8 @@ from jobbergate_cli.constants import FileType
 from jobbergate_cli.exceptions import Abort, JobbergateCliError
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import (
-    JobbergateConfig,
     ContextProtocol,
+    JobbergateConfig,
     JobScriptCreateRequest,
     JobScriptFile,
     JobScriptRenderRequestData,

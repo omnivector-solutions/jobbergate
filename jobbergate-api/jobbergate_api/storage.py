@@ -2,12 +2,12 @@
 Provide functions to interact with persistent data storage.
 """
 
-from typing import Annotated
 import re
 import typing
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from itertools import product
+from typing import Annotated
 
 import asyncpg
 import fastapi

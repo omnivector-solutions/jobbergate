@@ -4,7 +4,6 @@ from pydantic import BaseModel
 
 from jobbergate_cli.schemas import ListResponseEnvelope
 
-
 EnvelopeT = TypeVar("EnvelopeT")
 
 

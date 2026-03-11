@@ -1,10 +1,10 @@
 from pathlib import Path
-from typing import Generic, List, Optional, TypeVar, TypedDict, TypeAlias
+from typing import Generic, List, Optional, TypeAlias, TypedDict, TypeVar
 
 import pydantic
 from pydantic import ConfigDict, field_validator
 
-from jobbergate_agent.jobbergate.constants import FileType, INFLUXDB_MEASUREMENT
+from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT, FileType
 
 
 class JobScriptFile(pydantic.BaseModel, extra="ignore"):

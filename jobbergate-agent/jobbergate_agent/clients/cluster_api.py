@@ -8,7 +8,6 @@ from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import AuthTokenError
 from jobbergate_agent.utils.logging import logger
 
-
 CACHE_DIR = SETTINGS.CACHE_DIR / "cluster-api"
 
 

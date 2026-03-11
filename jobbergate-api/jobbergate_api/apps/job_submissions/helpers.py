@@ -3,13 +3,13 @@
 from collections.abc import Iterable
 from math import ceil
 from textwrap import dedent
-from typing import Any, assert_never, Type
+from typing import Any, Type, assert_never
 
 from loguru import logger
 
 from jobbergate_api.apps.job_submissions.constants import (
-    JobSubmissionMetricSampleRate,
     JobSubmissionMetricAggregateNames,
+    JobSubmissionMetricSampleRate,
 )
 
 

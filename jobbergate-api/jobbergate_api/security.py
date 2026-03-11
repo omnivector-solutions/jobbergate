@@ -15,7 +15,6 @@ from pydantic import EmailStr, model_validator
 
 from jobbergate_api.config import settings
 
-
 guard = Armasec(
     domain=settings.ARMASEC_DOMAIN,
     debug_logger=logger.debug if settings.ARMASEC_DEBUG else None,

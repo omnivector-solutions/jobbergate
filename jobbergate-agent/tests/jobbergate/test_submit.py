@@ -15,6 +15,7 @@ import respx
 from jobbergate_agent.jobbergate.schemas import JobScriptFile, PendingJobSubmission, SlurmJobData
 from jobbergate_agent.jobbergate.submit import (
     PendingJobSubmissionContext,
+    SubprocessAsUserHandler,
     fetch_pending_submissions,
     get_job_script_file,
     mark_as_rejected,
@@ -25,14 +26,13 @@ from jobbergate_agent.jobbergate.submit import (
     retrieve_submission_file,
     submit_job_script,
     submit_pending_jobs,
-    SubprocessAsUserHandler,
     validate_submit_dir,
     write_submission_file,
 )
 from jobbergate_agent.settings import SETTINGS
-from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError
 from jobbergate_agent.user_mapper.base import manufacture
 from jobbergate_agent.user_mapper.single_user import SingleUserMapper
+from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError
 
 
 class RegexArgMatcher:

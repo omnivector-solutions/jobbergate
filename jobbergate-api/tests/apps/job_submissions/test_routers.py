@@ -4,28 +4,27 @@ Tests for the /job-submissions/ endpoint.
 
 import itertools
 import json
-from faker import Faker
-
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from textwrap import dedent
 from unittest import mock
 
-import pytest
 import msgpack
+import pytest
+from faker import Faker
 from fastapi import status
 from sqlalchemy import insert, select
 
 from jobbergate_api.apps.job_submissions.constants import (
-    JobSubmissionStatus,
-    SlurmJobState,
     JobSubmissionMetricAggregateNames,
     JobSubmissionMetricSampleRate,
+    JobSubmissionStatus,
+    SlurmJobState,
 )
+from jobbergate_api.apps.job_submissions.models import JobProgress, JobSubmissionMetric
+from jobbergate_api.apps.job_submissions.schemas import JobSubmissionAgentMaxTimes, JobSubmissionMetricSchema
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.rabbitmq_notification import rabbitmq_connect
-from jobbergate_api.apps.job_submissions.models import JobSubmissionMetric, JobProgress
-from jobbergate_api.apps.job_submissions.schemas import JobSubmissionMetricSchema, JobSubmissionAgentMaxTimes
 
 # Not using the synth_session fixture in a route that needs the database is unsafe
 pytest.mark.usefixtures("synth_session")

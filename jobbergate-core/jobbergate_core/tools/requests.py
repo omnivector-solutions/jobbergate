@@ -6,7 +6,7 @@ from textwrap import dedent
 from typing import Any, Type, TypeVar
 
 from buzz import check_expressions, handle_errors
-from httpx import Client, HTTPStatusError, RequestError, Response, Request
+from httpx import Client, HTTPStatusError, Request, RequestError, Response
 from loguru import logger
 from pydantic import BaseModel
 

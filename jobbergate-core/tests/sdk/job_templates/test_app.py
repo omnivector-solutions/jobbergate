@@ -1,5 +1,6 @@
 import json
 from typing import Any
+
 import pytest
 import respx
 from httpx import Response, codes

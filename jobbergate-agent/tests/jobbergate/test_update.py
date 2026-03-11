@@ -1,9 +1,9 @@
 import json
-from pathlib import Path
 import uuid
 from collections.abc import Callable
 from datetime import datetime
 from itertools import combinations
+from pathlib import Path
 from textwrap import dedent
 from typing import Any, NamedTuple, get_args
 from unittest import mock

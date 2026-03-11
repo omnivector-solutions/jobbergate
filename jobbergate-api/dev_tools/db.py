@@ -3,12 +3,12 @@
 import subprocess
 
 import typer
-from loguru import logger
-
+from alembic.command import downgrade as sqla_downgrade
 from alembic.command import revision as sqla_migrate
 from alembic.command import upgrade as sqla_upgrade
-from alembic.command import downgrade as sqla_downgrade
 from alembic.config import Config
+from loguru import logger
+
 from jobbergate_api.storage import build_db_url
 
 ALEMBIC_CONFIG_PATH = "alembic/alembic.ini"

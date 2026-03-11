@@ -2,47 +2,46 @@
 Router for the JobSubmission resource.
 """
 
-from typing import Annotated
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Body
+import msgpack
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from fastapi import Response as FastAPIResponse
-from fastapi import status
 from fastapi_pagination import Page
 from loguru import logger
-from jobbergate_api.apps.job_submissions.models import JobSubmissionMetric
-from sqlalchemy import select, insert, text as sa_text
-from sqlalchemy.sql.functions import max, min
-import msgpack
+from sqlalchemy import insert, select
+from sqlalchemy import text as sa_text
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.sql.functions import max, min
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.dependencies import SecureService, secure_services
 from jobbergate_api.apps.job_submissions.constants import (
+    JobSubmissionMetricSampleRate,
     JobSubmissionStatus,
     slurm_job_state_details,
-    JobSubmissionMetricSampleRate,
 )
+from jobbergate_api.apps.job_submissions.helpers import (
+    build_job_metric_aggregation_query,
+    validate_job_metric_upload_input,
+)
+from jobbergate_api.apps.job_submissions.models import JobSubmissionMetric
 from jobbergate_api.apps.job_submissions.schemas import (
     ActiveJobSubmission,
+    JobProgressDetail,
+    JobSubmissionAgentMaxTimes,
+    JobSubmissionAgentMetricsRequest,
     JobSubmissionAgentRejectedRequest,
     JobSubmissionAgentSubmittedRequest,
     JobSubmissionAgentUpdateRequest,
     JobSubmissionCreateRequest,
     JobSubmissionDetailedView,
     JobSubmissionListView,
-    JobSubmissionUpdateRequest,
-    PendingJobSubmission,
-    JobSubmissionAgentMetricsRequest,
-    JobSubmissionAgentMaxTimes,
     JobSubmissionMetricSchema,
     JobSubmissionMetricTimestamps,
-    JobProgressDetail,
-)
-from jobbergate_api.apps.job_submissions.helpers import (
-    validate_job_metric_upload_input,
-    build_job_metric_aggregation_query,
+    JobSubmissionUpdateRequest,
+    PendingJobSubmission,
 )
 from jobbergate_api.apps.permissions import Permissions, can_bypass_ownership_check
 from jobbergate_api.apps.schemas import ListParams

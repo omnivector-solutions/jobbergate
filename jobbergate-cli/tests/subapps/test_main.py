@@ -1,6 +1,6 @@
 import shlex
 
-from jobbergate_cli.main import main, login, logout
+from jobbergate_cli.main import login, logout, main
 
 
 def test_main_command_with_ignore_username_and_password(make_test_app, cli_runner):

@@ -2,6 +2,7 @@ import re
 import subprocess
 import sys
 from importlib.metadata import version
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
@@ -9,8 +10,6 @@ from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_ap
 
 # flake8 doesn't understand the scheduler is used in the self_update_agent function
 from jobbergate_agent.utils.scheduler import schedule_tasks, scheduler  # noqa: F401
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from apscheduler.job import Job

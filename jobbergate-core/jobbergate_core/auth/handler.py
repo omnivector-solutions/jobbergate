@@ -10,8 +10,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Iterable
 
-from loguru import logger
 import pendulum
+from loguru import logger
 from pydantic import BaseModel
 
 from jobbergate_core.auth.exceptions import AuthenticationError

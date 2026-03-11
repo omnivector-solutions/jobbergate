@@ -5,11 +5,10 @@ Note:
     The dependencies can be reused multiple times, since FastAPI caches the results.
 """
 
-from typing import Annotated
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
 from itertools import chain
-from typing import AsyncIterator, Iterator, NamedTuple
+from typing import Annotated, AsyncIterator, Iterator, NamedTuple
 
 from aioboto3.session import Session
 from fastapi import Depends
@@ -25,8 +24,8 @@ from jobbergate_api.apps.job_script_templates.services import (
 )
 from jobbergate_api.apps.job_scripts.models import JobScript, JobScriptFile
 from jobbergate_api.apps.job_scripts.services import JobScriptCrudService, JobScriptFileService
-from jobbergate_api.apps.job_submissions.models import JobSubmission, JobProgress
-from jobbergate_api.apps.job_submissions.services import JobSubmissionService, JobProgressService
+from jobbergate_api.apps.job_submissions.models import JobProgress, JobSubmission
+from jobbergate_api.apps.job_submissions.services import JobProgressService, JobSubmissionService
 from jobbergate_api.config import settings
 from jobbergate_api.safe_types import Bucket
 from jobbergate_api.security import PermissionMode

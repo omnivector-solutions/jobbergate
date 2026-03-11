@@ -9,7 +9,7 @@ from typing import Annotated, Optional
 
 from buzz import require_condition
 from loguru import logger
-from pydantic import confloat, Field, HttpUrl, model_validator
+from pydantic import Field, HttpUrl, confloat, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 

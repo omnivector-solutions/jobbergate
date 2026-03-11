@@ -1,6 +1,8 @@
 from pathlib import Path
+
 import pytest
 from click import UsageError
+
 from jobbergate_cli.subapps.tools import resolve_application_selection, resolve_selection
 
 

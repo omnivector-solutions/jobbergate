@@ -5,6 +5,7 @@ Provide schemas for the job script templates component.
 from typing import Any
 
 from pydantic import BaseModel, NonNegativeInt
+
 from jobbergate_core.sdk.constants import FileType
 from jobbergate_core.sdk.schemas import PydanticDateTime, TableResource
 

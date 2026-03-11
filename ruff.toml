@@ -1,7 +1,7 @@
 line-length = 120
 
 [lint]
-extend-select = []
+extend-select = ["I"]
 
 [lint.isort]
 known-first-party = [

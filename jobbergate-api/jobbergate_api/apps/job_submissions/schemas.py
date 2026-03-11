@@ -2,9 +2,9 @@
 JobSubmission resource schema.
 """
 
-from typing import Self
-from datetime import datetime
 from collections.abc import Iterable
+from datetime import datetime
+from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, field_validator
 

@@ -15,7 +15,6 @@ from jobbergate_core.auth import JobbergateAuthHandler
 from jobbergate_core.auth.exceptions import AuthenticationError
 from jobbergate_core.auth.token import TokenType
 
-
 DUMMY_LOGIN_DOMAIN = "http://localhost:8080/realms/jobbergate-local"
 DUMMY_LOGIN_CLIENT_ID = "cli"
 

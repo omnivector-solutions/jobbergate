@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 from dataclasses import dataclass, field
 from functools import cached_property, partial
 from pathlib import Path
-import sys
 from tempfile import TemporaryDirectory
 from typing import Any, Callable, Coroutine
 
@@ -20,12 +20,12 @@ from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_ap
 from jobbergate_agent.jobbergate.constants import FileType
 from jobbergate_agent.jobbergate.pagination import fetch_paginated_result
 from jobbergate_agent.jobbergate.schemas import JobScriptFile, PendingJobSubmission, SlurmJobData
-from jobbergate_agent.jobbergate.update import fetch_job_data, SubprocessAsUserHandler
+from jobbergate_agent.jobbergate.update import SubprocessAsUserHandler, fetch_job_data
 from jobbergate_agent.settings import SETTINGS
+from jobbergate_agent.user_mapper.base import manufacture
 from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError
 from jobbergate_agent.utils.logging import log_error
 from jobbergate_agent.utils.plugin import get_plugin_manager, hookimpl, hookspec
-from jobbergate_agent.user_mapper.base import manufacture
 
 
 async def retrieve_submission_file(file: JobScriptFile) -> str:

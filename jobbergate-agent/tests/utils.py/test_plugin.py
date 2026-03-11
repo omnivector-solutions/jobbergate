@@ -7,8 +7,8 @@ from jobbergate_agent.tasks import (
     status_report_task,
 )
 from jobbergate_agent.user_mapper.ldap import user_mapper_factory
-from jobbergate_agent.utils.plugin import load_plugins
 from jobbergate_agent.user_mapper.single_user import SingleUserMapper
+from jobbergate_agent.utils.plugin import load_plugins
 
 
 def test_discover_tasks__success():

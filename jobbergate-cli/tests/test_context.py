@@ -4,8 +4,8 @@ from unittest import mock
 import pytest
 
 from jobbergate_cli.auth import show_login_message, track_login_progress
-from jobbergate_cli.context import JobbergateContext
 from jobbergate_cli.config import settings
+from jobbergate_cli.context import JobbergateContext
 from jobbergate_cli.exceptions import Abort
 
 

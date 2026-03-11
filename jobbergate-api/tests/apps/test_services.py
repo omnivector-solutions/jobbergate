@@ -9,9 +9,9 @@ from unittest import mock
 
 import httpx
 import pytest
-from pydantic import AnyUrl
 from fastapi import HTTPException, UploadFile
 from fastapi_pagination.default import Params
+from pydantic import AnyUrl
 
 from jobbergate_api.apps.models import Base, CrudMixin, FileMixin
 from jobbergate_api.apps.services import CrudService, FileService, ServiceError
