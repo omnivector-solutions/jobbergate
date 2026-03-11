@@ -113,7 +113,7 @@ def _deserialize_request_model(
             ),
             sentry_context=sentry_context,
             original_error=err,
-        )
+        ) from err
 
 
 ResponseModel = TypeVar("ResponseModel", bound=pydantic.BaseModel)
@@ -190,7 +190,7 @@ def make_request(
             support=support,
             log_message=f"There was an error on the request -- {str(err)}",
             original_error=err,
-        )
+        ) from err
 
     if expected_status is not None:
         if response.is_client_error:
@@ -255,7 +255,7 @@ def make_request(
             support=support,
             log_message=f"Failed unpacking json: {response.text}",
             original_error=err,
-        )
+        ) from err
     logger.debug(f"Extracted data from response: {data}")
 
     if response_model_cls is None:
@@ -276,4 +276,4 @@ def make_request(
             support=support,
             log_message=f"Unexpected format in response data: {data}",
             original_error=err,
-        )
+        ) from err

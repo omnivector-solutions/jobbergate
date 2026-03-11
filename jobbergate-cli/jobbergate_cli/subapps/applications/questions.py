@@ -112,8 +112,8 @@ class Integer(QuestionBase):
         """
         try:
             int_val = int(current)
-        except ValueError:
-            raise inquirer.errors.ValidationError("", reason=f"{current} is not an integer")
+        except ValueError as err:
+            raise inquirer.errors.ValidationError("", reason=f"{current} is not an integer") from err
 
         min_str = str(self.minval) if self.minval is not None else "-∞"
         max_str = str(self.maxval) if self.maxval is not None else "∞"

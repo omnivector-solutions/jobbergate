@@ -112,6 +112,7 @@ def lockdown_with_identity(
             for ensure, name in zip(
                 (ensure_email, ensure_organization, ensure_client_id),
                 ("email", "organization_id", "client_id"),
+                strict=True,
             ):
                 if ensure:
                     check(getattr(identity_payload, name, None) is not None, message=name)

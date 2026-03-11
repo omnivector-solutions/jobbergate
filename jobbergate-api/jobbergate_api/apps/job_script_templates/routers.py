@@ -65,10 +65,10 @@ async def job_script_template_create(
             owner_email=secure_services.identity_payload.email,
             **create_request.model_dump(exclude_unset=True),
         )
-    except IntegrityError:
+    except IntegrityError as err:
         message = f"Job script template with the identifier={create_request.identifier} already exists"
         logger.error(message)
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=message)
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=message) from err
 
 
 @router.get(
@@ -120,12 +120,12 @@ async def job_script_template_clone(
             owner_email=secure_services.identity_payload.email,
             **new_data,
         )
-    except IntegrityError:
+    except IntegrityError as err:
         message = "Job script template with the identifier={} already exists".format(
             clone_request.identifier or original_instance.identifier
         )
         logger.error(message)
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=message)
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=message) from err
 
     for file in original_instance.template_files:
         await secure_services.file.template.clone_instance(file, cloned_instance.id)
@@ -294,7 +294,7 @@ async def job_script_template_upload_file(
     """Upload a file to a job script template by id or identifier."""
     # This is included for backwards compatibility with the previous implementation
     # where filename was recovered from the upload_file object
-    filename = filename or getattr(upload_file, "filename")
+    filename = filename or getattr(upload_file, "filename", None)
     if not filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

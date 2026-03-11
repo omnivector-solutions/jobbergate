@@ -78,6 +78,6 @@ def test_authentication_handler__fails_on_missing_setting(mocked_auth_handler, m
                 flags=re.DOTALL,
             ),
         ):
-            ctx.authentication_handler
+            _ = ctx.authentication_handler
 
     mocked_auth_handler.assert_not_called()

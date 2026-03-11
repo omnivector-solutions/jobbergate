@@ -581,7 +581,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             raise ServiceError(
                 f"Error uploading file {instance.filename} to the file storage",
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            ) from e
 
     async def add_instance(self, parent_id, filename, upsert_kwargs) -> FileModel:
         """
@@ -626,7 +626,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             raise ServiceError(
                 f"Error copying file {source_instance.file_key} to the file storage",
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            ) from e
 
     async def delete(self, instance: FileModel) -> None:
         """
@@ -672,7 +672,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
                 raise ServiceError(
                     f"Jinja can not render filename={instance.filename}",
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                )
+                ) from e
             except UndefinedError as e:
                 logger.debug(
                     "Unable to render filename={} with context={} -- Error: {}",

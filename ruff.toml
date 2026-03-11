@@ -1,7 +1,10 @@
 line-length = 120
 
 [lint]
-extend-select = ["I"]
+extend-select = ["B", "E", "F", "I"]
+extend-ignore = [
+    "E501", # Line too long
+]
 
 [lint.isort]
 known-first-party = [

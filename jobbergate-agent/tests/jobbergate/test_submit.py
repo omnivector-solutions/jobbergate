@@ -487,7 +487,7 @@ class TestSubprocessAsUserHandler:
             ),
             pytest.raises(RuntimeError, match="Failed to get supplementary groups"),
         ):
-            handler.extra_groups
+            _ = handler.extra_groups
 
 
 class TestValidateSubmitDir:

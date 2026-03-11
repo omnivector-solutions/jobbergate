@@ -216,12 +216,12 @@ def render_template(
     for context in render_contexts:
         try:
             return template.render(**context)
-        except SecurityError:
+        except SecurityError as err:
             raise Abort(
                 f"Security errors raised when rendering filename={template_path}",
                 subject="Unable to render jinja template",
                 log_message=f"Security error rendering filename={template_path}",
-            )
+            ) from err
         except UndefinedError as e:
             logger.debug(
                 "Unable to render filename={} with context={} -- Error: {}",

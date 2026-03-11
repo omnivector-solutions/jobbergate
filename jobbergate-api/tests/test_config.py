@@ -38,7 +38,7 @@ class TestCheckNoneOrAllKeysExist:
         """
         assert check_none_or_all_keys_exist(dummy_dict, set(target_keys)) is True
 
-    @pytest.mark.parametrize("target_keys", zip(keys, missing_keys))
+    @pytest.mark.parametrize("target_keys", zip(keys, missing_keys, strict=True))
     def test_some_keys_exist(self, dummy_dict, target_keys):
         """
         Test if it returns false when some of the target keys are missing in the input dict.

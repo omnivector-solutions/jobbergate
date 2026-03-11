@@ -195,11 +195,11 @@ async def job_submission_get_list(
     if slurm_job_ids:
         try:
             list_kwargs["filter_slurm_job_ids"] = [int(i) for i in slurm_job_ids.split(",")]
-        except Exception:
+        except Exception as err:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Invalid slurm_job_ids param. Must be a comma-separated list of integers",
-            )
+            ) from err
 
     return await secure_services.crud.job_submission.paginated_list(**list_kwargs)
 
@@ -632,7 +632,7 @@ async def job_submissions_agent_metrics_upload(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
     else:
         logger.debug("Decoded data is valid")
 
@@ -667,7 +667,7 @@ async def job_submissions_agent_metrics_upload(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Failed to insert metrics",
-        )
+        ) from e
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -689,8 +689,8 @@ async def job_submissions_metrics(
         Query(description="Filter by node_host. If omitted, metrics will be gathered over all nodes."),
     ] = None,
     start_time: Annotated[
-        datetime, Query(description="Start time for the metrics query. Defaults to one hour ago.")
-    ] = datetime.now(tz=timezone.utc) - timedelta(hours=1),
+        datetime | None, Query(description="Start time for the metrics query. Defaults to one hour ago.")
+    ] = None,
     sample_rate: Annotated[
         JobSubmissionMetricSampleRate, Query(description="Sample rate in seconds for the metrics query.")
     ] = JobSubmissionMetricSampleRate.ten_minutes,
@@ -700,6 +700,7 @@ async def job_submissions_metrics(
     ] = None,
 ):
     """Get the metrics for a job submission."""
+    start_time = start_time or (datetime.now(tz=timezone.utc) - timedelta(hours=1))
     logger.debug(f"Getting metrics for job submission {job_submission_id}")
     if end_time is not None and end_time < start_time:
         raise HTTPException(

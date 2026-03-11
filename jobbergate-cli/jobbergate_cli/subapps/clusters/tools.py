@@ -42,7 +42,7 @@ def pull_client_ids_from_api(ctx: ContextProtocol) -> List[str]:
             support=True,
             original_error=err,
             log_message=f"Failed to unpack data from cluster-api: {response_data}",
-        )
+        ) from err
     return client_ids
 
 

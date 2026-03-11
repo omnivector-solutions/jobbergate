@@ -657,7 +657,7 @@ class TestListJobScripts:
         assert response_data["size"] == 50
         assert response_data["pages"] == 1
 
-        for response_item, expected_item in zip(response_data["items"], job_scripts_list):
+        for response_item, expected_item in zip(response_data["items"], job_scripts_list, strict=True):
             assert response_item["name"] == expected_item["name"]
             assert response_item["description"] == expected_item["description"]
             assert response_item["owner_email"] == expected_item["owner_email"]

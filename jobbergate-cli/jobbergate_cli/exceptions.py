@@ -102,7 +102,7 @@ def handle_abort(func):
             console.print()
             console.print(Panel(message, **panel_kwargs))
             console.print()
-            raise typer.Exit(code=1)
+            raise typer.Exit(code=1) from None
 
     return wrapper
 

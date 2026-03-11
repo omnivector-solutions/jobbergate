@@ -71,7 +71,7 @@ class TemplateFiles:
         )
 
     @validate_call
-    def download(self, id_or_identifier: NonNegativeInt | str, filename: str, directory: Path = Path.cwd()) -> Path:
+    def download(self, id_or_identifier: NonNegativeInt | str, filename: str, directory: Path | None = None) -> Path:
         """
         Download a template file.
 
@@ -83,6 +83,7 @@ class TemplateFiles:
         Returns:
             The path to the downloaded file.
         """
+        directory = Path.cwd() if directory is None else directory
         output_path = (directory / filename).resolve()
         (
             self.request_handler_cls(
@@ -153,7 +154,7 @@ class WorkflowFiles:
         )
 
     @validate_call
-    def download(self, id_or_identifier: NonNegativeInt | str, directory: Path = Path.cwd()) -> Path:
+    def download(self, id_or_identifier: NonNegativeInt | str, directory: Path | None = None) -> Path:
         """
         Download a workflow file.
 
@@ -164,6 +165,7 @@ class WorkflowFiles:
         Returns:
             The path to the downloaded file.
         """
+        directory = Path.cwd() if directory is None else directory
         output_path = directory / APPLICATION_SCRIPT_FILE_NAME
         (
             self.request_handler_cls(

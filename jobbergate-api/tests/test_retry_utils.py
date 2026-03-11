@@ -86,7 +86,7 @@ class TestAsyncRetry:
 
         assert on_error_callback.call_count == 3
         # Verify attempt numbers are passed correctly (1, 2, 3)
-        for call_args, expected_attempt in zip(on_error_callback.call_args_list, [1, 2, 3]):
+        for call_args, expected_attempt in zip(on_error_callback.call_args_list, [1, 2, 3], strict=True):
             args, _ = call_args
             exc, attempt = args
             assert isinstance(exc, Exception)
@@ -229,7 +229,7 @@ class TestSyncRetry:
 
         assert on_error_callback.call_count == 3
         # Verify attempt numbers are passed correctly (1, 2, 3)
-        for call_args, expected_attempt in zip(on_error_callback.call_args_list, [1, 2, 3]):
+        for call_args, expected_attempt in zip(on_error_callback.call_args_list, [1, 2, 3], strict=True):
             args, _ = call_args
             exc, attempt = args
             assert isinstance(exc, Exception)

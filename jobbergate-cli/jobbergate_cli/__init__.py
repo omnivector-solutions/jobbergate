@@ -16,6 +16,7 @@ def __getattr__(name: str):
         warnings.warn(
             "appform is deprecated.  Import from 'jobbergate_cli.subapps.applications.questions' instead",
             DeprecationWarning,
+            stacklevel=2,
         )
         return importlib.import_module("jobbergate_cli.subapps.applications.questions", __name__)
 

@@ -80,7 +80,7 @@ class JobScriptFiles:
         )
 
     @validate_call
-    def download(self, job_script_id: NonNegativeInt, filename: str, directory: Path = Path.cwd()) -> Path:
+    def download(self, job_script_id: NonNegativeInt, filename: str, directory: Path | None = None) -> Path:
         """
         Download a job script file.
 
@@ -92,6 +92,7 @@ class JobScriptFiles:
         Returns:
             The path to the downloaded file.
         """
+        directory = Path.cwd() if directory is None else directory
         output_path = (directory / filename).resolve()
         (
             self.request_handler_cls(

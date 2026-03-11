@@ -23,6 +23,7 @@ if settings.JOBBERGATE_COMPATIBILITY_MODE:
             """
         ),
         DeprecationWarning,
+        stacklevel=2,
     )
 else:
     raise ImportError(

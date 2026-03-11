@@ -375,7 +375,7 @@ class ApplicationRuntime:
                 support=True,
                 log_message="Invalid application config",
                 original_error=err,
-            )
+            ) from err
 
     @cached_property
     def app_module(self) -> JobbergateApplicationBase:
@@ -392,7 +392,7 @@ class ApplicationRuntime:
                 support=True,
                 log_message=INVALID_APPLICATION_MODULE,
                 original_error=err,
-            )
+            ) from err
 
     def execute_application(self):
         """Execute the jobbergate application python module."""
@@ -433,7 +433,7 @@ class ApplicationRuntime:
             logger.debug(f"Calling method {next_method}")
             try:
                 workflow_questions = method_to_call(data=config)
-            except NotImplementedError:
+            except NotImplementedError as err:
                 raise Abort(
                     f"""
                     Abstract method not implemented.
@@ -441,7 +441,7 @@ class ApplicationRuntime:
                     Please implement {next_method} in your class.",
                     """,
                     subject=INVALID_APPLICATION_MODULE,
-                )
+                ) from err
 
             prompts = []
             auto_answers = {}

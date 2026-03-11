@@ -376,7 +376,7 @@ async def job_script_upload_file(
     """Upload a file to a job script."""
     # This is included for backwards compatibility with the previous implementation
     # where filename was recovered from the upload_file object
-    filename = filename or getattr(upload_file, "filename")
+    filename = filename or getattr(upload_file, "filename", None)
     if not filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

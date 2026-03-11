@@ -251,7 +251,11 @@ def _build_enum_sort_clause(sort_column: Column, sort_ascending: bool) -> Case:
     """
     assert isinstance(sort_column.type, Enum)
     sorted_values = sorted(sort_column.type.enums)
-    sort_tuple = zip(sorted_values, sorted_values if sort_ascending else reversed(sorted_values))
+    sort_tuple = zip(
+        sorted_values,
+        sorted_values if sort_ascending else reversed(sorted_values),
+        strict=True,
+    )
     return sqlalchemy.case(dict(sort_tuple), value=sort_column)
 
 

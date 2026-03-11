@@ -563,7 +563,7 @@ class TestListJobTemplates:
         assert response_data["size"] == 50
         assert response_data["pages"] == 1
 
-        for response_item, expected_item in zip(response_data["items"], job_templates_list):
+        for response_item, expected_item in zip(response_data["items"], job_templates_list, strict=True):
             assert response_item.get("identifier") == expected_item.get("identifier")
             assert response_item["name"] == expected_item["name"]
             assert response_item["description"] == expected_item["description"]

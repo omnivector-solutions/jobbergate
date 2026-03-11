@@ -78,7 +78,7 @@ async def process_supporting_files(pending_job_submission: PendingJobSubmission,
     # Write the files to the submit dir
     files_to_write = [
         asyncio.to_thread(write_submission_file, file_content, file.filename, submit_dir)
-        for file_content, file in zip(files_content, supporting_files)
+        for file_content, file in zip(files_content, supporting_files, strict=True)
     ]
     return await asyncio.gather(*files_to_write)
 
