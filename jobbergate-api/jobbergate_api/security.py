@@ -20,7 +20,6 @@ guard = Armasec(
     domain=settings.ARMASEC_DOMAIN,
     debug_logger=logger.debug if settings.ARMASEC_DEBUG else None,
     use_https=settings.ARMASEC_USE_HTTPS,
-    ignore_audience=True,
 )
 
 
@@ -95,7 +94,9 @@ def lockdown_with_identity(
     """
 
     def dependency(
-        token_payload: Annotated[TokenPayload, Depends(guard.lockdown(*scopes, permission_mode=permission_mode))],
+        token_payload: Annotated[
+            TokenPayload, Depends(guard.lockdown(*scopes, permission_mode=permission_mode))
+        ],
     ) -> IdentityPayload:
         """
         Provide an injectable function to lockdown a route and extract the identity payload.
