@@ -11,7 +11,6 @@ from functools import cached_property
 from typing import Any, Dict, List, Union, cast
 
 import yaml
-from jobbergate_core.sdk import Apps
 from loguru import logger
 
 from jobbergate_cli.constants import (
@@ -35,6 +34,7 @@ from jobbergate_cli.schemas import (
 )
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.questions import inquirer
+from jobbergate_core.sdk import Apps
 
 CONTENT_TYPE_TEXT_PLAIN = "text/plain"
 INVALID_APPLICATION_MODULE = "Invalid application module"

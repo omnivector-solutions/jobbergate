@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Optional, cast
 
 from buzz import enforce_defined
-from jobbergate_core.tools.sbatch import SubmissionHandler, inject_sbatch_params
 from loguru import logger
 
 from jobbergate_cli.config import settings
@@ -17,6 +16,7 @@ from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ContextProtocol, JobSubmissionCreateRequestData, JobSubmissionResponse
 from jobbergate_cli.subapps.job_scripts.tools import download_job_script_files
+from jobbergate_core.tools.sbatch import SubmissionHandler, inject_sbatch_params
 
 
 def _normalize_error_output(output: object) -> str:

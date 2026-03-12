@@ -10,10 +10,10 @@ from typing import Any, Dict, Generic, List, Optional, Protocol, TypeVar
 import httpx
 import pydantic
 import pydantic.generics
-from jobbergate_core.auth.handler import JobbergateAuthHandler
-from jobbergate_core.sdk import Apps
 
 from jobbergate_cli.constants import FileType
+from jobbergate_core.auth.handler import JobbergateAuthHandler
+from jobbergate_core.sdk import Apps
 
 
 class TokenSet(pydantic.BaseModel, extra="ignore"):

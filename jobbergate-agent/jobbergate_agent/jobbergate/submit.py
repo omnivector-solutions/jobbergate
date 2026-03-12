@@ -9,11 +9,6 @@ from tempfile import TemporaryDirectory
 from typing import Any, Callable, Coroutine
 
 from buzz import DoExceptParams, handle_errors_async
-from jobbergate_core.tools.sbatch import (
-    InfoHandler,
-    SubmissionHandler,
-    inject_sbatch_params,
-)
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
@@ -26,6 +21,11 @@ from jobbergate_agent.user_mapper.base import manufacture
 from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError
 from jobbergate_agent.utils.logging import log_error
 from jobbergate_agent.utils.plugin import get_plugin_manager, hookimpl, hookspec
+from jobbergate_core.tools.sbatch import (
+    InfoHandler,
+    SubmissionHandler,
+    inject_sbatch_params,
+)
 
 
 async def retrieve_submission_file(file: JobScriptFile) -> str:

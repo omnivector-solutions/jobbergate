@@ -4,7 +4,6 @@ from typing import Any, Callable, Dict, Generator, Optional
 import httpx
 import pytest
 import yaml
-from jobbergate_core import JobbergateAuthHandler
 from typer import Context, Typer
 from typer.testing import CliRunner
 
@@ -13,6 +12,7 @@ from jobbergate_cli.context import JobbergateContext
 from jobbergate_cli.exceptions import handle_abort, handle_authentication_error
 from jobbergate_cli.schemas import ContextProtocol, IdentityData, JobbergateApplicationConfig
 from jobbergate_cli.text_tools import dedent
+from jobbergate_core import JobbergateAuthHandler
 
 OWNER_EMAIL_PRIMARY = "tucker.beck@omnivector.solutions"
 OWNER_EMAIL_SECONDARY = "tucker@omnivector.solutions"

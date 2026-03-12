@@ -5,13 +5,13 @@ Utilities for handling auth in jobbergate-cli.
 import webbrowser
 from typing import Iterable
 
-from jobbergate_core.auth.handler import DeviceCodeData
 from loguru import logger
 from rich.console import Console
 from rich.progress import track
 
 from jobbergate_cli.render import terminal_message
 from jobbergate_cli.text_tools import copy_to_clipboard
+from jobbergate_core.auth.handler import DeviceCodeData
 
 
 def open_on_browser(url: str) -> bool:

@@ -9,13 +9,13 @@ extend-ignore = [
 
 [lint.isort]
 known-first-party = [
-    "jobbergate-core",
-    "jobbergate-cli",
-    "jobbergate-agent",
-    "jobbergate-api",
-    "jobbergate-docs",
-    "jobbergate-test",
-    "fake-sbatch",
+    "jobbergate_core",
+    "jobbergate_cli",
+    "jobbergate_agent",
+    "jobbergate_api",
+    "jobbergate_docs",
+    "jobbergate_test",
+    "fake_sbatch",
 ]
 
 [lint.per-file-ignores]
