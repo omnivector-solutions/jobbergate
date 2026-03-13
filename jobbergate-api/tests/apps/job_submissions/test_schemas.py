@@ -1,14 +1,15 @@
-import math
-from typing import Callable
-import pytest
 import functools
+import math
+from datetime import datetime
+from typing import Callable
+
+import pytest
 
 from jobbergate_api.apps.job_submissions.schemas import (
     JobSubmissionCreateRequest,
-    JobSubmissionUpdateRequest,
     JobSubmissionMetricSchema,
+    JobSubmissionUpdateRequest,
 )
-from datetime import datetime
 
 
 @pytest.mark.parametrize(

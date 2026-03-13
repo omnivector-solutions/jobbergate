@@ -10,14 +10,14 @@ from jobbergate_agent.clients.influx import initialize_influx_client
 
 
 @mock.patch("jobbergate_agent.clients.influx.InfluxDBClient")
-def test_client_is_None_if_integration_is_disabled(
-    mocked_InfluxDBClient: mock.MagicMock, tweak_settings: Callable[..., contextlib._GeneratorContextManager]
+def test_client_is_none_if_integration_is_disabled(
+    mocked_influx_db_client: mock.MagicMock, tweak_settings: Callable[..., contextlib._GeneratorContextManager]
 ):
     """Test that the client is None if the Influx integration is disabled."""
     with tweak_settings(INFLUX_DSN=None):
         client = initialize_influx_client()
-    mocked_InfluxDBClient.assert_not_called()
-    mocked_InfluxDBClient.from_dsn.assert_not_called()
+    mocked_influx_db_client.assert_not_called()
+    mocked_influx_db_client.from_dsn.assert_not_called()
     assert client is None
 
 
@@ -31,7 +31,7 @@ def test_client_is_None_if_integration_is_disabled(
 )
 @mock.patch("jobbergate_agent.clients.influx.InfluxDBClient")
 def test_client_is_initialized(
-    mocked_InfluxDBClient: mock.MagicMock,
+    mocked_influx_db_client: mock.MagicMock,
     pool_size: int,
     ssl: bool,
     verify_ssl: bool,
@@ -41,7 +41,7 @@ def test_client_is_initialized(
     tweak_settings: Callable[..., contextlib._GeneratorContextManager],
 ):
     """Test that the influxdb_client is properly initialized by the function ``initialize_influx_client ``."""
-    mocked_InfluxDBClient.from_dsn = mock.Mock(return_value="dummy-value")
+    mocked_influx_db_client.from_dsn = mock.Mock(return_value="dummy-value")
 
     influx_dsn = "influxdb://user:passwd@localhost:8086/database"
 
@@ -57,7 +57,7 @@ def test_client_is_initialized(
         client = initialize_influx_client()
 
     assert client == "dummy-value"
-    mocked_InfluxDBClient.from_dsn.assert_called_once_with(
+    mocked_influx_db_client.from_dsn.assert_called_once_with(
         influx_dsn,
         pool_size=pool_size,
         ssl=ssl,
@@ -65,4 +65,4 @@ def test_client_is_initialized(
         timeout=timeout,
         udp_port=udp_port,
     )
-    mocked_InfluxDBClient.assert_not_called()
+    mocked_influx_db_client.assert_not_called()

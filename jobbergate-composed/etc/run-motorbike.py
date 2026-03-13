@@ -27,7 +27,7 @@ def main(verbose=True, clean=True):
 
     try:
         subprocess.run("jobbergate show-token", check=True, shell=True, capture_output=True)
-    except Exception as err:
+    except Exception:
         logger.debug("Logging in")
         subprocess.run("jobbergate login", check=True, shell=True)
 
@@ -107,7 +107,7 @@ def main(verbose=True, clean=True):
         "create",
         f"--name={name}",
         f"--job-script-id={job_script_id}",
-        f"--cluster-name=local-slurm",
+        "--cluster-name=local-slurm",
     ])
     logger.debug(f"...with command `{command}`")
     proc = subprocess.run(

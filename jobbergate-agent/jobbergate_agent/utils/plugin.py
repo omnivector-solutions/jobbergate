@@ -9,7 +9,6 @@ from pluggy import HookimplMarker, HookspecMarker, PluginManager
 
 from jobbergate_agent.utils.logging import logger, logger_wraps
 
-
 PROJECT_NAME = "jobbergate_agent"
 
 hookspec = HookspecMarker(PROJECT_NAME)

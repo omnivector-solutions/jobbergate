@@ -1,31 +1,31 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 from dataclasses import dataclass, field
 from functools import cached_property, partial
 from pathlib import Path
-import sys
 from tempfile import TemporaryDirectory
 from typing import Any, Callable, Coroutine
 
 from buzz import DoExceptParams, handle_errors_async
-from jobbergate_core.tools.sbatch import (
-    InfoHandler,
-    SubmissionHandler,
-    inject_sbatch_params,
-)
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
 from jobbergate_agent.jobbergate.constants import FileType
 from jobbergate_agent.jobbergate.pagination import fetch_paginated_result
 from jobbergate_agent.jobbergate.schemas import JobScriptFile, PendingJobSubmission, SlurmJobData
-from jobbergate_agent.jobbergate.update import fetch_job_data, SubprocessAsUserHandler
+from jobbergate_agent.jobbergate.update import SubprocessAsUserHandler, fetch_job_data
 from jobbergate_agent.settings import SETTINGS
+from jobbergate_agent.user_mapper.base import manufacture
 from jobbergate_agent.utils.exception import JobbergateApiError, JobSubmissionError
 from jobbergate_agent.utils.logging import log_error
 from jobbergate_agent.utils.plugin import get_plugin_manager, hookimpl, hookspec
-from jobbergate_agent.user_mapper.base import manufacture
+from jobbergate_core.tools.sbatch import (
+    InfoHandler,
+    SubmissionHandler,
+    inject_sbatch_params,
+)
 
 
 async def retrieve_submission_file(file: JobScriptFile) -> str:
@@ -78,7 +78,7 @@ async def process_supporting_files(pending_job_submission: PendingJobSubmission,
     # Write the files to the submit dir
     files_to_write = [
         asyncio.to_thread(write_submission_file, file_content, file.filename, submit_dir)
-        for file_content, file in zip(files_content, supporting_files)
+        for file_content, file in zip(files_content, supporting_files, strict=True)
     ]
     return await asyncio.gather(*files_to_write)
 
@@ -185,7 +185,7 @@ def validate_submit_dir(submit_dir: Path, subprocess_handler: SubprocessAsUserHa
         raise ValueError("Execution directory does not exist or is not writable by the user") from e
 
 
-def reject_handler(id: int) -> Callable[[DoExceptParams], Coroutine[Any, Any, None]]:
+def reject_handler(job_submission_id: int) -> Callable[[DoExceptParams], Coroutine[Any, Any, None]]:
     async def helper(params: DoExceptParams) -> None:
         """
         Use for the ``do_except`` parameter of a ``handle_errors``.
@@ -193,7 +193,7 @@ def reject_handler(id: int) -> Callable[[DoExceptParams], Coroutine[Any, Any, No
         Logs the error and then invokes job rejection on the Jobbergate API.
         """
         log_error(params)
-        await mark_as_rejected(id, params.final_message)
+        await mark_as_rejected(job_submission_id, params.final_message)
 
     return helper
 

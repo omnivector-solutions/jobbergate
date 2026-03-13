@@ -90,17 +90,17 @@ class Token:
             data = decode(
                 token=self.content,
                 key="secret-will-be-ignored",
-                options=dict(
-                    verify_signature=False,
-                    verify_aud=False,
-                    verify_iat=False,
-                    verify_exp=False,
-                    verify_nbf=False,
-                    verify_iss=False,
-                    verify_sub=False,
-                    verify_jti=False,
-                    verify_at_hash=False,
-                ),
+                options={
+                    "verify_signature": False,
+                    "verify_aud": False,
+                    "verify_iat": False,
+                    "verify_exp": False,
+                    "verify_nbf": False,
+                    "verify_iss": False,
+                    "verify_sub": False,
+                    "verify_jti": False,
+                    "verify_at_hash": False,
+                },
             )
 
         return TokenData(**data)
@@ -166,8 +166,8 @@ class Token:
         )
         token_expiration = self.data["exp"]
 
-        current_time_UTC = pendulum.now(tz="UTC").int_timestamp
-        is_expired = token_expiration <= current_time_UTC
+        current_time_utc = pendulum.now(tz="UTC").int_timestamp
+        is_expired = token_expiration <= current_time_utc
         logger.debug(f"{self.label.capitalize()} token is {'' if is_expired else 'NOT'} expired")
 
         return is_expired

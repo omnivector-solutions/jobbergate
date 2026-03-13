@@ -1,7 +1,7 @@
 import pydantic
 import pytest
 import respx
-from httpx import codes, Response
+from httpx import Response, codes
 from polyfactory.factories.pydantic_factory import ModelFactory
 
 from jobbergate_core.sdk.clusters.app import ClusterStatus

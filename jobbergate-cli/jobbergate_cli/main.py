@@ -152,7 +152,7 @@ def show_token(
         print(token_text)
     else:
         subject = f"{token.label.title()} Token"
-        kwargs: dict[str, Any] = dict(subject=subject, indent=False)
+        kwargs: dict[str, Any] = {"subject": subject, "indent": False}
         if on_clipboard:
             kwargs["footer"] = "The output was copied to your clipboard"
 

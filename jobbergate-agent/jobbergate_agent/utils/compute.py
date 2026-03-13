@@ -1,10 +1,9 @@
 """Core module for compute related functions."""
 
 import tracemalloc
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from functools import wraps
-from typing import Any, get_args, cast
-from collections.abc import Iterator
+from typing import Any, cast, get_args
 
 import numpy as np
 from loguru import logger

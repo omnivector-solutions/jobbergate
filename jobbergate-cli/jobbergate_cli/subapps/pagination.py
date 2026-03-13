@@ -5,12 +5,11 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
 import inquirer
 import pydantic
 
-from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.constants import PaginationChoices
+from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import StyleMapper, render_paginated_list_results
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ContextProtocol, ListResponseEnvelope
-
 
 DEFAULT_PAGE_SIZE = 50
 MAX_PAGE_SIZE = 100

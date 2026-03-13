@@ -2,47 +2,46 @@
 Router for the JobSubmission resource.
 """
 
-from typing import Annotated
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Body
+import msgpack
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from fastapi import Response as FastAPIResponse
-from fastapi import status
 from fastapi_pagination import Page
 from loguru import logger
-from jobbergate_api.apps.job_submissions.models import JobSubmissionMetric
-from sqlalchemy import select, insert, text as sa_text
-from sqlalchemy.sql.functions import max, min
-import msgpack
+from sqlalchemy import insert, select
+from sqlalchemy import text as sa_text
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.sql.functions import max, min
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.dependencies import SecureService, secure_services
 from jobbergate_api.apps.job_submissions.constants import (
+    JobSubmissionMetricSampleRate,
     JobSubmissionStatus,
     slurm_job_state_details,
-    JobSubmissionMetricSampleRate,
 )
+from jobbergate_api.apps.job_submissions.helpers import (
+    build_job_metric_aggregation_query,
+    validate_job_metric_upload_input,
+)
+from jobbergate_api.apps.job_submissions.models import JobSubmissionMetric
 from jobbergate_api.apps.job_submissions.schemas import (
     ActiveJobSubmission,
+    JobProgressDetail,
+    JobSubmissionAgentMaxTimes,
+    JobSubmissionAgentMetricsRequest,
     JobSubmissionAgentRejectedRequest,
     JobSubmissionAgentSubmittedRequest,
     JobSubmissionAgentUpdateRequest,
     JobSubmissionCreateRequest,
     JobSubmissionDetailedView,
     JobSubmissionListView,
-    JobSubmissionUpdateRequest,
-    PendingJobSubmission,
-    JobSubmissionAgentMetricsRequest,
-    JobSubmissionAgentMaxTimes,
     JobSubmissionMetricSchema,
     JobSubmissionMetricTimestamps,
-    JobProgressDetail,
-)
-from jobbergate_api.apps.job_submissions.helpers import (
-    validate_job_metric_upload_input,
-    build_job_metric_aggregation_query,
+    JobSubmissionUpdateRequest,
+    PendingJobSubmission,
 )
 from jobbergate_api.apps.permissions import Permissions, can_bypass_ownership_check
 from jobbergate_api.apps.schemas import ListParams
@@ -82,9 +81,7 @@ async def job_submission_create(
         )
     create_request.client_id = client_id
 
-    base_job_script = await secure_services.crud.job_script.get(
-        create_request.job_script_id, include_files=True
-    )
+    base_job_script = await secure_services.crud.job_script.get(create_request.job_script_id, include_files=True)
 
     job_script_files = [f for f in base_job_script.files if f.file_type == FileType.ENTRYPOINT]
 
@@ -109,7 +106,7 @@ async def job_submission_create(
 
 
 @router.post(
-    "/clone/{id}",
+    "/clone/{job_submission_id}",
     status_code=status.HTTP_201_CREATED,
     response_model=JobSubmissionDetailedView,
     description="Endpoint for cloning a job submission under the CREATED status for a new run on the cluster",
@@ -119,12 +116,12 @@ async def job_submission_clone(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_CREATE, ensure_email=True)),
     ],
-    id: int = Path(...),
+    job_submission_id: Annotated[int, Path()],
 ):
     """Clone a job_submission given its id."""
-    logger.info(f"Cloning job submission {id=}")
+    logger.info(f"Cloning job submission {job_submission_id=}")
 
-    original_instance = await secure_services.crud.job_submission.get(id)
+    original_instance = await secure_services.crud.job_submission.get(job_submission_id)
 
     if original_instance.job_script_id is None:
         raise HTTPException(
@@ -146,7 +143,7 @@ async def job_submission_clone(
 
 
 @router.get(
-    "/{id}",
+    "/{job_submission_id}",
     description="Endpoint to get a job_submission",
     response_model=JobSubmissionDetailedView,
 )
@@ -155,11 +152,11 @@ async def job_submission_get(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)),
     ],
-    id: int = Path(...),
+    job_submission_id: Annotated[int, Path()],
 ):
     """Return the job_submission given its id."""
-    logger.debug(f"Getting job submission {id=}")
-    return await secure_services.crud.job_submission.get(id)
+    logger.debug(f"Getting job submission {job_submission_id=}")
+    return await secure_services.crud.job_submission.get(job_submission_id)
 
 
 @router.get(
@@ -173,18 +170,15 @@ async def job_submission_get_list(
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)),
     ],
     list_params: Annotated[ListParams, Depends()],
-    slurm_job_ids: str | None = Query(
-        None,
-        description="Comma-separated list of slurm-job-ids to match active job_submissions",
-    ),
-    submit_status: JobSubmissionStatus | None = Query(
-        None,
-        description="Limit results to those with matching status",
-    ),
-    from_job_script_id: int | None = Query(
-        None,
-        description="Filter job-submissions by the job-script-id they were created from.",
-    ),
+    slurm_job_ids: Annotated[
+        str | None, Query(description="Comma-separated list of slurm-job-ids to match active job_submissions")
+    ] = None,
+    submit_status: Annotated[
+        JobSubmissionStatus | None, Query(description="Limit results to those with matching status")
+    ] = None,
+    from_job_script_id: Annotated[
+        int | None, Query(description="Filter job-submissions by the job-script-id they were created from.")
+    ] = None,
 ):
     """List job_submissions for the authenticated user."""
     logger.debug("Fetching job submissions")
@@ -201,17 +195,17 @@ async def job_submission_get_list(
     if slurm_job_ids:
         try:
             list_kwargs["filter_slurm_job_ids"] = [int(i) for i in slurm_job_ids.split(",")]
-        except Exception:
+        except Exception as err:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Invalid slurm_job_ids param. Must be a comma-separated list of integers",
-            )
+            ) from err
 
     return await secure_services.crud.job_submission.paginated_list(**list_kwargs)
 
 
 @router.delete(
-    "/{id}",
+    "/{job_submission_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     description="Endpoint to delete job submission",
 )
@@ -220,21 +214,21 @@ async def job_submission_delete(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_DELETE, ensure_email=True)),
     ],
-    id: int = Path(..., description="id of the job submission to delete"),
+    job_submission_id: Annotated[int, Path(description="id of the job submission to delete")],
 ):
     """Delete job_submission given its id."""
-    logger.info(f"Deleting job submission {id=}")
-    instance = await secure_services.crud.job_submission.get(id)
+    logger.info(f"Deleting job submission {job_submission_id=}")
+    instance = await secure_services.crud.job_submission.get(job_submission_id)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.job_submission.ensure_attribute(
             instance, owner_email=secure_services.identity_payload.email
         )
-    await secure_services.crud.job_submission.delete(id)
+    await secure_services.crud.job_submission.delete(job_submission_id)
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.put(
-    "/{id}",
+    "/{job_submission_id}",
     status_code=status.HTTP_200_OK,
     description="Endpoint to update a job_submission given the id",
     response_model=JobSubmissionDetailedView,
@@ -245,22 +239,22 @@ async def job_submission_update(
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_email=True)),
     ],
     update_params: JobSubmissionUpdateRequest,
-    id: int = Path(),
+    job_submission_id: Annotated[int, Path()],
 ):
     """Update a job_submission given its id."""
-    logger.debug(f"Updating {id=} with {update_params=}")
-    instance = await secure_services.crud.job_submission.get(id)
+    logger.debug(f"Updating {job_submission_id=} with {update_params=}")
+    instance = await secure_services.crud.job_submission.get(job_submission_id)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
         secure_services.crud.job_submission.ensure_attribute(
             instance, owner_email=secure_services.identity_payload.email
         )
     return await secure_services.crud.job_submission.update(
-        id, **update_params.model_dump(exclude_unset=True)
+        job_submission_id, **update_params.model_dump(exclude_unset=True)
     )
 
 
 @router.put(
-    "/cancel/{id}",
+    "/cancel/{job_submission_id}",
     status_code=status.HTTP_200_OK,
     description="Endpoint to cancel a job_submission",
     response_model=JobSubmissionDetailedView,
@@ -270,12 +264,12 @@ async def job_submission_cancel(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_email=True)),
     ],
-    id: int = Path(),
+    job_submission_id: Annotated[int, Path()],
 ):
     """Cancel a job_submission given its id."""
-    logger.debug(f"Cancelling job submission {id=}")
+    logger.debug(f"Cancelling job submission {job_submission_id=}")
 
-    job_submission = await secure_services.crud.job_submission.get(id)
+    job_submission = await secure_services.crud.job_submission.get(job_submission_id)
 
     # Ensure user can only cancel their own jobs (unless they have admin permissions)
     if not can_bypass_ownership_check(secure_services.identity_payload.permissions):
@@ -291,16 +285,16 @@ async def job_submission_cancel(
             "Only jobs with 'CREATED' or 'SUBMITTED' status can be cancelled.",
         )
 
-    logger.info(f"Marking job_submission {id} as CANCELLED by user")
+    logger.info(f"Marking job_submission {job_submission_id} as CANCELLED by user")
 
     # Update the job submission status to CANCELLED
     updated_job_submission = await secure_services.crud.job_submission.update(
-        id, status=JobSubmissionStatus.CANCELLED
+        job_submission_id, status=JobSubmissionStatus.CANCELLED
     )
 
     # Create a progress entry to track the cancellation
     await secure_services.crud.job_progress.create(
-        job_submission_id=id,
+        job_submission_id=job_submission_id,
         timestamp=datetime.now(timezone.utc),
         additional_info="Job cancelled by user",
     )
@@ -316,7 +310,7 @@ async def job_submission_cancel(
 
 # The "agent" routes are used for agents to fetch pending job submissions and update their statuses
 @router.put(
-    "/agent/{id}",
+    "/agent/{job_submission_id}",
     status_code=status.HTTP_202_ACCEPTED,
     description="Endpoint for an agent to update the status of a job_submission",
     tags=["Agent"],
@@ -324,22 +318,20 @@ async def job_submission_cancel(
 async def job_submission_agent_update(
     secure_services: Annotated[
         SecureService,
-        Depends(
-            secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)
-        ),
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)),
     ],
     update_params: JobSubmissionAgentUpdateRequest,
-    id: int = Path(),
+    job_submission_id: Annotated[int, Path()],
 ):
     """
     Update a job_submission with slurm_job_state and slurm_job_info.
 
     Note that if the new slurm_job_state is a termination state, the job submission status will be updated.
     """
-    logger.debug(f"Agent is requesting to update {id=}")
+    logger.debug(f"Agent is requesting to update {job_submission_id=}")
 
     job_submission = await secure_services.crud.job_submission.get(
-        id, ensure_attributes={"client_id": secure_services.identity_payload.client_id}
+        job_submission_id, ensure_attributes={"client_id": secure_services.identity_payload.client_id}
     )
 
     if job_submission.status not in {JobSubmissionStatus.SUBMITTED, JobSubmissionStatus.CANCELLED}:
@@ -351,19 +343,19 @@ async def job_submission_agent_update(
     if job_submission.slurm_job_id != update_params.slurm_job_id:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Update slurm job id does not match the job id on record for job submission {id=}",
+            detail=f"Update slurm job id does not match the job id on record for job submission {job_submission_id=}",
         )
 
     logger.info(
         f"Setting slurm job state status to: {update_params.slurm_job_state} "
-        f"for job_submission: {id} "
+        f"for job_submission: {job_submission_id} "
         f"on client_id: {secure_services.identity_payload.client_id}"
     )
 
     # Create a progress entry if the job state has changed
     if job_submission.slurm_job_state != update_params.slurm_job_state:
         await secure_services.crud.job_progress.create(
-            job_submission_id=id,
+            job_submission_id=job_submission_id,
             timestamp=datetime.now(timezone.utc),
             slurm_job_state=update_params.slurm_job_state,
             additional_info=update_params.slurm_job_state_reason,
@@ -382,7 +374,7 @@ async def job_submission_agent_update(
     elif job_state_details.is_done_status:
         update_dict["status"] = JobSubmissionStatus.DONE
 
-    job_submission = await secure_services.crud.job_submission.update(id, **update_dict)
+    job_submission = await secure_services.crud.job_submission.update(job_submission_id, **update_dict)
 
     if job_submission.status in (
         JobSubmissionStatus.ABORTED,
@@ -406,9 +398,7 @@ async def job_submissions_agent_submitted(
     submitted_request: JobSubmissionAgentSubmittedRequest,
     secure_services: Annotated[
         SecureService,
-        Depends(
-            secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)
-        ),
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)),
     ],
 ):
     """Update a job_submission to indicate that it was submitted to Slurm."""
@@ -458,9 +448,7 @@ async def job_submissions_agent_rejected(
     rejected_request: JobSubmissionAgentRejectedRequest,
     secure_services: Annotated[
         SecureService,
-        Depends(
-            secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)
-        ),
+        Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True)),
     ],
 ):
     """Update a job_submission to indicate that it was rejected by Slurm."""
@@ -515,9 +503,7 @@ async def job_submissions_agent_pending(
     secure_services: Annotated[
         SecureService,
         Depends(
-            secure_services(
-                Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True
-            )
+            secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True)
         ),
     ],
 ):
@@ -546,9 +532,7 @@ async def job_submissions_agent_active(
     secure_services: Annotated[
         SecureService,
         Depends(
-            secure_services(
-                Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True
-            )
+            secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True)
         ),
     ],
 ):
@@ -577,9 +561,7 @@ async def job_submissions_agent_metrics(
     secure_services: Annotated[
         SecureService,
         Depends(
-            secure_services(
-                Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True
-            )
+            secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False, ensure_client_id=True)
         ),
     ],
 ):
@@ -623,12 +605,10 @@ async def job_submissions_agent_metrics_upload(
     secure_services: Annotated[
         SecureService,
         Depends(
-            secure_services(
-                Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True, commit=True
-            )
+            secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_UPDATE, ensure_client_id=True, commit=True)
         ),
     ],
-    body: bytes = Body(..., description="The binary data to upload"),
+    body: Annotated[bytes, Body(description="The binary data to upload")],
 ):
     """Upload metrics for a job submission."""
     logger.debug(f"Agent is uploading metrics for job submission {job_submission_id}")
@@ -652,7 +632,7 @@ async def job_submissions_agent_metrics_upload(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
     else:
         logger.debug("Decoded data is valid")
 
@@ -687,7 +667,7 @@ async def job_submissions_agent_metrics_upload(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Failed to insert metrics",
-        )
+        ) from e
 
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -704,22 +684,23 @@ async def job_submissions_metrics(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)),
     ],
-    node: str | None = Query(
-        None, description="Filter by node_host. If omitted, metrics will be gathered over all nodes."
-    ),
-    start_time: datetime = Query(
-        datetime.now(tz=timezone.utc) - timedelta(hours=1),
-        description="Start time for the metrics query. Defaults to one hour ago.",
-    ),
-    sample_rate: JobSubmissionMetricSampleRate = Query(
-        JobSubmissionMetricSampleRate.ten_minutes, description="Sample rate in seconds for the metrics query."
-    ),
-    end_time: datetime | None = Query(
-        None,
-        description="End time for the metrics query. If omitted, assume the window to be up to the present.",
-    ),
+    node: Annotated[
+        str | None,
+        Query(description="Filter by node_host. If omitted, metrics will be gathered over all nodes."),
+    ] = None,
+    start_time: Annotated[
+        datetime | None, Query(description="Start time for the metrics query. Defaults to one hour ago.")
+    ] = None,
+    sample_rate: Annotated[
+        JobSubmissionMetricSampleRate, Query(description="Sample rate in seconds for the metrics query.")
+    ] = JobSubmissionMetricSampleRate.ten_minutes,
+    end_time: Annotated[
+        datetime | None,
+        Query(description="End time for the metrics query. If omitted, assume the window to be up to the present."),
+    ] = None,
 ):
     """Get the metrics for a job submission."""
+    start_time = start_time or (datetime.now(tz=timezone.utc) - timedelta(hours=1))
     logger.debug(f"Getting metrics for job submission {job_submission_id}")
     if end_time is not None and end_time < start_time:
         raise HTTPException(
@@ -793,14 +774,8 @@ async def job_submission_progress(
         SecureService,
         Depends(secure_services(Permissions.ADMIN, Permissions.JOB_SUBMISSIONS_READ, commit=False)),
     ],
-    sort_ascending: bool = Query(
-        True,
-        description="Sort the progress entries in ascending order",
-    ),
-    sort_field: str = Query(
-        "timestamp",
-        description="Sort the progress entries by a specific field",
-    ),
+    sort_ascending: Annotated[bool, Query(description="Sort the progress entries in ascending order")] = True,
+    sort_field: Annotated[str, Query(description="Sort the progress entries by a specific field")] = "timestamp",
 ):
     """Get progress entries for a job submission."""
     logger.debug(f"Fetching progress entries for job submission {job_submission_id}")

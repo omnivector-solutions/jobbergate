@@ -12,7 +12,6 @@ from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.logging import logger
 from jobbergate_agent.utils.plugin import load_plugins
 
-
 SlurmUserMapper = Mapping[str, str]
 """
 Slurm user mappers are mappings from email addresses to local Slurm users.

@@ -26,15 +26,15 @@ def test_pull_client_ids_from_api__success(respx_mock, dummy_domain, dummy_conte
     clusters_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
-            json=dict(
-                data=dict(
-                    cluster=[
-                        dict(clientId="cluster1"),
-                        dict(clientId="cluster2"),
-                        dict(clientId="cluster3"),
+            json={
+                "data": {
+                    "cluster": [
+                        {"clientId": "cluster1"},
+                        {"clientId": "cluster2"},
+                        {"clientId": "cluster3"},
                     ],
-                ),
-            ),
+                },
+            },
         ),
     )
 
@@ -58,7 +58,7 @@ def test_pull_client_ids_from_api__raises_abort_on_malformed_response(respx_mock
     clusters_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
-            json=dict(bad="data"),
+            json={"bad": "data"},
         ),
     )
 
@@ -89,7 +89,7 @@ def test_load_clusters_from_cache__success(tmp_path, tweak_settings):
             assert load_clusters_from_cache() == ["cluster1", "cluster2", "cluster3"]
 
 
-def test_load_clusters_from_cache__returns_None_if_cache_is_expired(tmp_path, tweak_settings):
+def test_load_clusters_from_cache__returns_none_if_cache_is_expired(tmp_path, tweak_settings):
     with tweak_settings(JOBBERGATE_CACHE_DIR=tmp_path, JOBBERGATE_CLUSTER_CACHE_LIFETIME=5):
         with plummet.frozen_time("2022-05-13 16:56:00"):
             cache_data = ClusterCacheData(
@@ -102,7 +102,7 @@ def test_load_clusters_from_cache__returns_None_if_cache_is_expired(tmp_path, tw
             assert load_clusters_from_cache() is None
 
 
-def test_load_clusters_from_cache__returns_None_if_cache_is_invalid(tmp_path, tweak_settings):
+def test_load_clusters_from_cache__returns_none_if_cache_is_invalid(tmp_path, tweak_settings):
     with tweak_settings(JOBBERGATE_CACHE_DIR=tmp_path, JOBBERGATE_CLUSTER_CACHE_LIFETIME=5):
         settings.JOBBERGATE_CLUSTER_LIST_PATH.write_text("BAD DATA")
         assert load_clusters_from_cache() is None
@@ -120,15 +120,15 @@ def test_get_client_ids__pulls_from_api_if_no_cache_available(
     clusters_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
-            json=dict(
-                data=dict(
-                    cluster=[
-                        dict(clientId="cluster1"),
-                        dict(clientId="cluster2"),
-                        dict(clientId="cluster3"),
+            json={
+                "data": {
+                    "cluster": [
+                        {"clientId": "cluster1"},
+                        {"clientId": "cluster2"},
+                        {"clientId": "cluster3"},
                     ],
-                ),
-            ),
+                },
+            },
         ),
     )
 
@@ -147,15 +147,15 @@ def test_get_client_ids__loads_from_cache_when_available(mocker, respx_mock, dum
     clusters_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
-            json=dict(
-                data=dict(
-                    cluster=[
-                        dict(clientId="cluster1"),
-                        dict(clientId="cluster2"),
-                        dict(clientId="cluster3"),
+            json={
+                "data": {
+                    "cluster": [
+                        {"clientId": "cluster1"},
+                        {"clientId": "cluster2"},
+                        {"clientId": "cluster3"},
                     ],
-                ),
-            ),
+                },
+            },
         ),
     )
 

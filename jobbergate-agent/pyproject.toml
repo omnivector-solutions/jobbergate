@@ -57,7 +57,7 @@ dev = []
 jobbergate-core = { workspace = true }
 
 [tool.ruff]
-line-length = 120
+extend = "../ruff.toml"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -48,12 +48,12 @@ def cached_run(*args, cache_path: Optional[Path] = None) -> Dict[str, Any]:
     result = run(*command)
     try:
         result_json = json.loads(result.stdout)
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as err:
         # the command jobbergate --raw --full create-job-script returns
         # some noise before the json, so we need to filter it out
         filtered_stdout = re.search(r"([\s\S]{[\s\S]+\})$", result.stdout)
         if not filtered_stdout:
-            raise RuntimeError(f"Could not filter stdout: {result.stdout}")
+            raise RuntimeError(f"Could not filter stdout: {result.stdout}") from err
         result_json = json.loads(filtered_stdout.group())
 
     if cache_path is not None:

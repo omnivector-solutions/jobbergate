@@ -45,9 +45,9 @@ class TemplateFiles:
                 client=self.client,
                 url_path=f"/jobbergate/job-script-templates/{id_or_identifier}/upload/template/{file_type.value}",
                 method="PUT",
-                request_kwargs=dict(
-                    files={"upload_file": (file_path.name, file, "text/plain")},
-                ),
+                request_kwargs={
+                    "files": {"upload_file": (file_path.name, file, "text/plain")},
+                },
             )
         return response.raise_for_status().check_status_code(codes.OK).to_model(TemplateFileDetailedView)
 
@@ -71,7 +71,7 @@ class TemplateFiles:
         )
 
     @validate_call
-    def download(self, id_or_identifier: NonNegativeInt | str, filename: str, directory: Path = Path.cwd()) -> Path:
+    def download(self, id_or_identifier: NonNegativeInt | str, filename: str, directory: Path | None = None) -> Path:
         """
         Download a template file.
 
@@ -83,6 +83,7 @@ class TemplateFiles:
         Returns:
             The path to the downloaded file.
         """
+        directory = Path.cwd() if directory is None else directory
         output_path = (directory / filename).resolve()
         (
             self.request_handler_cls(
@@ -120,7 +121,7 @@ class WorkflowFiles:
         Returns:
             The detailed view of the workflow file.
         """
-        request_kwargs: dict[str, Any] = dict()
+        request_kwargs: dict[str, Any] = {}
         if runtime_config is not None:
             request_kwargs["data"] = {"runtime_config": json.dumps(runtime_config)}
         with open_optional_file(file_path) as file:
@@ -153,7 +154,7 @@ class WorkflowFiles:
         )
 
     @validate_call
-    def download(self, id_or_identifier: NonNegativeInt | str, directory: Path = Path.cwd()) -> Path:
+    def download(self, id_or_identifier: NonNegativeInt | str, directory: Path | None = None) -> Path:
         """
         Download a workflow file.
 
@@ -164,6 +165,7 @@ class WorkflowFiles:
         Returns:
             The path to the downloaded file.
         """
+        directory = Path.cwd() if directory is None else directory
         output_path = directory / APPLICATION_SCRIPT_FILE_NAME
         (
             self.request_handler_cls(
@@ -235,14 +237,14 @@ class JobTemplates:
             The detailed view of the cloned job template.
         """
         data = filter_null_out(
-            dict(name=name, identifier=identifier, description=description, template_vars=template_vars)
+            {"name": name, "identifier": identifier, "description": description, "template_vars": template_vars}
         )
         return (
             self.request_handler_cls(
                 client=self.client,
                 url_path=f"{self.base_path}/clone/{base_id_or_identifier}",
                 method="POST",
-                request_kwargs=dict(data=data),
+                request_kwargs={"data": data},
             )
             .raise_for_status()
             .check_status_code(codes.CREATED)
@@ -271,14 +273,14 @@ class JobTemplates:
             The detailed view of the created job template.
         """
         data = filter_null_out(
-            dict(name=name, identifier=identifier, description=description, template_vars=template_vars)
+            {"name": name, "identifier": identifier, "description": description, "template_vars": template_vars}
         )
         return (
             self.request_handler_cls(
                 client=self.client,
                 url_path=self.base_path,
                 method="POST",
-                request_kwargs=dict(data=data),
+                request_kwargs={"data": data},
             )
             .raise_for_status()
             .check_status_code(codes.CREATED)
@@ -354,23 +356,23 @@ class JobTemplates:
             The list response envelope containing job template list views.
         """
         params = filter_null_out(
-            dict(
-                include_null_identifier=include_null_identifier,
-                sort_ascending=sort_ascending,
-                user_only=user_only,
-                search=search,
-                sort_field=sort_field,
-                include_archived=include_archived,
-                size=size,
-                page=page,
-            )
+            {
+                "include_null_identifier": include_null_identifier,
+                "sort_ascending": sort_ascending,
+                "user_only": user_only,
+                "search": search,
+                "sort_field": sort_field,
+                "include_archived": include_archived,
+                "size": size,
+                "page": page,
+            }
         )
         result = (
             self.request_handler_cls(
                 client=self.client,
                 url_path=self.base_path,
                 method="GET",
-                request_kwargs=dict(params=params),
+                request_kwargs={"params": params},
             )
             .raise_for_status()
             .check_status_code(codes.OK)
@@ -404,20 +406,20 @@ class JobTemplates:
             The detailed view of the updated job template.
         """
         data = filter_null_out(
-            dict(
-                name=name,
-                identifier=identifier,
-                description=description,
-                template_vars=template_vars,
-                is_archived=is_archived,
-            )
+            {
+                "name": name,
+                "identifier": identifier,
+                "description": description,
+                "template_vars": template_vars,
+                "is_archived": is_archived,
+            }
         )
         return (
             self.request_handler_cls(
                 client=self.client,
                 url_path=f"{self.base_path}/{id_or_identifier}",
                 method="PUT",
-                request_kwargs=dict(data=data),
+                request_kwargs={"data": data},
             )
             .raise_for_status()
             .check_status_code(codes.OK)

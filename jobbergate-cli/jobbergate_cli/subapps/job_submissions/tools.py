@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Optional, cast
 
 from buzz import enforce_defined
-from jobbergate_core.tools.sbatch import SubmissionHandler, inject_sbatch_params
 from loguru import logger
 
 from jobbergate_cli.config import settings
@@ -17,6 +16,7 @@ from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ContextProtocol, JobSubmissionCreateRequestData, JobSubmissionResponse
 from jobbergate_cli.subapps.job_scripts.tools import download_job_script_files
+from jobbergate_core.tools.sbatch import SubmissionHandler, inject_sbatch_params
 
 
 def _normalize_error_output(output: object) -> str:
@@ -198,7 +198,7 @@ class OnsiteJobSubmission(JobSubmissionABC):
         Abort.require_condition(
             len(entrypoint_file) == 1,
             f"There should be exactly one entrypoint file in the parent job script, got {len(entrypoint_file)}",
-            raise_kwargs=dict(subject="Job Script Error"),
+            raise_kwargs={"subject": "Job Script Error"},
         )
         job_script_path = self.execution_directory / entrypoint_file[0].filename
 
@@ -236,10 +236,10 @@ class OnsiteJobSubmission(JobSubmissionABC):
             getattr(self, "slurm_job_id", None),
             "Slurm job id not found, on-site submission failed",
             raise_exc_class=Abort,
-            raise_kwargs=dict(
-                subject="Slurm Submission Error",
-                support=True,
-            ),
+            raise_kwargs={
+                "subject": "Slurm Submission Error",
+                "support": True,
+            },
         )
         return data
 

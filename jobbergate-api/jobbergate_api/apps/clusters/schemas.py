@@ -5,6 +5,8 @@ from pydantic import BaseModel, ConfigDict
 from jobbergate_api.apps.schemas import PydanticDateTime
 from jobbergate_api.meta_mapper import MetaField, MetaMapper
 
+TIMESTAMP_EXAMPLE = "2023-08-18T13:55:37.172285"
+
 cluster_status_meta_mapper = MetaMapper(
     client_id=MetaField(
         description="The client_id of the cluster where this agent is reporting status from",
@@ -12,15 +14,15 @@ cluster_status_meta_mapper = MetaMapper(
     ),
     created_at=MetaField(
         description="The timestamp for when this entry was created",
-        example="2023-08-18T13:55:37.172285",
+        example=TIMESTAMP_EXAMPLE,
     ),
     updated_at=MetaField(
         description="The timestamp for when this entry was last updated",
-        example="2023-08-18T13:55:37.172285",
+        example=TIMESTAMP_EXAMPLE,
     ),
     last_reported=MetaField(
         description="The timestamp for when the agent on the cluster last reported its status",
-        example="2023-08-18T13:55:37.172285",
+        example=TIMESTAMP_EXAMPLE,
     ),
     interval=MetaField(
         description="The expected interval in seconds between pings from the agent",

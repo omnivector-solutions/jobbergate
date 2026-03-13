@@ -11,7 +11,6 @@ from functools import cached_property
 from typing import Any, Dict, List, Union, cast
 
 import yaml
-from jobbergate_core.sdk import Apps
 from loguru import logger
 
 from jobbergate_cli.constants import (
@@ -35,6 +34,10 @@ from jobbergate_cli.schemas import (
 )
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.questions import inquirer
+from jobbergate_core.sdk import Apps
+
+CONTENT_TYPE_TEXT_PLAIN = "text/plain"
+INVALID_APPLICATION_MODULE = "Invalid application module"
 
 
 def load_default_config() -> Dict[str, Any]:
@@ -150,7 +153,7 @@ def get_upload_files(application_path: pathlib.Path):
         yield [
             (
                 "upload_files",
-                (path.name, stack.enter_context(io.open(path, mode="r", newline="")), "text/plain"),
+                (path.name, stack.enter_context(io.open(path, mode="r", newline="")), CONTENT_TYPE_TEXT_PLAIN),
             )
             for path in application_path.rglob("*")
             if path.is_file() and path.suffix in JOBBERGATE_APPLICATION_SUPPORTED_FILES
@@ -216,7 +219,7 @@ def upload_application(
                 expect_response=False,
                 abort_message="Request to upload application files was not accepted by the API",
                 support=True,
-                files={"upload_file": (relative_template_path.name, template_file, "text/plain")},
+                files={"upload_file": (relative_template_path.name, template_file, CONTENT_TYPE_TEXT_PLAIN)},
                 expected_status=200,
             )
 
@@ -230,7 +233,7 @@ def upload_application(
             abort_message="Request to upload application module was not accepted by the API",
             support=True,
             files={
-                "upload_file": (module_file_path.name, module_file, "text/plain"),
+                "upload_file": (module_file_path.name, module_file, CONTENT_TYPE_TEXT_PLAIN),
             },
             data={"runtime_config": application_config.jobbergate_config.model_dump_json()},
             expected_status=200,
@@ -322,7 +325,7 @@ def load_application_from_source(app_source: str) -> type[JobbergateApplicationB
     Args:
         app_source: The JobbergateApplication source code to load
     """
-    app_locals: Dict[str, Any] = dict()
+    app_locals: Dict[str, Any] = {}
     exec(app_source, app_locals, app_locals)
     return app_locals["JobbergateApplication"]
 
@@ -346,7 +349,7 @@ class ApplicationRuntime:
     fast_mode: bool = False
 
     def __post_init__(self) -> None:
-        self.answers: Dict[str, Any] = dict()
+        self.answers: Dict[str, Any] = {}
 
     @cached_property
     def app_config(self) -> JobbergateApplicationConfig:
@@ -372,7 +375,7 @@ class ApplicationRuntime:
                 support=True,
                 log_message="Invalid application config",
                 original_error=err,
-            )
+            ) from err
 
     @cached_property
     def app_module(self) -> JobbergateApplicationBase:
@@ -385,11 +388,11 @@ class ApplicationRuntime:
         except Exception as err:
             raise Abort(
                 "The application source fetched from the API is not valid",
-                subject="Invalid application module",
+                subject=INVALID_APPLICATION_MODULE,
                 support=True,
-                log_message="Invalid application module",
+                log_message=INVALID_APPLICATION_MODULE,
                 original_error=err,
-            )
+            ) from err
 
     def execute_application(self):
         """Execute the jobbergate application python module."""
@@ -430,15 +433,15 @@ class ApplicationRuntime:
             logger.debug(f"Calling method {next_method}")
             try:
                 workflow_questions = method_to_call(data=config)
-            except NotImplementedError:
+            except NotImplementedError as err:
                 raise Abort(
                     f"""
                     Abstract method not implemented.
 
                     Please implement {next_method} in your class.",
                     """,
-                    subject="Invalid application module",
-                )
+                    subject=INVALID_APPLICATION_MODULE,
+                ) from err
 
             prompts = []
             auto_answers = {}

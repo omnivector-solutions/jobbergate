@@ -18,7 +18,6 @@ from buzz import handle_errors
 from jobbergate_agent.utils.logging import logger, logger_wraps
 from jobbergate_agent.utils.plugin import load_plugins
 
-
 scheduler = AsyncIOScheduler()
 
 

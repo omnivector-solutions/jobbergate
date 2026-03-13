@@ -2,9 +2,9 @@
 JobSubmission resource schema.
 """
 
-from typing import Self
-from datetime import datetime
 from collections.abc import Iterable
+from datetime import datetime
+from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, field_validator
 
@@ -205,9 +205,7 @@ class PendingJobSubmission(BaseModel):
     job_script: JobScriptDetailedView
     sbatch_arguments: list[str] | None = None
 
-    model_config = ConfigDict(
-        from_attributes=True, extra="ignore", json_schema_extra=job_submission_meta_mapper
-    )
+    model_config = ConfigDict(from_attributes=True, extra="ignore", json_schema_extra=job_submission_meta_mapper)
 
 
 class ActiveJobSubmission(BaseModel):
@@ -314,10 +312,12 @@ class JobSubmissionMetricSchema(BaseModel):
         else:
             fields = list(cls.model_fields.keys())
 
-        if len(fields) != len(list(iterable)):
+        values = list(iterable)
+
+        if len(fields) != len(values):
             raise ValueError("The iterable must have the same length as the model fields.")
 
-        return cls(**dict(zip(fields, iterable)))
+        return cls(**dict(zip(fields, values, strict=True)))
 
 
 class JobSubmissionMetricTimestamps(BaseModel):

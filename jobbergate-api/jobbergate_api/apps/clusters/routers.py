@@ -2,9 +2,8 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from fastapi import Response as FastAPIResponse
-from fastapi import status
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 from loguru import logger

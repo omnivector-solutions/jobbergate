@@ -1,8 +1,8 @@
 from jobbergate_core.sdk import Apps
 from jobbergate_core.sdk.clusters import ClusterStatus
-from jobbergate_core.sdk.job_templates import JobTemplates
-from jobbergate_core.sdk.job_submissions import JobSubmissions
 from jobbergate_core.sdk.job_scripts import JobScripts
+from jobbergate_core.sdk.job_submissions import JobSubmissions
+from jobbergate_core.sdk.job_templates import JobTemplates
 from jobbergate_core.tools.requests import Client
 
 BASE_URL = "https://testserver"

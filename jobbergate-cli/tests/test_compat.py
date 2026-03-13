@@ -60,7 +60,7 @@ def test_import_appform_from_jobbergate_cli_warns_and_gives_you_questions_instea
             assert appform is questions
 
 
-def test_import_appform_from_jobbergate_cli_raises_an_ImportError_when_not_in_compatibility_mode(cleanup_deprecated):
+def test_import_appform_from_jobbergate_cli_raises_an_import_error_when_not_in_compatibility_mode(cleanup_deprecated):
     with pytest.raises(ImportError):
         from jobbergate_cli import appform  # noqa
 
@@ -74,7 +74,9 @@ def test_import_jobberappslib__from_jobbergate_cli_with_direct_import_of_functio
             assert dep_rj is new_rj
 
 
-def test_import_jobberappslib_from_jobbergate_cli_raises_ImportError_when_not_in_compatibility_mode(cleanup_deprecated):
+def test_import_jobberappslib_from_jobbergate_cli_raises_import_error_when_not_in_compatibility_mode(
+    cleanup_deprecated,
+):
     with pytest.raises(ImportError):
         from jobbergate_cli.jobberappslib import get_running_jobs  # noqa
 

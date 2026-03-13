@@ -1,18 +1,17 @@
 import asyncio
+import json
+import os
+import pwd
+import sys
 from dataclasses import dataclass
 from functools import cached_property, partial
-import json
 from itertools import chain
-import os
 from pathlib import Path
-import pwd
 from subprocess import CompletedProcess
-import sys
 from textwrap import dedent
 from typing import Any, Callable, Coroutine, List, get_args
 
 import msgpack
-from jobbergate_core.tools.sbatch import InfoHandler, ScancelHandler, SubprocessHandler
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
@@ -32,6 +31,7 @@ from jobbergate_agent.utils.compute import aggregate_influx_measures
 from jobbergate_agent.utils.exception import JobbergateAgentError, JobbergateApiError, SbatchError
 from jobbergate_agent.utils.logging import log_error
 from jobbergate_agent.utils.plugin import get_plugin_manager, hookimpl, hookspec
+from jobbergate_core.tools.sbatch import InfoHandler, ScancelHandler, SubprocessHandler
 
 
 @dataclass

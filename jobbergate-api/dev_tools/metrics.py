@@ -5,10 +5,10 @@ Provide command for generating dummy job metrics for testing purposes.
 import random
 from collections.abc import Iterator
 from datetime import datetime
-from typing import cast, Generator, get_args, Literal, TypedDict
+from typing import Generator, Literal, TypedDict, cast, get_args
 
-import typer
 import msgpack
+import typer
 
 app = typer.Typer()
 

@@ -1,23 +1,23 @@
 """Define tests for the functions in jobbergate_agent/utils/compute.py."""
 
+import itertools
 from collections import defaultdict
-import pytest
-from faker import Faker
-
 from collections.abc import Callable
 from datetime import datetime
 from typing import cast, get_args
 from unittest import mock
-import itertools
+
 import numpy as np
+import pytest
+from faker import Faker
 
 from jobbergate_agent.jobbergate.constants import INFLUXDB_MEASUREMENT
 from jobbergate_agent.jobbergate.schemas import InfluxDBPointDict, JobMetricData
 from jobbergate_agent.utils.compute import (
+    _aggregate_with_numba,
+    _create_mapping,
     aggregate_influx_measures,
     measure_memory_usage,
-    _create_mapping,
-    _aggregate_with_numba,
 )
 
 

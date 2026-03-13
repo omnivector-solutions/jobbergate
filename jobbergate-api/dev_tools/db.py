@@ -3,13 +3,15 @@
 import subprocess
 
 import typer
-from loguru import logger
-
+from alembic.command import downgrade as sqla_downgrade
 from alembic.command import revision as sqla_migrate
 from alembic.command import upgrade as sqla_upgrade
-from alembic.command import downgrade as sqla_downgrade
 from alembic.config import Config
+from loguru import logger
+
 from jobbergate_api.storage import build_db_url
+
+ALEMBIC_CONFIG_PATH = "alembic/alembic.ini"
 
 app = typer.Typer()
 
@@ -29,7 +31,7 @@ def migrate(
 ):
     """Create alembic migrations for a local database."""
     logger.debug(f"Creating migration with message: {message}")
-    config = Config(file_="alembic/alembic.ini")
+    config = Config(file_=ALEMBIC_CONFIG_PATH)
     sqla_migrate(config, message=message, autogenerate=not blank)
 
 
@@ -38,7 +40,7 @@ def upgrade(target: str = typer.Option("head", help="The migration to which the 
     """Apply alembic migrations to a local database."""
     logger.debug("Upgrading database...")
 
-    config = Config(file_="alembic/alembic.ini")
+    config = Config(file_=ALEMBIC_CONFIG_PATH)
     sqla_upgrade(config, target)
 
 
@@ -47,5 +49,5 @@ def downgrade(target: str = typer.Option("-1", help="The migration to which the 
     """Revert alembic migrations to a local database."""
     logger.debug("Downgrading database...")
 
-    config = Config(file_="alembic/alembic.ini")
+    config = Config(file_=ALEMBIC_CONFIG_PATH)
     sqla_downgrade(config, target)

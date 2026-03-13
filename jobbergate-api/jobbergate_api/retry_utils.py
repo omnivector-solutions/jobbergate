@@ -61,9 +61,7 @@ async def async_retry(
                 await asyncio.sleep(delay)
                 delay *= backoff_factor
             else:
-                logger.error(
-                    f"All {max_attempts} retry attempts exhausted for {func.__name__}: {last_exception}"
-                )
+                logger.error(f"All {max_attempts} retry attempts exhausted for {func.__name__}: {last_exception}")
 
     return None
 
@@ -111,8 +109,6 @@ def sync_retry(
                 time.sleep(delay)
                 delay *= backoff_factor
             else:
-                logger.error(
-                    f"All {max_attempts} retry attempts exhausted for {func.__name__}: {last_exception}"
-                )
+                logger.error(f"All {max_attempts} retry attempts exhausted for {func.__name__}: {last_exception}")
 
     return None

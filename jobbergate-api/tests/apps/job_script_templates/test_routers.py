@@ -91,7 +91,7 @@ async def test_create_job_template__fails_if_name_is_empty(
     assert (await synth_services.crud.template.count()) == 0
 
 
-async def test_create_job_template__coerces_empty_identifier_to_None(
+async def test_create_job_template__coerces_empty_identifier_to_none(
     client,
     fill_job_template_data,
     inject_security_header,
@@ -444,9 +444,7 @@ async def test_clone_job_template__replace_base_values(
     }
 
     inject_security_header(new_owner_email, Permissions.JOB_TEMPLATES_CREATE)
-    response = await client.post(
-        f"jobbergate/job-script-templates/clone/{original_instance.id}", json=payload
-    )
+    response = await client.post(f"jobbergate/job-script-templates/clone/{original_instance.id}", json=payload)
 
     assert response.status_code == 201, f"Clone failed: {response.text}"
     response_data = response.json()
@@ -565,7 +563,7 @@ class TestListJobTemplates:
         assert response_data["size"] == 50
         assert response_data["pages"] == 1
 
-        for response_item, expected_item in zip(response_data["items"], job_templates_list):
+        for response_item, expected_item in zip(response_data["items"], job_templates_list, strict=True):
             assert response_item.get("identifier") == expected_item.get("identifier")
             assert response_item["name"] == expected_item["name"]
             assert response_item["description"] == expected_item["description"]
@@ -896,9 +894,7 @@ class TestJobTemplateFiles:
 
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
 
-        template_file = await synth_services.file.template.get(
-            parent_id=parent_id, filename=job_template_filename
-        )
+        template_file = await synth_services.file.template.get(parent_id=parent_id, filename=job_template_filename)
 
         assert template_file is not None
         assert template_file.parent_id == parent_id
@@ -1482,10 +1478,7 @@ class TestJobTemplateWorkflowFile:
             )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert (
-            response.json()["detail"]
-            == "Runtime configuration is required when the workflow file does not exist"
-        )
+        assert response.json()["detail"] == "Runtime configuration is required when the workflow file does not exist"
 
         with pytest.raises(ServiceError, match="workflow_files row not found"):
             await synth_services.file.workflow.get(parent_id=parent_id, filename=WORKFLOW_FILE_NAME)

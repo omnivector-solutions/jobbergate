@@ -5,7 +5,6 @@ Provide constants that may be used throughout the CLI modules.
 from enum import Enum
 from pathlib import Path
 
-
 JOBBERGATE_APPLICATION_CONFIG = {
     "application_name": "",
     "application_description": "",

@@ -4,7 +4,7 @@ Provide helper commands for local development.
 
 import typer
 
-from dev_tools import db, dev_server, show_env, metrics
+from dev_tools import db, dev_server, metrics, show_env
 
 app = typer.Typer()
 app.command(name="dev-server")(dev_server.dev_server)

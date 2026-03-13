@@ -28,11 +28,11 @@ from jobbergate_cli.subapps.job_scripts.tools import (
 
 def test_validate_parameter_file__success(tmp_path):
     parameter_path = tmp_path / "dummy.json"
-    dummy_data = dict(
-        foo="one",
-        bar=2,
-        baz=False,
-    )
+    dummy_data = {
+        "foo": "one",
+        "bar": 2,
+        "baz": False,
+    }
     parameter_path.write_text(json.dumps(dummy_data))
     assert validate_parameter_file(parameter_path) == dummy_data
 
@@ -162,11 +162,11 @@ def test_render_template__success(tmp_path):
     template_path = tmp_path / "dummy.j2"
     template_path.write_text("{{ foo }} {{ bar }} {{ baz }}")
 
-    parameters = dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
+    parameters = {
+        "foo": "FOO",
+        "bar": "BAR",
+        "baz": "BAZ",
+    }
 
     expected_output = "FOO BAR BAZ"
 
@@ -177,7 +177,7 @@ def test_render_template__fail_when_unable_to_render(tmp_path):
     template_path = tmp_path / "dummy.j2"
     template_path.write_text("{{ foo + 42 }}")
 
-    parameters = dict(not_a_key="bla")
+    parameters = {"not_a_key": "bla"}
 
     with pytest.raises(Abort, match="Unable to render"):
         render_template(template_path, parameters)
@@ -187,7 +187,7 @@ def test_render_template__fail_sandbox_violation(tmp_path):
     template_path = tmp_path / "dummy.j2"
     template_path.write_text("{{ foo.__str__() }}")
 
-    parameters = dict(foo="bla")
+    parameters = {"foo": "bla"}
 
     with pytest.raises(Abort, match="Security errors raised when rendering"):
         render_template(template_path, parameters)
@@ -228,11 +228,11 @@ def test_render_job_script_locally__success(
     )
     mocker.patch("jobbergate_cli.subapps.job_scripts.tools.render_template", return_value=expected_template_data)
 
-    dummy_render_class.prepared_input = dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
+    dummy_render_class.prepared_input = {
+        "foo": "FOO",
+        "bar": "BAR",
+        "baz": "BAZ",
+    }
     mocker.patch.object(
         importlib.import_module("inquirer.prompt"),
         "ConsoleRender",
@@ -265,11 +265,11 @@ def test_render_job_script_locally__fail_when_no_workflow_file_specified(tmp_pat
 def test_render_job_script_locally__with_sbatch_params(
     dummy_render_class, dummy_context, dummy_application_dir, mocker
 ):
-    dummy_render_class.prepared_input = dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
+    dummy_render_class.prepared_input = {
+        "foo": "FOO",
+        "bar": "BAR",
+        "baz": "BAZ",
+    }
     mocker.patch.object(
         importlib.import_module("inquirer.prompt"),
         "ConsoleRender",
@@ -332,11 +332,11 @@ def test_render_job_script__providing_a_name(
         ),
     )
 
-    dummy_render_class.prepared_input = dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
+    dummy_render_class.prepared_input = {
+        "foo": "FOO",
+        "bar": "BAR",
+        "baz": "BAZ",
+    }
 
     desired_job_script_data = dummy_job_script_data[0]
 
@@ -401,11 +401,11 @@ def test_render_job_script__set_name_dynamically_from_application_config(
         ),
     )
 
-    dummy_render_class.prepared_input = dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
+    dummy_render_class.prepared_input = {
+        "foo": "FOO",
+        "bar": "BAR",
+        "baz": "BAZ",
+    }
 
     desired_job_script_data = dummy_job_script_data[0]
 
@@ -470,11 +470,11 @@ def test_render_job_script__set_name_dynamically_from_jobbergate_config(
         ),
     )
 
-    dummy_render_class.prepared_input = dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
+    dummy_render_class.prepared_input = {
+        "foo": "FOO",
+        "bar": "BAR",
+        "baz": "BAZ",
+    }
 
     desired_job_script_data = dummy_job_script_data[0]
 
@@ -537,11 +537,11 @@ def test_render_job_script__without_a_name(
         ),
     )
 
-    dummy_render_class.prepared_input = dict(
-        foo="FOO",
-        bar="BAR",
-        baz="BAZ",
-    )
+    dummy_render_class.prepared_input = {
+        "foo": "FOO",
+        "bar": "BAR",
+        "baz": "BAZ",
+    }
 
     desired_job_script_data = dummy_job_script_data[0]
     desired_job_script_data["name"] = application_response.name

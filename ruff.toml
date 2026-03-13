@@ -1,0 +1,24 @@
+line-length = 120
+extend-exclude = ["_version.py"]
+
+[lint]
+extend-select = ["B", "E", "F", "I"]
+extend-ignore = [
+    "E501", # Line too long
+]
+
+[lint.isort]
+known-first-party = [
+    "jobbergate_core",
+    "jobbergate_cli",
+    "jobbergate_agent",
+    "jobbergate_api",
+    "jobbergate_docs",
+    "jobbergate_test",
+    "fake_sbatch",
+]
+
+[lint.per-file-ignores]
+
+[format]
+quote-style = "double"

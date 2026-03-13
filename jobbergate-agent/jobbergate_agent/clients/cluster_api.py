@@ -2,12 +2,11 @@
 
 import httpx
 import sentry_sdk
-from jobbergate_core.auth.token import Token, TokenError, TokenType
 
 from jobbergate_agent.settings import SETTINGS
 from jobbergate_agent.utils.exception import AuthTokenError
 from jobbergate_agent.utils.logging import logger
-
+from jobbergate_core.auth.token import Token, TokenError, TokenType
 
 CACHE_DIR = SETTINGS.CACHE_DIR / "cluster-api"
 

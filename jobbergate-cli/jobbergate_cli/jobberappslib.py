@@ -11,7 +11,6 @@ import warnings
 from jobbergate_cli.config import settings
 from jobbergate_cli.text_tools import dedent, unwrap
 
-
 if settings.JOBBERGATE_COMPATIBILITY_MODE:
     from jobbergate_cli.subapps.applications.application_helpers import *  # noqa
 
@@ -24,6 +23,7 @@ if settings.JOBBERGATE_COMPATIBILITY_MODE:
             """
         ),
         DeprecationWarning,
+        stacklevel=2,
     )
 else:
     raise ImportError(

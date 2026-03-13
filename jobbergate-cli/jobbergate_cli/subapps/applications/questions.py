@@ -20,7 +20,6 @@ import inquirer.questions
 
 from jobbergate_cli.exceptions import Abort
 
-
 TInquirerType = TypeVar("TInquirerType", bound=inquirer.questions.Question)
 
 
@@ -51,11 +50,11 @@ class QuestionBase:
         """
         self.variablename = variablename
         self.default = default
-        self.inquirer_kwargs = dict(
-            message=message,
-            default=default,
-            ignore=ignore,
-        )
+        self.inquirer_kwargs = {
+            "message": message,
+            "default": default,
+            "ignore": ignore,
+        }
         self.inquirer_type = inquirer_type
 
     def make_prompts(self, **override_kwargs):
@@ -113,8 +112,8 @@ class Integer(QuestionBase):
         """
         try:
             int_val = int(current)
-        except ValueError:
-            raise inquirer.errors.ValidationError("", reason=f"{current} is not an integer")
+        except ValueError as err:
+            raise inquirer.errors.ValidationError("", reason=f"{current} is not an integer") from err
 
         min_str = str(self.minval) if self.minval is not None else "-∞"
         max_str = str(self.maxval) if self.maxval is not None else "∞"
@@ -253,8 +252,8 @@ class BooleanList(Confirm):
             whenfalse: List of questions to show if the user answers 'false' on this question.
         """
         super().__init__(variablename, message, **kwargs)
-        self.whentrue_child = whentrue or list()
-        self.whenfalse_child = whenfalse or list()
+        self.whentrue_child = whentrue or []
+        self.whenfalse_child = whenfalse or []
 
     def ignore_child(self, child: QuestionBase, answers: dict[str, Any]) -> bool:
         """

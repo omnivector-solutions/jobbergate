@@ -60,12 +60,12 @@ def _deserialize_request_model(
     """
     Deserialize a pydantic model instance into request_kwargs for an httpx client request in place.
     """
-    sentry_context = dict(
-        make_request=dict(
-            request_model=request_model,
-            request_kwargs=request_kwargs,
-        ),
-    )
+    sentry_context = {
+        "make_request": {
+            "request_model": request_model,
+            "request_kwargs": request_kwargs,
+        },
+    }
     Abort.require_condition(
         all(
             [
@@ -80,17 +80,17 @@ def _deserialize_request_model(
             Request was incorrectly structured.
             """
         ),
-        raise_kwargs=dict(
-            subject=abort_subject,
-            support=True,
-            log_message=unwrap(
+        raise_kwargs={
+            "subject": abort_subject,
+            "support": True,
+            "log_message": unwrap(
                 """
                 When using `request_model`, you may not pass
                 `data`, `json`, or `content` in the `request_kwargs`
                 """
             ),
-            sentry_context=sentry_context,
-        ),
+            "sentry_context": sentry_context,
+        },
     )
     try:
         request_kwargs["content"] = request_model.model_dump_json()
@@ -113,7 +113,7 @@ def _deserialize_request_model(
             ),
             sentry_context=sentry_context,
             original_error=err,
-        )
+        ) from err
 
 
 ResponseModel = TypeVar("ResponseModel", bound=pydantic.BaseModel)
@@ -190,7 +190,7 @@ def make_request(
             support=support,
             log_message=f"There was an error on the request -- {str(err)}",
             original_error=err,
-        )
+        ) from err
 
     if expected_status is not None:
         if response.is_client_error:
@@ -210,9 +210,12 @@ def make_request(
                     response.status_code, response.reason_phrase, response.text
                 ),
                 support=True,
-                sentry_context=dict(
-                    url=request.url, method=method, request_kwargs=request_kwargs, response=response.text
-                ),
+                sentry_context={
+                    "url": request.url,
+                    "method": method,
+                    "request_kwargs": request_kwargs,
+                    "response": response.text,
+                },
             )
         elif expected_status != response.status_code:
             raise Abort(
@@ -252,7 +255,7 @@ def make_request(
             support=support,
             log_message=f"Failed unpacking json: {response.text}",
             original_error=err,
-        )
+        ) from err
     logger.debug(f"Extracted data from response: {data}")
 
     if response_model_cls is None:
@@ -273,4 +276,4 @@ def make_request(
             support=support,
             log_message=f"Unexpected format in response data: {data}",
             original_error=err,
-        )
+        ) from err

@@ -10,8 +10,8 @@ from concurrent import futures
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
 
-from jinja2.sandbox import SandboxedEnvironment
 from jinja2.exceptions import SecurityError, UndefinedError
+from jinja2.sandbox import SandboxedEnvironment
 from loguru import logger
 
 from jobbergate_cli.config import settings
@@ -19,8 +19,8 @@ from jobbergate_cli.constants import FileType
 from jobbergate_cli.exceptions import Abort, JobbergateCliError
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import (
-    JobbergateConfig,
     ContextProtocol,
+    JobbergateConfig,
     JobScriptCreateRequest,
     JobScriptFile,
     JobScriptRenderRequestData,
@@ -32,6 +32,8 @@ from jobbergate_cli.subapps.applications.tools import (
     fetch_application_data,
     fetch_application_data_locally,
 )
+
+NO_WORKFLOW_FILE_MESSAGE = "Application does not have a workflow file"
 
 
 def validate_parameter_file(parameter_path: pathlib.Path) -> Dict[str, Any]:
@@ -50,10 +52,10 @@ def validate_parameter_file(parameter_path: pathlib.Path) -> Dict[str, Any]:
     data = None
     with Abort.check_expressions(
         f"The parameter file at {parameter_path} was invalid",
-        raise_kwargs=dict(
-            subject="Invalid parameter file",
-            log_message=f"Parameter file located at {parameter_path} failed validation",
-        ),
+        raise_kwargs={
+            "subject": "Invalid parameter file",
+            "log_message": f"Parameter file located at {parameter_path} failed validation",
+        },
     ) as checker:
         checker(
             parameter_path.exists(),
@@ -74,7 +76,7 @@ def validate_parameter_file(parameter_path: pathlib.Path) -> Dict[str, Any]:
 
 def fetch_job_script_data(
     jg_ctx: ContextProtocol,
-    id: int,
+    job_script_id: int,
 ) -> JobScriptResponse:
     """
     Retrieve a job_script from the API by ``id``
@@ -83,10 +85,10 @@ def fetch_job_script_data(
         JobScriptResponse,
         make_request(
             jg_ctx.client,
-            f"/jobbergate/job-scripts/{id}",
+            f"/jobbergate/job-scripts/{job_script_id}",
             "GET",
             expected_status=200,
-            abort_message=f"Couldn't retrieve job script ({id}) from API",
+            abort_message=f"Couldn't retrieve job script ({job_script_id}) from API",
             support=True,
             response_model_cls=JobScriptResponse,
         ),
@@ -201,10 +203,10 @@ def render_template(
 
     with Abort.handle_errors(
         f"Unable to process jinja template filename={template_path}",
-        raise_kwargs=dict(
-            subject="Unable to process jinja template",
-            log_message=f"Unable to process jinja template filename={template_path}",
-        ),
+        raise_kwargs={
+            "subject": "Unable to process jinja template",
+            "log_message": f"Unable to process jinja template filename={template_path}",
+        },
     ):
         sandbox_env = SandboxedEnvironment()
         template = sandbox_env.from_string(file_content)
@@ -214,12 +216,12 @@ def render_template(
     for context in render_contexts:
         try:
             return template.render(**context)
-        except SecurityError:
+        except SecurityError as err:
             raise Abort(
                 f"Security errors raised when rendering filename={template_path}",
                 subject="Unable to render jinja template",
                 log_message=f"Security error rendering filename={template_path}",
-            )
+            ) from err
         except UndefinedError as e:
             logger.debug(
                 "Unable to render filename={} with context={} -- Error: {}",
@@ -260,9 +262,9 @@ def render_job_script_locally(
 
     if not app_data.workflow_files:
         raise Abort(
-            "Application does not have a workflow file",
+            NO_WORKFLOW_FILE_MESSAGE,
             subject="Workflow file not found",
-            log_message="Application does not have a workflow file",
+            log_message=NO_WORKFLOW_FILE_MESSAGE,
         )
 
     application_source_code = app_data.workflow_files[0].path.read_text()
@@ -272,7 +274,7 @@ def render_job_script_locally(
         application_source_code,
         fast_mode=fast,
         sdk=jg_ctx.sdk,
-        supplied_params=validate_parameter_file(param_file) if param_file else dict(),
+        supplied_params=validate_parameter_file(param_file) if param_file else {},
     )
     application_runtime.execute_application()
     param_dict_flat = application_runtime.as_flatten_param_dict()
@@ -335,7 +337,7 @@ def render_job_script(
         raise Abort(
             f"Application {app_data.application_id} does not have a workflow file",
             subject="Workflow file not found",
-            log_message="Application does not have a workflow file",
+            log_message=NO_WORKFLOW_FILE_MESSAGE,
         )
 
     with tempfile.NamedTemporaryFile() as fp:
@@ -356,7 +358,7 @@ def render_job_script(
         application_source_code,
         fast_mode=fast,
         sdk=jg_ctx.sdk,
-        supplied_params=validate_parameter_file(param_file) if param_file else dict(),
+        supplied_params=validate_parameter_file(param_file) if param_file else {},
     )
     application_runtime.execute_application()
     param_dict_flat = application_runtime.as_flatten_param_dict()
@@ -484,12 +486,16 @@ def save_job_script_file(
     return file_path
 
 
-def download_job_script_files(id: int, jg_ctx: ContextProtocol, destination_path: pathlib.Path) -> List[JobScriptFile]:
+def download_job_script_files(
+    job_script_id: int,
+    jg_ctx: ContextProtocol,
+    destination_path: pathlib.Path,
+) -> List[JobScriptFile]:
     """
     Download all job script files from the API and save them to the destination path.
     """
 
-    result = fetch_job_script_data(jg_ctx, id)
+    result = fetch_job_script_data(jg_ctx, job_script_id)
 
     with futures.ThreadPoolExecutor() as executor:
         executor.map(partial(save_job_script_file, jg_ctx, destination_path), result.files)

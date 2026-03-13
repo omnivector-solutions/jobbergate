@@ -12,12 +12,10 @@ from rich import traceback
 from rich.console import Console
 from rich.panel import Panel
 
-from jobbergate_core.auth import AuthenticationError
-
 from jobbergate_cli.config import settings
 from jobbergate_cli.constants import OV_CONTACT
 from jobbergate_cli.text_tools import dedent, unwrap
-
+from jobbergate_core.auth import AuthenticationError
 
 # Enables prettified traceback printing via rich
 traceback.install()
@@ -86,7 +84,7 @@ def handle_abort(func):
                         sentry_sdk.capture_exception(err.original_error if err.original_error is not None else err)
                         sentry_sdk.flush()
 
-            panel_kwargs = dict()
+            panel_kwargs = {}
             if err.subject is not None:
                 panel_kwargs["title"] = f"[red]{err.subject}"
             message = dedent(err.message)
@@ -104,7 +102,7 @@ def handle_abort(func):
             console.print()
             console.print(Panel(message, **panel_kwargs))
             console.print()
-            raise typer.Exit(code=1)
+            raise typer.Exit(code=1) from None
 
     return wrapper
 

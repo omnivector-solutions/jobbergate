@@ -3,20 +3,23 @@ Database model for the JobSubmission resource.
 """
 
 from __future__ import annotations
+
 from datetime import datetime, timezone
 
 from pendulum.datetime import DateTime as PendulumDateTime
 from sqlalchemy import (
     ARRAY,
+    BigInteger,
     Dialect,
     Enum,
-    ForeignKey,
-    Integer,
-    String,
     Float,
+    ForeignKey,
     Index,
+    Integer,
     PrimaryKeyConstraint,
-    BigInteger,
+    String,
+)
+from sqlalchemy import (
     DateTime as DateTimeColumn,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
@@ -25,7 +28,7 @@ from sqlalchemy.types import DateTime, TypeDecorator
 
 from jobbergate_api.apps.job_scripts.models import JobScript as JobScriptModel
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus, SlurmJobState
-from jobbergate_api.apps.models import Base, CrudMixin, CommonMixin
+from jobbergate_api.apps.models import Base, CommonMixin, CrudMixin
 from jobbergate_api.safe_types import JobScript
 
 

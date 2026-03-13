@@ -57,9 +57,7 @@ async def test_create_stand_alone_job_script__success(
 async def test_clone_job_script__success(
     client, permission, fill_job_script_data, inject_security_header, tester_email, synth_services
 ):
-    original_instance = await synth_services.crud.job_script.create(
-        **fill_job_script_data(owner_email=tester_email)
-    )
+    original_instance = await synth_services.crud.job_script.create(**fill_job_script_data(owner_email=tester_email))
     parent_id = original_instance.id
     await synth_services.file.job_script.upsert(
         parent_id=parent_id,
@@ -96,9 +94,7 @@ async def test_clone_job_script__success(
 async def test_clone_job_script__replace_base_values(
     client, fill_job_script_data, inject_security_header, tester_email, synth_services
 ):
-    original_instance = await synth_services.crud.job_script.create(
-        **fill_job_script_data(owner_email=tester_email)
-    )
+    original_instance = await synth_services.crud.job_script.create(**fill_job_script_data(owner_email=tester_email))
 
     new_owner_email = "new_" + tester_email
 
@@ -661,7 +657,7 @@ class TestListJobScripts:
         assert response_data["size"] == 50
         assert response_data["pages"] == 1
 
-        for response_item, expected_item in zip(response_data["items"], job_scripts_list):
+        for response_item, expected_item in zip(response_data["items"], job_scripts_list, strict=True):
             assert response_item["name"] == expected_item["name"]
             assert response_item["description"] == expected_item["description"]
             assert response_item["owner_email"] == expected_item["owner_email"]
@@ -726,12 +722,12 @@ class TestListJobScripts:
         for item in data:
             job_script_data = await synth_services.crud.job_script.create(**item)
 
-            id = job_script_data.id
+            job_script_id = job_script_data.id
             file_type = "ENTRYPOINT"
             job_script_filename = "entrypoint.sh"
 
             await synth_services.file.job_script.upsert(
-                parent_id=id,
+                parent_id=job_script_id,
                 filename=job_script_filename,
                 upload_content=job_script_data_as_string,
                 file_type=file_type,
@@ -820,7 +816,7 @@ class TestJobScriptFiles:
         is_owner,
         permissions,
     ):
-        id = job_script_data.id
+        job_script_id = job_script_data.id
         file_type = "ENTRYPOINT"
         dummy_file_path = make_dummy_file("test_template.sh", content=job_script_data_as_string)
 
@@ -830,7 +826,7 @@ class TestJobScriptFiles:
         inject_security_header(requester_email, *permissions)
         with open(dummy_file_path, mode="rb") as file:
             response = await client.put(
-                f"jobbergate/job-scripts/{id}/upload/{file_type}",
+                f"jobbergate/job-scripts/{job_script_id}/upload/{file_type}",
                 files={"upload_file": (dummy_file_path.name, file, "text/plain")},
             )
 
@@ -839,17 +835,17 @@ class TestJobScriptFiles:
         # Check the response from the upload endpoint
         response_data = response.json()
         assert response_data is not None
-        assert response_data["parent_id"] == id
+        assert response_data["parent_id"] == job_script_id
         assert response_data["filename"] == dummy_file_path.name
         assert response_data["file_type"] == file_type
 
         # Check the database
-        job_script_file = await synth_services.file.job_script.get(id, "test_template.sh")
+        job_script_file = await synth_services.file.job_script.get(job_script_id, "test_template.sh")
         assert job_script_file is not None
-        assert job_script_file.parent_id == id
+        assert job_script_file.parent_id == job_script_id
         assert job_script_file.filename == dummy_file_path.name
         assert job_script_file.file_type == file_type
-        assert job_script_file.file_key == f"job_script_files/{id}/{dummy_file_path.name}"
+        assert job_script_file.file_key == f"job_script_files/{job_script_id}/{dummy_file_path.name}"
 
         # Check the file content on s3
         file_content = await synth_services.file.job_script.get_file_content(job_script_file)
@@ -885,7 +881,7 @@ class TestJobScriptFiles:
             ),
         )
 
-        id = job_script_data.id
+        job_script_id = job_script_data.id
         file_type = "ENTRYPOINT"
 
         owner_email = job_script_data.owner_email
@@ -893,7 +889,7 @@ class TestJobScriptFiles:
 
         inject_security_header(requester_email, *permissions)
         response = await client.put(
-            f"jobbergate/job-scripts/{id}/upload-by-url/{file_type}",
+            f"jobbergate/job-scripts/{job_script_id}/upload-by-url/{file_type}",
             params={"file_url": f"{protocol}://dummy-domain.com/dummy-file.py"},
         )
 
@@ -902,17 +898,17 @@ class TestJobScriptFiles:
         # Check the response from the upload endpoint
         response_data = response.json()
         assert response_data is not None
-        assert response_data["parent_id"] == id
+        assert response_data["parent_id"] == job_script_id
         assert response_data["filename"] == "dummy-file.py"
         assert response_data["file_type"] == file_type
 
         # Check the database
-        job_script_file = await synth_services.file.job_script.get(id, "dummy-file.py")
+        job_script_file = await synth_services.file.job_script.get(job_script_id, "dummy-file.py")
         assert job_script_file is not None
-        assert job_script_file.parent_id == id
+        assert job_script_file.parent_id == job_script_id
         assert job_script_file.filename == "dummy-file.py"
         assert job_script_file.file_type == file_type
-        assert job_script_file.file_key == f"job_script_files/{id}/dummy-file.py"
+        assert job_script_file.file_key == f"job_script_files/{job_script_id}/dummy-file.py"
 
         # Check the file content on s3
         file_content = await synth_services.file.job_script.get_file_content(job_script_file)
@@ -946,7 +942,7 @@ class TestJobScriptFiles:
             ),
         )
 
-        id = job_script_data.id
+        job_script_id = job_script_data.id
         file_type = "ENTRYPOINT"
 
         owner_email = job_script_data.owner_email
@@ -954,7 +950,7 @@ class TestJobScriptFiles:
 
         inject_security_header(requester_email, *permissions)
         response = await client.put(
-            f"jobbergate/job-scripts/{id}/upload-by-url/{file_type}",
+            f"jobbergate/job-scripts/{job_script_id}/upload-by-url/{file_type}",
             params={"file_url": s3_url},
         )
 
@@ -963,17 +959,17 @@ class TestJobScriptFiles:
         # Check the response from the upload endpoint
         response_data = response.json()
         assert response_data is not None
-        assert response_data["parent_id"] == id
+        assert response_data["parent_id"] == job_script_id
         assert response_data["filename"] == "dummy-file.py"
         assert response_data["file_type"] == file_type
 
         # Check the database
-        job_script_file = await synth_services.file.job_script.get(id, "dummy-file.py")
+        job_script_file = await synth_services.file.job_script.get(job_script_id, "dummy-file.py")
         assert job_script_file is not None
-        assert job_script_file.parent_id == id
+        assert job_script_file.parent_id == job_script_id
         assert job_script_file.filename == "dummy-file.py"
         assert job_script_file.file_type == file_type
-        assert job_script_file.file_key == f"job_script_files/{id}/dummy-file.py"
+        assert job_script_file.file_key == f"job_script_files/{job_script_id}/dummy-file.py"
 
         # Check the file content on s3
         file_content = await synth_services.file.job_script.get_file_content(job_script_file)
@@ -997,7 +993,7 @@ class TestJobScriptFiles:
             ),
         )
 
-        id = job_script_data.id
+        job_script_id = job_script_data.id
         file_type = "ENTRYPOINT"
 
         owner_email = job_script_data.owner_email
@@ -1006,7 +1002,7 @@ class TestJobScriptFiles:
         inject_security_header(requester_email, Permissions.JOB_SCRIPTS_CREATE)
 
         response = await client.put(
-            f"jobbergate/job-scripts/{id}/upload-by-url/{file_type}",
+            f"jobbergate/job-scripts/{job_script_id}/upload-by-url/{file_type}",
             params={"file_url": file_url},
         )
 
@@ -1031,12 +1027,12 @@ class TestJobScriptFiles:
         is_owner,
         permissions,
     ):
-        id = job_script_data.id
+        job_script_id = job_script_data.id
         file_type = "ENTRYPOINT"
         job_script_filename = "entrypoint.sh"
 
         await synth_services.file.job_script.upsert(
-            parent_id=id,
+            parent_id=job_script_id,
             filename=job_script_filename,
             upload_content="original_content",
             file_type=file_type,
@@ -1050,19 +1046,19 @@ class TestJobScriptFiles:
         inject_security_header(requester_email, *permissions)
         with open(dummy_file_path, mode="rb") as file:
             response = await client.put(
-                f"jobbergate/job-scripts/{id}/upload/{file_type}",
+                f"jobbergate/job-scripts/{job_script_id}/upload/{file_type}",
                 files={"upload_file": (dummy_file_path.name, file, "text/plain")},
             )
 
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
 
-        job_script_file = await synth_services.file.job_script.get(id, job_script_filename)
+        job_script_file = await synth_services.file.job_script.get(job_script_id, job_script_filename)
 
         assert job_script_file is not None
-        assert job_script_file.parent_id == id
+        assert job_script_file.parent_id == job_script_id
         assert job_script_file.filename == job_script_filename
         assert job_script_file.file_type == file_type
-        assert job_script_file.file_key == f"job_script_files/{id}/{dummy_file_path.name}"
+        assert job_script_file.file_key == f"job_script_files/{job_script_id}/{dummy_file_path.name}"
 
         file_content = await synth_services.file.job_script.get_file_content(job_script_file)
         assert file_content.decode() == new_content
@@ -1084,12 +1080,12 @@ class TestJobScriptFiles:
         is_owner,
         permissions,
     ):
-        id = job_script_data.id
+        job_script_id = job_script_data.id
         file_type = "ENTRYPOINT"
         job_script_filename = "entrypoint.sh"
 
         await synth_services.file.job_script.upsert(
-            parent_id=id,
+            parent_id=job_script_id,
             filename=job_script_filename,
             upload_content="original_content",
             file_type=file_type,
@@ -1101,19 +1097,19 @@ class TestJobScriptFiles:
         requester_email = owner_email if is_owner else "another_" + owner_email
         inject_security_header(requester_email, *permissions)
         response = await client.put(
-            f"jobbergate/job-scripts/{id}/upload/{file_type}",
+            f"jobbergate/job-scripts/{job_script_id}/upload/{file_type}",
             params={"filename": new_filename, "previous_filename": job_script_filename},
         )
 
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
 
-        job_script_file = await synth_services.file.job_script.get(id, new_filename)
+        job_script_file = await synth_services.file.job_script.get(job_script_id, new_filename)
 
         assert job_script_file is not None
-        assert job_script_file.parent_id == id
+        assert job_script_file.parent_id == job_script_id
         assert job_script_file.filename == new_filename
         assert job_script_file.file_type == file_type
-        assert job_script_file.file_key == f"job_script_files/{id}/{new_filename}"
+        assert job_script_file.file_key == f"job_script_files/{job_script_id}/{new_filename}"
 
         file_content = await synth_services.file.job_script.get_file_content(job_script_file)
         assert file_content.decode() == "original_content"
@@ -1136,12 +1132,12 @@ class TestJobScriptFiles:
         is_owner,
         permissions,
     ):
-        id = job_script_data.id
+        job_script_id = job_script_data.id
         file_type = "ENTRYPOINT"
         job_script_filename = "entrypoint.sh"
 
         await synth_services.file.job_script.upsert(
-            parent_id=id,
+            parent_id=job_script_id,
             filename=job_script_filename,
             upload_content="original_content",
             file_type=file_type,
@@ -1156,7 +1152,7 @@ class TestJobScriptFiles:
         inject_security_header(requester_email, *permissions)
         with open(dummy_file_path, mode="rb") as file:
             response = await client.put(
-                f"jobbergate/job-scripts/{id}/upload/{file_type}",
+                f"jobbergate/job-scripts/{job_script_id}/upload/{file_type}",
                 files={"upload_file": (dummy_file_path.name, file, "text/plain")},
                 params={
                     "filename": dummy_file_path.name,
@@ -1166,13 +1162,13 @@ class TestJobScriptFiles:
 
         assert response.status_code == status.HTTP_200_OK, f"Upsert failed: {response.text}"
 
-        job_script_file = await synth_services.file.job_script.get(id, new_filename)
+        job_script_file = await synth_services.file.job_script.get(job_script_id, new_filename)
 
         assert job_script_file is not None
-        assert job_script_file.parent_id == id
+        assert job_script_file.parent_id == job_script_id
         assert job_script_file.filename == new_filename
         assert job_script_file.file_type == file_type
-        assert job_script_file.file_key == f"job_script_files/{id}/{new_filename}"
+        assert job_script_file.file_key == f"job_script_files/{job_script_id}/{new_filename}"
 
         file_content = await synth_services.file.job_script.get_file_content(job_script_file)
         assert file_content.decode() == new_content
@@ -1186,7 +1182,7 @@ class TestJobScriptFiles:
         job_script_data_as_string,
         make_dummy_file,
     ):
-        id = job_script_data.id
+        job_script_id = job_script_data.id
         file_type = "ENTRYPOINT"
         dummy_file_path = make_dummy_file("test_template.sh", content=job_script_data_as_string)
 
@@ -1196,7 +1192,7 @@ class TestJobScriptFiles:
         inject_security_header(requester_email, Permissions.JOB_SCRIPTS_CREATE)
         with open(dummy_file_path, mode="rb") as file:
             response = await client.put(
-                f"jobbergate/job-scripts/{id}/upload/{file_type}",
+                f"jobbergate/job-scripts/{job_script_id}/upload/{file_type}",
                 files={"upload_file": (dummy_file_path.name, file, "text/plain")},
                 params={"filename": dummy_file_path.name},
             )
@@ -1214,19 +1210,19 @@ class TestJobScriptFiles:
         job_script_data_as_string,
         synth_services,
     ):
-        id = job_script_data.id
+        job_script_id = job_script_data.id
         file_type = "ENTRYPOINT"
         job_script_filename = "entrypoint.sh"
 
         await synth_services.file.job_script.upsert(
-            parent_id=id,
+            parent_id=job_script_id,
             filename=job_script_filename,
             upload_content=job_script_data_as_string,
             file_type=file_type,
         )
 
         inject_security_header(tester_email, permission)
-        response = await client.get(f"jobbergate/job-scripts/{id}/upload/{job_script_filename}")
+        response = await client.get(f"jobbergate/job-scripts/{job_script_id}/upload/{job_script_filename}")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.content.decode() == job_script_data_as_string
@@ -1245,19 +1241,19 @@ class TestJobScriptFiles:
         """
         large_string = "print(1)\n" * 5000
 
-        id = job_script_data.id
+        job_script_id = job_script_data.id
         file_type = "ENTRYPOINT"
         job_script_filename = "entrypoint.sh"
 
         await synth_services.file.job_script.upsert(
-            parent_id=id,
+            parent_id=job_script_id,
             filename=job_script_filename,
             upload_content=large_string,
             file_type=file_type,
         )
 
         inject_security_header(tester_email, Permissions.JOB_SCRIPTS_READ)
-        response = await client.get(f"jobbergate/job-scripts/{id}/upload/{job_script_filename}")
+        response = await client.get(f"jobbergate/job-scripts/{job_script_id}/upload/{job_script_filename}")
 
         assert response.status_code == status.HTTP_200_OK, f"Get failed: {response.text}"
         assert response.content.decode() == large_string

@@ -4,16 +4,15 @@ import asyncio
 import contextlib
 import dataclasses
 import datetime
-from faker import Faker
-
 import typing
 from contextlib import asynccontextmanager
 from textwrap import dedent
 from unittest.mock import patch
 
 import pytest
+from faker import Faker
 from fastapi import status
-from httpx import AsyncClient, Response, ASGITransport
+from httpx import ASGITransport, AsyncClient, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jobbergate_api.apps.dependencies import get_bucket_name, get_bucket_url, s3_bucket, service_factory
@@ -211,9 +210,7 @@ def time_frame():
         """
         Context manager for defining the time-frame for the time_frame fixture.
         """
-        window = TimeFrame(
-            now=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=1), later=None
-        )
+        window = TimeFrame(now=datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=1), later=None)
         yield window
         window.later = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=1)
 

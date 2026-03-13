@@ -33,7 +33,7 @@ Changelog = "https://github.com/omnivector-solutions/jobbergate/blob/main/jobber
 dev = []
 
 [tool.ruff]
-line-length = 120
+extend = "../ruff.toml"
 
 [tool.pytest.ini_options]
 addopts = [

@@ -427,10 +427,10 @@ class TestJobScripts:
         response_data = JobScriptBaseViewFactory.build()
         job_script_id = response_data.id
         update_kwargs: dict[str, Any] = filter_null_out(
-            dict(
-                name=name,
-                description=description,
-            )
+            {
+                "name": name,
+                "description": description,
+            }
         )
 
         with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:

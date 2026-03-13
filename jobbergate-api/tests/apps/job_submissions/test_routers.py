@@ -4,28 +4,27 @@ Tests for the /job-submissions/ endpoint.
 
 import itertools
 import json
-from faker import Faker
-
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from textwrap import dedent
 from unittest import mock
 
-import pytest
 import msgpack
+import pytest
+from faker import Faker
 from fastapi import status
 from sqlalchemy import insert, select
 
 from jobbergate_api.apps.job_submissions.constants import (
-    JobSubmissionStatus,
-    SlurmJobState,
     JobSubmissionMetricAggregateNames,
     JobSubmissionMetricSampleRate,
+    JobSubmissionStatus,
+    SlurmJobState,
 )
+from jobbergate_api.apps.job_submissions.models import JobProgress, JobSubmissionMetric
+from jobbergate_api.apps.job_submissions.schemas import JobSubmissionAgentMaxTimes, JobSubmissionMetricSchema
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.rabbitmq_notification import rabbitmq_connect
-from jobbergate_api.apps.job_submissions.models import JobSubmissionMetric, JobProgress
-from jobbergate_api.apps.job_submissions.schemas import JobSubmissionMetricSchema, JobSubmissionAgentMaxTimes
 
 # Not using the synth_session fixture in a route that needs the database is unsafe
 pytest.mark.usefixtures("synth_session")
@@ -333,9 +332,7 @@ async def test_create_job_submission_without_job_script(
     the job_submission still does not exists in the database, the correct status code (404) is returned.
     """
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_CREATE)
-    response = await client.post(
-        "/jobbergate/job-submissions", json=fill_job_submission_data(job_script_id=9999)
-    )
+    response = await client.post("/jobbergate/job-submissions", json=fill_job_submission_data(job_script_id=9999))
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -1508,7 +1505,7 @@ async def test_job_submissions_agent_submitted_cancelled_job__success(
     assert result[0].additional_info is None
 
 
-async def test_job_submissions_agent_submitted__fails_if_status_is_not_CREATED(
+async def test_job_submissions_agent_submitted__fails_if_status_is_not_created(
     fill_job_script_data,
     fill_job_submission_data,
     client,
@@ -1719,7 +1716,7 @@ async def test_job_submissions_agent_rejected__publishes_status_change_to_rabbit
     }
 
 
-async def test_job_submissions_agent_rejected__fails_if_status_is_not_CREATED(
+async def test_job_submissions_agent_rejected__fails_if_status_is_not_created(
     fill_job_script_data,
     fill_job_submission_data,
     client,
@@ -2408,9 +2405,7 @@ async def test_job_submissions_agent_metrics_upload__successful_request(
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
-    query = select(JobSubmissionMetric).where(
-        JobSubmissionMetric.job_submission_id == inserted_job_submission_id
-    )
+    query = select(JobSubmissionMetric).where(JobSubmissionMetric.job_submission_id == inserted_job_submission_id)
     result = await synth_session.execute(query)
     scalars = result.scalars()
     assert all(
@@ -2633,19 +2628,7 @@ async def test_job_submissions_metrics__aggregation_by_all_nodes(
             (
                 data_point[0],
                 data_point[1],
-                # skip both task and step because the API aggregates in the node level
-                # data_point[2],
-                # data_point[3],
-                data_point[4],
-                data_point[5],
-                data_point[6],
-                data_point[7],
-                data_point[8],
-                data_point[9],
-                data_point[10],
-                data_point[11],
-                data_point[12],
-                data_point[13],
+                *data_point[4:14],
             ),
             skip_optional=True,
         ).model_dump()
@@ -2759,9 +2742,7 @@ async def test_job_submissions_metrics_timestamps__successful_request(
     await synth_session.execute(query)
 
     inject_security_header("who@cares.com", permission)
-    response = await client.get(
-        f"/jobbergate/job-submissions/{inserted_job_submission_id}/metrics/timestamps"
-    )
+    response = await client.get(f"/jobbergate/job-submissions/{inserted_job_submission_id}/metrics/timestamps")
     assert response.status_code == status.HTTP_200_OK
 
     response_data = response.json()
@@ -2834,9 +2815,7 @@ async def test_job_submissions_metrics_timestamps__job_submission_has_no_metric(
     inserted_job_submission_id = inserted_submission.id
 
     inject_security_header("who@cares.com", permission, client_id="dummy-client")
-    response = await client.get(
-        f"/jobbergate/job-submissions/{inserted_job_submission_id}/metrics/timestamps"
-    )
+    response = await client.get(f"/jobbergate/job-submissions/{inserted_job_submission_id}/metrics/timestamps")
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
     response_data = response.json()

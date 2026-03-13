@@ -1,9 +1,9 @@
 import json
-from pathlib import Path
 import uuid
 from collections.abc import Callable
 from datetime import datetime
 from itertools import combinations
+from pathlib import Path
 from textwrap import dedent
 from typing import Any, NamedTuple, get_args
 from unittest import mock
@@ -200,7 +200,7 @@ async def test_fetch_active_submissions__success():
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
-async def test_fetch_active_submissions__raises_JobbergateApiError_if_response_is_not_200():  # noqa
+async def test_fetch_active_submissions__raises_jobbergate_api_error_if_response_is_not_200():
     """
     Test that the ``fetch_active_submissions()`` function will raise a
     JobbergateApiError if the response from the API is not OK (200).
@@ -216,7 +216,7 @@ async def test_fetch_active_submissions__raises_JobbergateApiError_if_response_i
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
-async def test_fetch_active_submissions__raises_JobbergateApiError_if_response_cannot_be_deserialized():  # noqa
+async def test_fetch_active_submissions__raises_jobbergate_api_error_if_response_cannot_be_deserialized():
     """
     Test that the ``fetch_active_submissions()`` function will raise a
     JobbergateApiError if it fails to convert the response to an ActiveJobSubmission.
@@ -266,7 +266,7 @@ async def test_update_job_data__success():
 
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("mock_access_token")
-async def test_update_job_data__raises_JobbergateApiError_if_the_response_is_not_200():
+async def test_update_job_data__raises_jobbergate_api_error_if_the_response_is_not_200():
     """
     Test that the ``update_status()`` function will raise a JobbergateApiError if
     the response from the API is not OK (200).
@@ -446,7 +446,7 @@ def test_fetch_influx_data__data_point_overflow(mocked_influxdb_client: mock.Mag
 
 
 @mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
-async def test_fetch_influx_data__success_with_all_None(
+async def test_fetch_influx_data__success_with_all_none(
     mocked_influxdb_client: mock.MagicMock, faker: Faker, influx_data: InfluxData
 ):
     """
@@ -550,7 +550,7 @@ def test_fetch_influx_measurements__success(mocked_influxdb_client: mock.MagicMo
 
 
 @pytest.mark.asyncio
-async def test_fetch_influx_measurements__raises_JobbergateApiError_if_influxdb_client_is_None():
+async def test_fetch_influx_measurements__raises_jobbergate_api_error_if_influxdb_client_is_none():
     """
     Test that the ``fetch_influx_measurements()`` function will raise a JobbergateApiError
     if the influxdb_client is None.
@@ -562,7 +562,7 @@ async def test_fetch_influx_measurements__raises_JobbergateApiError_if_influxdb_
 
 @pytest.mark.asyncio
 @mock.patch("jobbergate_agent.jobbergate.update.influxdb_client")
-async def test_fetch_influx_measurements__raises_JobbergateApiError_if_query_fails(
+async def test_fetch_influx_measurements__raises_jobbergate_api_error_if_query_fails(
     mocked_influxdb_client: mock.MagicMock,
 ):
     """

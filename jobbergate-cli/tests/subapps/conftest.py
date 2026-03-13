@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Generator, Optional
 
 import httpx
-from jobbergate_core import JobbergateAuthHandler
 import pytest
 import yaml
 from typer import Context, Typer
@@ -11,8 +10,12 @@ from typer.testing import CliRunner
 from jobbergate_cli.constants import JOBBERGATE_APPLICATION_CONFIG_FILE_NAME, JOBBERGATE_APPLICATION_MODULE_FILE_NAME
 from jobbergate_cli.context import JobbergateContext
 from jobbergate_cli.exceptions import handle_abort, handle_authentication_error
-from jobbergate_cli.schemas import IdentityData, JobbergateApplicationConfig, ContextProtocol
+from jobbergate_cli.schemas import ContextProtocol, IdentityData, JobbergateApplicationConfig
 from jobbergate_cli.text_tools import dedent
+from jobbergate_core import JobbergateAuthHandler
+
+OWNER_EMAIL_PRIMARY = "tucker.beck@omnivector.solutions"
+OWNER_EMAIL_SECONDARY = "tucker@omnivector.solutions"
 
 
 @pytest.fixture
@@ -85,16 +88,16 @@ def seed_clusters(mocker):
 @pytest.fixture
 def dummy_application_data():
     return [
-        dict(
-            id=1,
-            name="test-app-1",
-            identifier="test-app-1",
-            description="Test Application Number 1",
-            owner_email="tucker.beck@omnivector.solutions",
-            created_at="2022-03-01 17:31:00",
-            updated_at="2022-03-01 17:31:00",
-            template_vars={"foo": "bar"},
-            template_files=[
+        {
+            "id": 1,
+            "name": "test-app-1",
+            "identifier": "test-app-1",
+            "description": "Test Application Number 1",
+            "owner_email": OWNER_EMAIL_PRIMARY,
+            "created_at": "2022-03-01 17:31:00",
+            "updated_at": "2022-03-01 17:31:00",
+            "template_vars": {"foo": "bar"},
+            "template_files": [
                 {
                     "filename": "test-job-script.py.j2",
                     "parent_id": 1,
@@ -103,7 +106,7 @@ def dummy_application_data():
                     "file_type": "ENTRYPOINT",
                 }
             ],
-            workflow_files=[
+            "workflow_files": [
                 {
                     "filename": "jobbergate.py",
                     "parent_id": 1,
@@ -112,25 +115,25 @@ def dummy_application_data():
                     "runtime_config": {"default_template": "test-job-script.py.j2"},
                 },
             ],
-        ),
-        dict(
-            id=2,
-            name="test-app-2",
-            identifier="test-app-2",
-            description="Test Application Number 2",
-            owner_email="tucker.beck@omnivector.solutions",
-            created_at="2022-03-01 17:31:00",
-            updated_at="2022-03-01 17:31:00",
-        ),
-        dict(
-            id=3,
-            name="test-app-3",
-            identifier="test-app-3",
-            description="Test Application Number 3",
-            owner_email="tucker.beck@omnivector.solutions",
-            created_at="2022-03-01 17:31:00",
-            updated_at="2022-03-01 17:31:00",
-        ),
+        },
+        {
+            "id": 2,
+            "name": "test-app-2",
+            "identifier": "test-app-2",
+            "description": "Test Application Number 2",
+            "owner_email": OWNER_EMAIL_PRIMARY,
+            "created_at": "2022-03-01 17:31:00",
+            "updated_at": "2022-03-01 17:31:00",
+        },
+        {
+            "id": 3,
+            "name": "test-app-3",
+            "identifier": "test-app-3",
+            "description": "Test Application Number 3",
+            "owner_email": OWNER_EMAIL_PRIMARY,
+            "created_at": "2022-03-01 17:31:00",
+            "updated_at": "2022-03-01 17:31:00",
+        },
     ]
 
 
@@ -147,87 +150,87 @@ def dummy_job_script_file():
 @pytest.fixture
 def dummy_job_script_data(dummy_application_data, dummy_job_script_file):
     return [
-        dict(
-            id=1,
-            created_at="2022-03-02 22:08:00",
-            updated_at="2022-03-02 22:08:00",
-            name="script1",
-            description="Job Script 1",
-            owner_email="tucker@omnivector.solutions",
-            application_id=dummy_application_data[0]["id"],
-            files=[dict(parent_id=1, **dummy_job_script_file)],
-        ),
-        dict(
-            id=2,
-            created_at="2022-03-02 22:08:00",
-            updated_at="2022-03-02 22:08:00",
-            name="script2",
-            description="Job Script 2",
-            owner_email="tucker@omnivector.solutions",
-            application_id=1,
-            files=[dict(parent_id=2, **dummy_job_script_file)],
-        ),
-        dict(
-            id=3,
-            created_at="2022-03-02 22:08:00",
-            updated_at="2022-03-02 22:08:00",
-            name="script3",
-            description="Job Script 3",
-            owner_email="james@omnivector.solutions",
-            application_id=1,
-            files=[dict(parent_id=3, **dummy_job_script_file)],
-        ),
+        {
+            "id": 1,
+            "created_at": "2022-03-02 22:08:00",
+            "updated_at": "2022-03-02 22:08:00",
+            "name": "script1",
+            "description": "Job Script 1",
+            "owner_email": OWNER_EMAIL_SECONDARY,
+            "application_id": dummy_application_data[0]["id"],
+            "files": [dict(parent_id=1, **dummy_job_script_file)],
+        },
+        {
+            "id": 2,
+            "created_at": "2022-03-02 22:08:00",
+            "updated_at": "2022-03-02 22:08:00",
+            "name": "script2",
+            "description": "Job Script 2",
+            "owner_email": OWNER_EMAIL_SECONDARY,
+            "application_id": 1,
+            "files": [dict(parent_id=2, **dummy_job_script_file)],
+        },
+        {
+            "id": 3,
+            "created_at": "2022-03-02 22:08:00",
+            "updated_at": "2022-03-02 22:08:00",
+            "name": "script3",
+            "description": "Job Script 3",
+            "owner_email": "james@omnivector.solutions",
+            "application_id": 1,
+            "files": [dict(parent_id=3, **dummy_job_script_file)],
+        },
     ]
 
 
 @pytest.fixture
 def dummy_job_submission_data(dummy_job_script_data):
     return [
-        dict(
-            id=1,
-            created_at="2022-03-02 22:08:00",
-            updated_at="2022-03-02 22:08:00",
-            name="sub1",
-            description="Job Submission 1",
-            owner_email="tucker@omnivector.solutions",
-            job_script_id=dummy_job_script_data[0]["id"],
-            slurm_job_id=13,
-            status="CREATED",
-        ),
-        dict(
-            id=1,
-            created_at="2022-03-02 22:08:00",
-            updated_at="2022-03-02 22:08:00",
-            name="sub1",
-            description="Job Submission 1",
-            owner_email="tucker@omnivector.solutions",
-            job_script_id=88,
-            slurm_job_id=8888,
-            status="CREATED",
-        ),
-        dict(
-            id=3,
-            created_at="2022-03-02 22:08:00",
-            updated_at="2022-03-02 22:08:00",
-            name="sub3",
-            description="Job Submission 3",
-            owner_email="tucker@omnivector.solutions",
-            job_script_id=99,
-            slurm_job_id=9999,
-            status="CREATED",
-        ),
-        dict(
-            id=4,
-            created_at="2022-11-17 11:17:00",
-            updated_at="2022-11-17 11:17:00",
-            name="sub4",
-            description="Job Submission 4",
-            owner_email="felipe@omnivector.solutions",
-            job_script_id=99,
-            slurm_job_id=9999,
-            status="REJECTED",
-            report_message="Failed to submit job to slurm",
-        ),
+        {
+            "id": 1,
+            "created_at": "2022-03-02 22:08:00",
+            "updated_at": "2022-03-02 22:08:00",
+            "name": "sub1",
+            "description": "Job Submission 1",
+            "owner_email": OWNER_EMAIL_SECONDARY,
+            "job_script_id": dummy_job_script_data[0]["id"],
+            "slurm_job_id": 13,
+            "status": "CREATED",
+        },
+        {
+            "id": 1,
+            "created_at": "2022-03-02 22:08:00",
+            "updated_at": "2022-03-02 22:08:00",
+            "name": "sub1",
+            "description": "Job Submission 1",
+            "owner_email": OWNER_EMAIL_SECONDARY,
+            "job_script_id": 88,
+            "slurm_job_id": 8888,
+            "status": "CREATED",
+        },
+        {
+            "id": 3,
+            "created_at": "2022-03-02 22:08:00",
+            "updated_at": "2022-03-02 22:08:00",
+            "name": "sub3",
+            "description": "Job Submission 3",
+            "owner_email": OWNER_EMAIL_SECONDARY,
+            "job_script_id": 99,
+            "slurm_job_id": 9999,
+            "status": "CREATED",
+        },
+        {
+            "id": 4,
+            "created_at": "2022-11-17 11:17:00",
+            "updated_at": "2022-11-17 11:17:00",
+            "name": "sub4",
+            "description": "Job Submission 4",
+            "owner_email": "felipe@omnivector.solutions",
+            "job_script_id": 99,
+            "slurm_job_id": 9999,
+            "status": "REJECTED",
+            "report_message": "Failed to submit job to slurm",
+        },
     ]
 
 
@@ -327,7 +330,7 @@ def dummy_render_class():
             self.kwargs = kwargs
 
         def render(self, question, answers=None):
-            question.answers = answers if answers is not None else dict()
+            question.answers = answers if answers is not None else {}
 
             try:
                 ignore = question.ignore(answers)

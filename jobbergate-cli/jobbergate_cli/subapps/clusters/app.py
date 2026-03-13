@@ -8,7 +8,6 @@ from jobbergate_cli.render import terminal_message
 from jobbergate_cli.schemas import ContextProtocol
 from jobbergate_cli.subapps.clusters.tools import get_client_ids
 
-
 app = typer.Typer(help="Commands to interact with clusters")
 
 

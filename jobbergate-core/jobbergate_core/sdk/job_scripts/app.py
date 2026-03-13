@@ -32,12 +32,17 @@ class JobScriptFiles:
     request_handler_cls: Type[RequestHandler] = RequestHandler
 
     @validate_call
-    def upsert(self, id: NonNegativeInt, file_type: FileType, file_path: Path) -> JobScriptFileDetailedView:
+    def upsert(
+        self,
+        job_script_id: NonNegativeInt,
+        file_type: FileType,
+        file_path: Path,
+    ) -> JobScriptFileDetailedView:
         """
         Upload or update a job script file.
 
         Args:
-            id: The ID of the job script.
+            job_script_id: The ID of the job script.
             file_type: The type of the file.
             file_path: The path to the file to be uploaded.
 
@@ -47,27 +52,27 @@ class JobScriptFiles:
         with file_path.open("rb") as file:
             response = self.request_handler_cls(
                 client=self.client,
-                url_path=f"/jobbergate/job-scripts/{id}/upload/{file_type.value}",
+                url_path=f"/jobbergate/job-scripts/{job_script_id}/upload/{file_type.value}",
                 method="PUT",
-                request_kwargs=dict(
-                    files={"upload_file": (file_path.name, file, "text/plain")},
-                ),
+                request_kwargs={
+                    "files": {"upload_file": (file_path.name, file, "text/plain")},
+                },
             )
         return response.raise_for_status().check_status_code(codes.OK).to_model(JobScriptFileDetailedView)
 
     @validate_call
-    def delete(self, id: NonNegativeInt, filename: str) -> None:
+    def delete(self, job_script_id: NonNegativeInt, filename: str) -> None:
         """
         Delete a job script file.
 
         Args:
-            id: The ID of the job script.
+            job_script_id: The ID of the job script.
             filename: The name of the file to be deleted.
         """
         (
             self.request_handler_cls(
                 client=self.client,
-                url_path=f"/jobbergate/job-scripts/{id}/upload/{filename}",
+                url_path=f"/jobbergate/job-scripts/{job_script_id}/upload/{filename}",
                 method="DELETE",
             )
             .raise_for_status()
@@ -75,23 +80,24 @@ class JobScriptFiles:
         )
 
     @validate_call
-    def download(self, id: NonNegativeInt, filename: str, directory: Path = Path.cwd()) -> Path:
+    def download(self, job_script_id: NonNegativeInt, filename: str, directory: Path | None = None) -> Path:
         """
         Download a job script file.
 
         Args:
-            id: The ID of the job script.
+            job_script_id: The ID of the job script.
             filename: The name of the file to be downloaded.
             directory: The directory where the file will be saved.
 
         Returns:
             The path to the downloaded file.
         """
+        directory = Path.cwd() if directory is None else directory
         output_path = (directory / filename).resolve()
         (
             self.request_handler_cls(
                 client=self.client,
-                url_path=f"/jobbergate/job-scripts/{id}/upload/{filename}",
+                url_path=f"/jobbergate/job-scripts/{job_script_id}/upload/{filename}",
                 method="GET",
             )
             .raise_for_status()
@@ -131,13 +137,13 @@ class JobScripts:
         Returns:
             The detailed view of the cloned job script.
         """
-        data = filter_null_out(dict(name=name, description=description))
+        data = filter_null_out({"name": name, "description": description})
         return (
             self.request_handler_cls(
                 client=self.client,
                 url_path=f"{self.base_path}/clone/{base_id}",
                 method="POST",
-                request_kwargs=dict(data=data),
+                request_kwargs={"data": data},
             )
             .raise_for_status()
             .check_status_code(codes.CREATED)
@@ -162,13 +168,13 @@ class JobScripts:
         Returns:
             The detailed view of the created job script.
         """
-        data = filter_null_out(dict(name=name, description=description))
+        data = filter_null_out({"name": name, "description": description})
         return (
             self.request_handler_cls(
                 client=self.client,
                 url_path=self.base_path,
                 method="POST",
-                request_kwargs=dict(data=data),
+                request_kwargs={"data": data},
             )
             .raise_for_status()
             .check_status_code(codes.CREATED)
@@ -176,17 +182,17 @@ class JobScripts:
         )
 
     @validate_call
-    def delete(self, id: NonNegativeInt) -> None:
+    def delete(self, job_script_id: NonNegativeInt) -> None:
         """
         Delete a job script.
 
         Args:
-            id: The ID of the job script.
+            job_script_id: The ID of the job script.
         """
         (
             self.request_handler_cls(
                 client=self.client,
-                url_path=f"{self.base_path}/{id}",
+                url_path=f"{self.base_path}/{job_script_id}",
                 method="DELETE",
             )
             .raise_for_status()
@@ -223,24 +229,24 @@ class JobScripts:
             The list response envelope containing job script list views.
         """
         params = filter_null_out(
-            dict(
-                sort_ascending=sort_ascending,
-                user_only=user_only,
-                search=search,
-                sort_field=sort_field,
-                include_archived=include_archived,
-                include_parent=include_parent,
-                from_job_script_template_id=from_job_script_template_id,
-                size=size,
-                page=page,
-            )
+            {
+                "sort_ascending": sort_ascending,
+                "user_only": user_only,
+                "search": search,
+                "sort_field": sort_field,
+                "include_archived": include_archived,
+                "include_parent": include_parent,
+                "from_job_script_template_id": from_job_script_template_id,
+                "size": size,
+                "page": page,
+            }
         )
         return (
             self.request_handler_cls(
                 client=self.client,
                 url_path=self.base_path,
                 method="GET",
-                request_kwargs=dict(params=params),
+                request_kwargs={"params": params},
             )
             .raise_for_status()
             .check_status_code(codes.OK)
@@ -248,12 +254,12 @@ class JobScripts:
         )
 
     @validate_call
-    def get_one(self, id: NonNegativeInt) -> JobScriptDetailedView:
+    def get_one(self, job_script_id: NonNegativeInt) -> JobScriptDetailedView:
         """
         Get a single job script.
 
         Args:
-            id: The ID of the job script.
+            job_script_id: The ID of the job script.
 
         Returns:
             The detailed view of the job script.
@@ -261,7 +267,7 @@ class JobScripts:
         return (
             self.request_handler_cls(
                 client=self.client,
-                url_path=f"{self.base_path}/{id}",
+                url_path=f"{self.base_path}/{job_script_id}",
                 method="GET",
             )
             .raise_for_status()
@@ -272,7 +278,7 @@ class JobScripts:
     @validate_call
     def update(
         self,
-        id: NonNegativeInt,
+        job_script_id: NonNegativeInt,
         *,
         name: str | None = None,
         description: str | None = None,
@@ -282,7 +288,7 @@ class JobScripts:
         Update a job script.
 
         Args:
-            id: The ID of the job script.
+            job_script_id: The ID of the job script.
             name: The name of the job script.
             identifier: The identifier of the job script.
             description: The description of the job script.
@@ -293,18 +299,18 @@ class JobScripts:
             The detailed view of the updated job script.
         """
         data = filter_null_out(
-            dict(
-                name=name,
-                description=description,
-                is_archived=is_archived,
-            )
+            {
+                "name": name,
+                "description": description,
+                "is_archived": is_archived,
+            }
         )
         return (
             self.request_handler_cls(
                 client=self.client,
-                url_path=f"{self.base_path}/{id}",
+                url_path=f"{self.base_path}/{job_script_id}",
                 method="PUT",
-                request_kwargs=dict(data=data),
+                request_kwargs={"data": data},
             )
             .raise_for_status()
             .check_status_code(codes.OK)
@@ -336,22 +342,22 @@ class JobScripts:
         Returns:
             The detailed view of the rendered job script.
         """
-        data = dict(
-            create_request=filter_null_out(dict(name=name, description=description)),
-            render_request=filter_null_out(
-                dict(
-                    template_output_name_mapping=template_output_name_mapping,
-                    sbatch_params=sbatch_params,
-                    param_dict=param_dict,
-                )
+        data = {
+            "create_request": filter_null_out({"name": name, "description": description}),
+            "render_request": filter_null_out(
+                {
+                    "template_output_name_mapping": template_output_name_mapping,
+                    "sbatch_params": sbatch_params,
+                    "param_dict": param_dict,
+                }
             ),
-        )
+        }
         return (
             self.request_handler_cls(
                 client=self.client,
                 url_path=f"{self.base_path}/render-from-template/{id_or_identifier}",
                 method="POST",
-                request_kwargs=dict(data=data),
+                request_kwargs={"data": data},
             )
             .raise_for_status()
             .check_status_code(codes.CREATED)

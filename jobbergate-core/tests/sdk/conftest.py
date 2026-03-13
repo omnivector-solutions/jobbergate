@@ -8,9 +8,9 @@ from jobbergate_core.sdk.schemas import ListResponseEnvelope
 
 @pytest.fixture(scope="session")
 def wrap_items_on_paged_response():
-    PagedItem = TypeVar("PagedItem", bound=BaseModel)
+    paged_item_t = TypeVar("paged_item_t", bound=BaseModel)
 
-    def helper(items: list[PagedItem]) -> ListResponseEnvelope[PagedItem]:
+    def helper(items: list[paged_item_t]) -> ListResponseEnvelope[paged_item_t]:
         """
         Wrap a list of items into a single-page ListResponseEnvelope.
         Args:

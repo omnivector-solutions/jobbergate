@@ -26,10 +26,10 @@ def pull_client_ids_from_api(ctx: ContextProtocol) -> List[str]:
             abort_message="There was a problem retrieving registered clusters from the Cluster API",
             abort_subject="COULD NOT RETRIEVE CLUSTERS",
             support=True,
-            json=dict(
-                query="query {cluster{clientId}}",
-                variables=dict(),
-            ),
+            json={
+                "query": "query {cluster{clientId}}",
+                "variables": {},
+            },
         ),
     )
 
@@ -42,7 +42,7 @@ def pull_client_ids_from_api(ctx: ContextProtocol) -> List[str]:
             support=True,
             original_error=err,
             log_message=f"Failed to unpack data from cluster-api: {response_data}",
-        )
+        ) from err
     return client_ids
 
 
@@ -94,8 +94,8 @@ def validate_client_id(ctx: ContextProtocol, client_id: str):
             """,
             *client_ids,
         ),
-        raise_kwargs=dict(
-            subject="Invalid cluster name",
-            support=True,
-        ),
+        raise_kwargs={
+            "subject": "Invalid cluster name",
+            "support": True,
+        },
     )

@@ -1,6 +1,8 @@
 from pathlib import Path
+
 import pytest
 from click import UsageError
+
 from jobbergate_cli.subapps.tools import resolve_application_selection, resolve_selection
 
 
@@ -15,18 +17,18 @@ class TestResolveApplicationSelection:
         assert resolve_application_selection(identifier="app-identifier") == "app-identifier"
 
     def test_resolve_application_selection_id_only(self):
-        assert resolve_application_selection(id=456) == 456
+        assert resolve_application_selection(selected_id=456) == 456
 
     def test_resolve_application_selection_all_null(self):
         with pytest.raises(UsageError, match="^You must supply one and only one selection value"):
-            resolve_application_selection(id_or_identifier=None, id=None, identifier=None)
+            resolve_application_selection(id_or_identifier=None, selected_id=None, identifier=None)
 
     @pytest.mark.parametrize(
         "kwargs",
         [
-            {"id_or_identifier": "123", "id": 456},
+            {"id_or_identifier": "123", "selected_id": 456},
             {"id_or_identifier": "123", "identifier": "app-identifier"},
-            {"id": 456, "identifier": "app-identifier"},
+            {"selected_id": 456, "identifier": "app-identifier"},
         ],
     )
     def test_resolve_application_selection_multiple_args(self, kwargs):
