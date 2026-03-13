@@ -293,7 +293,7 @@ def handle_fk_error(
     """
     Unpack metadata from a ForeignKeyViolationError and return a 409 response.
     """
-    FK_DETAIL_RX = r"DETAIL:  Key \(id\)=\((?P<pk_id>\d+)\) is still referenced from table \"(?P<table>\w+)\""
+    FK_DETAIL_RX = r"DETAIL:\s+Key \(id\)=\((?P<pk_id>\d+)\) is still referenced from table \"(?P<table>\w+)\""
     matches = re.search(FK_DETAIL_RX, str(err), re.MULTILINE)
     (table, pk_id) = (None, None)
     if matches:
