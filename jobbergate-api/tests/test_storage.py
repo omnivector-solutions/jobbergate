@@ -4,6 +4,7 @@ Test the storage module.
 
 import enum
 import json
+from unittest import mock
 
 import asyncpg
 import pytest
@@ -159,7 +160,8 @@ def test_handle_fk_error():
     fk_error = asyncpg.exceptions.ForeignKeyViolationError(
         '''DETAIL:  Key (id)=(13) is still referenced from table "blah"'''
     )
-    response = handle_fk_error(None, fk_error)
+    response = handle_fk_error(mock.MagicMock(), fk_error)
+    assert isinstance(response.body, bytes)
     response_data = json.loads(response.body.decode())
     assert response_data["detail"]["message"] == "Delete failed due to foreign-key constraint"
     assert response_data["detail"]["table"] == "blah"
