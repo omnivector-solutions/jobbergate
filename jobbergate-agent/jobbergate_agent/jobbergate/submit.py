@@ -61,7 +61,7 @@ async def process_supporting_files(pending_job_submission: PendingJobSubmission,
 
     if not supporting_files:
         return []
-    elif supporting_files and not SETTINGS.WRITE_SUBMISSION_FILES:
+    if not SETTINGS.WRITE_SUBMISSION_FILES:
         logger.debug(f"Can't write files for submission {pending_job_submission.id}")
         raise JobSubmissionError(
             "Job submission rejected. The submission has supporting files that can't be downloaded to "
