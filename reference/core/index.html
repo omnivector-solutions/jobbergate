@@ -7471,7 +7471,7 @@ Expiration date and permissions are some examples of data that can be found.</p>
 
 
 </h7>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">delete</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">delete</span><span class="p">(</span><span class="n">job_script_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7492,7 +7492,7 @@ Expiration date and permissions are some examples of data that can be found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_script_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -7718,7 +7718,9 @@ Expiration date and permissions are some examples of data that can be found.</p>
 
 
 </h7>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_one</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobScriptDetailedView</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_one</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_script_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobScriptDetailedView</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7739,7 +7741,7 @@ Expiration date and permissions are some examples of data that can be found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_script_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -7955,7 +7957,7 @@ Expiration date and permissions are some examples of data that can be found.</p>
 
 </h7>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">update</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_script_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="o">*</span><span class="p">,</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -7981,7 +7983,7 @@ Expiration date and permissions are some examples of data that can be found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_script_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -8193,7 +8195,9 @@ Expiration date and permissions are some examples of data that can be found.</p>
 
 
 </h8>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">delete</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">delete</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_script_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8214,7 +8218,7 @@ Expiration date and permissions are some examples of data that can be found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_script_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -8261,9 +8265,9 @@ Expiration date and permissions are some examples of data that can be found.</p>
 
 </h8>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">download</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_script_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">directory</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">(),</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">directory</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span>
 </span></code></pre></div>
 
@@ -8285,7 +8289,7 @@ Expiration date and permissions are some examples of data that can be found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_script_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -8320,7 +8324,7 @@ Expiration date and permissions are some examples of data that can be found.</p>
                 <code>directory</code>
             </td>
             <td>
-                  <code><span title="pathlib.Path">Path</span></code>
+                  <code><span title="pathlib.Path">Path</span> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -8328,7 +8332,7 @@ Expiration date and permissions are some examples of data that can be found.</p>
               </div>
             </td>
             <td>
-                  <code><span title="pathlib.Path.cwd">cwd</span>()</code>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>
@@ -8371,8 +8375,10 @@ Expiration date and permissions are some examples of data that can be found.</p>
 
 </h8>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">upsert</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span> <span class="n">file_type</span><span class="p">:</span> <span class="n">FileType</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="n">Path</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobScriptFileDetailedView</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_script_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">file_type</span><span class="p">:</span> <span class="n">FileType</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">file_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobScriptFileDetailedView</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8393,7 +8399,7 @@ Expiration date and permissions are some examples of data that can be found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_script_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -8805,7 +8811,7 @@ Expiration date and permissions are some examples of data that can be found.</p>
 
 
 </h8>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">delete</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">delete</span><span class="p">(</span><span class="n">job_script_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8826,7 +8832,7 @@ Expiration date and permissions are some examples of data that can be found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_script_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -9052,7 +9058,9 @@ Expiration date and permissions are some examples of data that can be found.</p>
 
 
 </h8>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_one</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobScriptDetailedView</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_one</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_script_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobScriptDetailedView</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -9073,7 +9081,7 @@ Expiration date and permissions are some examples of data that can be found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_script_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -9289,7 +9297,7 @@ Expiration date and permissions are some examples of data that can be found.</p>
 
 </h8>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">update</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_script_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="o">*</span><span class="p">,</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -9315,7 +9323,7 @@ Expiration date and permissions are some examples of data that can be found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_script_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -9773,7 +9781,9 @@ an empty list when they are requested, but no file is found.</p>
 
 
 </h7>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">cancel</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionDetailedView</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">cancel</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_submission_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionDetailedView</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -9794,7 +9804,7 @@ an empty list when they are requested, but no file is found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_submission_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -9847,7 +9857,9 @@ an empty list when they are requested, but no file is found.</p>
 
 
 </h7>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">clone</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionDetailedView</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">clone</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_submission_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionDetailedView</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -9868,7 +9880,7 @@ an empty list when they are requested, but no file is found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_submission_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -10100,7 +10112,7 @@ an empty list when they are requested, but no file is found.</p>
 
 
 </h7>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">delete</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">delete</span><span class="p">(</span><span class="n">job_submission_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -10121,7 +10133,7 @@ an empty list when they are requested, but no file is found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_submission_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -10397,7 +10409,9 @@ an empty list when they are requested, but no file is found.</p>
 
 
 </h7>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_one</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionDetailedView</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_one</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_submission_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionDetailedView</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -10418,7 +10432,7 @@ an empty list when they are requested, but no file is found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_submission_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -10472,7 +10486,7 @@ an empty list when they are requested, but no file is found.</p>
 
 </h7>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_one_ensure_slurm_id</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_submission_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">max_retries</span><span class="p">:</span> <span class="n">PositiveInt</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">waiting_interval</span><span class="p">:</span> <span class="n">PositiveInt</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionDetailedView</span>
@@ -10496,7 +10510,7 @@ an empty list when they are requested, but no file is found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_submission_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -10582,7 +10596,7 @@ an empty list when they are requested, but no file is found.</p>
 
 </h7>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">update</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_submission_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="o">*</span><span class="p">,</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -10609,7 +10623,7 @@ an empty list when they are requested, but no file is found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_submission_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -10787,7 +10801,9 @@ an empty list when they are requested, but no file is found.</p>
 
 
 </h8>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">cancel</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionDetailedView</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">cancel</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_submission_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionDetailedView</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -10808,7 +10824,7 @@ an empty list when they are requested, but no file is found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_submission_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -10861,7 +10877,9 @@ an empty list when they are requested, but no file is found.</p>
 
 
 </h8>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">clone</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionDetailedView</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">clone</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_submission_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionDetailedView</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -10882,7 +10900,7 @@ an empty list when they are requested, but no file is found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_submission_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -11114,7 +11132,7 @@ an empty list when they are requested, but no file is found.</p>
 
 
 </h8>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">delete</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">delete</span><span class="p">(</span><span class="n">job_submission_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -11135,7 +11153,7 @@ an empty list when they are requested, but no file is found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_submission_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -11411,7 +11429,9 @@ an empty list when they are requested, but no file is found.</p>
 
 
 </h8>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_one</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionDetailedView</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_one</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_submission_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionDetailedView</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -11432,7 +11452,7 @@ an empty list when they are requested, but no file is found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_submission_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -11486,7 +11506,7 @@ an empty list when they are requested, but no file is found.</p>
 
 </h8>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_one_ensure_slurm_id</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_submission_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">max_retries</span><span class="p">:</span> <span class="n">PositiveInt</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">waiting_interval</span><span class="p">:</span> <span class="n">PositiveInt</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JobSubmissionDetailedView</span>
@@ -11510,7 +11530,7 @@ an empty list when they are requested, but no file is found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_submission_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -11596,7 +11616,7 @@ an empty list when they are requested, but no file is found.</p>
 
 </h8>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">update</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_submission_id</span><span class="p">:</span> <span class="n">NonNegativeInt</span><span class="p">,</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="o">*</span><span class="p">,</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -11623,7 +11643,7 @@ an empty list when they are requested, but no file is found.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>id</code>
+                <code>job_submission_id</code>
             </td>
             <td>
                   <code><span title="pydantic.NonNegativeInt">NonNegativeInt</span></code>
@@ -14032,7 +14052,7 @@ an empty list when they are requested, but no file is found.</p>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">download</span><span class="p">(</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="n">NonNegativeInt</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">directory</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">(),</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">directory</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span>
 </span></code></pre></div>
 
@@ -14089,7 +14109,7 @@ an empty list when they are requested, but no file is found.</p>
                 <code>directory</code>
             </td>
             <td>
-                  <code><span title="pathlib.Path">Path</span></code>
+                  <code><span title="pathlib.Path">Path</span> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -14097,7 +14117,7 @@ an empty list when they are requested, but no file is found.</p>
               </div>
             </td>
             <td>
-                  <code><span title="pathlib.Path.cwd">cwd</span>()</code>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>
@@ -14346,7 +14366,7 @@ an empty list when they are requested, but no file is found.</p>
 </h8>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">download</span><span class="p">(</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">id_or_identifier</span><span class="p">:</span> <span class="n">NonNegativeInt</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">directory</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">(),</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">directory</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span>
 </span></code></pre></div>
 
@@ -14387,7 +14407,7 @@ an empty list when they are requested, but no file is found.</p>
                 <code>directory</code>
             </td>
             <td>
-                  <code><span title="pathlib.Path">Path</span></code>
+                  <code><span title="pathlib.Path">Path</span> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -14395,7 +14415,7 @@ an empty list when they are requested, but no file is found.</p>
               </div>
             </td>
             <td>
-                  <code><span title="pathlib.Path.cwd">cwd</span>()</code>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>
