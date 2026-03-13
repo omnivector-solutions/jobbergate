@@ -132,6 +132,8 @@ jobs:
   snapstore:
     name: Release Snap to the edge channel
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     needs: [build-publish]
     env:
       SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
