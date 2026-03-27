@@ -6,13 +6,12 @@ import subprocess
 import sys
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Union
 
 SNAP_COMMON_PATH = "/var/snap/jobbergate-agent/common"
 SNAP_INSTANCE_NAME = os.environ["SNAP_INSTANCE_NAME"]
 DOTENV_PREFIX = "JOBBERGATE_AGENT_"
 DOTENV_FILE_LOCATION = Path(f"{SNAP_COMMON_PATH}/.env")
-AGENT_VARIABLES_MAP: dict[str, Union[str, int]] = {
+AGENT_VARIABLES_MAP: dict[str, str | int] = {
     "BASE_API_URL": "https://apis.vantagehpc.io",
     "OIDC_DOMAIN": "auth.vantagehpc.io/realms/vantage",
     "OIDC_CLIENT_ID": "",
@@ -65,12 +64,12 @@ def daemon_stopper():
         run_bash(f"snapctl stop --disable {SNAP_INSTANCE_NAME}.daemon")
 
 
-def snapctl_get(snap_config_value: str) -> Union[str, None]:
+def snapctl_get(snap_config_value: str) -> str | None:
     """Get snap config from snapctl.
 
     Return python None if snapctl returns the empty string.
     """
-    snapctl_out: Union[str, None]
+    snapctl_out: str | None
     snapctl_out = run_bash(f"snapctl get {snap_config_value}")
 
     if snapctl_out == "":

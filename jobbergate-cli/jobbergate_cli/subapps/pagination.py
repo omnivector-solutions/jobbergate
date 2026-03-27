@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Type, cast
 
 import inquirer
 import pydantic
@@ -41,7 +41,7 @@ def handle_pagination(
         params["size"] = size
 
         envelope = cast(
-            Union[ListResponseEnvelope[Dict[str, Any]], ListResponseEnvelope[pydantic.BaseModel]],
+            ListResponseEnvelope[Dict[str, Any]] | ListResponseEnvelope[pydantic.BaseModel],
             make_request(
                 jg_ctx.client,
                 url_path,

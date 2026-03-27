@@ -263,7 +263,7 @@ def sort_clause(
     sort_field: str,
     sortable_fields: set,
     sort_ascending: bool,
-) -> typing.Union[Mapped, UnaryExpression, Case]:
+) -> Mapped | UnaryExpression | Case:
     """
     Create a sort clause given a sort field, the list of sortable fields, and a sort_ascending flag.
     """
