@@ -5,7 +5,7 @@ Validation methods for the uploaded files.
 from ast import parse as ast_parse
 from functools import wraps
 from pathlib import PurePath
-from typing import BinaryIO, Callable, Union
+from typing import BinaryIO, Callable
 
 from buzz import require_condition
 from jinja2 import Environment
@@ -35,7 +35,7 @@ def check_uploaded_file_syntax(file_obj: BinaryIO, filename: str) -> bool:
     return True
 
 
-SyntaxValidationEquation = Callable[[Union[str, bytes]], bool]
+SyntaxValidationEquation = Callable[[str | bytes], bool]
 """Type alias describing the function signature used to validate file syntax."""
 
 syntax_validation_dispatch: dict[str, SyntaxValidationEquation] = {}
@@ -71,7 +71,7 @@ def register_syntax_validator(*file_extensions: str):
 
 
 @register_syntax_validator(".py")
-def is_valid_python_file(source_code: Union[str, bytes]) -> bool:
+def is_valid_python_file(source_code: str | bytes) -> bool:
     """
     Check if a given Python source code is valid by parsing it into an AST node.
 
@@ -89,7 +89,7 @@ def is_valid_python_file(source_code: Union[str, bytes]) -> bool:
 
 
 @register_syntax_validator(".yaml")
-def is_valid_yaml_file(yaml_file: Union[str, bytes]) -> bool:
+def is_valid_yaml_file(yaml_file: str | bytes) -> bool:
     """
     Check if a given YAML file is valid by parsing it with yaml.safe_load.
 
@@ -107,7 +107,7 @@ def is_valid_yaml_file(yaml_file: Union[str, bytes]) -> bool:
 
 
 @register_syntax_validator(".j2", ".jinja2")
-def is_valid_jinja2_template(template: Union[str, bytes]) -> bool:
+def is_valid_jinja2_template(template: str | bytes) -> bool:
     """
     Check if a given jinja2 template is valid by creating a Template object and trying to render it.
 

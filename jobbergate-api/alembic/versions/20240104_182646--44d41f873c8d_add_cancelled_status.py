@@ -43,7 +43,7 @@ def downgrade():
     op.execute("UPDATE job_submissions SET status = 'UNKNOWN' WHERE status = 'CANCELLED'")
     # Create a temporary "_status" type, convert and drop the "new" type
     tmp_type.create(op.get_bind(), checkfirst=False)
-    op.execute("ALTER TABLE job_submissions ALTER COLUMN status TYPE _status" " USING status::text::_status")
+    op.execute("ALTER TABLE job_submissions ALTER COLUMN status TYPE _status USING status::text::_status")
     new_type.drop(op.get_bind(), checkfirst=False)
     # Create and convert to the "old" status type
     old_type.create(op.get_bind(), checkfirst=False)

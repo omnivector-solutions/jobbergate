@@ -168,8 +168,7 @@ def inject_sbatch_params(job_script_data_as_string: str, sbatch_params: List[str
     inner_string = "# Sbatch params injected at rendering time\n"
     for parameter in sbatch_params:
         inner_string += f"#SBATCH {parameter}\n"
-    else:
-        inner_string += "\n"
+    inner_string += "\n"
 
     new_job_script_data_as_string = (
         job_script_data_as_string[:insert_index] + inner_string + job_script_data_as_string[insert_index:]

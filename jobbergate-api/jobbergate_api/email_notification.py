@@ -3,7 +3,7 @@ Email notification system for Jobbergate.
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from buzz import Buzz
 from loguru import logger
@@ -33,7 +33,7 @@ class EmailManager:
 
     def send_email(
         self,
-        to_emails: Union[str, List[str]],
+        to_emails: str | List[str],
         subject: str,
         skip_on_failure: bool = False,
         enable_retry: bool = False,
@@ -86,7 +86,7 @@ class EmailManager:
                 raise
         return True
 
-    def _build_message(self, to_emails: Union[str, List[str]], subject: str, **kwargs) -> Mail:
+    def _build_message(self, to_emails: str | List[str], subject: str, **kwargs) -> Mail:
         """
         Build an email message.
         """
@@ -106,7 +106,7 @@ class EmailManager:
 
 
 def notify_submission_rejected(
-    job_submission_id: Union[str, int], report_message: str, to_emails: Union[str, List[str]]
+    job_submission_id: str | int, report_message: str, to_emails: str | List[str]
 ) -> None:
     """
     Notify an email or a list of emails about a job submission that has been rejected.

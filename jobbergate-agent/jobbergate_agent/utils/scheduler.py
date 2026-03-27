@@ -8,7 +8,7 @@ References:
     https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins
 """
 
-from typing import Protocol, Union
+from typing import Protocol
 
 from apscheduler.job import Job
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -24,7 +24,7 @@ scheduler = AsyncIOScheduler()
 class JobbergateTask(Protocol):
     """Protocol to be implemented by any task that is expected to run on the scheduler."""
 
-    def __call__(self, scheduler: BaseScheduler) -> Union[Job, None]:
+    def __call__(self, scheduler: BaseScheduler) -> Job | None:
         """
         Specify a callable used to schedule a task and return the resulting job.
 

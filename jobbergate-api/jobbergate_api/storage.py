@@ -263,7 +263,7 @@ def sort_clause(
     sort_field: str,
     sortable_fields: set,
     sort_ascending: bool,
-) -> typing.Union[Mapped, UnaryExpression, Case]:
+) -> Mapped | UnaryExpression | Case:
     """
     Create a sort clause given a sort field, the list of sortable fields, and a sort_ascending flag.
     """
@@ -293,7 +293,7 @@ def handle_fk_error(
     """
     Unpack metadata from a ForeignKeyViolationError and return a 409 response.
     """
-    FK_DETAIL_RX = r"DETAIL:  Key \(id\)=\((?P<pk_id>\d+)\) is still referenced from table \"(?P<table>\w+)\""
+    FK_DETAIL_RX = r"DETAIL:\s+Key \(id\)=\((?P<pk_id>\d+)\) is still referenced from table \"(?P<table>\w+)\""
     matches = re.search(FK_DETAIL_RX, str(err), re.MULTILINE)
     (table, pk_id) = (None, None)
     if matches:

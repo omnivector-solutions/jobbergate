@@ -8,7 +8,7 @@ import io
 import pathlib
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import Any, Dict, List, Union, cast
+from typing import Any, Dict, List, cast
 
 import yaml
 from loguru import logger
@@ -342,7 +342,7 @@ class ApplicationRuntime:
         fast_mode: A flag indicating whether the application is in fast mode, defaults to False.
     """
 
-    app_data: Union[ApplicationResponse, LocalApplication]
+    app_data: ApplicationResponse | LocalApplication
     app_source_code: str
     sdk: Apps
     supplied_params: Dict[str, Any] = field(default_factory=dict)

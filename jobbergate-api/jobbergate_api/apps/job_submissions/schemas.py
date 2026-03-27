@@ -308,7 +308,7 @@ class JobSubmissionMetricSchema(BaseModel):
     def from_iterable(cls, iterable: Iterable, skip_optional: bool = False) -> Self:
         """Convert an iterable containing the fields of the model to an instance of the model."""
         if skip_optional:
-            fields = list(field_name for field_name, field in cls.model_fields.items() if field.is_required())
+            fields = [field_name for field_name, field in cls.model_fields.items() if field.is_required()]
         else:
             fields = list(cls.model_fields.keys())
 
