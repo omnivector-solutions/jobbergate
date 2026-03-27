@@ -7,6 +7,10 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 
 from jobbergate_core.sdk.job_submissions.app import JobSubmissions
 from jobbergate_core.sdk.job_submissions.constants import JobSubmissionStatus
+from jobbergate_core.sdk.job_submissions.exceptions import (
+    JobSubmissionRejectedError,
+    JobSubmissionTimeoutError,
+)
 from jobbergate_core.sdk.job_submissions.schemas import JobSubmissionDetailedView, JobSubmissionListView
 from jobbergate_core.sdk.schemas import PydanticDateTime
 from jobbergate_core.sdk.utils import filter_null_out
@@ -178,15 +182,18 @@ class TestJobSubmissions:
         response_data = JobSubmissionDetailedViewFactory.build(status=JobSubmissionStatus.REJECTED, slurm_job_id=None)
         job_submission_id = response_data.id
 
-        with (
-            respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock,
-            pytest.raises(ValueError, match="was rejected and does not have a SLURM job ID"),
-        ):
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
             route = respx_mock.get(f"/jobbergate/job-submissions/{job_submission_id}").mock(
                 return_value=Response(codes.OK, content=response_data.model_dump_json())
             )
 
-            self.job_submissions.get_one_ensure_slurm_id(job_submission_id, max_retries=3, waiting_interval=1)
+            with pytest.raises(JobSubmissionRejectedError) as exc_info:
+                self.job_submissions.get_one_ensure_slurm_id(job_submission_id, max_retries=3, waiting_interval=1)
+
+            # Verify the exception contains submission data for consumer access
+            assert exc_info.value.job_submission_id == job_submission_id
+            assert exc_info.value.submission == response_data
+            assert "was rejected and does not have a SLURM job ID" in str(exc_info.value)
 
         assert mocked_sleep.call_count == 0
         assert route.call_count == 1
@@ -197,14 +204,19 @@ class TestJobSubmissions:
         response_data = JobSubmissionDetailedViewFactory.build(slurm_job_id=None, status=JobSubmissionStatus.CREATED)
         job_submission_id = response_data.id
 
-        with (
-            respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock,
-            pytest.raises(TimeoutError, match="was not set within 3 retry attempts"),
-        ):
+        with respx.mock(base_url=BASE_URL, assert_all_called=True, assert_all_mocked=True) as respx_mock:
             route = respx_mock.get(f"/jobbergate/job-submissions/{job_submission_id}").mock(
                 return_value=Response(codes.OK, content=response_data.model_dump_json())
             )
-            self.job_submissions.get_one_ensure_slurm_id(job_submission_id, max_retries=3, waiting_interval=1)
+
+            with pytest.raises(JobSubmissionTimeoutError) as exc_info:
+                self.job_submissions.get_one_ensure_slurm_id(job_submission_id, max_retries=3, waiting_interval=1)
+
+            # Verify the exception contains submission data for consumer access
+            assert exc_info.value.job_submission_id == job_submission_id
+            assert exc_info.value.max_retries == 3
+            assert exc_info.value.submission == response_data
+            assert "was not set within 3 retry attempts" in str(exc_info.value)
 
         assert mocked_sleep.call_count == 2
         assert route.call_count == 3
