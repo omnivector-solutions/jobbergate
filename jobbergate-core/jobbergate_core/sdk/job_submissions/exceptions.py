@@ -34,7 +34,7 @@ class JobSubmissionRejectedError(JobSubmissionError, ValueError):
 
 class JobSubmissionTimeoutError(JobSubmissionError, TimeoutError):
     """
-    Exception raised when a job submission SLURM ID is not set within timeout.
+    Exception raised when a job submission SLURM ID is not set after the configured number of retry attempts.
 
     Includes the last retrieved submission data for consumer access.
     """
