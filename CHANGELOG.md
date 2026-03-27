@@ -11,185 +11,7 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
-# [5.10.0a7](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a7) - 2026-03-09
-
-
-## Core
-
-No significant changes.
-
-
-## Agent
-
-No significant changes.
-
-
-## Agent Snap
-
-No significant changes.
-
-
-## API
-
-No significant changes.
-
-
-## CLI
-
-### Fixed
-
-- Enforce maximum page size limit in list commands ([PR #939](https://github.com/omnivector-solutions/jobbergate/pull/939))
-
-
-## Documentation
-
-No significant changes.
-
-
-# [5.10.0a6](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a6) - 2026-03-06
-
-
-## Core
-
-No significant changes.
-
-
-## Agent
-
-No significant changes.
-
-
-## Agent Snap
-
-No significant changes.
-
-
-## API
-
-No significant changes.
-
-
-## CLI
-
-### Added
-
-- Added command-line arguments for controlling pagination (page number and items per page) on list commands ([PR #935](https://github.com/omnivector-solutions/jobbergate/pull/935))
-
-
-## Documentation
-
-No significant changes.
-
-
-# [5.10.0a5](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a5) - 2026-03-05
-
-
-## Core
-
-No significant changes.
-
-
-## Agent
-
-No significant changes.
-
-
-## Agent Snap
-
-No significant changes.
-
-
-## API
-
-No significant changes.
-
-
-## CLI
-
-### Added
-
-- Enhanced error message when on-site job submission fails ([PR #932](https://github.com/omnivector-solutions/jobbergate/pull/932))
-
-
-## Documentation
-
-No significant changes.
-
-
-# [5.10.0a4](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a4) - 2026-03-03
-
-
-## Core
-
-No significant changes.
-
-
-## Agent
-
-No significant changes.
-
-
-## Agent Snap
-
-No significant changes.
-
-
-## API
-
-### Changed
-
-- Remove DomainConfig from Armasec client to pass the attributes directly ([PR #927](https://github.com/omnivector-solutions/jobbergate/pull/927))
-
-### Miscellaneous
-
-- [PR #905](https://github.com/omnivector-solutions/jobbergate/pull/905)
-
-
-## CLI
-
-No significant changes.
-
-
-## Documentation
-
-No significant changes.
-
-
-# [5.10.0a3](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a3) - 2026-02-26
-
-
-## Core
-
-No significant changes.
-
-
-## Agent
-
-No significant changes.
-
-
-## Agent Snap
-
-No significant changes.
-
-
-## API
-
-No significant changes.
-
-
-## CLI
-
-No significant changes.
-
-
-## Documentation
-
-No significant changes.
-
-
-# [5.10.0a2](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a2) - 2026-02-26
-
+# [5.10.0rc0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0rc0) - 2026-03-27
 
 ## Core
 
@@ -197,76 +19,10 @@ No significant changes.
 
 - Enabled pkce challenge method for authorization code flow ([PR #918](https://github.com/omnivector-solutions/jobbergate/pull/918))
 
-
-## Agent
-
-No significant changes.
-
-
-## Agent Snap
-
-No significant changes.
-
-
-## API
-
-No significant changes.
-
-
-## CLI
-
-### Changed
-
-- Renamed configuration field `ARMADA_API_BASE` to `BASE_API_URL` for consistency across the codebase. The previous field name was kept for backward compatibility, but it is recommended to update to the new field name in future configurations. ([PR #920](https://github.com/omnivector-solutions/jobbergate/pull/920))
-
-
-## Documentation
-
-No significant changes.
-
-
-# [5.10.0a1](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a1) - 2026-02-20
-
-
-## Core
-
-No significant changes.
-
-
-## Agent
-
-No significant changes.
-
-
-## Agent Snap
-
-No significant changes.
-
-
-## API
-
-No significant changes.
-
-
-## CLI
-
-No significant changes.
-
-
-## Documentation
-
-No significant changes.
-
-
-# [5.10.0a0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0a0) - 2026-02-20
-
-
-## Core
-
 ### Miscellaneous
 
 - [PR #895](https://github.com/omnivector-solutions/jobbergate/pull/895)
-
+- [PR #906](https://github.com/omnivector-solutions/jobbergate/pull/906)
 
 ## Agent
 
@@ -281,7 +37,9 @@ No significant changes.
 ### Miscellaneous
 
 - [PR #895](https://github.com/omnivector-solutions/jobbergate/pull/895)
-
+- [PR #901](https://github.com/omnivector-solutions/jobbergate/pull/901)
+- [PR #906](https://github.com/omnivector-solutions/jobbergate/pull/906)
+- [PR #945](https://github.com/omnivector-solutions/jobbergate/pull/945)
 
 ## Agent Snap
 
@@ -292,27 +50,40 @@ No significant changes.
 
 ### Changed
 
+- Remove DomainConfig from Armasec client to pass the attributes directly ([PR #927](https://github.com/omnivector-solutions/jobbergate/pull/927))
 - Added extra database indexes for performance optimization ([PR #894](https://github.com/omnivector-solutions/jobbergate/pull/894))
 
 ### Miscellaneous
 
 - [PR #895](https://github.com/omnivector-solutions/jobbergate/pull/895)
-
+- [PR #901](https://github.com/omnivector-solutions/jobbergate/pull/901)
+- [PR #905](https://github.com/omnivector-solutions/jobbergate/pull/905)
+- [PR #906](https://github.com/omnivector-solutions/jobbergate/pull/906)
+- [PR #945](https://github.com/omnivector-solutions/jobbergate/pull/945)
 
 ## CLI
 
+### Added
+
+- Added command-line arguments for controlling pagination (page number and items per page) on list commands ([PR #935](https://github.com/omnivector-solutions/jobbergate/pull/935))
+- Enhanced error message when on-site job submission fails ([PR #932](https://github.com/omnivector-solutions/jobbergate/pull/932))
+
 ### Changed
 
+- Renamed configuration field `ARMADA_API_BASE` to `BASE_API_URL` for consistency across the codebase. The previous field name was kept for backward compatibility, but it is recommended to update to the new field name in future configurations. ([PR #920](https://github.com/omnivector-solutions/jobbergate/pull/920))
 - Enhanced help messages in general, specially to better differentiate the core subcommands: `applications`, `job-scripts`, and `job-submissions` ([PR #893](https://github.com/omnivector-solutions/jobbergate/pull/893))
 
 ### Fixed
 
-- Load json string to dict in slurm_job_info field of JobSubmission schema ([PR #873](https://github.com/omnivector-solutions/jobbergate/pull/873))
+- Enforce maximum page size limit in list commands ([PR #939](https://github.com/omnivector-solutions/jobbergate/pull/939))
+- Load json string to dict in `slurm_job_info` field of JobSubmission schema ([PR #873](https://github.com/omnivector-solutions/jobbergate/pull/873))
 
 ### Miscellaneous
 
 - [PR #895](https://github.com/omnivector-solutions/jobbergate/pull/895)
-
+- [PR #901](https://github.com/omnivector-solutions/jobbergate/pull/901)
+- [PR #906](https://github.com/omnivector-solutions/jobbergate/pull/906)
+- [PR #945](https://github.com/omnivector-solutions/jobbergate/pull/945)
 
 ## Documentation
 
