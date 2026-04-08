@@ -6,6 +6,10 @@ from pydantic import ConfigDict, NonNegativeInt, PositiveInt, validate_call
 from pydantic.dataclasses import dataclass
 
 from jobbergate_core.sdk.job_submissions.constants import JobSubmissionStatus
+from jobbergate_core.sdk.job_submissions.exceptions import (
+    JobSubmissionRejectedError,
+    JobSubmissionTimeoutError,
+)
 from jobbergate_core.sdk.job_submissions.schemas import (
     JobSubmissionDetailedView,
     JobSubmissionListView,
@@ -133,6 +137,10 @@ class JobSubmissions:
 
         Returns:
             The detailed view of the job submission.
+
+        Raises:
+            JobSubmissionRejectedError: If the job submission is rejected.
+            JobSubmissionTimeoutError: If the SLURM job ID is not set within max_retries.
         """
         for attempt in range(max_retries):
             if attempt > 0:
@@ -142,11 +150,9 @@ class JobSubmissions:
             if submission.slurm_job_id is not None:
                 return submission
             elif submission.status == JobSubmissionStatus.REJECTED:
-                raise ValueError(
-                    f"The job submission with ID {job_submission_id} was rejected and does not have a SLURM job ID."
-                )
+                raise JobSubmissionRejectedError(job_submission_id, submission)
 
-        raise TimeoutError(f"The SLURM job ID was not set within {max_retries} retry attempts.")
+        raise JobSubmissionTimeoutError(job_submission_id, max_retries, submission)
 
     @validate_call
     def get_list(
