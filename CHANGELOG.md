@@ -11,13 +11,14 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
-# [5.10.0rc0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0rc0) - 2026-03-27
+# [5.10.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.10.0) - 2026-04-08
 
 ## Core
 
 ### Added
 
 - Enabled pkce challenge method for authorization code flow ([PR #918](https://github.com/omnivector-solutions/jobbergate/pull/918))
+- Created custom exceptions for `jobbergate_core.sdk.job_submissions.JobSubmissions.get_one_ensure_slurm_id` to surface the last retrieved data so consumers can make informed decisions on how to proceed (such as inspect `report_message` for more details on the failure) ([PR #947](https://github.com/omnivector-solutions/jobbergate/pull/947))
 
 ### Miscellaneous
 
