@@ -7,10 +7,8 @@ def test_main_logs_and_handles_exceptions(monkeypatch, caplog):
     caplog.set_level(logging.INFO)
     # Patch dependencies
     monkeypatch.setattr(main_mod, "init_sentry", lambda: None)
-    monkeypatch.setattr(main_mod, "shut_down_scheduler", lambda s, wait: None)
-    monkeypatch.setattr(main_mod, "scheduler", object())
-    # Patch helper to avoid infinite loop
-    monkeypatch.setattr(main_mod, "helper", lambda: "fake-coro")
+    # Patch run_scheduler to avoid actually starting the scheduler
+    monkeypatch.setattr(main_mod, "run_scheduler", lambda: "fake-coro")
 
     # Patch asyncio.Runner
     class DummyRunner:

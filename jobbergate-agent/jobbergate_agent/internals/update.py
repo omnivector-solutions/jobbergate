@@ -2,15 +2,11 @@ import re
 import subprocess
 import sys
 from importlib.metadata import version
-from typing import TYPE_CHECKING
 
 from loguru import logger
 
 from jobbergate_agent.clients.cluster_api import backend_client as jobbergate_api_client
-from jobbergate_agent.utils.scheduler import schedule_tasks, scheduler
-
-if TYPE_CHECKING:
-    from apscheduler.job import Job
+from jobbergate_agent.utils.scheduler import clear_schedules, schedule_tasks, scheduler  # noqa: F401
 
 package_name = "jobbergate_agent"
 
@@ -85,23 +81,15 @@ async def self_update_agent() -> None:
     if _need_update(current_version, upstream_version):
         logger.warning("The Jobbergate Agent is outdated in relation to the upstream version; an update is required.")
 
-        logger.debug("Pausing the scheduler...")
-        scheduler.pause()
-
-        logger.debug("Clearing the scheduler jobs...")
-        scheduler_jobs: list[Job] = scheduler.get_jobs()
-        for job in scheduler_jobs:
-            job.remove()
+        logger.debug("Clearing existing schedules...")
+        await clear_schedules(scheduler)
 
         logger.debug(f"Updating {package_name} from version {current_version} to {upstream_version}...")
         _update_package(upstream_version)
         logger.debug("Update completed successfully.")
 
         logger.debug(f"Loading plugins from version {upstream_version}...")
-        schedule_tasks(scheduler)
-        scheduler.resume()
-        logger.debug("Plugins loaded successfully.")
-
-        logger.info("Resuming the scheduler")
+        await schedule_tasks(scheduler)
+        logger.debug("Plugins loaded and schedules re-registered.")
     else:
         logger.debug("No update is required or update crosses a major version divide.")

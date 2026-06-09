@@ -119,11 +119,11 @@ def test_update_package(mocked_sys: mock.MagicMock, mocked_subprocess: mock.Magi
 @mock.patch("jobbergate_agent.internals.update._update_package")
 @mock.patch("jobbergate_agent.internals.update.version")
 @mock.patch("jobbergate_agent.internals.update._need_update")
-@mock.patch("jobbergate_agent.internals.update.scheduler")
-@mock.patch("jobbergate_agent.internals.update.schedule_tasks")
+@mock.patch("jobbergate_agent.internals.update.clear_schedules", new_callable=mock.AsyncMock)
+@mock.patch("jobbergate_agent.internals.update.schedule_tasks", new_callable=mock.AsyncMock)
 async def test_self_update_agent(
-    mocked_schedule_tasks: mock.MagicMock,
-    mocked_scheduler: mock.MagicMock,
+    mocked_schedule_tasks: mock.AsyncMock,
+    mocked_clear_schedules: mock.AsyncMock,
     mocked_need_update: mock.MagicMock,
     mocked_version: mock.MagicMock,
     mocked_update_package: mock.MagicMock,
@@ -134,14 +134,12 @@ async def test_self_update_agent(
 ):
     """Test that self_update_agent runs without error the expected logic.
 
-    If an update is available, it is expected that the scheduler is shutdown
-    and then restarted with the new version after the package update is done.
+    If an update is available, it is expected that existing schedules are cleared,
+    the package updated, and tasks re-registered.
     """
     mocked_version.return_value = current_version
     mocked_fetch_upstream_version_info.return_value = upstream_version
     mocked_need_update.return_value = is_update_available
-    mocked_scheduler.pause = mock.Mock()
-    mocked_scheduler.resume = mock.Mock()
 
     await self_update_agent()
 
@@ -149,13 +147,10 @@ async def test_self_update_agent(
     mocked_fetch_upstream_version_info.assert_called_once_with()
     mocked_need_update.assert_called_once_with(current_version, upstream_version)
     if is_update_available:
-        mocked_scheduler.pause.assert_called_once_with()
+        mocked_clear_schedules.assert_called_once()
         mocked_update_package.assert_called_once_with(upstream_version)
-        mocked_schedule_tasks.assert_called_once_with(mocked_scheduler)
-        mocked_scheduler.resume.assert_called_once_with()
-
+        mocked_schedule_tasks.assert_called_once()
     else:
-        mocked_scheduler.pause.assert_not_called()
+        mocked_clear_schedules.assert_not_called()
         mocked_update_package.assert_not_called()
         mocked_schedule_tasks.assert_not_called()
-        mocked_scheduler.resume.assert_not_called()
