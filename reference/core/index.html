@@ -1949,6 +1949,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_core.sdk.job_submissions.exceptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        exceptions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_core.sdk.job_submissions.schemas" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3033,6 +3044,17 @@
     <span class="md-ellipsis">
       
         constants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_core.sdk.job_submissions.exceptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        exceptions
       
     </span>
   </a>
@@ -10583,6 +10605,39 @@ an empty list when they are requested, but no file is found.</p>
     </table>
 
 
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="JobSubmissionRejectedError (jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionRejectedError)" href="#jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionRejectedError">JobSubmissionRejectedError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the job submission is rejected.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="JobSubmissionTimeoutError (jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionTimeoutError)" href="#jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionTimeoutError">JobSubmissionTimeoutError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the SLURM job ID is not set within max_retries.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
     </div>
 
 </div>
@@ -11603,6 +11658,39 @@ an empty list when they are requested, but no file is found.</p>
     </table>
 
 
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="JobSubmissionRejectedError (jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionRejectedError)" href="#jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionRejectedError">JobSubmissionRejectedError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the job submission is rejected.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="JobSubmissionTimeoutError (jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionTimeoutError)" href="#jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionTimeoutError">JobSubmissionTimeoutError</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the SLURM job ID is not set within max_retries.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
     </div>
 
 </div>
@@ -11823,6 +11911,334 @@ an empty list when they are requested, but no file is found.</p>
 
 
 
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h6 id="jobbergate_core.sdk.job_submissions.exceptions" class="doc doc-heading">
+            <span class="doc doc-object-name doc-module-name">exceptions</span>
+
+
+</h6>
+
+    <div class="doc doc-contents ">
+
+        <p>Custom exceptions for job submissions module.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h7 id="jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionError" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">JobSubmissionError</span>
+
+
+</h7>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="Exception">Exception</span></code></p>
+
+
+
+        <p>Base exception for errors related to job submissions.</p>
+
+
+
+
+
+
+
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h7 id="jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionRejectedError" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">JobSubmissionRejectedError</span>
+
+
+</h7>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="JobSubmissionError (jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionError)" href="#jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionError">JobSubmissionError</a></code>, <code><span title="ValueError">ValueError</span></code></p>
+
+
+
+        <p>Exception raised when a job submission is rejected.</p>
+<p>Includes the last retrieved submission data for consumer access.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h8 id="jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionRejectedError.__init__" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">__init__</span>
+
+
+</h8>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">__init__</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_submission_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">submission</span><span class="p">:</span> <span class="n">JobSubmissionDetailedView</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Initialize the exception.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>job_submission_id</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The ID of the rejected job submission.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>submission</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="JobSubmissionDetailedView (jobbergate_core.sdk.job_submissions.schemas.JobSubmissionDetailedView)" href="#jobbergate_core.sdk.job_submissions.schemas.JobSubmissionDetailedView">JobSubmissionDetailedView</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The last retrieved submission data.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h7 id="jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionTimeoutError" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">JobSubmissionTimeoutError</span>
+
+
+</h7>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="JobSubmissionError (jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionError)" href="#jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionError">JobSubmissionError</a></code>, <code><span title="TimeoutError">TimeoutError</span></code></p>
+
+
+
+        <p>Exception raised when a job submission SLURM ID is not set after the configured number of retry attempts.</p>
+<p>Includes the last retrieved submission data for consumer access.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h8 id="jobbergate_core.sdk.job_submissions.exceptions.JobSubmissionTimeoutError.__init__" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">__init__</span>
+
+
+</h8>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">__init__</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">job_submission_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">max_retries</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">submission</span><span class="p">:</span> <span class="n">JobSubmissionDetailedView</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Initialize the exception.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>job_submission_id</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The ID of the job submission.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>max_retries</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The maximum number of retry attempts.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>submission</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="JobSubmissionDetailedView (jobbergate_core.sdk.job_submissions.schemas.JobSubmissionDetailedView)" href="#jobbergate_core.sdk.job_submissions.schemas.JobSubmissionDetailedView">JobSubmissionDetailedView</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The last retrieved submission data.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
 
 
 
