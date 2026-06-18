@@ -2,7 +2,7 @@
 
 from itertools import product
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any
 
 import pendulum
 import pytest
@@ -11,6 +11,7 @@ from sqlalchemy import inspect
 
 from jobbergate_api.apps.constants import FileType
 from jobbergate_api.apps.job_script_templates.constants import WORKFLOW_FILE_NAME
+from tests.apps.auto_clean_utils import EntryInfo, expected_archived_ids, expected_deleted_ids
 
 
 @pytest.fixture
@@ -283,29 +284,6 @@ class TestIntegration:
         assert exc_info.value.status_code == 404
 
 
-class EntryInfo(NamedTuple):
-    """Named tuple to store the info on a test entry."""
-
-    last_updated_delta: int
-    last_used_delta: int | None
-    is_archived: bool
-
-
-def filter_test_entries(
-    entries: dict[EntryInfo, dict[str, Any]],
-    **kwargs: set[Any],
-) -> set[int]:
-    """
-    This function returns a filter for test entries contained in a dictionary, based on specified target attributes.
-
-    Given that entries are a dictionary of EntryInfo objects and their associated data,
-    this function facilitates the retrieval of entry IDs that are contained in the set of values for each key in kwargs.
-    """
-    if not kwargs:
-        return set()
-    return {value["id"] for key, value in entries.items() if all(getattr(key, k) in v for k, v in kwargs.items())}
-
-
 class TestAutoCleanUnusedJobScriptTemplates:
     """
     Test the clean_unused_entries method.
@@ -420,21 +398,8 @@ class TestAutoCleanUnusedJobScriptTemplates:
         ):
             result = await synth_services.crud.template.clean_unused_entries()
 
-        expected_archived_ids = filter_test_entries(
-            dummy_data,
-            is_archived={False},
-            last_updated_delta=set(range(time_delta)),
-            last_used_delta=set(range(time_delta)) | {None},
-        )
-        assert result.archived == expected_archived_ids
-
-        expected_deleted_ids = filter_test_entries(
-            dummy_data,
-            is_archived={True},
-            last_updated_delta=set(range(time_delta - 1)),
-            last_used_delta=set(range(time_delta - 1)) | {None},
-        )
-        assert result.deleted == expected_deleted_ids
+        assert result.archived == expected_archived_ids(dummy_data, time_delta)
+        assert result.deleted == expected_deleted_ids(dummy_data, time_delta)
 
         # Assert the deleted entries are not in the list of job script templates
         templates_list = await synth_services.crud.template.list()
