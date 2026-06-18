@@ -24,7 +24,8 @@ class TestAsyncRetry:
         """Test successful function execution after one failure."""
         mock_func = AsyncMock(side_effect=[Exception("fail"), "success"])
         mock_func.__name__ = "test_func"
-        result = await async_retry(mock_func, max_attempts=3)
+        with patch("jobbergate_api.retry_utils.asyncio.sleep", new_callable=AsyncMock):
+            result = await async_retry(mock_func, max_attempts=3)
         assert result == "success"
         assert mock_func.call_count == 2
 
@@ -39,7 +40,8 @@ class TestAsyncRetry:
             ]
         )
         mock_func.__name__ = "test_func"
-        result = await async_retry(mock_func, max_attempts=3)
+        with patch("jobbergate_api.retry_utils.asyncio.sleep", new_callable=AsyncMock):
+            result = await async_retry(mock_func, max_attempts=3)
         assert result == "success"
         assert mock_func.call_count == 3
 
@@ -48,7 +50,8 @@ class TestAsyncRetry:
         """Test returnNone when all retries are exhausted."""
         mock_func = AsyncMock(side_effect=Exception("persistent failure"))
         mock_func.__name__ = "test_func"
-        result = await async_retry(mock_func, max_attempts=3)
+        with patch("jobbergate_api.retry_utils.asyncio.sleep", new_callable=AsyncMock):
+            result = await async_retry(mock_func, max_attempts=3)
         assert result is None
         assert mock_func.call_count == 3
 
@@ -78,11 +81,12 @@ class TestAsyncRetry:
         mock_func.__name__ = "test_func"
         on_error_callback = MagicMock()
 
-        await async_retry(
-            mock_func,
-            max_attempts=3,
-            on_error=on_error_callback,
-        )
+        with patch("jobbergate_api.retry_utils.asyncio.sleep", new_callable=AsyncMock):
+            await async_retry(
+                mock_func,
+                max_attempts=3,
+                on_error=on_error_callback,
+            )
 
         assert on_error_callback.call_count == 3
         # Verify attempt numbers are passed correctly (1, 2, 3)
@@ -116,7 +120,8 @@ class TestAsyncRetry:
         mock_func.__name__ = "test_func"
 
         with patch("jobbergate_api.retry_utils.logger") as mock_logger:
-            result = await async_retry(mock_func, max_attempts=2)
+            with patch("jobbergate_api.retry_utils.asyncio.sleep", new_callable=AsyncMock):
+                result = await async_retry(mock_func, max_attempts=2)
             assert result is None
             # Verify error was logged with exception details
             mock_logger.error.assert_called_once()
@@ -131,7 +136,8 @@ class TestAsyncRetry:
         mock_func.__name__ = "test_func"
 
         with patch("jobbergate_api.retry_utils.logger") as mock_logger:
-            await async_retry(mock_func, max_attempts=2)
+            with patch("jobbergate_api.retry_utils.asyncio.sleep", new_callable=AsyncMock):
+                await async_retry(mock_func, max_attempts=2)
             # Should log warning for each failure
             assert mock_logger.warning.call_count == 2
 
@@ -143,11 +149,12 @@ class TestAsyncRetry:
         on_error_callback = MagicMock()
 
         with patch("jobbergate_api.retry_utils.logger") as mock_logger:
-            await async_retry(
-                mock_func,
-                max_attempts=2,
-                on_error=on_error_callback,
-            )
+            with patch("jobbergate_api.retry_utils.asyncio.sleep", new_callable=AsyncMock):
+                await async_retry(
+                    mock_func,
+                    max_attempts=2,
+                    on_error=on_error_callback,
+                )
             # Should not log warning when callback is provided
             mock_logger.warning.assert_not_called()
 
@@ -167,7 +174,8 @@ class TestSyncRetry:
         """Test successful function execution after one failure."""
         mock_func = MagicMock(side_effect=[Exception("fail"), "success"])
         mock_func.__name__ = "test_func"
-        result = sync_retry(mock_func, max_attempts=3)
+        with patch("time.sleep"):
+            result = sync_retry(mock_func, max_attempts=3)
         assert result == "success"
         assert mock_func.call_count == 2
 
@@ -181,7 +189,8 @@ class TestSyncRetry:
             ]
         )
         mock_func.__name__ = "test_func"
-        result = sync_retry(mock_func, max_attempts=3)
+        with patch("time.sleep"):
+            result = sync_retry(mock_func, max_attempts=3)
         assert result == "success"
         assert mock_func.call_count == 3
 
