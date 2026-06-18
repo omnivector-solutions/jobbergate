@@ -11,7 +11,7 @@ from botocore.response import StreamingBody
 from buzz import enforce_defined, handle_errors, require_condition
 from fastapi import HTTPException, UploadFile, status
 from fastapi_pagination import Page
-from fastapi_pagination.ext.sqlalchemy import paginate
+from fastapi_pagination.ext.sqlalchemy import apaginate
 from jinja2.exceptions import SecurityError, UndefinedError
 from jinja2.sandbox import SandboxedEnvironment
 from loguru import logger
@@ -295,7 +295,7 @@ class CrudService(DatabaseBoundService, Generic[CrudModel]):
 
         For details on the supported filters, see the ``build_list_query()`` method.
         """
-        return await paginate(self.session, self.build_list_query(**filter_kwargs))
+        return await apaginate(self.session, self.build_list_query(**filter_kwargs))
 
     async def list(self, **filter_kwargs) -> list[CrudModel]:
         """
@@ -560,7 +560,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
             size <= settings.MAX_UPLOAD_FILE_SIZE,
             f"Uploaded files cannot exceed {settings.MAX_UPLOAD_FILE_SIZE} bytes, got {size} bytes",
             raise_exc_class=ServiceError,
-            raise_kwargs={"status_code": status.HTTP_413_REQUEST_ENTITY_TOO_LARGE},
+            raise_kwargs={"status_code": status.HTTP_413_CONTENT_TOO_LARGE},
         )
 
         require_condition(
@@ -652,7 +652,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
         with handle_errors(
             f"Unable to process jinja template filename={instance.filename}",
             raise_exc_class=ServiceError,
-            raise_kwargs={"status_code": status.HTTP_422_UNPROCESSABLE_ENTITY},
+            raise_kwargs={"status_code": status.HTTP_422_UNPROCESSABLE_CONTENT},
         ):
             sandbox_env = SandboxedEnvironment()
             template = sandbox_env.from_string(file_content.decode("utf-8"))
@@ -671,7 +671,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
                 )
                 raise ServiceError(
                     f"Jinja can not render filename={instance.filename}",
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 ) from e
             except UndefinedError as e:
                 logger.debug(
@@ -683,7 +683,7 @@ class FileService(DatabaseBoundService, BucketBoundService, Generic[FileModel]):
 
         raise ServiceError(
             f"Unable to render filename={instance.filename} with the provided parameters",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
 
     async def clean_unused_files(self, collector_cls: type[GarbageCollector] = GarbageCollector) -> None:

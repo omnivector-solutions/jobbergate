@@ -159,7 +159,7 @@ async def test_create_job_template__fail_missing_name(
 
     response = await client.post("jobbergate/job-script-templates", json=payload)
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     assert (await synth_services.crud.template.count()) == 0
 

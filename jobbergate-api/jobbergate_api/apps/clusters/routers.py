@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 from fastapi import Response as FastAPIResponse
 from fastapi_pagination import Page
-from fastapi_pagination.ext.sqlalchemy import paginate
+from fastapi_pagination.ext.sqlalchemy import apaginate
 from loguru import logger
 from pendulum.datetime import DateTime as PendulumDateTime
 from sqlalchemy import select
@@ -62,7 +62,7 @@ async def get_cluster_status(
     """
     logger.debug("Getting list of cluster statuses")
     query = select(ClusterStatus).order_by(ClusterStatus.client_id)
-    return await paginate(secure_session.session, query)
+    return await apaginate(secure_session.session, query)
 
 
 @router.get(

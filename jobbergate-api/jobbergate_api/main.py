@@ -108,6 +108,6 @@ async def validation_exception_handler(request: Request, err: RequestValidationE
     Handle exceptions from pydantic validators.
     """
     raise HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         detail=f"Validation error for request to {request.url} with data: {request.json()}: {err}",
     )

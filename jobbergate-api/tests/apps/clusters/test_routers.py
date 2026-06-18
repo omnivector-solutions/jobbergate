@@ -68,7 +68,7 @@ class TestPutClusterStatus:
 
         response = await client.put("/jobbergate/clusters/status", params={"interval": interval})
 
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     async def test_report_cluster_status__no_client_id(self, client, inject_security_header):
         inject_security_header("who@cares.com", Permissions.CLUSTERS_UPDATE)

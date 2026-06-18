@@ -158,7 +158,7 @@ async def job_script_create_from_template(
             with handle_errors(
                 "Failed to inject sbatch params into the entrypoint file",
                 raise_exc_class=ServiceError,
-                raise_kwargs={"status_code": status.HTTP_422_UNPROCESSABLE_ENTITY},
+                raise_kwargs={"status_code": status.HTTP_422_UNPROCESSABLE_CONTENT},
             ):
                 file_content = inject_sbatch_params(file_content, render_request.sbatch_params)
 

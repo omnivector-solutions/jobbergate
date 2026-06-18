@@ -197,7 +197,7 @@ async def job_submission_get_list(
             list_kwargs["filter_slurm_job_ids"] = [int(i) for i in slurm_job_ids.split(",")]
         except Exception as err:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Invalid slurm_job_ids param. Must be a comma-separated list of integers",
             ) from err
 
