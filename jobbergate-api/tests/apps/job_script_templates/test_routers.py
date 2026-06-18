@@ -1253,7 +1253,7 @@ class TestJobTemplateWorkflowFile:
         response = await client.put(
             f"jobbergate/job-script-templates/{parent_id}/upload-by-url/workflow",
             params={"file_url": file_url},
-            data=json.dumps(runtime_config),
+            json=runtime_config,
         )
 
         # First, check the response from the upload endpoint
@@ -1322,7 +1322,7 @@ class TestJobTemplateWorkflowFile:
         response = await client.put(
             f"jobbergate/job-script-templates/{parent_id}/upload-by-url/workflow",
             params={"file_url": s3_url},
-            data=json.dumps(runtime_config),
+            json=runtime_config,
         )
 
         # First, check the response from the upload endpoint
