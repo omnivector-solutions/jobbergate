@@ -8,28 +8,27 @@ References:
     https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins
 """
 
-from typing import Protocol
+from typing import Optional, Protocol
 
-from apscheduler.job import Job
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.schedulers.base import BaseScheduler
+from apscheduler import AsyncScheduler
 from buzz import handle_errors
 
 from jobbergate_agent.utils.logging import logger, logger_wraps
 from jobbergate_agent.utils.plugin import load_plugins
 
-scheduler = AsyncIOScheduler()
+
+scheduler = AsyncScheduler()
+
+# Track schedule IDs so they can be cleared during self-update
+_schedule_ids: list[str] = []
 
 
 class JobbergateTask(Protocol):
     """Protocol to be implemented by any task that is expected to run on the scheduler."""
 
-    def __call__(self, scheduler: BaseScheduler) -> Job | None:
+    async def __call__(self, scheduler: AsyncScheduler) -> Optional[str]:
         """
-        Specify a callable used to schedule a task and return the resulting job.
-
-        This is handled to client code to give them the opportunity to handle
-        their own configuration and to access the rich flexibility of the scheduler API.
+        Specify an async callable used to schedule a task and return the resulting schedule ID.
 
         None can also be returned if no task is going to be scheduled due to internal business logic.
         """
@@ -37,8 +36,9 @@ class JobbergateTask(Protocol):
 
 
 @logger_wraps()
-def schedule_tasks(scheduler: BaseScheduler) -> None:
-    """Discovery and schedule all tasks to be run by the agent."""
+async def schedule_tasks(scheduler: AsyncScheduler) -> None:
+    """Discover and schedule all tasks to be run by the agent."""
+    global _schedule_ids
 
     for name, task_function in load_plugins("tasks").items():
         with handle_errors(
@@ -46,21 +46,21 @@ def schedule_tasks(scheduler: BaseScheduler) -> None:
             raise_exc_class=RuntimeError,
             do_except=lambda params: logger.error(params.final_message),
         ):
-            job = task_function(scheduler=scheduler)
+            schedule_id = await task_function(scheduler=scheduler)
 
-        if job is not None:
-            job.name = name
-
-
-@logger_wraps()
-def init_scheduler() -> BaseScheduler:
-    """Initialize the scheduler and schedule all tasks."""
-    scheduler.start()
-    schedule_tasks(scheduler)
-    return scheduler
+        if schedule_id is not None:
+            _schedule_ids.append(schedule_id)
+            logger.debug(f"Scheduled task {name!r} with schedule ID {schedule_id}")
 
 
 @logger_wraps()
-def shut_down_scheduler(scheduler: BaseScheduler, wait: bool = True) -> None:
-    """Shutdown the scheduler."""
-    scheduler.shutdown(wait)
+async def clear_schedules(scheduler: AsyncScheduler) -> None:
+    """Remove all tracked schedules (used during self-update)."""
+    global _schedule_ids
+
+    for sid in list(_schedule_ids):
+        try:
+            await scheduler.remove_schedule(sid)
+        except Exception as exc:
+            logger.warning(f"Could not remove schedule {sid}: {exc}")
+    _schedule_ids.clear()
