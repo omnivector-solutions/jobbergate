@@ -148,6 +148,7 @@ class JobSubmission(CrudMixin, Base):
 
 class TimestampInt(TypeDecorator):
     impl = DateTime(timezone=True)
+    cache_ok = True
 
     def process_bind_param(self, value: int | None, dialect: Dialect) -> datetime | None:
         if value is not None:
