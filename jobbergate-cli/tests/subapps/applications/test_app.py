@@ -123,7 +123,7 @@ def test_get_one__fails_with_neither_id_or_identifier(make_test_app, cli_runner)
     test_app = make_test_app("get-one", get_one)
     result = cli_runner.invoke(test_app, shlex.split("get-one"))
     assert result.exit_code != 0
-    assert "You must supply one and only one selection value" in result.output
+    assert "You must supply one and only one selection value" in result.exception.message
 
 
 @pytest.mark.parametrize(
@@ -134,7 +134,7 @@ def test_get_one__fails_with_both_id_and_identifier(make_test_app, cli_runner, c
     test_app = make_test_app("get-one", get_one)
     result = cli_runner.invoke(test_app, shlex.split(f"get-one {cli_selector}"))
     assert result.exit_code != 0
-    assert "You must supply one and only one selection value" in result.output
+    assert "You must supply one and only one selection value" in result.exception.message
 
 
 @pytest.mark.parametrize(
@@ -546,7 +546,7 @@ class TestDownloadApplicationFiles:
         """
         result = cli_runner.invoke(test_app, shlex.split("download"))
         assert result.exit_code != 0
-        assert "You must supply one and only one selection value" in result.output
+        assert "You must supply one and only one selection value" in result.exception.message
 
     def test_download__fails_with_both_id_and_identifier(self, test_app, cli_runner):
         """
@@ -554,7 +554,7 @@ class TestDownloadApplicationFiles:
         """
         result = cli_runner.invoke(test_app, shlex.split("download --id=1 --identifier=dummy"))
         assert result.exit_code != 0
-        assert "You must supply one and only one selection value" in result.output
+        assert "You must supply one and only one selection value" in result.exception.message
 
 
 @pytest.mark.parametrize(
