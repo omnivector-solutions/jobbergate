@@ -1475,7 +1475,7 @@ requires-dist = [
     { name = "jobbergate-cli", editable = "jobbergate-cli" },
     { name = "jobbergate-core", editable = "jobbergate-core" },
     { name = "mkdocs-material", specifier = ">=9.4.2" },
-    { name = "mkdocstrings", extras = ["python"], specifier = ">=1.0.4" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=0.23.0" },
     { name = "pygments", specifier = ">=2.16.1" },
 ]
 
