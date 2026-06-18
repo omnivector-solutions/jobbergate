@@ -36,7 +36,7 @@ jobs:
           flags: ${{ matrix.component }}
           env_vars: OS,PYTHON
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: tests/coverage.xml
+          files: tests/coverage.xml
           disable_search: true
           fail_ci_if_error: true
 
@@ -61,7 +61,7 @@ jobs:
           flags: api
           env_vars: OS,PYTHON
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: tests/coverage.xml
+          files: tests/coverage.xml
           disable_search: true
           fail_ci_if_error: true
 
