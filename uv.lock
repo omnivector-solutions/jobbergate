@@ -827,7 +827,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "pydantic-settings", specifier = ">=2.12.0" },
+    { name = "pydantic-settings", specifier = ">=2.14.2" },
     { name = "python-dotenv", specifier = ">=1.2.1" },
     { name = "typer", specifier = ">=0.20.0" },
 ]
@@ -1212,7 +1212,7 @@ requires-dist = [
     { name = "numba", specifier = ">=0.63.1" },
     { name = "pluggy", specifier = ">=1.6.0" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.12.5" },
-    { name = "pydantic-settings", specifier = ">=2.12.0" },
+    { name = "pydantic-settings", specifier = ">=2.14.2" },
     { name = "python-dotenv", specifier = ">=1.2.1" },
     { name = "sentry-sdk", specifier = ">=2.47.0" },
     { name = "types-ldap3", specifier = ">=2.9.13.14" },
@@ -1289,9 +1289,9 @@ requires-dist = [
     { name = "pendulum", extras = ["test"], specifier = ">=3.1.0" },
     { name = "py-buzz", specifier = ">=7.3.0" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.12.5" },
-    { name = "pydantic-settings", specifier = ">=2.12.0" },
+    { name = "pydantic-settings", specifier = ">=2.14.2" },
     { name = "python-dotenv", specifier = ">=1.2.1" },
-    { name = "python-multipart", specifier = ">=0.0.31,<0.0.32" },
+    { name = "python-multipart", specifier = ">=0.0.20,<0.0.23" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "sendgrid", specifier = ">=6.12.5" },
     { name = "sentry-sdk", specifier = ">=2.47.0" },
@@ -1346,7 +1346,7 @@ requires-dist = [
     { name = "inquirer", specifier = ">=3.4.1" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "jobbergate-core", editable = "jobbergate-core" },
-    { name = "pydantic-settings", specifier = ">=2.12.0" },
+    { name = "pydantic-settings", specifier = ">=2.14.2" },
     { name = "pyperclip", specifier = ">=1.11.0" },
     { name = "python-dotenv", specifier = ">=1.2.1" },
     { name = "pyyaml", specifier = ">=6.0.3" },
@@ -2495,16 +2495,16 @@ wheels = [
 
 [[package]]
 name = "pydantic-settings"
-version = "2.12.0"
+version = "2.14.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "python-dotenv" },
     { name = "typing-inspection" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/43/4b/ac7e0aae12027748076d72a8764ff1c9d82ca75a7a52622e67ed3f765c54/pydantic_settings-2.12.0.tar.gz", hash = "sha256:005538ef951e3c2a68e1c08b292b5f2e71490def8589d4221b95dab00dafcfd0", size = 194184, upload-time = "2025-11-10T14:25:47.013Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5c/b5/8f48e906c3e0205276e8bd8cb7512217a87b2685304d64be27cad5b3019f/pydantic_settings-2.14.2.tar.gz", hash = "sha256:c19dd64b19097f1de80184f0cc7b0272a13ae6e170cbf240a3e27e381ed14a5f", size = 237700, upload-time = "2026-06-19T13:44:56.324Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c1/60/5d4751ba3f4a40a6891f24eec885f51afd78d208498268c734e256fb13c4/pydantic_settings-2.12.0-py3-none-any.whl", hash = "sha256:fddb9fd99a5b18da837b29710391e945b1e30c135477f484084ee513adb93809", size = 51880, upload-time = "2025-11-10T14:25:45.546Z" },
+    { url = "https://files.pythonhosted.org/packages/77/c1/6e422f34e569cf8e18df68d1939c81c099d2b61e4f7d9621c8a77560799c/pydantic_settings-2.14.2-py3-none-any.whl", hash = "sha256:a20c97b37910b6550d5ea50fbcc2d4187defe58cd57070b73863d069419c9440", size = 61715, upload-time = "2026-06-19T13:44:55.02Z" },
 ]
 
 [[package]]
@@ -2667,11 +2667,11 @@ cryptography = [
 
 [[package]]
 name = "python-multipart"
-version = "0.0.31"
+version = "0.0.22"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/64/7e/9b35ad8f3d9ca680f7c87a88f19612fdd8da9796c4d3b46e560ac79dcc4a/python_multipart-0.0.31.tar.gz", hash = "sha256:fc631183bb13e56db3158a4909908dfb2e23565286744e798241e63750e5d680", size = 46689, upload-time = "2026-06-04T08:27:49.014Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/94/01/979e98d542a70714b0cb2b6728ed0b7c46792b695e3eaec3e20711271ca3/python_multipart-0.0.22.tar.gz", hash = "sha256:7340bef99a7e0032613f56dc36027b959fd3b30a787ed62d310e951f7c3a3a58", size = 37612, upload-time = "2026-01-25T10:15:56.219Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5e/1e/7f7f299527a5a8ad90acd5f2f78dfa6c8495c6301a3205106ea68a84de96/python_multipart-0.0.31-py3-none-any.whl", hash = "sha256:8408153d68a9773291fc1da39a8b85a50044bddbabd2dd72e9229776b7b15e28", size = 29996, upload-time = "2026-06-04T08:27:47.804Z" },
+    { url = "https://files.pythonhosted.org/packages/1b/d0/397f9626e711ff749a95d96b7af99b9c566a9bb5129b8e4c10fc4d100304/python_multipart-0.0.22-py3-none-any.whl", hash = "sha256:2b2cd894c83d21bf49d702499531c7bafd057d730c201782048f7945d82de155", size = 24579, upload-time = "2026-01-25T10:15:54.811Z" },
 ]
 
 [[package]]
