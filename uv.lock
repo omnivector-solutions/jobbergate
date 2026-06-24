@@ -1346,7 +1346,7 @@ requires-dist = [
     { name = "armasec", specifier = ">=3.0.3" },
     { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "auto-name-enum", specifier = ">=3.0.0" },
-    { name = "fastapi", specifier = ">=0.124.4" },
+    { name = "fastapi", specifier = ">=0.136.3" },
     { name = "fastapi-pagination", specifier = ">=0.15.3" },
     { name = "greenlet", specifier = ">=3.3.0" },
     { name = "httpx", specifier = ">=0.28.1,<1" },

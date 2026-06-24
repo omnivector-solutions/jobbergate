@@ -109,5 +109,5 @@ async def validation_exception_handler(request: Request, err: RequestValidationE
     """
     raise HTTPException(
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-        detail=f"Validation error for request to {request.url} with data: {request.json()}: {err}",
+        detail=f"Validation error for request to {request.url}: {err}",
     )
