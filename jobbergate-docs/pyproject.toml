@@ -8,9 +8,9 @@ license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "mkdocs-material>=9.4.2",
-    "mkdocstrings[python]>=0.23.0",
-    "pygments>=2.16.1",
+    "mkdocs-material>=9.7.6",
+    "mkdocstrings[python]>=1.0.4",
+    "pygments>=2.20.0",
     "jobbergate-core",
     "jobbergate-api",
     "jobbergate-cli",
@@ -35,7 +35,7 @@ extend = "../ruff.toml"
 
 [build-system]
 requires = [
-    "hatchling>=1.28.0",          # Build the package
+    "hatchling>=1.30.1",          # Build the package
     "hatch-dependency-coversion", # pin jobbergate-core to the same version as the cli at build time
     "hatch-vcs",                  # Recover the version from current git tag
 ]
