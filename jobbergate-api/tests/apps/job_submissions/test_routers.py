@@ -1032,11 +1032,11 @@ async def test_get_job_submissions_with_invalid_slurm_job_ids_param(
     """
     inject_security_header("owner1@org.com", Permissions.JOB_SUBMISSIONS_READ)
     response = await client.get("/jobbergate/job-submissions?slurm_job_ids=101-103")
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert "Invalid slurm_job_ids" in response.text
 
     response = await client.get("/jobbergate/job-submissions?slurm_job_ids=one-oh-one")
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert "Invalid slurm_job_ids" in response.text
 
 

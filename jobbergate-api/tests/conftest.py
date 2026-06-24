@@ -1,6 +1,5 @@
 """Configuration of pytest."""
 
-import asyncio
 import contextlib
 import dataclasses
 import datetime
@@ -20,24 +19,6 @@ from jobbergate_api.apps.models import Base
 from jobbergate_api.config import settings
 from jobbergate_api.main import app
 from jobbergate_api.storage import engine_factory
-
-
-@pytest.fixture(scope="session", autouse=True)
-def event_loop():
-    """
-    Create an instance of the default event loop for each test case.
-
-    This fixture is used to run each test in a different async loop. Running all
-    in the same loop causes errors with SQLAlchemy. See the following two issues:
-
-    1. https://github.com/tiangolo/fastapi/issues/5692
-    2. https://github.com/encode/starlette/issues/1315
-
-    [Reference](https://tonybaloney.github.io/posts/async-test-patterns-for-pytest-and-unittest.html)
-    """
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest.fixture(autouse=True, scope="session")

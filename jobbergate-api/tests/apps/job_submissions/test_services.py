@@ -90,7 +90,7 @@ class TestIntegration:
         assert actual_unloaded == expected_unloaded
 
 
-class TestEntryInfo(NamedTuple):
+class EntryInfo(NamedTuple):
     """Named tuple to store the info on a test entry."""
 
     last_updated_delta: int
@@ -98,13 +98,13 @@ class TestEntryInfo(NamedTuple):
 
 
 def filter_test_entries(
-    entries: dict[TestEntryInfo, dict[str, Any]],
+    entries: dict[EntryInfo, dict[str, Any]],
     **kwargs: set[Any],
 ) -> set[int]:
     """
     This function returns a filter for test entries contained in a dictionary, based on specified target attributes.
 
-    Given that entries are a dictionary of TestEntryInfo objects and their associated data,
+    Given that entries are a dictionary of EntryInfo objects and their associated data,
     this function facilitates the retrieval of entry IDs that are contained in the set of values for each key in kwargs.
     """
     if not kwargs:
@@ -130,9 +130,7 @@ class TestAutoCleanUnusedJobSubmissions:
             yield time_now
 
     @pytest.fixture
-    async def dummy_data(
-        self, fill_job_submission_data, time_now, synth_services
-    ) -> dict[TestEntryInfo, dict[str, Any]]:
+    async def dummy_data(self, fill_job_submission_data, time_now, synth_services) -> dict[EntryInfo, dict[str, Any]]:
         """
         Create dummy test data covering a range of possible scenarios.
 
@@ -145,7 +143,7 @@ class TestAutoCleanUnusedJobSubmissions:
         IS_ARCHIVED_VALUES = (True, False)
 
         for e in product(LAST_UPDATED_DELTA_VALUES, IS_ARCHIVED_VALUES):
-            entry_info = TestEntryInfo(*e)
+            entry_info = EntryInfo(*e)
             data = fill_job_submission_data(is_archived=entry_info.is_archived)
 
             with pendulum.travel_to(time_now.add(days=entry_info.last_updated_delta), freeze=True):

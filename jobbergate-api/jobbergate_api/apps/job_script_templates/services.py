@@ -87,7 +87,7 @@ class JobScriptTemplateService(CrudService):
                     self.name, identifier
                 ),
                 raise_exc_class=ServiceError,
-                raise_kwargs={"status_code": status.HTTP_422_UNPROCESSABLE_ENTITY},
+                raise_kwargs={"status_code": status.HTTP_422_UNPROCESSABLE_CONTENT},
             )
 
     async def clean_unused_entries(self) -> AutoCleanResponse:

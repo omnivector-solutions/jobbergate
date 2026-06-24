@@ -105,9 +105,7 @@ class EmailManager:
         return message
 
 
-def notify_submission_rejected(
-    job_submission_id: str | int, report_message: str, to_emails: str | List[str]
-) -> None:
+def notify_submission_rejected(job_submission_id: str | int, report_message: str, to_emails: str | List[str]) -> None:
     """
     Notify an email or a list of emails about a job submission that has been rejected.
     """

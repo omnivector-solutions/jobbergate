@@ -9,9 +9,17 @@ updates:
         patterns:
           - "*"
     cooldown:
-      default-days: 7
+      default-days: 14
   - package-ecosystem: "uv"
-    directory: "/"
+    directories:
+      - "/"
+      - "/fake-sbatch"
+      - "/jobbergate-agent"
+      - "/jobbergate-api"
+      - "/jobbergate-cli"
+      - "/jobbergate-core"
+      - "/jobbergate-docs"
+      - "/jobbergate-test"
     schedule:
       interval: "weekly"
     groups:
@@ -19,4 +27,4 @@ updates:
         patterns:
           - "*"
     cooldown:
-      default-days: 7
+      default-days: 14
