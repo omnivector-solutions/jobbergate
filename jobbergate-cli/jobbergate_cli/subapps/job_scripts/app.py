@@ -1,19 +1,29 @@
 """
 Provide a ``typer`` app that can interact with Job Script data in a cruddy manner.
+
+The commands can also be called directly as regular functions (e.g. from a ``jobbergate.py``
+application script running in-process). In that case, the ``ctx`` argument is omitted and the
+Jobbergate context is resolved from the active context (see ``jobbergate_cli.context``).
 """
 
+import functools
+import inspect
+import json
 import pathlib
 import tempfile
+from contextvars import ContextVar
 from typing import Annotated, Any, Dict, List, cast
 
 import typer
+from loguru import logger
 
 from jobbergate_cli.config import settings
 from jobbergate_cli.constants import SortOrder
+from jobbergate_cli.context import get_active_context
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import ContextProtocol, JobScriptCreateRequest, JobScriptResponse
+from jobbergate_cli.schemas import JobScriptCreateRequest, JobScriptFile, JobScriptResponse
 from jobbergate_cli.subapps.job_scripts.tools import (
     download_job_script_files,
     fetch_job_script_data,
@@ -39,6 +49,66 @@ HIDDEN_FIELDS = [
 ]
 
 ID_OPTION_HELP = "Alternative way to specify id."
+
+_active_recreation: ContextVar["functools.partial | None"] = ContextVar(
+    "jobbergate_job_scripts_recreation", default=None
+)
+"""
+The creation command currently executing an application, bound to its original selection.
+
+It is set by ``create`` and ``create_locally`` while the application workflow runs, so
+application code can call :func:`recreate` without knowing how it was invoked.
+"""
+
+_recreation_locked: ContextVar[bool] = ContextVar("jobbergate_job_scripts_recreation_locked", default=False)
+"""
+A lock held while a recreated run executes, so recreation can not recurse further.
+"""
+
+
+def recreate(**kwargs: Any) -> JobScriptResponse | list[pathlib.Path] | None:
+    """
+    Re-invoke the job-script creation flow that is currently executing this application.
+
+    Inside an application spawned by ``create``, this calls ``create`` again with the same
+    ``id_or_identifier``; inside one spawned by ``create-locally``, it calls ``create_locally``
+    again with the same ``application_path``. Arguments are forwarded to the underlying
+    command as keyword arguments; the two commands take different arguments, so any that the
+    underlying command does not accept (or that would override the original selection) are
+    ignored with a logged warning, keeping the same ``recreate`` call valid under both.
+
+    Recreation is limited to a single level: sequential calls are fine, but a recreated run
+    calling ``recreate`` again is blocked to rule out unbounded recursion.
+    """
+    bound_command = Abort.enforce_defined(
+        _active_recreation.get(),
+        "No job-script creation is in progress. ``recreate`` can only be called from within "
+        "an application spawned by the ``create`` or ``create-locally`` commands; it is not "
+        "available from any other command.",
+        raise_kwargs=dict(subject="No creation in progress", support=True),
+    )
+    Abort.require_condition(
+        not _recreation_locked.get(),
+        "``recreate`` was called from a run that was itself started by ``recreate``. Only one "
+        "level of recreation is allowed, to rule out unbounded recursion.",
+        raise_kwargs=dict(subject="Recursive recreation blocked", support=True),
+    )
+
+    accepted_params = inspect.signature(bound_command.func).parameters
+    ignored = {key for key in kwargs if key not in accepted_params or key in bound_command.keywords}
+    if ignored:
+        logger.warning(
+            "recreate is forwarding to {} and ignoring arguments it does not take"
+            " (or that are bound to the original selection): {}",
+            bound_command.func.__name__,
+            ", ".join(sorted(ignored)),
+        )
+
+    lock_token = _recreation_locked.set(True)
+    try:
+        return bound_command(**{key: value for key, value in kwargs.items() if key not in ignored})
+    finally:
+        _recreation_locked.reset(lock_token)
 
 
 style_mapper = StyleMapper(
@@ -74,7 +144,7 @@ app = typer.Typer(
 
 @app.command("list")
 def list_all(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     show_all: Annotated[
         bool, typer.Option("--all", help="Show all job scripts, even the ones owned by others")
     ] = False,
@@ -98,7 +168,7 @@ def list_all(
     """
     Show available job scripts
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
 
     params: Dict[str, Any] = {"user_only": not show_all, "include_archived": include_archived}
     if search is not None:
@@ -126,16 +196,16 @@ def list_all(
 
 @app.command()
 def get_one(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     job_script_id: Annotated[
         int | None, typer.Argument(help="The specific id of the job script to be selected.")
     ] = None,
     job_script_id_option: Annotated[int | None, typer.Option("--id", "-i", help=ID_OPTION_HELP)] = None,
-):
+) -> JobScriptResponse:
     """
     Show a detailed view of a single job script by id.
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
     job_script_id = resolve_selection(job_script_id, job_script_id_option)
 
     result = fetch_job_script_data(jg_ctx, job_script_id)
@@ -145,11 +215,13 @@ def get_one(
         hidden_fields=HIDDEN_FIELDS,
         title="Job Script",
     )
+    return result
 
 
 @app.command()
 def create_stand_alone(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
+    *,
     name: Annotated[
         str,
         typer.Option(
@@ -177,11 +249,11 @@ def create_stand_alone(
             readable=True,
         ),
     ] = None,
-):
+) -> JobScriptResponse:
     """
     Create and upload files for a standalone job script (i.e., unrelated to any application).
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
     job_script_path = resolve_selection(job_script_path, job_script_path_option, option_name="job_script_path")
 
     request_data = JobScriptCreateRequest(
@@ -211,11 +283,12 @@ def create_stand_alone(
         hidden_fields=HIDDEN_FIELDS,
         title="Created Job Script",
     )
+    return job_script_result
 
 
 @app.command()
 def create_locally(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     application_path: Annotated[
         pathlib.Path,
         typer.Argument(
@@ -223,7 +296,7 @@ def create_locally(
             dir_okay=True,
         ),
     ] = pathlib.Path("."),
-    job_script_name: Annotated[str, typer.Option(help="The name of the job script to render locally.")] = "job_script",
+    name: Annotated[str, typer.Option(help="The name of the job script to render locally.")] = "job_script",
     output_path: Annotated[
         pathlib.Path,
         typer.Option(
@@ -253,33 +326,45 @@ def create_locally(
             help="Use default answers (when available) instead of asking the user.",
         ),
     ] = False,
-):
+    *,
+    param_dict: Annotated[
+        Dict[str, Any] | None,
+        typer.Option(hidden=True, parser=json.loads),
+    ] = None,
+) -> list[pathlib.Path] | None:
     """
     Create a job-script from local application files (ideal for development and troubleshooting).
 
     The templates will be overwritten with the rendered files.
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
 
-    render_job_script_locally(
-        jg_ctx,
-        job_script_name,
-        application_path,
-        output_path,
-        sbatch_params,
-        param_file,
-        fast,
-    )
+    # Let the application code recreate this flow with the same path (see ``recreate``)
+    recreation_token = _active_recreation.set(functools.partial(create_locally, application_path=application_path))
+    try:
+        rendered_files = render_job_script_locally(
+            jg_ctx,
+            name,
+            application_path,
+            output_path,
+            sbatch_params,
+            param_file,
+            fast,
+            supplied_params=param_dict,
+        )
+    finally:
+        _active_recreation.reset(recreation_token)
 
     terminal_message(
         "The job script was successfully rendered locally.",
         subject="Job script render succeeded",
     )
+    return rendered_files
 
 
 @app.command()
 def create(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     id_or_identifier: Annotated[
         str | None,
         typer.Argument(
@@ -360,22 +445,34 @@ def create(
             ).strip(),
         ),
     ] = None,
-):
+    *,
+    param_dict: Annotated[
+        Dict[str, Any] | None,
+        typer.Option(hidden=True, parser=json.loads),
+    ] = None,
+) -> JobScriptResponse:
     """
     Create a new job script from an application.
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
     selector = resolve_application_selection(id_or_identifier, application_id, application_identifier)
 
-    job_script_result = render_job_script(
-        jg_ctx,
-        selector,
-        name,
-        description,
-        sbatch_params,
-        param_file,
-        fast,
-    )
+    # Let the application code recreate this flow with the same selection (see ``recreate``).
+    # The selector is passed as a string, as on the CLI; numeric ids are resolved back to int.
+    recreation_token = _active_recreation.set(functools.partial(create, id_or_identifier=str(selector)))
+    try:
+        job_script_result = render_job_script(
+            jg_ctx,
+            selector,
+            name,
+            description,
+            sbatch_params,
+            param_file,
+            fast,
+            supplied_params=param_dict,
+        )
+    finally:
+        _active_recreation.reset(recreation_token)
 
     render_single_result(
         jg_ctx,
@@ -423,7 +520,7 @@ def create(
             download_job_script_files(job_script_result.job_script_id, jg_ctx, pathlib.Path.cwd())
 
     if not submit:
-        return
+        return job_script_result
 
     try:
         submissions_handler = job_submissions_factory(
@@ -455,11 +552,12 @@ def create(
         hidden_fields=JOB_SUBMISSION_HIDDEN_FIELDS,
         title="Created Job Submission (Fast Mode)",
     )
+    return job_script_result
 
 
 @app.command()
 def update(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     job_script_id: Annotated[int | None, typer.Argument(help="The id of the job script to update")] = None,
     job_script_id_option: Annotated[
         int | None,
@@ -475,11 +573,11 @@ def update(
         bool | None,
         typer.Option("--is-archived", help="Optional value to update is_archived field on this entry"),
     ] = None,
-):
+) -> JobScriptResponse:
     """
     Update an existing job script.
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
     job_script_id = resolve_selection(job_script_id, job_script_id_option)
 
     update_params: dict[str, Any] = {}
@@ -509,11 +607,12 @@ def update(
         hidden_fields=HIDDEN_FIELDS,
         title="Updated Job Script",
     )
+    return job_script_result
 
 
 @app.command()
 def delete(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     job_script_id: Annotated[int | None, typer.Argument(help="The id of the job script to delete")] = None,
     job_script_id_option: Annotated[
         int | None,
@@ -523,7 +622,7 @@ def delete(
     """
     Delete an existing job script.
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
     job_script_id = resolve_selection(job_script_id, job_script_id_option)
 
     make_request(
@@ -542,7 +641,7 @@ def delete(
 
 @app.command()
 def show_files(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     job_script_id: Annotated[int | None, typer.Argument(help="The specific id of the job script to be cloned.")] = None,
     job_script_id_option: Annotated[int | None, typer.Option("--id", "-i", help=ID_OPTION_HELP)] = None,
     plain: Annotated[bool, typer.Option(help="Show the files in plain text.")] = False,
@@ -550,7 +649,7 @@ def show_files(
     """
     Show the files for a single job script by id.
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
     job_script_id = resolve_selection(job_script_id, job_script_id_option)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -576,16 +675,16 @@ def show_files(
 
 @app.command()
 def download_files(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     job_script_id: Annotated[
         int | None, typer.Argument(help="The specific id of the job script to be downloaded.")
     ] = None,
     job_script_id_option: Annotated[int | None, typer.Option("--id", "-i", help=ID_OPTION_HELP)] = None,
-):
+) -> list[JobScriptFile]:
     """
     Download the files from a job script to the current working directory.
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
     job_script_id = resolve_selection(job_script_id, job_script_id_option)
     downloaded_files = download_job_script_files(job_script_id, jg_ctx, pathlib.Path.cwd())
 
@@ -597,11 +696,12 @@ def download_files(
         ),
         subject="Job script download succeeded",
     )
+    return downloaded_files
 
 
 @app.command()
 def clone(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     job_script_id: Annotated[
         int | None, typer.Argument(help="The specific id of the job script to be updated.")
     ] = None,
@@ -611,11 +711,11 @@ def clone(
     ] = None,
     name: Annotated[str | None, typer.Option(help="Optional new name of the job script.")] = None,
     description: Annotated[str | None, typer.Option(help="Optional new text describing the job script.")] = None,
-):
+) -> JobScriptResponse:
     """
     Clone an existing job script, so the user can own and modify a copy of it.
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
     job_script_id = resolve_selection(job_script_id, job_script_id_option)
 
     update_params: Dict[str, Any] = {}
@@ -644,3 +744,4 @@ def clone(
         hidden_fields=HIDDEN_FIELDS,
         title="Cloned Job Script",
     )
+    return job_script_result

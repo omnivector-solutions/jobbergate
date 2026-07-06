@@ -1,11 +1,20 @@
 import re
+import threading
 from unittest import mock
 
+import click
 import pytest
+import typer
 
 from jobbergate_cli.auth import show_login_message, track_login_progress
 from jobbergate_cli.config import settings
-from jobbergate_cli.context import JobbergateContext
+from jobbergate_cli.context import (
+    JobbergateContext,
+    active_context,
+    get_active_context,
+    reset_active_context,
+    set_active_context,
+)
 from jobbergate_cli.exceptions import Abort
 
 
@@ -81,3 +90,137 @@ def test_authentication_handler__fails_on_missing_setting(mocked_auth_handler, m
             _ = ctx.authentication_handler
 
     mocked_auth_handler.assert_not_called()
+
+
+class TestActiveContext:
+    """
+    Test the ContextVar based active context mechanism.
+    """
+
+    def test_get_active_context__raises_abort_when_no_context_is_available(self):
+        with pytest.raises(Abort, match="No active Jobbergate context"):
+            get_active_context()
+
+    def test_get_active_context__returns_the_override_when_provided(self):
+        override = mock.Mock()
+        assert get_active_context(override) is override
+
+    def test_get_active_context__returns_the_context_var_value(self):
+        context = mock.Mock()
+        token = set_active_context(context)
+        try:
+            assert get_active_context() is context
+        finally:
+            reset_active_context(token)
+
+    def test_get_active_context__override_takes_precedence_over_context_var(self):
+        context = mock.Mock()
+        override = mock.Mock()
+        token = set_active_context(context)
+        try:
+            assert get_active_context(override) is override
+        finally:
+            reset_active_context(token)
+
+    @pytest.mark.parametrize("context_class", [click.Context, typer.Context])
+    def test_get_active_context__unwraps_a_click_context_override(self, context_class):
+        context = mock.Mock()
+        click_ctx = mock.Mock(spec=context_class)
+        click_ctx.obj = context
+        assert get_active_context(click_ctx) is context
+
+    @pytest.mark.parametrize("context_class", [click.Context, typer.Context])
+    def test_get_active_context__falls_back_to_context_var_when_click_context_has_no_obj(self, context_class):
+        context = mock.Mock()
+        click_ctx = mock.Mock(spec=context_class)
+        click_ctx.obj = None
+        with active_context(context):
+            assert get_active_context(click_ctx) is context
+
+    def test_get_active_context__rejects_an_override_that_is_not_a_context(self):
+        """
+        Guard the trap of calling a command with a positional value that binds to the ``ctx`` parameter.
+        """
+        with pytest.raises(Abort, match="keyword arguments"):
+            get_active_context("my-app")  # type: ignore[arg-type]
+
+    def test_set_and_reset_active_context__round_trip(self):
+        first = mock.Mock()
+        second = mock.Mock()
+
+        first_token = set_active_context(first)
+        second_token = set_active_context(second)
+        assert get_active_context() is second
+
+        reset_active_context(second_token)
+        assert get_active_context() is first
+
+        reset_active_context(first_token)
+        with pytest.raises(Abort, match="No active Jobbergate context"):
+            get_active_context()
+
+    def test_active_context__sets_and_restores_the_previous_value(self):
+        outer = mock.Mock()
+        inner = mock.Mock()
+        with active_context(outer) as outer_context:
+            assert outer_context is outer
+            assert get_active_context() is outer
+            with active_context(inner):
+                assert get_active_context() is inner
+            assert get_active_context() is outer
+        with pytest.raises(Abort, match="No active Jobbergate context"):
+            get_active_context()
+
+    def test_active_context__restores_the_previous_value_on_exception(self):
+        context = mock.Mock()
+        with pytest.raises(RuntimeError, match="boom"):
+            with active_context(context):
+                assert get_active_context() is context
+                raise RuntimeError("boom")
+        with pytest.raises(Abort, match="No active Jobbergate context"):
+            get_active_context()
+
+    def test_active_context__does_not_propagate_to_a_new_thread(self):
+        context = mock.Mock()
+        thread_results = {}
+
+        def probe():
+            try:
+                thread_results["context"] = get_active_context()
+            except Abort as err:
+                thread_results["error"] = err
+
+        with active_context(context):
+            thread = threading.Thread(target=probe)
+            thread.start()
+            thread.join()
+
+        assert "context" not in thread_results
+        assert isinstance(thread_results["error"], Abort)
+
+
+def test_main_callback__sets_the_active_context():
+    """
+    Verify that invoking the real app through the ``main()`` callback sets the active context.
+    """
+    from typer.testing import CliRunner
+
+    from jobbergate_cli.main import app as main_app
+
+    cli_runner = CliRunner()
+    captured = {}
+
+    @main_app.command(name="probe-active-context", hidden=True)
+    def probe_active_context():
+        captured["context"] = get_active_context()
+
+    try:
+        result = cli_runner.invoke(main_app, ["--raw", "probe-active-context"])
+    finally:
+        main_app.registered_commands = [
+            command for command in main_app.registered_commands if command.callback is not probe_active_context
+        ]
+
+    assert result.exit_code == 0, f"probe failed: {result.stdout}"
+    assert isinstance(captured["context"], JobbergateContext)
+    assert captured["context"].raw_output is True

@@ -6,13 +6,15 @@ import contextlib
 import copy
 import io
 import pathlib
-from dataclasses import dataclass, field
+import tempfile
+from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, Optional, cast
 
 import yaml
 from loguru import logger
 
+from jobbergate_cli.cache import ClientScopedCache
 from jobbergate_cli.constants import (
     JOBBERGATE_APPLICATION_CONFIG,
     JOBBERGATE_APPLICATION_CONFIG_FILE_NAME,
@@ -21,7 +23,7 @@ from jobbergate_cli.constants import (
     FileType,
 )
 from jobbergate_cli.exceptions import Abort
-from jobbergate_cli.render import render_dict, terminal_message
+from jobbergate_cli.render import render_dict
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import (
     ApplicationResponse,
@@ -38,6 +40,20 @@ from jobbergate_core.sdk import Apps
 
 CONTENT_TYPE_TEXT_PLAIN = "text/plain"
 INVALID_APPLICATION_MODULE = "Invalid application module"
+
+# In-memory cache of application runtimes keyed per client, so that repeated job-script
+# creation in the same process (e.g. nested creation from within an application) does not
+# re-download the same data. Each entry covers both the application details and the workflow
+# source code. Plain data fetches (``fetch_application_data``) are deliberately not cached,
+# so commands that display or mutate applications always see fresh data.
+_application_runtime_cache: ClientScopedCache["ApplicationRuntime"] = ClientScopedCache()
+
+
+def clear_application_runtime_cache() -> None:
+    """
+    Clear all cached application runtimes for all clients.
+    """
+    _application_runtime_cache.clear()
 
 
 def load_default_config() -> Dict[str, Any]:
@@ -134,6 +150,73 @@ def fetch_application_data(jg_ctx: ContextProtocol, id_or_identifier: int | str)
             support=True,
         ),
     )
+
+
+def _fetch_workflow_source_code(jg_ctx: ContextProtocol, app_data: ApplicationResponse) -> str:
+    """
+    Download the source code of the workflow file for an application.
+
+    Args:
+        jg_ctx: The Jobbergate context.
+        app_data: The application data whose workflow file should be fetched.
+
+    Raises:
+        Abort: If the application does not have a workflow file.
+
+    Returns:
+        The source code of the application's workflow file.
+    """
+    if not app_data.workflow_files:
+        raise Abort(
+            f"Application {app_data.application_id} does not have a workflow file",
+            subject="Workflow file not found",
+            log_message="Application does not have a workflow file",
+        )
+
+    # A directory is used instead of a NamedTemporaryFile so the file is not already
+    # open when make_request writes to it (re-opening an open file fails on Windows)
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_file_path = pathlib.Path(tmp_dir) / "jobbergate.py"
+        make_request(
+            jg_ctx.client,
+            app_data.workflow_files[0].path,
+            "GET",
+            expected_status=200,
+            abort_message="Couldn't retrieve application module file from API",
+            save_to_file=tmp_file_path,
+        )
+
+        return tmp_file_path.read_text()
+
+
+def fetch_application_runtime(jg_ctx: ContextProtocol, id_or_identifier: int | str) -> "ApplicationRuntime":
+    """
+    Fetch (or reuse from the per-client cache) the ``ApplicationRuntime`` for an application.
+
+    The runtime bundles the application details and the workflow source code, so both are
+    covered by a single cache entry. The returned runtime holds no execution state (see
+    :meth:`ApplicationRuntime.run`), so the same instance can be shared and executed multiple
+    times; treat it and its ``app_data`` as read-only, since any mutation would poison every
+    later use in the same process. Use ``clear_application_runtime_cache`` to reset the cache.
+
+    Args:
+        jg_ctx: The JobbergateContext. Needed to access the Httpx client with which to make API calls.
+        id_or_identifier: The id or identifier of the application to fetch.
+
+    Returns:
+        The ApplicationRuntime for the application.
+    """
+    runtime = _application_runtime_cache.get(jg_ctx.client, id_or_identifier)
+
+    if runtime is None:
+        app_data = fetch_application_data(jg_ctx, id_or_identifier)
+        app_source_code = _fetch_workflow_source_code(jg_ctx, app_data)
+        runtime = ApplicationRuntime(app_data, app_source_code)
+        _application_runtime_cache.set(
+            jg_ctx.client, id_or_identifier, runtime, app_data.application_id, app_data.identifier
+        )
+
+    return runtime
 
 
 @contextlib.contextmanager
@@ -331,25 +414,47 @@ def load_application_from_source(app_source: str) -> type[JobbergateApplicationB
 
 
 @dataclass
+class ApplicationRuntimeResult:
+    """
+    The outcome of a single execution of a Jobbergate application question workflow.
+
+    Args:
+        answers: The answers gathered from the question workflow.
+        app_config: The application config resulting from the execution (legacy applications
+            may change config values at runtime).
+    """
+
+    answers: Dict[str, Any]
+    app_config: JobbergateApplicationConfig
+
+    def as_flatten_param_dict(self) -> Dict[str, Any]:
+        """Flatten the resulting config to support the rendering process."""
+        param_dict_flat = {}
+        for outer_value in self.app_config.model_dump().values():
+            for nest_key, nest_value in outer_value.items():
+                param_dict_flat[nest_key] = nest_value
+        return param_dict_flat
+
+
+@dataclass
 class ApplicationRuntime:
     """
-    Prepare and execute a Jobbergate application gathering the answers to the questions.
+    Prepare and execute a Jobbergate application, gathering the answers to its questions.
+
+    Instances hold only the immutable inputs (application data and source code); treat them
+    as read-only, since the same instance may be cached and shared. Each call to :meth:`run`
+    re-executes the source code on a fresh application instance and returns the outcome, so
+    the same runtime can be executed multiple times without leaking state between runs.
 
     Args:
         app_data: The application data, can be either an ApplicationResponse or a LocalApplication.
         app_source_code: The source code of the application, often coming from jobbergate.py file.
-        supplied_params: The parameters supplied to the application, defaults to an empty dictionary.
-        fast_mode: A flag indicating whether the application is in fast mode, defaults to False.
+        app_class: Optional override for the application class, skipping the source execution.
     """
 
     app_data: ApplicationResponse | LocalApplication
     app_source_code: str
-    sdk: Apps
-    supplied_params: Dict[str, Any] = field(default_factory=dict)
-    fast_mode: bool = False
-
-    def __post_init__(self) -> None:
-        self.answers: Dict[str, Any] = {}
+    app_class: Optional[type[JobbergateApplicationBase]] = None
 
     @cached_property
     def app_config(self) -> JobbergateApplicationConfig:
@@ -377,14 +482,18 @@ class ApplicationRuntime:
                 original_error=err,
             ) from err
 
-    @cached_property
-    def app_module(self) -> JobbergateApplicationBase:
+    def _build_app_module(self, sdk: Optional[Apps]) -> JobbergateApplicationBase:
         """
-        The JobbergateApplicationBase for the application.
+        Instantiate a fresh JobbergateApplication for a single execution of the workflow.
+
+        The source code is re-executed on every call, so module-level and class-level state
+        in the application can not leak from one execution to the next.
         """
         try:
-            jobbergate_application_class = load_application_from_source(self.app_source_code)
-            return jobbergate_application_class(jobbergate_yaml=self.app_config.model_dump(), sdk=self.sdk)
+            app_class = (
+                self.app_class if self.app_class is not None else load_application_from_source(self.app_source_code)
+            )
+            return app_class(jobbergate_yaml=self.app_config.model_dump(), sdk=sdk)
         except Exception as err:
             raise Abort(
                 "The application source fetched from the API is not valid",
@@ -394,42 +503,63 @@ class ApplicationRuntime:
                 original_error=err,
             ) from err
 
-    def execute_application(self):
-        """Execute the jobbergate application python module."""
+    def run(
+        self,
+        *,
+        sdk: Optional[Apps] = None,
+        supplied_params: Optional[Dict[str, Any]] = None,
+        fast_mode: bool = False,
+    ) -> ApplicationRuntimeResult:
+        """
+        Execute the jobbergate application python module.
+
+        The runtime itself is not modified, so ``run`` can be called multiple times on the
+        same (possibly cached) instance.
+
+        Args:
+            sdk: The SDK handed to the application instance for this execution. It is not
+                stored on the runtime, so cached runtimes hold no reference to any client.
+            supplied_params: Parameters supplied upfront; matching questions are not asked.
+            fast_mode: Whether to use default answers (when available) instead of asking the user.
+
+        Returns:
+            The result carrying the gathered answers and the resulting application config.
+        """
+        app_module = self._build_app_module(sdk)
         try:
-            self._gather_answers()
+            result = self._gather_answers(app_module, dict(supplied_params or {}), fast_mode)
+        except Abort:
+            raise
         except Exception as err:
-            exception_name = type(err).__name__
-            terminal_message(
-                "The question workflow failed to execute. Please check the traceback bellow for more information.",
-                subject=f"Runtime error on application execution - {exception_name}",
-                color="red",
-            )
-            raise err
+            raise Abort(
+                "The question workflow failed to execute. Please check the log file for more information.",
+                subject=f"Runtime error on application execution - {type(err).__name__}",
+                support=True,
+                log_message=f"The question workflow failed to execute: {err}",
+                original_error=err,
+            ) from err
 
-        self._update_template_files_information()
+        self._update_template_files_information(result.app_config)
+        return result
 
-    def as_flatten_param_dict(self) -> Dict[str, Any]:
-        """Flatten the internal data to support the rendering process."""
-        param_dict_flat = {}
-        for outer_value in self.app_config.model_dump().values():
-            for nest_key, nest_value in outer_value.items():
-                param_dict_flat[nest_key] = nest_value
-        return param_dict_flat
-
-    def _gather_answers(self):
+    def _gather_answers(
+        self,
+        app_module: JobbergateApplicationBase,
+        supplied_params: Dict[str, Any],
+        fast_mode: bool,
+    ) -> ApplicationRuntimeResult:
         """Gather the parameter values by executing the application methods."""
         logger.debug("Gathering answers from the application")
-        self.answers.update(self.supplied_params)
-        # config should be self.answers ideally
-        # but we use self.app_module.jobbergate_config for backward compatibility with v1
-        config = self.app_module.jobbergate_config
-        config.update(self.supplied_params)
+        answers = dict(supplied_params)
+        # config should be the answers ideally
+        # but we use app_module.jobbergate_config for backward compatibility with v1
+        config = app_module.jobbergate_config
+        config.update(supplied_params)
 
         next_method = "mainflow"
 
         while next_method is not None:
-            method_to_call = getattr(self.app_module, next_method)
+            method_to_call = getattr(app_module, next_method)
             logger.debug(f"Calling method {next_method}")
             try:
                 workflow_questions = method_to_call(data=config)
@@ -453,9 +583,9 @@ class ApplicationRuntime:
                 workflow_questions = []
 
             for question in workflow_questions:
-                if question.variablename in self.supplied_params:
+                if question.variablename in supplied_params:
                     continue
-                elif self.fast_mode and question.default is not None:
+                elif fast_mode and question.default is not None:
                     auto_answers[question.variablename] = question.default
                 else:
                     prompts.extend(question.make_prompts())
@@ -466,22 +596,24 @@ class ApplicationRuntime:
             logger.debug(f"Answers gathered from {next_method}: {workflow_answers}")
 
             config.update(workflow_answers)
-            self.answers.update(workflow_answers)
+            answers.update(workflow_answers)
             if len(auto_answers) > 0:
                 render_dict(auto_answers, title="Default values used")
 
             next_method = config.pop("nextworkflow", None)
 
-        # Legacy applications change the values at runtime, so we need to update the config
-        self.app_config = JobbergateApplicationConfig(
-            application_config=dict(self.app_module.application_config),
-            jobbergate_config=JobbergateConfig.model_validate(self.app_module.jobbergate_config),
+        # Legacy applications change the values at runtime, so the resulting config is rebuilt
+        # from the application instance instead of reusing the initial one
+        app_config = JobbergateApplicationConfig(
+            application_config=dict(app_module.application_config),
+            jobbergate_config=JobbergateConfig.model_validate(app_module.jobbergate_config),
         )
-        logger.debug(f"Concluded getting answers: {self.answers}")
+        logger.debug(f"Concluded getting answers: {answers}")
+        return ApplicationRuntimeResult(answers=answers, app_config=app_config)
 
-    def _update_template_files_information(self):
+    def _update_template_files_information(self, app_config: JobbergateApplicationConfig) -> None:
         """Update the information about the template files if not already present in the configuration."""
-        if not self.app_config.jobbergate_config.default_template:
+        if not app_config.jobbergate_config.default_template:
             list_of_entrypoints = [
                 i.filename for i in self.app_data.template_files if i.file_type.upper() == "ENTRYPOINT"
             ]
@@ -493,11 +625,11 @@ class ApplicationRuntime:
                     subject="Entry point is unspecified",
                     log_message="Entry point file not specified",
                 )
-            self.app_config.jobbergate_config.default_template = list_of_entrypoints[0]
+            app_config.jobbergate_config.default_template = list_of_entrypoints[0]
 
-        if self.app_config.jobbergate_config.supporting_files is None:
+        if app_config.jobbergate_config.supporting_files is None:
             list_of_supporting_files = [
                 i.filename for i in self.app_data.template_files if i.file_type.upper() == "SUPPORT"
             ]
             if list_of_supporting_files:
-                self.app_config.jobbergate_config.supporting_files = list_of_supporting_files
+                app_config.jobbergate_config.supporting_files = list_of_supporting_files

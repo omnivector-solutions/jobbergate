@@ -9,10 +9,11 @@ from typing import Annotated, Any, Dict, cast
 import typer
 
 from jobbergate_cli.constants import SortOrder
+from jobbergate_cli.context import get_active_context
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import ContextProtocol, JobSubmissionResponse
+from jobbergate_cli.schemas import JobSubmissionResponse
 from jobbergate_cli.subapps.job_submissions.tools import fetch_job_submission_data, job_submissions_factory
 from jobbergate_cli.subapps.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, handle_pagination
 from jobbergate_cli.subapps.tools import resolve_selection
@@ -63,7 +64,8 @@ app = typer.Typer(
 
 @app.command()
 def create(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
+    *,
     name: Annotated[
         str,
         typer.Option(
@@ -118,11 +120,11 @@ def create(
     download: Annotated[
         bool, typer.Option(help="Download the job script files to the current working directory")
     ] = False,
-):
+) -> JobSubmissionResponse:
     """
     Create a new job submission.
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
     job_script_id = resolve_selection(job_script_id, job_script_id_option)
 
     try:
@@ -154,11 +156,12 @@ def create(
         hidden_fields=HIDDEN_FIELDS,
         title="Created Job Submission",
     )
+    return result
 
 
 @app.command("list")
 def list_all(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     show_all: Annotated[
         bool,
         typer.Option(
@@ -184,7 +187,7 @@ def list_all(
     """
     Show available job submissions.
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
 
     params: Dict[str, Any] = {"user_only": not show_all, "include_archived": include_archived}
     if search is not None:
@@ -218,17 +221,17 @@ def list_all(
 
 @app.command()
 def get_one(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     job_submission_id: Annotated[
         int | None,
         typer.Argument(help="The specific id of the job submission to be selected."),
     ] = None,
     job_submission_id_option: Annotated[int | None, typer.Option("--id", "-i", help=ID_OPTION_HELP)] = None,
-):
+) -> JobSubmissionResponse:
     """
     Show the detailed view of a single job submission by id
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
     job_submission_id = resolve_selection(job_submission_id, job_submission_id_option)
 
     value_mappers = None
@@ -244,6 +247,7 @@ def get_one(
         title="Job Submission",
         value_mappers=value_mappers,
     )
+    return result
 
 
 # NOTE: job submissions update is not added because it was an effective noop on the former implementation
@@ -251,7 +255,7 @@ def get_one(
 
 @app.command()
 def delete(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     job_submission_id: Annotated[
         int | None,
         typer.Argument(
@@ -270,7 +274,7 @@ def delete(
     """
     Delete an existing job submission.
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
     job_submission_id = resolve_selection(job_submission_id, job_submission_id_option)
 
     make_request(
@@ -289,7 +293,7 @@ def delete(
 
 @app.command()
 def clone(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     job_submission_id: Annotated[
         int | None,
         typer.Argument(help="The specific id of the job submission to be updated."),
@@ -302,7 +306,7 @@ def clone(
     """
     Clone an existing job submission under the CREATED status, so it is re-submitted to the cluster.
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
     job_submission_id = resolve_selection(job_submission_id, job_submission_id_option)
 
     job_submission_result = cast(
@@ -328,7 +332,7 @@ def clone(
 
 @app.command()
 def cancel(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     job_submission_id: Annotated[
         int | None,
         typer.Argument(help="The specific id of the job submission to be cancelled."),
@@ -338,7 +342,7 @@ def cancel(
     """
     Cancel an existing job submission.
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
     job_submission_id = resolve_selection(job_submission_id, job_submission_id_option)
 
     job_submission_result = cast(

@@ -9,9 +9,37 @@ from jobbergate_cli.schemas import JobScriptResponse, JobSubmissionCreateRequest
 from jobbergate_cli.subapps.job_submissions.tools import (
     OnsiteJobSubmission,
     RemoteJobSubmission,
+    _map_cluster_name,
     fetch_job_submission_data,
     job_submissions_factory,
 )
+from jobbergate_core.auth import AuthenticationError
+
+
+class TestMapClusterName:
+    def test_identity_failure_raises_abort_with_original_error(self, dummy_context, mocker):
+        original_error = RuntimeError("BOOM!")
+        mocker.patch.object(
+            dummy_context.authentication_handler, attribute="get_identity_data", side_effect=original_error
+        )
+
+        with pytest.raises(Abort, match="Failed to create the job submission") as exc_info:
+            _map_cluster_name(dummy_context, "test-cluster")
+
+        assert exc_info.value.subject == "Job submission failed"
+        assert exc_info.value.original_error is original_error
+        assert exc_info.value.__cause__ is original_error
+
+    def test_authentication_error_is_not_wrapped(self, dummy_context, mocker):
+        original_error = AuthenticationError("Could not retrieve user email from token")
+        mocker.patch.object(
+            dummy_context.authentication_handler, attribute="get_identity_data", side_effect=original_error
+        )
+
+        with pytest.raises(AuthenticationError) as exc_info:
+            _map_cluster_name(dummy_context, "test-cluster")
+
+        assert exc_info.value is original_error
 
 
 @pytest.mark.parametrize("submission_cls", [OnsiteJobSubmission, RemoteJobSubmission])
@@ -212,6 +240,73 @@ class TestJobSubmissionsProcessSubmissions:
         submission_handler.process_submission()
         mocked_download_job_script_files.assert_not_called()
 
+    def test_process_submission__remote_download_failure_raises_abort_with_original_error(
+        self, dummy_context, mocker, attach_persona
+    ):
+        attach_persona("dummy@dummy.com")
+        submission_handler = RemoteJobSubmission(
+            jg_ctx=dummy_context,
+            job_script_id=1,
+            name="test",
+            cluster_name="test-cluster",
+            download=True,
+        )
+        original_error = OSError("No space left on device")
+        mocker.patch(
+            "jobbergate_cli.subapps.job_submissions.tools.download_job_script_files", side_effect=original_error
+        )
+
+        with pytest.raises(Abort, match="Failed to create the job submission") as exc_info:
+            submission_handler.process_submission()
+
+        assert exc_info.value.subject == "Job submission failed"
+        assert exc_info.value.original_error is original_error
+        assert exc_info.value.__cause__ is original_error
+
+    def test_process_submission__remote_download_authentication_error_is_not_wrapped(
+        self, dummy_context, mocker, attach_persona
+    ):
+        attach_persona("dummy@dummy.com")
+        submission_handler = RemoteJobSubmission(
+            jg_ctx=dummy_context,
+            job_script_id=1,
+            name="test",
+            cluster_name="test-cluster",
+            download=True,
+        )
+        original_error = AuthenticationError("Unable to acquire the access token, all attempts failed")
+        mocker.patch(
+            "jobbergate_cli.subapps.job_submissions.tools.download_job_script_files", side_effect=original_error
+        )
+
+        with pytest.raises(AuthenticationError) as exc_info:
+            submission_handler.process_submission()
+
+        assert exc_info.value is original_error
+
+    def test_process_submission__remote_download_abort_is_not_wrapped(self, dummy_context, mocker, attach_persona):
+        attach_persona("dummy@dummy.com")
+        submission_handler = RemoteJobSubmission(
+            jg_ctx=dummy_context,
+            job_script_id=1,
+            name="test",
+            cluster_name="test-cluster",
+            download=True,
+        )
+        original_abort = Abort(
+            "Couldn't retrieve job script 1 from API",
+            subject="Job script fetch failed",
+            support=True,
+        )
+        mocker.patch(
+            "jobbergate_cli.subapps.job_submissions.tools.download_job_script_files", side_effect=original_abort
+        )
+
+        with pytest.raises(Abort) as exc_info:
+            submission_handler.process_submission()
+
+        assert exc_info.value is original_abort
+
     def test_process_submission__on_site_abort_if_sbatch_path_is_unset(
         self, dummy_context, attach_persona, tweak_settings
     ):
@@ -389,7 +484,8 @@ class TestJobSubmissionsProcessSubmissions:
         mocker.patch.object(submission_handler, "inject_sbatch_params")
 
         mocked_sbatch = mock.MagicMock()
-        mocked_sbatch.submit_job.side_effect = RuntimeError(sbatch_error)
+        original_error = RuntimeError(sbatch_error)
+        mocked_sbatch.submit_job.side_effect = original_error
         mocker.patch("jobbergate_cli.subapps.job_submissions.tools.SubmissionHandler", return_value=mocked_sbatch)
 
         with tweak_settings(SBATCH_PATH=tmp_path), pytest.raises(Abort) as exc_info:
@@ -399,6 +495,8 @@ class TestJobSubmissionsProcessSubmissions:
         assert "Slurm rejected the job submission." in message
         assert sbatch_error in message
         assert expected_suggestion in message
+        assert exc_info.value.original_error is original_error
+        assert exc_info.value.__cause__ is original_error
 
 
 @pytest.mark.parametrize("submission_cls", [OnsiteJobSubmission, RemoteJobSubmission])

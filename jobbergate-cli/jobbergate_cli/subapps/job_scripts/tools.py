@@ -5,7 +5,6 @@ Provide tool functions for working with Job Script data
 import json
 import pathlib
 import re
-import tempfile
 from concurrent import futures
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, cast
@@ -19,6 +18,7 @@ from jobbergate_cli.constants import FileType
 from jobbergate_cli.exceptions import Abort, JobbergateCliError
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import (
+    ApplicationResponse,
     ContextProtocol,
     JobbergateConfig,
     JobScriptCreateRequest,
@@ -29,11 +29,26 @@ from jobbergate_cli.schemas import (
 )
 from jobbergate_cli.subapps.applications.tools import (
     ApplicationRuntime,
-    fetch_application_data,
     fetch_application_data_locally,
+    fetch_application_runtime,
 )
 
 NO_WORKFLOW_FILE_MESSAGE = "Application does not have a workflow file"
+
+
+def collect_supplied_params(
+    param_file: Optional[pathlib.Path],
+    supplied_params: Optional[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """
+    Merge the parameters from a parameter file with the ones supplied programmatically.
+
+    The programmatically supplied parameters take precedence over the ones from the file.
+    """
+    return {
+        **(validate_parameter_file(param_file) if param_file else {}),
+        **(supplied_params or {}),
+    }
 
 
 def validate_parameter_file(parameter_path: pathlib.Path) -> Dict[str, Any]:
@@ -244,7 +259,9 @@ def render_job_script_locally(
     sbatch_params: Optional[List[str]] = None,
     param_file: Optional[pathlib.Path] = None,
     fast: bool = False,
-):
+    *,
+    supplied_params: Optional[Dict[str, Any]] = None,
+) -> List[pathlib.Path]:
     """
     Render a new job script from an application in a local directory.
 
@@ -256,6 +273,11 @@ def render_job_script_locally(
         sbatch_params: List of sbatch parameters.
         param_file: Path to a parameters file.
         fast: Whether to use default answers (when available) instead of asking the user.
+        supplied_params: Parameters supplied programmatically; they take precedence
+            over the ones loaded from ``param_file``.
+
+    Returns:
+        The paths of the rendered output files.
     """
     app_data = fetch_application_data_locally(application_path)
 
@@ -268,15 +290,13 @@ def render_job_script_locally(
 
     application_source_code = app_data.workflow_files[0].path.read_text()
 
-    application_runtime = ApplicationRuntime(
-        app_data,
-        application_source_code,
-        fast_mode=fast,
+    application_runtime = ApplicationRuntime(app_data, application_source_code)
+    runtime_result = application_runtime.run(
         sdk=jg_ctx.sdk,
-        supplied_params=validate_parameter_file(param_file) if param_file else {},
+        supplied_params=collect_supplied_params(param_file, supplied_params),
+        fast_mode=fast,
     )
-    application_runtime.execute_application()
-    param_dict_flat = application_runtime.as_flatten_param_dict()
+    param_dict_flat = runtime_result.as_flatten_param_dict()
 
     if param_dict_flat.get("job_script_name"):
         # Possibly overwrite script name if set at runtime by the application
@@ -284,7 +304,7 @@ def render_job_script_locally(
         logger.debug("Job script name was set by the application at runtime: {}", job_script_name)
 
     template_name_mapping = get_template_output_name_mapping(
-        application_runtime.app_config.jobbergate_config, job_script_name
+        runtime_result.app_config.jobbergate_config, job_script_name
     )
 
     mapped_template_files = {
@@ -293,16 +313,21 @@ def render_job_script_locally(
         if (new_filename := template_name_mapping.get(file.filename, None))
     }
 
+    output_file_paths: List[pathlib.Path] = []
     for new_filename, template_file in mapped_template_files.items():
         file_content = render_template(template_file.path, param_dict_flat)
 
         if template_file.file_type == FileType.ENTRYPOINT and sbatch_params:
             file_content = inject_sbatch_params(file_content, sbatch_params)
 
-        with open(output_path / new_filename, "w") as f:
+        output_file_path = output_path / new_filename
+        with open(output_file_path, "w") as f:
             f.write(file_content)
 
+        output_file_paths.append(output_file_path)
         logger.debug("Rendered template file {} to: {}", template_file.filename, new_filename)
+
+    return output_file_paths
 
 
 def render_job_script(
@@ -313,54 +338,36 @@ def render_job_script(
     sbatch_params: Optional[List[str]] = None,
     param_file: Optional[pathlib.Path] = None,
     fast: bool = False,
+    *,
+    supplied_params: Optional[Dict[str, Any]] = None,
 ) -> JobScriptResponse:
     """
     Render a new job script from an application.
 
     Args:
         jg_ctx: The Jobbergate context.
+        id_or_identifier: Id or identifier of the base application.
         name: Name of the new job script.
-        application_id: Id of the base application.
-        application_identifier: Identifier of the base application.
         description: Description of the new job script.
         sbatch_params: List of sbatch parameters.
         param_file: Path to a parameters file.
         fast: Whether to use default answers (when available) instead of asking the user.
+        supplied_params: Parameters supplied programmatically; they take precedence
+            over the ones loaded from ``param_file``.
 
     Returns:
         The new job script.
     """
-    app_data = fetch_application_data(jg_ctx, id_or_identifier)
+    application_runtime = fetch_application_runtime(jg_ctx, id_or_identifier)
+    # The cached runtime only ever holds API-backed applications, never local ones
+    app_data = cast(ApplicationResponse, application_runtime.app_data)
 
-    if not app_data.workflow_files:
-        raise Abort(
-            f"Application {app_data.application_id} does not have a workflow file",
-            subject="Workflow file not found",
-            log_message=NO_WORKFLOW_FILE_MESSAGE,
-        )
-
-    with tempfile.NamedTemporaryFile() as fp:
-        tmp_file_path = pathlib.Path(fp.name)
-        make_request(
-            jg_ctx.client,
-            app_data.workflow_files[0].path,
-            "GET",
-            expected_status=200,
-            abort_message="Couldn't retrieve application module file from API",
-            save_to_file=tmp_file_path,
-        )
-
-        application_source_code = tmp_file_path.read_text()
-
-    application_runtime = ApplicationRuntime(
-        app_data,
-        application_source_code,
-        fast_mode=fast,
+    runtime_result = application_runtime.run(
         sdk=jg_ctx.sdk,
-        supplied_params=validate_parameter_file(param_file) if param_file else {},
+        supplied_params=collect_supplied_params(param_file, supplied_params),
+        fast_mode=fast,
     )
-    application_runtime.execute_application()
-    param_dict_flat = application_runtime.as_flatten_param_dict()
+    param_dict_flat = runtime_result.as_flatten_param_dict()
 
     job_script_name = name if name else app_data.name
 
@@ -376,7 +383,7 @@ def render_job_script(
         ),
         render_request=RenderFromTemplateRequest(
             template_output_name_mapping=get_template_output_name_mapping(
-                application_runtime.app_config.jobbergate_config, job_script_name
+                runtime_result.app_config.jobbergate_config, job_script_name
             ),
             sbatch_params=sbatch_params,
             param_dict={"data": param_dict_flat},
@@ -405,7 +412,7 @@ def upload_job_script_files(
     job_script_id: int,
     job_script_path: pathlib.Path,
     supporting_file_paths: list[pathlib.Path] | None = None,
-):
+) -> List[pathlib.Path]:
     """
     Upload a job-script and its supporting files given their paths and the job-script id.
 
@@ -414,6 +421,9 @@ def upload_job_script_files(
         job_script_path: The path to the job-script file to upload
         supporting_file_paths: The paths to any supporting files to upload with the job-scritpt
         job_script_id: The id of the job-script for which to upload  data
+
+    Returns:
+        The paths of the files that were successfully uploaded.
     """
 
     client = JobbergateCliError.enforce_defined(jg_ctx.client)
@@ -442,6 +452,8 @@ def upload_job_script_files(
         )
         Abort.require_condition(response_code == 200, f"Job Script file {job_script_path} failed to upload")
 
+    uploaded_file_paths: List[pathlib.Path] = [job_script_path]
+
     with JobbergateCliError.check_expressions("Some supporting files failed to upload") as check:
         for supporting_file_path in supporting_file_paths:
             with open(supporting_file_path, "rb") as supporting_file:
@@ -461,6 +473,10 @@ def upload_job_script_files(
                     response_code == 200,
                     f"Supporting file {supporting_file_path} was not accepted by the API for download",
                 )
+                if response_code == 200:
+                    uploaded_file_paths.append(supporting_file_path)
+
+    return uploaded_file_paths
 
 
 def save_job_script_file(
@@ -492,6 +508,10 @@ def download_job_script_files(
 ) -> List[JobScriptFile]:
     """
     Download all job script files from the API and save them to the destination path.
+
+    Note:
+        Unlike most tool functions in this module, ``jg_ctx`` is the second argument
+        here instead of the first. The order is kept as is for backward compatibility.
     """
 
     result = fetch_job_script_data(jg_ctx, job_script_id)

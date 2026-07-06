@@ -9,7 +9,7 @@ import importlib_metadata
 import typer
 
 from jobbergate_cli.config import settings
-from jobbergate_cli.context import JobbergateContext
+from jobbergate_cli.context import JobbergateContext, set_active_context
 from jobbergate_cli.exceptions import Abort, handle_abort, handle_authentication_error
 from jobbergate_cli.logging import init_logs, init_sentry
 from jobbergate_cli.render import QUICK_START_GUIDE, render_json, terminal_message
@@ -64,6 +64,8 @@ def main(
     # Then stored in the context object to be passed to the subcommands
     context: ContextProtocol = JobbergateContext(full_output=full, raw_output=raw)
     ctx.obj = context
+    # Also expose the context to commands called directly as functions (e.g. from application scripts)
+    set_active_context(context)
 
 
 @app.command(rich_help_panel="Authentication")

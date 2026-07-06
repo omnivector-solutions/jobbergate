@@ -16,6 +16,7 @@ from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import ContextProtocol, JobSubmissionCreateRequestData, JobSubmissionResponse
 from jobbergate_cli.subapps.job_scripts.tools import download_job_script_files
+from jobbergate_core.auth import AuthenticationError
 from jobbergate_core.tools.sbatch import SubmissionHandler, inject_sbatch_params
 
 
@@ -84,7 +85,19 @@ def _map_cluster_name(
     If the organization is undefined (multi-tenancy is disabled) or the cluster_name already includes the
     organization_id, use the base_cluster_name.
     """
-    org_id = jg_ctx.authentication_handler.get_identity_data().organization_id
+    try:
+        org_id = jg_ctx.authentication_handler.get_identity_data().organization_id
+    except (Abort, AuthenticationError):
+        # Re-raised as is, so the caller commands can keep rendering the same panels as before
+        raise
+    except Exception as err:
+        raise Abort(
+            "Failed to create the job submission",
+            subject="Job submission failed",
+            support=True,
+            log_message=f"Failed to retrieve identity data while resolving cluster_name={base_cluster_name}",
+            original_error=err,
+        ) from err
     if org_id is None or base_cluster_name.endswith(org_id):
         return base_cluster_name
 
@@ -177,7 +190,19 @@ class RemoteJobSubmission(JobSubmissionABC):
         """Process the job submission in remote mode."""
         logger.info("Creating job submission in remote mode")
         if self.download:
-            download_job_script_files(self.job_script_id, self.jg_ctx, self.execution_directory)
+            try:
+                download_job_script_files(self.job_script_id, self.jg_ctx, self.execution_directory)
+            except (Abort, AuthenticationError):
+                # Re-raised as is, so the caller commands can keep rendering the same panels as before
+                raise
+            except Exception as err:
+                raise Abort(
+                    "Failed to create the job submission",
+                    subject="Job submission failed",
+                    support=True,
+                    log_message=f"Failed to download the files from job_script_id={self.job_script_id}",
+                    original_error=err,
+                ) from err
 
 
 class OnsiteJobSubmission(JobSubmissionABC):
@@ -216,6 +241,7 @@ class OnsiteJobSubmission(JobSubmissionABC):
                 subject="Slurm Submission Error",
                 support=True,
                 log_message=f"On-site submission failed: {e}",
+                original_error=e,
             ) from e
         self.slurm_job_id = slurm_id
 

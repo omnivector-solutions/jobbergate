@@ -5,6 +5,7 @@ import pytest
 from loguru import logger
 
 from jobbergate_cli.config import settings
+from jobbergate_cli.context import _active_context
 
 
 @pytest.fixture
@@ -12,6 +13,18 @@ def caplog(caplog):
     handler_id = logger.add(caplog.handler, format="{message}")
     yield caplog
     logger.remove(handler_id)
+
+
+@pytest.fixture(autouse=True)
+def reset_active_context():
+    """
+    Ensure the active context ContextVar is cleared before each test and restored afterwards.
+
+    Tests run in random order, so any active context leaked by one test could contaminate another.
+    """
+    token = _active_context.set(None)
+    yield
+    _active_context.reset(token)
 
 
 @pytest.fixture(autouse=True)

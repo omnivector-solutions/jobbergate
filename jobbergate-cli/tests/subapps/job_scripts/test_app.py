@@ -8,8 +8,10 @@ import httpx
 import pytest
 
 from jobbergate_cli.config import settings
+from jobbergate_cli.context import active_context
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ApplicationResponse, JobScriptFile, JobScriptResponse, JobSubmissionResponse
+from jobbergate_cli.subapps.job_scripts import recreate
 from jobbergate_cli.subapps.job_scripts.app import (
     HIDDEN_FIELDS,
     JOB_SUBMISSION_HIDDEN_FIELDS,
@@ -262,7 +264,7 @@ def test_create__non_fast_mode_and_job_submission(
     test_app = make_test_app("create", create)
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
     mocked_fetch_application_data = mocker.patch(
-        "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
+        "jobbergate_cli.subapps.applications.tools.fetch_application_data",
         return_value=application_response,
     )
     assert len(application_response.workflow_files) >= 1
@@ -400,7 +402,7 @@ def test_create__with_fast_mode_and_no_job_submission(
     test_app = make_test_app("create", create)
     mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
     mocked_fetch_application_data = mocker.patch(
-        "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
+        "jobbergate_cli.subapps.applications.tools.fetch_application_data",
         return_value=application_response,
     )
     assert len(application_response.workflow_files) >= 1
@@ -772,6 +774,414 @@ class TestDownloadJobScriptFiles:
             "A total of 1 job script files were successfully downloaded.",
             subject="Job script download succeeded",
         )
+
+
+class TestDirectInvocation:
+    """
+    Test that the commands can be called directly as regular functions, with no click Context.
+
+    The active context supplies the ``ContextProtocol`` normally found on ``ctx.obj``.
+    """
+
+    def test_create__direct_call_returns_job_script_response(
+        self,
+        dummy_context,
+        dummy_job_script_data,
+        mocker,
+    ):
+        job_script_result = JobScriptResponse(**dummy_job_script_data[0])
+
+        mocked_render_job_script = mocker.patch(
+            "jobbergate_cli.subapps.job_scripts.app.render_job_script",
+            return_value=job_script_result,
+        )
+        mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
+
+        with active_context(dummy_context):
+            result = create(id_or_identifier="1", name="dummy-name", fast=True, submit=False, download=False)
+
+        assert result == job_script_result
+        mocked_render_job_script.assert_called_once_with(
+            dummy_context,
+            1,
+            "dummy-name",
+            None,
+            None,
+            None,
+            True,
+            supplied_params=None,
+        )
+        mocked_render.assert_called_once_with(
+            dummy_context,
+            job_script_result,
+            title="Created Job Script",
+            hidden_fields=HIDDEN_FIELDS,
+        )
+
+    def test_recreate__outside_a_creation_raises_abort(self):
+        """``recreate`` only works while a creation command is executing an application."""
+        with pytest.raises(Abort, match="No job-script creation is in progress"):
+            recreate()
+
+    def test_recreate__reinvokes_create_with_the_same_application(
+        self,
+        dummy_context,
+        dummy_job_script_data,
+        mocker,
+    ):
+        """An application calling ``recreate`` under ``create`` re-runs it with the same selection."""
+        job_script_result = JobScriptResponse(**dummy_job_script_data[0])
+        rendered_selectors = []
+
+        def fake_render_job_script(jg_ctx, selector, *args, **kwargs):
+            rendered_selectors.append(selector)
+            if len(rendered_selectors) == 1:
+                # Simulate an application calling ``recreate`` from within its question workflow
+                recreate(name="nested", fast=True, submit=False, download=False)
+            return job_script_result
+
+        mocker.patch(
+            "jobbergate_cli.subapps.job_scripts.app.render_job_script",
+            side_effect=fake_render_job_script,
+        )
+        mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
+
+        with active_context(dummy_context):
+            result = create(id_or_identifier="1", fast=True, submit=False, download=False)
+
+        assert result == job_script_result
+        assert rendered_selectors == [1, 1]
+
+    def test_recreate__reinvokes_create_locally_with_the_same_path(
+        self,
+        dummy_context,
+        tmp_path,
+        mocker,
+    ):
+        """An application calling ``recreate`` under ``create-locally`` re-runs it with the same path."""
+        rendered_paths = []
+
+        def fake_render_job_script_locally(jg_ctx, job_script_name, application_path, *args, **kwargs):
+            rendered_paths.append(application_path)
+            if len(rendered_paths) == 1:
+                recreate(job_script_name="nested", fast=True)
+            return [application_path / "dummy.job"]
+
+        mocker.patch(
+            "jobbergate_cli.subapps.job_scripts.app.render_job_script_locally",
+            side_effect=fake_render_job_script_locally,
+        )
+        mocker.patch("jobbergate_cli.subapps.job_scripts.app.terminal_message")
+
+        with active_context(dummy_context):
+            result = create_locally(application_path=tmp_path, output_path=tmp_path, fast=True)
+
+        assert result == [tmp_path / "dummy.job"]
+        assert rendered_paths == [tmp_path, tmp_path]
+
+    def test_recreate__ignores_unsupported_arguments_with_a_warning(
+        self,
+        dummy_context,
+        tmp_path,
+        mocker,
+        caplog,
+    ):
+        """A ``create``-style recreate call works under ``create-locally``, warning about ignored args."""
+        rendered = []
+
+        def fake_render_job_script_locally(jg_ctx, job_script_name, application_path, *args, **kwargs):
+            rendered.append((application_path, kwargs.get("supplied_params")))
+            if len(rendered) == 1:
+                # ``description``, ``submit``, and ``download`` only exist on ``create``
+                recreate(
+                    description="ignored",
+                    submit=False,
+                    download=False,
+                    fast=True,
+                    param_dict={"nodes": 2},
+                )
+            return [application_path / "dummy.job"]
+
+        mocker.patch(
+            "jobbergate_cli.subapps.job_scripts.app.render_job_script_locally",
+            side_effect=fake_render_job_script_locally,
+        )
+        mocker.patch("jobbergate_cli.subapps.job_scripts.app.terminal_message")
+
+        with active_context(dummy_context):
+            create_locally(application_path=tmp_path, output_path=tmp_path, fast=True)
+
+        # the recreated run happened, with the supported arguments forwarded
+        assert rendered == [(tmp_path, None), (tmp_path, {"nodes": 2})]
+        assert "recreate is forwarding to create_locally" in caplog.text
+        assert "description" in caplog.text
+        assert "submit" in caplog.text
+        assert "download" in caplog.text
+        assert "param_dict" not in caplog.text
+
+    def test_recreate__ignores_attempts_to_override_the_original_selection(
+        self,
+        dummy_context,
+        dummy_job_script_data,
+        mocker,
+        caplog,
+    ):
+        """``recreate`` always reuses the original selection, warning when an override is attempted."""
+        job_script_result = JobScriptResponse(**dummy_job_script_data[0])
+        rendered_selectors = []
+
+        def fake_render_job_script(jg_ctx, selector, *args, **kwargs):
+            rendered_selectors.append(selector)
+            if len(rendered_selectors) == 1:
+                recreate(id_or_identifier="another-app", fast=True, submit=False, download=False)
+            return job_script_result
+
+        mocker.patch(
+            "jobbergate_cli.subapps.job_scripts.app.render_job_script",
+            side_effect=fake_render_job_script,
+        )
+        mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
+
+        with active_context(dummy_context):
+            create(id_or_identifier="1", fast=True, submit=False, download=False)
+
+        assert rendered_selectors == [1, 1]
+        assert "id_or_identifier" in caplog.text
+
+    def test_recreate__blocks_recursion_beyond_one_level(
+        self,
+        dummy_context,
+        dummy_job_script_data,
+        mocker,
+    ):
+        """A run started by ``recreate`` can not call ``recreate`` again."""
+        job_script_result = JobScriptResponse(**dummy_job_script_data[0])
+        rendered_selectors = []
+
+        def fake_render_job_script(jg_ctx, selector, *args, **kwargs):
+            rendered_selectors.append(selector)
+            # every run tries to recreate unconditionally: the second level must be blocked
+            recreate(fast=True, submit=False, download=False)
+            return job_script_result
+
+        mocker.patch(
+            "jobbergate_cli.subapps.job_scripts.app.render_job_script",
+            side_effect=fake_render_job_script,
+        )
+        mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
+
+        with active_context(dummy_context):
+            with pytest.raises(Abort, match="Only one level of recreation is allowed") as exc_info:
+                create(id_or_identifier="1", fast=True, submit=False, download=False)
+
+        assert exc_info.value.subject == "Recursive recreation blocked"
+        # the outer run and the single allowed recreation rendered; the third level was blocked
+        assert rendered_selectors == [1, 1]
+
+    def test_recreate__sequential_calls_are_allowed(
+        self,
+        dummy_context,
+        dummy_job_script_data,
+        mocker,
+    ):
+        """Fanning out several recreations in sequence from the same run is allowed."""
+        job_script_result = JobScriptResponse(**dummy_job_script_data[0])
+        rendered_selectors = []
+
+        def fake_render_job_script(jg_ctx, selector, *args, **kwargs):
+            rendered_selectors.append(selector)
+            if len(rendered_selectors) == 1:
+                recreate(name="first", fast=True, submit=False, download=False)
+                recreate(name="second", fast=True, submit=False, download=False)
+            return job_script_result
+
+        mocker.patch(
+            "jobbergate_cli.subapps.job_scripts.app.render_job_script",
+            side_effect=fake_render_job_script,
+        )
+        mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
+
+        with active_context(dummy_context):
+            result = create(id_or_identifier="1", fast=True, submit=False, download=False)
+
+        assert result == job_script_result
+        assert rendered_selectors == [1, 1, 1]
+
+    def test_recreate__is_reset_after_the_command_returns(
+        self,
+        dummy_context,
+        dummy_job_script_data,
+        mocker,
+    ):
+        """The recreation context does not leak once the creation command finishes."""
+        job_script_result = JobScriptResponse(**dummy_job_script_data[0])
+        mocker.patch(
+            "jobbergate_cli.subapps.job_scripts.app.render_job_script",
+            return_value=job_script_result,
+        )
+        mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
+
+        with active_context(dummy_context):
+            create(id_or_identifier="1", fast=True, submit=False, download=False)
+
+            with pytest.raises(Abort, match="No job-script creation is in progress"):
+                recreate()
+
+    def test_create__direct_call_with_param_dict(
+        self,
+        dummy_context,
+        dummy_job_script_data,
+        mocker,
+    ):
+        """``param_dict`` supplies template parameters directly, with no JSON file round-trip."""
+        job_script_result = JobScriptResponse(**dummy_job_script_data[0])
+
+        mocked_render_job_script = mocker.patch(
+            "jobbergate_cli.subapps.job_scripts.app.render_job_script",
+            return_value=job_script_result,
+        )
+        mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
+
+        with active_context(dummy_context):
+            result = create(
+                id_or_identifier="1",
+                name="dummy-name",
+                fast=True,
+                submit=False,
+                download=False,
+                param_dict={"foo": "FOO", "bar": "BAR"},
+            )
+
+        assert result == job_script_result
+        assert mocked_render_job_script.call_args.kwargs["supplied_params"] == {"foo": "FOO", "bar": "BAR"}
+
+    def test_create_locally__direct_call_with_param_dict(
+        self,
+        dummy_context,
+        tmp_path,
+        mocker,
+    ):
+        """``param_dict`` reaches the local renderer as ``supplied_params``."""
+        rendered_files = [tmp_path / "dummy.job"]
+        mocked_render_locally = mocker.patch(
+            "jobbergate_cli.subapps.job_scripts.app.render_job_script_locally",
+            return_value=rendered_files,
+        )
+        mocker.patch("jobbergate_cli.subapps.job_scripts.app.terminal_message")
+
+        with active_context(dummy_context):
+            result = create_locally(
+                application_path=tmp_path,
+                output_path=tmp_path,
+                fast=True,
+                param_dict={"foo": "FOO"},
+            )
+
+        assert result == rendered_files
+        assert mocked_render_locally.call_args.kwargs["supplied_params"] == {"foo": "FOO"}
+
+    @pytest.mark.parametrize("command_function, command_name", [(create, "create"), (create_locally, "create-locally")])
+    def test_param_dict_is_hidden_from_the_cli_help(
+        self,
+        command_function,
+        command_name,
+        make_test_app,
+        cli_runner,
+    ):
+        """The ``param_dict`` argument is hidden from the CLI help (including the docstring epilog)."""
+        test_app = make_test_app(command_name, command_function)
+
+        help_result = cli_runner.invoke(test_app, [command_name, "--help"])
+        assert help_result.exit_code == 0
+        assert "param-dict" not in help_result.stdout
+        assert "param_dict" not in help_result.stdout
+
+    def test_param_dict_is_parsed_from_json_on_the_cli(
+        self,
+        dummy_context,
+        dummy_job_script_data,
+        make_test_app,
+        cli_runner,
+        mocker,
+    ):
+        """The hidden ``--param-dict`` option still parses a JSON string when supplied on the CLI."""
+        job_script_result = JobScriptResponse(**dummy_job_script_data[0])
+        mocked_render_job_script = mocker.patch(
+            "jobbergate_cli.subapps.job_scripts.app.render_job_script",
+            return_value=job_script_result,
+        )
+        mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
+
+        test_app = make_test_app("create", create)
+        result = cli_runner.invoke(
+            test_app,
+            ["create", "1", "--fast", "--no-submit", "--no-download", "--param-dict", '{"foo": "FOO"}'],
+        )
+
+        assert result.exit_code == 0, f"create failed: {result.stdout}"
+        assert mocked_render_job_script.call_args.kwargs["supplied_params"] == {"foo": "FOO"}
+
+    def test_create__direct_call_with_submit_still_returns_job_script_response(
+        self,
+        dummy_context,
+        dummy_job_script_data,
+        dummy_job_submission_data,
+        mocker,
+    ):
+        job_script_result = JobScriptResponse(**dummy_job_script_data[0])
+
+        mocker.patch(
+            "jobbergate_cli.subapps.job_scripts.app.render_job_script",
+            return_value=job_script_result,
+        )
+        mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
+
+        submissions_handler = mock.MagicMock()
+        submissions_handler.run.return_value = JobSubmissionResponse.model_validate(dummy_job_submission_data[0])
+        mocker.patch(
+            "jobbergate_cli.subapps.job_scripts.app.job_submissions_factory",
+            return_value=submissions_handler,
+        )
+
+        with active_context(dummy_context):
+            result = create(id_or_identifier="1", name="dummy-name", fast=True, submit=True, download=False)
+
+        assert result == job_script_result
+        submissions_handler.run.assert_called_once_with()
+
+    def test_get_one__direct_call_returns_job_script_response(
+        self,
+        respx_mock,
+        dummy_context,
+        dummy_job_script_data,
+        dummy_domain,
+        mocker,
+    ):
+        job_script_data = dummy_job_script_data[0]
+        job_script_id = job_script_data["id"]
+
+        respx_mock.get(f"{dummy_domain}/jobbergate/job-scripts/{job_script_id}").mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                json=job_script_data,
+            ),
+        )
+        mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
+
+        with active_context(dummy_context):
+            result = get_one(job_script_id=job_script_id)
+
+        assert result == JobScriptResponse.model_validate(job_script_data)
+        mocked_render.assert_called_once_with(
+            dummy_context,
+            JobScriptResponse.model_validate(job_script_data),
+            title="Job Script",
+            hidden_fields=HIDDEN_FIELDS,
+        )
+
+    def test_get_one__direct_call_without_active_context_raises_abort(self):
+        with pytest.raises(Abort, match="No active Jobbergate context"):
+            get_one(job_script_id=1)
 
 
 class TestCloneJobScript:

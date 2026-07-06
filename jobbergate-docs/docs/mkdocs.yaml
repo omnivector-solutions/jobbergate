@@ -88,6 +88,7 @@ nav:
       - Continuous Integration: developer_guide/ci.md
       - Keycloak Setup: developer_guide/keycloak_setup.md
       - Template Workflows: developer_guide/template_workflows.md
+      - Calling Jobbergate from an Application: developer_guide/calling_jobbergate_from_an_application.md
   - Reference:
       - Jobbergate Agent: reference/agent.md
       - Jobbergate API: reference/api.md
