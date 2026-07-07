@@ -4,6 +4,7 @@ from unittest import mock
 import httpx
 import pytest
 
+from jobbergate_cli.context import active_context
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.schemas import ApplicationResponse
 from jobbergate_cli.subapps.applications.app import (
@@ -286,7 +287,10 @@ def test_update__success_by_id(
     mocked_upload = mocker.patch("jobbergate_cli.subapps.applications.app.upload_application")
     mocked_upload.return_value = True
 
-    get_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{url_selector}")
+    # When the application is selected by identifier and the identifier is updated,
+    # the final fetch must target the new identifier
+    get_url_selector = "dummy-identifier" if "identifier" in selector_template else application_id
+    get_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{get_url_selector}")
     get_route.mock(
         return_value=httpx.Response(
             httpx.codes.OK,
@@ -367,6 +371,61 @@ def test_update__does_not_upload_if_application_path_is_not_supplied(
     assert result.exit_code == 0, f"update failed: {result.output}"
     assert update_route.called
     assert mocked_upload.call_count == 0
+
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        ApplicationResponse(**response_data),
+        title="Updated Application",
+        hidden_fields=HIDDEN_FIELDS,
+    )
+
+
+def test_update__fetches_by_new_identifier_when_selected_by_identifier(
+    respx_mock,
+    make_test_app,
+    dummy_context,
+    dummy_application_data,
+    dummy_domain,
+    cli_runner,
+    mocker,
+):
+    response_data = dummy_application_data[0]
+    old_identifier = response_data["identifier"]
+    new_identifier = "brand-new-identifier"
+
+    update_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-script-templates/{old_identifier}")
+    update_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=response_data,
+        ),
+    )
+
+    old_get_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{old_identifier}")
+    old_get_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.NOT_FOUND,
+            json={"detail": "Not found"},
+        ),
+    )
+    new_get_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{new_identifier}")
+    new_get_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=response_data,
+        ),
+    )
+
+    test_app = make_test_app("update", update)
+    mocked_render = mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
+    result = cli_runner.invoke(
+        test_app,
+        shlex.split(f"update {old_identifier} --update-identifier={new_identifier}"),
+    )
+    assert result.exit_code == 0, f"update failed: {result.output}"
+    assert update_route.called
+    assert new_get_route.called
+    assert not old_get_route.called
 
     mocked_render.assert_called_once_with(
         dummy_context,
@@ -463,6 +522,46 @@ def test_delete__success(respx_mock, make_test_app, dummy_domain, cli_runner, se
     assert result.exit_code == 0, f"delete failed: {result.output}"
     assert delete_route.called
     assert "Application delete succeeded" in result.output
+
+
+def test_delete__clears_the_application_caches(respx_mock, make_test_app, dummy_domain, cli_runner, mocker):
+    """Deleting an application must invalidate the in-process runtime cache."""
+    respx_mock.delete(f"{dummy_domain}/jobbergate/job-script-templates/1").mock(
+        return_value=httpx.Response(httpx.codes.NO_CONTENT)
+    )
+    mocked_clear = mocker.patch("jobbergate_cli.subapps.applications.app.clear_application_runtime_cache")
+
+    test_app = make_test_app("delete", delete)
+    result = cli_runner.invoke(test_app, shlex.split("delete 1"))
+
+    assert result.exit_code == 0, f"delete failed: {result.output}"
+    mocked_clear.assert_called_once_with()
+
+
+def test_update__clears_the_application_caches_before_the_final_fetch(
+    respx_mock,
+    make_test_app,
+    dummy_application_data,
+    dummy_domain,
+    cli_runner,
+    mocker,
+):
+    """Updating an application must invalidate the caches so the final fetch is not served stale."""
+    application_id = dummy_application_data[0]["id"]
+    respx_mock.put(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}").mock(
+        return_value=httpx.Response(httpx.codes.OK, json=dummy_application_data[0])
+    )
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}").mock(
+        return_value=httpx.Response(httpx.codes.OK, json=dummy_application_data[0])
+    )
+    mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
+    mocked_clear = mocker.patch("jobbergate_cli.subapps.applications.app.clear_application_runtime_cache")
+
+    test_app = make_test_app("update", update)
+    result = cli_runner.invoke(test_app, shlex.split(f"update --id={application_id} --application-name=new-name"))
+
+    assert result.exit_code == 0, f"update failed: {result.output}"
+    mocked_clear.assert_called_once_with()
 
 
 class TestDownloadApplicationFiles:
@@ -620,3 +719,170 @@ def test_clone__success(
         title="Cloned Application",
         hidden_fields=HIDDEN_FIELDS,
     )
+
+
+class TestDirectInvocationReturnValues:
+    """
+    Test that the command functions return usable values when called directly (programmatic path).
+    """
+
+    @pytest.fixture()
+    def stub_ctx(self, dummy_context):
+        """
+        Activate the dummy context and provide ``None`` for the ``ctx`` param, as direct callers would.
+        """
+        with active_context(dummy_context):
+            yield None
+
+    def test_get_one__returns_application_response(
+        self,
+        respx_mock,
+        stub_ctx,
+        dummy_application_data,
+        dummy_domain,
+        mocker,
+    ):
+        application_data = dummy_application_data[0]
+        application_id = application_data["id"]
+
+        respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}").mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                json=application_data,
+            ),
+        )
+        mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
+
+        result = get_one(stub_ctx, id_or_identifier=str(application_id))
+
+        assert result == ApplicationResponse(**application_data)
+
+    def test_create__returns_application_response(
+        self,
+        respx_mock,
+        stub_ctx,
+        dummy_application_data,
+        dummy_application_dir,
+        dummy_domain,
+        mocker,
+    ):
+        response_data = dummy_application_data[0]
+
+        create_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-script-templates")
+        create_route.mock(
+            return_value=httpx.Response(
+                httpx.codes.CREATED,
+                json=response_data,
+            ),
+        )
+        mocked_upload = mocker.patch("jobbergate_cli.subapps.applications.app.upload_application")
+        mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
+
+        result = create(
+            stub_ctx,
+            name="dummy-name",
+            application_path=dummy_application_dir,
+            identifier="dummy-identifier",
+            application_desc="This application is kinda dumb, actually",
+        )
+
+        assert create_route.called
+        assert mocked_upload.called
+        assert result == ApplicationResponse(**response_data)
+
+    def test_update__returns_application_response(
+        self,
+        respx_mock,
+        stub_ctx,
+        dummy_application_data,
+        dummy_domain,
+        mocker,
+    ):
+        response_data = dummy_application_data[0]
+        application_id = response_data["id"]
+
+        update_route = respx_mock.put(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}")
+        update_route.mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                json=response_data,
+            ),
+        )
+        get_route = respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}")
+        get_route.mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                json=response_data,
+            ),
+        )
+        mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
+
+        result = update(
+            stub_ctx,
+            application_id=application_id,
+            application_desc="This application is kinda dumb, actually",
+        )
+
+        assert update_route.called
+        assert get_route.called
+        assert result == ApplicationResponse(**response_data)
+
+    def test_clone__returns_application_response(
+        self,
+        respx_mock,
+        stub_ctx,
+        dummy_application_data,
+        dummy_domain,
+        mocker,
+    ):
+        application_data = dummy_application_data[0]
+        application_id = application_data["id"]
+
+        clone_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-script-templates/clone/{application_id}").mock(
+            return_value=httpx.Response(
+                httpx.codes.CREATED,
+                json=application_data,
+            ),
+        )
+        mocker.patch("jobbergate_cli.subapps.applications.app.render_single_result")
+
+        result = clone(stub_ctx, application_id=application_id)
+
+        assert clone_route.called
+        assert result == ApplicationResponse(**application_data)
+
+    def test_download_files__returns_saved_paths(
+        self,
+        respx_mock,
+        stub_ctx,
+        dummy_application_data,
+        dummy_context,
+        dummy_domain,
+        mocker,
+        tmp_path,
+    ):
+        application_data = dummy_application_data[0]
+        application_id = application_data["id"]
+
+        respx_mock.get(f"{dummy_domain}/jobbergate/job-script-templates/{application_id}").mock(
+            return_value=httpx.Response(
+                httpx.codes.OK,
+                json=application_data,
+            ),
+        )
+        mocker.patch("jobbergate_cli.subapps.applications.app.terminal_message")
+
+        list_of_files = [tmp_path / f"file-{i}" for i in range(3)]
+        mocked_save_files = mocker.patch(
+            "jobbergate_cli.subapps.applications.app.save_application_files", return_value=list_of_files
+        )
+
+        with mock.patch.object(pathlib.Path, "cwd", return_value=tmp_path):
+            result = download_files(stub_ctx, id_or_identifier=str(application_id))
+
+        mocked_save_files.assert_called_once_with(
+            dummy_context,
+            application_data=ApplicationResponse(**application_data),
+            destination_path=tmp_path,
+        )
+        assert result == list_of_files

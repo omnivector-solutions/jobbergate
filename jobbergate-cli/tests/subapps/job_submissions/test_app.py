@@ -4,8 +4,9 @@ from unittest import mock
 import httpx
 import pytest
 
+from jobbergate_cli.context import set_active_context
 from jobbergate_cli.exceptions import Abort
-from jobbergate_cli.schemas import JobSubmissionResponse
+from jobbergate_cli.schemas import JobScriptResponse, JobSubmissionResponse
 from jobbergate_cli.subapps.job_submissions.app import (
     HIDDEN_FIELDS,
     cancel,
@@ -82,6 +83,153 @@ def test_create(
         title="Created Job Submission",
         hidden_fields=HIDDEN_FIELDS,
     )
+
+
+def test_create__returns_job_submission_response__remote_mode(
+    respx_mock,
+    dummy_context,
+    dummy_job_submission_data,
+    dummy_domain,
+    cli_runner,
+    mocker,
+    attach_persona,
+    tweak_settings,
+):
+    """Direct invocation of ``create`` in remote mode returns the created ``JobSubmissionResponse``."""
+    attach_persona("dummy@dummy.com")
+    job_submission_data = dummy_job_submission_data[0]
+
+    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions").mock(
+        return_value=httpx.Response(
+            httpx.codes.CREATED,
+            json=job_submission_data,
+        ),
+    )
+    mocked_render = mocker.patch("jobbergate_cli.subapps.job_submissions.app.render_single_result")
+
+    set_active_context(dummy_context)
+    with tweak_settings(SBATCH_PATH=None):
+        result = create(
+            name=job_submission_data["name"],
+            job_script_id=job_submission_data["job_script_id"],
+            cluster_name="test-cluster",
+        )
+
+    expected_response = JobSubmissionResponse(**job_submission_data)
+    assert create_route.called
+    assert result == expected_response
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        expected_response,
+        title="Created Job Submission",
+        hidden_fields=HIDDEN_FIELDS,
+    )
+
+
+def test_create__returns_job_submission_response__onsite_mode(
+    respx_mock,
+    dummy_context,
+    dummy_job_submission_data,
+    dummy_job_script_data,
+    dummy_domain,
+    cli_runner,
+    mocker,
+    attach_persona,
+    tweak_settings,
+    tmp_path,
+):
+    """Direct invocation of ``create`` in on-site mode returns the created ``JobSubmissionResponse``."""
+    attach_persona("dummy@dummy.com")
+    job_submission_data = dummy_job_submission_data[0]
+    job_script_data = JobScriptResponse.model_validate(dummy_job_script_data[0])
+
+    create_route = respx_mock.post(f"{dummy_domain}/jobbergate/job-submissions").mock(
+        return_value=httpx.Response(
+            httpx.codes.CREATED,
+            json=job_submission_data,
+        ),
+    )
+    mocked_render = mocker.patch("jobbergate_cli.subapps.job_submissions.app.render_single_result")
+    mocker.patch(
+        "jobbergate_cli.subapps.job_submissions.tools.download_job_script_files",
+        return_value=job_script_data.files,
+    )
+    mocked_sbatch = mock.MagicMock()
+    mocked_sbatch.submit_job.return_value = 13
+    mocker.patch("jobbergate_cli.subapps.job_submissions.tools.SubmissionHandler", return_value=mocked_sbatch)
+
+    set_active_context(dummy_context)
+    with tweak_settings(SBATCH_PATH=tmp_path):
+        result = create(
+            name=job_submission_data["name"],
+            job_script_id=job_submission_data["job_script_id"],
+            cluster_name="test-cluster",
+            execution_directory=tmp_path,
+        )
+
+    expected_response = JobSubmissionResponse(**job_submission_data)
+    assert create_route.called
+    assert result == expected_response
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        expected_response,
+        title="Created Job Submission",
+        hidden_fields=HIDDEN_FIELDS,
+    )
+
+
+def test_create__onsite_sbatch_failure_raises_abort_with_original_error(
+    dummy_context,
+    dummy_job_script_data,
+    mocker,
+    attach_persona,
+    tweak_settings,
+    tmp_path,
+):
+    """A simulated sbatch failure surfaces as ``Abort`` carrying the underlying error."""
+    attach_persona("dummy@dummy.com")
+    job_script_data = JobScriptResponse.model_validate(dummy_job_script_data[0])
+
+    mocker.patch(
+        "jobbergate_cli.subapps.job_submissions.tools.download_job_script_files",
+        return_value=job_script_data.files,
+    )
+    sbatch_error = RuntimeError("sbatch: error: Batch job submission failed: Invalid partition name specified")
+    mocked_sbatch = mock.MagicMock()
+    mocked_sbatch.submit_job.side_effect = sbatch_error
+    mocker.patch("jobbergate_cli.subapps.job_submissions.tools.SubmissionHandler", return_value=mocked_sbatch)
+
+    set_active_context(dummy_context)
+    with tweak_settings(SBATCH_PATH=tmp_path), pytest.raises(Abort) as exc_info:
+        create(
+            name="test-submission",
+            job_script_id=1,
+            cluster_name="test-cluster",
+            execution_directory=tmp_path,
+        )
+
+    assert exc_info.value.subject == "Slurm Submission Error"
+    assert exc_info.value.original_error is sbatch_error
+    assert exc_info.value.__cause__ is sbatch_error
+
+
+def test_create__unexpected_error_raises_abort_with_original_error(dummy_context, mocker):
+    """Unexpected errors from the submissions handler surface as ``Abort`` carrying the underlying error."""
+    original_error = RuntimeError("BOOM!")
+    submissions_handler = mock.MagicMock()
+    submissions_handler.run.side_effect = original_error
+    mocker.patch("jobbergate_cli.subapps.job_submissions.app.job_submissions_factory", return_value=submissions_handler)
+
+    set_active_context(dummy_context)
+    with pytest.raises(Abort) as exc_info:
+        create(
+            name="test-submission",
+            job_script_id=1,
+        )
+
+    assert exc_info.value.subject == "Job submission failed"
+    assert exc_info.value.original_error is original_error
+    assert exc_info.value.__cause__ is original_error
 
 
 def test_create__preserves_abort_message_from_submission_handler(make_test_app, cli_runner, mocker):
@@ -186,6 +334,38 @@ def test_get_one__success(
     mocked_render.assert_called_once_with(
         dummy_context,
         JobSubmissionResponse(**dummy_job_submission_data[0]),
+        title="Job Submission",
+        hidden_fields=HIDDEN_FIELDS,
+        value_mappers=None,
+    )
+
+
+def test_get_one__returns_job_submission_response(
+    respx_mock,
+    dummy_context,
+    dummy_job_submission_data,
+    dummy_domain,
+    mocker,
+    attach_persona,
+):
+    """Direct invocation of ``get_one`` returns the fetched ``JobSubmissionResponse``."""
+    attach_persona("dummy@dummy.com")
+    respx_mock.get(f"{dummy_domain}/jobbergate/job-submissions/1").mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            json=dummy_job_submission_data[0],
+        ),
+    )
+    mocked_render = mocker.patch("jobbergate_cli.subapps.job_submissions.app.render_single_result")
+
+    set_active_context(dummy_context)
+    result = get_one(job_submission_id=1)
+
+    expected_response = JobSubmissionResponse(**dummy_job_submission_data[0])
+    assert result == expected_response
+    mocked_render.assert_called_once_with(
+        dummy_context,
+        expected_response,
         title="Job Submission",
         hidden_fields=HIDDEN_FIELDS,
         value_mappers=None,

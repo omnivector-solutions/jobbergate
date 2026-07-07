@@ -2,6 +2,7 @@ import importlib
 import json
 import pathlib
 from textwrap import dedent
+from types import SimpleNamespace
 from unittest import mock
 
 import httpx
@@ -10,6 +11,7 @@ import respx
 
 from jobbergate_cli.exceptions import Abort, JobbergateCliError
 from jobbergate_cli.schemas import ApplicationResponse, JobScriptResponse, LocalApplication
+from jobbergate_cli.subapps.applications.tools import ApplicationRuntime, clear_application_runtime_cache
 from jobbergate_cli.subapps.job_scripts.tools import (
     JobbergateConfig,
     download_job_script_files,
@@ -24,6 +26,16 @@ from jobbergate_cli.subapps.job_scripts.tools import (
     upload_job_script_files,
     validate_parameter_file,
 )
+
+
+@pytest.fixture(autouse=True)
+def _clear_application_runtime_cache():
+    """
+    Ensure the in-memory application caches do not leak state between tests in this module.
+    """
+    clear_application_runtime_cache()
+    yield
+    clear_application_runtime_cache()
 
 
 def test_validate_parameter_file__success(tmp_path):
@@ -241,9 +253,10 @@ def test_render_job_script_locally__success(
 
     write_mock = mocker.patch("builtins.open", mocker.mock_open())
 
-    render_job_script_locally(dummy_context, "dummy-job-script", dummy_application_dir, tmp_path, fast=True)
+    result = render_job_script_locally(dummy_context, "dummy-job-script", dummy_application_dir, tmp_path, fast=True)
 
     write_mock().write.assert_called_once_with(expected_template_data)
+    assert result == [tmp_path / "job-script-template.py"]
 
 
 def test_render_job_script_locally__fail_when_no_workflow_file_specified(tmp_path, dummy_context, mocker):
@@ -276,7 +289,7 @@ def test_render_job_script_locally__with_sbatch_params(
         new=dummy_render_class,
     )
 
-    render_job_script_locally(
+    result = render_job_script_locally(
         dummy_context,
         "dummy-job-script",
         dummy_application_dir,
@@ -284,6 +297,7 @@ def test_render_job_script_locally__with_sbatch_params(
         sbatch_params=["--comment=some_comment", "--nice=-1", "-N 10"],
     )
 
+    assert result == [dummy_application_dir / "job-script-template.py"]
     assert (dummy_application_dir / "job-script-template.py").read_text() == dedent(
         """\
         #!/bin/python3
@@ -300,6 +314,149 @@ def test_render_job_script_locally__with_sbatch_params(
         print(f"bar='BAR'")
         print(f"baz='BAZ'")"""
     )
+
+
+def test_render_job_script__fails_when_no_workflow_file_is_available(
+    dummy_application_data,
+    dummy_context,
+    mocker,
+):
+    """
+    Test that render_job_script aborts with the expected message when the application has no workflow file.
+    """
+    application_response = ApplicationResponse(**dummy_application_data[0])
+    application_response.workflow_files = []
+
+    mocker.patch(
+        "jobbergate_cli.subapps.applications.tools.fetch_application_data",
+        return_value=application_response,
+    )
+
+    with pytest.raises(
+        Abort,
+        match=f"Application {application_response.application_id} does not have a workflow file",
+    ) as exc_info:
+        render_job_script(dummy_context, id_or_identifier=1, fast=True)
+
+    assert exc_info.value.subject == "Workflow file not found"
+
+
+@pytest.fixture
+def dummy_render_setup(
+    dummy_application_data,
+    dummy_job_script_data,
+    dummy_module_source,
+    dummy_domain,
+    dummy_render_class,
+    attach_persona,
+    respx_mock,
+    mocker,
+):
+    """
+    Set up the common mocks and routes needed to call render_job_script against a dummy application.
+    """
+    attach_persona("dummy@dummy.com")
+
+    application_response = ApplicationResponse(**dummy_application_data[0])
+    mocker.patch(
+        "jobbergate_cli.subapps.applications.tools.fetch_application_data",
+        return_value=application_response,
+    )
+    assert application_response.workflow_files is not None
+    get_workflow_route = respx_mock.get(f"{dummy_domain}{application_response.workflow_files[0].path}")
+    get_workflow_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.OK,
+            content=dummy_module_source.encode(),
+        ),
+    )
+
+    dummy_render_class.prepared_input = {
+        "foo": "FOO",
+        "bar": "BAR",
+        "baz": "BAZ",
+    }
+    mocker.patch.object(
+        importlib.import_module("inquirer.prompt"),
+        "ConsoleRender",
+        new=dummy_render_class,
+    )
+
+    desired_job_script_data = dummy_job_script_data[0]
+    create_route = respx_mock.post(
+        f"{dummy_domain}/jobbergate/job-scripts/render-from-template/{application_response.application_id}"
+    )
+    create_route.mock(
+        return_value=httpx.Response(
+            httpx.codes.CREATED,
+            json=desired_job_script_data,
+        ),
+    )
+
+    return SimpleNamespace(
+        application_response=application_response,
+        desired_job_script_data=desired_job_script_data,
+        get_workflow_route=get_workflow_route,
+        create_route=create_route,
+    )
+
+
+def test_render_job_script__downloads_workflow_file_only_once_for_consecutive_calls(
+    dummy_render_setup,
+    dummy_context,
+):
+    """
+    Test that consecutive renders of the same application download the workflow file only once.
+    """
+    desired_job_script_data = dummy_render_setup.desired_job_script_data
+
+    first = render_job_script(dummy_context, id_or_identifier=1, name=desired_job_script_data["name"], fast=True)
+    second = render_job_script(dummy_context, id_or_identifier=1, name=desired_job_script_data["name"], fast=True)
+
+    assert first == second == JobScriptResponse.model_validate(desired_job_script_data)
+    assert dummy_render_setup.get_workflow_route.call_count == 1
+    assert dummy_render_setup.create_route.call_count == 2
+
+
+def test_render_job_script__supplied_params_take_precedence_over_param_file(
+    dummy_render_setup,
+    dummy_context,
+    mocker,
+    tmp_path,
+):
+    """
+    Test that supplied_params reach the ApplicationRuntime and their keys win over param_file keys.
+    """
+    param_file = tmp_path / "params.json"
+    param_file.write_text(json.dumps({"foo": "from-file-foo", "bar": "from-file-bar"}))
+
+    desired_job_script_data = dummy_render_setup.desired_job_script_data
+    create_route = dummy_render_setup.create_route
+
+    run_spy = mocker.spy(ApplicationRuntime, "run")
+
+    actual_job_script_data = render_job_script(
+        dummy_context,
+        id_or_identifier=1,
+        name=desired_job_script_data["name"],
+        param_file=param_file,
+        fast=True,
+        supplied_params={"bar": "supplied-bar", "baz": "supplied-baz"},
+    )
+
+    assert run_spy.call_args.kwargs["supplied_params"] == {
+        "foo": "from-file-foo",
+        "bar": "supplied-bar",
+        "baz": "supplied-baz",
+    }
+
+    request_payload = json.loads(create_route.calls[0].request.content)
+    param_dict = request_payload["render_request"]["param_dict"]["data"]
+    assert param_dict["foo"] == "from-file-foo"
+    assert param_dict["bar"] == "supplied-bar"
+    assert param_dict["baz"] == "supplied-baz"
+
+    assert actual_job_script_data == JobScriptResponse.model_validate(desired_job_script_data)
 
 
 def test_render_job_script__providing_a_name(
@@ -320,7 +477,7 @@ def test_render_job_script__providing_a_name(
 
     application_response = ApplicationResponse(**dummy_application_data[0])
     mocked_fetch_application_data = mocker.patch(
-        "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
+        "jobbergate_cli.subapps.applications.tools.fetch_application_data",
         return_value=application_response,
     )
     assert application_response.workflow_files is not None
@@ -389,7 +546,7 @@ def test_render_job_script__set_name_dynamically_from_application_config(
     application_response.template_vars["job_script_name"] = new_name
 
     mocked_fetch_application_data = mocker.patch(
-        "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
+        "jobbergate_cli.subapps.applications.tools.fetch_application_data",
         return_value=application_response,
     )
     assert application_response.workflow_files is not None
@@ -458,7 +615,7 @@ def test_render_job_script__set_name_dynamically_from_jobbergate_config(
     application_response.workflow_files[0].runtime_config["job_script_name"] = new_name
 
     mocked_fetch_application_data = mocker.patch(
-        "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
+        "jobbergate_cli.subapps.applications.tools.fetch_application_data",
         return_value=application_response,
     )
     assert application_response.workflow_files is not None
@@ -525,7 +682,7 @@ def test_render_job_script__without_a_name(
 
     application_response = ApplicationResponse(**dummy_application_data[0])
     mocked_fetch_application_data = mocker.patch(
-        "jobbergate_cli.subapps.job_scripts.tools.fetch_application_data",
+        "jobbergate_cli.subapps.applications.tools.fetch_application_data",
         return_value=application_response,
     )
     assert application_response.workflow_files is not None
@@ -720,6 +877,18 @@ class TestGetTemplateOutputNameMapping:
         with tweak_settings(JOBBERGATE_LEGACY_NAME_CONVENTION=True):
             assert get_template_output_name_mapping(config, "dummy-name") == expected_mapping
 
+    def test_default_template_valid_output_name__legacy_mode_disabled(self, tweak_settings):
+        """Regression test ensuring the legacy name convention is not applied when explicitly disabled."""
+        config = JobbergateConfig(
+            default_template="templates/template.j2",
+            supporting_files=None,
+            supporting_files_output_name=None,
+        )
+        expected_mapping = {"template.j2": "template"}
+
+        with tweak_settings(JOBBERGATE_LEGACY_NAME_CONVENTION=False):
+            assert get_template_output_name_mapping(config, "dummy-name") == expected_mapping
+
     def test_supporting_files_with_valid_output_names(self):
         config = JobbergateConfig(
             template_files=[pathlib.Path("templates/template1.j2"), pathlib.Path("templates/template2.j2")],
@@ -799,9 +968,11 @@ class TestUploadJobScriptFiles:
             dummy_support_2 = tmp_path / "dummy-support-2.txt"
             dummy_support_2.write_text("dummy 2")
 
-            upload_job_script_files(
+            result = upload_job_script_files(
                 dummy_context, self.job_script_id, dummy_job_script, [dummy_support_1, dummy_support_2]
             )
+
+            assert result == [dummy_job_script, dummy_support_1, dummy_support_2]
 
             assert routes["upload_entrypoint"].call_count == 1
             assert b'filename="dummy.sh"' in routes["upload_entrypoint"].calls[0].request.content

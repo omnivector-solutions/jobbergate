@@ -9,11 +9,13 @@ from typing import Annotated, Any, Dict, cast
 import typer
 
 from jobbergate_cli.constants import SortOrder
+from jobbergate_cli.context import get_active_context
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import ApplicationResponse, ContextProtocol
+from jobbergate_cli.schemas import ApplicationResponse
 from jobbergate_cli.subapps.applications.tools import (
+    clear_application_runtime_cache,
     fetch_application_data,
     save_application_files,
     upload_application,
@@ -91,7 +93,7 @@ app = typer.Typer(
 
 @app.command("list")
 def list_all(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     show_all: Annotated[
         bool, typer.Option("--all", help="Show all applications, even the ones without identifier")
     ] = False,
@@ -110,7 +112,7 @@ def list_all(
     """
     Show available applications
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
 
     params: Dict[str, Any] = {
         "include_null_identifier": show_all,
@@ -140,7 +142,7 @@ def list_all(
 
 @app.command()
 def get_one(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     id_or_identifier: Annotated[
         str | None,
         typer.Argument(
@@ -161,11 +163,11 @@ def get_one(
             help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}",
         ),
     ] = None,
-):
+) -> ApplicationResponse:
     """
     Show the detailed view of a single application by id or identifier
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
     result = fetch_application_data(
         jg_ctx,
         id_or_identifier=resolve_application_selection(id_or_identifier, application_id, identifier),
@@ -176,11 +178,13 @@ def get_one(
         hidden_fields=HIDDEN_FIELDS,
         title="Application",
     )
+    return result
 
 
 @app.command()
 def create(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
+    *,
     name: Annotated[
         str,
         typer.Option(
@@ -209,7 +213,7 @@ def create(
             help="A helpful description of the application",
         ),
     ] = None,
-):
+) -> ApplicationResponse:
     """
     Create a new application.
     """
@@ -221,7 +225,7 @@ def create(
     if application_desc:
         req_data["description"] = application_desc
 
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
 
     result = cast(
         Dict[str, Any],
@@ -261,11 +265,12 @@ def create(
             hidden_fields=HIDDEN_FIELDS,
             title="Created Application",
         )
+    return ApplicationResponse(**result)
 
 
 @app.command()
 def update(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     id_or_identifier: Annotated[str | None, typer.Argument(help=SELECT_APPLICATION_HELP)] = None,
     application_id: Annotated[
         int | None,
@@ -297,7 +302,7 @@ def update(
             help="Optional value to update is_archived field on this entry",
         ),
     ] = None,
-):
+) -> ApplicationResponse:
     """
     Update an existing application.
     """
@@ -317,7 +322,7 @@ def update(
     if is_archived is not None:
         req_data["is_archived"] = is_archived
 
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
 
     if req_data:
         make_request(
@@ -342,9 +347,11 @@ def update(
         )
         raise e
     finally:
-        if not application_id and update_identifier:
-            # We need to fetch from new identifier if it was updated
-            identifier = update_identifier
+        # The application may have changed, so any cached runtime for it is stale
+        clear_application_runtime_cache()
+        if update_identifier and isinstance(identification, str):
+            # The application was selected by identifier, so it needs to be fetched by the new one
+            identification = update_identifier
         result = fetch_application_data(jg_ctx, identification)
 
         render_single_result(
@@ -353,11 +360,12 @@ def update(
             hidden_fields=HIDDEN_FIELDS,
             title="Updated Application",
         )
+    return result
 
 
 @app.command()
 def delete(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     id_or_identifier: Annotated[str | None, typer.Argument(help=SELECT_APPLICATION_HELP)] = None,
     application_id: Annotated[
         int | None,
@@ -375,7 +383,7 @@ def delete(
     """
     Delete an existing application.
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
 
     identification = resolve_application_selection(id_or_identifier, application_id, identifier)
 
@@ -389,6 +397,8 @@ def delete(
         abort_message="Request to delete application was not accepted by the API",
         support=True,
     )
+    # Drop any cached runtime for the deleted application (its identifier may even be reused)
+    clear_application_runtime_cache()
     terminal_message(
         """
         The application was successfully deleted.
@@ -399,7 +409,7 @@ def delete(
 
 @app.command()
 def download_files(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     id_or_identifier: Annotated[str | None, typer.Argument(help=SELECT_APPLICATION_HELP)] = None,
     application_id: Annotated[
         int | None,
@@ -413,11 +423,11 @@ def download_files(
         str | None,
         typer.Option(help=f"Alternative way to specify identifier. {IDENTIFIER_NOTE}"),
     ] = None,
-):
+) -> list[pathlib.Path]:
     """
     Download the files from an application to the current working directory.
     """
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
 
     result = fetch_application_data(
         jg_ctx,
@@ -436,11 +446,12 @@ def download_files(
         ).strip(),
         subject="Application download succeeded",
     )
+    return saved_files
 
 
 @app.command()
 def clone(
-    ctx: typer.Context,
+    ctx: typer.Context = None,  # type: ignore[assignment]
     id_or_identifier: Annotated[str | None, typer.Argument(help=SELECT_APPLICATION_HELP)] = None,
     application_id: Annotated[
         int | None,
@@ -472,7 +483,7 @@ def clone(
         str | None,
         typer.Option(help="Optional new application name to override the original"),
     ] = None,
-):
+) -> ApplicationResponse:
     """
     Clone an application, so the user can own and modify a copy of it.
     """
@@ -489,7 +500,7 @@ def clone(
     if application_name:
         req_data["name"] = application_name
 
-    jg_ctx: ContextProtocol = ctx.obj
+    jg_ctx = get_active_context(ctx)
 
     result = cast(
         ApplicationResponse,
@@ -511,3 +522,4 @@ def clone(
         hidden_fields=HIDDEN_FIELDS,
         title="Cloned Application",
     )
+    return result
