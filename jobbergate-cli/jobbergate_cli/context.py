@@ -142,7 +142,7 @@ def get_active_context(override: ContextProtocol | typer.Context | click.Context
             f"Got an override of type {type(override).__name__} instead of a Jobbergate context. "
             "When calling commands directly as functions, pass all arguments as keyword arguments "
             "to avoid binding a positional value to the ``ctx`` parameter.",
-            raise_kwargs=dict(subject="Invalid context override", support=True),
+            raise_kwargs={"subject": "Invalid context override", "support": True},
         )
         return cast(ContextProtocol, override)
 
@@ -151,5 +151,5 @@ def get_active_context(override: ContextProtocol | typer.Context | click.Context
         "No active Jobbergate context is available. When calling commands directly, either run them "
         "from within a Jobbergate CLI session or activate a context first with "
         "``with active_context(JobbergateContext()):``.",
-        raise_kwargs=dict(subject="No active context", support=True),
+        raise_kwargs={"subject": "No active context", "support": True},
     )

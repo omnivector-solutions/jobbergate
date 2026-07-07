@@ -85,13 +85,13 @@ def recreate(**kwargs: Any) -> JobScriptResponse | list[pathlib.Path] | None:
         "No job-script creation is in progress. ``recreate`` can only be called from within "
         "an application spawned by the ``create`` or ``create-locally`` commands; it is not "
         "available from any other command.",
-        raise_kwargs=dict(subject="No creation in progress", support=True),
+        raise_kwargs={"subject": "No creation in progress", "support": True},
     )
     Abort.require_condition(
         not _recreation_locked.get(),
         "``recreate`` was called from a run that was itself started by ``recreate``. Only one "
         "level of recreation is allowed, to rule out unbounded recursion.",
-        raise_kwargs=dict(subject="Recursive recreation blocked", support=True),
+        raise_kwargs={"subject": "Recursive recreation blocked", "support": True},
     )
 
     accepted_params = inspect.signature(bound_command.func).parameters
