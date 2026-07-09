@@ -22,6 +22,6 @@ dev = [
     "pytest>=8.4.1,<9",
     "requests-mock>=1.12.1",
     "respx>=0.23.1",
-    "ruff>=0.15.17",
+    "ruff>=0.15.19",
     "towncrier>=24.11.0",
 ]
