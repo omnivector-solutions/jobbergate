@@ -529,8 +529,10 @@ class ApplicationRuntime:
         try:
             result = self._gather_answers(app_module, dict(supplied_params or {}), fast_mode)
         except Abort:
+            logger.exception("The question workflow aborted while executing the application")
             raise
         except Exception as err:
+            logger.exception("The question workflow failed with an unexpected runtime error")
             raise Abort(
                 "The question workflow failed to execute. Please check the log file for more information.",
                 subject=f"Runtime error on application execution - {type(err).__name__}",
