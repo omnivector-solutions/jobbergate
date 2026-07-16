@@ -25,6 +25,7 @@ from jobbergate_cli.schemas import (
     TemplateFileResponse,
     WorkflowFileResponse,
 )
+from jobbergate_cli.subapps.applications import tools as application_tools
 from jobbergate_cli.subapps.applications.application_base import JobbergateApplicationBase
 from jobbergate_cli.subapps.applications.questions import Text
 from jobbergate_cli.subapps.applications.tools import (
@@ -508,8 +509,9 @@ class TestApplicationRuntime:
         # The runtime inputs are untouched by the executions
         assert application_runtime.app_config == initial_config
 
-    def test_run__wraps_unexpected_errors_in_abort(self, application_runtime):
+    def test_run__wraps_unexpected_errors_in_abort(self, application_runtime, mocker):
         original_error = ValueError("BOOM!")
+        exception_logger = mocker.patch.object(application_tools.logger, "exception")
 
         class DummyApplication(JobbergateApplicationBase):
             def mainflow(self, data):
@@ -523,9 +525,11 @@ class TestApplicationRuntime:
         assert exc_info.value.original_error is original_error
         assert "ValueError" in exc_info.value.subject
         assert exc_info.value.__cause__ is original_error
+        exception_logger.assert_called_once_with("The question workflow failed with an unexpected runtime error")
 
-    def test_run__inner_abort_propagates_unwrapped(self, application_runtime):
+    def test_run__inner_abort_propagates_unwrapped(self, application_runtime, mocker):
         inner_abort = Abort("Inner abort", subject="Inner subject")
+        exception_logger = mocker.patch.object(application_tools.logger, "exception")
 
         class DummyApplication(JobbergateApplicationBase):
             def mainflow(self, data):
@@ -538,6 +542,7 @@ class TestApplicationRuntime:
 
         assert exc_info.value is inner_abort
         assert exc_info.value.subject == "Inner subject"
+        exception_logger.assert_called_once_with("The question workflow aborted while executing the application")
 
     def test_set_name_dynamically(self, application_runtime):
         class DummyApplication(JobbergateApplicationBase):
