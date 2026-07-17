@@ -798,7 +798,7 @@ class TestDirectInvocation:
         mocked_render = mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
 
         with active_context(dummy_context):
-            result = create(id_or_identifier="1", name="dummy-name", fast=True, submit=False, download=False)
+            result, _ = create(id_or_identifier="1", name="dummy-name", fast=True, submit=False, download=False)
 
         assert result == job_script_result
         mocked_render_job_script.assert_called_once_with(
@@ -847,7 +847,7 @@ class TestDirectInvocation:
         mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
 
         with active_context(dummy_context):
-            result = create(id_or_identifier="1", fast=True, submit=False, download=False)
+            result, _ = create(id_or_identifier="1", fast=True, submit=False, download=False)
 
         assert result == job_script_result
         assert rendered_selectors == [1, 1]
@@ -1002,7 +1002,7 @@ class TestDirectInvocation:
         mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
 
         with active_context(dummy_context):
-            result = create(id_or_identifier="1", fast=True, submit=False, download=False)
+            result, _ = create(id_or_identifier="1", fast=True, submit=False, download=False)
 
         assert result == job_script_result
         assert rendered_selectors == [1, 1, 1]
@@ -1043,7 +1043,7 @@ class TestDirectInvocation:
         mocker.patch("jobbergate_cli.subapps.job_scripts.app.render_single_result")
 
         with active_context(dummy_context):
-            result = create(
+            result, _ = create(
                 id_or_identifier="1",
                 name="dummy-name",
                 fast=True,
@@ -1144,7 +1144,7 @@ class TestDirectInvocation:
         )
 
         with active_context(dummy_context):
-            result = create(id_or_identifier="1", name="dummy-name", fast=True, submit=True, download=False)
+            result, _ = create(id_or_identifier="1", name="dummy-name", fast=True, submit=True, download=False)
 
         assert result == job_script_result
         submissions_handler.run.assert_called_once_with()

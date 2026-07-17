@@ -23,7 +23,7 @@ from jobbergate_cli.context import get_active_context
 from jobbergate_cli.exceptions import Abort
 from jobbergate_cli.render import StyleMapper, render_single_result, terminal_message
 from jobbergate_cli.requests import make_request
-from jobbergate_cli.schemas import JobScriptCreateRequest, JobScriptFile, JobScriptResponse
+from jobbergate_cli.schemas import JobScriptCreateRequest, JobScriptFile, JobScriptResponse, JobSubmissionResponse
 from jobbergate_cli.subapps.job_scripts.tools import (
     download_job_script_files,
     fetch_job_script_data,
@@ -331,7 +331,7 @@ def create_locally(
         Dict[str, Any] | None,
         typer.Option(hidden=True, parser=json.loads),
     ] = None,
-) -> list[pathlib.Path] | None:
+) -> list[pathlib.Path]:
     """
     Create a job-script from local application files (ideal for development and troubleshooting).
 
@@ -450,7 +450,7 @@ def create(
         Dict[str, Any] | None,
         typer.Option(hidden=True, parser=json.loads),
     ] = None,
-) -> JobScriptResponse:
+) -> tuple[JobScriptResponse, JobSubmissionResponse | None]:
     """
     Create a new job script from an application.
     """
@@ -520,7 +520,7 @@ def create(
             download_job_script_files(job_script_result.job_script_id, jg_ctx, pathlib.Path.cwd())
 
     if not submit:
-        return job_script_result
+        return job_script_result, None
 
     try:
         submissions_handler = job_submissions_factory(
@@ -552,7 +552,7 @@ def create(
         hidden_fields=JOB_SUBMISSION_HIDDEN_FIELDS,
         title="Created Job Submission (Fast Mode)",
     )
-    return job_script_result
+    return job_script_result, job_submission_result
 
 
 @app.command()
