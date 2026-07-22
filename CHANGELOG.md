@@ -11,6 +11,41 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.11.0a1](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.11.0a1) - 2026-07-22
+
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+No significant changes.
+
+
+## CLI
+
+### Added
+
+- Enhanced traceback logging for application runtime errors in jobbergate-cli. The logger now captures detailed exception information when the question workflow fails, aiding in debugging and error resolution. ([PR #988](https://github.com/omnivector-solutions/jobbergate/pull/988))
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.11.0a0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.11.0a0) - 2026-07-07
 
 
