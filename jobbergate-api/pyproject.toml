@@ -140,7 +140,7 @@ warn_untyped_fields = true
 
 [build-system]
 requires = [
-    "hatchling>=1.28.0",          # Build the package
+    "hatchling>=1.31.0",          # Build the package
     "hatch-vcs",                  # Recover the version from current git tag
 ]
 build-backend = "hatchling.build"

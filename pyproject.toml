@@ -12,7 +12,7 @@ members = [
 [dependency-groups]
 dev = [
     "faker>=40.28.1",
-    "mypy>=2.1.0",
+    "mypy>=2.2.0",
     "polyfactory>=3.3.0",
     "pytest-asyncio>=1.4.0,<2",
     "pytest-cov>=7.1.0",

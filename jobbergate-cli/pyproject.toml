@@ -75,7 +75,7 @@ ignore_missing_imports = true
 
 [build-system]
 requires = [
-    "hatchling>=1.28.0",          # Build the package
+    "hatchling>=1.31.0",          # Build the package
     "hatch-dependency-coversion", # pin jobbergate-core to the same version as the cli at build time
     "hatch-vcs",                  # Recover the version from current git tag
 ]
