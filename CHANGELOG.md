@@ -11,42 +11,7 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
-# [5.11.0a1](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.11.0a1) - 2026-07-22
-
-
-## Core
-
-No significant changes.
-
-
-## Agent
-
-No significant changes.
-
-
-## Agent Snap
-
-No significant changes.
-
-
-## API
-
-No significant changes.
-
-
-## CLI
-
-### Added
-
-- Enhanced traceback logging for application runtime errors in jobbergate-cli. The logger now captures detailed exception information when the question workflow fails, aiding in debugging and error resolution. ([PR #988](https://github.com/omnivector-solutions/jobbergate/pull/988))
-
-
-## Documentation
-
-No significant changes.
-
-
-# [5.11.0a0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.11.0a0) - 2026-07-07
+# [5.11.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.11.0) - 2026-07-31
 
 
 ## Core
@@ -76,6 +41,7 @@ No significant changes.
 - All CLI commands can now be imported and called directly as regular Python functions (e.g. from `jobbergate.py` application scripts), replacing recursive `subprocess.run` calls: the Jobbergate context is shared through a ContextVar-based active context and commands return the resources they operate on [ASP-9767] ([PR #980](https://github.com/omnivector-solutions/jobbergate/pull/980))
 - Added `recreate` to the job-scripts subapp: applications can re-invoke the creation flow currently executing them (`create` with the same id or identifier, `create-locally` with the same path) without knowing how they were invoked; arguments the underlying command does not take are ignored with a logged warning, it aborts from any other command, and recreation is limited to a single level to rule out unbounded recursion ([PR #980](https://github.com/omnivector-solutions/jobbergate/pull/980))
 - Added a function-only `param_dict` argument to `job-scripts create` and `create-locally` (hidden from the CLI help), so programmatic callers can supply template parameters as a dictionary instead of a JSON parameter file ([PR #980](https://github.com/omnivector-solutions/jobbergate/pull/980))
+- Enhanced traceback logging for application runtime errors in jobbergate-cli. The logger now captures detailed exception information when the question workflow fails, aiding in debugging and error resolution. ([PR #988](https://github.com/omnivector-solutions/jobbergate/pull/988))
 
 ### Changed
 
