@@ -8,6 +8,8 @@ By making a simple, local deployment of Jobbergate, this project provides:
 - An example against which guides, tutorials, and other examples can operate
 - A demonstration of how Jobbergate interacts with other components
 - A reference for the environment variables and settings Jobbergate relies upon
+- A test-bed for the `jobbergate-cluster-api` PoC (interactive Q/A sessions on the
+  cluster over ttyd, host port 8003 — see `../jobbergate-cluster-api/README.md`)
 
 
 > **Warning**

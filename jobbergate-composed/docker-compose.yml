@@ -284,6 +284,53 @@ services:
       slurmctld:
         condition: service_started
 
+  jobbergate-cluster-api:
+    build:
+      context: .
+      dockerfile: Dockerfile-slurm
+      target: slurm-base
+    image: slurm-docker-cluster
+    networks:
+      - jobbergate-net
+    command: ["jobbergate-cluster-api"]
+    container_name: jobbergate-cluster-api
+    hostname: jobbergate-cluster-api
+    environment:
+      - CLUSTER_API_ARMASEC_DOMAIN=keycloak.local:8080/realms/jobbergate-local
+      - CLUSTER_API_ARMASEC_USE_HTTPS=false
+      - CLUSTER_API_ARMASEC_DEBUG=false
+      - CLUSTER_API_SESSIONS_DIR=/nfs/cluster-api-sessions
+      - CLUSTER_API_SESSIONS_PARTITION=interactive
+      - CLUSTER_API_SUBMIT_USER=local-user
+      - CLUSTER_API_CLUSTER_NAME=local-slurm
+      - CLUSTER_API_CLI_BASE_API_URL=http://jobbergate-api:80
+      - CLUSTER_API_CLI_OIDC_DOMAIN=keycloak.local:8080/realms/jobbergate-local
+      - CLUSTER_API_CLI_OIDC_CLIENT_ID=cli
+      - CLUSTER_API_CLI_OIDC_USE_HTTPS=false
+      - CLUSTER_API_APP_DIR=/app
+      - CLUSTER_API_UV_CACHE_DIR=/nfs/.uv-cache
+      - CLUSTER_API_UV_ENV_DIR=/nfs/.venvs/jobbergate-cli
+    volumes:
+      - etc_munge:/etc/munge
+      - var_log_slurm:/var/log/slurm
+      - ./slurm-fake-nfs:/nfs
+      - ./slurm-work-dir:/slurm-work-dir
+      - ..:/app/
+    ports:
+      - 8003:8000
+    healthcheck:
+      test: curl --fail http://localhost:8000/jobbergate/health || exit 1
+      interval: 5s
+      retries: 20
+      timeout: 5s
+    depends_on:
+      jobbergate-api:
+        condition: service_healthy
+      slurmctld:
+        condition: service_started
+      keycloak.local:
+        condition: service_healthy
+
   slurmdbd:
     build:
       context: .

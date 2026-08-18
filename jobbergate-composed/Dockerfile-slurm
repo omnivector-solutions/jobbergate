@@ -6,7 +6,7 @@ ARG GOSU_VERSION=1.16
 
 RUN set -ex \
     && apt update \
-    && apt install -y wget gpg python3-dev python3-pip \
+    && apt install -y wget gpg python3-dev python3-pip git curl \
     && wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-amd64" \
     && wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-amd64.asc" \
     && export GNUPGHOME="$(mktemp -d)" \
@@ -28,6 +28,17 @@ RUN set -ex \
     && apt update \
     && apt install slurm-wlm-basic-plugins slurmd slurmdbd slurmctld mysql-client -y \
     && rm -rf "${GNUPGHOME}" ubuntu-hpc.pub
+
+
+# Install ttyd (terminal-over-web used by jobbergate-cluster-api interactive
+# sessions on the compute nodes) and uv (to run the CLI from the mounted workspace)
+ARG TTYD_VERSION=1.7.7
+RUN set -ex \
+    && wget -O /usr/local/bin/ttyd "https://github.com/tsl0922/ttyd/releases/download/${TTYD_VERSION}/ttyd.x86_64" \
+    && chmod +x /usr/local/bin/ttyd \
+    && ttyd --version
+
+COPY --from=ghcr.io/astral-sh/uv:0.10.8@sha256:88234bc9e09c2b2f6d176a3daf411419eb0370d450a08129257410de9cfafd2a /uv /usr/local/bin/uv
 
 
 # Prepare Filesystem

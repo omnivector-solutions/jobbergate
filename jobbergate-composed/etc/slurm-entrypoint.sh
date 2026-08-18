@@ -70,4 +70,21 @@ then
     uv run --python 3.12 --no-dev --package --frozen jobbergate-agent jg-run
 fi
 
+if [[ "$1" = "jobbergate-cluster-api" ]]
+then
+    echo "---> Waiting for slurmctld to become active before starting jobbergate-cluster-api..."
+
+    until 2>/dev/null >/dev/tcp/slurmctld/6817
+    do
+        echo "-- slurmctld is not available.  Sleeping ..."
+        sleep 2
+    done
+    echo "-- slurmctld is now active ..."
+
+    echo "---> Starting Jobbergate Cluster API ..."
+    cd /app
+    exec uv run --python 3.12 --package jobbergate-cluster-api \
+        uvicorn jobbergate_cluster_api.main:app --host 0.0.0.0 --port 8000
+fi
+
 exec "$@"

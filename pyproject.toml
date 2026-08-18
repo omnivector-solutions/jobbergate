@@ -2,6 +2,7 @@
 members = [
     "jobbergate-core",
     "jobbergate-cli",
+    "jobbergate-cluster-api",
     "jobbergate-agent",
     "jobbergate-api",
     "jobbergate-docs",
