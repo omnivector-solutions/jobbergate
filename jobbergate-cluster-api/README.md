@@ -137,7 +137,7 @@ is authenticated **as the user** without any interactive login:
 1. The web app forwards the user's existing **access token** (and, when available, the refresh
    token) in the `POST /sessions` call.
 2. The cluster API validates the access token against Keycloak (same Armasec permission model as
-   the cloud API — new scopes `jobbergate:sessions:{view,edit}`).
+   the cloud API): the guard mirrors the job-script creation route, `jobbergate:admin` OR `jobbergate:job-scripts:create`.
 3. It writes the token(s) into a **per-session, mode-0700, tmpfs-backed** cache directory and
    points the session job at it via `JOBBERGATE_CACHE_DIR`.
 4. The CLI inside ttyd picks the tokens up transparently; every request it makes to the cloud API
@@ -206,8 +206,8 @@ New service in `jobbergate-composed/docker-compose.yml`:
   `jobbergate-cli`. Joins the cluster as a submit host; mounts the shared `/nfs` volume and the
   munge key volume; exposes port `8003` to the host for the web app / manual browser testing.
 - **Slurm config** — add the `interactive` partition to the composed `slurm.conf` over `c1,c2`.
-- **Keycloak** — add `jobbergate:sessions:view` / `jobbergate:sessions:edit` roles to the
-  existing realm export, attached to the CLI client's user.
+- **Keycloak** — no realm changes: the session guard reuses the existing job-script
+  creation permissions.
 - Smoke test: `curl -X POST :8003/jobbergate/sessions -H "Authorization: Bearer $(jobbergate
   show-token --plain)" -d '{"application_identifier": "simple-application"}'`, open the returned
   URL in a browser, answer the questions, watch the submission land in `squeue`.
@@ -229,7 +229,7 @@ What is implemented in this sub-project (a uv workspace member, tested with
 | Module | Purpose |
 |---|---|
 | `jobbergate_cluster_api/config.py` | `CLUSTER_API_*` settings (Armasec domain, sessions dir/partition, submit user, CLI passthrough env). |
-| `jobbergate_cluster_api/security.py` | Armasec guard; sessions are locked down with the existing `jobbergate:job-scripts:edit` permission, so **no new realm roles are needed**. |
+| `jobbergate_cluster_api/security.py` | Armasec guard; sessions are locked down with the cloud API's own job-script creation permissions (`jobbergate:admin` OR `jobbergate:job-scripts:create`), so **no new realm roles are needed**. |
 | `jobbergate_cluster_api/sessions.py` | Session dir + token-cache seeding, session job script rendering, `meta.json` persistence (API restart-safe), status derivation, credential shredding. |
 | `jobbergate_cluster_api/slurm.py` | `sbatch --parsable` / `scontrol show job` / `scancel` wrappers, run as `SUBMIT_USER` via `gosu`. |
 | `jobbergate_cluster_api/proxy.py` | HTTP + websocket reverse proxy to the per-session ttyd (subprotocol `tty`). |
@@ -263,6 +263,154 @@ curl -s -X POST http://localhost:8003/jobbergate/sessions \
 Not yet implemented (tracked in [Future work](#future-work-explicitly-out-of-scope-now)):
 result-id reporting (`job_script_id`/`job_submission_id` stay `null`; the `exit_code` file is the
 completion signal), reconnectable sessions, tunneling, and real user mapping.
+
+## Self-guided demo
+
+A complete walkthrough on your own machine, from zero to answering an application's
+questions in a browser terminal while the flow runs on a Slurm compute node.
+
+**0. Prerequisites.** Docker Desktop running, and the Keycloak alias in your hostfile
+(`/etc/hosts` on Linux/macOS):
+
+```
+127.0.0.1   keycloak.local
+```
+
+**1. Bring up the stack** (first build takes a few minutes):
+
+```bash
+cd jobbergate-composed
+docker compose up --build -d
+```
+
+Wait until `docker compose ps` shows `jobbergate-api` healthy and
+`jobbergate-cluster-api` healthy, and the compute nodes are idle:
+
+```bash
+docker exec slurmctld sinfo
+# interactive    up      30:00      2   idle c[1-2]   <- the sessions partition
+```
+
+**2. Log in and register the example application.** The composed stack ships a demo
+user (`local-user` / password `local`) and mounts the example application at
+`/simple-example` inside the CLI container:
+
+```bash
+docker compose run jobbergate-cli bash
+# inside the container:
+jobbergate login          # open the printed link, sign in as local-user / local
+jobbergate applications create --name simple \
+    --identifier simple-application --application-path /simple-example
+```
+
+**3. Launch a web session with one command** (still inside the CLI container):
+
+```bash
+jobbergate job-scripts create-web simple-application
+```
+
+`create-web` forwards your token to the cluster API, opens the session, waits until
+the terminal is up (the first run pays a one-time `uv` environment build for the CLI
+on the shared volume), and prints the terminal URL. The composed stack sets
+`CLUSTER_API_URL=http://jobbergate-cluster-api:8000` (how the CLI reaches the API)
+and `CLUSTER_API_PUBLIC_URL=http://localhost:8003` (what your browser can reach) —
+so open the printed `http://localhost:8003/...` URL in your host browser. On a
+workstation install the command opens the browser for you.
+
+<details>
+<summary>Alternative: drive the raw REST API with curl (what a web app would do)</summary>
+
+Grab a token inside the CLI container with `jobbergate show-token --plain`, export
+it on your host as `ACCESS_TOKEN`, then:
+
+```bash
+curl -s -X POST http://localhost:8003/jobbergate/sessions \
+    -H "Authorization: Bearer $ACCESS_TOKEN" -H "Content-Type: application/json" \
+    -d '{"application_identifier": "simple-application"}' | python3 -m json.tool
+```
+
+The response carries `session_id`, the terminal `url`, and the one-time password
+`otp` — the OTP is only ever returned here. Poll
+`GET /jobbergate/sessions/<session_id>` until `"status": "RUNNING"`, then open
+`http://localhost:8003/jobbergate/sessions/<session_id>/terminal/?otp=<otp>`.
+
+</details>
+
+**4. Answer the questions in the browser.**
+You are now inside `jobbergate job-scripts create simple-application --submit`
+running **on a compute node**: answer the application's questions exactly as a
+cluster user would in ssh. When the flow completes it renders the job script and
+submits it on-site via `sbatch`, then the session closes itself (`ttyd --once`).
+
+**5. Verify the outcome:**
+
+```bash
+docker exec slurmctld gosu local-user squeue          # or sacct once it finishes
+docker compose run jobbergate-cli jobbergate job-submissions list   # attributed to local-user
+curl -s http://localhost:8003/jobbergate/sessions/<session_id> \
+    -H "Authorization: Bearer $ACCESS_TOKEN"           # "status": "FINISHED", "exit_code": 0
+```
+
+The seeded token cache is shredded as soon as the session reaches a terminal state.
+
+**6. Clean up:**
+
+```bash
+docker compose down          # add -v to also drop volumes (fresh Keycloak/DB next time)
+```
+
+If something misbehaves, the session's full trace is in
+`jobbergate-composed/slurm-fake-nfs/cluster-api-sessions/<session_id>/session.log`,
+and `docker logs jobbergate-cluster-api` has the API side.
+
+## Design deep-dive: why ttyd (and an unmodified jobbergate-cli)
+
+The single most important constraint on this design: **SME-authored applications must
+keep working exactly as they do today.** An application is arbitrary Python — a
+`jobbergate.py` subclassing `JobbergateApplicationBase`, with `mainflow()`,
+dynamically chained `nextworkflow` methods, and any `QuestionBase` subclass
+(`Text`, `Integer`, `List`, `Checkbox`, `Confirm`, ...). Teams have years of these
+in production.
+
+Any approach that reimplements the Q/A layer breaks that contract:
+
+| Alternative | Why it was rejected |
+|---|---|
+| Re-render questions as web forms (extract a JSON schema from the application, serve React forms) | The question flow is *imperative*, not declarative: `mainflow()` can compute the next question from previous answers, call out to the filesystem, or branch into `nextworkflow`. A schema extraction only covers the trivial subset — every non-trivial application would silently change behavior. It also forks the Q/A engine into two implementations that must be kept in sync forever. |
+| A [Textual](https://textual.textualize.io/) TUI adapter (map `QuestionBase` subclasses onto Textual widgets; web-servable via `textual serve`) | The most tempting middle ground — richer UI than a raw terminal, still Python, natively servable on the web. Initial tests confirmed the same trap as the web-forms path, though: the adapter only covers the declared `QuestionBase` API, and applications are free to do anything the CLI allows *outside* it (direct `print`/Rich output, custom prompts, mid-flow filesystem interaction). Anything beyond `QuestionBase` subclasses that works on the CLI can just break the Textual adapter. It could return later as an *opt-in* frontend for well-behaved declarative applications — same slot as the `param_dict` web-forms path — but it cannot be the compatibility baseline. |
+| A custom PTY-over-websocket bridge inside the API | Functionally the same as ttyd, but we own the terminal protocol, resize handling, flow control, and the xterm.js frontend. ttyd is exactly this, already hardened, in a single static ~1 MB binary. |
+| SSH / wetty into a login node | Requires cluster shell accounts and credentials management for web users — the very thing Jobbergate exists to avoid — and lands the flow on a login node, not inside a Slurm-accounted job. |
+| `srun --pty` attached from the API container | Ties the interactive session to a long-lived process inside the API (state, restarts, scaling all get harder). With `sbatch` + ttyd, Slurm owns the process and the API stays stateless. |
+
+What running the **stock CLI under ttyd** buys us:
+
+- **Full compatibility by construction.** The session runs literally
+  `jobbergate job-scripts create <id> --submit`. Every feature the CLI has — Q/A
+  flows, `ApplicationRuntime`, template rendering, `--sbatch-params`, on-site
+  submission via `SBATCH_PATH`, error reporting through `Abort` — is available on
+  day one, and every future CLI feature is inherited for free. There is no second
+  code path to test.
+- **The terminal is the contract.** `python-inquirer` (the CLI's prompt engine)
+  needs a real TTY with raw-mode key handling. ttyd provides a genuine PTY on the
+  compute node and xterm.js in the browser, so prompts, arrow-key lists, checkboxes,
+  and Rich's colored output all behave pixel-for-pixel like an ssh session.
+- **Session lifecycle for free.** `--once` means the terminal accepts exactly one
+  connection and the process tree ends when the CLI exits — the natural end of the
+  Q/A flow is the natural end of the web session, with no idle-terminal reaping
+  logic in the API. Slurm's `MaxTime` on the partition is the only backstop needed.
+- **The seams stay honest.** Because the CLI is unmodified, authentication had to go
+  through the CLI's *existing* seam (the token cache read by
+  `JobbergateAuthHandler`) rather than a bespoke handshake — which is precisely why
+  submissions come out attributed to the real user with no API changes.
+- **A migration path, not a dead end.** When we later want native web forms for the
+  *simple* subset of applications, the headless `param_dict` fast path (see Future
+  work) can serve them from the same endpoint — while ttyd remains the
+  100%-compatible fallback for everything imperative.
+
+The trade-off accepted: a terminal in an iframe is a terminal, not a polished web
+form, and `--once` sacrifices reconnection (a dropped connection means starting a
+new session). Both are considered acceptable for the PoC and are revisited in
+[Future work](#future-work-explicitly-out-of-scope-now).
 
 ## Design rationale / trade-offs
 

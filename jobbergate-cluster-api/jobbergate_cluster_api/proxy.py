@@ -29,6 +29,11 @@ _HOP_BY_HOP = {
     "upgrade",
 }
 
+# httpx transparently decompresses the upstream body, so the original encoding and
+# length headers no longer describe what we send downstream — forwarding them makes
+# browsers try to gunzip plain bytes (Safari's "Failed to Load Page")
+_CONTENT_REWRITTEN = {"content-encoding", "content-length"}
+
 
 async def proxy_http(endpoint: str, path: str, request: Request) -> Response:
     """Forward a plain HTTP request (the ttyd terminal page and its assets)."""
@@ -41,7 +46,9 @@ async def proxy_http(endpoint: str, path: str, request: Request) -> Response:
             headers=headers,
             content=await request.body(),
         )
-    response_headers = {k: v for k, v in upstream.headers.items() if k.lower() not in _HOP_BY_HOP}
+    response_headers = {
+        k: v for k, v in upstream.headers.items() if k.lower() not in _HOP_BY_HOP | _CONTENT_REWRITTEN
+    }
     return Response(content=upstream.content, status_code=upstream.status_code, headers=response_headers)
 
 

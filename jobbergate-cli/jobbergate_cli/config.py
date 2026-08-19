@@ -52,6 +52,12 @@ class Settings(BaseSettings):
     # Default job submission cluster
     DEFAULT_CLUSTER_NAME: Optional[str] = None
 
+    # Jobbergate Cluster API (interactive web sessions on the cluster)
+    # CLUSTER_API_URL is used by the CLI to reach the API; CLUSTER_API_PUBLIC_URL is
+    # the address the user's browser can reach (defaults to CLUSTER_API_URL)
+    CLUSTER_API_URL: Optional[str] = None
+    CLUSTER_API_PUBLIC_URL: Optional[str] = None
+
     # How long it will use cached cluster lists before fetching them again
     JOBBERGATE_CLUSTER_CACHE_LIFETIME: int = 60 * 5
 

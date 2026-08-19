@@ -3,7 +3,31 @@ set -e
 
 
 echo "---> Starting the MUNGE Authentication service (munged) ..."
+# The munge key lives on a shared named volume; ownership is not preserved on
+# Docker Desktop (macOS), and munged refuses to start on loose permissions
+chown -R munge:munge /etc/munge
+chmod 700 /etc/munge
+[ -f /etc/munge/munge.key ] && chmod 400 /etc/munge/munge.key
 service munge start
+
+echo "---> Starting the D-Bus system daemon (dbus) ..."
+mkdir -p /run/dbus
+rm -f /run/dbus/pid
+dbus-daemon --system --fork
+
+prepare_cgroups_for_slurmd() {
+    # Docker Desktop (macOS) runs containers on a unified cgroup v2 hierarchy:
+    # slurmd cannot create its slurmstepd scope unless the root cgroup's
+    # processes are moved aside and the controllers are delegated
+    echo "---> Preparing cgroup v2 delegation for slurmd ..."
+    mkdir -p /sys/fs/cgroup/init
+    for p in $(cat /sys/fs/cgroup/cgroup.procs); do
+        echo "$p" > /sys/fs/cgroup/init/cgroup.procs 2>/dev/null || true
+    done
+    echo "+cpu +cpuset +memory +io +pids" > /sys/fs/cgroup/cgroup.subtree_control
+    mkdir -p "/sys/fs/cgroup/system.slice/${HOSTNAME}_slurmstepd.scope"
+    echo "+cpu +cpuset +memory" > /sys/fs/cgroup/system.slice/cgroup.subtree_control
+}
 
 if [[ "$1" = "slurmdbd" ]]
 then
@@ -47,8 +71,12 @@ then
     done
     echo "-- slurmctld is now active ..."
 
+    prepare_cgroups_for_slurmd
+
     echo "---> Starting the Slurm Node Daemon (slurmd) ..."
-    exec /usr/sbin/slurmd -Dvvv
+    /usr/sbin/slurmd -Dvvv &
+    wait $!
+    exit $?
 fi
 
 if [[ "$1" = "jobbergate-agent" ]]
@@ -62,12 +90,14 @@ then
     done
     echo "-- slurmctld is now active ..."
 
+    prepare_cgroups_for_slurmd
+
     echo "---> Starting the Slurm Node Daemon (slurmd) ..."
-    exec /usr/sbin/slurmd -Dvvv &
+    /usr/sbin/slurmd -Dvvv &
 
     echo "---> Starting Jobbergate-agent ..."
     cd /app
-    uv run --python 3.12 --no-dev --package --frozen jobbergate-agent jg-run
+    uv run --python 3.12 --no-dev --frozen --package jobbergate-agent jg-run
 fi
 
 if [[ "$1" = "jobbergate-cluster-api" ]]

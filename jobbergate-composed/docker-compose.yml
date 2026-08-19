@@ -33,7 +33,8 @@ services:
     ports:
       - 8000:80
     healthcheck:
-      test: curl --fail http://localhost:80/jobbergate/health || exit 1
+      # The slim API image has no curl; probe the health route with python instead
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:80/jobbergate/health')"]
       interval: 5s
       retries: 10
       timeout: 5s
@@ -78,6 +79,11 @@ services:
     build:
       context: ..
       dockerfile: jobbergate-cli/Dockerfile
+    # The image's entrypoint is the jobbergate binary itself, which would turn
+    # `docker compose run jobbergate-cli bash` into `jobbergate bash` (an error).
+    # Clear it so the service drops into an interactive shell for exploration.
+    entrypoint: ""
+    command: ["bash"]
     networks:
       - jobbergate-net
     volumes:
@@ -95,6 +101,10 @@ services:
       - OIDC_CLIENT_ID=cli
       - OIDC_USE_HTTPS=false
       - DEFAULT_CLUSTER_NAME=local-slurm
+      - CLUSTER_API_URL=http://jobbergate-cluster-api:8000
+      - CLUSTER_API_PUBLIC_URL=http://localhost:8003
+      # Put the image's venv on PATH so `jobbergate` resolves in the interactive shell
+      - PATH=/app/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
   db:
     image: timescale/timescaledb:latest-pg17
@@ -189,6 +199,9 @@ services:
 
   keycloak.local:
     image: keycloak/keycloak:18.0.0
+    # Keycloak 18 ships amd64-only images; declare the platform explicitly so
+    # Apple Silicon hosts run it via Rosetta/QEMU without the mismatch warning
+    platform: linux/amd64
     restart: always
     networks:
       - jobbergate-net
@@ -211,7 +224,9 @@ services:
       timeout: 5s
 
   mysql:
-    image: mysql:5.7
+    # mariadb is multi-arch (mysql:5.7 has no arm64 image, which stalls the
+    # mysql -> slurmdbd -> slurmctld -> slurmd chain on Apple Silicon)
+    image: mariadb:10.11
     networks:
       - jobbergate-net
     hostname: mysql
@@ -369,6 +384,8 @@ services:
       - var_log_slurm:/var/log/slurm
       - ./slurm-fake-nfs:/nfs
       - ./slurm-work-dir:/slurm-work-dir
+      # Workspace mount so cluster-api session jobs can `uv run` the CLI on this node
+      - ..:/app/
     expose:
       - "6818"
     depends_on:
@@ -391,6 +408,8 @@ services:
       - var_log_slurm:/var/log/slurm
       - ./slurm-fake-nfs:/nfs
       - ./slurm-work-dir:/slurm-work-dir
+      # Workspace mount so cluster-api session jobs can `uv run` the CLI on this node
+      - ..:/app/
     expose:
       - "6818"
     depends_on:

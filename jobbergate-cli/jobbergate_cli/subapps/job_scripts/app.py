@@ -745,3 +745,126 @@ def clone(
         title="Cloned Job Script",
     )
     return job_script_result
+
+
+@app.command("create-web")
+def create_web(
+    ctx: typer.Context = None,  # type: ignore[assignment]
+    id_or_identifier: Annotated[
+        str | None,
+        typer.Argument(
+            help="The specific id or identifier of the application from which to create the job script.",
+        ),
+    ] = None,
+    application_id: Annotated[
+        int | None,
+        typer.Option(
+            "--application-id",
+            "-i",
+            help="Alternative way to specify the application id.",
+        ),
+    ] = None,
+    application_identifier: Annotated[
+        str | None,
+        typer.Option(help="Alternative way to specify the application identifier."),
+    ] = None,
+    sbatch_params: Annotated[
+        List[str] | None,
+        typer.Option(help="Optional parameter to submit raw sbatch parameters."),
+    ] = None,
+    wait_timeout: Annotated[
+        int,
+        typer.Option(help="Seconds to wait for the web terminal to come up before giving up."),
+    ] = 300,
+) -> None:
+    """
+    Create a job script interactively on the cluster through a web terminal session.
+
+    The question/answer flow runs on a compute node (so it can verify files on the
+    cluster and submit on-site right away), and is served back through the browser
+    by the Jobbergate Cluster API.
+    """
+    import time
+
+    import httpx
+
+    from jobbergate_cli.auth import open_on_browser
+
+    Abort.require_condition(
+        settings.CLUSTER_API_URL,
+        "CLUSTER_API_URL must be set to use web sessions.",
+        raise_kwargs=dict(subject="Cluster API not configured", support=True),
+    )
+    jg_ctx = get_active_context(ctx)
+    selector = resolve_application_selection(id_or_identifier, application_id, application_identifier)
+
+    handler = jg_ctx.authentication_handler
+    # acquire_access() returns the token already prefixed as "Bearer <token>"
+    bearer_access = handler.acquire_access()
+    refresh_token = handler._refresh_token.content if handler._refresh_token.is_valid() else None
+
+    payload: Dict[str, Any] = {"sbatch_params": sbatch_params, "refresh_token": refresh_token}
+    if isinstance(selector, int) or str(selector).isdigit():
+        payload["application_id"] = int(selector)
+    else:
+        payload["application_identifier"] = str(selector)
+
+    base_url = str(settings.CLUSTER_API_URL).rstrip("/")
+    headers = {"Authorization": bearer_access}
+    try:
+        with httpx.Client(base_url=base_url, headers=headers, timeout=30) as client:
+            response = client.post("/jobbergate/sessions", json=payload)
+            Abort.require_condition(
+                response.status_code == 201,
+                f"Couldn't create the web session: {response.text}",
+                raise_kwargs=dict(subject="Session creation failed", support=True),
+            )
+            session = response.json()
+            logger.debug(f"Session {session['session_id']} created (slurm job {session.get('slurm_job_id')})")
+
+            deadline = time.monotonic() + wait_timeout
+            status = session["status"]
+            while status in ("PENDING",):
+                Abort.require_condition(
+                    time.monotonic() < deadline,
+                    f"The web terminal did not come up within {wait_timeout}s.",
+                    raise_kwargs=dict(subject="Session timed out", support=True),
+                )
+                time.sleep(2)
+                poll = client.get(f"/jobbergate/sessions/{session['session_id']}")
+                poll.raise_for_status()
+                status = poll.json()["status"]
+    except httpx.HTTPError as err:
+        raise Abort(
+            dedent(
+                f"""
+                Couldn't reach the Cluster API at {base_url}:
+
+                [red]{err}[/red]
+
+                Check that the jobbergate-cluster-api service is up and that
+                CLUSTER_API_URL points at it.
+                """
+            ),
+            subject="Cluster API unavailable",
+            support=True,
+            log_message=f"Cluster API request failed: {err}",
+            original_error=err,
+        )
+
+    Abort.require_condition(
+        status == "RUNNING",
+        f"The session ended before the terminal came up (status: {status}).",
+        raise_kwargs=dict(subject="Session failed", support=True),
+    )
+
+    public_base = str(settings.CLUSTER_API_PUBLIC_URL or settings.CLUSTER_API_URL).rstrip("/")
+    terminal_url = f"{public_base}{session['url']}?otp={session['otp']}"
+
+    kwargs: Dict[str, Any] = {"subject": "Web terminal session ready"}
+    if open_on_browser(terminal_url):
+        kwargs["footer"] = "The session was opened on your browser"
+    terminal_message(
+        f"Answer the application questions in the web terminal:\n\n{terminal_url}",
+        **kwargs,
+    )

@@ -2,18 +2,20 @@
 Auth guard for the cluster API.
 
 Reuses the same Armasec/OIDC validation as the cloud jobbergate-api. Sessions are
-locked down with the existing ``jobbergate:job-scripts:edit`` permission — creating a
-session is, functionally, creating a job script — so no new realm roles are required
-for the PoC.
+locked down with the existing job-script creation permissions — creating a session
+is, functionally, creating a job script — so no new realm roles are required for the
+PoC. The guard mirrors the cloud API's route exactly: ``jobbergate:admin`` OR
+``jobbergate:job-scripts:create`` (PermissionMode.SOME).
 """
 
 from armasec import Armasec
+from armasec.token_security import PermissionMode
 from fastapi import HTTPException, Request, status
 from loguru import logger
 
 from jobbergate_cluster_api.config import settings
 
-SESSION_PERMISSION = "jobbergate:job-scripts:edit"
+SESSION_PERMISSIONS = ("jobbergate:admin", "jobbergate:job-scripts:create")
 
 guard = Armasec(
     domain=settings.ARMASEC_DOMAIN,
@@ -23,7 +25,7 @@ guard = Armasec(
 )
 
 
-lockdown_session = guard.lockdown(SESSION_PERMISSION)
+lockdown_session = guard.lockdown(*SESSION_PERMISSIONS, permission_mode=PermissionMode.SOME)
 
 
 def get_bearer_token(request: Request) -> str:
