@@ -245,3 +245,67 @@ def test_boolean_list__same_variable_name(dummy_render_class, parent_answer):
     expected_ignored_questions = [False, not parent_answer, parent_answer]
     actual_ignored_questions = [q.ignore for q in prompts]
     assert actual_ignored_questions == expected_ignored_questions
+
+
+class TestJsonSchema:
+    """The JSON Schema surface: single source of truth for wire format and validation."""
+
+    def test_text__base_schema(self):
+        question = Text("foo", message="gimme the foo!", default="foo")
+        assert question.json_schema() == {"title": "gimme the foo!", "type": "string", "default": "foo"}
+
+    def test_integer__range_schema(self):
+        question = Integer("ntasks", message="how many?", default=2, minval=1, maxval=8)
+        assert question.json_schema() == {
+            "title": "how many?",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8,
+            "default": 2,
+        }
+
+    def test_list__enum_schema(self):
+        question = List("queue", message="which?", choices=["a", "b"], default="a")
+        assert question.json_schema() == {"title": "which?", "enum": ["a", "b"], "default": "a"}
+
+    def test_checkbox__array_schema(self):
+        question = Checkbox("toppings", message="pick", choices=["x", "y"])
+        schema = question.json_schema()
+        assert schema["type"] == "array"
+        assert schema["items"] == {"enum": ["x", "y"]}
+        assert schema["uniqueItems"] is True
+
+    def test_confirm__boolean_schema(self):
+        assert Confirm("ok", message="ok?").json_schema()["type"] == "boolean"
+
+    def test_const__const_schema(self):
+        assert Const("pinned", default="v1").json_schema()["const"] == "v1"
+
+    def test_file__path_annotations(self):
+        schema = File("input", message="which file?", exists=True).json_schema()
+        assert schema["type"] == "string"
+        assert schema["x-path-type"] == "file"
+        assert schema["x-exists"] is True
+
+    def test_user_schema__overrides_and_extends(self):
+        question = Text("email", message="email?", schema={"pattern": r"^\S+@\S+$"})
+        assert question.json_schema()["pattern"] == r"^\S+@\S+$"
+
+    def test_user_schema__is_enforced_by_the_prompt_validator(self):
+        question = Text("email", message="email?", schema={"pattern": r"^\S+@\S+$"})
+        prompt_obj = question.make_prompts()[0]
+        with pytest.raises(ValidationError):
+            prompt_obj.validate("not-an-email")
+        prompt_obj.validate("someone@example.com")
+
+    def test_schema_validation__coerces_terminal_strings(self):
+        question = Integer("ntasks", message="how many?", minval=1, maxval=8)
+        prompt_obj = question.make_prompts()[0]
+        prompt_obj.validate("3")
+        with pytest.raises(ValidationError):
+            prompt_obj.validate("9")
+
+    def test_prompts_carry_the_schema_for_wire_serialization(self):
+        question = Integer("ntasks", message="how many?", minval=1, maxval=8)
+        prompt_obj = question.make_prompts()[0]
+        assert prompt_obj.jobbergate_schema == question.json_schema()

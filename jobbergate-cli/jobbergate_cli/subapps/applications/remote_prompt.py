@@ -111,6 +111,12 @@ class BridgePrompter:
         }
         if payload["type"] in ("List", "Checkbox"):
             payload["choices"] = [_jsonable(choice) for choice in question.choices]
+        # The JSON Schema is the single source of truth for the answer's shape: front-ends
+        # can auto-generate the widget from it and pre-validate for quick feedback, while
+        # the authoritative check still happens here on the runtime (question.validate)
+        schema = getattr(question, "jobbergate_schema", None)
+        if schema is not None:
+            payload["schema"] = {key: _jsonable(value) if key in ("default", "const") else value for key, value in schema.items()}
         return payload
 
     def _ask(self, question: Any) -> Any:
