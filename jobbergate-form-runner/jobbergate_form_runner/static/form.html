@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jobbergate Application Form</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a2332; --muted: #6b7687; --border: #d9dee7;
+    --accent: #d97b25; --accent-fg: #ffffff; --ok: #2e7d4f; --err: #c0392b;
+    --card: #f6f8fb; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151a22; --fg: #e6eaf1; --muted: #93a0b4; --border: #313a49;
+      --accent: #e8934a; --accent-fg: #1a1206; --ok: #5bc98a; --err: #e8705f;
+      --card: #1d242f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .widget { max-width: 640px; margin: 0 auto; padding: 1.25rem; }
+  header { display: flex; align-items: baseline; gap: .75rem; margin-bottom: 1rem; }
+  header h1 { font-size: 1.1rem; margin: 0; }
+  .status {
+    font-size: .78rem; padding: .15rem .6rem; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--muted); white-space: nowrap;
+  }
+  .status[data-state="active"]   { border-color: var(--accent); color: var(--accent); }
+  .status[data-state="completed"]{ border-color: var(--ok); color: var(--ok); }
+  .status[data-state="failed"]   { border-color: var(--err); color: var(--err); }
+  .transcript { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1rem; }
+  .qa {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: .5rem .8rem; display: flex;
+    justify-content: space-between; gap: 1rem; font-size: .88rem;
+  }
+  .qa .q { color: var(--muted); }
+  .qa .a { font-family: var(--mono); text-align: right; overflow-wrap: anywhere; }
+  .qa.const .a::after { content: " (fixed)"; color: var(--muted); font-family: inherit; }
+  .prompt {
+    border: 1px solid var(--accent); border-radius: 10px;
+    padding: 1rem; background: var(--card);
+  }
+  .prompt .msg { font-weight: 600; margin-bottom: .6rem; }
+  .prompt .hint { color: var(--muted); font-size: .8rem; margin-top: .35rem; }
+  .prompt input[type=text], .prompt input[type=number], .prompt select {
+    width: 100%; padding: .5rem .6rem; border: 1px solid var(--border);
+    border-radius: 6px; background: var(--bg); color: var(--fg); font: inherit;
+  }
+  .choices label {
+    display: flex; gap: .5rem; align-items: center; padding: .3rem .2rem; cursor: pointer;
+  }
+  .actions { margin-top: .8rem; display: flex; gap: .6rem; align-items: center; }
+  button {
+    font: inherit; padding: .45rem 1.1rem; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--bg); color: var(--fg);
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
+  .error {
+    margin-top: .6rem; color: var(--err); font-size: .85rem;
+    border-left: 3px solid var(--err); padding-left: .6rem;
+  }
+  .waiting { color: var(--muted); font-style: italic; padding: .8rem 0; }
+  .result {
+    border: 1px solid var(--ok); border-radius: 10px; padding: 1rem; background: var(--card);
+  }
+  .result h2 { font-size: 1rem; margin: 0 0 .4rem; color: var(--ok); }
+  .result pre {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: .6rem; overflow-x: auto; font-family: var(--mono); font-size: .8rem;
+  }
+  footer { margin-top: 1rem; font-size: .75rem; color: var(--muted); font-family: var(--mono); }
+</style>
+</head>
+<body>
+<div class="widget">
+  <header>
+    <h1 id="title">Jobbergate application</h1>
+    <span class="status" id="status" data-state="idle">connecting…</span>
+  </header>
+  <div class="transcript" id="transcript"></div>
+  <div id="stage"><div class="waiting">Starting session…</div></div>
+  <footer id="footer"></footer>
+</div>
+
+<script>
+"use strict";
+/*
+ * Embeddable Jobbergate form-runner client.
+ *
+ * Protocol (see ../README.md §4):
+ *   POST   {api}/form-runner/sessions                    -> {session_id}
+ *   GET    {api}/form-runner/sessions/{sid}/events       -> SSE (question, answer events, completed, failed, status)
+ *   POST   {api}/form-runner/sessions/{sid}/answers      -> 200 accepted | 422 {message}
+ *
+ * Query params: ?session_id=<sid> (attach to an existing session) or ?app=<id-or-identifier>
+ * (create a new one); ?api=http://host:port overrides the API origin (defaults to this page's
+ * origin, since the Form Runner service serves this page itself).
+ * The access token travels in the URL fragment (#token=...) so it is never sent to any server
+ * as part of the URL; ?token= is also accepted for embedding flows that inject it themselves.
+ * Opened from file:// with no ?api=, the page runs a built-in MOCK session (no backend needed).
+ */
+
+const params = new URLSearchParams(location.search);
+const hashParams = new URLSearchParams(location.hash.replace(/^#/, ""));
+const cfg = {
+  api: params.get("api") || (location.protocol === "file:" ? null : location.origin),
+  app: params.get("app") || "demo-application",
+  session: params.get("session_id"),
+  // Preferred: the short per-session capability key minted by the service (#key=...).
+  // A full OIDC bearer (#token=... / ?token=) also works, for embedding web apps.
+  key: hashParams.get("key") || params.get("key"),
+  token: hashParams.get("token") || params.get("token") || "dev-token",
+};
+const authHeaders = () =>
+  cfg.key && cfg.session ? { "X-Session-Key": cfg.key } : { "Authorization": `Bearer ${cfg.token}` };
+
+const el = (id) => document.getElementById(id);
+const statusEl = el("status"), transcript = el("transcript"), stage = el("stage");
+
+function setStatus(state, text) {
+  statusEl.dataset.state = state;
+  statusEl.textContent = text;
+  // let the embedding page react (resize iframe, navigate on completion, ...)
+  parent.postMessage({ type: "jg-form-status", state, text }, "*");
+}
+
+function addTranscript(q, value) {
+  const row = document.createElement("div");
+  row.className = "qa" + (q.type === "Const" ? " const" : "");
+  const full = Array.isArray(value) ? value.join(", ") : String(value);
+  const shown = full.length > 80 ? full.slice(0, 77) + "…" : full;  // cut long answers
+  row.innerHTML = `<span class="q"></span><span class="a"></span>`;
+  row.querySelector(".q").textContent = q.message || q.variablename;
+  row.querySelector(".a").textContent = shown;
+  if (shown !== full) row.querySelector(".a").title = full;
+  transcript.appendChild(row);
+}
+
+function waiting(text) {
+  stage.innerHTML = `<div class="waiting"></div>`;
+  stage.firstChild.textContent = text;
+}
+
+/* ---- question renderers: one control per question type ---- */
+
+function renderQuestion(q, submit) {
+  const box = document.createElement("div");
+  box.className = "prompt";
+  const msg = document.createElement("div");
+  msg.className = "msg";
+  msg.textContent = q.message || q.variablename;
+  box.appendChild(msg);
+
+  let getValue;
+  const hint = (t) => {
+    const h = document.createElement("div");
+    h.className = "hint"; h.textContent = t; box.appendChild(h);
+  };
+
+  switch (q.type) {
+    case "Integer": {
+      const input = Object.assign(document.createElement("input"), { type: "number" });
+      if (q.default != null) input.value = q.default;
+      if (q.minval != null) input.min = q.minval;
+      if (q.maxval != null) input.max = q.maxval;
+      box.appendChild(input);
+      hint(`integer${q.minval != null || q.maxval != null
+        ? ` in range [${q.minval ?? "-∞"}, ${q.maxval ?? "∞"}]` : ""}`);
+      getValue = () => input.value.trim();
+      break;
+    }
+    case "List": {
+      const sel = document.createElement("select");
+      for (const c of q.choices || []) {
+        const o = document.createElement("option");
+        o.value = o.textContent = c;
+        if (c === q.default) o.selected = true;
+        sel.appendChild(o);
+      }
+      box.appendChild(sel);
+      getValue = () => sel.value;
+      break;
+    }
+    case "Checkbox": {
+      const wrap = document.createElement("div");
+      wrap.className = "choices";
+      for (const c of q.choices || []) {
+        const lab = document.createElement("label");
+        const cb = Object.assign(document.createElement("input"), { type: "checkbox", value: c });
+        if (Array.isArray(q.default) && q.default.includes(c)) cb.checked = true;
+        lab.append(cb, document.createTextNode(c));
+        wrap.appendChild(lab);
+      }
+      box.appendChild(wrap);
+      hint("select all that apply");
+      getValue = () => [...wrap.querySelectorAll("input:checked")].map((i) => i.value);
+      break;
+    }
+    case "Confirm":
+    case "BooleanList": {
+      const wrap = document.createElement("div");
+      wrap.className = "choices";
+      let val = q.default ?? false;
+      for (const [label, v] of [["Yes", true], ["No", false]]) {
+        const lab = document.createElement("label");
+        const rb = Object.assign(document.createElement("input"),
+          { type: "radio", name: "jg-confirm", checked: v === val });
+        rb.addEventListener("change", () => { val = v; });
+        lab.append(rb, document.createTextNode(label));
+        wrap.appendChild(lab);
+      }
+      box.appendChild(wrap);
+      getValue = () => val;
+      break;
+    }
+    case "File":
+    case "Directory": {
+      const input = Object.assign(document.createElement("input"), { type: "text" });
+      if (q.default != null) input.value = q.default;
+      box.appendChild(input);
+      hint(`${q.type.toLowerCase()} path on the cluster filesystem`
+        + (q.exists ? " — must exist (verified on the cluster)" : ""));
+      getValue = () => input.value.trim();
+      break;
+    }
+    default: { // Text and anything unknown degrades to a text input
+      const input = Object.assign(document.createElement("input"), { type: "text" });
+      if (q.default != null) input.value = q.default;
+      box.appendChild(input);
+      getValue = () => input.value.trim();
+    }
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  const btn = document.createElement("button");
+  btn.className = "primary";
+  btn.textContent = "Answer";
+  actions.appendChild(btn);
+  const errBox = document.createElement("div");
+  box.append(actions, errBox);
+
+  const send = async () => {
+    btn.disabled = true;
+    errBox.className = ""; errBox.textContent = "";
+    const value = getValue();
+    const verdict = await submit(q, value);   // {accepted, message?} — runner is authoritative
+    if (verdict.accepted) {
+      // transcript row comes from the answer-accepted SSE event (mock adds it itself),
+      // so live answers and replayed-on-reconnect answers render identically.
+      // The next question event can beat this response — only clear if still showing.
+      if (box.isConnected) waiting("Waiting for the next question…");
+    } else {
+      errBox.className = "error";
+      errBox.textContent = verdict.message || "Invalid answer, please try again.";
+      btn.disabled = false;
+    }
+  };
+  btn.addEventListener("click", send);
+  box.addEventListener("keydown", (e) => { if (e.key === "Enter" && !btn.disabled) send(); });
+
+  stage.replaceChildren(box);
+  box.querySelector("input, select")?.focus();
+}
+
+function renderCompleted(payload) {
+  setStatus("completed", "completed");
+  const box = document.createElement("div");
+  box.className = "result";
+  box.innerHTML = `<h2>Job script created</h2><pre></pre>`;
+  box.querySelector("pre").textContent = JSON.stringify(payload, null, 2);
+  stage.replaceChildren(box);
+}
+
+function renderFailed(message) {
+  setStatus("failed", "failed");
+  stage.innerHTML = `<div class="error"></div>`;
+  stage.firstChild.textContent = message || "Session failed.";
+}
+
+/* ---- real backend client: REST + SSE (fetch-based so we can send the bearer) ---- */
+
+async function runRemote() {
+  const base = cfg.api.replace(/\/$/, "") + "/form-runner";
+  const headers = { ...authHeaders(), "Content-Type": "application/json" };
+
+  // An explicit ?session_id= (the create-web flow) attaches to that session directly.
+  // Otherwise, reconnect support: reuse a live session for the same app if we have one.
+  const storeKey = `jg-form-session:${cfg.app}`;
+  let sid = cfg.session || sessionStorage.getItem(storeKey);
+  if (sid) {
+    const probe = await fetch(`${base}/sessions/${sid}`, { headers });
+    if (probe.status === 403) return renderFailed("You are not the owner of this session.");
+    if (!probe.ok) sid = null;                 // gone — start fresh
+    else {
+      const snap = await probe.json();
+      if (!cfg.session && ["completed", "failed", "cancelled"].includes(snap.status)) sid = null;
+    }
+  }
+  if (!sid && cfg.session) return renderFailed("This session no longer exists on the Form Runner.");
+  if (!sid) {
+    const res = await fetch(`${base}/sessions`, {
+      method: "POST", headers,
+      body: JSON.stringify({ application_id_or_identifier: cfg.app }),
+    });
+    if (!res.ok) return renderFailed(`Could not start session (HTTP ${res.status}).`);
+    sid = (await res.json()).session_id;
+    sessionStorage.setItem(storeKey, sid);
+  }
+  el("footer").textContent = `session ${sid}`;
+  setStatus("active", "queued");
+
+  const submit = async (q, value) => {
+    const res = await fetch(`${base}/sessions/${sid}/answers`, {
+      method: "POST", headers,
+      body: JSON.stringify({ variablename: q.variablename, value }),
+    });
+    if (res.status === 422) return await res.json();       // {accepted:false, message}
+    if (!res.ok) return { accepted: false, message: `Server error (HTTP ${res.status}).` };
+    return { accepted: true };
+  };
+
+  // SSE via fetch stream: EventSource cannot send Authorization headers.
+  let lastEventId = "";
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await fetch(`${base}/sessions/${sid}/events`, {
+        headers: { ...headers, "Last-Event-ID": lastEventId },
+      });
+      if (res.status === 403) return renderFailed("You are not the owner of this session.");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      attempt = 0;
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let idx;
+        while ((idx = buf.indexOf("\n\n")) >= 0) {
+          const frame = buf.slice(0, idx); buf = buf.slice(idx + 2);
+          let event = "message", data = "", id = "";
+          for (const line of frame.split("\n")) {
+            if (line.startsWith("event:")) event = line.slice(6).trim();
+            else if (line.startsWith("data:")) data += line.slice(5).trim();
+            else if (line.startsWith("id:")) id = line.slice(3).trim();
+          }
+          if (id) lastEventId = id;
+          if (!data) continue;
+          const payload = JSON.parse(data);
+          if (event === "question") { setStatus("active", "in progress"); renderQuestion(payload, submit); }
+          else if (event === "status") setStatus("active", payload.status);
+          else if (event === "auto-answered" || event === "answer-accepted") addTranscript(payload.question, payload.value);
+          else if (event === "completed") { renderCompleted(payload); return; }
+          else if (event === "failed") { renderFailed(payload.message); return; }
+        }
+      }
+    } catch (e) {
+      if (attempt >= 5) return renderFailed("Lost connection to the form runner.");
+      setStatus("active", "reconnecting…");
+      await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
+    }
+  }
+}
+
+/* ---- mock mode: simulates a runner session so the widget can be demoed standalone ---- */
+
+async function runMock() {
+  el("title").textContent = "Demo application (mock)";
+  el("footer").textContent = "mock mode — pass ?api=http://localhost:8000 to use the prototype service";
+  setStatus("active", "queued (partition: form)");
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  await sleep(900);
+  setStatus("active", "in progress");
+
+  const flow = [
+    { type: "Text", variablename: "job_name", message: "Name for your job", default: "my-sim",
+      validate: (v) => v ? null : "A job name is required." },
+    { type: "Integer", variablename: "ntasks", message: "Number of tasks", default: 4, minval: 1, maxval: 128,
+      validate: (v) => {
+        const n = Number(v);
+        if (!Number.isInteger(n)) return `"${v}" is not an integer.`;
+        return n >= 1 && n <= 128 ? null : `${n} is out of range [1, 128].`;
+      } },
+    { type: "List", variablename: "queue", message: "Which partition should the job use?",
+      choices: ["compute", "gpu", "debug"], default: "compute" },
+    { type: "File", variablename: "input_file", message: "Path to the input deck", exists: true,
+      validate: (v) => v.startsWith("/") ? null : `File "${v}" does not exist on the cluster (mock check: use an absolute path).` },
+    { type: "Checkbox", variablename: "modules", message: "Modules to load",
+      choices: ["openmpi/4.1", "cuda/12.4", "python/3.12"], default: ["openmpi/4.1"] },
+    { type: "Confirm", variablename: "notify", message: "Email me when the job finishes?", default: true },
+    { type: "Const", variablename: "cluster_name", default: "local-slurm" },
+  ];
+
+  for (const q of flow) {
+    if (q.type === "Const") { addTranscript({ ...q, message: q.variablename }, q.default); continue; }
+    await sleep(400); // the SME script "thinking" (e.g. scanning the filesystem) between questions
+    await new Promise((resolve) => {
+      renderQuestion(q, async (question, value) => {
+        await sleep(250); // round-trip to the runner
+        const message = q.validate ? q.validate(value) : null;
+        if (message) return { accepted: false, message };
+        addTranscript(question, value);
+        resolve();
+        return { accepted: true };
+      });
+    });
+  }
+
+  waiting("Rendering job script and verifying files on the cluster…");
+  await sleep(1200);
+  renderCompleted({
+    job_script_id: 1234,
+    files: ["my-sim.job (entrypoint, verified)", "config.yaml (verified)"],
+    job_submission: { slurm_job_id: 98765, status: "SUBMITTED", partition: "compute" },
+  });
+}
+
+(cfg.api ? runRemote() : runMock()).catch((e) => renderFailed(String(e)));
+</script>
+</body>
+</html>

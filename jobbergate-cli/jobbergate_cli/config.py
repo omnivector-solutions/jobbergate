@@ -52,6 +52,9 @@ class Settings(BaseSettings):
     # Default job submission cluster
     DEFAULT_CLUSTER_NAME: Optional[str] = None
 
+    # Base URL of the cluster-side Form Runner service (enables `job-scripts create-web`)
+    FORM_RUNNER_BASE_URL: Optional[str] = None
+
     # How long it will use cached cluster lists before fetching them again
     JOBBERGATE_CLUSTER_CACHE_LIFETIME: int = 60 * 5
 

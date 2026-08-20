@@ -14,6 +14,7 @@ import tempfile
 from contextvars import ContextVar
 from typing import Annotated, Any, Dict, List, cast
 
+import httpx
 import typer
 from loguru import logger
 
@@ -553,6 +554,146 @@ def create(
         title="Created Job Submission (Fast Mode)",
     )
     return job_script_result, job_submission_result
+
+
+@app.command("create-web")
+def create_web(
+    ctx: typer.Context = None,  # type: ignore[assignment]
+    id_or_identifier: Annotated[
+        str | None,
+        typer.Argument(
+            help="The specific id or identifier of the application from which to create the job script.",
+        ),
+    ] = None,
+    name: Annotated[
+        str | None,
+        typer.Option("--name", "-n", help="The name of the job script to create."),
+    ] = None,
+    application_id: Annotated[
+        int | None,
+        typer.Option("--application-id", "-i", help="Alternative way to specify the application id."),
+    ] = None,
+    application_identifier: Annotated[
+        str | None,
+        typer.Option(help="Alternative way to specify the application identifier."),
+    ] = None,
+    fast: Annotated[
+        bool,
+        typer.Option("--fast", "-f", help="Use default answers (when available) instead of asking the user."),
+    ] = False,
+    submit: Annotated[
+        bool,
+        typer.Option(help="Submit the job on the cluster right after the job script is created."),
+    ] = False,
+    cluster_name: Annotated[
+        str | None,
+        typer.Option(help="The name of the cluster where the job should be submitted to."),
+    ] = None,
+    execution_directory: Annotated[
+        pathlib.Path | None,
+        typer.Option(help="The path on the cluster where the job script should be executed."),
+    ] = None,
+    sbatch_params: Annotated[
+        List[str] | None,
+        typer.Option(help="Optional parameter to submit raw sbatch parameters."),
+    ] = None,
+    runner_url: Annotated[
+        str | None,
+        typer.Option(help="Override the Form Runner base URL (defaults to FORM_RUNNER_BASE_URL)."),
+    ] = None,
+) -> Dict[str, Any]:
+    """
+    Start the application question flow **on the cluster** and get a web form URL to fill it in.
+
+    The questions run inside a Slurm job on the cluster, so the application code sees the real
+    cluster filesystem and can submit the job right away (`--submit`). The command prints the
+    URL where the questions can be answered from the browser.
+    """
+    jg_ctx = get_active_context(ctx)
+    selector = resolve_application_selection(id_or_identifier, application_id, application_identifier)
+
+    base_url = (runner_url or settings.FORM_RUNNER_BASE_URL or "").rstrip("/")
+    Abort.require_condition(
+        base_url,
+        "No Form Runner service is configured. Set FORM_RUNNER_BASE_URL or pass --runner-url.",
+        raise_kwargs={"subject": "Form runner not configured"},
+    )
+
+    handler = jg_ctx.authentication_handler
+    bearer = handler.acquire_access()
+    # Forward the refresh token too, so the interview can outlive the access-token TTL:
+    # the runner refreshes silently instead of stalling on a device-login prompt
+    try:
+        refresh_token = handler._refresh_token.load_from_cache().content or None
+    except Exception:
+        refresh_token = None
+    with Abort.handle_errors(
+        f"Couldn't reach the Form Runner service at {base_url}",
+        raise_kwargs={"subject": "Form runner unavailable", "support": True},
+    ):
+        response = httpx.post(
+            f"{base_url}/form-runner/sessions",
+            json={
+                "application_id_or_identifier": str(selector),
+                "refresh_token": refresh_token,
+                "name": name,
+                "fast": fast,
+                "submit": submit,
+                "cluster_name": cluster_name,
+                "execution_directory": str(execution_directory) if execution_directory else None,
+                "sbatch_params": sbatch_params or None,
+            },
+            headers={"Authorization": bearer},
+            timeout=30,
+        )
+    Abort.require_condition(
+        response.status_code == 201,
+        f"The Form Runner service rejected the session request with status {response.status_code}: {response.text}",
+        raise_kwargs={"subject": "Couldn't start web session", "support": True},
+    )
+    session_data = cast(Dict[str, Any], response.json())
+
+    # The URL carries only a short per-session key in its fragment (never sent to any
+    # server); the user's actual token was handed to the runner by the service.
+    form_url = session_data["form_url"]
+    terminal_message(
+        dedent(
+            f"""
+            Fill in the application questions from your browser — the URL is printed
+            below this box (kept out of it so your terminal shows it as one clickable link).
+
+            Session id: [cyan]{session_data["session_id"]}[/cyan]
+            The interview runs inside a Slurm job on the cluster; you can reconnect to the
+            same URL if the connection drops.
+            """
+        ),
+        subject="Web form ready",
+    )
+    # Deliberately plain and unboxed: rich panels hard-wrap long URLs and break them
+    typer.echo(form_url)
+    return session_data
+
+
+@app.command("create-web-runner", hidden=True)
+def create_web_runner(
+    ctx: typer.Context = None,  # type: ignore[assignment]
+    session_id: Annotated[str, typer.Option(help="The Form Runner session to execute.")] = "",
+    bridge_url: Annotated[str, typer.Option(help="Base URL of the Form Runner internal bridge.")] = "",
+    session_secret: Annotated[
+        str,
+        typer.Option(envvar="JOBBERGATE_FORM_RUNNER_SECRET", help="Secret authenticating this runner."),
+    ] = "",
+):
+    """
+    Execute a Form Runner session (internal; launched by the Form Runner service inside a Slurm job).
+    """
+    for value, option in ((session_id, "--session-id"), (bridge_url, "--bridge-url"), (session_secret, "secret")):
+        Abort.require_condition(value, f"Missing required value for {option}", raise_kwargs={"subject": "Bad runner invocation"})
+
+    # Imported lazily: this module is only needed inside the runner job
+    from jobbergate_cli.subapps.job_scripts.web_runner import run_web_session
+
+    run_web_session(bridge_url=bridge_url, session_id=session_id, session_secret=session_secret)
 
 
 @app.command()

@@ -7,9 +7,10 @@ import copy
 import io
 import pathlib
 import tempfile
+from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, cast
 
 import yaml
 from loguru import logger
@@ -40,6 +41,46 @@ from jobbergate_core.sdk import Apps
 
 CONTENT_TYPE_TEXT_PLAIN = "text/plain"
 INVALID_APPLICATION_MODULE = "Invalid application module"
+
+PromptBackend = Callable[[List[Any]], Dict[str, Any]]
+"""
+A callable that resolves a list of ``inquirer`` prompts into an answers dict.
+
+The default backend asks the questions interactively on the terminal; alternative backends
+(e.g. :class:`jobbergate_cli.subapps.applications.remote_prompt.BridgePrompter`) can relay
+them to a remote user instead.
+"""
+
+
+def terminal_prompt_backend(prompts: List[Any]) -> Dict[str, Any]:
+    """
+    Resolve prompts interactively on the terminal via ``inquirer`` (the default behavior).
+    """
+    return cast(Dict[str, Any], inquirer.prompt(prompts, raise_keyboard_interrupt=True))
+
+
+_active_prompt_backend: ContextVar[Optional[PromptBackend]] = ContextVar(
+    "jobbergate_active_prompt_backend", default=None
+)
+"""
+The prompt backend for the current execution context.
+
+It allows an alternative backend (e.g. the form-runner bridge) to reuse the existing creation
+commands unchanged: the commands resolve prompts through the active backend, falling back to
+the interactive terminal when none is set.
+"""
+
+
+@contextlib.contextmanager
+def active_prompt_backend(backend: PromptBackend):
+    """
+    Context manager that sets the active prompt backend and restores the previous value on exit.
+    """
+    token = _active_prompt_backend.set(backend)
+    try:
+        yield backend
+    finally:
+        _active_prompt_backend.reset(token)
 
 # In-memory cache of application runtimes keyed per client, so that repeated job-script
 # creation in the same process (e.g. nested creation from within an application) does not
@@ -509,6 +550,7 @@ class ApplicationRuntime:
         sdk: Optional[Apps] = None,
         supplied_params: Optional[Dict[str, Any]] = None,
         fast_mode: bool = False,
+        prompt_backend: Optional[PromptBackend] = None,
     ) -> ApplicationRuntimeResult:
         """
         Execute the jobbergate application python module.
@@ -521,13 +563,16 @@ class ApplicationRuntime:
                 stored on the runtime, so cached runtimes hold no reference to any client.
             supplied_params: Parameters supplied upfront; matching questions are not asked.
             fast_mode: Whether to use default answers (when available) instead of asking the user.
+            prompt_backend: Optional override for how prompts are resolved into answers. The
+                default asks interactively on the terminal; it is not stored on the runtime,
+                so cached runtimes hold no reference to any backend.
 
         Returns:
             The result carrying the gathered answers and the resulting application config.
         """
         app_module = self._build_app_module(sdk)
         try:
-            result = self._gather_answers(app_module, dict(supplied_params or {}), fast_mode)
+            result = self._gather_answers(app_module, dict(supplied_params or {}), fast_mode, prompt_backend)
         except Abort:
             logger.exception("The question workflow aborted while executing the application")
             raise
@@ -549,8 +594,10 @@ class ApplicationRuntime:
         app_module: JobbergateApplicationBase,
         supplied_params: Dict[str, Any],
         fast_mode: bool,
+        prompt_backend: Optional[PromptBackend] = None,
     ) -> ApplicationRuntimeResult:
         """Gather the parameter values by executing the application methods."""
+        prompter: PromptBackend = prompt_backend or _active_prompt_backend.get() or terminal_prompt_backend
         logger.debug("Gathering answers from the application")
         answers = dict(supplied_params)
         # config should be the answers ideally
@@ -592,7 +639,7 @@ class ApplicationRuntime:
                 else:
                     prompts.extend(question.make_prompts())
 
-            workflow_answers = cast(Dict[str, Any], inquirer.prompt(prompts, raise_keyboard_interrupt=True))
+            workflow_answers = prompter(prompts)
             workflow_answers.update(auto_answers)
 
             logger.debug(f"Answers gathered from {next_method}: {workflow_answers}")

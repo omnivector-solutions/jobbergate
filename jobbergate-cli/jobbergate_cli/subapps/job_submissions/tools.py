@@ -216,6 +216,9 @@ class OnsiteJobSubmission(JobSubmissionABC):
                 support=True,
             )
 
+        # The execution directory may not exist yet (e.g. a fresh path picked on a web form)
+        self.execution_directory.mkdir(parents=True, exist_ok=True)
+
         job_script_files = download_job_script_files(self.job_script_id, self.jg_ctx, self.execution_directory)
 
         entrypoint_file = [f for f in job_script_files if f.file_type == FileType.ENTRYPOINT]

@@ -31,4 +31,8 @@ RUN chown -R appuser:appuser /workspace
 
 USER appuser
 
+# Keep the venv on PATH so `jobbergate` also works from an interactive shell
+# (e.g. `docker compose run --rm --entrypoint bash jobbergate-cli`)
+ENV PATH="/app/.venv/bin:$PATH"
+
 ENTRYPOINT ["/app/.venv/bin/jobbergate"]

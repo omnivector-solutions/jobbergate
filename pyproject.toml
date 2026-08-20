@@ -4,6 +4,7 @@ members = [
     "jobbergate-cli",
     "jobbergate-agent",
     "jobbergate-api",
+    "jobbergate-form-runner",
     "jobbergate-docs",
     "jobbergate-test",
     "fake-sbatch",

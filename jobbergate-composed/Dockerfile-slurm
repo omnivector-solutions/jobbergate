@@ -1,14 +1,16 @@
 FROM ubuntu:jammy-20211122 as slurm-base
 
 
-# Install GOSU
+# Install GOSU (arch-aware so native arm64 builds work on Apple Silicon)
 ARG GOSU_VERSION=1.16
+ARG TARGETARCH
 
 RUN set -ex \
     && apt update \
     && apt install -y wget gpg python3-dev python3-pip \
-    && wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-amd64" \
-    && wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-amd64.asc" \
+    && GOSU_ARCH="${TARGETARCH:-amd64}" \
+    && wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$GOSU_ARCH" \
+    && wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$GOSU_ARCH.asc" \
     && export GNUPGHOME="$(mktemp -d)" \
     && gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
     && gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \
@@ -26,8 +28,15 @@ RUN set -ex \
     && echo "deb [signed-by=/usr/share/keyrings/ubuntu-hpc.gpg] https://ppa.launchpadcontent.net/ubuntu-hpc/slurm-wlm-23.02/ubuntu/ jammy main" > /etc/apt/sources.list.d/ubuntu-hpc-slurm.list \
     && gpg --keyserver hkp://keyserver.ubuntu.com:80  --recv-keys AE87121DC3E4A0B0F81FF023F6D0C5D5C6BEB37B \
     && apt update \
-    && apt install slurm-wlm-basic-plugins slurmd slurmdbd slurmctld mysql-client -y \
+    && apt install slurm-wlm-basic-plugins slurmd slurmdbd slurmctld mysql-client dbus -y \
     && rm -rf "${GNUPGHOME}" ubuntu-hpc.pub
+
+# The mpi/pmix plugin dlopens libpmix.so (no dev package installed); without the
+# symlink slurmd fails to load its MPI stack (mirrors lm-composed)
+RUN apt install -y libpmix2 \
+    && for SO2 in $(dpkg -L libpmix2 | grep -E '/libpmix\.so\.2$'); do \
+         ln -s "$(basename "$SO2")" "$(dirname "$SO2")/libpmix.so"; \
+       done
 
 
 # Prepare Filesystem
@@ -51,6 +60,9 @@ RUN chown -R slurm:slurm /var/spool/slurmctld \
 # Add local-user
 RUN useradd -ms /bin/bash local-user
 
+# Install uv on every slurm image: compute nodes run jobbergate-cli inside form-runner jobs
+COPY --from=ghcr.io/astral-sh/uv:0.10.8@sha256:88234bc9e09c2b2f6d176a3daf411419eb0370d450a08129257410de9cfafd2a /uv /usr/local/bin/uv
+
 # Copy in the entrypoint.sh
 COPY etc/slurm-entrypoint.sh /usr/local/bin/slurm-entrypoint.sh
 
@@ -61,7 +73,5 @@ ENTRYPOINT ["/usr/local/bin/slurm-entrypoint.sh"]
 FROM slurm-base as jobbergate-agent
 
 RUN apt update && apt install -y curl libpq-dev gcc git
-
-COPY --from=ghcr.io/astral-sh/uv:0.10.8@sha256:88234bc9e09c2b2f6d176a3daf411419eb0370d450a08129257410de9cfafd2a /uv /usr/local/bin/uv
 
 WORKDIR /app

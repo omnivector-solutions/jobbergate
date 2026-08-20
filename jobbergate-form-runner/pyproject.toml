@@ -1,0 +1,27 @@
+[project]
+name = "jobbergate-form-runner"
+version = "0.1.0"
+description = "Cluster-side web form runner for Jobbergate application question flows"
+authors = [
+    { name = "Omnivector Solutions", email = "info@omnivector.solutions" },
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "armasec>=3.0.3",
+    "fastapi>=0.115",
+    "httpx>=0.27",
+    "loguru>=0.7",
+    "pydantic>=2",
+    "pydantic-settings>=2",
+    "uvicorn>=0.30",
+]
+
+[build-system]
+requires = ["hatchling>=1.31.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["jobbergate_form_runner"]
+artifacts = ["jobbergate_form_runner/static/*"]
