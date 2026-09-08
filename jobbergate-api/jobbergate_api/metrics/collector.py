@@ -42,8 +42,9 @@ class MetricsCollector(Collector):
                 "Job submissions grouped by job template identifier.",
                 labels=["bucket", "client_id", "template_identifier"],
             )
-            for bucket, client_id, identifier, count in self.values:
-                metric.add_metric([bucket.isoformat(), client_id, identifier or "unknown"], count)
+            for bucket, client_id, template_id, identifier, count in self.values:
+                template_identifier = identifier or f"template_id:{template_id}"
+                metric.add_metric([bucket.isoformat(), client_id, template_identifier], count)
             yield metric
         else:
             metric = GaugeMetricFamily(

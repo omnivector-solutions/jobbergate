@@ -83,6 +83,7 @@ def _response(metric_name: str, values) -> Response:
     description=(
         "Returns the number of job submissions for each job template identifier, "
         "grouped by cluster and into hourly, daily, or weekly time buckets. "
+        "Templates without an identifier use a template_id:<id> fallback label. "
         "Use end_time with a grace period when generating finalized reports."
     ),
     response_class=Response,
@@ -99,14 +100,15 @@ async def template_metrics(
         select(
             func.date_trunc(interval.value, JobSubmission.created_at).label("bucket"),
             JobSubmission.client_id,
+            JobScriptTemplate.id,
             JobScriptTemplate.identifier,
             func.count(JobSubmission.id),
         )
         .join(JobScript, JobScript.parent_template_id == JobScriptTemplate.id)
         .join(JobSubmission, JobSubmission.job_script_id == JobScript.id)
         .where(JobSubmission.created_at >= start_time, JobSubmission.created_at <= end_time)
-        .group_by("bucket", JobSubmission.client_id, JobScriptTemplate.identifier)
-        .order_by("bucket", JobSubmission.client_id, JobScriptTemplate.identifier)
+        .group_by("bucket", JobSubmission.client_id, JobScriptTemplate.id, JobScriptTemplate.identifier)
+        .order_by("bucket", JobSubmission.client_id, JobScriptTemplate.id, JobScriptTemplate.identifier)
     )
     return _response("templates", result.all())
 

@@ -16,7 +16,12 @@ def test_metrics_collector_exposes_usage_and_status_metrics():
     registry.register(
         MetricsCollector(
             "templates",
-            [(now, "cluster-a", "template-a", 3), (now, "cluster-b", "template-a", 2)],
+            [
+                (now, "cluster-a", 1, "template-a", 3),
+                (now, "cluster-b", 1, "template-a", 2),
+                (now, "cluster-a", 2, None, 1),
+                (now, "cluster-a", 3, None, 1),
+            ],
         )
     )
 
@@ -25,6 +30,8 @@ def test_metrics_collector_exposes_usage_and_status_metrics():
     assert 'jobbergate_job_template_selection_total{bucket="' in body
     assert 'client_id="cluster-a",template_identifier="template-a"} 3.0' in body
     assert 'client_id="cluster-b",template_identifier="template-a"} 2.0' in body
+    assert 'client_id="cluster-a",template_identifier="template_id:2"} 1.0' in body
+    assert 'client_id="cluster-a",template_identifier="template_id:3"} 1.0' in body
 
 
 def test_metrics_collector_marks_stale_agents_unhealthy():
