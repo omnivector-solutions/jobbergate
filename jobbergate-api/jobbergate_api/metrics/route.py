@@ -37,7 +37,9 @@ def _window(start_time: datetime | None, end_time: datetime | None) -> tuple[dat
     end_time = end_time or datetime.now(timezone.utc)
     start_time = start_time or end_time - timedelta(hours=1)
     if end_time < start_time:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="End time must be greater than the start time.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="End time must be greater than the start time."
+        )
     return start_time, end_time
 
 
@@ -110,7 +112,9 @@ async def health_metrics(
     ],
 ):
     result = await secure_services.session.execute(
-        select(ClusterStatus.client_id, ClusterStatus.last_reported, ClusterStatus.interval).order_by(ClusterStatus.client_id)
+        select(ClusterStatus.client_id, ClusterStatus.last_reported, ClusterStatus.interval).order_by(
+            ClusterStatus.client_id
+        )
     )
     return _response("health", result.all())
 
