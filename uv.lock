@@ -18,21 +18,7 @@ members = [
 ]
 
 [manifest.dependency-groups]
-dev = [
-    { name = "faker", specifier = ">=40.31.0" },
-    { name = "mypy", specifier = ">=2.3.0" },
-    { name = "polyfactory", specifier = ">=3.3.0" },
-    { name = "pytest", specifier = ">=8.4.1,<9" },
-    { name = "pytest-asyncio", specifier = ">=1.4.0,<2" },
-    { name = "pytest-cov", specifier = ">=7.1.0" },
-    { name = "pytest-env", specifier = ">=1.1.3" },
-    { name = "pytest-mock", specifier = ">=3.15.1" },
-    { name = "pytest-random-order", specifier = ">=1.2.0" },
-    { name = "requests-mock", specifier = ">=1.12.1" },
-    { name = "respx", specifier = ">=0.23.1" },
-    { name = "ruff", specifier = ">=0.15.21" },
-    { name = "towncrier", specifier = ">=24.11.0" },
-]
+dev = [{ name = "towncrier", specifier = ">=24.11.0" }]
 
 [[package]]
 name = "aio-pika"
@@ -867,7 +853,14 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-env" },
     { name = "pytest-mock" },
+    { name = "pytest-random-order" },
+    { name = "ruff" },
+    { name = "towncrier" },
 ]
 
 [package.metadata]
@@ -878,7 +871,16 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest-mock", specifier = ">=3.15.1" }]
+dev = [
+    { name = "mypy", specifier = ">=2.3.0" },
+    { name = "pytest", specifier = ">=8.4.1,<9" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "pytest-env", specifier = ">=1.1.3" },
+    { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "pytest-random-order", specifier = ">=1.2.0" },
+    { name = "ruff", specifier = ">=0.15.21" },
+    { name = "towncrier", specifier = ">=24.11.0" },
+]
 
 [[package]]
 name = "faker"
@@ -1234,7 +1236,7 @@ name = "jinxed"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ansicon", marker = "sys_platform == 'win32'" },
+    { name = "ansicon" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/20/d0/59b2b80e7a52d255f9e0ad040d2e826342d05580c4b1d7d7747cfb8db731/jinxed-1.3.0.tar.gz", hash = "sha256:1593124b18a41b7a3da3b078471442e51dbad3d77b4d4f2b0c26ab6f7d660dbf", size = 80981, upload-time = "2024-07-31T22:39:18.854Z" }
 wheels = [
@@ -1270,6 +1272,23 @@ dependencies = [
     { name = "types-ldap3" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "faker" },
+    { name = "mypy" },
+    { name = "polyfactory" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-env" },
+    { name = "pytest-mock" },
+    { name = "pytest-random-order" },
+    { name = "requests-mock" },
+    { name = "respx" },
+    { name = "ruff" },
+    { name = "towncrier" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "apscheduler", specifier = "==3.11.3" },
@@ -1289,7 +1308,21 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = []
+dev = [
+    { name = "faker", specifier = ">=40.31.0" },
+    { name = "mypy", specifier = ">=2.3.0" },
+    { name = "polyfactory", specifier = ">=3.3.0" },
+    { name = "pytest", specifier = ">=8.4.1,<9" },
+    { name = "pytest-asyncio", specifier = ">=1.4.0,<2" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "pytest-env", specifier = ">=1.1.3" },
+    { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "pytest-random-order", specifier = ">=1.2.0" },
+    { name = "requests-mock", specifier = ">=1.12.1" },
+    { name = "respx", specifier = ">=0.23.1" },
+    { name = "ruff", specifier = ">=0.15.21" },
+    { name = "towncrier", specifier = ">=24.11.0" },
+]
 
 [[package]]
 name = "jobbergate-api"
@@ -1328,11 +1361,24 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "asgi-lifespan" },
+    { name = "faker" },
     { name = "flaky" },
+    { name = "mypy" },
     { name = "nest-asyncio" },
     { name = "pgcli" },
+    { name = "polyfactory" },
     { name = "psycopg2-binary" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-env" },
+    { name = "pytest-mock" },
+    { name = "pytest-random-order" },
     { name = "requests" },
+    { name = "requests-mock" },
+    { name = "respx" },
+    { name = "ruff" },
+    { name = "towncrier" },
     { name = "typer" },
     { name = "types-aioboto3", extra = ["essential"] },
     { name = "types-pyyaml" },
@@ -1374,11 +1420,24 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "asgi-lifespan", specifier = ">=1.0.1" },
+    { name = "faker", specifier = ">=40.31.0" },
     { name = "flaky", specifier = ">=3.8.1" },
+    { name = "mypy", specifier = ">=2.3.0" },
     { name = "nest-asyncio", specifier = ">=1.6.0" },
     { name = "pgcli", specifier = ">=4.3.0" },
+    { name = "polyfactory", specifier = ">=3.3.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.11" },
+    { name = "pytest", specifier = ">=8.4.1,<9" },
+    { name = "pytest-asyncio", specifier = ">=1.4.0,<2" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "pytest-env", specifier = ">=1.1.3" },
+    { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "pytest-random-order", specifier = ">=1.2.0" },
     { name = "requests", specifier = ">=2.32.5" },
+    { name = "requests-mock", specifier = ">=1.12.1" },
+    { name = "respx", specifier = ">=0.23.1" },
+    { name = "ruff", specifier = ">=0.15.21" },
+    { name = "towncrier", specifier = ">=24.11.0" },
     { name = "typer", specifier = ">=0.20.0" },
     { name = "types-aioboto3", extras = ["essential"], specifier = ">=15.5.0" },
     { name = "types-pyyaml", specifier = ">=6.0" },
@@ -1405,7 +1464,20 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "faker" },
+    { name = "mypy" },
     { name = "plummet", extra = ["time-machine"] },
+    { name = "polyfactory" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-env" },
+    { name = "pytest-mock" },
+    { name = "pytest-random-order" },
+    { name = "requests-mock" },
+    { name = "respx" },
+    { name = "ruff" },
+    { name = "towncrier" },
     { name = "types-pyyaml" },
 ]
 
@@ -1427,7 +1499,20 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "faker", specifier = ">=40.31.0" },
+    { name = "mypy", specifier = ">=2.3.0" },
     { name = "plummet", extras = ["time-machine"], specifier = ">=1.2.1" },
+    { name = "polyfactory", specifier = ">=3.3.0" },
+    { name = "pytest", specifier = ">=8.4.1,<9" },
+    { name = "pytest-asyncio", specifier = ">=1.4.0,<2" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "pytest-env", specifier = ">=1.1.3" },
+    { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "pytest-random-order", specifier = ">=1.2.0" },
+    { name = "requests-mock", specifier = ">=1.12.1" },
+    { name = "respx", specifier = ">=0.23.1" },
+    { name = "ruff", specifier = ">=0.15.21" },
+    { name = "towncrier", specifier = ">=24.11.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12" },
 ]
 
@@ -1443,6 +1528,23 @@ dependencies = [
     { name = "python-jose" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "faker" },
+    { name = "mypy" },
+    { name = "polyfactory" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-env" },
+    { name = "pytest-mock" },
+    { name = "pytest-random-order" },
+    { name = "requests-mock" },
+    { name = "respx" },
+    { name = "ruff" },
+    { name = "towncrier" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.28.1,<1" },
@@ -1454,7 +1556,21 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = []
+dev = [
+    { name = "faker", specifier = ">=40.31.0" },
+    { name = "mypy", specifier = ">=2.3.0" },
+    { name = "polyfactory", specifier = ">=3.3.0" },
+    { name = "pytest", specifier = ">=8.4.1,<9" },
+    { name = "pytest-asyncio", specifier = ">=1.4.0,<2" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "pytest-env", specifier = ">=1.1.3" },
+    { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "pytest-random-order", specifier = ">=1.2.0" },
+    { name = "requests-mock", specifier = ">=1.12.1" },
+    { name = "respx", specifier = ">=0.23.1" },
+    { name = "ruff", specifier = ">=0.15.21" },
+    { name = "towncrier", specifier = ">=24.11.0" },
+]
 
 [[package]]
 name = "jobbergate-documentation"
