@@ -32,6 +32,23 @@ PROMETHEUS_RESPONSE: dict[int | str, dict[str, Any]] = {
     status.HTTP_400_BAD_REQUEST: {"description": "The requested time range is invalid."},
 }
 
+MetricsServices = Annotated[
+    SecureService,
+    Depends(secure_services(Permissions.ADMIN, Permissions.METRICS_READ, commit=False)),
+]
+MetricsStartTime = Annotated[
+    datetime | None,
+    Query(description="Inclusive start of the UTC reporting window. Defaults to one hour before end_time."),
+]
+MetricsEndTime = Annotated[
+    datetime | None,
+    Query(description="Inclusive end of the UTC reporting window. Defaults to the current time."),
+]
+MetricsIntervalQuery = Annotated[
+    MetricsInterval,
+    Query(description="Time bucket size for aggregation: hour, day, or week."),
+]
+
 
 def _window(start_time: datetime | None, end_time: datetime | None) -> tuple[datetime, datetime]:
     end_time = end_time or datetime.now(timezone.utc)
@@ -60,22 +77,10 @@ def _response(metric_name: str, values) -> Response:
     responses=PROMETHEUS_RESPONSE,
 )
 async def template_metrics(
-    secure_services: Annotated[
-        SecureService,
-        Depends(secure_services(Permissions.ADMIN, Permissions.METRICS_READ, commit=False)),
-    ],
-    start_time: Annotated[
-        datetime | None,
-        Query(description="Inclusive start of the UTC reporting window. Defaults to one hour before end_time."),
-    ] = None,
-    end_time: Annotated[
-        datetime | None,
-        Query(description="Inclusive end of the UTC reporting window. Defaults to the current time."),
-    ] = None,
-    interval: Annotated[
-        MetricsInterval,
-        Query(description="Time bucket size for aggregation: hour, day, or week."),
-    ] = MetricsInterval.HOUR,
+    secure_services: MetricsServices,
+    start_time: MetricsStartTime = None,
+    end_time: MetricsEndTime = None,
+    interval: MetricsIntervalQuery = MetricsInterval.HOUR,
 ):
     start_time, end_time = _window(start_time, end_time)
     result = await secure_services.session.execute(
@@ -106,10 +111,7 @@ async def template_metrics(
     },
 )
 async def health_metrics(
-    secure_services: Annotated[
-        SecureService,
-        Depends(secure_services(Permissions.ADMIN, Permissions.METRICS_READ, commit=False)),
-    ],
+    secure_services: MetricsServices,
 ):
     result = await secure_services.session.execute(
         select(ClusterStatus.client_id, ClusterStatus.last_reported, ClusterStatus.interval).order_by(
@@ -130,22 +132,10 @@ async def health_metrics(
     responses=PROMETHEUS_RESPONSE,
 )
 async def submission_metrics(
-    secure_services: Annotated[
-        SecureService,
-        Depends(secure_services(Permissions.ADMIN, Permissions.METRICS_READ, commit=False)),
-    ],
-    start_time: Annotated[
-        datetime | None,
-        Query(description="Inclusive start of the UTC reporting window. Defaults to one hour before end_time."),
-    ] = None,
-    end_time: Annotated[
-        datetime | None,
-        Query(description="Inclusive end of the UTC reporting window. Defaults to the current time."),
-    ] = None,
-    interval: Annotated[
-        MetricsInterval,
-        Query(description="Time bucket size for aggregation: hour, day, or week."),
-    ] = MetricsInterval.HOUR,
+    secure_services: MetricsServices,
+    start_time: MetricsStartTime = None,
+    end_time: MetricsEndTime = None,
+    interval: MetricsIntervalQuery = MetricsInterval.HOUR,
 ):
     start_time, end_time = _window(start_time, end_time)
     result = await secure_services.session.execute(
