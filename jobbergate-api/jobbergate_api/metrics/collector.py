@@ -40,21 +40,22 @@ class MetricsCollector(Collector):
             metric = GaugeMetricFamily(
                 "jobbergate_job_template_selection_total",
                 "Job submissions grouped by job template identifier.",
-                labels=["bucket", "template_identifier"],
+                labels=["bucket", "client_id", "template_identifier"],
             )
-            for bucket, identifier, count in self.values:
-                metric.add_metric([bucket.isoformat(), identifier or "unknown"], count)
+            for bucket, client_id, identifier, count in self.values:
+                metric.add_metric([bucket.isoformat(), client_id, identifier or "unknown"], count)
             yield metric
         else:
             metric = GaugeMetricFamily(
                 "jobbergate_job_submission_status_total",
                 "Job submissions grouped by Jobbergate and Slurm status.",
-                labels=["bucket", "status", "slurm_job_state"],
+                labels=["bucket", "client_id", "status", "slurm_job_state"],
             )
-            for bucket, submission_status, slurm_job_state, count in self.values:
+            for bucket, client_id, submission_status, slurm_job_state, count in self.values:
                 metric.add_metric(
                     [
                         bucket.isoformat(),
+                        client_id,
                         submission_status.value,
                         slurm_job_state.value if slurm_job_state is not None else "unknown",
                     ],

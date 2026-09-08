@@ -38,11 +38,22 @@ MetricsServices = Annotated[
 ]
 MetricsStartTime = Annotated[
     datetime | None,
-    Query(description="Inclusive start of the UTC reporting window. Defaults to one hour before end_time."),
+    Query(
+        description=(
+            "Inclusive start of the UTC reporting window. Submissions are selected by created_at. "
+            "Defaults to one hour before end_time."
+        )
+    ),
 ]
 MetricsEndTime = Annotated[
     datetime | None,
-    Query(description="Inclusive end of the UTC reporting window. Defaults to the current time."),
+    Query(
+        description=(
+            "Inclusive end of the UTC reporting window, based on submission created_at. "
+            "Defaults to the current time. For finalized reports, set this earlier than now "
+            "to allow recent submissions to reach a final status."
+        )
+    ),
 ]
 MetricsIntervalQuery = Annotated[
     MetricsInterval,
@@ -71,7 +82,8 @@ def _response(metric_name: str, values) -> Response:
     summary="Get job template selection metrics",
     description=(
         "Returns the number of job submissions for each job template identifier, "
-        "grouped into hourly, daily, or weekly time buckets."
+        "grouped by cluster and into hourly, daily, or weekly time buckets. "
+        "Use end_time with a grace period when generating finalized reports."
     ),
     response_class=Response,
     responses=PROMETHEUS_RESPONSE,
@@ -86,14 +98,15 @@ async def template_metrics(
     result = await secure_services.session.execute(
         select(
             func.date_trunc(interval.value, JobSubmission.created_at).label("bucket"),
+            JobSubmission.client_id,
             JobScriptTemplate.identifier,
             func.count(JobSubmission.id),
         )
         .join(JobScript, JobScript.parent_template_id == JobScriptTemplate.id)
         .join(JobSubmission, JobSubmission.job_script_id == JobScript.id)
         .where(JobSubmission.created_at >= start_time, JobSubmission.created_at <= end_time)
-        .group_by("bucket", JobScriptTemplate.identifier)
-        .order_by("bucket", JobScriptTemplate.identifier)
+        .group_by("bucket", JobSubmission.client_id, JobScriptTemplate.identifier)
+        .order_by("bucket", JobSubmission.client_id, JobScriptTemplate.identifier)
     )
     return _response("templates", result.all())
 
@@ -126,7 +139,9 @@ async def health_metrics(
     summary="Get job submission status metrics",
     description=(
         "Returns counts of Jobbergate and Slurm submission statuses, "
-        "grouped into hourly, daily, or weekly time buckets."
+        "grouped by cluster and into hourly, daily, or weekly time buckets. "
+        "Submissions are selected by created_at and their latest known status is reported. "
+        "Use an end_time grace period when generating finalized reports."
     ),
     response_class=Response,
     responses=PROMETHEUS_RESPONSE,
@@ -141,12 +156,13 @@ async def submission_metrics(
     result = await secure_services.session.execute(
         select(
             func.date_trunc(interval.value, JobSubmission.created_at).label("bucket"),
+            JobSubmission.client_id,
             JobSubmission.status,
             JobSubmission.slurm_job_state,
             func.count(JobSubmission.id),
         )
         .where(JobSubmission.created_at >= start_time, JobSubmission.created_at <= end_time)
-        .group_by("bucket", JobSubmission.status, JobSubmission.slurm_job_state)
-        .order_by("bucket", JobSubmission.status, JobSubmission.slurm_job_state)
+        .group_by("bucket", JobSubmission.client_id, JobSubmission.status, JobSubmission.slurm_job_state)
+        .order_by("bucket", JobSubmission.client_id, JobSubmission.status, JobSubmission.slurm_job_state)
     )
     return _response("submissions", result.all())
