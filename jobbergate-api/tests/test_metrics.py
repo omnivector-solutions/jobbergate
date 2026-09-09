@@ -98,6 +98,35 @@ async def test_metrics_routes_reject_invalid_time_range(
     assert response.json()["detail"] == "End time must be greater than the start time."
 
 
+@pytest.mark.parametrize("path", ("templates", "submissions"))
+async def test_metrics_routes_accept_timezone_naive_time_range(
+    client: AsyncClient, inject_security_header, tester_email: str, path: str, synth_session
+):
+    inject_security_header(tester_email, Permissions.METRICS_READ)
+
+    response = await client.get(
+        f"/jobbergate/metrics/{path}",
+        params={"start_time": "2026-01-01", "interval": "hour"},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.parametrize("path", ("templates", "submissions"))
+async def test_metrics_routes_reject_invalid_timezone_naive_time_range(
+    client: AsyncClient, inject_security_header, tester_email: str, path: str, synth_session
+):
+    inject_security_header(tester_email, Permissions.METRICS_READ)
+
+    response = await client.get(
+        f"/jobbergate/metrics/{path}",
+        params={"start_time": "2026-09-08T12:00:00", "end_time": "2026-09-08T11:00:00Z"},
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()["detail"] == "End time must be greater than the start time."
+
+
 async def test_metrics_routes_reject_unknown_interval(
     client: AsyncClient, inject_security_header, tester_email: str, synth_session
 ):

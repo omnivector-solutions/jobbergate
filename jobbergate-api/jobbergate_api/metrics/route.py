@@ -14,6 +14,7 @@ from jobbergate_api.apps.job_scripts.models import JobScript
 from jobbergate_api.apps.job_submissions.models import JobSubmission
 from jobbergate_api.apps.permissions import Permissions
 from jobbergate_api.metrics.collector import MetricsCollector, MetricsInterval
+from jobbergate_api.utils.time import ensure_utc
 
 router = APIRouter(
     prefix="/metrics",
@@ -41,7 +42,8 @@ MetricsStartTime = Annotated[
     Query(
         description=(
             "Inclusive start of the UTC reporting window. Submissions are selected by created_at. "
-            "Defaults to one hour before end_time."
+            "Values without a timezone offset are assumed to be UTC. "
+            "Defaults to one day before end_time."
         )
     ),
 ]
@@ -50,6 +52,7 @@ MetricsEndTime = Annotated[
     Query(
         description=(
             "Inclusive end of the UTC reporting window, based on submission created_at. "
+            "Values without a timezone offset are assumed to be UTC. "
             "Defaults to the current time. For finalized reports, set this earlier than now "
             "to allow recent submissions to reach a final status."
         )
@@ -62,8 +65,8 @@ MetricsIntervalQuery = Annotated[
 
 
 def _window(start_time: datetime | None, end_time: datetime | None) -> tuple[datetime, datetime]:
-    end_time = end_time or datetime.now(timezone.utc)
-    start_time = start_time or end_time - timedelta(hours=1)
+    end_time = ensure_utc(end_time) or datetime.now(timezone.utc)
+    start_time = ensure_utc(start_time) or end_time - timedelta(days=1)
     if end_time < start_time:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="End time must be greater than the start time."
