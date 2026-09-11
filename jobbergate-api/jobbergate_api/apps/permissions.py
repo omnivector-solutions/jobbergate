@@ -14,6 +14,7 @@ class Permissions(str, Enum):
     MAINTAINER = "jobbergate:maintainer"
     CLUSTERS_READ = "jobbergate:clusters:read"
     CLUSTERS_UPDATE = "jobbergate:clusters:update"
+    METRICS_READ = "jobbergate:metrics:read"
     JOB_SCRIPTS_CREATE = "jobbergate:job-scripts:create"
     JOB_SCRIPTS_DELETE = "jobbergate:job-scripts:delete"
     JOB_SCRIPTS_READ = "jobbergate:job-scripts:read"
