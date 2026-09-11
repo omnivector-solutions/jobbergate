@@ -11,6 +11,41 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.12.0a0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.12.0a0) - 2026-09-11
+
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+### Added
+
+- Added Prometheus metrics endpoints for job template selection, API and agent health, and job submission status reporting. ([PR #1008](https://github.com/omnivector-solutions/jobbergate/pull/1008))
+
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.11.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.11.0) - 2026-07-31
 
 
