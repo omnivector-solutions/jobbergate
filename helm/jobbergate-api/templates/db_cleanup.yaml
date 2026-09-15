@@ -1,0 +1,85 @@
+{{- if .Values.autoClean.enable -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: jg-db-cleanup
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  labels:
+    k8s-app: jobbergate
+spec:
+  schedule: "0 0 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            k8s-app: jobbergate
+          annotations:
+            instrumentation.opentelemetry.io/inject-python: "false"
+        spec:
+          containers:
+            - name: job
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              resources:
+                requests:
+                  memory: 1Gi
+                limits:
+                  memory: 5Gi
+              command:
+                - sh
+                - -c
+                - apt install -y postgresql && pip install poetry && psql "postgresql://$DATABASE_USER:$DATABASE_PSWD@$DATABASE_HOST:$DATABASE_PORT/postgres" -c "SELECT '--organization_id', datname FROM pg_database WHERE datname ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'" -t -AF '=' | paste -sd' ' - | xargs -t poetry run jg-api-cron
+              envFrom:
+                - configMapRef:
+                    name: jobbergate-api
+                    optional: false
+              env:
+                - name: MULTI_TENANCY_ENABLED
+                  value: "true"
+                - name: S3_BUCKET_NAME
+                  value: jobbergate
+                - name: S3_ENDPOINT_URL
+                  value: http://jobbergate-minio:9000
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      key: MINIO_ACCESS_KEY
+                      name: jobbergate-minio-credentials
+                      optional: false
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: MINIO_SECRET_KEY
+                      name: jobbergate-minio-credentials
+                      optional: false
+                - name: DATABASE_HOST
+                  value: jobbergate-postgres
+                - name: DATABASE_USER
+                  value: omnivector
+                - name: DATABASE_PSWD
+                  valueFrom:
+                    secretKeyRef:
+                      name: jobbergate-kubegres-credentials
+                      key: primary-password
+                - name: DATABASE_PORT
+                  value: "5432"
+                - name: DATABASE_URL
+                  value: postgresql://$(DATABASE_USER):$(DATABASE_PSWD)@$(DATABASE_HOST):$(DATABASE_PORT)
+                - name: DATABASE_NAME
+                  value: postgres
+                - name: AUTO_CLEAN_JOB_SCRIPT_TEMPLATES_DAYS_TO_ARCHIVE
+                  value: {{ .Values.autoClean.templatesDaysToArchive | quote }}
+                - name: AUTO_CLEAN_JOB_SCRIPT_TEMPLATES_DAYS_TO_DELETE
+                  value: {{ .Values.autoClean.templatesDaysToDelete | quote }}
+                - name: AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_ARCHIVE
+                  value: {{ .Values.autoClean.jobScriptsDaysToArchive | quote }}
+                - name: AUTO_CLEAN_JOB_SCRIPTS_DAYS_TO_DELETE
+                  value: {{ .Values.autoClean.jobScriptsDaysToDelete | quote }}
+                - name: AUTO_CLEAN_JOB_SUBMISSIONS_DAYS_TO_ARCHIVE
+                  value: {{ .Values.autoClean.jobbergateApiDaysToArchive | quote }}
+                - name: AUTO_CLEAN_JOB_SUBMISSIONS_DAYS_TO_DELETE
+                  value: {{ .Values.autoClean.jobbergateApiDaysToDelete | quote }}
+          restartPolicy: OnFailure
+{{- end }}

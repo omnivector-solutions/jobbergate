@@ -1,0 +1,135 @@
+# Default values for jobbergate-api.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repository: ghcr.io/omnivector-solutions/jobbergate-api
+  tag: "5.6.0"
+  pullPolicy: Always
+
+# Names of existing Secrets to use as imagePullSecrets, e.g. if
+# `image.repository` points at a private registry.
+imagePullSecrets: []
+
+replicaCount: 1
+
+# Pod scheduling for the API deployment. Left empty by default so the chart
+# makes no assumptions about your cluster's nodes/zones. Set these if you
+# need to pin workloads (e.g. to a specific node pool or spot instances).
+affinity: {}
+tolerations: []
+nodeSelector: {}
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 100Mi
+    ephemeral-storage: 256Mi
+  limits:
+    cpu: 300m
+    memory: 500Mi
+    ephemeral-storage: 1Gi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 100
+  targetMemoryUtilizationPercentage: 100
+
+# Auth. Jobbergate validates JWTs (via armasec) against an OIDC realm you
+# provide, e.g. Keycloak, Auth0, or any other OIDC-compliant provider.
+auth:
+  # Domain + realm path used to fetch signing keys, e.g.
+  # "keycloak.example.com/realms/jobbergate". Required.
+  armasecDomain: ""
+  debug: false
+
+deployEnv: PRODUCTION
+logLevel: INFO
+
+# Sentry error tracking. Disabled by default.
+sentry:
+  enabled: false
+  dsn: ""
+  tracesSampleRate: 0.0
+  profilesSampleRate: 0.0
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  host: ""
+  path: /jobbergate
+  tls: []
+
+service:
+  annotations: {}
+
+# HorizontalPodAutoscaler is only created when autoscaling.enabled is true.
+
+# Leave empty to use the cluster's default StorageClass. Shared by the
+# Postgres and MinIO PersistentVolumeClaims below.
+storageClassName: ""
+
+# The Jobbergate API's own Postgres (TimescaleDB) database, managed via
+# Kubegres (https://www.kubegres.io/). Requires the Kubegres operator to be
+# installed in the cluster.
+postgres:
+  storageSize: 200Gi
+  backupSchedule: "0 0 1 * *"
+  replicas: 2
+  highAvailability: true
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: "1.5"
+    limits:
+      memory: 2Gi
+      cpu: "2.5"
+
+# MinIO object storage used by the API for job scripts and templates.
+minio:
+  image:
+    repository: quay.io/minio/minio
+    tag: RELEASE.2025-10-15T17-29-55Z
+  storageSize: 10Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+      ephemeral-storage: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+      ephemeral-storage: 1Gi
+
+# RabbitMQ is an external dependency, not deployed by this chart. Defaults
+# assume a sibling install of the Bitnami chart named "rabbitmq"
+# (`helm install rabbitmq bitnami/rabbitmq`), which creates a Service named
+# "rabbitmq" and a Secret "rabbitmq-default-user" with these keys.
+rabbitmq:
+  host: rabbitmq
+  existingSecret: rabbitmq-default-user
+  usernameKey: username
+  passwordKey: password
+
+# Periodic cleanup of old job scripts/submissions. Disabled by default;
+# set the *DaysToArchive/*DaysToDelete fields when enabling it.
+autoClean:
+  enable: false
+  templatesDaysToArchive: null
+  templatesDaysToDelete: null
+  jobScriptsDaysToArchive: null
+  jobScriptsDaysToDelete: null
+  jobbergateApiDaysToArchive: null
+  jobbergateApiDaysToDelete: null
+
+# Image used by the init container that waits for Postgres to be reachable.
+pgCheckerImage: busybox:latest
+
+# External Secrets Operator (https://external-secrets.io/) is required to
+# generate and store the Postgres/MinIO credentials. Set this to the name
+# of an existing ClusterSecretStore in your cluster.
+externalSecrets:
+  clusterSecretStoreName: k8s-secretsmanager
