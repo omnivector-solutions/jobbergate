@@ -214,8 +214,6 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.rabbitmq.existingSecret }}
                   key: {{ .Values.rabbitmq.passwordKey }}
-            - name: DATABASE_HOST
-              value: jobbergate-postgres
             - name: DATABASE_USER
               value: omnivector
             - name: DATABASE_PSWD
@@ -279,8 +277,6 @@ spec:
                   key: MINIO_SECRET_KEY
                   name: jobbergate-minio-credentials
                   optional: false
-            - name: DATABASE_HOST
-              value: jobbergate-postgres
             - name: DATABASE_USER
               value: omnivector
             - name: DATABASE_PSWD
