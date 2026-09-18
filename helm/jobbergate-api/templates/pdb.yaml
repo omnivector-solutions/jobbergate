@@ -1,0 +1,30 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: jobbergate-api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jobbergate-api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: jobbergate-api-kubegres-primary
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: jobbergate-api-postgres-cluster
+      replicationRole: primary
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: jobbergate-minio
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: jobbergate-minio

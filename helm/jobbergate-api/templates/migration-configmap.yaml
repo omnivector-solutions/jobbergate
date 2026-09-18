@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: check-migration
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+data:
+  check-migration.py: |
+    import os
+    from alembic.migration import MigrationContext
+    from alembic import script
+    from alembic.config import Config
+    from sqlalchemy import create_engine, text
+    from alembic.script.revision import ResolutionError
+
+    if os.environ.get("DATABASE_URL") is None:
+        raise Exception("Connection string not found.")
+
+    dbs_list = []
+    try:
+        connection_string = f'{os.environ["DATABASE_URL"]}/postgres'
+
+        engine = create_engine(connection_string)
+        conn = engine.connect()
+        list_db_query = text("SELECT datname FROM pg_database WHERE datname ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'")
+        dbs_list = conn.execute(list_db_query).fetchall()
+        conn.close()
+
+    except Exception as e:
+        print("Fail when trying connect to database.")
+        print(e)
+        exit(1)
+
+    alembic_cfg = Config("alembic/alembic.ini")
+    script_ = script.ScriptDirectory.from_config(alembic_cfg)
+    revision = script_.get_current_head()
+    print('Head revision: ', revision)
+
+    environ = os.environ
+    for db in dbs_list:
+        environ["DB_NAME"] = db[0]
+        environ["DATABASE_NAME"] = db[0]
+        os.environ.update(environ)
+        connection_string = f'{os.environ["DATABASE_URL"]}/{db[0]}'
+        engine = create_engine(connection_string)
+
+        with engine.begin() as connection:
+            from alembic import command
+
+            context = MigrationContext.configure(connection)
+            alembic_cfg.attributes['connection'] = connection
+
+            current_rev = context.get_current_revision()
+            print(f'Current revision on DB {db[0]}: ', current_rev)
+            if current_rev is not None:
+                try:
+                    revision = script_.get_revision(current_rev)
+                    if not revision.is_head:
+                        print("Database not up to date, upgrading migrations.")
+                        command.upgrade(config=alembic_cfg, revision="head")
+                    else:
+                        print("Database is up to date")
+                except ResolutionError as e:
+                    print(f"Revision not found, downgrading to last revision: Error {e}")
+                    head = script_.get_current_head()
+                    print(f'Downgrading DB to revision: {head}')
+                    command.downgrade(config=alembic_cfg, revision=head)
+                except Exception as e:
+                    print(f"Error: {e}")
+            else:
+                print("Database clear, running migrations.")
+                command.upgrade(config=alembic_cfg, revision="head")
+
+            connection.close()

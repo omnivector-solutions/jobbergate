@@ -1,0 +1,304 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: refresh-continuous-aggregates
+  annotations:
+    checksum/config: {{ .Files.Get "files/jobbergate_refresh_continuous_aggregates.sh" | sha256sum }}
+    argocd.argoproj.io/sync-wave: "1"
+data:
+  jobbergate_refresh_continuous_aggregates.sh: |
+    {{- .Files.Get "files/jobbergate_refresh_continuous_aggregates.sh" | nindent 4 }}
+---
+{{- $views := dict "10-seconds-by-node" "metrics_nodes_mv_10_seconds_by_node" "10-seconds-all-nodes" "metrics_nodes_mv_10_seconds_all_nodes" "1-minute-by-node" "metrics_nodes_mv_1_minute_by_node" "1-minute-all-nodes" "metrics_nodes_mv_1_minute_all_nodes" "10-minutes-by-node" "metrics_nodes_mv_10_minutes_by_node" "10-minutes-all-nodes" "metrics_nodes_mv_10_minutes_all_nodes" "1-hour-by-node" "metrics_nodes_mv_1_hour_by_node" "1-hour-all-nodes" "metrics_nodes_mv_1_hour_all_nodes" "1-week-by-node" "metrics_nodes_mv_1_week_by_node" "1-week-all-nodes" "metrics_nodes_mv_1_week_all_nodes" }}
+{{- range $key, $value := $views }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: jg-continuous-aggregates-{{ $key }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  labels:
+    k8s-app: jobbergate
+    view: {{ $value }}
+spec:
+  {{- if eq $key "10-seconds-by-node" }}
+  schedule: "*/1 * * * *"
+  {{- else if eq $key "10-seconds-all-nodes" }}
+  schedule: "*/1 * * * *"
+  {{- else if eq $key "1-minute-by-node" }}
+  schedule: "*/1 * * * *"
+  {{- else if eq $key "1-minute-all-nodes" }}
+  schedule: "*/1 * * * *"
+  {{- else if eq $key "10-minutes-by-node" }}
+  schedule: "*/10 * * * *"
+  {{- else if eq $key "10-minutes-all-nodes" }}
+  schedule: "*/10 * * * *"
+  {{- else if eq $key "1-hour-by-node" }}
+  schedule: "0 * * * *"
+  {{- else if eq $key "1-hour-all-nodes" }}
+  schedule: "0 * * * *"
+  {{- else if eq $key "1-week-by-node" }}
+  schedule: "0 0 * * 0"
+  {{- else if eq $key "1-week-all-nodes" }}
+  schedule: "0 0 * * 0"
+  {{- end }}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            k8s-app: jobbergate
+            view: {{ $value }}
+          annotations:
+            instrumentation.opentelemetry.io/inject-python: "false"
+        spec:
+          volumes:
+            - name: refresh-continuous-aggregates
+              configMap:
+                name: refresh-continuous-aggregates
+                defaultMode: 0555
+          containers:
+            - name: job
+              image: timescale/timescaledb:latest-pg14
+              command:
+                - sh
+                - -c
+                - /tmp/jobbergate_refresh_continuous_aggregates.sh
+              volumeMounts:
+                - name: refresh-continuous-aggregates
+                  mountPath: /tmp/jobbergate_refresh_continuous_aggregates.sh
+                  subPath: jobbergate_refresh_continuous_aggregates.sh
+              env:
+                - name: DB_HOST
+                  valueFrom:
+                    configMapKeyRef:
+                      name: jobbergate-api
+                      key: DATABASE_HOST
+                - name: DB_USER
+                  value: omnivector
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: jobbergate-kubegres-credentials
+                      key: primary-password
+                - name: DB_PORT
+                  value: "5432"
+                - name: INIT_DB
+                  value: jobbergate
+                - name: VIEW_NAME
+                  value: {{ $value }}
+              livenessProbe:
+                exec:
+                  command:
+                    - sh
+                    - -c
+                    - pg_isready -h $DB_HOST -U $DB_USER -d $INIT_DB
+          restartPolicy: OnFailure
+---
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jobbergate-api
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  labels:
+    k8s-app: jobbergate
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jobbergate-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: jobbergate-api
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: "default/python-instrumentation"
+    spec:
+      terminationGracePeriodSeconds: 30
+      automountServiceAccountToken: false
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: check-migration
+          configMap:
+            name: check-migration
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: pgchecker
+          command:
+            - sh
+            - -c
+            - |-
+              echo ">>>>> Waiting for Postgres to be ready"
+              until nc -z -w 2 $HOST 5432; do sleep 2; done;
+              echo "<<<<< Postgres ready"
+          image: {{ .Values.pgCheckerImage }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            limits:
+              cpu: 10m
+              memory: 16Mi
+            requests:
+              cpu: 10m
+              memory: 16Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: HOST
+              value: jobbergate-postgres
+        - name: migration
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command:
+            - sh
+            - -c
+            - cd /app && python check-migration.py
+          envFrom:
+            - configMapRef:
+                name: jobbergate-api
+                optional: false
+          env:
+            - name: MULTI_TENANCY_ENABLED
+              value: "true"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: S3_BUCKET_NAME
+              value: jobbergate
+            - name: S3_ENDPOINT_URL
+              value: http://jobbergate-minio:9000
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  key: MINIO_ACCESS_KEY
+                  name: jobbergate-minio-credentials
+                  optional: false
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: MINIO_SECRET_KEY
+                  name: jobbergate-minio-credentials
+                  optional: false
+            - name: RABBITMQ_HOST
+              value: {{ .Values.rabbitmq.host }}
+            - name: RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.rabbitmq.existingSecret }}
+                  key: {{ .Values.rabbitmq.usernameKey }}
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.rabbitmq.existingSecret }}
+                  key: {{ .Values.rabbitmq.passwordKey }}
+            - name: DATABASE_USER
+              value: omnivector
+            - name: DATABASE_PSWD
+              valueFrom:
+                secretKeyRef:
+                  name: jobbergate-kubegres-credentials
+                  key: primary-password
+            - name: DATABASE_PORT
+              value: "5432"
+            - name: DATABASE_URL
+              value: postgresql://$(DATABASE_USER):$(DATABASE_PSWD)@$(DATABASE_HOST):$(DATABASE_PORT)
+            - name: DATABASE_NAME
+              value: postgres
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: check-migration
+              mountPath: /app/check-migration.py
+              subPath: check-migration.py
+      containers:
+        - name: jobbergate-api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: jobbergate-api
+                optional: false
+          readinessProbe:
+            httpGet:
+              port: 80
+              path: /jobbergate/health
+            periodSeconds: 3
+            failureThreshold: 3
+            successThreshold: 2
+            timeoutSeconds: 1
+            initialDelaySeconds: 5
+          startupProbe:
+            tcpSocket:
+              port: 80
+          env:
+            - name: MULTI_TENANCY_ENABLED
+              value: "true"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: S3_BUCKET_NAME
+              value: jobbergate
+            - name: S3_ENDPOINT_URL
+              value: http://jobbergate-minio:9000
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  key: MINIO_ACCESS_KEY
+                  name: jobbergate-minio-credentials
+                  optional: false
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: MINIO_SECRET_KEY
+                  name: jobbergate-minio-credentials
+                  optional: false
+            - name: DATABASE_USER
+              value: omnivector
+            - name: DATABASE_PSWD
+              valueFrom:
+                secretKeyRef:
+                  name: jobbergate-kubegres-credentials
+                  key: primary-password
+            - name: DATABASE_PORT
+              value: "5432"
+            - name: RABBITMQ_HOST
+              value: {{ .Values.rabbitmq.host }}
+            - name: RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: {{ .Values.rabbitmq.usernameKey }}
+                  name: {{ .Values.rabbitmq.existingSecret }}
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: {{ .Values.rabbitmq.passwordKey }}
+                  name: {{ .Values.rabbitmq.existingSecret }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+      restartPolicy: Always

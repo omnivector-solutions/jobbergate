@@ -72,4 +72,36 @@ The final action is
 [publish_on_tag.yaml](https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/publish_on_tag.yaml)
 This action is triggered when a new version tag is pushed to the repository.
 It first double checks if the tag matches the version number of each Jobbergate
-component, and then it builds and publishes the packages on PyPI.
+component, and then it builds and publishes the packages on PyPI. The same
+workflow also builds and pushes container images (to GHCR and, for the API, to
+Amazon ECR as well).
+
+## Automated Publication of the Helm Chart
+
+Jobbergate API can also be deployed standalone via the Helm chart at
+[`helm/jobbergate-api`](https://github.com/omnivector-solutions/jobbergate/tree/main/helm/jobbergate-api)
+in this repository. It is a generic chart with no cloud-specific assumptions (no
+hardcoded node affinity, no cloud Ingress annotations); see the chart's own
+`README.md` for requirements and configuration.
+
+The chart is versioned independently from the application (its own `version` in
+`Chart.yaml`), since chart changes (e.g. a resource limit tweak) happen at a very
+different cadence than application releases. It is published by
+[publish_jobbergate_api_helm_chart.yaml](https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/publish_jobbergate_api_helm_chart.yaml),
+which:
+
+- Triggers on its own tag, `jobbergate-api-chart-v<Chart.yaml version>` (e.g.
+  `jobbergate-api-chart-v0.2.0`), or via manual workflow dispatch.
+- Fails if the tag doesn't match the chart's `version` in `Chart.yaml`.
+- Packages the chart and pushes it as an OCI artifact to
+  `oci://ghcr.io/omnivector-solutions/charts/jobbergate-api`.
+- Attaches the packaged `.tgz` to a GitHub Release for that tag.
+
+To release a new chart version: bump `version` in `helm/jobbergate-api/Chart.yaml`,
+merge to `main`, then tag and push `jobbergate-api-chart-v<version>`.
+
+Install directly from GHCR with:
+
+```bash
+helm install jobbergate-api oci://ghcr.io/omnivector-solutions/charts/jobbergate-api --version <chart-version>
+```

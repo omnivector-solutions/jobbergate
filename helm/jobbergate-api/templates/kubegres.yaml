@@ -1,0 +1,169 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jobbergate-postgres-config
+  labels:
+    k8s-app: jobbergate
+  annotations:
+    checksum/config: {{ (printf "%s%s" (.Files.Get "files/jobbergate_postgres.conf") (.Files.Get "files/jobbergate_promote_replica_to_primary.sh")) | sha256sum }}
+    argocd.argoproj.io/sync-wave: "1"
+data:
+  postgres.conf: |
+    {{- .Files.Get "files/jobbergate_postgres.conf" | nindent 4 }}
+  promote_replica_to_primary.sh: |
+    {{- .Files.Get "files/jobbergate_promote_replica_to_primary.sh" | nindent 4 }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jobbergate-postgres-backup-pvc
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  labels:
+    k8s-app: jobbergate
+spec:
+  {{- with .Values.storageClassName }}
+  storageClassName: {{ . }}
+  {{- end }}
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgres.storageSize }}
+---
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: jobbergate-postgres-primary-password
+  labels:
+    k8s-app: jobbergate
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  length: 42
+  digits: 10
+  symbols: 10
+  symbolCharacters: "-_"
+  noUpper: false
+  allowRepeat: true
+---
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: jobbergate-postgres-replica-password
+  labels:
+    k8s-app: jobbergate
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  length: 42
+  digits: 10
+  symbols: 10
+  symbolCharacters: "-_"
+  noUpper: false
+  allowRepeat: true
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: jobbergate-kubegres-credentials
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    k8s-app: jobbergate
+spec:
+  refreshInterval: "0"
+  secretStoreRef:
+    name: {{ .Values.externalSecrets.clusterSecretStoreName }}
+    kind: ClusterSecretStore
+  target:
+    name: jobbergate-kubegres-credentials
+    immutable: true
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Password
+          name: "jobbergate-postgres-primary-password"
+      rewrite:
+        - regexp:
+            source: "(.*)"
+            target: "primary-password"
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Password
+          name: "jobbergate-postgres-replica-password"
+      rewrite:
+        - regexp:
+            source: "(.*)"
+            target: "replica-password"
+---
+apiVersion: kubegres.reactive-tech.io/v1
+kind: Kubegres
+metadata:
+  name: jobbergate-postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  labels:
+    k8s-app: jobbergate
+spec:
+  replicas: {{ .Values.postgres.replicas }}
+  image: timescale/timescaledb:latest-pg14
+  customConfig: jobbergate-postgres-config
+  database:
+    size: {{ .Values.postgres.storageSize }}
+    {{- with .Values.storageClassName }}
+    storageClassName: {{ . }}
+    {{- end }}
+    volumeMount: /var/lib/postgresql/data
+  backup:
+    schedule: "{{ .Values.postgres.backupSchedule }}"
+    pvcName: jobbergate-postgres-backup-pvc
+    volumeMount: /var/lib/backup
+  resources:
+    {{- toYaml .Values.postgres.resources | nindent 4 }}
+  scheduler:
+    {{- if .Values.affinity }}
+    affinity:
+      {{- toYaml .Values.affinity | nindent 6 }}
+    {{- else if .Values.postgres.highAvailability }}
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: topology.kubernetes.io/zone
+              labelSelector:
+                matchLabels:
+                  app: jobbergate-postgres
+          - weight: 90
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app: jobbergate-postgres
+    {{- end }}
+    {{- with .Values.tolerations }}
+    tolerations:
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with .Values.nodeSelector }}
+    nodeSelector:
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  env:
+    - name: POSTGRES_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: jobbergate-kubegres-credentials
+          key: primary-password
+    - name: POSTGRES_REPLICATION_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: jobbergate-kubegres-credentials
+          key: replica-password
+    - name: POSTGRES_USER
+      value: omnivector
+    - name: POSTGRES_DB
+      value: jobbergate

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jobbergate-api
+  labels:
+    k8s-app: jobbergate
+data:
+  ARMASEC_DOMAIN: {{ .Values.auth.armasecDomain | quote }}
+  ARMASEC_DEBUG: {{ .Values.auth.debug | quote }}
+  {{- if .Values.sentry.enabled }}
+  SENTRY_DSN: {{ .Values.sentry.dsn | quote }}
+  {{- end }}
+  LOG_LEVEL: {{ .Values.logLevel | quote }}
+  DEPLOY_ENV: {{ .Values.deployEnv | quote }}
+  SENTRY_TRACING_SAMPLE_RATE: {{ .Values.sentry.tracesSampleRate | quote }}
+  SENTRY_PROFILING_SAMPLE_RATE: {{ .Values.sentry.profilesSampleRate | quote }}
+  DATABASE_HOST: jobbergate-postgres
