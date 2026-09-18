@@ -1014,6 +1014,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#automated-publication-of-the-helm-chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automated Publication of the Helm Chart
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1369,6 +1380,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#automated-publication-of-the-helm-chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automated Publication of the Helm Chart
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1449,7 +1471,33 @@ the new version number for the release.</p>
 <a href="https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/publish_on_tag.yaml">publish_on_tag.yaml</a>
 This action is triggered when a new version tag is pushed to the repository.
 It first double checks if the tag matches the version number of each Jobbergate
-component, and then it builds and publishes the packages on PyPI.</p>
+component, and then it builds and publishes the packages on PyPI. The same
+workflow also builds and pushes container images (to GHCR and, for the API, to
+Amazon ECR as well).</p>
+<h2 id="automated-publication-of-the-helm-chart">Automated Publication of the Helm Chart</h2>
+<p>Jobbergate API can also be deployed standalone via the Helm chart at
+<a href="https://github.com/omnivector-solutions/jobbergate/tree/main/helm/jobbergate-api"><code>helm/jobbergate-api</code></a>
+in this repository. It is a generic chart with no cloud-specific assumptions (no
+hardcoded node affinity, no cloud Ingress annotations); see the chart's own
+<code>README.md</code> for requirements and configuration.</p>
+<p>The chart is versioned independently from the application (its own <code>version</code> in
+<code>Chart.yaml</code>), since chart changes (e.g. a resource limit tweak) happen at a very
+different cadence than application releases. It is published by
+<a href="https://github.com/omnivector-solutions/jobbergate/blob/main/.github/workflows/publish_jobbergate_api_helm_chart.yaml">publish_jobbergate_api_helm_chart.yaml</a>,
+which:</p>
+<ul>
+<li>Triggers on its own tag, <code>jobbergate-api-chart-v&lt;Chart.yaml version&gt;</code> (e.g.
+  <code>jobbergate-api-chart-v0.2.0</code>), or via manual workflow dispatch.</li>
+<li>Fails if the tag doesn't match the chart's <code>version</code> in <code>Chart.yaml</code>.</li>
+<li>Packages the chart and pushes it as an OCI artifact to
+  <code>oci://ghcr.io/omnivector-solutions/charts/jobbergate-api</code>.</li>
+<li>Attaches the packaged <code>.tgz</code> to a GitHub Release for that tag.</li>
+</ul>
+<p>To release a new chart version: bump <code>version</code> in <code>helm/jobbergate-api/Chart.yaml</code>,
+merge to <code>main</code>, then tag and push <code>jobbergate-api-chart-v&lt;version&gt;</code>.</p>
+<p>Install directly from GHCR with:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>helm<span class="w"> </span>install<span class="w"> </span>jobbergate-api<span class="w"> </span>oci://ghcr.io/omnivector-solutions/charts/jobbergate-api<span class="w"> </span>--version<span class="w"> </span>&lt;chart-version&gt;
+</span></code></pre></div>
 
 
 
