@@ -6,8 +6,12 @@ Deploys the Jobbergate API standalone, with its own:
   backup PVC, replica/primary credentials generated through
   [External Secrets](https://external-secrets.io/), and the continuous aggregate
   refresh CronJobs.
-- MinIO object storage (deployment, PVC, service, generated credentials) used for job
-  scripts and templates.
+- Object storage for job scripts and templates, either:
+  - **MinIO** (default, `storage.backend: minio`): the chart deploys its own MinIO
+    instance (Deployment, PVC, Service, generated credentials), or
+  - **S3** (`storage.backend: s3`): no MinIO is deployed; the API is pointed at an
+    external bucket (AWS S3, or any S3-compatible service) using credentials you
+    provide via `storage.s3.*` (either inline, or an existing Secret).
 
 This chart makes no assumptions about your cloud provider or cluster setup: it has no
 hardcoded node affinity, no cloud-specific Ingress annotations, and no proprietary
@@ -20,7 +24,8 @@ scheduling, image pull secrets) is left to `values.yaml` for you to fill in.
   installed.
 - [External Secrets Operator](https://external-secrets.io/) with a `ClusterSecretStore`
   (name configurable via `externalSecrets.clusterSecretStoreName`) able to back the
-  `Password` generator used for DB/MinIO credentials.
+  `Password` generator used for DB credentials, and MinIO credentials when
+  `storage.backend: minio` (the default).
 - An external RabbitMQ instance (see below).
 - An OIDC provider (Keycloak, Auth0, etc) to issue the JWTs Jobbergate validates.
 
@@ -51,15 +56,17 @@ At minimum, set `auth.armasecDomain` to your OIDC realm (e.g.
 
 See `values.yaml` for all configurable options: image, resources, scheduling
 (`affinity`/`tolerations`/`nodeSelector`), autoscaling, ingress, Sentry, RabbitMQ,
-storage class, and the periodic auto-clean job.
+storage backend (`storage.backend: minio|s3`), storage class, and the periodic
+auto-clean job.
 
 ## Publishing (CI)
 
-- **Container image** (`.github/workflows/publish_on_tag.yaml`, job `publish-to-ecr`):
-  built from `jobbergate-api/` and pushed to both Amazon ECR and
-  `ghcr.io/omnivector-solutions/jobbergate-api` (tags: app version + `latest`) on every
-  app version tag. The GHCR image carries `org.opencontainers.image.source/version/revision`
-  labels so it shows up linked to this repository and version on GHCR.
+- **Container image** (`.github/workflows/publish_on_tag.yaml`): the `publish-to-ghcr`
+  job builds and pushes `jobbergate-api`, `jobbergate-cli` and `jobbergate-agent`
+  images to [GHCR](https://ghcr.io/omnivector-solutions), tagged by
+  `docker/metadata-action` with the semver version, `{major}.{minor}`, `{major}`, the
+  git ref and the commit SHA; the `publish-to-ecr` job additionally pushes
+  `jobbergate-api`'s image to Amazon ECR. Both run on every app version tag.
 - **Helm chart** (`.github/workflows/publish_jobbergate_api_helm_chart.yaml`): packaged
   from this directory and pushed as an OCI artifact to
   `oci://ghcr.io/omnivector-solutions/charts/jobbergate-api` whenever a

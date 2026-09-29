@@ -186,22 +186,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: S3_BUCKET_NAME
-              value: jobbergate
-            - name: S3_ENDPOINT_URL
-              value: http://jobbergate-minio:9000
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  key: MINIO_ACCESS_KEY
-                  name: jobbergate-minio-credentials
-                  optional: false
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  key: MINIO_SECRET_KEY
-                  name: jobbergate-minio-credentials
-                  optional: false
+            {{- include "jobbergate-api.s3Env" . | nindent 12 }}
             - name: RABBITMQ_HOST
               value: {{ .Values.rabbitmq.host }}
             - name: RABBITMQ_USERNAME
@@ -261,22 +246,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: S3_BUCKET_NAME
-              value: jobbergate
-            - name: S3_ENDPOINT_URL
-              value: http://jobbergate-minio:9000
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  key: MINIO_ACCESS_KEY
-                  name: jobbergate-minio-credentials
-                  optional: false
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  key: MINIO_SECRET_KEY
-                  name: jobbergate-minio-credentials
-                  optional: false
+            {{- include "jobbergate-api.s3Env" . | nindent 12 }}
             - name: DATABASE_USER
               value: omnivector
             - name: DATABASE_PSWD

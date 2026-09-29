@@ -4,7 +4,7 @@
 
 image:
   repository: ghcr.io/omnivector-solutions/jobbergate-api
-  tag: "5.6.0"
+  tag: "5.11.0"
   pullPolicy: Always
 
 # Names of existing Secrets to use as imagePullSecrets, e.g. if
@@ -88,21 +88,48 @@ postgres:
       memory: 2Gi
       cpu: "2.5"
 
-# MinIO object storage used by the API for job scripts and templates.
-minio:
-  image:
-    repository: quay.io/minio/minio
-    tag: RELEASE.2025-09-07T16-13-09Z
-  storageSize: 10Gi
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-      ephemeral-storage: 256Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
-      ephemeral-storage: 1Gi
+# Object storage for job scripts and templates.
+storage:
+  # "minio": this chart deploys its own MinIO instance and generates its
+  #          credentials (default, works out of the box).
+  # "s3":    no MinIO is deployed; the API is pointed at an external bucket
+  #          (AWS S3, or any S3-compatible service) using the credentials
+  #          configured under storage.s3 below.
+  backend: minio
+  bucketName: jobbergate
+
+  # Only used when backend: minio.
+  minio:
+    image:
+      repository: quay.io/minio/minio
+      tag: RELEASE.2025-09-07T16-13-09Z
+    storageSize: 10Gi
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+        ephemeral-storage: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+        ephemeral-storage: 1Gi
+
+  # Only used when backend: s3.
+  s3:
+    # Leave empty to use AWS S3's default endpoint. Set this to point at an
+    # S3-compatible service instead (e.g. Cloudflare R2, Backblaze B2, a
+    # self-hosted MinIO outside this chart).
+    endpointUrl: ""
+    # Leave empty to fall back to the AWS SDK's own region resolution.
+    region: ""
+    # Static credentials. Ignored if existingSecret is set below.
+    accessKeyId: ""
+    secretAccessKey: ""
+    # Name of an existing Secret to source credentials from instead of the
+    # two values above (e.g. one managed by External Secrets).
+    existingSecret: ""
+    existingSecretAccessKeyIdKey: AWS_ACCESS_KEY_ID
+    existingSecretSecretAccessKeyKey: AWS_SECRET_ACCESS_KEY
 
 # RabbitMQ is an external dependency, not deployed by this chart. Defaults
 # assume a sibling install of the Bitnami chart named "rabbitmq"

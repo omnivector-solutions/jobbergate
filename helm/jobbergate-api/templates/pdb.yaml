@@ -16,8 +16,9 @@ spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: jobbergate-api-postgres-cluster
+      app: jobbergate-postgres
       replicationRole: primary
+{{- if eq .Values.storage.backend "minio" }}
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -28,3 +29,4 @@ spec:
   selector:
     matchLabels:
       app: jobbergate-minio
+{{- end }}
