@@ -30,13 +30,18 @@ To spin everything up using `docker-compose`, simply execute the following comma
 docker-compose up --build
 ```
 
+The local S3 service is Garage at `http://localhost:9000`. Compose creates the
+`jobbergate-resources` and `test-jobbergate-resources` buckets automatically.
+This is a single-node development deployment; existing MinIO volumes are not
+migrated to Garage. Garage does not support MinIO's public bucket policies, so
+objects require authenticated access.
+
 
 Then, you can begin executing commands via the `jobberate-cli` by running bash within
 the container built for it:
 
 ```shell
-docker-compose run jobbergate-cli bash
-```
+docker compose run --rm -it --entrypoint bash jobbergate-cli```
 
 
 Once the bash shell in the container has started, you can start running jobbergate

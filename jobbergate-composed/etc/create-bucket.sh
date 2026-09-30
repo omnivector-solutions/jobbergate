@@ -1,8 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
-mc alias set myminio http://minio:9000 compose-s3-key compose-s3-secret
-mc mb --ignore-existing myminio/jobbergate-resources
-mc policy set public myminio/jobbergate-resources
-mc mb --ignore-existing myminio/test-resources
-mc policy set public myminio/test-resources
+if ! /garage bucket info test-jobbergate-resources >/dev/null 2>&1; then
+	/garage bucket create test-jobbergate-resources
+fi
+/garage bucket allow --read --write --owner test-jobbergate-resources --key GK0123456789abcdef0123456789abcdef
