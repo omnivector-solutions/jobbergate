@@ -2,7 +2,7 @@
 
 export PGPASSWORD=$DB_PASSWORD
 
-if [ "$MULTI_TENANCY_ENABLED" = "true" ]; then
+if [[ "$MULTI_TENANCY_ENABLED" == "true" ]]; then
     # Multi-tenancy: one database per organization, named after the organization id (UUID).
     echo "Fetching the list of databases"
     DB_LIST=$(psql -h $DB_HOST \
