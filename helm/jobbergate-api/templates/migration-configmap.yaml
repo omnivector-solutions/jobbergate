@@ -17,19 +17,24 @@ data:
         raise Exception("Connection string not found.")
 
     dbs_list = []
-    try:
-        connection_string = f'{os.environ["DATABASE_URL"]}/postgres'
+    if os.environ.get("MULTI_TENANCY_ENABLED", "false").lower() == "true":
+        # Multi-tenancy: one database per organization, named after the organization id (UUID).
+        try:
+            connection_string = f'{os.environ["DATABASE_URL"]}/postgres'
 
-        engine = create_engine(connection_string)
-        conn = engine.connect()
-        list_db_query = text("SELECT datname FROM pg_database WHERE datname ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'")
-        dbs_list = conn.execute(list_db_query).fetchall()
-        conn.close()
+            engine = create_engine(connection_string)
+            conn = engine.connect()
+            list_db_query = text("SELECT datname FROM pg_database WHERE datname ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'")
+            dbs_list = conn.execute(list_db_query).fetchall()
+            conn.close()
 
-    except Exception as e:
-        print("Fail when trying connect to database.")
-        print(e)
-        exit(1)
+        except Exception as e:
+            print("Fail when trying connect to database.")
+            print(e)
+            exit(1)
+    else:
+        # Single tenant: migrate only the configured database.
+        dbs_list = [(os.environ["DATABASE_NAME"],)]
 
     alembic_cfg = Config("alembic/alembic.ini")
     script_ = script.ScriptDirectory.from_config(alembic_cfg)

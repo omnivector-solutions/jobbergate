@@ -16,15 +16,17 @@ spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: jobbergate-api-postgres-cluster
+      app: jobbergate-postgres
       replicationRole: primary
+{{- if eq .Values.storage.backend "garage" }}
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: jobbergate-minio
+  name: jobbergate-garage
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: jobbergate-minio
+      app: jobbergate-garage
+{{- end }}

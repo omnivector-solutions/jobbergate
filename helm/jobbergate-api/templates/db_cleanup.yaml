@@ -30,45 +30,33 @@ spec:
               command:
                 - sh
                 - -c
-                - apt install -y postgresql && pip install poetry && psql "postgresql://$DATABASE_USER:$DATABASE_PSWD@$DATABASE_HOST:$DATABASE_PORT/postgres" -c "SELECT '--organization_id', datname FROM pg_database WHERE datname ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'" -t -AF '=' | paste -sd' ' - | xargs -t poetry run jg-api-cron
+                {{- if .Values.multiTenancy.enabled }}
+                - |-
+                  # Multi-tenancy: one database per organization, named after the organization id (UUID).
+                  ORGS=$(python - <<'PY'
+                  import os
+                  from sqlalchemy import create_engine, text
+                  query = text("SELECT datname FROM pg_database WHERE datname ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'")
+                  with create_engine(os.environ["DATABASE_URL"] + "/postgres").connect() as conn:
+                      print(" ".join(f"--organization_id={row[0]}" for row in conn.execute(query)))
+                  PY
+                  )
+                  if [ -z "$ORGS" ]; then echo "No tenant databases found"; exit 0; fi
+                  exec jg-api-cron $ORGS
+                {{- else }}
+                - exec jg-api-cron
+                {{- end }}
               envFrom:
                 - configMapRef:
                     name: jobbergate-api
                     optional: false
               env:
-                - name: MULTI_TENANCY_ENABLED
-                  value: "true"
-                - name: S3_BUCKET_NAME
-                  value: jobbergate
-                - name: S3_ENDPOINT_URL
-                  value: http://jobbergate-minio:9000
-                - name: AWS_ACCESS_KEY_ID
-                  valueFrom:
-                    secretKeyRef:
-                      key: MINIO_ACCESS_KEY
-                      name: jobbergate-minio-credentials
-                      optional: false
-                - name: AWS_SECRET_ACCESS_KEY
-                  valueFrom:
-                    secretKeyRef:
-                      key: MINIO_SECRET_KEY
-                      name: jobbergate-minio-credentials
-                      optional: false
+                {{- include "jobbergate-api.dbEnv" . | nindent 16 }}
+                {{- include "jobbergate-api.s3Env" . | nindent 16 }}
                 - name: DATABASE_HOST
                   value: jobbergate-postgres
-                - name: DATABASE_USER
-                  value: omnivector
-                - name: DATABASE_PSWD
-                  valueFrom:
-                    secretKeyRef:
-                      name: jobbergate-kubegres-credentials
-                      key: primary-password
-                - name: DATABASE_PORT
-                  value: "5432"
                 - name: DATABASE_URL
                   value: postgresql://$(DATABASE_USER):$(DATABASE_PSWD)@$(DATABASE_HOST):$(DATABASE_PORT)
-                - name: DATABASE_NAME
-                  value: postgres
                 - name: AUTO_CLEAN_JOB_SCRIPT_TEMPLATES_DAYS_TO_ARCHIVE
                   value: {{ .Values.autoClean.templatesDaysToArchive | quote }}
                 - name: AUTO_CLEAN_JOB_SCRIPT_TEMPLATES_DAYS_TO_DELETE

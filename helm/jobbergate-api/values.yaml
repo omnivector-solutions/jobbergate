@@ -4,7 +4,7 @@
 
 image:
   repository: ghcr.io/omnivector-solutions/jobbergate-api
-  tag: "5.6.0"
+  tag: "5.11.0"
   pullPolicy: Always
 
 # Names of existing Secrets to use as imagePullSecrets, e.g. if
@@ -48,6 +48,12 @@ auth:
 deployEnv: PRODUCTION
 logLevel: INFO
 
+# Multi-tenancy. When enabled, Jobbergate selects the database from the
+# organization id in the user's token. When disabled (default), Jobbergate
+# uses the single database defined by `postgres.database`.
+multiTenancy:
+  enabled: false
+
 # Sentry error tracking. Disabled by default.
 sentry:
   enabled: false
@@ -69,13 +75,16 @@ service:
 # HorizontalPodAutoscaler is only created when autoscaling.enabled is true.
 
 # Leave empty to use the cluster's default StorageClass. Shared by the
-# Postgres and MinIO PersistentVolumeClaims below.
+# Postgres and Garage PersistentVolumeClaims below.
 storageClassName: ""
 
 # The Jobbergate API's own Postgres (TimescaleDB) database, managed via
 # Kubegres (https://www.kubegres.io/). Requires the Kubegres operator to be
 # installed in the cluster.
 postgres:
+  # Database created by Postgres. Also passed to Jobbergate as DATABASE_NAME
+  # when multi-tenancy is disabled.
+  database: jobbergate
   storageSize: 200Gi
   backupSchedule: "0 0 1 * *"
   replicas: 2
@@ -88,21 +97,52 @@ postgres:
       memory: 2Gi
       cpu: "2.5"
 
-# MinIO object storage used by the API for job scripts and templates.
-minio:
-  image:
-    repository: quay.io/minio/minio
-    tag: RELEASE.2025-09-07T16-13-09Z
-  storageSize: 10Gi
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-      ephemeral-storage: 256Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
-      ephemeral-storage: 1Gi
+# Object storage for job scripts and templates.
+storage:
+  # "garage": this chart deploys a single-node Garage instance
+  #           (https://garagehq.deuxfleurs.fr/), creates its bucket and S3 key
+  #           and generates their credentials (default, works out of the box).
+  # "s3":     no Garage is deployed; the API is pointed at an external bucket
+  #           (AWS S3, or any S3-compatible service) using the credentials
+  #           configured under storage.s3 below.
+  backend: garage
+  bucketName: jobbergate
+
+  # Only used when backend: garage.
+  garage:
+    image:
+      repository: dxflrs/garage
+      tag: v2.3.0
+    # S3 region served by Garage. It must match the region the API signs
+    # requests with, which is passed to the API as AWS_DEFAULT_REGION.
+    region: us-east-1
+    storageSize: 10Gi
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+        ephemeral-storage: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+        ephemeral-storage: 1Gi
+
+  # Only used when backend: s3.
+  s3:
+    # Leave empty to use AWS S3's default endpoint. Set this to point at an
+    # S3-compatible service instead (e.g. Cloudflare R2, Backblaze B2, a
+    # self-hosted Garage or MinIO outside this chart).
+    endpointUrl: ""
+    # Leave empty to fall back to the AWS SDK's own region resolution.
+    region: ""
+    # Static credentials. Ignored if existingSecret is set below.
+    accessKeyId: ""
+    secretAccessKey: ""
+    # Name of an existing Secret to source credentials from instead of the
+    # two values above (e.g. one managed by External Secrets).
+    existingSecret: ""
+    existingSecretAccessKeyIdKey: AWS_ACCESS_KEY_ID
+    existingSecretSecretAccessKeyKey: AWS_SECRET_ACCESS_KEY
 
 # RabbitMQ is an external dependency, not deployed by this chart. Defaults
 # assume a sibling install of the Bitnami chart named "rabbitmq"
@@ -129,7 +169,7 @@ autoClean:
 pgCheckerImage: busybox:latest
 
 # External Secrets Operator (https://external-secrets.io/) is required to
-# generate and store the Postgres/MinIO credentials. Set this to the name
+# generate and store the Postgres/Garage credentials. Set this to the name
 # of an existing ClusterSecretStore in your cluster.
 externalSecrets:
   clusterSecretStoreName: k8s-secretsmanager
