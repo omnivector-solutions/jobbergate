@@ -111,8 +111,8 @@ ARMASEC_DOMAIN = "armasec.dev"                                   # Must align wi
 ARMASEC_DEBUG = false                                            # Set this to True to debug armasec issues by seeing verbose logging
 SENDGRID_FROM_EMAIL = "info@pytesting.com"
 SENDGRID_API_KEY = "test-api-key"
-AWS_ACCESS_KEY_ID = "compose-s3-key"
-AWS_SECRET_ACCESS_KEY = "compose-s3-secret"
+AWS_ACCESS_KEY_ID = "GK0123456789abcdef0123456789abcdef"
+AWS_SECRET_ACCESS_KEY = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 RABBITMQ_HOST = { value = "localhost", skip_if_set = true }
 RABBITMQ_USERNAME = { value = "local-user", skip_if_set = true }
 RABBITMQ_PASSWORD = { value = "local-pswd", skip_if_set = true }

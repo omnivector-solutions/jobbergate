@@ -122,14 +122,14 @@ jobbergate-composed-db-1                    "docker-entrypoint.s…"   db       
 jobbergate-composed-jobbergate-api-1        "/bin/sh -c /app/dev…"   jobbergate-api        running (healthy)   0.0.0.0:8000->80/tcp
 jobbergate-composed-jobbergate-cli-1        "python3"                jobbergate-cli        exited (0)
 jobbergate-composed-keycloak.local-1        "/opt/keycloak/bin/k…"   keycloak.local        running             0.0.0.0:8080->8080/tcp, 8443/tcp
-jobbergate-composed-minio-1                 "/usr/bin/docker-ent…"   minio                 running             0.0.0.0:9000-9001->9000-9001/tcp
-jobbergate-composed-minio-create-bucket-1   "/create-bucket.sh"      minio-create-bucket   exited (1)
+jobbergate-composed-garage-1                "/garage server --si…"  garage                running (healthy)   0.0.0.0:9000->3900/tcp
+jobbergate-composed-garage-create-bucket-1  "/bin/sh /create-buck…"  garage-create-bucket  exited (0)
 mysql                                       "docker-entrypoint.s…"   mysql                 running             3306/tcp, 33060/tcp
 slurmctld                                   "/usr/local/bin/slur…"   slurmctld             running             6817/tcp
 slurmdbd                                    "/usr/local/bin/slur…"   slurmdbd              running             6819/tcp
 ```
 
-The `STATUS` for each service should be "running" except for the `minio-create-bucket` and `jobbergate-cli`
+The `STATUS` for each service should be "running" except for the `garage-create-bucket` and `jobbergate-cli`
 services that should be "exited".
 
 #### Confirm Jobbergate CLI availability
