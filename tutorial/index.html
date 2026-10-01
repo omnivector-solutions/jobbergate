@@ -1914,13 +1914,13 @@ services are in a healthy state</p>
 </span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>jobbergate-composed-jobbergate-api-1        &quot;/bin/sh -c /app/dev…&quot;   jobbergate-api        running (healthy)   0.0.0.0:8000-&gt;80/tcp
 </span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>jobbergate-composed-jobbergate-cli-1        &quot;python3&quot;                jobbergate-cli        exited (0)
 </span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>jobbergate-composed-keycloak.local-1        &quot;/opt/keycloak/bin/k…&quot;   keycloak.local        running             0.0.0.0:8080-&gt;8080/tcp, 8443/tcp
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>jobbergate-composed-minio-1                 &quot;/usr/bin/docker-ent…&quot;   minio                 running             0.0.0.0:9000-9001-&gt;9000-9001/tcp
-</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>jobbergate-composed-minio-create-bucket-1   &quot;/create-bucket.sh&quot;      minio-create-bucket   exited (1)
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>jobbergate-composed-garage-1                &quot;/garage server --si…&quot;  garage                running (healthy)   0.0.0.0:9000-&gt;3900/tcp
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>jobbergate-composed-garage-create-bucket-1  &quot;/bin/sh /create-buck…&quot;  garage-create-bucket  exited (0)
 </span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>mysql                                       &quot;docker-entrypoint.s…&quot;   mysql                 running             3306/tcp, 33060/tcp
 </span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>slurmctld                                   &quot;/usr/local/bin/slur…&quot;   slurmctld             running             6817/tcp
 </span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>slurmdbd                                    &quot;/usr/local/bin/slur…&quot;   slurmdbd              running             6819/tcp
 </span></code></pre></div>
-<p>The <code>STATUS</code> for each service should be "running" except for the <code>minio-create-bucket</code> and <code>jobbergate-cli</code>
+<p>The <code>STATUS</code> for each service should be "running" except for the <code>garage-create-bucket</code> and <code>jobbergate-cli</code>
 services that should be "exited".</p>
 <h4 id="confirm-jobbergate-cli-availability">Confirm Jobbergate CLI availability</h4>
 <p>Since this tutorial relies on running commands in the Jobbergate CLI, it's essential to verify that the CLI is available
