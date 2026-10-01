@@ -85,7 +85,9 @@ spec:
                 - name: DB_PORT
                   value: "5432"
                 - name: INIT_DB
-                  value: jobbergate
+                  value: {{ $.Values.postgres.database | quote }}
+                - name: MULTI_TENANCY_ENABLED
+                  value: {{ $.Values.multiTenancy.enabled | quote }}
                 - name: VIEW_NAME
                   value: {{ $value }}
               livenessProbe:
@@ -180,8 +182,7 @@ spec:
                 name: jobbergate-api
                 optional: false
           env:
-            - name: MULTI_TENANCY_ENABLED
-              value: "true"
+            {{- include "jobbergate-api.dbEnv" . | nindent 12 }}
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
@@ -199,19 +200,8 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.rabbitmq.existingSecret }}
                   key: {{ .Values.rabbitmq.passwordKey }}
-            - name: DATABASE_USER
-              value: omnivector
-            - name: DATABASE_PSWD
-              valueFrom:
-                secretKeyRef:
-                  name: jobbergate-kubegres-credentials
-                  key: primary-password
-            - name: DATABASE_PORT
-              value: "5432"
             - name: DATABASE_URL
               value: postgresql://$(DATABASE_USER):$(DATABASE_PSWD)@$(DATABASE_HOST):$(DATABASE_PORT)
-            - name: DATABASE_NAME
-              value: postgres
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
             - name: check-migration
@@ -240,22 +230,12 @@ spec:
             tcpSocket:
               port: 80
           env:
-            - name: MULTI_TENANCY_ENABLED
-              value: "true"
+            {{- include "jobbergate-api.dbEnv" . | nindent 12 }}
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
             {{- include "jobbergate-api.s3Env" . | nindent 12 }}
-            - name: DATABASE_USER
-              value: omnivector
-            - name: DATABASE_PSWD
-              valueFrom:
-                secretKeyRef:
-                  name: jobbergate-kubegres-credentials
-                  key: primary-password
-            - name: DATABASE_PORT
-              value: "5432"
             - name: RABBITMQ_HOST
               value: {{ .Values.rabbitmq.host }}
             - name: RABBITMQ_USERNAME

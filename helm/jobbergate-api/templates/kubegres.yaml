@@ -73,6 +73,7 @@ metadata:
     k8s-app: jobbergate
 spec:
   refreshInterval: "0"
+  refreshPolicy: CreatedOnce
   secretStoreRef:
     name: {{ .Values.externalSecrets.clusterSecretStoreName }}
     kind: ClusterSecretStore
@@ -166,4 +167,4 @@ spec:
     - name: POSTGRES_USER
       value: omnivector
     - name: POSTGRES_DB
-      value: jobbergate
+      value: {{ .Values.postgres.database | quote }}

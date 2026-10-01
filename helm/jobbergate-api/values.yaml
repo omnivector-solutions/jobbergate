@@ -48,6 +48,12 @@ auth:
 deployEnv: PRODUCTION
 logLevel: INFO
 
+# Multi-tenancy. When enabled, Jobbergate selects the database from the
+# organization id in the user's token. When disabled (default), Jobbergate
+# uses the single database defined by `postgres.database`.
+multiTenancy:
+  enabled: false
+
 # Sentry error tracking. Disabled by default.
 sentry:
   enabled: false
@@ -69,13 +75,16 @@ service:
 # HorizontalPodAutoscaler is only created when autoscaling.enabled is true.
 
 # Leave empty to use the cluster's default StorageClass. Shared by the
-# Postgres and MinIO PersistentVolumeClaims below.
+# Postgres and Garage PersistentVolumeClaims below.
 storageClassName: ""
 
 # The Jobbergate API's own Postgres (TimescaleDB) database, managed via
 # Kubegres (https://www.kubegres.io/). Requires the Kubegres operator to be
 # installed in the cluster.
 postgres:
+  # Database created by Postgres. Also passed to Jobbergate as DATABASE_NAME
+  # when multi-tenancy is disabled.
+  database: jobbergate
   storageSize: 200Gi
   backupSchedule: "0 0 1 * *"
   replicas: 2
@@ -90,19 +99,23 @@ postgres:
 
 # Object storage for job scripts and templates.
 storage:
-  # "minio": this chart deploys its own MinIO instance and generates its
-  #          credentials (default, works out of the box).
-  # "s3":    no MinIO is deployed; the API is pointed at an external bucket
-  #          (AWS S3, or any S3-compatible service) using the credentials
-  #          configured under storage.s3 below.
-  backend: minio
+  # "garage": this chart deploys a single-node Garage instance
+  #           (https://garagehq.deuxfleurs.fr/), creates its bucket and S3 key
+  #           and generates their credentials (default, works out of the box).
+  # "s3":     no Garage is deployed; the API is pointed at an external bucket
+  #           (AWS S3, or any S3-compatible service) using the credentials
+  #           configured under storage.s3 below.
+  backend: garage
   bucketName: jobbergate
 
-  # Only used when backend: minio.
-  minio:
+  # Only used when backend: garage.
+  garage:
     image:
-      repository: quay.io/minio/minio
-      tag: RELEASE.2025-09-07T16-13-09Z
+      repository: dxflrs/garage
+      tag: v2.3.0
+    # S3 region served by Garage. It must match the region the API signs
+    # requests with, which is passed to the API as AWS_DEFAULT_REGION.
+    region: us-east-1
     storageSize: 10Gi
     resources:
       requests:
@@ -118,7 +131,7 @@ storage:
   s3:
     # Leave empty to use AWS S3's default endpoint. Set this to point at an
     # S3-compatible service instead (e.g. Cloudflare R2, Backblaze B2, a
-    # self-hosted MinIO outside this chart).
+    # self-hosted Garage or MinIO outside this chart).
     endpointUrl: ""
     # Leave empty to fall back to the AWS SDK's own region resolution.
     region: ""
@@ -156,7 +169,7 @@ autoClean:
 pgCheckerImage: busybox:latest
 
 # External Secrets Operator (https://external-secrets.io/) is required to
-# generate and store the Postgres/MinIO credentials. Set this to the name
+# generate and store the Postgres/Garage credentials. Set this to the name
 # of an existing ClusterSecretStore in your cluster.
 externalSecrets:
   clusterSecretStoreName: k8s-secretsmanager
