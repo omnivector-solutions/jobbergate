@@ -3,9 +3,8 @@
 Deploys the Jobbergate API standalone, with its own:
 
 - Postgres (TimescaleDB) database via [Kubegres](https://www.kubegres.io/), including
-  backup PVC, replica/primary credentials generated through
-  [External Secrets](https://external-secrets.io/), and the continuous aggregate
-  refresh CronJobs.
+  backup PVC and replica/primary credentials generated through
+  [External Secrets](https://external-secrets.io/).
 - Object storage for job scripts and templates, either:
   - **Garage** (default, `storage.backend: garage`): the chart deploys its own
     single-node [Garage](https://garagehq.deuxfleurs.fr/) instance (Deployment, PVC,
@@ -28,7 +27,6 @@ scheduling, image pull secrets) is left to `values.yaml` for you to fill in.
   (name configurable via `externalSecrets.clusterSecretStoreName`) able to back the
   `Password` generator used for DB credentials, and Garage credentials when
   `storage.backend: garage` (the default).
-- An external RabbitMQ instance (see below).
 - An OIDC provider (Keycloak, Auth0, etc) to issue the JWTs Jobbergate validates.
 
 ## External dependencies (not deployed by this chart)
@@ -36,7 +34,9 @@ scheduling, image pull secrets) is left to `values.yaml` for you to fill in.
 - `ClusterSecretStore` (default name `k8s-secretsmanager`, configurable) for the
   External Secrets Operator.
 - Kubegres operator (CRD `kubegres.reactive-tech.io/v1`).
-- RabbitMQ: defaults assume a sibling install of the
+- RabbitMQ (optional, disabled by default via `rabbitmq.enabled: false`): used only to
+  publish job submission status change notifications; the API works fine without it.
+  When enabled, defaults assume a sibling install of the
   [Bitnami RabbitMQ chart](https://github.com/bitnami/charts/tree/main/bitnami/rabbitmq)
   named `rabbitmq` (Service `rabbitmq`, Secret `rabbitmq-default-user`). Override
   `rabbitmq.*` in `values.yaml` if yours is named differently.
@@ -57,9 +57,9 @@ At minimum, set `auth.armasecDomain` to your OIDC realm (e.g.
 `keycloak.example.com/realms/jobbergate`).
 
 See `values.yaml` for all configurable options: image, resources, scheduling
-(`affinity`/`tolerations`/`nodeSelector`), autoscaling, ingress, Sentry, RabbitMQ,
-storage backend (`storage.backend: garage|s3`), storage class, and the periodic
-auto-clean job.
+(`affinity`/`tolerations`/`nodeSelector`), autoscaling, ingress, Sentry, RabbitMQ
+(optional, `rabbitmq.enabled`), storage backend (`storage.backend: garage|s3`),
+storage class, and the periodic auto-clean job.
 
 ## Multi-tenancy
 
@@ -77,9 +77,9 @@ multiTenancy:
   enabled: true
 ```
 
-The migration init container, the continuous aggregate CronJobs and the auto-clean
-CronJob follow this setting: they act on the single database when multi-tenancy is
-disabled, and on every database whose name is a UUID when it is enabled.
+The migration init container and the auto-clean CronJob follow this setting: they act
+on the single database when multi-tenancy is disabled, and on every database whose
+name is a UUID when it is enabled.
 
 With multi-tenancy enabled, each tenant also uses its own **bucket**, named after the
 organization id. The chart only creates the bucket set in `storage.bucketName`, so tenant
