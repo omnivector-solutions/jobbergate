@@ -11,6 +11,41 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.12.0a1](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.12.0a1) - 2026-10-15
+
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+### Changed
+
+- Reworked the metrics endpoints to expose gauges computed from the database at scrape time (`jobbergate_job_submissions_by_template`, `jobbergate_job_submissions_by_status`), replacing the time-windowed aggregation parameters, which are now rejected with an explicit error. Values cover the database retention window; once scraped, their history lives in the monitoring stack's time-series database, and time windowing happens at query time. The endpoints are safe to scrape on an interval through a load balancer with no deduplication concerns, a new index covers the status aggregation, and the configured auto-clean periods are published as a `jobbergate_retention_days` gauge so dashboards can see the window.
+
+
+## CLI
+
+No significant changes.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.12.0a0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.12.0a0) - 2026-09-11
 
 
