@@ -1,5 +1,15 @@
 """Metrics collection and API routes."""
 
-from jobbergate_api.metrics.collector import MetricsCollector, MetricsInterval
+from jobbergate_api.metrics.collector import (
+    HealthCollector,
+    RetentionCollector,
+    SubmissionStatusCollector,
+    TemplateSelectionCollector,
+)
 
-__all__ = ["MetricsCollector", "MetricsInterval"]
+__all__ = [
+    "HealthCollector",
+    "RetentionCollector",
+    "SubmissionStatusCollector",
+    "TemplateSelectionCollector",
+]
