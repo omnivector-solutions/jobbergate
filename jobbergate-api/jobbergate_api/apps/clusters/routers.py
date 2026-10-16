@@ -101,9 +101,7 @@ async def delete_cluster_status_by_client_id(
     Delete the status entry of a specific cluster.
     """
     logger.info("Deleting cluster status for client_id={}", client_id)
-    query = select(ClusterStatus).where(ClusterStatus.client_id == client_id)
-    result = await secure_session.session.execute(query)
-    instance = result.scalar_one_or_none()
+    instance = await secure_session.session.get(ClusterStatus, client_id)
     if instance is None:
         return FastAPIResponse(status_code=status.HTTP_404_NOT_FOUND)
     await secure_session.session.delete(instance)
