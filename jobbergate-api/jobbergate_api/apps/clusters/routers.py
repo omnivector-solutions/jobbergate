@@ -86,3 +86,25 @@ async def get_cluster_status_by_client_id(
     if instance is None:
         return FastAPIResponse(status_code=status.HTTP_404_NOT_FOUND)
     return instance
+
+
+@router.delete(
+    "/status/{client_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    description="Endpoint to delete the status entry of a specific cluster, e.g. after it was decommissioned.",
+)
+async def delete_cluster_status_by_client_id(
+    client_id: str,
+    secure_session: Annotated[SecureSession, Depends(secure_session(Permissions.ADMIN))],
+):
+    """
+    Delete the status entry of a specific cluster.
+    """
+    logger.info("Deleting cluster status for client_id={}", client_id)
+    query = select(ClusterStatus).where(ClusterStatus.client_id == client_id)
+    result = await secure_session.session.execute(query)
+    instance = result.scalar_one_or_none()
+    if instance is None:
+        return FastAPIResponse(status_code=status.HTTP_404_NOT_FOUND)
+    await secure_session.session.delete(instance)
+    return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
