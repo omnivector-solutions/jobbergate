@@ -159,3 +159,38 @@ class TestGetClusterStatus:
             "updated_at": "2023-01-01T00:00:00Z",
             "is_healthy": True,
         }
+
+
+class TestDeleteClusterStatus:
+    async def test_delete_cluster_status__success(self, client, inject_security_header, synth_session):
+        client_id = "dummy-client"
+        synth_session.add(ClusterStatus(client_id=client_id, interval=10, last_reported=pendulum.datetime(2023, 1, 1)))
+
+        inject_security_header("who@cares.com", Permissions.ADMIN)
+
+        response = await client.delete(f"/jobbergate/clusters/status/{client_id}")
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        result = await synth_session.execute(select(ClusterStatus).where(ClusterStatus.client_id == client_id))
+        assert result.scalar_one_or_none() is None
+
+    async def test_delete_cluster_status__not_found(self, client, inject_security_header, synth_session):
+        inject_security_header("who@cares.com", Permissions.ADMIN)
+
+        response = await client.delete("/jobbergate/clusters/status/dummy-client")
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    @pytest.mark.parametrize("permission", (Permissions.CLUSTERS_READ, Permissions.CLUSTERS_UPDATE))
+    async def test_delete_cluster_status__bad_permission(
+        self, permission, client, inject_security_header, synth_session
+    ):
+        client_id = "dummy-client"
+        synth_session.add(ClusterStatus(client_id=client_id, interval=10, last_reported=pendulum.datetime(2023, 1, 1)))
+
+        inject_security_header("who@cares.com", permission)
+
+        response = await client.delete(f"/jobbergate/clusters/status/{client_id}")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+        result = await synth_session.execute(select(ClusterStatus).where(ClusterStatus.client_id == client_id))
+        assert result.scalar_one_or_none() is not None
