@@ -144,11 +144,14 @@ storage:
     existingSecretAccessKeyIdKey: AWS_ACCESS_KEY_ID
     existingSecretSecretAccessKeyKey: AWS_SECRET_ACCESS_KEY
 
-# RabbitMQ is an external dependency, not deployed by this chart. Defaults
-# assume a sibling install of the Bitnami chart named "rabbitmq"
-# (`helm install rabbitmq bitnami/rabbitmq`), which creates a Service named
-# "rabbitmq" and a Secret "rabbitmq-default-user" with these keys.
+# RabbitMQ is optional and used only to publish job submission status change
+# notifications; the API works fine without it. It is an external dependency,
+# not deployed by this chart. When enabled, defaults assume a sibling install
+# of the Bitnami chart named "rabbitmq" (`helm install rabbitmq
+# bitnami/rabbitmq`), which creates a Service named "rabbitmq" and a Secret
+# "rabbitmq-default-user" with these keys.
 rabbitmq:
+  enabled: false
   host: rabbitmq
   existingSecret: rabbitmq-default-user
   usernameKey: username

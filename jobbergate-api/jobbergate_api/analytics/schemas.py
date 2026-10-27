@@ -1,10 +1,17 @@
 """Schemas for the analytics reporting endpoints."""
 
 from datetime import datetime
+from enum import StrEnum
 
 from pydantic import BaseModel
 
-from jobbergate_api.metrics.collector import MetricsInterval
+
+class ReportInterval(StrEnum):
+    """Supported time buckets for report aggregation."""
+
+    HOUR = "hour"
+    DAY = "day"
+    WEEK = "week"
 
 
 class TemplateUsageRow(BaseModel):
@@ -31,7 +38,7 @@ class TemplateUsageReport(BaseModel):
 
     start_time: datetime
     end_time: datetime
-    interval: MetricsInterval
+    interval: ReportInterval
     items: list[TemplateUsageRow]
 
 
@@ -40,5 +47,5 @@ class SubmissionStatusReport(BaseModel):
 
     start_time: datetime
     end_time: datetime
-    interval: MetricsInterval
+    interval: ReportInterval
     items: list[SubmissionStatusRow]

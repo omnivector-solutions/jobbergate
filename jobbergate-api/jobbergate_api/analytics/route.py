@@ -1,18 +1,21 @@
 """Analytics API endpoints.
 
-These endpoints serve the same aggregations as the Prometheus-format ``/metrics``
-endpoints, but as JSON, for consumers that want windowed reports on demand: the
-Grafana Infinity datasource, the Jobbergate CLI, and batch exports. The data is
-aggregated in the database by time bucket keyed on ``created_at``, so the reports
-are exact within the database retention window.
+These endpoints serve time-windowed aggregations as JSON, for consumers that want
+reports on demand: the Grafana Infinity datasource, the Jobbergate CLI, and batch
+exports. The data is aggregated in the database by time bucket keyed on
+``created_at``, so the reports are exact within the database retention window.
+They complement the Prometheus-format ``/metrics`` endpoints, which expose the
+current retained totals for interval scraping.
 """
 
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 
 from jobbergate_api.analytics.schemas import (
+    ReportInterval,
     SubmissionStatusReport,
     SubmissionStatusRow,
     TemplateUsageReport,
@@ -23,8 +26,8 @@ from jobbergate_api.apps.job_script_templates.models import JobScriptTemplate
 from jobbergate_api.apps.job_scripts.models import JobScript
 from jobbergate_api.apps.job_submissions.models import JobSubmission
 from jobbergate_api.apps.permissions import Permissions
-from jobbergate_api.metrics.collector import MetricsInterval
-from jobbergate_api.metrics.route import MetricsEndTime, MetricsStartTime, resolve_window
+from jobbergate_api.config import settings
+from jobbergate_api.utils.time import ensure_utc
 
 router = APIRouter(
     prefix="/analytics",
@@ -40,10 +43,60 @@ AnalyticsServices = Annotated[
     SecureService,
     Depends(secure_services(Permissions.ADMIN, Permissions.METRICS_READ, commit=False)),
 ]
-AnalyticsIntervalQuery = Annotated[
-    MetricsInterval,
+StartTimeQuery = Annotated[
+    datetime | None,
+    Query(
+        description=(
+            "Inclusive start of the UTC reporting window. Submissions are selected by created_at. "
+            "Values without a timezone offset are assumed to be UTC. "
+            "Defaults to one day before end_time."
+        )
+    ),
+]
+EndTimeQuery = Annotated[
+    datetime | None,
+    Query(
+        description=(
+            "Inclusive end of the UTC reporting window, based on submission created_at. "
+            "Values without a timezone offset are assumed to be UTC. "
+            "Defaults to the current time. For finalized reports, set this earlier than now "
+            "to allow recent submissions to reach a final status."
+        )
+    ),
+]
+IntervalQuery = Annotated[
+    ReportInterval,
     Query(description="Time bucket size for aggregation: hour, day, or week."),
 ]
+
+_INTERVAL_WIDTH = {
+    ReportInterval.HOUR: timedelta(hours=1),
+    ReportInterval.DAY: timedelta(days=1),
+    ReportInterval.WEEK: timedelta(weeks=1),
+}
+
+
+def resolve_window(
+    start_time: datetime | None, end_time: datetime | None, interval: ReportInterval
+) -> tuple[datetime, datetime]:
+    """Apply the window defaults and reject inverted or oversized ranges."""
+    end_time = ensure_utc(end_time) or datetime.now(timezone.utc)
+    start_time = ensure_utc(start_time) or end_time - timedelta(days=1)
+    if end_time < start_time:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="End time must be greater than the start time."
+        )
+    buckets = (end_time - start_time) // _INTERVAL_WIDTH[interval] + 1
+    if buckets > settings.ANALYTICS_MAX_BUCKETS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"The requested window spans {buckets} {interval.value} buckets, "
+                f"exceeding the maximum of {settings.ANALYTICS_MAX_BUCKETS}. "
+                "Use a coarser interval or a shorter time window."
+            ),
+        )
+    return start_time, end_time
 
 
 @router.get(
@@ -59,11 +112,11 @@ AnalyticsIntervalQuery = Annotated[
 )
 async def template_usage_report(
     secure_services: AnalyticsServices,
-    start_time: MetricsStartTime = None,
-    end_time: MetricsEndTime = None,
-    interval: AnalyticsIntervalQuery = MetricsInterval.DAY,
+    start_time: StartTimeQuery = None,
+    end_time: EndTimeQuery = None,
+    interval: IntervalQuery = ReportInterval.DAY,
 ) -> TemplateUsageReport:
-    start_time, end_time = resolve_window(start_time, end_time)
+    start_time, end_time = resolve_window(start_time, end_time, interval)
     result = await secure_services.session.execute(
         select(
             func.date_trunc(interval.value, JobSubmission.created_at).label("bucket"),
@@ -106,11 +159,11 @@ async def template_usage_report(
 )
 async def submission_status_report(
     secure_services: AnalyticsServices,
-    start_time: MetricsStartTime = None,
-    end_time: MetricsEndTime = None,
-    interval: AnalyticsIntervalQuery = MetricsInterval.DAY,
+    start_time: StartTimeQuery = None,
+    end_time: EndTimeQuery = None,
+    interval: IntervalQuery = ReportInterval.DAY,
 ) -> SubmissionStatusReport:
-    start_time, end_time = resolve_window(start_time, end_time)
+    start_time, end_time = resolve_window(start_time, end_time, interval)
     result = await secure_services.session.execute(
         select(
             func.date_trunc(interval.value, JobSubmission.created_at).label("bucket"),

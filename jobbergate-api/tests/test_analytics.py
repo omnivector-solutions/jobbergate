@@ -42,6 +42,51 @@ async def test_analytics_routes_reject_inverted_time_range(
 
 
 @pytest.mark.parametrize("path", ("templates", "submissions"))
+async def test_analytics_routes_reject_windows_with_too_many_buckets(
+    client: AsyncClient, inject_security_header, tester_email: str, path: str, synth_session
+):
+    inject_security_header(tester_email, Permissions.METRICS_READ)
+
+    response = await client.get(
+        f"/jobbergate/analytics/{path}",
+        params={"start_time": "2024-09-08T00:00:00Z", "end_time": "2026-09-08T00:00:00Z", "interval": "hour"},
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "Use a coarser interval or a shorter time window." in response.json()["detail"]
+
+
+@pytest.mark.parametrize("path", ("templates", "submissions"))
+async def test_analytics_routes_accept_long_windows_with_coarse_buckets(
+    client: AsyncClient, inject_security_header, tester_email: str, path: str, synth_session
+):
+    inject_security_header(tester_email, Permissions.METRICS_READ)
+
+    response = await client.get(
+        f"/jobbergate/analytics/{path}",
+        params={"start_time": "2024-09-08T00:00:00Z", "end_time": "2026-09-08T00:00:00Z", "interval": "day"},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.parametrize("path", ("templates", "submissions"))
+async def test_analytics_routes_bucket_limit_is_configurable(
+    client: AsyncClient, inject_security_header, tester_email: str, path: str, synth_session, tweak_settings
+):
+    inject_security_header(tester_email, Permissions.METRICS_READ)
+
+    with tweak_settings(ANALYTICS_MAX_BUCKETS=10):
+        response = await client.get(
+            f"/jobbergate/analytics/{path}",
+            params={"start_time": "2026-09-01T00:00:00Z", "end_time": "2026-09-12T00:00:00Z", "interval": "day"},
+        )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "exceeding the maximum of 10" in response.json()["detail"]
+
+
+@pytest.mark.parametrize("path", ("templates", "submissions"))
 async def test_analytics_routes_return_empty_report_without_data(
     client: AsyncClient, inject_security_header, tester_email: str, path: str, synth_session
 ):

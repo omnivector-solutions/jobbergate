@@ -53,9 +53,15 @@ IntervalOption = Annotated[
 ]
 
 
-def _build_params(
-    start_time: Optional[datetime], end_time: Optional[datetime], interval: Optional[ReportInterval]
-) -> dict[str, Any]:
+def _fetch_report(
+    ctx: ContextProtocol,
+    report_name: str,
+    row_cls: type,
+    start_time: Optional[datetime],
+    end_time: Optional[datetime],
+    interval: Optional[ReportInterval],
+) -> AnalyticsReport[Any]:
+    """Fetch one analytics report, forwarding only the options that were set."""
     params: dict[str, Any] = {}
     if start_time is not None:
         params["start_time"] = start_time.isoformat()
@@ -63,7 +69,19 @@ def _build_params(
         params["end_time"] = end_time.isoformat()
     if interval is not None:
         params["interval"] = interval.value
-    return params
+    return cast(
+        AnalyticsReport[Any],
+        make_request(
+            ctx.client,
+            f"/jobbergate/analytics/{report_name}",
+            "GET",
+            expected_status=200,
+            abort_message=f"Couldn't retrieve the {report_name} report from the API",
+            support=True,
+            response_model_cls=AnalyticsReport[row_cls],  # type: ignore[valid-type]
+            params=params,
+        ),
+    )
 
 
 def _render_report(ctx: ContextProtocol, report: AnalyticsReport[Any], title: str):
@@ -102,19 +120,7 @@ def templates(
     Show the number of job submissions per job template, bucketed over time.
     """
     jg_ctx = get_active_context(ctx)
-    report = cast(
-        AnalyticsReport[TemplateUsageRow],
-        make_request(
-            jg_ctx.client,
-            "/jobbergate/analytics/templates",
-            "GET",
-            expected_status=200,
-            abort_message="Couldn't retrieve the template usage report from the API",
-            support=True,
-            response_model_cls=AnalyticsReport[TemplateUsageRow],
-            params=_build_params(start_time, end_time, interval),
-        ),
-    )
+    report = _fetch_report(jg_ctx, "templates", TemplateUsageRow, start_time, end_time, interval)
     _render_report(jg_ctx, report, "Template usage")
 
 
@@ -129,17 +135,5 @@ def submissions(
     Show the number of job submissions per Jobbergate and Slurm status, bucketed over time.
     """
     jg_ctx = get_active_context(ctx)
-    report = cast(
-        AnalyticsReport[SubmissionStatusRow],
-        make_request(
-            jg_ctx.client,
-            "/jobbergate/analytics/submissions",
-            "GET",
-            expected_status=200,
-            abort_message="Couldn't retrieve the submission status report from the API",
-            support=True,
-            response_model_cls=AnalyticsReport[SubmissionStatusRow],
-            params=_build_params(start_time, end_time, interval),
-        ),
-    )
+    report = _fetch_report(jg_ctx, "submissions", SubmissionStatusRow, start_time, end_time, interval)
     _render_report(jg_ctx, report, "Submission statuses")

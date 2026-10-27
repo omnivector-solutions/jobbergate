@@ -11,40 +11,38 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
-# [5.12.0a0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.12.0a0) - 2026-09-11
-
+# [5.12.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.12.0) - 2026-10-20
 
 ## Core
 
 No significant changes.
 
-
 ## Agent
 
 No significant changes.
-
 
 ## Agent Snap
 
 No significant changes.
 
-
 ## API
 
 ### Added
 
+- Added endpoint `DELETE /clusters/status/{client_id}` so admins can remove the health status entry of decommissioned clusters ([PR #1028](https://github.com/omnivector-solutions/jobbergate/pull/1028))
 - Added Prometheus metrics endpoints for job template selection, API and agent health, and job submission status reporting. ([PR #1008](https://github.com/omnivector-solutions/jobbergate/pull/1008))
 
+### Changed
+
+- Reworked the metrics endpoints to expose gauges computed from the database at scrape time (`jobbergate_job_submissions_by_template`, `jobbergate_job_submissions_by_status`), replacing the time-windowed aggregation parameters, which are now rejected with an explicit error. Values cover the database retention window; once scraped, their history lives in the monitoring stack's time-series database, and time windowing happens at query time. The endpoints are safe to scrape on an interval through a load balancer with no deduplication concerns, a new index covers the status aggregation, and the configured auto-clean periods are published as a `jobbergate_retention_days` gauge so dashboards can see the window. ([PR #1026](https://github.com/omnivector-solutions/jobbergate/pull/1026))
 
 ## CLI
 
 No significant changes.
 
-
 ## Documentation
 
 No significant changes.
-
 
 # [5.11.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.11.0) - 2026-07-31
 

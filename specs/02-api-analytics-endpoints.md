@@ -19,11 +19,15 @@ Query params (shared with `/metrics/*` semantics):
 - `start_time` (optional datetime, UTC assumed when naive) — inclusive, on
   `job_submissions.created_at`; defaults to one day before `end_time`.
 - `end_time` (optional datetime) — inclusive; defaults to now.
-- `interval` (`hour|day|week`, reusing `MetricsInterval`) — **default `day`** (JSON
-  reports span days-to-months; `hour` stays the default only on the scrape endpoints).
-- 400 when `end_time < start_time` (same `_window` logic as metrics; factor the helper
-  into `jobbergate_api/utils/` or duplicate minimally — prefer a shared
-  `jobbergate_api.utils.time`-adjacent helper `resolve_window`).
+- `interval` (`hour|day|week`, a `ReportInterval` enum owned by analytics) —
+  **default `day`** (JSON reports span days-to-months).
+- 400 when `end_time < start_time`, and when the window would produce more time
+  buckets than the `ANALYTICS_MAX_BUCKETS` setting (default 2,500 — the default
+  90-day retention window at hourly resolution, with slack; two years at `hour` is
+  rejected) — with a hint to use a coarser interval or a shorter window, bounding
+  database load and response size. (`resolve_window` in `analytics/route.py` owns
+  both checks; since the gauge rework landed on main, `/metrics/*` has no time
+  windows, so nothing is shared.)
 
 Response `TemplateUsageReport`:
 
@@ -57,8 +61,9 @@ datetimes.
 
 ## Notes
 
-- Queries are the same `date_trunc`/`group_by` selects as `metrics/route.py`; rows map
-  straight into the pydantic rows.
+- Queries are `date_trunc`/`group_by` selects over `job_submissions` (joined to
+  templates for the usage report); rows map straight into the pydantic rows. They are
+  the windowed counterparts of the gauge queries in `metrics/route.py`.
 - Data is bounded by the database retention window — exact within it. That is by
   design (the TSDB keeps longer approximate history via the scraped gauges).
 - Changelog fragment: `changes/api/+analytics-endpoints.added.md`.
