@@ -216,7 +216,9 @@ services:
       timeout: 5s
 
   grafana:
-    image: grafana/grafana-oss:11.4.0
+    # Keep new enough for the latest Infinity plugin, which GF_INSTALL_PLUGINS
+    # downloads at container start (it declares a minimum Grafana version).
+    image: grafana/grafana-oss:12.4.3
     profiles: ["observability"]
     networks:
       - jobbergate-net
