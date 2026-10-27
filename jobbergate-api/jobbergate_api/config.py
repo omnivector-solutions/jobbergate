@@ -109,6 +109,11 @@ class Settings(BaseSettings):
     AUTO_CLEAN_JOB_SUBMISSIONS_DAYS_TO_ARCHIVE: int | None = None
     AUTO_CLEAN_JOB_SUBMISSIONS_DAYS_TO_DELETE: int | None = None
 
+    # Upper bound on the number of time buckets an analytics report may span,
+    # limiting database load and response size. The default allows the whole
+    # default retention window (90 days) at hourly resolution, with some slack.
+    ANALYTICS_MAX_BUCKETS: int = 2500
+
     # Metadata for the API Documentation
     METADATA_API_TITLE: str = "Jobbergate-API"
     METADATA_CONTACT_NAME: str = "Omnivector Solutions"

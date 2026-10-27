@@ -14,6 +14,7 @@ from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
 from jobbergate_api import __version__
+from jobbergate_api.analytics.route import router as analytics_router
 from jobbergate_api.apps.clusters.routers import router as cluster_status_router
 from jobbergate_api.apps.job_script_templates.routers import router as job_script_templates_router
 from jobbergate_api.apps.job_scripts.routers import router as job_scripts_router
@@ -64,6 +65,7 @@ subapp.include_router(job_scripts_router)
 subapp.include_router(job_submissions_router)
 subapp.include_router(cluster_status_router)
 subapp.include_router(metrics_router)
+subapp.include_router(analytics_router)
 subapp.exception_handler(asyncpg.exceptions.ForeignKeyViolationError)(handle_fk_error)
 
 add_pagination(subapp)

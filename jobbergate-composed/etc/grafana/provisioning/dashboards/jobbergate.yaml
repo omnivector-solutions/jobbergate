@@ -1,0 +1,10 @@
+apiVersion: 1
+
+providers:
+  - name: Jobbergate
+    folder: Jobbergate
+    type: file
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false
