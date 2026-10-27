@@ -88,6 +88,14 @@
     "client": {
       "cli": [
         {
+          "id": "8f1cbe24-6a0f-4a3f-9a0e-54c1a2f8d901",
+          "name": "jobbergate:metrics:read",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "7f75edc2-e695-481e-b3bd-226fb2958112",
+          "attributes": {}
+        },
+        {
           "id": "2dd32416-2e52-4ed3-97cd-b941753b7538",
           "name": "jobbergate:clusters:read",
           "composite": false,
@@ -422,6 +430,14 @@
       ],
       "local-slurm": [
         {
+          "id": "c3b7d6aa-21e4-4b7e-8c53-0f2d9b7e6412",
+          "name": "jobbergate:metrics:read",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "92da95dd-3e4e-4143-8cbb-b4704bd88438",
+          "attributes": {}
+        },
+        {
           "id": "94b9846e-197f-4121-a157-6d5533a55dba",
           "name": "jobbergate:clusters:read",
           "composite": false,
@@ -745,6 +761,7 @@
       ],
       "clientRoles": {
         "local-slurm": [
+          "jobbergate:metrics:read",
           "jobbergate:clusters:update",
           "jobbergate:job-scripts:delete",
           "jobbergate:job-scripts:read",

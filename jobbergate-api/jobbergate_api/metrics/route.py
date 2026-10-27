@@ -64,7 +64,7 @@ MetricsIntervalQuery = Annotated[
 ]
 
 
-def _window(start_time: datetime | None, end_time: datetime | None) -> tuple[datetime, datetime]:
+def resolve_window(start_time: datetime | None, end_time: datetime | None) -> tuple[datetime, datetime]:
     end_time = ensure_utc(end_time) or datetime.now(timezone.utc)
     start_time = ensure_utc(start_time) or end_time - timedelta(days=1)
     if end_time < start_time:
@@ -98,7 +98,7 @@ async def template_metrics(
     end_time: MetricsEndTime = None,
     interval: MetricsIntervalQuery = MetricsInterval.HOUR,
 ):
-    start_time, end_time = _window(start_time, end_time)
+    start_time, end_time = resolve_window(start_time, end_time)
     result = await secure_services.session.execute(
         select(
             func.date_trunc(interval.value, JobSubmission.created_at).label("bucket"),
@@ -157,7 +157,7 @@ async def submission_metrics(
     end_time: MetricsEndTime = None,
     interval: MetricsIntervalQuery = MetricsInterval.HOUR,
 ):
-    start_time, end_time = _window(start_time, end_time)
+    start_time, end_time = resolve_window(start_time, end_time)
     result = await secure_services.session.execute(
         select(
             func.date_trunc(interval.value, JobSubmission.created_at).label("bucket"),

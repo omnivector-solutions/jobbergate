@@ -1,0 +1,68 @@
+{
+  "uid": "jobbergate-analytics",
+  "title": "Jobbergate Analytics",
+  "description": "Windowed usage reports served by the Jobbergate API /analytics endpoints.",
+  "tags": ["jobbergate"],
+  "timezone": "utc",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5m",
+  "time": {"from": "now-30d", "to": "now"},
+  "panels": [
+    {
+      "id": 1,
+      "type": "table",
+      "title": "Template usage",
+      "description": "Job submissions per template, bucketed by day over the dashboard time range.",
+      "gridPos": {"h": 12, "w": 12, "x": 0, "y": 0},
+      "datasource": {"type": "yesoreyeram-infinity-datasource", "uid": "jobbergate-infinity"},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {"type": "yesoreyeram-infinity-datasource", "uid": "jobbergate-infinity"},
+          "type": "json",
+          "source": "url",
+          "parser": "backend",
+          "format": "table",
+          "url": "http://jobbergate-api:80/jobbergate/analytics/templates?start_time=${__from:date:iso}&end_time=${__to:date:iso}&interval=day",
+          "url_options": {"method": "GET", "data": ""},
+          "root_selector": "items",
+          "columns": [
+            {"selector": "bucket", "text": "bucket", "type": "timestamp"},
+            {"selector": "client_id", "text": "client_id", "type": "string"},
+            {"selector": "template_identifier", "text": "template_identifier", "type": "string"},
+            {"selector": "count", "text": "count", "type": "number"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Submission statuses",
+      "description": "Job submissions per Jobbergate/Slurm status, bucketed by day over the dashboard time range.",
+      "gridPos": {"h": 12, "w": 12, "x": 12, "y": 0},
+      "datasource": {"type": "yesoreyeram-infinity-datasource", "uid": "jobbergate-infinity"},
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {"type": "yesoreyeram-infinity-datasource", "uid": "jobbergate-infinity"},
+          "type": "json",
+          "source": "url",
+          "parser": "backend",
+          "format": "table",
+          "url": "http://jobbergate-api:80/jobbergate/analytics/submissions?start_time=${__from:date:iso}&end_time=${__to:date:iso}&interval=day",
+          "url_options": {"method": "GET", "data": ""},
+          "root_selector": "items",
+          "columns": [
+            {"selector": "bucket", "text": "bucket", "type": "timestamp"},
+            {"selector": "client_id", "text": "client_id", "type": "string"},
+            {"selector": "status", "text": "status", "type": "string"},
+            {"selector": "slurm_job_state", "text": "slurm_job_state", "type": "string"},
+            {"selector": "count", "text": "count", "type": "number"}
+          ]
+        }
+      ]
+    }
+  ]
+}
