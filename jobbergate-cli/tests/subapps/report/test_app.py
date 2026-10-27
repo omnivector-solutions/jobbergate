@@ -1,6 +1,31 @@
 import httpx
 
-from jobbergate_cli.subapps.report.app import submissions, templates
+from jobbergate_cli.subapps.report.app import status, submissions, templates
+
+STATUS_PAYLOAD = {
+    "items": [
+        {
+            "client_id": "cluster-a",
+            "created_at": "2026-09-01T00:00:00Z",
+            "updated_at": "2026-10-27T12:00:00Z",
+            "last_reported": "2026-10-27T12:00:00Z",
+            "interval": 60,
+            "is_healthy": True,
+        },
+        {
+            "client_id": "cluster-b",
+            "created_at": "2026-09-01T00:00:00Z",
+            "updated_at": "2026-10-20T12:00:00Z",
+            "last_reported": "2026-10-20T12:00:00Z",
+            "interval": 60,
+            "is_healthy": False,
+        },
+    ],
+    "total": 2,
+    "page": 1,
+    "size": 50,
+    "pages": 1,
+}
 
 TEMPLATES_PAYLOAD = {
     "start_time": "2026-09-08T00:00:00Z",
@@ -156,6 +181,45 @@ def test_templates__aborts_on_api_error(
     result = cli_runner.invoke(test_app, ["templates"])
 
     assert result.exit_code != 0
+
+
+def test_status__renders_cluster_statuses(
+    make_test_app,
+    cli_runner,
+    dummy_domain,
+    respx_mock,
+):
+    route = respx_mock.get(f"{dummy_domain}/jobbergate/clusters/status").mock(
+        return_value=httpx.Response(httpx.codes.OK, json=STATUS_PAYLOAD),
+    )
+    test_app = make_test_app("status", status)
+
+    result = cli_runner.invoke(test_app, ["status", "--page", "1"])
+
+    assert result.exit_code == 0, f"status failed: {result.stdout}"
+    assert route.called
+    assert "cluster-a" in result.stdout
+    assert "cluster-b" in result.stdout
+    assert "True" in result.stdout
+    assert "False" in result.stdout
+
+
+def test_status__hides_audit_timestamps(
+    make_test_app,
+    cli_runner,
+    dummy_domain,
+    respx_mock,
+):
+    respx_mock.get(f"{dummy_domain}/jobbergate/clusters/status").mock(
+        return_value=httpx.Response(httpx.codes.OK, json=STATUS_PAYLOAD),
+    )
+    test_app = make_test_app("status", status)
+
+    result = cli_runner.invoke(test_app, ["status", "--page", "1"])
+
+    assert result.exit_code == 0, f"status failed: {result.stdout}"
+    assert "created_at" not in result.stdout
+    assert "updated_at" not in result.stdout
 
 
 def test_submissions__forwards_options_and_renders_table(

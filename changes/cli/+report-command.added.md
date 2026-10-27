@@ -1,1 +1,1 @@
-Added a `jobbergate report` command group with `templates` and `submissions` subcommands that fetch windowed usage reports from the new analytics endpoints, with `--start-time`, `--end-time`, and `--interval` options mapping directly to the API parameters.
+Added a `jobbergate report` command group: `templates` and `submissions` fetch windowed usage reports from the new analytics endpoints, with `--start-time`, `--end-time`, and `--interval` options mapping directly to the API parameters, and `status` lists the current health reported by each cluster agent.

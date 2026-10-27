@@ -9,9 +9,10 @@ from typing import Annotated, Any, Optional, cast
 import typer
 
 from jobbergate_cli.context import get_active_context
-from jobbergate_cli.render import render_json, render_table, terminal_message
+from jobbergate_cli.render import StyleMapper, render_json, render_table, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import AnalyticsReport, ContextProtocol, SubmissionStatusRow, TemplateUsageRow
+from jobbergate_cli.subapps.pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, handle_pagination
 
 app = typer.Typer(
     rich_markup_mode="markdown",
@@ -112,6 +113,30 @@ def templates(
     jg_ctx = get_active_context(ctx)
     report = _fetch_report(jg_ctx, "templates", AnalyticsReport[TemplateUsageRow], start_time, end_time, interval)
     _render_report(jg_ctx, report, "Template usage")
+
+
+@app.command()
+def status(
+    ctx: typer.Context = None,  # type: ignore[assignment]
+    page: Annotated[Optional[int], typer.Option("--page", "-p", min=1, help="The page number to retrieve")] = None,
+    size: Annotated[
+        int, typer.Option("--size", "-s", min=1, max=MAX_PAGE_SIZE, help="The number of items per page to retrieve")
+    ] = DEFAULT_PAGE_SIZE,
+):
+    """
+    Show the current health status reported by each cluster agent.
+    """
+    jg_ctx = get_active_context(ctx)
+    handle_pagination(
+        jg_ctx=jg_ctx,
+        url_path="/jobbergate/clusters/status",
+        abort_message="Couldn't retrieve the cluster statuses from the API",
+        title="Cluster statuses",
+        style_mapper=StyleMapper(client_id="green", is_healthy="cyan"),
+        hidden_fields=["created_at", "updated_at"],
+        page=page,
+        size=size,
+    )
 
 
 @app.command()
