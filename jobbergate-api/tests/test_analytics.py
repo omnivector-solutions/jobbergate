@@ -247,6 +247,7 @@ async def test_template_usage_report_counts_submissions_without_template_as_unkn
 ):
     """A deleted job script or template must not drop submissions from the report (SET NULL FKs)."""
     inject_security_header(tester_email, Permissions.METRICS_READ)
+    # Submission whose job script is gone (job_script_id SET NULL).
     await synth_services.crud.job_submission.create(
         name="analytics-submission-orphan",
         description="Analytics submission without a job script",
@@ -256,6 +257,24 @@ async def test_template_usage_report_counts_submissions_without_template_as_unkn
         sbatch_arguments=[],
         client_id="cluster-a",
         created_at=datetime(2026, 9, 8, 12, 15, tzinfo=timezone.utc),
+    )
+    # Submission whose job script lost its template (parent_template_id SET NULL).
+    script = await synth_services.crud.job_script.create(
+        name="analytics-script-orphan",
+        description="Analytics script without a template",
+        owner_email=tester_email,
+        is_archived=False,
+    )
+    await synth_services.crud.job_submission.create(
+        name="analytics-submission-orphan-template",
+        description="Analytics submission whose script has no template",
+        owner_email=tester_email,
+        is_archived=False,
+        status=JobSubmissionStatus.CREATED,
+        sbatch_arguments=[],
+        job_script_id=script.id,
+        client_id="cluster-a",
+        created_at=datetime(2026, 9, 8, 13, 15, tzinfo=timezone.utc),
     )
 
     response = await client.get(
@@ -267,7 +286,7 @@ async def test_template_usage_report_counts_submissions_without_template_as_unkn
     (item,) = response.json()["items"]
     assert item["template_id"] is None
     assert item["template_identifier"] == "unknown"
-    assert item["count"] == 1
+    assert item["count"] == 2
 
 
 async def test_submission_status_report_groups_by_status(
