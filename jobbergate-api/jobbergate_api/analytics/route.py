@@ -116,9 +116,11 @@ def resolve_window(
     description=(
         "Returns the number of job submissions for each job template identifier, "
         "grouped by cluster and into hourly, daily, or weekly time buckets, as JSON. "
-        "Templates without an identifier use a template_id:<id> fallback. "
-        "Submissions are selected by created_at, so the report is exact within the "
-        "database retention window."
+        "Templates without an identifier use a template_id:<id> fallback; submissions "
+        "whose job script or template was deleted (or that never had one) are reported "
+        "under template_id null with the identifier 'unknown', so every retained "
+        "submission is counted. Submissions are selected by created_at, so the report "
+        "is exact within the database retention window."
     ),
 )
 async def template_usage_report(
@@ -136,8 +138,9 @@ async def template_usage_report(
             JobScriptTemplate.identifier,
             func.count(JobSubmission.id),
         )
-        .join(JobScript, JobScript.parent_template_id == JobScriptTemplate.id)
-        .join(JobSubmission, JobSubmission.job_script_id == JobScript.id)
+        .select_from(JobSubmission)
+        .join(JobScript, JobSubmission.job_script_id == JobScript.id, isouter=True)
+        .join(JobScriptTemplate, JobScript.parent_template_id == JobScriptTemplate.id, isouter=True)
         .where(JobSubmission.created_at >= start_time, JobSubmission.created_at <= end_time)
         .group_by("bucket", JobSubmission.client_id, JobScriptTemplate.id, JobScriptTemplate.identifier)
         .order_by("bucket", JobSubmission.client_id, JobScriptTemplate.id, JobScriptTemplate.identifier)
@@ -151,7 +154,7 @@ async def template_usage_report(
                 bucket=bucket,
                 client_id=client_id,
                 template_id=template_id,
-                template_identifier=identifier or f"template_id:{template_id}",
+                template_identifier=identifier or (f"template_id:{template_id}" if template_id else "unknown"),
                 count=count,
             )
             for bucket, client_id, template_id, identifier, count in result.all()

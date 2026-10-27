@@ -239,6 +239,37 @@ async def test_template_usage_report_uses_template_id_fallback(
     assert item["template_identifier"] == f"template_id:{template.id}"
 
 
+async def test_template_usage_report_counts_submissions_without_template_as_unknown(
+    client: AsyncClient,
+    inject_security_header,
+    tester_email: str,
+    synth_services,
+):
+    """A deleted job script or template must not drop submissions from the report (SET NULL FKs)."""
+    inject_security_header(tester_email, Permissions.METRICS_READ)
+    await synth_services.crud.job_submission.create(
+        name="analytics-submission-orphan",
+        description="Analytics submission without a job script",
+        owner_email=tester_email,
+        is_archived=False,
+        status=JobSubmissionStatus.CREATED,
+        sbatch_arguments=[],
+        client_id="cluster-a",
+        created_at=datetime(2026, 9, 8, 12, 15, tzinfo=timezone.utc),
+    )
+
+    response = await client.get(
+        "/jobbergate/analytics/templates",
+        params={"start_time": "2026-09-08T00:00:00Z", "end_time": "2026-09-09T00:00:00Z"},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    (item,) = response.json()["items"]
+    assert item["template_id"] is None
+    assert item["template_identifier"] == "unknown"
+    assert item["count"] == 1
+
+
 async def test_submission_status_report_groups_by_status(
     client: AsyncClient,
     inject_security_header,

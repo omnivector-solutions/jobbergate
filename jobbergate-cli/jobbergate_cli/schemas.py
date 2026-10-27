@@ -338,7 +338,7 @@ class TemplateUsageRow(pydantic.BaseModel):
 
     bucket: datetime
     client_id: str
-    template_id: int
+    template_id: Optional[int] = None
     template_identifier: str
     count: int
 
