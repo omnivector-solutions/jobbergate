@@ -14,4 +14,4 @@ data:
   DEPLOY_ENV: {{ .Values.deployEnv | quote }}
   SENTRY_TRACING_SAMPLE_RATE: {{ .Values.sentry.tracesSampleRate | quote }}
   SENTRY_PROFILING_SAMPLE_RATE: {{ .Values.sentry.profilesSampleRate | quote }}
-  DATABASE_HOST: jobbergate-postgres
+  DATABASE_HOST: {{ include "jobbergate.dbHost" . }}

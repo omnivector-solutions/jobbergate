@@ -49,10 +49,24 @@ garage/s3 branching only needs to be written once.
 {{- end -}}
 
 {{/*
+CloudNativePG names the Service and the app Secret of a Cluster after the
+Cluster itself. The Cluster is named "jobbergate-postgres" in cnpg.yaml.
+*/}}
+{{- define "jobbergate.dbHost" -}}
+jobbergate-postgres-rw
+{{- end -}}
+
+{{- define "jobbergate.dbSecretName" -}}
+jobbergate-postgres-app
+{{- end -}}
+
+{{/*
 Database environment shared by the jobbergate-api container and the migration
 init container. DATABASE_HOST comes from the jobbergate-api ConfigMap.
 DATABASE_NAME is only set when multi-tenancy is disabled. With multi-tenancy,
 the database is selected per request from the organization id in the token.
+DATABASE_USER/DATABASE_PSWD come from the Secret CloudNativePG generates for
+the Cluster's app user (see jobbergate.dbSecretName).
 */}}
 {{- define "jobbergate-api.dbEnv" -}}
 - name: MULTI_TENANCY_ENABLED
@@ -62,12 +76,15 @@ the database is selected per request from the organization id in the token.
   value: {{ .Values.postgres.database | quote }}
 {{- end }}
 - name: DATABASE_USER
-  value: omnivector
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "jobbergate.dbSecretName" . }}
+      key: username
 - name: DATABASE_PSWD
   valueFrom:
     secretKeyRef:
-      name: jobbergate-kubegres-credentials
-      key: primary-password
+      name: {{ include "jobbergate.dbSecretName" . }}
+      key: password
 - name: DATABASE_PORT
   value: "5432"
 {{- end }}

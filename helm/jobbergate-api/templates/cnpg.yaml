@@ -1,0 +1,111 @@
+{{- if and .Values.postgres.backup.enabled (not .Values.postgres.backup.existingSecret) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jobbergate-postgres-backup-credentials
+  labels:
+    k8s-app: jobbergate
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+type: Opaque
+stringData:
+  {{ .Values.postgres.backup.existingSecretAccessKeyIdKey }}: {{ .Values.postgres.backup.accessKeyId | quote }}
+  {{ .Values.postgres.backup.existingSecretSecretAccessKeyKey }}: {{ .Values.postgres.backup.secretAccessKey | quote }}
+  {{- with .Values.postgres.backup.region }}
+  {{ $.Values.postgres.backup.existingSecretRegionKey }}: {{ . | quote }}
+  {{- end }}
+---
+{{- end }}
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: jobbergate-postgres
+  labels:
+    k8s-app: jobbergate
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  instances: {{ .Values.postgres.highAvailability | ternary 2 1 }}
+  imageName: {{ .Values.postgres.image | quote }}
+
+  postgresql:
+    {{- with .Values.postgres.sharedPreloadLibraries }}
+    shared_preload_libraries:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.postgres.parameters }}
+    parameters:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+
+  bootstrap:
+    initdb:
+      database: {{ .Values.postgres.database | quote }}
+      owner: {{ .Values.postgres.owner | quote }}
+
+  storage:
+    size: {{ .Values.postgres.storageSize | quote }}
+    {{- with .Values.storageClassName }}
+    storageClassName: {{ . }}
+    {{- end }}
+
+  resources:
+    {{- toYaml .Values.postgres.resources | nindent 4 }}
+
+  affinity:
+    enablePodAntiAffinity: {{ .Values.postgres.highAvailability }}
+    topologyKey: kubernetes.io/hostname
+    {{- with .Values.affinity.nodeAffinity }}
+    nodeAffinity:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.nodeSelector }}
+    nodeSelector:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+    tolerations:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+
+  {{- if .Values.postgres.backup.enabled }}
+  backup:
+    barmanObjectStore:
+      destinationPath: {{ .Values.postgres.backup.destinationPath | quote }}
+      {{- with .Values.postgres.backup.endpointUrl }}
+      endpointURL: {{ . | quote }}
+      {{- end }}
+      s3Credentials:
+        accessKeyId:
+          name: {{ .Values.postgres.backup.existingSecret | default "jobbergate-postgres-backup-credentials" }}
+          key: {{ .Values.postgres.backup.existingSecretAccessKeyIdKey }}
+        secretAccessKey:
+          name: {{ .Values.postgres.backup.existingSecret | default "jobbergate-postgres-backup-credentials" }}
+          key: {{ .Values.postgres.backup.existingSecretSecretAccessKeyKey }}
+        {{- if or .Values.postgres.backup.region .Values.postgres.backup.existingSecret }}
+        region:
+          name: {{ .Values.postgres.backup.existingSecret | default "jobbergate-postgres-backup-credentials" }}
+          key: {{ .Values.postgres.backup.existingSecretRegionKey }}
+        {{- end }}
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: {{ .Values.postgres.backup.retentionPolicy | quote }}
+  {{- end }}
+---
+{{- if .Values.postgres.backup.enabled }}
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: jobbergate-postgres-scheduled
+  labels:
+    k8s-app: jobbergate
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  schedule: {{ .Values.postgres.backup.schedule | quote }}
+  backupOwnerReference: self
+  cluster:
+    name: jobbergate-postgres
+{{- end }}

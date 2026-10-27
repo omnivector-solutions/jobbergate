@@ -2,9 +2,10 @@
 
 Deploys the Jobbergate API standalone, with its own:
 
-- Postgres (TimescaleDB) database via [Kubegres](https://www.kubegres.io/), including
-  backup PVC and replica/primary credentials generated through
-  [External Secrets](https://external-secrets.io/).
+- Postgres (TimescaleDB) database via [CloudNativePG](https://cloudnative-pg.io/).
+  CloudNativePG generates and stores its own app credentials (no External Secrets
+  needed for the database); optional continuous backup to S3 is available via
+  `postgres.backup.*`.
 - Object storage for job scripts and templates, either:
   - **Garage** (default, `storage.backend: garage`): the chart deploys its own
     single-node [Garage](https://garagehq.deuxfleurs.fr/) instance (Deployment, PVC,
@@ -21,19 +22,19 @@ scheduling, image pull secrets) is left to `values.yaml` for you to fill in.
 
 ## Requirements
 
-- A running Postgres-capable cluster with the [Kubegres operator](https://www.kubegres.io/)
-  installed.
+- A cluster with the [CloudNativePG operator](https://cloudnative-pg.io/) installed
+  (CRD `postgresql.cnpg.io/v1`).
 - [External Secrets Operator](https://external-secrets.io/) with a `ClusterSecretStore`
-  (name configurable via `externalSecrets.clusterSecretStoreName`) able to back the
-  `Password` generator used for DB credentials, and Garage credentials when
-  `storage.backend: garage` (the default).
+  (name configurable via `externalSecrets.clusterSecretStoreName`), required only when
+  `storage.backend: garage` (the default), to back the `Password` generator used for
+  Garage's credentials.
 - An OIDC provider (Keycloak, Auth0, etc) to issue the JWTs Jobbergate validates.
 
 ## External dependencies (not deployed by this chart)
 
+- CloudNativePG operator (CRD `postgresql.cnpg.io/v1`).
 - `ClusterSecretStore` (default name `k8s-secretsmanager`, configurable) for the
-  External Secrets Operator.
-- Kubegres operator (CRD `kubegres.reactive-tech.io/v1`).
+  External Secrets Operator, only needed when `storage.backend: garage`.
 - RabbitMQ (optional, disabled by default via `rabbitmq.enabled: false`): used only to
   publish job submission status change notifications; the API works fine without it.
   When enabled, defaults assume a sibling install of the
@@ -66,7 +67,7 @@ storage class, and the periodic auto-clean job.
 Multi-tenancy is **disabled by default** (`multiTenancy.enabled: false`).
 
 - **Disabled:** Jobbergate uses a single database, named by `postgres.database` (default
-  `jobbergate`). The same value is used for the `POSTGRES_DB` created by Kubegres and for
+  `jobbergate`). The same value is used for the database CloudNativePG bootstraps and for
   the `DATABASE_NAME` passed to the API, so they always match.
 - **Enabled:** Jobbergate selects the database per request from the organization id in
   the user's token, and `DATABASE_NAME` is not set. Tenant databases must already exist,
@@ -91,7 +92,27 @@ kubectl exec deploy/jobbergate-garage -- /garage bucket create <organization-id>
 kubectl exec deploy/jobbergate-garage -- /garage bucket allow --read --write --owner <organization-id> --key "$KEY"
 ```
 
-## Database migrations
+## Postgres
+
+CloudNativePG creates the `jobbergate-postgres` Cluster and a `jobbergate-postgres-app`
+Secret holding the generated `username`/`password` for the database owner
+(`postgres.owner`, default `jobbergate`); the API and the migration/cleanup jobs read
+their credentials from that Secret. `postgres.highAvailability: true` (default) runs 2
+instances (1 primary + 1 standby) with pod anti-affinity; set it to `false` for a single
+instance.
+
+The default `postgres.image` (`ghcr.io/omnivector-solutions/timescaledb-cnpg`) is the
+official CloudNativePG PostgreSQL image with the TimescaleDB extension installed (built
+from `containers/timescaledb-cnpg` in this repository), needed for the job metrics
+hypertables and continuous aggregates created by the API's migrations. Point
+`postgres.image` elsewhere if you build or source your own.
+
+Continuous backup is **disabled by default**. Set `postgres.backup.enabled: true` and
+provide a bucket plus credentials (`postgres.backup.destinationPath`,
+`accessKeyId`/`secretAccessKey` or `existingSecret`) to enable it; this chart does not
+provision the bucket itself.
+
+### Database migrations
 
 An init container (`migration`) runs `alembic upgrade head` before the API starts, after
 the `pgchecker` init container confirms Postgres is reachable. The script is shipped in
