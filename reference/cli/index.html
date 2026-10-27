@@ -1903,6 +1903,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_cli.render.render_table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        render_table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_cli.render.terminal_message" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1979,6 +1990,17 @@
   
     <nav class="md-nav" aria-label="schemas">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.schemas.AnalyticsReport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AnalyticsReport
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#jobbergate_cli.schemas.ApplicationResponse" class="md-nav__link">
@@ -2224,6 +2246,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_cli.schemas.SubmissionStatusRow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SubmissionStatusRow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.schemas.TemplateUsageRow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TemplateUsageRow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_cli.schemas.TokenSet" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2440,6 +2484,34 @@
     <span class="md-ellipsis">
       
         tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.subapps.report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        report
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="report">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.subapps.report.app" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        app
       
     </span>
   </a>
@@ -3379,6 +3451,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_cli.render.render_table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        render_table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_cli.render.terminal_message" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3455,6 +3538,17 @@
   
     <nav class="md-nav" aria-label="schemas">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.schemas.AnalyticsReport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AnalyticsReport
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#jobbergate_cli.schemas.ApplicationResponse" class="md-nav__link">
@@ -3700,6 +3794,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#jobbergate_cli.schemas.SubmissionStatusRow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SubmissionStatusRow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.schemas.TemplateUsageRow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TemplateUsageRow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jobbergate_cli.schemas.TokenSet" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3916,6 +4032,34 @@
     <span class="md-ellipsis">
       
         tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.subapps.report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        report
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="report">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobbergate_cli.subapps.report.app" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        app
       
     </span>
   </a>
@@ -6070,6 +6214,105 @@ to the columns of the table.</p>
 <div class="doc doc-object doc-function">
 
 
+<h5 id="jobbergate_cli.render.render_table" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">render_table</span>
+
+
+</h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">render_table</span><span class="p">(</span><span class="n">rows</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Results List&#39;</span><span class="p">,</span> <span class="n">caption</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">style_mapper</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">StyleMapper</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Render a list of dict rows in a <code>rich</code> <code>Table</code>, with columns taken from the first row.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>rows</code>
+            </td>
+            <td>
+                  <code><span title="typing.List">List</span>[<span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The data items to render; must be non-empty and share the same keys.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>title</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The title header to include above the <code>Table</code> output.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;Results List&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>caption</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>An optional caption to include below the <code>Table</code> output.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>style_mapper</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="StyleMapper (jobbergate_cli.render.StyleMapper)" href="#jobbergate_cli.render.StyleMapper">StyleMapper</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The style mapper that should be used to apply styles to the columns of the table.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h5 id="jobbergate_cli.render.terminal_message" class="doc doc-heading">
             <span class="doc doc-object-name doc-function-name">terminal_message</span>
 
@@ -6554,6 +6797,54 @@ to the columns of the table.</p>
 
 
 
+
+<div class="doc doc-object doc-class">
+
+
+
+<h5 id="jobbergate_cli.schemas.AnalyticsReport" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">AnalyticsReport</span>
+
+
+</h5>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code>, <code><span title="typing.Generic">Generic</span>[<span title="jobbergate_cli.schemas.ReportRowT">ReportRowT</span>]</code></p>
+
+
+
+        <p>A model describing the reports returned by the analytics endpoints.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-class">
 
@@ -7485,6 +7776,102 @@ This is a convenience to combine all of the identifying data and credentials for
 
 
         <p>Request model for creating a JobScript entry from a template.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h5 id="jobbergate_cli.schemas.SubmissionStatusRow" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">SubmissionStatusRow</span>
+
+
+</h5>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+
+
+        <p>Job submission count for one status combination, cluster, and time bucket.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h5 id="jobbergate_cli.schemas.TemplateUsageRow" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">TemplateUsageRow</span>
+
+
+</h5>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="pydantic.BaseModel">BaseModel</span></code></p>
+
+
+
+        <p>Job submission count for one template, cluster, and time bucket.</p>
 
 
 
@@ -12935,6 +13322,196 @@ the current working directory.</p>
     <div class="doc doc-contents ">
 
         <p>Job submission factory function. Returns the correct job submission class based on the current mode.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-module">
+
+
+
+<h5 id="jobbergate_cli.subapps.report" class="doc doc-heading">
+            <span class="doc doc-object-name doc-module-name">report</span>
+
+
+</h5>
+
+    <div class="doc doc-contents ">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h6 id="jobbergate_cli.subapps.report.app" class="doc doc-heading">
+            <span class="doc doc-object-name doc-module-name">app</span>
+
+
+</h6>
+
+    <div class="doc doc-contents ">
+
+        <p>Provide a <code>typer</code> app that fetches usage reports from the analytics endpoints.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h7 id="jobbergate_cli.subapps.report.app.ReportInterval" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">ReportInterval</span>
+
+
+</h7>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="str">str</span></code>, <code><span title="enum.Enum">Enum</span></code></p>
+
+
+
+        <p>Supported time buckets for report aggregation.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h7 id="jobbergate_cli.subapps.report.app.status" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">status</span>
+
+
+</h7>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">status</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Context</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">page</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Option</span><span class="p">(</span><span class="o">--</span><span class="n">page</span><span class="p">,</span> <span class="o">-</span><span class="n">p</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The page number to retrieve&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Option</span><span class="p">(</span><span class="o">--</span><span class="n">size</span><span class="p">,</span> <span class="o">-</span><span class="n">s</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">MAX_PAGE_SIZE</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The number of items per page to retrieve&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">DEFAULT_PAGE_SIZE</span><span class="p">)</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Show the current health status reported by each cluster agent.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h7 id="jobbergate_cli.subapps.report.app.submissions" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">submissions</span>
+
+
+</h7>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">submissions</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Context</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">start_time</span><span class="p">:</span> <span class="n">StartTimeOption</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">end_time</span><span class="p">:</span> <span class="n">EndTimeOption</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">interval</span><span class="p">:</span> <span class="n">IntervalOption</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Show the number of job submissions per Jobbergate and Slurm status, bucketed over time.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h7 id="jobbergate_cli.subapps.report.app.templates" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">templates</span>
+
+
+</h7>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">templates</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">Context</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">start_time</span><span class="p">:</span> <span class="n">StartTimeOption</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">end_time</span><span class="p">:</span> <span class="n">EndTimeOption</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">interval</span><span class="p">:</span> <span class="n">IntervalOption</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Show the number of job submissions per job template, bucketed over time.</p>
 
 
     </div>
