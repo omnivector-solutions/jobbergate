@@ -10,12 +10,14 @@ TEMPLATES_PAYLOAD = {
         {
             "bucket": "2026-09-08T00:00:00Z",
             "client_id": "cluster-a",
+            "template_id": 3,
             "template_identifier": "template-a",
             "count": 2,
         },
         {
             "bucket": "2026-09-09T00:00:00Z",
             "client_id": "cluster-b",
+            "template_id": 7,
             "template_identifier": "template_id:7",
             "count": 1,
         },

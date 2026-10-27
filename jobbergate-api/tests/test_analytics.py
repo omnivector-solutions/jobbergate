@@ -182,12 +182,14 @@ async def test_template_usage_report_buckets_by_interval(
         {
             "bucket": "2026-09-08T00:00:00Z",
             "client_id": "cluster-a",
+            "template_id": template.id,
             "template_identifier": "template-a",
             "count": 2,
         },
         {
             "bucket": "2026-09-09T00:00:00Z",
             "client_id": "cluster-b",
+            "template_id": template.id,
             "template_identifier": "template-a",
             "count": 1,
         },
@@ -233,6 +235,7 @@ async def test_template_usage_report_uses_template_id_fallback(
 
     assert response.status_code == status.HTTP_200_OK
     (item,) = response.json()["items"]
+    assert item["template_id"] == template.id
     assert item["template_identifier"] == f"template_id:{template.id}"
 
 

@@ -150,6 +150,7 @@ async def template_usage_report(
             TemplateUsageRow(
                 bucket=bucket,
                 client_id=client_id,
+                template_id=template_id,
                 template_identifier=identifier or f"template_id:{template_id}",
                 count=count,
             )

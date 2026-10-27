@@ -15,10 +15,15 @@ class ReportInterval(StrEnum):
 
 
 class TemplateUsageRow(BaseModel):
-    """Job submission count for one template, cluster, and time bucket."""
+    """Job submission count for one template, cluster, and time bucket.
+
+    ``template_id`` is the stable key for the template; ``template_identifier`` is a
+    display name that can be assigned or changed after the fact.
+    """
 
     bucket: datetime
     client_id: str
+    template_id: int
     template_identifier: str
     count: int
 
