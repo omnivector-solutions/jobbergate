@@ -46,7 +46,7 @@ spec:
   storage:
     size: {{ .Values.postgres.storageSize | quote }}
     {{- with .Values.storageClassName }}
-    storageClassName: {{ . }}
+    storageClass: {{ . }}
     {{- end }}
 
   resources:

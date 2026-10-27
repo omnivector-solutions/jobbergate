@@ -110,7 +110,9 @@ hypertables and continuous aggregates created by the API's migrations. Point
 Continuous backup is **disabled by default**. Set `postgres.backup.enabled: true` and
 provide a bucket plus credentials (`postgres.backup.destinationPath`,
 `accessKeyId`/`secretAccessKey` or `existingSecret`) to enable it; this chart does not
-provision the bucket itself.
+provision the bucket itself. It uses CloudNativePG's native Barman Cloud integration,
+which upstream has deprecated in favor of the separate Barman Cloud Plugin (removal
+planned for CloudNativePG 1.28); this chart will move to the plugin before that happens.
 
 ### Database migrations
 

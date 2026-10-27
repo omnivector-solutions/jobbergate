@@ -114,7 +114,9 @@ postgres:
   # the bucket itself; you provide one plus credentials able to read/write it.
   backup:
     enabled: false
-    schedule: "0 0 * * *"
+    # CloudNativePG's ScheduledBackup uses a 6-field cron format (with a
+    # leading seconds specifier), unlike standard Kubernetes CronJobs.
+    schedule: "0 0 0 * * *"
     retentionPolicy: "30d"
     # s3://<bucket>/<path>
     destinationPath: ""
