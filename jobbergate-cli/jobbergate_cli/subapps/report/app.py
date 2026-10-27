@@ -7,11 +7,9 @@ from enum import Enum
 from typing import Annotated, Any, Optional, cast
 
 import typer
-from rich.console import Console
-from rich.table import Table
 
 from jobbergate_cli.context import get_active_context
-from jobbergate_cli.render import render_json, terminal_message
+from jobbergate_cli.render import render_json, render_table, terminal_message
 from jobbergate_cli.requests import make_request
 from jobbergate_cli.schemas import AnalyticsReport, ContextProtocol, SubmissionStatusRow, TemplateUsageRow
 
@@ -56,7 +54,7 @@ IntervalOption = Annotated[
 def _fetch_report(
     ctx: ContextProtocol,
     report_name: str,
-    row_cls: type,
+    response_model_cls: type[AnalyticsReport[Any]],
     start_time: Optional[datetime],
     end_time: Optional[datetime],
     interval: Optional[ReportInterval],
@@ -77,8 +75,7 @@ def _fetch_report(
             "GET",
             expected_status=200,
             abort_message=f"Couldn't retrieve the {report_name} report from the API",
-            support=True,
-            response_model_cls=AnalyticsReport[row_cls],  # type: ignore[valid-type]
+            response_model_cls=response_model_cls,
             params=params,
         ),
     )
@@ -92,21 +89,14 @@ def _render_report(ctx: ContextProtocol, report: AnalyticsReport[Any], title: st
     if not items:
         terminal_message("No data in the selected window", subject=title)
         return
-    table = Table(
+    render_table(
+        items,
         title=title,
         caption=(
             f"{report.start_time:%Y-%m-%d %H:%M} UTC → {report.end_time:%Y-%m-%d %H:%M} UTC, "
             f"interval: {report.interval}, total rows: {len(items)}"
         ),
     )
-    for key in items[0].keys():
-        table.add_column(key)
-    for row in items:
-        table.add_row(*[str(value) if value is not None else "" for value in row.values()])
-    console = Console()
-    console.print()
-    console.print(table)
-    console.print()
 
 
 @app.command()
@@ -120,7 +110,7 @@ def templates(
     Show the number of job submissions per job template, bucketed over time.
     """
     jg_ctx = get_active_context(ctx)
-    report = _fetch_report(jg_ctx, "templates", TemplateUsageRow, start_time, end_time, interval)
+    report = _fetch_report(jg_ctx, "templates", AnalyticsReport[TemplateUsageRow], start_time, end_time, interval)
     _render_report(jg_ctx, report, "Template usage")
 
 
@@ -135,5 +125,5 @@ def submissions(
     Show the number of job submissions per Jobbergate and Slurm status, bucketed over time.
     """
     jg_ctx = get_active_context(ctx)
-    report = _fetch_report(jg_ctx, "submissions", SubmissionStatusRow, start_time, end_time, interval)
+    report = _fetch_report(jg_ctx, "submissions", AnalyticsReport[SubmissionStatusRow], start_time, end_time, interval)
     _render_report(jg_ctx, report, "Submission statuses")

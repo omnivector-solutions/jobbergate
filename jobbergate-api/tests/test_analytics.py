@@ -4,8 +4,26 @@ import pytest
 from fastapi import status
 from httpx import AsyncClient
 
+from jobbergate_api.analytics.route import _bucket_count
+from jobbergate_api.analytics.schemas import ReportInterval
 from jobbergate_api.apps.job_submissions.constants import JobSubmissionStatus, SlurmJobState
 from jobbergate_api.apps.permissions import Permissions
+
+
+def test_bucket_count_counts_distinct_buckets_across_boundaries():
+    start = datetime(2026, 9, 8, 23, 30, tzinfo=timezone.utc)
+    end = datetime(2026, 9, 9, 0, 10, tzinfo=timezone.utc)
+    assert _bucket_count(start, end, ReportInterval.HOUR) == 2
+    assert _bucket_count(start, end, ReportInterval.DAY) == 2
+    # 2026-09-08 is a Tuesday; the Monday after it starts a new date_trunc week bucket.
+    assert _bucket_count(start, datetime(2026, 9, 13, tzinfo=timezone.utc), ReportInterval.WEEK) == 1
+    assert _bucket_count(start, datetime(2026, 9, 14, tzinfo=timezone.utc), ReportInterval.WEEK) == 2
+    assert (
+        _bucket_count(
+            datetime(2026, 9, 8, tzinfo=timezone.utc), datetime(2026, 9, 10, tzinfo=timezone.utc), ReportInterval.DAY
+        )
+        == 3
+    )
 
 
 @pytest.mark.parametrize("path", ("templates", "submissions"))

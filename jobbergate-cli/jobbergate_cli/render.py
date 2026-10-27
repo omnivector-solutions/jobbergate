@@ -155,6 +155,36 @@ def render_list_results(
         console.print()
 
 
+def render_table(
+    rows: List[Dict[str, Any]],
+    title: str = "Results List",
+    caption: Optional[str] = None,
+    style_mapper: Optional[StyleMapper] = None,
+):
+    """
+    Render a list of dict rows in a ``rich`` ``Table``, with columns taken from the first row.
+
+    Args:
+        rows: The data items to render; must be non-empty and share the same keys.
+        title: The title header to include above the ``Table`` output.
+        caption: An optional caption to include below the ``Table`` output.
+        style_mapper: The style mapper that should be used to apply styles to the columns of the table.
+    """
+    if style_mapper is None:
+        style_mapper = StyleMapper()
+
+    table = Table(title=title, caption=caption)
+    for key in rows[0].keys():
+        table.add_column(key, **style_mapper.map_style(key))
+    for row in rows:
+        table.add_row(*[str(value) if value is not None else "" for value in row.values()])
+
+    console = Console()
+    console.print()
+    console.print(table)
+    console.print()
+
+
 def render_dict(
     data: dict[str, Any],
     title: str = "Data",

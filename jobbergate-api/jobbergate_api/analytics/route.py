@@ -74,6 +74,17 @@ _INTERVAL_WIDTH = {
     ReportInterval.DAY: timedelta(days=1),
     ReportInterval.WEEK: timedelta(weeks=1),
 }
+_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+# date_trunc('week') truncates to Monday, but the epoch is a Thursday, so week
+# boundaries sit 3 days before epoch-aligned multiples.
+_WEEK_ALIGNMENT = timedelta(days=3)
+
+
+def _bucket_count(start_time: datetime, end_time: datetime, interval: ReportInterval) -> int:
+    """Count the distinct date_trunc buckets the window spans, bucket-boundary aligned."""
+    width = _INTERVAL_WIDTH[interval]
+    offset = _WEEK_ALIGNMENT if interval is ReportInterval.WEEK else timedelta(0)
+    return (end_time - _EPOCH + offset) // width - (start_time - _EPOCH + offset) // width + 1
 
 
 def resolve_window(
@@ -86,7 +97,7 @@ def resolve_window(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="End time must be greater than the start time."
         )
-    buckets = (end_time - start_time) // _INTERVAL_WIDTH[interval] + 1
+    buckets = _bucket_count(start_time, end_time, interval)
     if buckets > settings.ANALYTICS_MAX_BUCKETS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
