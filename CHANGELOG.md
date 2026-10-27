@@ -11,6 +11,43 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
+# [5.13.0a0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.13.0a0) - 2026-10-27
+
+
+## Core
+
+No significant changes.
+
+
+## Agent
+
+No significant changes.
+
+
+## Agent Snap
+
+No significant changes.
+
+
+## API
+
+### Added
+
+- Added `/analytics/templates` and `/analytics/submissions` endpoints serving the same time-bucketed aggregations as the Prometheus-format metrics endpoints, but as JSON, for consumers that want windowed reports on demand (Grafana Infinity datasource, the Jobbergate CLI, and batch exports). The reports are keyed on submission `created_at` and are exact within the database retention window. Requests whose window would produce more time buckets than the configurable `ANALYTICS_MAX_BUCKETS` setting (default 2,500, covering the default 90-day retention window at hourly resolution) are rejected with a hint to use a coarser interval, bounding the database load and the response size.
+
+
+## CLI
+
+### Added
+
+- Added a `jobbergate report` command group: `templates` and `submissions` fetch windowed usage reports from the new analytics endpoints, with `--start-time`, `--end-time`, and `--interval` options mapping directly to the API parameters, and `status` lists the current health reported by each cluster agent.
+
+
+## Documentation
+
+No significant changes.
+
+
 # [5.12.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.12.0) - 2026-10-20
 
 ## Core
