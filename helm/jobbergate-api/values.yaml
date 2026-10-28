@@ -74,21 +74,33 @@ service:
 
 # HorizontalPodAutoscaler is only created when autoscaling.enabled is true.
 
-# Leave empty to use the cluster's default StorageClass. Shared by the
-# Postgres and Garage PersistentVolumeClaims below.
+# Leave empty to use the cluster's default StorageClass. Used by the
+# CloudNativePG Cluster below and the Garage PersistentVolumeClaim.
 storageClassName: ""
 
-# The Jobbergate API's own Postgres (TimescaleDB) database, managed via
-# Kubegres (https://www.kubegres.io/). Requires the Kubegres operator to be
+# The Jobbergate API's own Postgres database, managed via CloudNativePG
+# (https://cloudnative-pg.io/). Requires the CloudNativePG operator to be
 # installed in the cluster.
 postgres:
+  # PostgreSQL + TimescaleDB image, needed for the job metrics
+  # hypertables/continuous aggregates. Built from containers/timescaledb-cnpg
+  # in this repository and published to GHCR.
+  image: ghcr.io/omnivector-solutions/timescaledb-cnpg:17
   # Database created by Postgres. Also passed to Jobbergate as DATABASE_NAME
   # when multi-tenancy is disabled.
   database: jobbergate
+  # Owner of the database above, and the role Jobbergate connects as.
+  # CloudNativePG generates its password and exposes both username and
+  # password in the "jobbergate-postgres-app" Secret.
+  owner: jobbergate
   storageSize: 200Gi
-  backupSchedule: "0 0 1 * *"
-  replicas: 2
+  # 2 instances (1 primary + 1 standby, pod anti-affinity enabled) when true,
+  # otherwise a single instance.
   highAvailability: true
+  sharedPreloadLibraries:
+    - timescaledb
+  parameters:
+    timescaledb.telemetry_level: "off"
   resources:
     requests:
       memory: 1Gi
@@ -96,6 +108,35 @@ postgres:
     limits:
       memory: 2Gi
       cpu: "2.5"
+
+  # Continuous backup to S3 (or an S3-compatible service) via CloudNativePG's
+  # Barman Cloud integration. Disabled by default. This chart never creates
+  # the bucket itself; you provide one plus credentials able to read/write it.
+  backup:
+    enabled: false
+    # CloudNativePG's ScheduledBackup uses a 6-field cron format (with a
+    # leading seconds specifier), unlike standard Kubernetes CronJobs.
+    schedule: "0 0 0 * * *"
+    retentionPolicy: "30d"
+    # s3://<bucket>/<path>
+    destinationPath: ""
+    # Leave empty to use AWS S3's default endpoint. Set this to point at an
+    # S3-compatible service instead (e.g. a self-hosted MinIO/Garage, outside
+    # this chart, dedicated to backups).
+    endpointUrl: ""
+    # Static credentials. Ignored if existingSecret is set below.
+    accessKeyId: ""
+    secretAccessKey: ""
+    # Only needed if your endpoint requires a specific region.
+    region: ""
+    # Name of an existing Secret to source credentials from instead of the
+    # values above (e.g. one managed by External Secrets). Must contain the
+    # keys named below; existingSecretRegionKey is only read when `region`
+    # above is set.
+    existingSecret: ""
+    existingSecretAccessKeyIdKey: ACCESS_KEY_ID
+    existingSecretSecretAccessKeyKey: ACCESS_SECRET_KEY
+    existingSecretRegionKey: REGION
 
 # Object storage for job scripts and templates.
 storage:
@@ -171,8 +212,10 @@ autoClean:
 # Image used by the init container that waits for Postgres to be reachable.
 pgCheckerImage: busybox:latest
 
-# External Secrets Operator (https://external-secrets.io/) is required to
-# generate and store the Postgres/Garage credentials. Set this to the name
-# of an existing ClusterSecretStore in your cluster.
+# External Secrets Operator (https://external-secrets.io/) is required only
+# when storage.backend is "garage" (the default), to generate and store its
+# credentials. Postgres credentials no longer need it: CloudNativePG generates
+# and stores its own. Set this to the name of an existing ClusterSecretStore
+# in your cluster.
 externalSecrets:
   clusterSecretStoreName: k8s-secretsmanager

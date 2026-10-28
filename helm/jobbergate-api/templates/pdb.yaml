@@ -7,17 +7,6 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: jobbergate-api
----
-apiVersion: policy/v1
-kind: PodDisruptionBudget
-metadata:
-  name: jobbergate-api-kubegres-primary
-spec:
-  minAvailable: 1
-  selector:
-    matchLabels:
-      app: jobbergate-postgres
-      replicationRole: primary
 {{- if eq .Values.storage.backend "garage" }}
 ---
 apiVersion: policy/v1

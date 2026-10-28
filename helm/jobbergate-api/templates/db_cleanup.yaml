@@ -54,7 +54,7 @@ spec:
                 {{- include "jobbergate-api.dbEnv" . | nindent 16 }}
                 {{- include "jobbergate-api.s3Env" . | nindent 16 }}
                 - name: DATABASE_HOST
-                  value: jobbergate-postgres
+                  value: {{ include "jobbergate.dbHost" . }}
                 - name: DATABASE_URL
                   value: postgresql://$(DATABASE_USER):$(DATABASE_PSWD)@$(DATABASE_HOST):$(DATABASE_PORT)
                 - name: AUTO_CLEAN_JOB_SCRIPT_TEMPLATES_DAYS_TO_ARCHIVE

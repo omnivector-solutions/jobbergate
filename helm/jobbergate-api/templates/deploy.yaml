@@ -69,7 +69,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: HOST
-              value: jobbergate-postgres
+              value: {{ include "jobbergate.dbHost" . }}
         - name: migration
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           command:

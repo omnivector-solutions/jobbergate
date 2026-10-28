@@ -1,0 +1,57 @@
+name: Publish timescaledb-cnpg Image
+
+# This action:
+#   - Is triggered manually (workflow_dispatch);
+#   - Builds the containers/timescaledb-cnpg image (PostgreSQL + TimescaleDB for
+#     CloudNativePG);
+#   - Pushes it to GHCR as ghcr.io/omnivector-solutions/timescaledb-cnpg.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pg_major:
+        description: "PostgreSQL major version to build (matches a ghcr.io/cloudnative-pg/postgresql tag)"
+        required: true
+        default: "17"
+      image_tag:
+        description: "Tag to publish the image under (defaults to pg_major)"
+        required: false
+        default: ""
+
+jobs:
+  publish-to-ghcr:
+    name: Publish to GHCR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Resolve image tag
+        id: tag
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          PG_MAJOR: ${{ inputs.pg_major }}
+        run: |
+          TAG="$IMAGE_TAG"
+          if [ -z "$TAG" ]; then
+            TAG="$PG_MAJOR"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: containers/timescaledb-cnpg
+          build-args: |
+            PG_MAJOR=${{ inputs.pg_major }}
+          push: true
+          tags: ghcr.io/omnivector-solutions/timescaledb-cnpg:${{ steps.tag.outputs.tag }}
