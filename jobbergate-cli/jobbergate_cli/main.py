@@ -17,6 +17,7 @@ from jobbergate_cli.schemas import ContextProtocol
 from jobbergate_cli.subapps.applications.app import app as applications_app
 from jobbergate_cli.subapps.job_scripts.app import app as job_scripts_app
 from jobbergate_cli.subapps.job_submissions.app import app as job_submissions_app
+from jobbergate_cli.subapps.report.app import app as report_app
 from jobbergate_cli.text_tools import copy_to_clipboard
 
 app = typer.Typer(rich_markup_mode="markdown", no_args_is_help=True)
@@ -31,6 +32,7 @@ if settings.JOBBERGATE_COMPATIBILITY_MODE:
 app.add_typer(applications_app, name="applications")
 app.add_typer(job_scripts_app, name="job-scripts")
 app.add_typer(job_submissions_app, name="job-submissions")
+app.add_typer(report_app, name="report")
 
 
 @app.callback(

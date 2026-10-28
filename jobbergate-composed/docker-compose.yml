@@ -215,6 +215,31 @@ services:
       retries: 10
       timeout: 5s
 
+  grafana:
+    # Keep new enough for the latest Infinity plugin, which GF_INSTALL_PLUGINS
+    # downloads at container start (it declares a minimum Grafana version).
+    image: grafana/grafana-oss:12.4.3
+    profiles: ["observability"]
+    networks:
+      - jobbergate-net
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./etc/grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      # The Infinity datasource plugin is downloaded at container start,
+      # so the first run needs internet access.
+      - GF_INSTALL_PLUGINS=yesoreyeram-infinity-datasource
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    ports:
+      - 3000:3000
+    depends_on:
+      jobbergate-api:
+        condition: service_healthy
+      keycloak.local:
+        condition: service_healthy
+
   mysql:
     image: mysql:5.7
     networks:
@@ -366,6 +391,7 @@ volumes:
   jobbergate-agent-cache:
   jobbergate-cli-cache:
   timeseries_data:
+  grafana_data:
 
 networks:
   jobbergate-net:

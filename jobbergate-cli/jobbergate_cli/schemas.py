@@ -329,3 +329,41 @@ class ClusterCacheData(pydantic.BaseModel):
 
     updated_at: datetime
     client_ids: List[str]
+
+
+class TemplateUsageRow(pydantic.BaseModel):
+    """
+    Job submission count for one template, cluster, and time bucket.
+    """
+
+    bucket: datetime
+    client_id: str
+    template_id: Optional[int] = None
+    template_identifier: str
+    count: int
+
+
+class SubmissionStatusRow(pydantic.BaseModel):
+    """
+    Job submission count for one status combination, cluster, and time bucket.
+    """
+
+    bucket: datetime
+    client_id: str
+    status: str
+    slurm_job_state: Optional[str] = None
+    count: int
+
+
+ReportRowT = TypeVar("ReportRowT")
+
+
+class AnalyticsReport(pydantic.BaseModel, Generic[ReportRowT]):
+    """
+    A model describing the reports returned by the analytics endpoints.
+    """
+
+    start_time: datetime
+    end_time: datetime
+    interval: str
+    items: List[ReportRowT]

@@ -1,0 +1,22 @@
+# Provision the Infinity datasource against the composed Jobbergate API, using the
+# same OAuth2 client-credentials flow the on-prem observability stack uses in
+# production (here with the local-slurm service account from the local Keycloak).
+apiVersion: 1
+
+datasources:
+  - name: Jobbergate API
+    uid: jobbergate-infinity
+    type: yesoreyeram-infinity-datasource
+    access: proxy
+    isDefault: true
+    editable: true
+    jsonData:
+      auth_method: oauth2
+      oauth2:
+        oauth2_type: client_credentials
+        client_id: local-slurm
+        token_url: http://keycloak.local:8080/realms/jobbergate-local/protocol/openid-connect/token
+      allowedHosts:
+        - http://jobbergate-api:80
+    secureJsonData:
+      oauth2ClientSecret: SVkaJ2f9xeYfOVzQPHXYyiwr12za4xGF
