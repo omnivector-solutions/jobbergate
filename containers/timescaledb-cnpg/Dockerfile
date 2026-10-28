@@ -10,7 +10,7 @@ RUN apt-get update \
         ca-certificates \
         curl \
         gnupg \
-    && curl -sL https://packagecloud.io/timescale/timescaledb/gpgkey \
+    && curl -fsSL --proto '=https' --tlsv1.2 https://packagecloud.io/timescale/timescaledb/gpgkey \
         | gpg --dearmor -o /usr/share/keyrings/timescaledb.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/timescaledb.gpg] https://packagecloud.io/timescale/timescaledb/debian/ $(. /etc/os-release && echo "$VERSION_CODENAME") main" \
         > /etc/apt/sources.list.d/timescaledb.list \

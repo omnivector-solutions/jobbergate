@@ -30,10 +30,13 @@ jobs:
 
       - name: Resolve image tag
         id: tag
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          PG_MAJOR: ${{ inputs.pg_major }}
         run: |
-          TAG="${{ inputs.image_tag }}"
+          TAG="$IMAGE_TAG"
           if [ -z "$TAG" ]; then
-            TAG="${{ inputs.pg_major }}"
+            TAG="$PG_MAJOR"
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
