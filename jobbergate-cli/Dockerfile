@@ -9,7 +9,10 @@ COPY --from=ghcr.io/astral-sh/uv:0.10.8@sha256:88234bc9e09c2b2f6d176a3daf411419e
 # Keep full repository in builder so hatch-vcs sees a clean tracked worktree.
 COPY . .
 
-RUN uv sync --frozen --no-editable --no-python-downloads --package jobbergate-cli --no-dev
+# Third-party dependencies are installed from wheels only (no build scripts run);
+# then the workspace packages are built from source.
+RUN uv sync --frozen --no-install-workspace --no-build --no-editable --no-python-downloads --package jobbergate-cli --no-dev \
+    && uv sync --frozen --no-editable --no-python-downloads --package jobbergate-cli --no-dev
 
 FROM python:3.14-slim-bookworm AS runner
 
