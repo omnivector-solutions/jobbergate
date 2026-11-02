@@ -13,8 +13,10 @@ COPY . .
 ENV UV_PYTHON_INSTALL_DIR=/app/.python
 # Third-party dependencies are installed from wheels only (no build scripts run);
 # then the workspace packages are built from source.
-RUN uv sync --frozen --no-install-workspace --no-build --no-editable --python 3.14 --managed-python --package jobbergate-agent --no-dev \
-    && uv sync --frozen --no-editable --python 3.14 --managed-python --package jobbergate-agent --no-dev
+RUN uv sync --frozen --no-install-workspace --no-build \
+        --no-editable --python 3.14 --managed-python --package jobbergate-agent --no-dev \
+    && uv sync --frozen \
+        --no-editable --python 3.14 --managed-python --package jobbergate-agent --no-dev
 
 FROM ubuntu:resolute AS runner
 

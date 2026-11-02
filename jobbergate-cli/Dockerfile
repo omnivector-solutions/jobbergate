@@ -11,8 +11,10 @@ COPY . .
 
 # Third-party dependencies are installed from wheels only (no build scripts run);
 # then the workspace packages are built from source.
-RUN uv sync --frozen --no-install-workspace --no-build --no-editable --no-python-downloads --package jobbergate-cli --no-dev \
-    && uv sync --frozen --no-editable --no-python-downloads --package jobbergate-cli --no-dev
+RUN uv sync --frozen --no-install-workspace --no-build \
+        --no-editable --no-python-downloads --package jobbergate-cli --no-dev \
+    && uv sync --frozen \
+        --no-editable --no-python-downloads --package jobbergate-cli --no-dev
 
 FROM python:3.14-slim-bookworm AS runner
 
