@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -27,10 +27,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -7523,7 +7523,7 @@ helper functions in the class.</p>
   </span>
 
 </h7>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">job_script_workflow_upload_file</span><span class="p">(</span><span class="n">secure_services</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">SecureService</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span><span class="n">secure_services</span><span class="p">(</span><span class="n">ADMIN</span><span class="p">,</span> <span class="n">JOB_TEMPLATES_CREATE</span><span class="p">,</span> <span class="n">ensure_email</span><span class="o">=</span><span class="kc">True</span><span class="p">))],</span> <span class="n">id_or_identifier</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">()],</span> <span class="n">upload_file</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">UploadFile</span><span class="p">,</span> <span class="n">File</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;File to upload&#39;</span><span class="p">)],</span> <span class="n">runtime_config</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">RunTimeConfig</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">Form</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Runtime configuration is optional when the workflow file already exists&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">job_script_workflow_upload_file</span><span class="p">(</span><span class="n">secure_services</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">SecureService</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span><span class="n">secure_services</span><span class="p">(</span><span class="n">ADMIN</span><span class="p">,</span> <span class="n">JOB_TEMPLATES_CREATE</span><span class="p">,</span> <span class="n">ensure_email</span><span class="o">=</span><span class="kc">True</span><span class="p">))],</span> <span class="n">id_or_identifier</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">()],</span> <span class="n">upload_file</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">UploadFile</span><span class="p">,</span> <span class="n">File</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;File to upload&#39;</span><span class="p">)],</span> <span class="n">runtime_config</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">Form</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Runtime configuration (JSON) is optional when the workflow file already exists&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -18307,10 +18307,10 @@ client_id found in the requesting user's auth token.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.expand", "navigation.footer", "navigation.tracking", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.expand", "navigation.footer", "navigation.tracking", "content.code.copy"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>
