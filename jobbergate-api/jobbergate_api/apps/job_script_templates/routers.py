@@ -19,7 +19,7 @@ from fastapi import (
 from fastapi import Response as FastAPIResponse
 from fastapi_pagination import Page
 from loguru import logger
-from pydantic import AnyUrl
+from pydantic import AnyUrl, ValidationError
 from sqlalchemy.exc import IntegrityError
 
 from jobbergate_api.apps.constants import FileType
@@ -476,12 +476,18 @@ async def job_script_workflow_upload_file(
     id_or_identifier: Annotated[str, Path()],
     upload_file: Annotated[UploadFile, File(description="File to upload")],
     runtime_config: Annotated[
-        RunTimeConfig | None,
-        Form(description="Runtime configuration is optional when the workflow file already exists"),
+        str | None,
+        Form(description="Runtime configuration (JSON) is optional when the workflow file already exists"),
     ] = None,
 ):
     """Upload a file to a job script workflow by id or identifier."""
-    return await _upsert_workflow_file(id_or_identifier, runtime_config, upload_file, secure_services)
+    # Kept as a string at the form level, since recent FastAPI versions flatten a single
+    # pydantic Form model into its fields instead of reading it from one form entry.
+    try:
+        parsed_runtime_config = None if runtime_config is None else RunTimeConfig.model_validate_json(runtime_config)
+    except ValidationError as err:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(err)) from err
+    return await _upsert_workflow_file(id_or_identifier, parsed_runtime_config, upload_file, secure_services)
 
 
 @router.put(
