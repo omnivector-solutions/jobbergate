@@ -67,6 +67,9 @@ then
 
     echo "---> Starting Jobbergate-agent ..."
     cd /app
+    # Install third-party dependencies from wheels only (no build scripts run),
+    # then build the workspace packages from source and start the agent.
+    uv sync --python 3.12 --no-dev --frozen --no-install-workspace --no-build --package jobbergate-agent
     uv run --python 3.12 --no-dev --frozen --package jobbergate-agent jg-run
 fi
 

@@ -12,7 +12,12 @@ COPY jobbergate-api ./jobbergate-api
 
 
 # Install only jobbergate-api and its dependencies (including dev)
-RUN uv sync --package jobbergate-api --group dev
+# Third-party dependencies are installed from wheels only (no build scripts run);
+# then the workspace packages are built from source.
+RUN uv sync --frozen --no-install-workspace --no-build \
+        --package jobbergate-api --group dev \
+    && uv sync --frozen \
+        --package jobbergate-api --group dev
 
 ENTRYPOINT ["/app/jobbergate-api/dev_tools/entrypoint.sh"]
 #CMD ["uvicorn", "jobbergate_api.main:app", "--host", "0.0.0.0", "--port", "80"]

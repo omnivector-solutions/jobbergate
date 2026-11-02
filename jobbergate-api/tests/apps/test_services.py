@@ -12,6 +12,7 @@ import pytest
 from fastapi import HTTPException, UploadFile
 from fastapi_pagination.default import Params
 from pydantic import AnyUrl
+from sqlalchemy.exc import DBAPIError
 
 from jobbergate_api.apps.models import Base, CrudMixin, FileMixin
 from jobbergate_api.apps.services import CrudService, FileService, ServiceError
@@ -666,17 +667,10 @@ class TestCrudService:
         # Create an instance
         await dummy_crud_service.create(name="test-item", owner_email="user@test.com")
 
-        # This should work by treating the dict as a single value
-        # Note: In practice this would likely fail at the database level
-        # but the service logic should treat it as a single value, not a collection
-        try:
-            result = await dummy_crud_service.list(name={"key": "value"})
-            # If it doesn't raise an exception, it should return empty (no matches)
-            assert len(result) == 0
-        except Exception:
-            # This is expected since dicts can't be compared to strings in the database
-            # The important thing is that it's NOT treated as an IN clause
-            pass
+        # The dict is bound as a single value (not expanded into an IN clause),
+        # which the database driver rejects since it cannot compare it to a string.
+        with pytest.raises(DBAPIError):
+            await dummy_crud_service.list(name={"key": "value"})
 
 
 class DummyFile(FileMixin, Base):
