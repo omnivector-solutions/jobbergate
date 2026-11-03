@@ -11,7 +11,7 @@ Refer to [changes](./changes) directory for unreleased changes.
 
 <!-- towncrier release notes start -->
 
-# [5.13.0a0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.13.0a0) - 2026-10-27
+# [5.13.0](https://github.com/omnivector-solutions/jobbergate/releases/tag/5.13.0) - 2026-11-03
 
 
 ## Core
