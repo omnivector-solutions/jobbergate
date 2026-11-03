@@ -113,10 +113,11 @@ def service_factory(session: AsyncSession, bucket: Bucket) -> Iterator[Services]
     [service.bind_session(session) for service in chain(crud, file)]
     [service.bind_bucket(bucket) for service in file]
 
-    yield Services(crud=crud, file=file)
-
-    [service.unbind_session() for service in chain(crud, file)]
-    [service.unbind_bucket() for service in file]
+    try:
+        yield Services(crud=crud, file=file)
+    finally:
+        [service.unbind_session() for service in chain(crud, file)]
+        [service.unbind_bucket() for service in file]
 
 
 def secure_services(
